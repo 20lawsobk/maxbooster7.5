@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T23:25:06.275369+00:00",
+  "source": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "sourceInputsSha256": "1331649284d57675d1b1c078e4dafcbe93dff87f92021c2f2ff8a3bf288f71de",
+  "scope": "Actual frozen-master leaf qualification and source preservation; not full product acceptance",
+  "masterStatus": "failed",
+  "masterFinishedAt": "2026-10-29T23:24:26.370918+00:00",
+  "sourceInputsUnchanged": true,
+  "evidenceProvenance": {
+    "status": "CURRENT",
+    "sourceInputsMatchCurrent": true,
+    "passingCases": 5408,
+    "rejectedEvidence": {}
+  },
+  "checks": [
+    {
+      "check": "unchanged actual source binding",
+      "status": "PASS"
+    },
+    {
+      "check": "64 parameterized occurrences preserve original names modulo unique index and qualify",
+      "status": "PASS",
+      "originalOccurrences": 64,
+      "currentOccurrences": 64,
+      "qualifiedOccurrences": 64
+    },
+    {
+      "check": "26 distinct Python class-scoped methods qualify without renaming source",
+      "status": "PASS",
+      "originalOccurrences": 26,
+      "distinctQualifiedIdentities": 26,
+      "qualifiedIdentities": 26
+    },
+    {
+      "check": "14 legacy-beat leaves qualify under actual consumed subject selection",
+      "status": "PASS",
+      "originalOccurrences": 14,
+      "qualifiedIdentities": 14,
+      "command": [
+        "scripts/testing/commerce-legacy-fixture.mjs",
+        "/workspace/maxbooster7.5/reports/test-verification/commerce/legacy-beat.xml",
+        "--subject-file",
+        "tests/unit/beat-sale-money-loop.test.ts"
+      ]
+    },
+    {
+      "check": "all nine candidate policy bundles resolve from exact current leaves",
+      "status": "PASS",
+      "mappings": [
+        {
+          "checkId": "api-7f174c69ff83279c/access-policy",
+          "resolvedCaseCount": 1
+        },
+        {
+          "checkId": "api-2153be5bc8e5692b/access-policy",
+          "resolvedCaseCount": 1
+        },
+        {
+          "checkId": "api-50167c08abd2dfe2/access-policy",
+          "resolvedCaseCount": 1
+        },
+        {
+          "checkId": "api-059a423751b44e6c/access-policy",
+          "resolvedCaseCount": 1
+        },
+        {
+          "checkId": "api-ebf54287f664010e/access-policy",
+          "resolvedCaseCount": 1
+        },
+        {
+          "checkId": "api-ef05357bba6ab833/access-policy",
+          "resolvedCaseCount": 3
+        },
+        {
+          "checkId": "api-3f640ac3745d3b6a/access-policy",
+          "resolvedCaseCount": 7
+        },
+        {
+          "checkId": "api-0772b8611dc21e1d/access-policy",
+          "resolvedCaseCount": 7
+        },
+        {
+          "checkId": "api-51e06323624f6bc1/access-policy",
+          "resolvedCaseCount": 1
+        }
+      ]
+    }
+  ],
+  "allIndependentChecksPassed": true,
+  "productionReady": false
+}

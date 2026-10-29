@@ -1,0 +1,10 @@
+{
+  "scope": "Known configured credential values compared only in memory; no values printed/stored",
+  "knownBindingCountChecked": 8,
+  "filesScanned": 162,
+  "configuredValueMatches": 0,
+  "symlinksRetained": 0,
+  "privateApplicationRowsRetained": false,
+  "limitation": "No claim to detect unknown values; source logs retain synthetic test fixture identifiers only",
+  "productionReady": false
+}

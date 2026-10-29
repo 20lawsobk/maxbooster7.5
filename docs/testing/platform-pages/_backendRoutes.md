@@ -32576,7 +32576,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "id": "api-51e06323624f6bc1/access-policy",
       "template": "access-policy",
-      "status": "UNVERIFIED"
+      "status": "PASS",
+      "evidence": {
+        "cases": [
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > 11. GET /api/billing/plans returns a non-empty plan list without auth",
+            "group": "http"
+          }
+        ],
+        "mode": "all-cases-required"
+      }
     },
     {
       "id": "api-51e06323624f6bc1/input-boundaries",
@@ -32614,11 +32625,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/refund-request-persistence.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/billing-lifecycle.test.ts",
-      "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
     {
@@ -32751,7 +32757,54 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "id": "api-3f640ac3745d3b6a/access-policy",
       "template": "access-policy",
-      "status": "UNVERIFIED"
+      "status": "PASS",
+      "evidence": {
+        "cases": [
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > 9. GET /api/billing/subscription returns complete tier shape when authenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > 10. GET /api/billing/subscription returns 401 when unauthenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects suspended session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects banned session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects mfa-required session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects trial-expired session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects subscription-expired session",
+            "group": "http"
+          }
+        ],
+        "mode": "all-cases-required"
+      }
     },
     {
       "id": "api-3f640ac3745d3b6a/input-boundaries",
@@ -129837,7 +129890,54 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "id": "api-0772b8611dc21e1d/access-policy",
       "template": "access-policy",
-      "status": "UNVERIFIED"
+      "status": "PASS",
+      "evidence": {
+        "cases": [
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > 9. GET /api/storage/quota returns quota info when authenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > 10. GET /api/storage/quota returns 401 or 403 without authentication",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects suspended session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects banned session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects mfa-required session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects trial-expired session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects subscription-expired session",
+            "group": "http"
+          }
+        ],
+        "mode": "all-cases-required"
+      }
     },
     {
       "id": "api-0772b8611dc21e1d/input-boundaries",
@@ -208214,16 +208314,33 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-e8e4a036051eff3f",
   "method": "GET",
-  "path": "/capability",
+  "path": "/api/analytics/capability",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
     "line": 255
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/capability",
+  "declaredPath": "/capability",
+  "declarationSubjectId": "api-e8e4a036051eff3f",
+  "pathResolved": true,
+  "routerPrefix": "/api/analytics",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+    "name": "create_router",
+    "line": 252
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1250
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/analytics",
   "requiredChecks": [
     {
       "id": "api-e8e4a036051eff3f/response-contract",
@@ -208253,13 +208370,24 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_capability_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_capability_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/account-analytics-contract.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/testing/test_maxcore_analytics.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -208269,16 +208397,33 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-a1f340f59332d78e",
   "method": "POST",
-  "path": "/predict",
+  "path": "/api/analytics/predict",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
     "line": 262
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/predict",
+  "declaredPath": "/predict",
+  "declarationSubjectId": "api-a1f340f59332d78e",
+  "pathResolved": true,
+  "routerPrefix": "/api/analytics",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+    "name": "create_router",
+    "line": 252
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1250
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/analytics",
   "requiredChecks": [
     {
       "id": "api-a1f340f59332d78e/response-contract",
@@ -208313,13 +208458,24 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_predict_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_predict_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/account-analytics-contract.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/testing/test_maxcore_analytics.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -208329,16 +208485,33 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-4f9324aca2b97b4b",
   "method": "POST",
-  "path": "/insights",
+  "path": "/api/analytics/insights",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
     "line": 266
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/insights",
+  "declaredPath": "/insights",
+  "declarationSubjectId": "api-4f9324aca2b97b4b",
+  "pathResolved": true,
+  "routerPrefix": "/api/analytics",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+    "name": "create_router",
+    "line": 252
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1250
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/analytics",
   "requiredChecks": [
     {
       "id": "api-4f9324aca2b97b4b/response-contract",
@@ -208373,15 +208546,25 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_insights_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_insights_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
   },
   "testCandidates": [
     {
-      "path": "tests/unit/dashboardPageContracts.test.ts",
+      "path": "tests/account-analytics-contract.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/testing/test_maxcore_analytics.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/required-awareness-dependency.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     }
@@ -208395,16 +208578,61 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-9299cfd1c947a1a4",
   "method": "POST",
-  "path": "/campaign",
+  "path": "/api/director/campaign",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
     "line": 174
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-  "confidence": "declared-only; mount prefix unverified",
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven conditional factory mount",
   "mountResolved": false,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/campaign",
+  "declaredPath": "/campaign",
+  "declarationSubjectId": "api-9299cfd1c947a1a4",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "/api/director",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+    "name": "create_director_router",
+    "line": 152
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1258
+  },
+  "mountConditions": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1257,
+      "kind": "if",
+      "expression": "_director_router is not None"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 158,
+      "kind": "if",
+      "expression": "not _HAS_FASTAPI"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 159,
+      "kind": "factory-may-return-none"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 62,
+      "kind": "try"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1254,
+      "kind": "try"
+    }
+  ],
+  "mountConditional": true,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/director",
   "requiredChecks": [
     {
       "id": "api-9299cfd1c947a1a4/response-contract",
@@ -208439,8 +208667,8 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_campaign_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_campaign_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
@@ -208455,16 +208683,61 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-2f285e0c500f8b0f",
   "method": "POST",
-  "path": "/feedback",
+  "path": "/api/director/feedback",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
     "line": 222
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-  "confidence": "declared-only; mount prefix unverified",
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven conditional factory mount",
   "mountResolved": false,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/feedback",
+  "declaredPath": "/feedback",
+  "declarationSubjectId": "api-2f285e0c500f8b0f",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "/api/director",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+    "name": "create_director_router",
+    "line": 152
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1258
+  },
+  "mountConditions": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1257,
+      "kind": "if",
+      "expression": "_director_router is not None"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 158,
+      "kind": "if",
+      "expression": "not _HAS_FASTAPI"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 159,
+      "kind": "factory-may-return-none"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 62,
+      "kind": "try"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1254,
+      "kind": "try"
+    }
+  ],
+  "mountConditional": true,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/director",
   "requiredChecks": [
     {
       "id": "api-2f285e0c500f8b0f/response-contract",
@@ -208499,8 +208772,8 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_feedback_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_feedback_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
@@ -208515,16 +208788,61 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-b0620d2505196b4d",
   "method": "GET",
-  "path": "/platforms",
+  "path": "/api/director/platforms",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
     "line": 248
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-  "confidence": "declared-only; mount prefix unverified",
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven conditional factory mount",
   "mountResolved": false,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/platforms",
+  "declaredPath": "/platforms",
+  "declarationSubjectId": "api-b0620d2505196b4d",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "/api/director",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+    "name": "create_director_router",
+    "line": 152
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1258
+  },
+  "mountConditions": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1257,
+      "kind": "if",
+      "expression": "_director_router is not None"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 158,
+      "kind": "if",
+      "expression": "not _HAS_FASTAPI"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 159,
+      "kind": "factory-may-return-none"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 62,
+      "kind": "try"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1254,
+      "kind": "try"
+    }
+  ],
+  "mountConditional": true,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/director",
   "requiredChecks": [
     {
       "id": "api-b0620d2505196b4d/response-contract",
@@ -208554,8 +208872,8 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_platforms_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_platforms_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
@@ -208570,16 +208888,61 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-41570e3eb2bd2da3",
   "method": "GET",
-  "path": "/config",
+  "path": "/api/director/config",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
     "line": 260
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-  "confidence": "declared-only; mount prefix unverified",
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven conditional factory mount",
   "mountResolved": false,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/config",
+  "declaredPath": "/config",
+  "declarationSubjectId": "api-41570e3eb2bd2da3",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "/api/director",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+    "name": "create_director_router",
+    "line": 152
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1258
+  },
+  "mountConditions": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1257,
+      "kind": "if",
+      "expression": "_director_router is not None"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 158,
+      "kind": "if",
+      "expression": "not _HAS_FASTAPI"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 159,
+      "kind": "factory-may-return-none"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 62,
+      "kind": "try"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1254,
+      "kind": "try"
+    }
+  ],
+  "mountConditional": true,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/director",
   "requiredChecks": [
     {
       "id": "api-41570e3eb2bd2da3/response-contract",
@@ -208609,8 +208972,8 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_config_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_config_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
@@ -208625,16 +208988,61 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-f51c6acc6ec5dc3a",
   "method": "GET",
-  "path": "/metrics",
+  "path": "/api/director/metrics",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
     "line": 269
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-  "confidence": "declared-only; mount prefix unverified",
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven conditional factory mount",
   "mountResolved": false,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/metrics",
+  "declaredPath": "/metrics",
+  "declarationSubjectId": "api-f51c6acc6ec5dc3a",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "/api/director",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+    "name": "create_director_router",
+    "line": 152
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1258
+  },
+  "mountConditions": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1257,
+      "kind": "if",
+      "expression": "_director_router is not None"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 158,
+      "kind": "if",
+      "expression": "not _HAS_FASTAPI"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 159,
+      "kind": "factory-may-return-none"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 62,
+      "kind": "try"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1254,
+      "kind": "try"
+    }
+  ],
+  "mountConditional": true,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/director",
   "requiredChecks": [
     {
       "id": "api-f51c6acc6ec5dc3a/response-contract",
@@ -208664,19 +209072,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_metrics_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_metrics_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
   },
-  "testCandidates": [
-    {
-      "path": "scripts/penetration-test.ts",
-      "association": "exact-route-literal-only",
-      "executionStatus": "not_run"
-    }
-  ]
+  "testCandidates": []
 }
 ```
 
@@ -208686,16 +209088,61 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-9dfbb46d34147f13",
   "method": "GET",
-  "path": "/metrics/prometheus",
+  "path": "/api/director/metrics/prometheus",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
     "line": 278
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-  "confidence": "declared-only; mount prefix unverified",
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven conditional factory mount",
   "mountResolved": false,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/metrics",
+  "declaredPath": "/metrics/prometheus",
+  "declarationSubjectId": "api-9dfbb46d34147f13",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "/api/director",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+    "name": "create_director_router",
+    "line": 152
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1258
+  },
+  "mountConditions": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1257,
+      "kind": "if",
+      "expression": "_director_router is not None"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 158,
+      "kind": "if",
+      "expression": "not _HAS_FASTAPI"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 159,
+      "kind": "factory-may-return-none"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 62,
+      "kind": "try"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 1254,
+      "kind": "try"
+    }
+  ],
+  "mountConditional": true,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/director",
   "requiredChecks": [
     {
       "id": "api-9dfbb46d34147f13/response-contract",
@@ -208725,8 +209172,8 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_metrics_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_metrics_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
@@ -208741,16 +209188,33 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-42deb4116b2557e0",
   "method": "POST",
-  "path": "/image",
+  "path": "/api/analysis/image",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
     "line": 159
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/image",
+  "declaredPath": "/image",
+  "declarationSubjectId": "api-42deb4116b2557e0",
+  "pathResolved": true,
+  "routerPrefix": "/api/analysis",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+    "name": "create_analysis_router",
+    "line": 78
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1240
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/analysis",
   "requiredChecks": [
     {
       "id": "api-42deb4116b2557e0/response-contract",
@@ -208790,13 +209254,19 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_image_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_image_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -208806,16 +209276,33 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-5ff5f045652ab661",
   "method": "POST",
-  "path": "/video",
+  "path": "/api/analysis/video",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
     "line": 163
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/video",
+  "declaredPath": "/video",
+  "declarationSubjectId": "api-5ff5f045652ab661",
+  "pathResolved": true,
+  "routerPrefix": "/api/analysis",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+    "name": "create_analysis_router",
+    "line": 78
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1240
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/analysis",
   "requiredChecks": [
     {
       "id": "api-5ff5f045652ab661/response-contract",
@@ -208855,8 +209342,8 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_video_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_video_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
@@ -208871,16 +209358,33 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-6708a28c5a8d26c0",
   "method": "POST",
-  "path": "/text",
+  "path": "/api/analysis/text",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
     "line": 167
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/text",
+  "declaredPath": "/text",
+  "declarationSubjectId": "api-6708a28c5a8d26c0",
+  "pathResolved": true,
+  "routerPrefix": "/api/analysis",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+    "name": "create_analysis_router",
+    "line": 78
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1240
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/analysis",
   "requiredChecks": [
     {
       "id": "api-6708a28c5a8d26c0/response-contract",
@@ -208915,13 +209419,19 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_text_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_text_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -208931,16 +209441,33 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-2c6445d266374190",
   "method": "POST",
-  "path": "/website",
+  "path": "/api/analysis/website",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
     "line": 178
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/website",
+  "declaredPath": "/website",
+  "declarationSubjectId": "api-2c6445d266374190",
+  "pathResolved": true,
+  "routerPrefix": "/api/analysis",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+    "name": "create_analysis_router",
+    "line": 78
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1240
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/analysis",
   "requiredChecks": [
     {
       "id": "api-2c6445d266374190/response-contract",
@@ -208975,8 +209502,8 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_website_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_website_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
@@ -208991,16 +209518,33 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "id": "api-8e623814d5812cf5",
   "method": "POST",
-  "path": "/upload",
+  "path": "/api/analysis/upload",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
     "line": 201
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/upload",
+  "declaredPath": "/upload",
+  "declarationSubjectId": "api-8e623814d5812cf5",
+  "pathResolved": true,
+  "routerPrefix": "/api/analysis",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+    "name": "create_analysis_router",
+    "line": 78
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 1240
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
+  "domain": "python-decorator-ast/analysis",
   "requiredChecks": [
     {
       "id": "api-8e623814d5812cf5/response-contract",
@@ -209035,24 +209579,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_upload_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_upload_acceptance.py",
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
   },
-  "testCandidates": [
-    {
-      "path": "tests/dependency-security-paths.test.mjs",
-      "association": "exact-route-literal-only",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/dependency-transport-teardown.test.mjs",
-      "association": "exact-route-literal-only",
-      "executionStatus": "executed"
-    }
-  ]
+  "testCandidates": []
 }
 ```
 
@@ -209067,10 +209600,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
     "line": 535
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
+  "declaredPath": "/api/training/candidates/live",
+  "declarationSubjectId": "api-f0d401be967e7979",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+    "name": "create_router",
+    "line": 519
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 2616
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
@@ -209128,10 +209678,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
     "line": 539
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
+  "declaredPath": "/api/training/candidates/live/{run_id}",
+  "declarationSubjectId": "api-a2d5112e6f836b75",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+    "name": "create_router",
+    "line": 519
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 2616
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
@@ -209183,10 +209750,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
     "line": 546
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
+  "declaredPath": "/api/training/candidates/live",
+  "declarationSubjectId": "api-63c25a5b3c0f3b69",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+    "name": "create_router",
+    "line": 519
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 2616
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
@@ -209249,10 +209833,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
     "line": 201
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
+  "declaredPath": "/api/training/media/{modality}/preflight",
+  "declarationSubjectId": "api-dc501135f7da694a",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+    "name": "create_router",
+    "line": 182
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 2627
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
@@ -209310,10 +209911,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
     "line": 205
   },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": false,
+  "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+  "confidence": "source-proven factory mount; runtime unverified",
+  "mountResolved": true,
   "origin": "python-decorator-ast",
+  "declaredPath": "/api/training/media/{modality}/preflight",
+  "declarationSubjectId": "api-46c9778776fd3ea7",
+  "pathResolved": true,
+  "routerPrefix": "",
+  "includeRouterPrefix": "",
+  "factory": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+    "name": "create_router",
+    "line": 182
+  },
+  "mountSource": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 2627
+  },
+  "mountConditions": [],
+  "mountConditional": false,
+  "runtimeAvailability": "UNVERIFIED",
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {

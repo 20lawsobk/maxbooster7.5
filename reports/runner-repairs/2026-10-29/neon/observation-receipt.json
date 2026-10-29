@@ -1,0 +1,27 @@
+{
+  "scope": "Package finalization from previously completed metadata-only observation; no further connection/query/migration",
+  "observationComplete": true,
+  "readOnly": true,
+  "transactionIsolation": "RepeatableRead",
+  "checkedTables": 312,
+  "driftEntries": 10,
+  "missingTables": 8,
+  "existingTablesWithMissingColumns": 2,
+  "missingColumnsInExistingTables": 3,
+  "exitCode": 1,
+  "exitMeaning": "Schema compatibility gate failed after successful authenticated read-only observation; no missing-key conclusion",
+  "sourceInputsStillMatchRecordedObservation": {
+    "shared/schema.ts": true,
+    "shared/readiness-schema.ts": true,
+    "scripts/check-neon-schema.mjs": true,
+    "reports/deployment-observations/2026-10-28/neon-schema-readonly-driver.mjs": true
+  },
+  "informationRead": [
+    "transaction_read_only",
+    "information_schema.columns"
+  ],
+  "productionDDL": false,
+  "productionDML": false,
+  "privateApplicationRowsRead": false,
+  "productionReady": false
+}

@@ -1,0 +1,65 @@
+{
+  "scope": "Outside candidate source inventory/full plan proof only. Existing master is stale after newly landed source changes; no prior passing assertions promoted.",
+  "checks": {
+    "all80PagesPreserved": true,
+    "all8374ControlsPreserved": true,
+    "all2909BackendIdsPreserved": true,
+    "all932ContractsPreserved": true,
+    "all33549CheckIdsPreserved": true,
+    "all170UnknownRecordsByteEquivalent": true,
+    "allOriginalCoverageRecordsPreserved": true,
+    "allOldWorkIdsRetained": true,
+    "all170MappingWorkIdsPreserved": true,
+    "all2162SectionsRetained": true,
+    "all12972DimensionsRetained": true
+  },
+  "beforeSummary": {
+    "routedPageDeclarations": 80,
+    "uiInteractionDeclarations": 8374,
+    "backendRegistrations": 2909,
+    "frontendApiContracts": 932,
+    "scannedTypeScriptJavaScriptFiles": 3408,
+    "actualCoverageFiles": 2653,
+    "requiredChecks": 33549,
+    "unverifiedChecks": 33543,
+    "unknownMappings": 170,
+    "invalidEvidenceLinks": 0
+  },
+  "afterSummary": {
+    "routedPageDeclarations": 80,
+    "uiInteractionDeclarations": 8374,
+    "backendRegistrations": 2909,
+    "frontendApiContracts": 932,
+    "scannedTypeScriptJavaScriptFiles": 3408,
+    "actualCoverageFiles": 2653,
+    "requiredChecks": 33549,
+    "unverifiedChecks": 33549,
+    "unknownMappings": 170,
+    "invalidEvidenceLinks": 9
+  },
+  "oldWorkItems": 53020,
+  "candidateWorkItems": 53025,
+  "removedWorkIds": [],
+  "addedWorkIds": [
+    "file-025bcbb1b1306311/contract",
+    "file-26f09e00ae7d303c/contract",
+    "file-9acc9258e665cbca/contract",
+    "file-e7b435df1b195a6a/contract",
+    "file-fc2f2530d752570e/contract"
+  ],
+  "candidatePlanSummary": {
+    "pageDeclarations": 80,
+    "controls": 8374,
+    "backendRegistrations": 2909,
+    "frontendContracts": 932,
+    "sourceCoverageFiles": 2653,
+    "unknownMappings": 170,
+    "repositoryFiles": 5537,
+    "sharedSubsystems": 20,
+    "workItems": 53025,
+    "businessSectionPages": 80,
+    "businessSectionTasks": 2162,
+    "businessDimensionSteps": 12972
+  },
+  "productionReady": false
+}

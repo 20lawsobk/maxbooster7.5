@@ -1,6 +1,6 @@
 # Python tests
 
-These instructions cover canonical MaxCore, application security, evaluator-contract and Sophia runner tests. The generated scratch copies under `.pdim-scratch-external_maxcore-989/` are retained snapshots, not a second application to execute.
+These instructions cover canonical MaxCore, application security, evaluator-contract and Sophia runner tests. Report-owned copies under `reports/` and generated state copies under `.pdim-*/` are retained snapshots, not independent current suites. They remain listed in `duplicateSnapshots`; select the canonical source instead.
 
 ## Setup
 
@@ -24,7 +24,7 @@ python3 scripts/testing/run-python-suites.py --output /tmp/maxbooster-python-res
 python3 scripts/testing/run-python-suites.py --file tests/test_secure_http.py --output /tmp/maxbooster-python-single
 ```
 
-Use `--python /path/to/python` to select another prepared interpreter, `--workers 1` to run serially, or `--timeout 180` to change the per-file timeout. The default is two workers and 120 seconds per file. A selected run writes only its selected suites; use a fresh output directory to preserve earlier reports.
+Use `--python /path/to/python` to select another prepared interpreter, `--workers 1` to run serially, or `--timeout 180` to change the per-file timeout. The default is two workers and 120 seconds per file. Full-repository read-only checks run after all ordinary workers and their report writes finish; no selected suite is skipped. A selected run writes only its selected suites; use a fresh output directory to preserve earlier reports.
 
 Add `--coverage` to measure first-party Python statements and branches with coverage.py. It is optional for this scoped runner and enabled by the master platform runner. The selected interpreter must contain `coverage>=7.13,<8`; a missing instrumentation dependency blocks the run with a nonzero exit rather than silently falling back to an uninstrumented run.
 
@@ -44,9 +44,9 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `10d192675beefcf1b7beef3ce47c271db0cc17cf`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 112, "skipped": 1, "timeout": 0}.
-- JUnit cases: 1440; failures: 0; errors: 0; skipped: 12.
+- Source baseline: `5eb416a04021f66c9bfc8af93997ec9fe8a55e31`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 117, "skipped": 1, "timeout": 0}.
+- JUnit cases: 1583; failures: 0; errors: 0; skipped: 12.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
@@ -3235,6 +3235,60 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 </details>
 
+### `tests/testing/test_catalog_snapshot_ownership.py`
+
+Keep report-owned source in the catalog without registering historical suites.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_catalog_snapshot_ownership.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `CatalogSnapshotOwnership.test_current_suite_is_canonical_and_report_copy_is_hashed_only`: current suite is canonical and report copy is hashed only
+- `CatalogSnapshotOwnership.test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression`: report ownership covers plain and snapshot paths without filename suppression
+- `CatalogSnapshotOwnership.test_existing_current_classifications_and_assertions_are_preserved`: existing current classifications and assertions are preserved
+- `CatalogSnapshotOwnership.test_unique_report_replay_sources_remain_documented_without_active_commands`: unique report replay sources remain documented without active commands
+- `CatalogSnapshotOwnership.test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors`: actual node builder admits generated commands and rejects report selectors
+- `CatalogSnapshotOwnership.test_census_is_read_only_and_preserves_every_input_hash_and_result_counter`: census is read only and preserves every input hash and result counter
+
+</details>
+
+### `tests/testing/test_commerce_subject_selector.py`
+
+Exercise the real legacy-commerce selector boundary without SQL or providers.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_commerce_subject_selector.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 22}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `CommerceSubjectSelectorTests.test_missing_subject_selector_rejected`: missing subject selector rejected
+- `CommerceSubjectSelectorTests.test_relative_report_rejected`: relative report rejected
+- `CommerceSubjectSelectorTests.test_absolute_subject_rejected`: absolute subject rejected
+- `CommerceSubjectSelectorTests.test_traversal_subject_rejected`: traversal subject rejected
+- `CommerceSubjectSelectorTests.test_unregistered_subject_rejected`: unregistered subject rejected
+- `CommerceSubjectSelectorTests.test_unknown_duplicate_or_ignored_arguments_rejected`: unknown duplicate or ignored arguments rejected
+- `CommerceSubjectSelectorTests.test_missing_registered_file_rejected`: missing registered file rejected
+- `CommerceSubjectSelectorTests.test_symlink_redirection_outside_repository_rejected`: symlink redirection outside repository rejected
+- `CommerceSubjectSelectorTests.test_config_include_mismatch_rejected`: config include mismatch rejected
+- `CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected`: selection changing or dynamic config rejected
+- `CommerceSubjectSelectorTests.test_validated_subject_drives_actual_spawn_and_owned_cleanup`: validated subject drives actual spawn and owned cleanup
+- `CommerceSubjectSelectorTests.test_runner_forwards_recorded_subject_and_strips_application_credentials`: runner forwards recorded subject and strips application credentials
+
+</details>
+
 ### `tests/testing/test_endpoint_mount_resolution.py`
 
 The actual registry consumer must retain source topology uncertainty.
@@ -3340,7 +3394,7 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_evidence.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 77}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 83}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3375,6 +3429,8 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 77}.
 - `test_aggregate_browser_tap_cannot_assign_cases_to_files`: aggregate browser tap cannot assign cases to files
 - `test_default_file_producer_requires_exact_command_and_numeric_success`: default file producer requires exact command and numeric success
 - `test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass`: Both occurrences really execute the same unchanged owned source.
+- `test_real_python_class_scopes_share_extractor_and_linker_identity`: Real pytest classnames separate methods; outcome and producer guards remain.
+- `test_duplicate_fully_qualified_python_scope_cannot_union_a_pass`: Disambiguating distinct classes must not disambiguate real duplicates.
 
 </details>
 
@@ -3403,6 +3459,70 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 </details>
 
+### `tests/testing/test_python_factory_mounts.py`
+
+Static factory topology must preserve declarations and fail closed on ambiguity.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_factory_mounts.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 62}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `FactoryMounts.test_direct_import_alias_and_prefixes`: direct import alias and prefixes
+- `FactoryMounts.test_constructor_alias_is_resolved_in_its_lexical_scope`: constructor alias is resolved in its lexical scope
+- `FactoryMounts.test_same_module_factory_and_relative_import`: same module factory and relative import
+- `FactoryMounts.test_assigned_router_and_optional_none_remain_conditional`: assigned router and optional none remain conditional
+- `FactoryMounts.test_optional_fastapi_none_fallback_requires_same_import_try`: optional fastapi none fallback requires same import try
+- `FactoryMounts.test_conditional_application_constructor_import_is_retained`: conditional application constructor import is retained
+- `FactoryMounts.test_module_app_and_router_binding_shadowing_reject`: module app and router binding shadowing reject
+- `FactoryMounts.test_nested_scope_shadowing_does_not_replace_outer_bindings`: nested scope shadowing does not replace outer bindings
+- `FactoryMounts.test_decorated_async_generator_early_or_implicit_return_factories_reject`: decorated async generator early or implicit return factories reject
+- `FactoryMounts.test_deferred_loop_comprehension_with_match_mounts_reject`: deferred loop comprehension with match mounts reject
+- `FactoryMounts.test_ordinary_if_and_try_mounts_record_conditions`: ordinary if and try mounts record conditions
+- `FactoryMounts.test_invalid_prefix_and_dynamic_spreads_reject`: invalid prefix and dynamic spreads reject
+- `FactoryMounts.test_constructor_and_factory_call_before_import_reject`: constructor and factory call before import reject
+- `FactoryMounts.test_ambiguous_packages_and_reexport_cycles_reject`: ambiguous packages and reexport cycles reject
+- `FactoryMounts.test_router_lifecycle_decorator_preserves_direct_route_topology`: router lifecycle decorator preserves direct route topology
+- `FactoryMounts.test_source_is_never_executed_and_unicode_prefix_preserved`: source is never executed and unicode prefix preserved
+- `FactoryMounts.test_finite_file_budget_fails_closed`: finite file budget fails closed
+- `FactoryMounts.test_importlib_consumer_loads_paired_helpers_without_sys_path`: importlib consumer loads paired helpers without sys path
+- `FactoryMounts.test_actual_consumer_retains_declaration_check_and_unknown_identities`: actual consumer retains declaration check and unknown identities
+- `FactoryMounts.test_multiple_mounts_retain_original_declaration_and_explicit_unknown`: multiple mounts retain original declaration and explicit unknown
+- `FactoryMounts.test_nonliteral_decorator_path_remains_unresolved`: nonliteral decorator path remains unresolved
+
+</details>
+
+### `tests/testing/test_python_runner_scheduling.py`
+
+Exercise Python worker isolation and quiescent read-only scheduling with real children.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_runner_scheduling.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `PythonRunnerScheduling.test_reader_waits_for_actual_writer_cleanup_and_result_files`: reader waits for actual writer cleanup and result files
+- `PythonRunnerScheduling.test_ordinary_suites_retain_real_parallelism`: ordinary suites retain real parallelism
+- `PythonRunnerScheduling.test_failed_ordinary_suite_is_retained_and_does_not_suppress_reader`: failed ordinary suite is retained and does not suppress reader
+- `PythonRunnerScheduling.test_timed_out_ordinary_suite_is_retained_and_reader_executes`: timed out ordinary suite is retained and reader executes
+- `PythonRunnerScheduling.test_report_owned_and_state_copies_are_retained_without_execution`: report owned and state copies are retained without execution
+- `PythonRunnerScheduling.test_retained_copy_selector_is_rejected_instead_of_running_history`: retained copy selector is rejected instead of running history
+- `PythonRunnerScheduling.test_quiescent_only_selector_retains_exact_selection`: quiescent only selector retains exact selection
+
+</details>
+
 ### `tests/testing/test_remediation.py`
 
 Pure-data contracts for the master verification's repair guide.
@@ -3427,6 +3547,40 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 </details>
 
+### `tests/testing/test_report_progress.py`
+
+Behavior and malformed-evidence checks for the counted progress report.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_report_progress.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 37}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `CountedProgressTests.test_independent_denominators_and_no_invented_implementation_or_test_total`: independent denominators and no invented implementation or test total
+- `CountedProgressTests.test_green_color_requires_all_gates_checks_and_no_blockers`: green color requires all gates checks and no blockers
+- `CountedProgressTests.test_stale_keeps_only_historical_observation_and_no_current_pass_credit`: stale keeps only historical observation and no current pass credit
+- `CountedProgressTests.test_complete_current_launch_uses_audit_and_master_not_summary_approval`: complete current launch uses audit and master not summary approval
+- `CountedProgressTests.test_complete_green_cannot_override_missing_failed_or_stale_master`: complete green cannot override missing failed or stale master
+- `CountedProgressTests.test_summary_claim_cannot_override_partial_or_unapproved_launch`: summary claim cannot override partial or unapproved launch
+- `CountedProgressTests.test_raw_fraction_is_separate_from_istanbul_truncated_percent`: raw fraction is separate from istanbul truncated percent
+- `CountedProgressTests.test_missing_page_and_duplicate_page_cannot_reduce_eighty_page_target`: missing page and duplicate page cannot reduce eighty page target
+- `CountedProgressTests.test_summary_counts_must_equal_actual_rows`: summary counts must equal actual rows
+- `CountedProgressTests.test_boolean_counts_are_rejected`: boolean counts are rejected
+- `CountedProgressTests.test_plan_and_readiness_statuses_must_agree`: plan and readiness statuses must agree
+- `CountedProgressTests.test_duplicate_check_identity_is_not_counted_twice`: duplicate check identity is not counted twice
+- `CountedProgressTests.test_coverage_overflow_negative_boolean_and_stale_summary_are_rejected`: coverage overflow negative boolean and stale summary are rejected
+- `CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent`: zero denominator has no fabricated completion percent
+- `CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged`: real collection leaves all git visible files unchanged
+- `CountedProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two`: missing input cli writes unavailable and returns two
+
+</details>
+
 ### `tests/testing/test_summary_results.py`
 
 Retain every case in mixed Node/Vitest JUnit layouts without double counts.
@@ -3437,7 +3591,7 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_summary_results.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3448,6 +3602,9 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 - `test_source_identity_detects_new_code_changes_and_excludes_generated_private_state`: source identity detects new code changes and excludes generated private state
 - `test_provider_parse_exclusions_cannot_be_mistaken_for_complete_coverage`: provider parse exclusions cannot be mistaken for complete coverage
 - `test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units`: coverage only database cases are retained without repeating ordinary units
+- `test_python_scopes_qualify_only_ambiguous_explicit_classes`: python scopes qualify only ambiguous explicit classes
+- `test_python_missing_class_scope_stays_ambiguous`: python missing class scope stays ambiguous
+- `test_python_missing_names_or_blank_classes_never_acquire_a_usable_identity`: python missing names or blank classes never acquire a usable identity
 
 </details>
 

@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: actual clean run has current nonce, exact passed case, public module identity and own time bounds
+ok 1 - actual clean run has current nonce, exact passed case, public module identity and own time bounds
+  ---
+  duration_ms: 767.094594
+  type: 'test'
+  ...
+# Subtest: actual coverage threshold failure retains passing test outcome without claiming threshold success
+ok 2 - actual coverage threshold failure retains passing test outcome without claiming threshold success
+  ---
+  duration_ms: 774.095457
+  type: 'test'
+  ...
+# Subtest: actual unhandled rejection is recorded despite clean JUnit and the same four threshold errors
+ok 3 - actual unhandled rejection is recorded despite clean JUnit and the same four threshold errors
+  ---
+  duration_ms: 821.794818
+  type: 'test'
+  ...
+# Subtest: actual failed assertion remains failed in both public outcome and JUnit
+ok 4 - actual failed assertion remains failed in both public outcome and JUnit
+  ---
+  duration_ms: 754.170784
+  type: 'test'
+  ...
+# Subtest: actual skipped assertion is counted as skipped and cannot look fully executed
+ok 5 - actual skipped assertion is counted as skipped and cannot look fully executed
+  ---
+  duration_ms: 743.548472
+  type: 'test'
+  ...
+# Subtest: actual collection failure records failed module/error without inventing a passed case
+ok 6 - actual collection failure records failed module/error without inventing a passed case
+  ---
+  duration_ms: 761.489406
+  type: 'test'
+  ...
+# Subtest: missing parent nonce prevents outcome creation
+ok 7 - missing parent nonce prevents outcome creation
+  ---
+  duration_ms: 625.464562
+  type: 'test'
+  ...
+# Subtest: output ancestor symlink cannot redirect the public outcome file
+ok 8 - output ancestor symlink cannot redirect the public outcome file
+  ---
+  duration_ms: 585.637353
+  type: 'test'
+  ...
+# Subtest: an existing owned outcome file is never overwritten
+ok 9 - an existing owned outcome file is never overwritten
+  ---
+  duration_ms: 789.803493
+  type: 'test'
+  ...
+# Subtest: two actual consecutive commands retain separate outcomes with coverage cleaning disabled
+ok 10 - two actual consecutive commands retain separate outcomes with coverage cleaning disabled
+  ---
+  duration_ms: 1614.304818
+  type: 'test'
+  ...
+# Subtest: a dangling output ancestor symlink is rejected explicitly before any file write
+ok 11 - a dangling output ancestor symlink is rejected explicitly before any file write
+  ---
+  duration_ms: 554.981148
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9196.157048

@@ -1,6 +1,6 @@
 # Actionable test and feature repair guide
 
-Generated: `2026-10-28T13:53:37.485410+00:00`. Status: **needs_work**. Unresolved tasks: **3419**.
+Generated: `2026-10-29T23:24:11.749300+00:00`. Status: **needs_work**. Unresolved tasks: **3421**.
 
 Observations come from the linked reports. A likely diagnosis is not a confirmed application bug. Run the reproduction command in the prepared isolated environment, complete the listed actions, and retain fresh proof. Generating this guide does not change a test result.
 
@@ -12,15 +12,15 @@ Observations come from the linked reports. A likely diagnosis is not a confirmed
 | coverage_gap | 2494 |
 | feature_acceptance_gap | 833 |
 | mapping_gap | 20 |
-| missing_execution | 30 |
-| skipped_case | 20 |
+| missing_execution | 29 |
+| skipped_case | 23 |
 
 ## Failure families
 
 | Observed boundary / diagnosis | Tasks |
 | --- | ---: |
 | Source-defined behavior lacks the required execution/feature evidence. | 3323 |
-| This check was not executed under its required conditions. | 70 |
+| This check was not executed under its required conditions. | 72 |
 | The source inventory cannot resolve the actual target of a dynamic registration or interaction. | 20 |
 | A required capability/readiness condition was not established. | 3 |
 | The deletion test imports a source module that is absent from this checkout. | 2 |
@@ -28,13 +28,13 @@ Observations come from the linked reports. A likely diagnosis is not a confirmed
 
 Machine details, exact uncovered source locations and platform acceptance IDs are in `remediation.json`. The platform register provides every page/API/control requirement; these tasks link to it without copying the entire register.
 
-This Markdown shows the first 100 prioritized tasks of 3419. The JSON retains every task and every uncovered location. Use `--markdown-limit N` to expand this review without changing the machine results.
+This Markdown shows the first 100 prioritized tasks of 3421. The JSON retains every task and every uncovered location. Use `--markdown-limit N` to expand this review without changing the machine results.
 
 ## `repair-e9ca68ef654083c1` — coverage
 
 Source: `scripts/testing/run-all.py`. Group: `coverage`. Kind: `command_failure`. Priority: **P1**.
 
-Observed: [13:35:49.268] INFO (230247): Sharp module loaded for image processing [13:35:52.381] WARN (230382): Mobile token remove error:     err: {       "type": "Error",       "message": "database unavailable",       "stack":           [ACCESSOR]     } [13:35:52.409] WARN (230382): Push unsubscribe error:     err: {
+Observed: [23:07:39.068] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint [23:07:40.980] WARN (410380): Mobile token remove error:     err: {       "type": "Error",       "message": "database unavailable",       "stack":           [ACCESSOR]     } [23:07:41.003] WARN (410380): Push unsubscribe error:     err: {
 
 Diagnosis (**needs_verification**): A required capability/readiness condition was not established.
 

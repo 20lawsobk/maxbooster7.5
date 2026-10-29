@@ -1,0 +1,107 @@
+[
+  {
+    "file": "scripts/testing/junit_evidence.py",
+    "beforeSha256": null,
+    "afterSha256": "2f628127157479063886c0810b6d85dae3b3d1f6b826c43a92a8075c25ec7efb",
+    "beforeBytes": 0,
+    "afterBytes": 1946
+  },
+  {
+    "file": "scripts/testing/platform-register.py",
+    "beforeSha256": "f8c4e518a50cfb66cce48e4b305b1760df6729ffbacbdaccaddb0708ab106257",
+    "afterSha256": "ef8982d404971acd5d1f0aacf277c0cc51e6c40c54fd7d9ac50d576e561f2d2e",
+    "beforeBytes": 63626,
+    "afterBytes": 63585
+  },
+  {
+    "file": "scripts/testing/summarize-results.py",
+    "beforeSha256": "a9e5d062edf1f292b5d26212e430e320db6820c3717272e8226ab6a0ed1a9b30",
+    "afterSha256": "4171c579d8cb2d8c60737e3d399e3efc4909471d412fcc930beb6d603b01962e",
+    "beforeBytes": 26883,
+    "afterBytes": 26052
+  },
+  {
+    "file": "tests/testing/test_platform_evidence.py",
+    "beforeSha256": "7cad1816b277bb29e6f1bd43b877ffc98ba3fb92207368df5bd906f65eea7f06",
+    "afterSha256": "661ae5f953fc8c84c6e262d255f73b7f73afde2bb57f895435e22a36e2afa84d",
+    "beforeBytes": 24976,
+    "afterBytes": 28515
+  },
+  {
+    "file": "tests/testing/test_summary_results.py",
+    "beforeSha256": "fb5b6359a39d2c46f1bf7f2132f1371bfd246a43dcea1182215aed1c64097bd7",
+    "afterSha256": "82ef8c0e5987ba783fdd9eec2d7a578bf222d26309f560e820cf33ddec6f1835",
+    "beforeBytes": 6152,
+    "afterBytes": 8189
+  },
+  {
+    "file": "tests/unit/auth-page-age-policy.test.ts",
+    "beforeSha256": "7daa3bc63ae43cba07f130fe4b1092d619c13e3422e70f27fe22cc97cfda8893",
+    "afterSha256": "22e0024e4084343f602b187c4223183feb4201f507e51611009c9bd4331f4fe5",
+    "beforeBytes": 17520,
+    "afterBytes": 17529
+  },
+  {
+    "file": "tests/unit/deployment-small-file-codec.test.ts",
+    "beforeSha256": "86152f41af0eaf718e6ba8e62b8a87f9d7f8afdc96be7fa3ff20acbaee84a8bd",
+    "afterSha256": "6ed70a60ce032f07199006f202562f9d5a0a5e50f989a79eff3b067dddcb2d76",
+    "beforeBytes": 1826,
+    "afterBytes": 1835
+  },
+  {
+    "file": "tests/unit/email-provider-ack.test.ts",
+    "beforeSha256": "f0dcae19451dd40cabd6fdfd047140c4c3774b49ed0fabd9c41d1a6c71966322",
+    "afterSha256": "c5b78d69f2243ef1044b27a735199b8b5c82b276e220854d8c87f417a211718a",
+    "beforeBytes": 3145,
+    "afterBytes": 3163
+  },
+  {
+    "file": "tests/unit/frontend-batch-response-contracts.test.ts",
+    "beforeSha256": "5e3b278f498917a3b34a2c9b03e0c0a03ff27c178f20f05e76318f044981cf6d",
+    "afterSha256": "e0ff62ca2cac6a18bc64478e09904e6116d8930006c2fc6ec722ddd93106436d",
+    "beforeBytes": 5806,
+    "afterBytes": 5815
+  },
+  {
+    "file": "tests/unit/marketplace-storefront-page-contracts.test.ts",
+    "beforeSha256": "2b5b251f5e7567a6c14559220d79c35c4d91e49a4f4496c361a8a66e26b45b94",
+    "afterSha256": "9d2177a22d4291da51d326e3706bf50f986aa82ef5c4361c492da1bf74a8ba4a",
+    "beforeBytes": 5240,
+    "afterBytes": 5249
+  },
+  {
+    "file": "tests/unit/password-policy.test.ts",
+    "beforeSha256": "4d069984f095d5fa8ac65a6a90fb1956dbf6b376a276aee7213806feb0a2e341",
+    "afterSha256": "71161c56b54c0f12880fdd99e43dc223cbd9258618a2251dbb8ab5f2bcb55da7",
+    "beforeBytes": 1356,
+    "afterBytes": 1374
+  },
+  {
+    "file": "tests/unit/registrationCompletion.test.ts",
+    "beforeSha256": "0cd757e641827b2e0e49f6a329ae8801cc4b664db3402da2cac01f82eaa235cc",
+    "afterSha256": "e9e2a92e364daa6a97b175331a232cd55c377e06deeccea0f8e2213d4bd1a649",
+    "beforeBytes": 3057,
+    "afterBytes": 3066
+  },
+  {
+    "file": "tests/unit/registrationCompletionBoundary.test.ts",
+    "beforeSha256": "1701903ddd3b95a85c975c9548ec0cf12389c1a39700e29eb7e50137d19e61a9",
+    "afterSha256": "4a5e097fd4f1f9af3fc9fcc91f05364525829aa0d1404ca12cd210124275d6f5",
+    "beforeBytes": 2500,
+    "afterBytes": 2509
+  },
+  {
+    "file": "tests/unit/subscriptionCheckout.test.ts",
+    "beforeSha256": "3e18dff432215b587e17438f6bc4df47470ec6f23964ff2b1a3d38cfc2df8b4a",
+    "afterSha256": "5eb3f59466a40e4423ce77a165704eb82943ea4ab1ab5f0f396a82137a4e6db5",
+    "beforeBytes": 3537,
+    "afterBytes": 3555
+  },
+  {
+    "file": "tests/unit/support-ticket-validation.test.ts",
+    "beforeSha256": "c05ba4430018bcb4f8414ba997e2d7bdbebd512cafaf7952e753ac53d7fe5ae0",
+    "afterSha256": "81b7acf28cc1401d2f17d75f966e9d20502d25c1d55819db44dc6244feee26f6",
+    "beforeBytes": 1546,
+    "afterBytes": 1573
+  }
+]

@@ -1,0 +1,40 @@
+{
+  "scope": "Outside-checkout candidate only",
+  "startedAt": "2026-10-29T22:04:26.615528+00:00",
+  "finishedAt": "2026-10-29T22:04:26.809253+00:00",
+  "command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "/workspace/onboarding-results/python-mount-review",
+    "-p",
+    "test_python_factory_mounts.py",
+    "-v"
+  ],
+  "exitCode": 0,
+  "durationSeconds": 0.193721,
+  "sourceRevision": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+  "rootConsumerSha256": "ef8982d404971acd5d1f0aacf277c0cc51e6c40c54fd7d9ac50d576e561f2d2e",
+  "candidateConsumerSha256": "9371d6d03fb93bdcecc7cd9b676a043776c1f3b02065918934424c0525cec32a",
+  "helperSha256": "0685d52d329ce777bcb991d3752eb5fa3c15ef9240cfc8c37818fe43922e4701",
+  "testsSha256": "6920abcc0232ff29384308a60016c5c5410dda653915a5f2118eb30a38b2c1de",
+  "testCases": 21,
+  "staticComparisonChecks": {
+    "all221DeclarationsRetained": true,
+    "declarationSourceOrderUnchanged": true,
+    "allSubjectIdsPreserved": true,
+    "noSubjectIdCollisions": true,
+    "allRequiredChecksPreserved": true,
+    "allOriginalMountWarningsByteEqual": true,
+    "allOriginalPythonDiagnosticsRetained": true,
+    "exact19FactoryDeclarations": true,
+    "exact13UnconditionalSourcePaths": true,
+    "exact6ConditionalSourcePaths": true,
+    "allRuntimeAvailabilityUnverified": true,
+    "currentPlatformBackendCountPreserved": true
+  },
+  "productionReady": false,
+  "canonicalChanges": false
+}

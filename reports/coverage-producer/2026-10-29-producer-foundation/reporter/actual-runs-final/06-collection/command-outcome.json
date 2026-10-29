@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "actual-public-Vitest-onTestRunEnd",
+  "runId": "57d32784-fbaa-4c9b-9012-044fadc44b92",
+  "repositoryRoot": "/tmp/c5-outcome-A39ubP",
+  "runtime": {
+    "node": "22.23.3",
+    "v8": "12.4.254.21-node.57"
+  },
+  "reporterSha256": "8f98f6ddf10431532d0972157191c3ae96354758fe19b51a0d4636ed537fd219",
+  "initializedAt": "2026-10-29T23:17:54.402Z",
+  "startedAt": "2026-10-29T23:17:54.407Z",
+  "finishedAt": "2026-10-29T23:17:54.573Z",
+  "reason": "failed",
+  "unhandledErrorCount": 0,
+  "testCaseCounts": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "pending": 0
+  },
+  "testModuleCount": 1,
+  "moduleStates": {
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "pending": 0,
+    "queued": 0
+  },
+  "moduleErrorCount": 1,
+  "testCaseErrorCount": 0,
+  "selectedModules": [
+    "actual.test.ts"
+  ],
+  "missingModules": [],
+  "unexpectedModules": [],
+  "modules": [
+    {
+      "file": "actual.test.ts",
+      "state": "failed",
+      "testCaseCounts": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "pending": 0
+      },
+      "errorCount": 1
+    }
+  ],
+  "scope": "Actual public reporter arguments; counts only, no error messages or private data. Not a coverage threshold or launch decision."
+}

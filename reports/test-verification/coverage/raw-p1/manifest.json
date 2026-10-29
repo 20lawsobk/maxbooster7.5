@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "kind": "actual-public-Istanbul-pre-JSON-sidecar",
+  "producerId": "833d1208-1999-4e6a-baca-1d682dc9c9e7",
+  "snapshot": {
+    "id": "833d1208-1999-4e6a-baca-1d682dc9c9e7-report",
+    "capturedAt": "2026-10-29T23:09:00.895Z",
+    "semantics": "One completed Vitest provider aggregate, captured by public Istanbul reporter before JSON; no global merge admission"
+  },
+  "contract": {
+    "version": "maxbooster-shared-vite-provider-v1",
+    "repositoryRoot": "/workspace/maxbooster7.5",
+    "implementations": {
+      "vite/dist/node/index.js": "8b142bd1231a46bf2cad4c05b3f76de5b183064ee771b9934fbaffb70b914652",
+      "vite/dist/node/chunks/config.js": "2e71344450b7c25a7fe0848d5ee474fb7342614d900ab9168588986150cbb9f9",
+      "esbuild/lib/main.js": "61ec0ba144ff93f4bf0e96ad6fab6f430ede0aa13e27ace8063ed63ba416b3cd",
+      "ast-v8-to-istanbul/dist/index.mjs": "855d3467ff70f75a152bee7fd3e51fc8c1207b7f25809853570f099ed1c1e566",
+      "typescript/lib/typescript.js": "3ae902c92cc44dace175c0e69e13a4b0899f6983c6121d76b9ab8dd5795e7675"
+    },
+    "runtime": {
+      "node": "22.23.3",
+      "v8": "12.4.254.21-node.57"
+    },
+    "versions": {
+      "vite": "7.3.7",
+      "vitest": "4.1.12",
+      "@vitest/coverage-v8": "4.1.12",
+      "esbuild": "0.28.2",
+      "ast-v8-to-istanbul": "1.0.7",
+      "typescript": "5.9.3"
+    },
+    "tsconfigs": {
+      "tsconfig.json": "f720d68c1da7c2f063a96505f531b78a055d61120cda9813db32a30a90c1f885",
+      "external/pdim/tsconfig.base.json": "71a4e86fb157f7bd574845c30877f4328c7f2fb1bdc3037890aac4cc4649b819",
+      "external/pdim/artifacts/api-server/tsconfig.json": "d0c83f11369bd09ad7b6767e0668184475b8fe89324713e4c6d6faf711532fee"
+    },
+    "transform": {
+      "publicApi": "Vite createServer / createServerModuleRunner + moduleRunnerTransform",
+      "configFile": false,
+      "envFile": false,
+      "server": {
+        "middlewareMode": true,
+        "hmr": false,
+        "watch": null
+      },
+      "esbuild": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "tsconfig": "actual Vite tsconfig resolution"
+    },
+    "provider": {
+      "package": "@vitest/coverage-v8",
+      "hook": "remapCoverage",
+      "implementationSha256": "9f7848b27aabc311e867d9a034b4f569892e68533b837116ab932e05fa20558f",
+      "ignoreClassMethods": [],
+      "policy": "unchanged installed provider SSR/original-node policy guarded against authored matches"
+    },
+    "wrapper": {
+      "implementationSha256": "a0b36fb2211d2587d8df68d5855d48141be27e99bdb973378a83f927e03b004e",
+      "encoding": "UTF-16 code units",
+      "prefix": "'use strict';async (__vite_ssr_exports__,__vite_ssr_import_meta__,__vite_ssr_import__,__vite_ssr_dynamic_import__,__vite_ssr_exportAll__,__vite_ssr_exportName__,__filename,__dirname,module,exports,require)=>{{",
+      "suffix": "\n}}",
+      "length": 209
+    }
+  },
+  "contractSha256": "19d319e1ec60d9b846dcb3f1b25e29e89ad9cbba1d66b7d1d3e113f9814ce499",
+  "runtime": {
+    "node": "22.23.3",
+    "v8": "12.4.254.21-node.57"
+  },
+  "files": [
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "name": "external__pdim__artifacts__api-server__src__redis__store.ts.v8",
+      "bytes": 710343,
+      "sha256": "f08686d2d6679ca6eeffe0710d5c3ac4960fb64c8df8f3f8ee0e82a4d609f7c9",
+      "sourceSha256": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770"
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "name": "external__pdim__artifacts__api-server__src__workers__lua-pool.ts.v8",
+      "bytes": 13106,
+      "sha256": "3073e9adf504dbca29de0d0195ae213ff2c9d0b5607bb30e692ee69294dc19da",
+      "sourceSha256": "c545aafe8452eea8124923cee34c2e1ffde8c578299b9268793096c736eb6e3f"
+    },
+    {
+      "file": "server/config/ports.ts",
+      "name": "server__config__ports.ts.v8",
+      "bytes": 4619,
+      "sha256": "f4c20d524809869d447f627cf14feac49233e480b04696019aa561261572d561",
+      "sourceSha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d"
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "name": "server__lib__luaExecutor.ts.v8",
+      "bytes": 39575,
+      "sha256": "f1a8b095861a929a0279c773badeb1b11045551410c0afc06be218ca0a91c676",
+      "sourceSha256": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00"
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "name": "server__lib__pdimCircuitBreaker.ts.v8",
+      "bytes": 23725,
+      "sha256": "6d095b4ae63f8774abc40606bf5e92c3c0ef8db93b974bb51b1f701832c5a245",
+      "sourceSha256": "beb5d21a1bf9d41affb5edcff3a1cfdc5dd8102c5eef27fbb41d7aaa0e0b65f4"
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "name": "server__lib__pdimClient.ts.v8",
+      "bytes": 213716,
+      "sha256": "36f0ff3a0d5e6f49a4328099d7b6c7dd14daad38f5f9a68c524ba06e20c2988e",
+      "sourceSha256": "eef5afab18d6b5697efd49b0eb6c840f27d0b10759b65b8a11542a558d8fb1a9"
+    },
+    {
+      "file": "server/logger.ts",
+      "name": "server__logger.ts.v8",
+      "bytes": 5603,
+      "sha256": "af4b41c05a2c5895b23c15715bded4f0b86b51e59d733265dda71e9ba10ee2e2",
+      "sourceSha256": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5"
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "name": "server__logSanitizer.ts.v8",
+      "bytes": 11574,
+      "sha256": "8c74ffc2dbaf78bb5f1ab58d7158fa9a84c4f48ae5ce615900eedd7be7403030",
+      "sourceSha256": "f012622e80390701551ab38f7eda478daf9f7ee4a692e63a71ebaa856a145fb5"
+    },
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "name": "server__pocket-dimension__fabric__storage__PocketDimensionChunkStore.ts.v8",
+      "bytes": 12865,
+      "sha256": "756a611f484a65789fdefba463fc388899b63a7221368096641e6689b1d0b2d3",
+      "sourceSha256": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76"
+    }
+  ],
+  "counterMutation": false,
+  "mergedIntoGlobalCoverage": false
+}

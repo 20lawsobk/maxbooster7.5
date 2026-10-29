@@ -1,0 +1,1 @@
+{"status":"observed","readOnly":true,"checkedTables":312,"driftTables":10}

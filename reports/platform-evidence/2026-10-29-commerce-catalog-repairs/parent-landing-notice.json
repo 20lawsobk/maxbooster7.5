@@ -1,0 +1,21 @@
+{
+  "recordedAt": "2026-10-29T08:53:19.001422+00:00",
+  "source": "Parent task message, not a claimed child execution receipt",
+  "parentReportedControlledLanding": true,
+  "sourcePatchSha256": "538665930f6000027a104167dfce59dcd73170e4ed53c0fcc23e88ddf9c66093",
+  "childRootMutations": false,
+  "postLandingRealFixtureReceiptOwner": "/root",
+  "postLandingRealFixtureStatus": "Pending parent execution",
+  "catalogDebtCategories": 1,
+  "catalogAffectedReportFiles": 7,
+  "preNewTestBaselineCounts": {
+    "canonicalTestFiles": 642,
+    "rootNodeFiles": 130,
+    "retainedSnapshotFiles": 71
+  },
+  "preNewTestCandidateCounts": {
+    "canonicalTestFiles": 635,
+    "rootNodeFiles": 124,
+    "retainedSnapshotFiles": 78
+  }
+}

@@ -1,0 +1,450 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-29T23:26:29.612002+00:00",
+  "scope": "Independent read-only completed5eb master reconciliation; no source edits, tests rerun, counter merge, deployed proof or launch approval",
+  "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "sourceInputsSha256": "1331649284d57675d1b1c078e4dafcbe93dff87f92021c2f2ff8a3bf288f71de",
+  "assertions": {
+    "actualHeadCurrent": true,
+    "unchangedCommonSource": true,
+    "exact17OrdinaryCommands": true,
+    "sixteenOrdinaryPassed": true,
+    "onlyOrdinaryFailureCoverage": true,
+    "all53033MidpointWorkIdsRetained": true,
+    "all2653CoverageFiles": true,
+    "sourceDenominatorsNotReduced": true,
+    "nineActualLinks23ExactRefs": true,
+    "nineCurrentChecksZeroInvalidLinks": true,
+    "rawEvidenceCurrentAndNothingRejected": true,
+    "nodeAll125CanonicalFilesExactlyOnce": true,
+    "nodeNoFailures": true,
+    "pythonNoFailuresOrErrors": true,
+    "historicalCopiesRemainUnexecuted": true,
+    "allCoverageFailureCriteria": true,
+    "retentionAll20Pass": true,
+    "actualIdentityAndCommerceProofAll5Pass": true
+  },
+  "allIndependentChecksPass": true,
+  "master": {
+    "startedAt": "2026-10-29T23:02:12.027944+00:00",
+    "finishedAt": "2026-10-29T23:24:26.370918+00:00",
+    "ordinaryCommands": 17,
+    "ordinaryStatuses": {
+      "passed": 16,
+      "failed": 1
+    },
+    "postprocessing": [
+      {
+        "id": "summary",
+        "status": "passed",
+        "exitCode": 0
+      },
+      {
+        "id": "platform",
+        "status": "failed",
+        "exitCode": 1
+      },
+      {
+        "id": "remediation",
+        "status": "failed",
+        "exitCode": 1
+      },
+      {
+        "id": "completion-plan",
+        "status": "passed",
+        "exitCode": 0
+      },
+      {
+        "id": "final-summary",
+        "status": "passed",
+        "exitCode": 0
+      }
+    ],
+    "status": "failed",
+    "allTestsPassed": false
+  },
+  "coverage": {
+    "files": 2653,
+    "totals": {
+      "lines": {
+        "total": 224013,
+        "covered": 29398,
+        "skipped": 0,
+        "pct": 13.12
+      },
+      "statements": {
+        "total": 240335,
+        "covered": 31305,
+        "skipped": 0,
+        "pct": 13.02
+      },
+      "functions": {
+        "total": 47857,
+        "covered": 4156,
+        "skipped": 0,
+        "pct": 8.68
+      },
+      "branches": {
+        "total": 158578,
+        "covered": 13937,
+        "skipped": 0,
+        "pct": 8.78
+      },
+      "branchesTrue": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    "prior8a9Denominators": {
+      "lines": 224013,
+      "statements": 240335,
+      "functions": 47857,
+      "branches": 158578
+    },
+    "failureScope": {
+      "exitCodeIsOne": true,
+      "noTimeout": true,
+      "noParseExclusions": true,
+      "all2771AssertionsPass": true,
+      "allFour100ThresholdFailuresRetained": true
+    },
+    "profilesMerged": false
+  },
+  "actualJUnit": {
+    "unit": {
+      "cases": 2728,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "sha256": "c36747294406c08740d06f474ca4eed1795808e6d9ce67da64a785abc5c1cf11"
+    },
+    "coverage-unit": {
+      "cases": 2771,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "sha256": "7f6d966f06c1019cc1ec8984613b0eaaf1304dc56497f5891e8526dd7be487dd"
+    },
+    "additional": {
+      "cases": 18,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "sha256": "5a71fcb7069857a74d017d83354e9bd6f67b38d04ff9fa4f21c66cfbc80e0e9b"
+    }
+  },
+  "node": {
+    "files": 125,
+    "failedFiles": 0,
+    "counts": {
+      "tests": 742,
+      "pass": 740,
+      "fail": 0,
+      "skipped": 2,
+      "cancelled": 0
+    }
+  },
+  "python": {
+    "summary": {
+      "passed": 117,
+      "failed": 0,
+      "timeout": 0,
+      "skipped": 1,
+      "blocked": 19,
+      "empty": 0
+    },
+    "junitCounts": {
+      "tests": 1583,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 12
+    },
+    "historicalReportCopiesExecuted": 0,
+    "historicalReportCopiesRetainedByRunner": [
+      "reports/mapping-audit/2026-10-28-topology-final/candidate/tests/testing/test_endpoint_mount_resolution.py"
+    ],
+    "limits": "19blocked files,1skipped file and12rawJUnit skips remain explicit; no claim all catalog tests passed"
+  },
+  "acceptance": {
+    "qualifiedCurrentLeafIdentities": 5408,
+    "rejectedEvidence": {},
+    "checksPassed": 9,
+    "checksTotal": 33549,
+    "checksUnverified": 33540,
+    "invalidLinks": 0,
+    "pagesGreen": 0,
+    "pagesTotal": 80,
+    "pageGreenScope": "All80 routed declarations remain UNVERIFIED in current register; root launch audit separately determines actual readiness",
+    "links": [
+      {
+        "checkId": "api-7f174c69ff83279c/access-policy",
+        "actualRegisteredStatus": "PASS",
+        "exactCaseReferences": 1,
+        "exactBoundCases": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /api/health returns 200",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-2153be5bc8e5692b/access-policy",
+        "actualRegisteredStatus": "PASS",
+        "exactCaseReferences": 1,
+        "exactBoundCases": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /health returns 200",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-50167c08abd2dfe2/access-policy",
+        "actualRegisteredStatus": "PASS",
+        "exactCaseReferences": 1,
+        "exactBoundCases": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /api/ping returns ok:true",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-059a423751b44e6c/access-policy",
+        "actualRegisteredStatus": "PASS",
+        "exactCaseReferences": 1,
+        "exactBoundCases": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /ready reflects the actual admitted dependency set",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-ebf54287f664010e/access-policy",
+        "actualRegisteredStatus": "PASS",
+        "exactCaseReferences": 1,
+        "exactBoundCases": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /readyz uses the same truthful readiness contract",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-ef05357bba6ab833/access-policy",
+        "actualRegisteredStatus": "PASS",
+        "exactCaseReferences": 3,
+        "exactBoundCases": [
+          {
+            "testFile": "tests/auth-flows.test.ts",
+            "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+            "caseName": "Full Auth Flow > 4. GET /api/auth/me returns user when authenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/auth-flows.test.ts",
+            "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+            "caseName": "Full Auth Flow > 10. /api/auth/me returns null or 401 after logout",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/api-guards.test.ts",
+            "testSha256": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
+            "caseName": "Unauthenticated route guards > GET /api/auth/me \u2192 200 (public, returns null)",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-3f640ac3745d3b6a/access-policy",
+        "actualRegisteredStatus": "PASS",
+        "exactCaseReferences": 7,
+        "exactBoundCases": [
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > 9. GET /api/billing/subscription returns complete tier shape when authenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > 10. GET /api/billing/subscription returns 401 when unauthenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects suspended session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects banned session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects mfa-required session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects trial-expired session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects subscription-expired session",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-0772b8611dc21e1d/access-policy",
+        "actualRegisteredStatus": "PASS",
+        "exactCaseReferences": 7,
+        "exactBoundCases": [
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > 9. GET /api/storage/quota returns quota info when authenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > 10. GET /api/storage/quota returns 401 or 403 without authentication",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects suspended session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects banned session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects mfa-required session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects trial-expired session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects subscription-expired session",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-51e06323624f6bc1/access-policy",
+        "actualRegisteredStatus": "PASS",
+        "exactCaseReferences": 1,
+        "exactBoundCases": [
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > 11. GET /api/billing/plans returns a non-empty plan list without auth",
+            "group": "http"
+          }
+        ]
+      }
+    ],
+    "proofScope": "Access-policy-only checks for exact reviewed declarations; no full endpoint or page promotion"
+  },
+  "retention": {
+    "retentionAssertions": 20,
+    "baselineOldWorkIds": 53020,
+    "midpointOldWorkIds": 53033,
+    "currentWorkIds": 53034,
+    "missingMidpointWorkIds": [],
+    "addedWorkIds": [
+      "file-15e4094cf6a63174/contract"
+    ],
+    "originalEntities": {
+      "pages": {
+        "before": 80,
+        "after": 80,
+        "missing": []
+      },
+      "controls": {
+        "before": 8374,
+        "after": 8374,
+        "missing": []
+      },
+      "backend": {
+        "before": 2909,
+        "after": 2909,
+        "missing": []
+      },
+      "frontendContracts": {
+        "before": 932,
+        "after": 932,
+        "missing": []
+      },
+      "requiredChecks": {
+        "before": 33549,
+        "after": 33549,
+        "missing": []
+      },
+      "businessSections": {
+        "before": 2162,
+        "after": 2162,
+        "missing": []
+      },
+      "workItems": {
+        "before": 53020,
+        "after": 53034,
+        "missing": []
+      },
+      "sourceInputs": {
+        "before": 4242,
+        "after": 4258,
+        "missing": []
+      }
+    },
+    "historical8a9ArchiveSha256": "d2bab491bd655e40e0ac9ffad35f50df6da4419c529e9d6a82cebff2b02e1712"
+  },
+  "artifactSha256": {
+    "reports/test-verification/orchestration/results.json": "a952e00c5a42d0ea9d3ed3f9f54e12cd651ca86b2b71e79f2ee92a95000f5db1",
+    "reports/test-verification/orchestration/source-inputs.json": "61b98f005ca2b3660374ff03474a291241e732ba6e84483575b58114e1de4ddc",
+    "reports/test-verification/platform-register.json": "0f4fbf280425e2b0b37f9961dba7b81d58a785bedf3f2f84609ff1b4df027d97",
+    "reports/test-verification/completion-plan.json": "f652ec1e01d185f316fbe010ec1241791d0b12c5ae7f18231d6bbab2b2c01478",
+    "reports/test-verification/test-inventory.json": "db01f86aa4501f643d1852f86886004946e5e2a6b120e6fa32e2cc3c162e12be",
+    "reports/test-verification/node/results.json": "c204e063ae967d10d78912d9fb92a77573e1771f5b460188be65b0e458ce68d5",
+    "reports/test-verification/python/results.json": "cf735e2c3daaf713e40911572be50dd96da640eba0219ff871858ae61b19fd5a",
+    "reports/test-verification/coverage/coverage-summary.json": "f83daa21b3e8215e49e982470ab38141d6f68078cf0dda09b0ae95649ab53007",
+    "tests/platform-acceptance-map.json": "98064ef08746b717d025c4934904aa3d6cf8a7f6c843abd1a0c15e4e44b303c4"
+  },
+  "productionReady": false
+}

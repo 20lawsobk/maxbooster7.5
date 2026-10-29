@@ -1,0 +1,70 @@
+{
+  "startedAt": "2026-10-29T08:57:51.834Z",
+  "finishedAt": "2026-10-29T08:57:52.570Z",
+  "helperSha256": "040ef393ee8d1122815424be716794c3b57331521420a4131afd93a0f2824837",
+  "scope": "Owned isolated SQL helper only; HTTP authorization not yet executed",
+  "status": "PASS",
+  "checks": [
+    {
+      "state": "suspended",
+      "callback": "success",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "suspended",
+      "callback": "expected-failure",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "banned",
+      "callback": "success",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "banned",
+      "callback": "expected-failure",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "mfa-required",
+      "callback": "success",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "mfa-required",
+      "callback": "expected-failure",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "trial-expired",
+      "callback": "success",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "trial-expired",
+      "callback": "expected-failure",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "subscription-expired",
+      "callback": "success",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "subscription-expired",
+      "callback": "expected-failure",
+      "exactOriginalSqlRestored": true
+    },
+    {
+      "state": "unknown-state",
+      "rejectedBeforeMutation": true
+    },
+    {
+      "state": "wrong-owned-proof",
+      "rejectedBeforeMutation": true
+    }
+  ],
+  "ownedPostgresStopped": true,
+  "temporaryDirectoryRemoved": true,
+  "productionReady": false
+}

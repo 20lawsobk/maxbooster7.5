@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testsuite name="refund reconciliation preserves newer dispute transitions in real isolated PostgreSQL" time="11.113989" disabled="0" errors="0" tests="10" failures="0" skipped="0" hostname="af966a6fd55d">
-		<testcase name="hold-created" time="0.037117" classname="test"/>
-		<testcase name="hold-won" time="0.029634" classname="test"/>
-		<testcase name="older dispute event reads current provider state after delayed refund pagination" time="0.042646" classname="test"/>
-		<testcase name="authoritative dispute reads serialize on the same source transaction" time="0.033438" classname="test"/>
-		<testcase name="dispute identity mismatch rolls back without fees or hold changes" time="0.012477" classname="test"/>
-		<testcase name="hung dispute read rolls back and releases its source lock" time="10.015048" classname="test"/>
-		<testcase name="pending refund observations serialize: pending-created" time="0.040633" classname="test"/>
-		<testcase name="pending refund observations serialize: pending-succeeded" time="0.031050" classname="test"/>
-		<testcase name="legacy lifetime entitlement uses current provider status instead of stale event status" time="0.012995" classname="test"/>
-		<testcase name="legacy lifetime provider observations serialize before entitlement writes" time="0.010334" classname="test"/>
+	<testsuite name="refund reconciliation preserves newer dispute transitions in real isolated PostgreSQL" time="10.892748" disabled="0" errors="0" tests="10" failures="0" skipped="0" hostname="af966a6fd55d">
+		<testcase name="hold-created" time="0.018923" classname="test"/>
+		<testcase name="hold-won" time="0.011104" classname="test"/>
+		<testcase name="older dispute event reads current provider state after delayed refund pagination" time="0.017186" classname="test"/>
+		<testcase name="authoritative dispute reads serialize on the same source transaction" time="0.019688" classname="test"/>
+		<testcase name="dispute identity mismatch rolls back without fees or hold changes" time="0.005851" classname="test"/>
+		<testcase name="hung dispute read rolls back and releases its source lock" time="10.010869" classname="test"/>
+		<testcase name="pending refund observations serialize: pending-created" time="0.031698" classname="test"/>
+		<testcase name="pending refund observations serialize: pending-succeeded" time="0.022044" classname="test"/>
+		<testcase name="legacy lifetime entitlement uses current provider status instead of stale event status" time="0.008188" classname="test"/>
+		<testcase name="legacy lifetime provider observations serialize before entitlement writes" time="0.012527" classname="test"/>
 	</testsuite>
 	<!-- tests 11 -->
 	<!-- suites 0 -->
@@ -19,5 +19,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 11198.508464 -->
+	<!-- duration_ms 10968.858304 -->
 </testsuites>

@@ -1,0 +1,10 @@
+{
+  "observedAt": "2026-10-29T22:33:22.706597+00:00",
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "inputs": {
+    "shared/schema.ts": "ce79392f833de48cc9bf3fe1ab6f158558b64824ccdcecce03ba277713bb1411",
+    "shared/readiness-schema.ts": "9b89b0ab7a721afa60746b2c78953ff6794c85c5108383408ce6bd1646c07e7f",
+    "scripts/check-neon-schema.mjs": "7c0f6adfc4af59adae1b61e1817af2814b8b6291f53f0932347ff3b2aeef0522",
+    "reports/deployment-observations/2026-10-28/neon-schema-readonly-driver.mjs": "386a6cdc9e50672c54f1b53fae64fe33945e2f67ef5520d01081fc4f4d1703e8"
+  }
+}

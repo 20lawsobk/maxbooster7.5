@@ -1,0 +1,15 @@
+{
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "rootSourceUnchanged": true,
+  "scope": "Outside candidate; no current production acceptance promoted",
+  "files": [
+    {
+      "path": "scripts/testing/run-python-suites.py",
+      "candidateSha256": "bd4e36f21886d1b6c81eba300ffc66892826842e1ffbfbf392dc66f28834e480"
+    },
+    {
+      "path": "tests/testing/test_python_runner_scheduling.py",
+      "candidateSha256": "e47e24cbf4eaf92675f3f632cceec832725085dd0a295e47a3b87ce52505a8dc"
+    }
+  ]
+}

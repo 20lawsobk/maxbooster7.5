@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "startedAt": "2026-10-28T13:39:58.480428+00:00",
-  "finishedAt": "2026-10-28T13:43:53.638912+00:00",
-  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "startedAt": "2026-10-29T23:11:14.822545+00:00",
+  "finishedAt": "2026-10-29T23:14:54.342631+00:00",
+  "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
   "interpreter": "/workspace/.cloud-python/bin/python",
   "summary": {
-    "passed": 112,
+    "passed": 117,
     "failed": 0,
     "timeout": 0,
     "skipped": 1,
@@ -13,7 +13,7 @@
     "empty": 0
   },
   "counts": {
-    "tests": 1440,
+    "tests": 1583,
     "failures": 0,
     "errors": 0,
     "skipped": 12
@@ -280,12 +280,20 @@
   "duplicateSnapshots": [
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/__init__.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/__init__.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/__init__.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/__init__.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_gpu_native.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_vs_reference_gpu.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/endpoint_load_test.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
@@ -327,7 +335,8 @@
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
     ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py",
-    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py"
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py",
+    "reports/mapping-audit/2026-10-28-topology-final/candidate/tests/testing/test_endpoint_mount_resolution.py"
   ],
   "suites": [
     {
@@ -356,7 +365,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file evaluations/maxcore-quality/test_protocol.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.586,
+      "durationSeconds": 0.468,
       "counts": {
         "tests": 4,
         "failures": 0,
@@ -400,7 +409,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 16.937,
+      "durationSeconds": 13.022,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -436,7 +445,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_controls.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.897,
+      "durationSeconds": 3.907,
       "counts": {
         "tests": 4,
         "failures": 0,
@@ -488,7 +497,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_media_facade.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.332,
+      "durationSeconds": 4.445,
       "counts": {
         "tests": 12,
         "failures": 0,
@@ -520,7 +529,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_short_duration.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.874,
+      "durationSeconds": 3.557,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -644,7 +653,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 7.38,
+      "durationSeconds": 6.115,
       "counts": {
         "tests": 26,
         "failures": 0,
@@ -688,7 +697,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.95,
+      "durationSeconds": 3.854,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -788,7 +797,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.051,
+      "durationSeconds": 0.698,
       "counts": {
         "tests": 29,
         "failures": 0,
@@ -864,7 +873,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.405,
+      "durationSeconds": 4.19,
       "counts": {
         "tests": 14,
         "failures": 0,
@@ -892,7 +901,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.636,
+      "durationSeconds": 2.9,
       "counts": {
         "tests": 2,
         "failures": 0,
@@ -972,7 +981,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.081,
+      "durationSeconds": 3.512,
       "counts": {
         "tests": 15,
         "failures": 0,
@@ -1024,7 +1033,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.221,
+      "durationSeconds": 2.672,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -1592,7 +1601,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.552,
+      "durationSeconds": 4.149,
       "counts": {
         "tests": 137,
         "failures": 0,
@@ -1632,7 +1641,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.392,
+      "durationSeconds": 3.417,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -1724,7 +1733,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_pocket_execution.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 8.665,
+      "durationSeconds": 7.158,
       "counts": {
         "tests": 18,
         "failures": 0,
@@ -1776,7 +1785,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.225,
+      "durationSeconds": 3.485,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -1812,7 +1821,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/image/test_controls.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.893,
+      "durationSeconds": 4.068,
       "counts": {
         "tests": 12,
         "failures": 0,
@@ -1848,7 +1857,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/image/test_image_contract.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.565,
+      "durationSeconds": 3.902,
       "counts": {
         "tests": 4,
         "failures": 0,
@@ -1900,7 +1909,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.586,
+      "durationSeconds": 2.961,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -2056,7 +2065,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 13.313,
+      "durationSeconds": 13.132,
       "counts": {
         "tests": 23,
         "failures": 0,
@@ -2104,7 +2113,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.697,
+      "durationSeconds": 0.676,
       "counts": {
         "tests": 7,
         "failures": 0,
@@ -2248,7 +2257,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.375,
+      "durationSeconds": 3.792,
       "counts": {
         "tests": 31,
         "failures": 0,
@@ -2292,7 +2301,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.764,
+      "durationSeconds": 0.702,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -2372,7 +2381,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.739,
+      "durationSeconds": 0.677,
       "counts": {
         "tests": 15,
         "failures": 0,
@@ -2464,7 +2473,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.153,
+      "durationSeconds": 0.988,
       "counts": {
         "tests": 18,
         "failures": 0,
@@ -2532,7 +2541,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/model/test_generation_regressions.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.109,
+      "durationSeconds": 4.78,
       "counts": {
         "tests": 12,
         "failures": 0,
@@ -2580,7 +2589,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/model/test_sampling_context.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.241,
+      "durationSeconds": 4.796,
       "counts": {
         "tests": 7,
         "failures": 0,
@@ -2620,7 +2629,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.657,
+      "durationSeconds": 0.69,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -2660,7 +2669,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.732,
+      "durationSeconds": 0.652,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -2720,7 +2729,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.391,
+      "durationSeconds": 6.845,
       "counts": {
         "tests": 10,
         "failures": 0,
@@ -2772,7 +2781,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 17.946,
+      "durationSeconds": 17.585,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -2808,7 +2817,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.38,
+      "durationSeconds": 3.244,
       "counts": {
         "tests": 4,
         "failures": 0,
@@ -2880,7 +2889,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.377,
+      "durationSeconds": 3.461,
       "counts": {
         "tests": 13,
         "failures": 0,
@@ -2912,7 +2921,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.904,
+      "durationSeconds": 5.862,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -2948,7 +2957,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.827,
+      "durationSeconds": 3.281,
       "counts": {
         "tests": 12,
         "failures": 0,
@@ -3020,7 +3029,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_ranker_upgrades.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.192,
+      "durationSeconds": 0.965,
       "counts": {
         "tests": 13,
         "failures": 0,
@@ -3064,7 +3073,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_request_intelligence_trends.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.964,
+      "durationSeconds": 0.749,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -3120,7 +3129,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.46,
+      "durationSeconds": 4.634,
       "counts": {
         "tests": 9,
         "failures": 0,
@@ -3148,7 +3157,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_generic.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.539,
+      "durationSeconds": 5.91,
       "counts": {
         "tests": 2,
         "failures": 0,
@@ -3180,7 +3189,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_manual.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.841,
+      "durationSeconds": 3.76,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -3252,7 +3261,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_live_learning.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 9.014,
+      "durationSeconds": 8.287,
       "counts": {
         "tests": 21,
         "failures": 0,
@@ -3288,7 +3297,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_public_content_model.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.034,
+      "durationSeconds": 5.807,
       "counts": {
         "tests": 4,
         "failures": 0,
@@ -3316,7 +3325,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_controls.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 7.491,
+      "durationSeconds": 6.173,
       "counts": {
         "tests": 10,
         "failures": 0,
@@ -3356,7 +3365,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_duration_contract.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 2.168,
+      "durationSeconds": 1.839,
       "counts": {
         "tests": 7,
         "failures": 0,
@@ -3416,7 +3425,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_sampler_upgrades.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.933,
+      "durationSeconds": 0.814,
       "counts": {
         "tests": 10,
         "failures": 0,
@@ -3448,7 +3457,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_admin_content_loop.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.326,
+      "durationSeconds": 3.298,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -3511,7 +3520,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_artifact_delivery_contract.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 2.119,
+      "durationSeconds": 1.8,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -3559,7 +3568,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.987,
+      "durationSeconds": 0.859,
       "counts": {
         "tests": 7,
         "failures": 0,
@@ -3699,7 +3708,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.819,
+      "durationSeconds": 0.666,
       "counts": {
         "tests": 30,
         "failures": 0,
@@ -3751,7 +3760,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.07,
+      "durationSeconds": 0.992,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -3791,7 +3800,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_auto_selection.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.944,
+      "durationSeconds": 3.848,
       "counts": {
         "tests": 11,
         "failures": 0,
@@ -3847,7 +3856,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.069,
+      "durationSeconds": 4.556,
       "counts": {
         "tests": 9,
         "failures": 0,
@@ -4155,7 +4164,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.677,
+      "durationSeconds": 3.12,
       "counts": {
         "tests": 29,
         "failures": 0,
@@ -4195,7 +4204,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.844,
+      "durationSeconds": 2.998,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -4255,7 +4264,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.63,
+      "durationSeconds": 4.179,
       "counts": {
         "tests": 29,
         "failures": 0,
@@ -4307,7 +4316,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_checkpoint_release.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.691,
+      "durationSeconds": 2.876,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -4555,7 +4564,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.445,
+      "durationSeconds": 5.546,
       "counts": {
         "tests": 23,
         "failures": 0,
@@ -4607,7 +4616,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_media_http.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 10.377,
+      "durationSeconds": 9.475,
       "counts": {
         "tests": 15,
         "failures": 0,
@@ -4639,7 +4648,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.494,
+      "durationSeconds": 5.151,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -4715,7 +4724,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.773,
+      "durationSeconds": 5.222,
       "counts": {
         "tests": 20,
         "failures": 0,
@@ -4755,7 +4764,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_capability.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.644,
+      "durationSeconds": 4.026,
       "counts": {
         "tests": 10,
         "failures": 0,
@@ -4811,7 +4820,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_durable_delivery.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.455,
+      "durationSeconds": 4.962,
       "counts": {
         "tests": 18,
         "failures": 0,
@@ -4879,7 +4888,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_plan_contract.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 2.425,
+      "durationSeconds": 2.453,
       "counts": {
         "tests": 12,
         "failures": 0,
@@ -4931,7 +4940,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_release_selection.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.642,
+      "durationSeconds": 3.164,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -4983,7 +4992,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_restart_reconciliation.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 2.586,
+      "durationSeconds": 2.22,
       "counts": {
         "tests": 11,
         "failures": 0,
@@ -5071,7 +5080,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_route_bindings.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.822,
+      "durationSeconds": 4.111,
       "counts": {
         "tests": 17,
         "failures": 0,
@@ -5115,7 +5124,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_snapshot_contract.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.678,
+      "durationSeconds": 0.539,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -5159,7 +5168,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_incremental_candidate_inference.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.298,
+      "durationSeconds": 4.853,
       "counts": {
         "tests": 11,
         "failures": 0,
@@ -5187,7 +5196,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.742,
+      "durationSeconds": 0.692,
       "counts": {
         "tests": 2,
         "failures": 0,
@@ -5231,7 +5240,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 2.284,
+      "durationSeconds": 2.203,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -5275,7 +5284,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_awareness_planner_http.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 2.593,
+      "durationSeconds": 2.861,
       "counts": {
         "tests": 16,
         "failures": 0,
@@ -5359,7 +5368,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 7.616,
+      "durationSeconds": 8.04,
       "counts": {
         "tests": 16,
         "failures": 0,
@@ -5387,7 +5396,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_serving_integration.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.957,
+      "durationSeconds": 7.216,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -5423,7 +5432,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_local_canonical_storage.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.764,
+      "durationSeconds": 0.804,
       "counts": {
         "tests": 4,
         "failures": 0,
@@ -5527,7 +5536,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.707,
+      "durationSeconds": 3.672,
       "counts": {
         "tests": 21,
         "failures": 0,
@@ -5591,7 +5600,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_media_learning.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.206,
+      "durationSeconds": 4.035,
       "counts": {
         "tests": 24,
         "failures": 0,
@@ -5635,7 +5644,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.782,
+      "durationSeconds": 1.635,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -5675,7 +5684,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.71,
+      "durationSeconds": 0.696,
       "counts": {
         "tests": 14,
         "failures": 0,
@@ -5739,7 +5748,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.722,
+      "durationSeconds": 5.495,
       "counts": {
         "tests": 13,
         "failures": 0,
@@ -5771,7 +5780,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.308,
+      "durationSeconds": 1.394,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -5807,7 +5816,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.557,
+      "durationSeconds": 1.603,
       "counts": {
         "tests": 9,
         "failures": 0,
@@ -5835,7 +5844,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.866,
+      "durationSeconds": 0.663,
       "counts": {
         "tests": 2,
         "failures": 0,
@@ -5875,7 +5884,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_public_fetch_proxy.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.268,
+      "durationSeconds": 1.258,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -5939,7 +5948,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 19.821,
+      "durationSeconds": 16.899,
       "counts": {
         "tests": 11,
         "failures": 0,
@@ -5971,7 +5980,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_safe_feed_xml.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.59,
+      "durationSeconds": 0.548,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -6015,7 +6024,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.25,
+      "durationSeconds": 2.933,
       "counts": {
         "tests": 12,
         "failures": 0,
@@ -6047,7 +6056,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_scoped_batch_admission.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.582,
+      "durationSeconds": 0.6,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -6083,7 +6092,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_script_byte_budget.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.017,
+      "durationSeconds": 3.937,
       "counts": {
         "tests": 4,
         "failures": 0,
@@ -6126,7 +6135,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.727,
+      "durationSeconds": 3.264,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -6182,7 +6191,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.409,
+      "durationSeconds": 4.799,
       "counts": {
         "tests": 12,
         "failures": 0,
@@ -6254,7 +6263,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.576,
+      "durationSeconds": 4.095,
       "counts": {
         "tests": 37,
         "failures": 0,
@@ -6294,7 +6303,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.728,
+      "durationSeconds": 0.502,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -6342,7 +6351,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 17.18,
+      "durationSeconds": 13.782,
       "counts": {
         "tests": 7,
         "failures": 0,
@@ -6554,7 +6563,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.398,
+      "durationSeconds": 3.439,
       "counts": {
         "tests": 48,
         "failures": 0,
@@ -6658,7 +6667,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 2.637,
+      "durationSeconds": 2.065,
       "counts": {
         "tests": 13,
         "failures": 0,
@@ -6702,7 +6711,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "skipped",
       "exitCode": 0,
-      "durationSeconds": 1.194,
+      "durationSeconds": 0.737,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -6776,7 +6785,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/fsspec-advisories.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.352,
+      "durationSeconds": 2.732,
       "counts": null,
       "junit": null,
       "log": "tests__fsspec-advisories.txt"
@@ -6850,7 +6859,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/test_ltx_adapter_download.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 3.215,
+      "durationSeconds": 2.831,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -6882,7 +6891,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/test_portable_rust_toolchain.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.64,
+      "durationSeconds": 0.484,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -6914,7 +6923,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/test_production_fixture_support.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.619,
+      "durationSeconds": 0.399,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -6958,7 +6967,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/test_secure_http.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.679,
+      "durationSeconds": 0.469,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -6986,7 +6995,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/test_torch_provenance.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.633,
+      "durationSeconds": 0.423,
       "counts": {
         "tests": 2,
         "failures": 0,
@@ -7018,7 +7027,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_archived_quality_verifiers.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.583,
+      "durationSeconds": 0.489,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -7046,7 +7055,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_assertion_oracles.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 2.935,
+      "durationSeconds": 2.448,
       "counts": {
         "tests": 10,
         "failures": 0,
@@ -7055,6 +7064,118 @@
       },
       "junit": "tests__testing__test_assertion_oracles.xml",
       "log": "tests__testing__test_assertion_oracles.txt"
+    },
+    {
+      "file": "tests/testing/test_catalog_snapshot_ownership.py",
+      "description": "Keep report-owned source in the catalog without registering historical suites.\n\nRun directly with Python, or with the isolated Python runner. Fixture source is\nparsed, never executed. MAXBOOSTER_CATALOG_SOURCE supports reviewing a candidate\ngenerator without changing the checkout; MAXBOOSTER_TEST_REPO_ROOT locates the\nowning Node runner when this test itself is staged outside the repository.",
+      "cases": [
+        {
+          "name": "CatalogSnapshotOwnership.test_current_suite_is_canonical_and_report_copy_is_hashed_only",
+          "description": "current suite is canonical and report copy is hashed only"
+        },
+        {
+          "name": "CatalogSnapshotOwnership.test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression",
+          "description": "report ownership covers plain and snapshot paths without filename suppression"
+        },
+        {
+          "name": "CatalogSnapshotOwnership.test_existing_current_classifications_and_assertions_are_preserved",
+          "description": "existing current classifications and assertions are preserved"
+        },
+        {
+          "name": "CatalogSnapshotOwnership.test_unique_report_replay_sources_remain_documented_without_active_commands",
+          "description": "unique report replay sources remain documented without active commands"
+        },
+        {
+          "name": "CatalogSnapshotOwnership.test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors",
+          "description": "actual node builder admits generated commands and rejects report selectors"
+        },
+        {
+          "name": "CatalogSnapshotOwnership.test_census_is_read_only_and_preserves_every_input_hash_and_result_counter",
+          "description": "census is read only and preserves every input hash and result counter"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "1d366498a40f609f10f00dea4d615a69c3192f44e0897e23d4ad7fd1137a3d32",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_catalog_snapshot_ownership.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.533,
+      "counts": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "tests__testing__test_catalog_snapshot_ownership.xml",
+      "log": "tests__testing__test_catalog_snapshot_ownership.txt"
+    },
+    {
+      "file": "tests/testing/test_commerce_subject_selector.py",
+      "description": "Exercise the real legacy-commerce selector boundary without SQL or providers.\n\nRun with Python unittest. These framework tests use an owned temporary project,\nfixture import sentinel and intercepted child-process calls. They verify selection\nand credential isolation, not the 14 production money-loop assertions. To review\nan unlanded candidate, set MAXBOOSTER_SELECTOR_SOURCE_ROOT to its repository-shaped\nroot and MAXBOOSTER_SELECTOR_DEPENDENCY_ROOT to the installed checkout.",
+      "cases": [
+        {
+          "name": "CommerceSubjectSelectorTests.test_missing_subject_selector_rejected",
+          "description": "missing subject selector rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_relative_report_rejected",
+          "description": "relative report rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_absolute_subject_rejected",
+          "description": "absolute subject rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_traversal_subject_rejected",
+          "description": "traversal subject rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_unregistered_subject_rejected",
+          "description": "unregistered subject rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_unknown_duplicate_or_ignored_arguments_rejected",
+          "description": "unknown duplicate or ignored arguments rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_missing_registered_file_rejected",
+          "description": "missing registered file rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_symlink_redirection_outside_repository_rejected",
+          "description": "symlink redirection outside repository rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_config_include_mismatch_rejected",
+          "description": "config include mismatch rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected",
+          "description": "selection changing or dynamic config rejected"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_validated_subject_drives_actual_spawn_and_owned_cleanup",
+          "description": "validated subject drives actual spawn and owned cleanup"
+        },
+        {
+          "name": "CommerceSubjectSelectorTests.test_runner_forwards_recorded_subject_and_strips_application_credentials",
+          "description": "runner forwards recorded subject and strips application credentials"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "53bb5f75f101a39dc40e2eb412520a2d1eefd82db46fac0b399d3fc14e70dff7",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_commerce_subject_selector.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 3.903,
+      "counts": {
+        "tests": 22,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "tests__testing__test_commerce_subject_selector.xml",
+      "log": "tests__testing__test_commerce_subject_selector.txt"
     },
     {
       "file": "tests/testing/test_endpoint_mount_resolution.py",
@@ -7094,7 +7215,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_endpoint_mount_resolution.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.484,
+      "durationSeconds": 0.456,
       "counts": {
         "tests": 7,
         "failures": 0,
@@ -7178,11 +7299,11 @@
         }
       ],
       "blockedReason": null,
-      "sourceSha256": "44a81984703f06289255e59b1640d45edbc0c09e95b4dd79d0c78f0517103d18",
+      "sourceSha256": "167bc13f022cb3eab80fffad8beb056dc2b5161022acb97b63ba910162cfe4a3",
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_launch_readiness_audit.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.636,
+      "durationSeconds": 1.214,
       "counts": {
         "tests": 42,
         "failures": 0,
@@ -7270,7 +7391,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_maxcore_analytics.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 2.65,
+      "durationSeconds": 2.137,
       "counts": {
         "tests": 59,
         "failures": 0,
@@ -7403,16 +7524,24 @@
         {
           "name": "test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass",
           "description": "Both occurrences really execute the same unchanged owned source."
+        },
+        {
+          "name": "test_real_python_class_scopes_share_extractor_and_linker_identity",
+          "description": "Real pytest classnames separate methods; outcome and producer guards remain."
+        },
+        {
+          "name": "test_duplicate_fully_qualified_python_scope_cannot_union_a_pass",
+          "description": "Disambiguating distinct classes must not disambiguate real duplicates."
         }
       ],
       "blockedReason": null,
-      "sourceSha256": "7cad1816b277bb29e6f1bd43b877ffc98ba3fb92207368df5bd906f65eea7f06",
+      "sourceSha256": "661ae5f953fc8c84c6e262d255f73b7f73afde2bb57f895435e22a36e2afa84d",
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_platform_evidence.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 12.126,
+      "durationSeconds": 12.235,
       "counts": {
-        "tests": 77,
+        "tests": 83,
         "failures": 0,
         "errors": 0,
         "skipped": 0
@@ -7458,7 +7587,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_platform_plan.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.574,
+      "durationSeconds": 0.523,
       "counts": {
         "tests": 7,
         "failures": 0,
@@ -7467,6 +7596,158 @@
       },
       "junit": "tests__testing__test_platform_plan.xml",
       "log": "tests__testing__test_platform_plan.txt"
+    },
+    {
+      "file": "tests/testing/test_python_factory_mounts.py",
+      "description": "Static factory topology must preserve declarations and fail closed on ambiguity.",
+      "cases": [
+        {
+          "name": "FactoryMounts.test_direct_import_alias_and_prefixes",
+          "description": "direct import alias and prefixes"
+        },
+        {
+          "name": "FactoryMounts.test_constructor_alias_is_resolved_in_its_lexical_scope",
+          "description": "constructor alias is resolved in its lexical scope"
+        },
+        {
+          "name": "FactoryMounts.test_same_module_factory_and_relative_import",
+          "description": "same module factory and relative import"
+        },
+        {
+          "name": "FactoryMounts.test_assigned_router_and_optional_none_remain_conditional",
+          "description": "assigned router and optional none remain conditional"
+        },
+        {
+          "name": "FactoryMounts.test_optional_fastapi_none_fallback_requires_same_import_try",
+          "description": "optional fastapi none fallback requires same import try"
+        },
+        {
+          "name": "FactoryMounts.test_conditional_application_constructor_import_is_retained",
+          "description": "conditional application constructor import is retained"
+        },
+        {
+          "name": "FactoryMounts.test_module_app_and_router_binding_shadowing_reject",
+          "description": "module app and router binding shadowing reject"
+        },
+        {
+          "name": "FactoryMounts.test_nested_scope_shadowing_does_not_replace_outer_bindings",
+          "description": "nested scope shadowing does not replace outer bindings"
+        },
+        {
+          "name": "FactoryMounts.test_decorated_async_generator_early_or_implicit_return_factories_reject",
+          "description": "decorated async generator early or implicit return factories reject"
+        },
+        {
+          "name": "FactoryMounts.test_deferred_loop_comprehension_with_match_mounts_reject",
+          "description": "deferred loop comprehension with match mounts reject"
+        },
+        {
+          "name": "FactoryMounts.test_ordinary_if_and_try_mounts_record_conditions",
+          "description": "ordinary if and try mounts record conditions"
+        },
+        {
+          "name": "FactoryMounts.test_invalid_prefix_and_dynamic_spreads_reject",
+          "description": "invalid prefix and dynamic spreads reject"
+        },
+        {
+          "name": "FactoryMounts.test_constructor_and_factory_call_before_import_reject",
+          "description": "constructor and factory call before import reject"
+        },
+        {
+          "name": "FactoryMounts.test_ambiguous_packages_and_reexport_cycles_reject",
+          "description": "ambiguous packages and reexport cycles reject"
+        },
+        {
+          "name": "FactoryMounts.test_router_lifecycle_decorator_preserves_direct_route_topology",
+          "description": "router lifecycle decorator preserves direct route topology"
+        },
+        {
+          "name": "FactoryMounts.test_source_is_never_executed_and_unicode_prefix_preserved",
+          "description": "source is never executed and unicode prefix preserved"
+        },
+        {
+          "name": "FactoryMounts.test_finite_file_budget_fails_closed",
+          "description": "finite file budget fails closed"
+        },
+        {
+          "name": "FactoryMounts.test_importlib_consumer_loads_paired_helpers_without_sys_path",
+          "description": "importlib consumer loads paired helpers without sys path"
+        },
+        {
+          "name": "FactoryMounts.test_actual_consumer_retains_declaration_check_and_unknown_identities",
+          "description": "actual consumer retains declaration check and unknown identities"
+        },
+        {
+          "name": "FactoryMounts.test_multiple_mounts_retain_original_declaration_and_explicit_unknown",
+          "description": "multiple mounts retain original declaration and explicit unknown"
+        },
+        {
+          "name": "FactoryMounts.test_nonliteral_decorator_path_remains_unresolved",
+          "description": "nonliteral decorator path remains unresolved"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "6920abcc0232ff29384308a60016c5c5410dda653915a5f2118eb30a38b2c1de",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_python_factory_mounts.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.751,
+      "counts": {
+        "tests": 62,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "tests__testing__test_python_factory_mounts.xml",
+      "log": "tests__testing__test_python_factory_mounts.txt"
+    },
+    {
+      "file": "tests/testing/test_python_runner_scheduling.py",
+      "description": "Exercise Python worker isolation and quiescent read-only scheduling with real children.\n\nThe fixtures use disposable Git repositories, pytest interpreters and report files.\nThey do not import the application or inherit provider credentials. Run with the\nprepared interpreter; MAXBOOSTER_PYTHON_RUNNER_SOURCE selects an outside candidate\nfor review without mutating the checkout.",
+      "cases": [
+        {
+          "name": "PythonRunnerScheduling.test_reader_waits_for_actual_writer_cleanup_and_result_files",
+          "description": "reader waits for actual writer cleanup and result files"
+        },
+        {
+          "name": "PythonRunnerScheduling.test_ordinary_suites_retain_real_parallelism",
+          "description": "ordinary suites retain real parallelism"
+        },
+        {
+          "name": "PythonRunnerScheduling.test_failed_ordinary_suite_is_retained_and_does_not_suppress_reader",
+          "description": "failed ordinary suite is retained and does not suppress reader"
+        },
+        {
+          "name": "PythonRunnerScheduling.test_timed_out_ordinary_suite_is_retained_and_reader_executes",
+          "description": "timed out ordinary suite is retained and reader executes"
+        },
+        {
+          "name": "PythonRunnerScheduling.test_report_owned_and_state_copies_are_retained_without_execution",
+          "description": "report owned and state copies are retained without execution"
+        },
+        {
+          "name": "PythonRunnerScheduling.test_retained_copy_selector_is_rejected_instead_of_running_history",
+          "description": "retained copy selector is rejected instead of running history"
+        },
+        {
+          "name": "PythonRunnerScheduling.test_quiescent_only_selector_retains_exact_selection",
+          "description": "quiescent only selector retains exact selection"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "e47e24cbf4eaf92675f3f632cceec832725085dd0a295e47a3b87ce52505a8dc",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_python_runner_scheduling.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 4.922,
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "tests__testing__test_python_runner_scheduling.xml",
+      "log": "tests__testing__test_python_runner_scheduling.txt"
     },
     {
       "file": "tests/testing/test_remediation.py",
@@ -7502,7 +7783,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_remediation.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.619,
+      "durationSeconds": 0.577,
       "counts": {
         "tests": 6,
         "failures": 0,
@@ -7511,6 +7792,90 @@
       },
       "junit": "tests__testing__test_remediation.xml",
       "log": "tests__testing__test_remediation.txt"
+    },
+    {
+      "file": "tests/testing/test_report_progress.py",
+      "description": "Behavior and malformed-evidence checks for the counted progress report.",
+      "cases": [
+        {
+          "name": "CountedProgressTests.test_independent_denominators_and_no_invented_implementation_or_test_total",
+          "description": "independent denominators and no invented implementation or test total"
+        },
+        {
+          "name": "CountedProgressTests.test_green_color_requires_all_gates_checks_and_no_blockers",
+          "description": "green color requires all gates checks and no blockers"
+        },
+        {
+          "name": "CountedProgressTests.test_stale_keeps_only_historical_observation_and_no_current_pass_credit",
+          "description": "stale keeps only historical observation and no current pass credit"
+        },
+        {
+          "name": "CountedProgressTests.test_complete_current_launch_uses_audit_and_master_not_summary_approval",
+          "description": "complete current launch uses audit and master not summary approval"
+        },
+        {
+          "name": "CountedProgressTests.test_complete_green_cannot_override_missing_failed_or_stale_master",
+          "description": "complete green cannot override missing failed or stale master"
+        },
+        {
+          "name": "CountedProgressTests.test_summary_claim_cannot_override_partial_or_unapproved_launch",
+          "description": "summary claim cannot override partial or unapproved launch"
+        },
+        {
+          "name": "CountedProgressTests.test_raw_fraction_is_separate_from_istanbul_truncated_percent",
+          "description": "raw fraction is separate from istanbul truncated percent"
+        },
+        {
+          "name": "CountedProgressTests.test_missing_page_and_duplicate_page_cannot_reduce_eighty_page_target",
+          "description": "missing page and duplicate page cannot reduce eighty page target"
+        },
+        {
+          "name": "CountedProgressTests.test_summary_counts_must_equal_actual_rows",
+          "description": "summary counts must equal actual rows"
+        },
+        {
+          "name": "CountedProgressTests.test_boolean_counts_are_rejected",
+          "description": "boolean counts are rejected"
+        },
+        {
+          "name": "CountedProgressTests.test_plan_and_readiness_statuses_must_agree",
+          "description": "plan and readiness statuses must agree"
+        },
+        {
+          "name": "CountedProgressTests.test_duplicate_check_identity_is_not_counted_twice",
+          "description": "duplicate check identity is not counted twice"
+        },
+        {
+          "name": "CountedProgressTests.test_coverage_overflow_negative_boolean_and_stale_summary_are_rejected",
+          "description": "coverage overflow negative boolean and stale summary are rejected"
+        },
+        {
+          "name": "CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent",
+          "description": "zero denominator has no fabricated completion percent"
+        },
+        {
+          "name": "CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged",
+          "description": "real collection leaves all git visible files unchanged"
+        },
+        {
+          "name": "CountedProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two",
+          "description": "missing input cli writes unavailable and returns two"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "5ade36db3ec3369ac4bcb1803730772a6327dae9005503bdc99a94240a29426e",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_report_progress.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 9.061,
+      "counts": {
+        "tests": 37,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "tests__testing__test_report_progress.xml",
+      "log": "tests__testing__test_report_progress.txt"
     },
     {
       "file": "tests/testing/test_summary_results.py",
@@ -7539,16 +7904,28 @@
         {
           "name": "test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units",
           "description": "coverage only database cases are retained without repeating ordinary units"
+        },
+        {
+          "name": "test_python_scopes_qualify_only_ambiguous_explicit_classes",
+          "description": "python scopes qualify only ambiguous explicit classes"
+        },
+        {
+          "name": "test_python_missing_class_scope_stays_ambiguous",
+          "description": "python missing class scope stays ambiguous"
+        },
+        {
+          "name": "test_python_missing_names_or_blank_classes_never_acquire_a_usable_identity",
+          "description": "python missing names or blank classes never acquire a usable identity"
         }
       ],
       "blockedReason": null,
-      "sourceSha256": "fb5b6359a39d2c46f1bf7f2132f1371bfd246a43dcea1182215aed1c64097bd7",
+      "sourceSha256": "e93e6c9aaea1b2ff76dba533102a7a51b283488e6fa6ad09ff56a17867d4f0c0",
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_summary_results.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.762,
+      "durationSeconds": 0.671,
       "counts": {
-        "tests": 6,
+        "tests": 9,
         "failures": 0,
         "errors": 0,
         "skipped": 0
@@ -7578,7 +7955,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/urllib3-security-paths.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.216,
+      "durationSeconds": 1.01,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -7618,7 +7995,7 @@
       "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tools/sophia-agent-runner/tests/test_sophia.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.611,
+      "durationSeconds": 0.517,
       "counts": {
         "tests": 5,
         "failures": 0,

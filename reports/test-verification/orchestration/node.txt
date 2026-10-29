@@ -110,6 +110,7 @@ passed: tests/startup-health.test.mjs
 passed: tests/storage-chunk-shared-postgres.test.mjs
 passed: tests/storefront-canonical-links.test.mjs
 passed: tests/subscription-checkout-isolated.test.mjs
+passed: tests/testing/coverage-coordinate-contract.test.mjs
 passed: tests/testing/coverage-provenance.test.mjs
 passed: tests/tls-toolchain-consumer.test.mjs
 passed: tests/unit/aiMediaResourceContracts.test.mjs

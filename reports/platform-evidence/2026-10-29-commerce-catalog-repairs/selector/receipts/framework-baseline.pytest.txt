@@ -1,0 +1,164 @@
+FFFFFF.FF.FF                                                   [100%]
+=================================== FAILURES ===================================
+_________ CommerceSubjectSelectorTests.test_absolute_subject_rejected __________
+candidate/tests/testing/test_commerce_subject_selector.py:143: in test_absolute_subject_rejected
+    self.assert_rejected_before_resources([self.report, '--subject-file', self.root / SUBJECT], 'registered repository-relative')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'registered repository-relative' not found in "file:///tmp/commerce-selector-framework-86quuiob/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-86quuiob/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+______ CommerceSubjectSelectorTests.test_config_include_mismatch_rejected ______
+candidate/tests/testing/test_commerce_subject_selector.py:171: in test_config_include_mismatch_rejected
+    self.assert_rejected_before_resources(self.selected(), 'include does not execute the selected subject')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'include does not execute the selected subject' not found in "file:///tmp/commerce-selector-framework-dru0z4np/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-dru0z4np/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+______ CommerceSubjectSelectorTests.test_missing_registered_file_rejected ______
+candidate/tests/testing/test_commerce_subject_selector.py:158: in test_missing_registered_file_rejected
+    self.assert_rejected_before_resources(self.selected(), 'ENOENT')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'ENOENT' not found in "file:///tmp/commerce-selector-framework-wdyqcxhj/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-wdyqcxhj/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_____ CommerceSubjectSelectorTests.test_missing_subject_selector_rejected ______
+candidate/tests/testing/test_commerce_subject_selector.py:137: in test_missing_subject_selector_rejected
+    self.assert_rejected_before_resources([self.report], 'Pass exactly --subject-file')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Pass exactly --subject-file' not found in "file:///tmp/commerce-selector-framework-_j5o6d_q/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-_j5o6d_q/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+__________ CommerceSubjectSelectorTests.test_relative_report_rejected __________
+candidate/tests/testing/test_commerce_subject_selector.py:140: in test_relative_report_rejected
+    self.assert_rejected_before_resources(['report.xml', '--subject-file', SUBJECT], 'absolute JUnit report path')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'absolute JUnit report path' not found in "file:///tmp/commerce-selector-framework-wcjcgrd9/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-wcjcgrd9/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_runner_forwards_recorded_subject_and_strips_application_credentials _
+candidate/tests/testing/test_commerce_subject_selector.py:266: in test_runner_forwards_recorded_subject_and_strips_application_credentials
+    self.assertEqual(command[-2:], ['--subject-file', record['path']])
+E   AssertionError: Lists differ: ['scripts/testing/commerce-legacy-fixture.m[74 chars]xml'] != ['--subject-file', 'tests/unit/beat-sale-mo[13 chars].ts']
+E   
+E   First differing element 0:
+E   'scripts/testing/commerce-legacy-fixture.mjs'
+E   '--subject-file'
+E   
+E   + ['--subject-file', 'tests/unit/beat-sale-money-loop.test.ts']
+E   - ['scripts/testing/commerce-legacy-fixture.mjs',
+E   -  '/tmp/commerce-selector-framework-w0j6px33/runner-output/legacy-beat.xml']
+_ CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected (kind='exclude') _
+candidate/tests/testing/test_commerce_subject_selector.py:187: in test_selection_changing_or_dynamic_config_rejected
+    self.assert_rejected_before_resources(self.selected(), 'Vitest')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Vitest' not found in "file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected (kind='root') _
+candidate/tests/testing/test_commerce_subject_selector.py:187: in test_selection_changing_or_dynamic_config_rejected
+    self.assert_rejected_before_resources(self.selected(), 'Vitest')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Vitest' not found in "file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected (kind='spread') _
+candidate/tests/testing/test_commerce_subject_selector.py:187: in test_selection_changing_or_dynamic_config_rejected
+    self.assert_rejected_before_resources(self.selected(), 'Vitest')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Vitest' not found in "file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected (kind='dynamic-include') _
+candidate/tests/testing/test_commerce_subject_selector.py:187: in test_selection_changing_or_dynamic_config_rejected
+    self.assert_rejected_before_resources(self.selected(), 'Vitest')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Vitest' not found in "file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected (kind='duplicate-include') _
+candidate/tests/testing/test_commerce_subject_selector.py:187: in test_selection_changing_or_dynamic_config_rejected
+    self.assert_rejected_before_resources(self.selected(), 'Vitest')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Vitest' not found in "file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected (kind='wrong-defineConfig-import') _
+candidate/tests/testing/test_commerce_subject_selector.py:187: in test_selection_changing_or_dynamic_config_rejected
+    self.assert_rejected_before_resources(self.selected(), 'Vitest')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Vitest' not found in "file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected (kind='extra-config-code') _
+candidate/tests/testing/test_commerce_subject_selector.py:187: in test_selection_changing_or_dynamic_config_rejected
+    self.assert_rejected_before_resources(self.selected(), 'Vitest')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Vitest' not found in "file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-kaw2zcw3/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_symlink_redirection_outside_repository_rejected _
+candidate/tests/testing/test_commerce_subject_selector.py:166: in test_symlink_redirection_outside_repository_rejected
+    self.assert_rejected_before_resources(self.selected(), 'without symlink redirection')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'without symlink redirection' not found in "file:///tmp/commerce-selector-framework-67kasosi/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-67kasosi/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_________ CommerceSubjectSelectorTests.test_traversal_subject_rejected _________
+candidate/tests/testing/test_commerce_subject_selector.py:146: in test_traversal_subject_rejected
+    self.assert_rejected_before_resources([self.report, '--subject-file', '../' + SUBJECT], 'registered repository-relative')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'registered repository-relative' not found in "file:///tmp/commerce-selector-framework-vd83idgf/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-vd83idgf/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_unknown_duplicate_or_ignored_arguments_rejected (extra=['--ignored']) _
+candidate/tests/testing/test_commerce_subject_selector.py:154: in test_unknown_duplicate_or_ignored_arguments_rejected
+    self.assert_rejected_before_resources([*self.selected(), *extra], 'Pass exactly --subject-file')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Pass exactly --subject-file' not found in "file:///tmp/commerce-selector-framework-hwtvzbd0/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-hwtvzbd0/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_unknown_duplicate_or_ignored_arguments_rejected (extra=['--subject-file', 'tests/unit/beat-sale-money-loop.test.ts']) _
+candidate/tests/testing/test_commerce_subject_selector.py:154: in test_unknown_duplicate_or_ignored_arguments_rejected
+    self.assert_rejected_before_resources([*self.selected(), *extra], 'Pass exactly --subject-file')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Pass exactly --subject-file' not found in "file:///tmp/commerce-selector-framework-hwtvzbd0/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-hwtvzbd0/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_unknown_duplicate_or_ignored_arguments_rejected (extra=['--config', 'vitest.beat-loop.config.ts']) _
+candidate/tests/testing/test_commerce_subject_selector.py:154: in test_unknown_duplicate_or_ignored_arguments_rejected
+    self.assert_rejected_before_resources([*self.selected(), *extra], 'Pass exactly --subject-file')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'Pass exactly --subject-file' not found in "file:///tmp/commerce-selector-framework-hwtvzbd0/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-hwtvzbd0/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_______ CommerceSubjectSelectorTests.test_unregistered_subject_rejected ________
+candidate/tests/testing/test_commerce_subject_selector.py:149: in test_unregistered_subject_rejected
+    self.assert_rejected_before_resources([self.report, '--subject-file', 'tests/unit/other.test.ts'], 'registered repository-relative')
+candidate/tests/testing/test_commerce_subject_selector.py:127: in assert_rejected_before_resources
+    self.assertIn(message, result.stderr)
+E   AssertionError: 'registered repository-relative' not found in "file:///tmp/commerce-selector-framework-5o950iw9/tests/payment-processing/helpers-database-postgres.mjs:5\nthrow new Error('Framework fixture import sentinel; no database was started');\n      ^\n\nError: Framework fixture import sentinel; no database was started\n    at file:///tmp/commerce-selector-framework-5o950iw9/tests/payment-processing/helpers-database-postgres.mjs:5:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.3\n"
+_ CommerceSubjectSelectorTests.test_validated_subject_drives_actual_spawn_and_owned_cleanup _
+candidate/tests/testing/test_commerce_subject_selector.py:214: in test_validated_subject_drives_actual_spawn_and_owned_cleanup
+    self.assertEqual(child['args'][:5], ['node_modules/vitest/vitest.mjs', 'run', SUBJECT, '--config', CONFIG])
+E   AssertionError: Lists differ: ['nod[33 chars]n', '--config', 'vitest.beat-loop.config.ts', [16 chars]ose'] != ['nod[33 chars]n', 'tests/unit/beat-sale-money-loop.test.ts',[37 chars].ts']
+E   
+E   First differing element 2:
+E   '--config'
+E   'tests/unit/beat-sale-money-loop.test.ts'
+E   
+E     ['node_modules/vitest/vitest.mjs',
+E      'run',
+E   +  'tests/unit/beat-sale-money-loop.test.ts',
+E      '--config',
+E   -  'vitest.beat-loop.config.ts',
+E   ?                              ^
+E   
+E   +  'vitest.beat-loop.config.ts']
+E   ?                              ^
+E   
+E   -  '--reporter=verbose']
+=========================== short test summary info ============================
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_absolute_subject_rejected
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_config_include_mismatch_rejected
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_missing_registered_file_rejected
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_missing_subject_selector_rejected
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_relative_report_rejected
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_runner_forwards_recorded_subject_and_strips_application_credentials
+SUBFAILED(kind='exclude') candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_selection_changing_or_dynamic_config_rejected
+SUBFAILED(kind='root') candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_selection_changing_or_dynamic_config_rejected
+SUBFAILED(kind='spread') candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_selection_changing_or_dynamic_config_rejected
+SUBFAILED(kind='dynamic-include') candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_selection_changing_or_dynamic_config_rejected
+SUBFAILED(kind='duplicate-include') candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_selection_changing_or_dynamic_config_rejected
+SUBFAILED(kind='wrong-defineConfig-import') candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_selection_changing_or_dynamic_config_rejected
+SUBFAILED(kind='extra-config-code') candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_selection_changing_or_dynamic_config_rejected
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_symlink_redirection_outside_repository_rejected
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_traversal_subject_rejected
+SUBFAILED(extra=['--ignored']) candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_unknown_duplicate_or_ignored_arguments_rejected
+SUBFAILED(extra=['--subject-file', 'tests/unit/beat-sale-money-loop.test.ts']) candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_unknown_duplicate_or_ignored_arguments_rejected
+SUBFAILED(extra=['--config', 'vitest.beat-loop.config.ts']) candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_unknown_duplicate_or_ignored_arguments_rejected
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_unregistered_subject_rejected
+FAILED candidate/tests/testing/test_commerce_subject_selector.py::CommerceSubjectSelectorTests::test_validated_subject_drives_actual_spawn_and_owned_cleanup
+20 failed, 2 passed in 1.10s

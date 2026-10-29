@@ -2,61 +2,61 @@ TAP version 13
 # Subtest: .: Express refuses forged forwarding through an invalid mapped trust subnet
 ok 1 - .: Express refuses forged forwarding through an invalid mapped trust subnet
   ---
-  duration_ms: 130.285484
+  duration_ms: 120.503529
   type: 'test'
   ...
 # Subtest: .: compression destroys its native stream when the client aborts
 ok 2 - .: compression destroys its native stream when the client aborts
   ---
-  duration_ms: 55.905427
+  duration_ms: 62.784868
   type: 'test'
   ...
 # Subtest: external/maxcore/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet
 ok 3 - external/maxcore/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet
   ---
-  duration_ms: 90.991661
+  duration_ms: 91.904651
   type: 'test'
   ...
 # Subtest: external/maxcore/artifacts/api-server: compression destroys its native stream when the client aborts
 ok 4 - external/maxcore/artifacts/api-server: compression destroys its native stream when the client aborts
   ---
-  duration_ms: 42.17226
+  duration_ms: 46.819394
   type: 'test'
   ...
 # Subtest: external/pdim/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet
 ok 5 - external/pdim/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet
   ---
-  duration_ms: 70.941693
+  duration_ms: 71.15367
   type: 'test'
   ...
 # Subtest: external/pdim/artifacts/api-server: compression destroys its native stream when the client aborts
 ok 6 - external/pdim/artifacts/api-server: compression destroys its native stream when the client aborts
   ---
-  duration_ms: 45.528451
+  duration_ms: 46.098106
   type: 'test'
   ...
 # Subtest: PostCSS source maps work and malicious indexed offsets fail promptly
 ok 7 - PostCSS source maps work and malicious indexed offsets fail promptly
   ---
-  duration_ms: 7.244273
+  duration_ms: 7.213218
   type: 'test'
   ...
 # Subtest: the real typography plugin retains its styles with the patched selector parser
 ok 8 - the real typography plugin retains its styles with the patched selector parser
   ---
-  duration_ms: 334.613975
+  duration_ms: 377.493498
   type: 'test'
   ...
 # Subtest: pino-pretty retains formatting and fast-copy uses controlled depth errors
 ok 9 - pino-pretty retains formatting and fast-copy uses controlled depth errors
   ---
-  duration_ms: 30.282268
+  duration_ms: 31.188333
   type: 'test'
   ...
 # Subtest: patched Capacitor creates and syncs both platforms with every installed plugin
 ok 10 - patched Capacitor creates and syncs both platforms with every installed plugin
   ---
-  duration_ms: 1527.020686
+  duration_ms: 1518.193836
   type: 'test'
   ...
 1..10
@@ -67,4 +67,4 @@ ok 10 - patched Capacitor creates and syncs both platforms with every installed 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 2490.412222
+# duration_ms 2518.861749

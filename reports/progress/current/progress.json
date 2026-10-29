@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "measurementStatus": "CURRENT",
+  "implementationCompletionPercent": null,
+  "implementationCompletionMeaning": "No verified whole-product implementation denominator exists; acceptance, pages and code coverage are distinct measurements.",
+  "sourceFreshnessReasons": [],
+  "lastMeasured": {
+    "greenPages": {
+      "completed": 0,
+      "total": 80,
+      "percent": 0.0
+    },
+    "requiredCheckAcceptance": {
+      "completed": 9,
+      "total": 33549,
+      "percent": 0.026826432978628276
+    },
+    "planWorkAcceptance": {
+      "completed": 9,
+      "total": 53034,
+      "percent": 0.01697024550288494
+    },
+    "coverage": {
+      "lines": {
+        "completed": 29398,
+        "total": 224013,
+        "percent": 13.123345520126064,
+        "canonicalPercent": 13.12
+      },
+      "statements": {
+        "completed": 31305,
+        "total": 240335,
+        "percent": 13.02556847733372,
+        "canonicalPercent": 13.02
+      },
+      "functions": {
+        "completed": 4156,
+        "total": 47857,
+        "percent": 8.684205027477693,
+        "canonicalPercent": 8.68
+      },
+      "branches": {
+        "completed": 13937,
+        "total": 158578,
+        "percent": 8.788734881257174,
+        "canonicalPercent": 8.78
+      }
+    }
+  },
+  "currentVerified": {
+    "greenPages": {
+      "completed": 0,
+      "total": 80,
+      "percent": 0.0
+    },
+    "requiredCheckAcceptance": {
+      "completed": 9,
+      "total": 33549,
+      "percent": 0.026826432978628276
+    },
+    "planWorkAcceptance": {
+      "completed": 9,
+      "total": 53034,
+      "percent": 0.01697024550288494
+    },
+    "coverage": {
+      "lines": {
+        "completed": 29398,
+        "total": 224013,
+        "percent": 13.123345520126064,
+        "canonicalPercent": 13.12
+      },
+      "statements": {
+        "completed": 31305,
+        "total": 240335,
+        "percent": 13.02556847733372,
+        "canonicalPercent": 13.02
+      },
+      "functions": {
+        "completed": 4156,
+        "total": 47857,
+        "percent": 8.684205027477693,
+        "canonicalPercent": 8.68
+      },
+      "branches": {
+        "completed": 13937,
+        "total": 158578,
+        "percent": 8.788734881257174,
+        "canonicalPercent": 8.78
+      }
+    }
+  },
+  "workStatusCounts": {
+    "PASS": 9,
+    "UNVERIFIED": 53025
+  },
+  "masterLaunchGatePassed": false,
+  "productionReady": false,
+  "masterStatus": "failed",
+  "testGroupObservations": [
+    {
+      "group": "root-unit",
+      "status": "passed",
+      "counts": {
+        "passed": 2728
+      },
+      "countScope": "JUnit cases"
+    },
+    {
+      "group": "root-additional",
+      "status": "passed",
+      "counts": {
+        "passed": 18
+      },
+      "countScope": "JUnit cases"
+    },
+    {
+      "group": "coverage-contracts",
+      "status": "passed",
+      "counts": {
+        "passed": 43
+      },
+      "countScope": "Real database contracts instrumented in-process; assertions also run through Node entrypoints"
+    },
+    {
+      "group": "node",
+      "status": "passed",
+      "fileCounts": {
+        "files": 125,
+        "failedFiles": 0,
+        "counts": {
+          "tests": 742,
+          "pass": 740,
+          "fail": 0,
+          "skipped": 2,
+          "cancelled": 0
+        }
+      },
+      "countScope": "TAP totals include parent tests; assertion scripts have process evidence only"
+    },
+    {
+      "group": "python",
+      "status": "passed",
+      "counts": {
+        "tests": 1583,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 12
+      },
+      "countScope": "JUnit suite counters, including unittest subtests; helper/operational inventory is separate"
+    },
+    {
+      "group": "commerce",
+      "status": "passed",
+      "counts": {
+        "passed": 136,
+        "skipped": 1
+      },
+      "countScope": "JUnit leaf cases; offline CLI assertions counted as a command only"
+    },
+    {
+      "group": "subsystems",
+      "status": "passed",
+      "countScope": "Per-command tests/scenarios; Rust cleanup overlaps one default Node case"
+    },
+    {
+      "group": "browser",
+      "status": "passed",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "group": "page80",
+      "status": "passed"
+    },
+    {
+      "group": "http",
+      "status": "passed",
+      "counts": {
+        "passed": 499,
+        "skipped": 9
+      },
+      "countScope": "21 files; JUnit cases; dual-config cache tests also appear in root unit run"
+    },
+    {
+      "group": "bounded-http-load",
+      "status": "passed"
+    },
+    {
+      "group": "checks",
+      "status": "passed"
+    },
+    {
+      "group": "dependency-audit-recheck",
+      "status": "passed"
+    },
+    {
+      "group": "operations",
+      "status": "passed"
+    },
+    {
+      "group": "coverage",
+      "status": "failed"
+    },
+    {
+      "group": "master-commands",
+      "status": "failed"
+    },
+    {
+      "group": "source-integrity",
+      "status": "passed"
+    },
+    {
+      "group": "evidence-gates",
+      "status": "failed"
+    }
+  ],
+  "testCountMeaning": "Original per-group scopes retained; groups overlap and no unique platform-wide test total is calculated.",
+  "meaning": "Numerators count exact PASS/Green receipts only; planned/source-present/rendered/skipped work is not completed work. Percentages are not interchangeable or averaged.",
+  "measuredSourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "measuredSourceInputsSha256": "1331649284d57675d1b1c078e4dafcbe93dff87f92021c2f2ff8a3bf288f71de",
+  "currentSourceInputsSha256": "1331649284d57675d1b1c078e4dafcbe93dff87f92021c2f2ff8a3bf288f71de",
+  "masterStartedAt": "2026-10-29T23:02:12.027944+00:00",
+  "masterFinishedAt": "2026-10-29T23:24:26.370918+00:00",
+  "generatedAt": "2026-10-29T23:25:21.111253+00:00",
+  "evidenceSha256": {
+    "reports/launch-readiness/current/status.json": "c3c81398fd66babf7c09718a94876f35afd2b6557b7cf09b1ee4b9d164ac6458",
+    "reports/launch-readiness/current/manifest.json": "d2eee2122427de3019b69d4abd9dfe310b72d462d8db0c71e2bfbc6cc7975456",
+    "reports/test-verification/platform-register.json": "0f4fbf280425e2b0b37f9961dba7b81d58a785bedf3f2f84609ff1b4df027d97",
+    "reports/test-verification/completion-plan.json": "f652ec1e01d185f316fbe010ec1241791d0b12c5ae7f18231d6bbab2b2c01478",
+    "reports/test-verification/coverage/coverage-summary.json": "f83daa21b3e8215e49e982470ab38141d6f68078cf0dda09b0ae95649ab53007",
+    "reports/test-verification/summary.json": "80b2c4ff2802b187311e9b644a2c1bda2e69bf9a980179e809bf7980bc53049e",
+    "reports/test-verification/orchestration/results.json": "a952e00c5a42d0ea9d3ed3f9f54e12cd651ca86b2b71e79f2ee92a95000f5db1",
+    "reports/test-verification/orchestration/source-inputs.json": "61b98f005ca2b3660374ff03474a291241e732ba6e84483575b58114e1de4ddc"
+  }
+}

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
-  "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+  "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "platformSourceDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
   "sourceInputsSha256": {
     ".agents/agent_assets_metadata.toml": "0988ead97441c301950f24bdba9f8f5bee66b529be4e2045c2fbce333e0f974b",
     ".agents/scripts/render_pages.py": "b1d78d36b4ff3bcec061a3d4b932704f4d0905698479b7db95e0d0287d860aec",
@@ -2363,7 +2363,7 @@
     "migrations/meta/0005_snapshot.json": "c64d1c9cc6a5029e9b76b90837eab7559b4968d1627fd85d7a9d0dc51113b957",
     "migrations/meta/_journal.json": "dbc08f2b9a9c4efc6372d9e4d3be981b1b43beca5b8f13f329a3d2db71e9bc84",
     "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad",
-    "package.json": "b5aa58bb5b6fc2263c07855a50c7159ddada8a5a2c9468c6295a77f4b1faa28e",
+    "package.json": "410446cea7e63d427f1335891cdea3843fa63068de1174da84419f477620514e",
     "packages/electron-download-transport/index.cjs": "eb223676e9d93ee745099f06546a18d26cf094d24a70c5ee89d2f6a001f07f15",
     "packages/electron-download-transport/package.json": "4bbd51adf92ff21d476f0066f130e7d8d47010741bc99b94d7d54ac791f17922",
     "pnpm-workspace.yaml": "4061b234e8e63b773afa306675a11f24541d4cb20f054929209f78e2160ce10e",
@@ -3547,13 +3547,13 @@
     "vitest.beat-loop.config.ts": "b0845cd81cbc43beb3fad1605078e2859850276b26f1083e24c5da2e6a1d2529",
     "vitest.config.ts": "70a05b445fc97945d94580970864ffc302f17f41b6c8fc75dfdb203aa7cc8647",
     "vitest.integration.config.ts": "b13108817eae6a92fef7f1ea9c4a34e1502582d3f1f77a366c7f074b6a2ffca5",
-    "vitest.platform.config.ts": "19db3933ad5515138a5831dc7f064f7f2f5622ce027ab76f02a6ed611c6c7438"
+    "vitest.platform.config.ts": "b76f7ba10df4bc4f434beff4775984865881ea7e756f77673b94f878a658ac48"
   },
   "inputArtifactsSha256": {
-    "reports/endpoint-audit.json": "919b049e5d9f7a6f4d09a6786a93e04e8608fd5593adb425a1252b68a7f4c5b6",
-    "reports/test-verification/test-inventory.json": "76c0cf8e2584b902b147ddde4b39411949126c6aae1f54799e316241b634e039",
-    "reports/test-verification/file-status.json": "f1d44de88bbd46a5771812179111483f70d1fae2710e7774c9684f7a7474eb08",
-    "reports/test-verification/case-results.json": "b6cf277968c736fce979393a217ff78645aa39ec2da83e973e595f4813724fa8"
+    "reports/endpoint-audit.json": "738c6d274d9d0aac9427310c0eb0730ccbb28bc6f29ae1d5f8f0d192bd6f7130",
+    "reports/test-verification/test-inventory.json": "db01f86aa4501f643d1852f86886004946e5e2a6b120e6fa32e2cc3c162e12be",
+    "reports/test-verification/file-status.json": "a66024b128ffe099cb18c523e8f39c8f934429e9f6e08c2400ed9f5ac5252137",
+    "reports/test-verification/case-results.json": "43380ae5e96dd15ec5a92536c99e8973b310df76316fc533f6500f545e8df0e8"
   },
   "summary": {
     "routedPageDeclarations": 80,
@@ -3563,7 +3563,7 @@
     "scannedTypeScriptJavaScriptFiles": 3408,
     "actualCoverageFiles": 2653,
     "requiredChecks": 33549,
-    "unverifiedChecks": 33543,
+    "unverifiedChecks": 33540,
     "unknownMappings": 170,
     "invalidEvidenceLinks": 0
   },
@@ -52785,7 +52785,18 @@
         {
           "id": "api-51e06323624f6bc1/access-policy",
           "template": "access-policy",
-          "status": "UNVERIFIED"
+          "status": "PASS",
+          "evidence": {
+            "cases": [
+              {
+                "testFile": "tests/billing-lifecycle.test.ts",
+                "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+                "caseName": "Billing Webhook Lifecycle > 11. GET /api/billing/plans returns a non-empty plan list without auth",
+                "group": "http"
+              }
+            ],
+            "mode": "all-cases-required"
+          }
         },
         {
           "id": "api-51e06323624f6bc1/input-boundaries",
@@ -52823,11 +52834,6 @@
         {
           "path": "tests/unit/refund-request-persistence.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "executed"
-        },
-        {
-          "path": "tests/billing-lifecycle.test.ts",
-          "association": "exact-route-literal-only",
           "executionStatus": "executed"
         },
         {
@@ -52950,7 +52956,54 @@
         {
           "id": "api-3f640ac3745d3b6a/access-policy",
           "template": "access-policy",
-          "status": "UNVERIFIED"
+          "status": "PASS",
+          "evidence": {
+            "cases": [
+              {
+                "testFile": "tests/billing-lifecycle.test.ts",
+                "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+                "caseName": "Billing Webhook Lifecycle > 9. GET /api/billing/subscription returns complete tier shape when authenticated",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/billing-lifecycle.test.ts",
+                "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+                "caseName": "Billing Webhook Lifecycle > 10. GET /api/billing/subscription returns 401 when unauthenticated",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/billing-lifecycle.test.ts",
+                "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+                "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects suspended session",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/billing-lifecycle.test.ts",
+                "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+                "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects banned session",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/billing-lifecycle.test.ts",
+                "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+                "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects mfa-required session",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/billing-lifecycle.test.ts",
+                "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+                "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects trial-expired session",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/billing-lifecycle.test.ts",
+                "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+                "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects subscription-expired session",
+                "group": "http"
+              }
+            ],
+            "mode": "all-cases-required"
+          }
         },
         {
           "id": "api-3f640ac3745d3b6a/input-boundaries",
@@ -143366,7 +143419,54 @@
         {
           "id": "api-0772b8611dc21e1d/access-policy",
           "template": "access-policy",
-          "status": "UNVERIFIED"
+          "status": "PASS",
+          "evidence": {
+            "cases": [
+              {
+                "testFile": "tests/file-management.test.ts",
+                "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+                "caseName": "File Management (Storage Round-Trip) > 9. GET /api/storage/quota returns quota info when authenticated",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/file-management.test.ts",
+                "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+                "caseName": "File Management (Storage Round-Trip) > 10. GET /api/storage/quota returns 401 or 403 without authentication",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/file-management.test.ts",
+                "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+                "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects suspended session",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/file-management.test.ts",
+                "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+                "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects banned session",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/file-management.test.ts",
+                "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+                "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects mfa-required session",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/file-management.test.ts",
+                "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+                "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects trial-expired session",
+                "group": "http"
+              },
+              {
+                "testFile": "tests/file-management.test.ts",
+                "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+                "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects subscription-expired session",
+                "group": "http"
+              }
+            ],
+            "mode": "all-cases-required"
+          }
         },
         {
           "id": "api-0772b8611dc21e1d/input-boundaries",
@@ -217378,16 +217478,33 @@
     {
       "id": "api-e8e4a036051eff3f",
       "method": "GET",
-      "path": "/capability",
+      "path": "/api/analytics/capability",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
         "line": 255
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/capability",
+      "declaredPath": "/capability",
+      "declarationSubjectId": "api-e8e4a036051eff3f",
+      "pathResolved": true,
+      "routerPrefix": "/api/analytics",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "name": "create_router",
+        "line": 252
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1250
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/analytics",
       "requiredChecks": [
         {
           "id": "api-e8e4a036051eff3f/response-contract",
@@ -217417,27 +217534,55 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_capability_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_capability_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
       },
-      "testCandidates": []
+      "testCandidates": [
+        {
+          "path": "tests/account-analytics-contract.test.mjs",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/testing/test_maxcore_analytics.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        }
+      ]
     },
     {
       "id": "api-a1f340f59332d78e",
       "method": "POST",
-      "path": "/predict",
+      "path": "/api/analytics/predict",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
         "line": 262
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/predict",
+      "declaredPath": "/predict",
+      "declarationSubjectId": "api-a1f340f59332d78e",
+      "pathResolved": true,
+      "routerPrefix": "/api/analytics",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "name": "create_router",
+        "line": 252
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1250
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/analytics",
       "requiredChecks": [
         {
           "id": "api-a1f340f59332d78e/response-contract",
@@ -217472,27 +217617,55 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_predict_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_predict_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
       },
-      "testCandidates": []
+      "testCandidates": [
+        {
+          "path": "tests/account-analytics-contract.test.mjs",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/testing/test_maxcore_analytics.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        }
+      ]
     },
     {
       "id": "api-4f9324aca2b97b4b",
       "method": "POST",
-      "path": "/insights",
+      "path": "/api/analytics/insights",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
         "line": 266
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/insights",
+      "declaredPath": "/insights",
+      "declarationSubjectId": "api-4f9324aca2b97b4b",
+      "pathResolved": true,
+      "routerPrefix": "/api/analytics",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "name": "create_router",
+        "line": 252
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1250
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/analytics",
       "requiredChecks": [
         {
           "id": "api-4f9324aca2b97b4b/response-contract",
@@ -217527,15 +217700,25 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_insights_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_insights_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analytics_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
       },
       "testCandidates": [
         {
-          "path": "tests/unit/dashboardPageContracts.test.ts",
+          "path": "tests/account-analytics-contract.test.mjs",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/testing/test_maxcore_analytics.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/required-awareness-dependency.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
         }
@@ -217544,16 +217727,61 @@
     {
       "id": "api-9299cfd1c947a1a4",
       "method": "POST",
-      "path": "/campaign",
+      "path": "/api/director/campaign",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
         "line": 174
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-      "confidence": "declared-only; mount prefix unverified",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
       "mountResolved": false,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/campaign",
+      "declaredPath": "/campaign",
+      "declarationSubjectId": "api-9299cfd1c947a1a4",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/director",
       "requiredChecks": [
         {
           "id": "api-9299cfd1c947a1a4/response-contract",
@@ -217588,8 +217816,8 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_campaign_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_campaign_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
@@ -217599,16 +217827,61 @@
     {
       "id": "api-2f285e0c500f8b0f",
       "method": "POST",
-      "path": "/feedback",
+      "path": "/api/director/feedback",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
         "line": 222
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-      "confidence": "declared-only; mount prefix unverified",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
       "mountResolved": false,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/feedback",
+      "declaredPath": "/feedback",
+      "declarationSubjectId": "api-2f285e0c500f8b0f",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/director",
       "requiredChecks": [
         {
           "id": "api-2f285e0c500f8b0f/response-contract",
@@ -217643,8 +217916,8 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_feedback_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_feedback_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
@@ -217654,16 +217927,61 @@
     {
       "id": "api-b0620d2505196b4d",
       "method": "GET",
-      "path": "/platforms",
+      "path": "/api/director/platforms",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
         "line": 248
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-      "confidence": "declared-only; mount prefix unverified",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
       "mountResolved": false,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/platforms",
+      "declaredPath": "/platforms",
+      "declarationSubjectId": "api-b0620d2505196b4d",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/director",
       "requiredChecks": [
         {
           "id": "api-b0620d2505196b4d/response-contract",
@@ -217693,8 +218011,8 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_platforms_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_platforms_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
@@ -217704,16 +218022,61 @@
     {
       "id": "api-41570e3eb2bd2da3",
       "method": "GET",
-      "path": "/config",
+      "path": "/api/director/config",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
         "line": 260
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-      "confidence": "declared-only; mount prefix unverified",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
       "mountResolved": false,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/config",
+      "declaredPath": "/config",
+      "declarationSubjectId": "api-41570e3eb2bd2da3",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/director",
       "requiredChecks": [
         {
           "id": "api-41570e3eb2bd2da3/response-contract",
@@ -217743,8 +218106,8 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_config_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_config_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
@@ -217754,16 +218117,61 @@
     {
       "id": "api-f51c6acc6ec5dc3a",
       "method": "GET",
-      "path": "/metrics",
+      "path": "/api/director/metrics",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
         "line": 269
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-      "confidence": "declared-only; mount prefix unverified",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
       "mountResolved": false,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/metrics",
+      "declaredPath": "/metrics",
+      "declarationSubjectId": "api-f51c6acc6ec5dc3a",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/director",
       "requiredChecks": [
         {
           "id": "api-f51c6acc6ec5dc3a/response-contract",
@@ -217793,33 +218201,72 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_metrics_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_metrics_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
       },
-      "testCandidates": [
-        {
-          "path": "scripts/penetration-test.ts",
-          "association": "exact-route-literal-only",
-          "executionStatus": "not_run"
-        }
-      ]
+      "testCandidates": []
     },
     {
       "id": "api-9dfbb46d34147f13",
       "method": "GET",
-      "path": "/metrics/prometheus",
+      "path": "/api/director/metrics/prometheus",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
         "line": 278
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
-      "confidence": "declared-only; mount prefix unverified",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
       "mountResolved": false,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/metrics",
+      "declaredPath": "/metrics/prometheus",
+      "declarationSubjectId": "api-9dfbb46d34147f13",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/director",
       "requiredChecks": [
         {
           "id": "api-9dfbb46d34147f13/response-contract",
@@ -217849,8 +218296,8 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_metrics_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_metrics_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_director_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
@@ -217860,16 +218307,33 @@
     {
       "id": "api-42deb4116b2557e0",
       "method": "POST",
-      "path": "/image",
+      "path": "/api/analysis/image",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
         "line": 159
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/image",
+      "declaredPath": "/image",
+      "declarationSubjectId": "api-42deb4116b2557e0",
+      "pathResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/analysis",
       "requiredChecks": [
         {
           "id": "api-42deb4116b2557e0/response-contract",
@@ -217909,27 +218373,50 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_image_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_image_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
       },
-      "testCandidates": []
+      "testCandidates": [
+        {
+          "path": "external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        }
+      ]
     },
     {
       "id": "api-5ff5f045652ab661",
       "method": "POST",
-      "path": "/video",
+      "path": "/api/analysis/video",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
         "line": 163
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/video",
+      "declaredPath": "/video",
+      "declarationSubjectId": "api-5ff5f045652ab661",
+      "pathResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/analysis",
       "requiredChecks": [
         {
           "id": "api-5ff5f045652ab661/response-contract",
@@ -217969,8 +218456,8 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_video_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_video_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
@@ -217980,16 +218467,33 @@
     {
       "id": "api-6708a28c5a8d26c0",
       "method": "POST",
-      "path": "/text",
+      "path": "/api/analysis/text",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
         "line": 167
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/text",
+      "declaredPath": "/text",
+      "declarationSubjectId": "api-6708a28c5a8d26c0",
+      "pathResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/analysis",
       "requiredChecks": [
         {
           "id": "api-6708a28c5a8d26c0/response-contract",
@@ -218024,27 +218528,50 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_text_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_text_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
       },
-      "testCandidates": []
+      "testCandidates": [
+        {
+          "path": "external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        }
+      ]
     },
     {
       "id": "api-2c6445d266374190",
       "method": "POST",
-      "path": "/website",
+      "path": "/api/analysis/website",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
         "line": 178
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/website",
+      "declaredPath": "/website",
+      "declarationSubjectId": "api-2c6445d266374190",
+      "pathResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/analysis",
       "requiredChecks": [
         {
           "id": "api-2c6445d266374190/response-contract",
@@ -218079,8 +218606,8 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_website_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_website_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
@@ -218090,16 +218617,33 @@
     {
       "id": "api-8e623814d5812cf5",
       "method": "POST",
-      "path": "/upload",
+      "path": "/api/analysis/upload",
       "source": {
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
         "line": 201
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
-      "domain": "python-decorator-ast/upload",
+      "declaredPath": "/upload",
+      "declarationSubjectId": "api-8e623814d5812cf5",
+      "pathResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "domain": "python-decorator-ast/analysis",
       "requiredChecks": [
         {
           "id": "api-8e623814d5812cf5/response-contract",
@@ -218134,24 +218678,13 @@
       ],
       "status": "UNVERIFIED",
       "addTest": {
-        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_upload_acceptance.py",
-        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_upload_acceptance.py",
+        "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
+        "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_analysis_acceptance.py",
         "cwd": ".",
         "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
         "fixtureTemplate": "python-loopback-router"
       },
-      "testCandidates": [
-        {
-          "path": "tests/dependency-security-paths.test.mjs",
-          "association": "exact-route-literal-only",
-          "executionStatus": "executed"
-        },
-        {
-          "path": "tests/dependency-transport-teardown.test.mjs",
-          "association": "exact-route-literal-only",
-          "executionStatus": "executed"
-        }
-      ]
+      "testCandidates": []
     },
     {
       "id": "api-f0d401be967e7979",
@@ -218161,10 +218694,27 @@
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
         "line": 535
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
+      "declaredPath": "/api/training/candidates/live",
+      "declarationSubjectId": "api-f0d401be967e7979",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "name": "create_router",
+        "line": 519
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2616
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
       "domain": "python-decorator-ast/training",
       "requiredChecks": [
         {
@@ -218217,10 +218767,27 @@
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
         "line": 539
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
+      "declaredPath": "/api/training/candidates/live/{run_id}",
+      "declarationSubjectId": "api-a2d5112e6f836b75",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "name": "create_router",
+        "line": 519
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2616
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
       "domain": "python-decorator-ast/training",
       "requiredChecks": [
         {
@@ -218267,10 +218834,27 @@
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
         "line": 546
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
+      "declaredPath": "/api/training/candidates/live",
+      "declarationSubjectId": "api-63c25a5b3c0f3b69",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "name": "create_router",
+        "line": 519
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2616
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
       "domain": "python-decorator-ast/training",
       "requiredChecks": [
         {
@@ -218328,10 +218912,27 @@
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
         "line": 201
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
+      "declaredPath": "/api/training/media/{modality}/preflight",
+      "declarationSubjectId": "api-dc501135f7da694a",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+        "name": "create_router",
+        "line": 182
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2627
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
       "domain": "python-decorator-ast/training",
       "requiredChecks": [
         {
@@ -218384,10 +218985,27 @@
         "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
         "line": 205
       },
-      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
-      "confidence": "declared-only; mount prefix unverified",
-      "mountResolved": false,
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "mountResolved": true,
       "origin": "python-decorator-ast",
+      "declaredPath": "/api/training/media/{modality}/preflight",
+      "declarationSubjectId": "api-46c9778776fd3ea7",
+      "pathResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+        "name": "create_router",
+        "line": 182
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2627
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
       "domain": "python-decorator-ast/training",
       "requiredChecks": [
         {
@@ -248236,11 +248854,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -248300,11 +248913,6 @@
       "eventBindings": [],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -339556,11 +340164,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -339623,11 +340226,6 @@
       "eventBindings": [],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -339697,11 +340295,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -339770,11 +340363,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -339840,11 +340428,6 @@
       ],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -339922,11 +340505,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -339992,11 +340570,6 @@
       ],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -340065,11 +340638,6 @@
       ],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -340141,11 +340709,6 @@
       ],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -344473,11 +345036,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -344538,11 +345096,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -344602,11 +345155,6 @@
       "eventBindings": [],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -344674,11 +345222,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -344745,11 +345288,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -344815,11 +345353,6 @@
       ],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -494195,11 +494728,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -494265,11 +494793,6 @@
       ],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -494337,11 +494860,6 @@
       "spreadAttributeLines": [],
       "testCandidates": [
         {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
-        {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
@@ -494407,11 +494925,6 @@
       ],
       "spreadAttributeLines": [],
       "testCandidates": [
-        {
-          "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-          "association": "static-import-or-literal-source-reference",
-          "executionStatus": "not_run"
-        },
         {
           "path": "tests/layout-navigation-accessibility-browser.test.mjs",
           "association": "static-import-or-literal-source-reference",
@@ -858875,15 +859388,15 @@
     {
       "file": "server/instrument.ts",
       "statements": {
-        "covered": 0,
+        "covered": 24,
         "total": 104
       },
       "functions": {
-        "covered": 0,
+        "covered": 1,
         "total": 14
       },
       "branches": {
-        "covered": 0,
+        "covered": 10,
         "total": 93
       },
       "uncoveredFunctions": [
@@ -858906,10 +859419,6 @@
         {
           "name": "captureSentryException",
           "line": 167
-        },
-        {
-          "name": "captureSentryMessage",
-          "line": 181
         },
         {
           "name": "sendSentryHeartbeat",
@@ -858945,14 +859454,6 @@
         }
       ],
       "uncoveredStatementLines": [
-        24,
-        25,
-        30,
-        36,
-        38,
-        40,
-        41,
-        42,
         48,
         51,
         52,
@@ -858962,10 +859463,6 @@
         61,
         62,
         68,
-        76,
-        81,
-        86,
-        88,
         89,
         92,
         93,
@@ -858974,7 +859471,6 @@
         110,
         113,
         114,
-        119,
         120,
         121,
         126,
@@ -858983,22 +859479,14 @@
         134,
         137,
         141,
-        144,
         145,
         146,
         150,
-        155,
         171,
         172,
         173,
-        186,
         187,
         188,
-        199,
-        200,
-        203,
-        204,
-        205,
         208,
         209,
         210,
@@ -859015,8 +859503,6 @@
         244,
         245,
         250,
-        260,
-        261,
         271,
         272,
         275,
@@ -970133,7 +970619,7 @@
     {
       "file": "server/services/dsp/instruments/pianoEngines.ts",
       "statements": {
-        "covered": 601,
+        "covered": 602,
         "total": 610
       },
       "functions": {
@@ -970154,11 +970640,10 @@
         26,
         27,
         28,
-        873,
-        874,
-        876,
-        877,
-        878
+        880,
+        881,
+        883,
+        884
       ],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
@@ -981569,11 +982054,11 @@
     {
       "file": "server/services/maxcoreClient.ts",
       "statements": {
-        "covered": 176,
+        "covered": 177,
         "total": 278
       },
       "functions": {
-        "covered": 23,
+        "covered": 24,
         "total": 34
       },
       "branches": {
@@ -981604,10 +982089,6 @@
         {
           "name": "(anonymous_11)",
           "line": 143
-        },
-        {
-          "name": "(anonymous_18)",
-          "line": 217
         },
         {
           "name": "(anonymous_19)",
@@ -981655,7 +982136,6 @@
         156,
         171,
         174,
-        218,
         262,
         263,
         264,
@@ -1040349,8 +1040829,8 @@
   "evidenceProvenance": {
     "status": "CURRENT",
     "sourceInputsMatchCurrent": true,
-    "currentSourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
-    "recordedSourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+    "currentSourceInputsSha256": "1331649284d57675d1b1c078e4dafcbe93dff87f92021c2f2ff8a3bf288f71de",
+    "recordedSourceInputsSha256": "1331649284d57675d1b1c078e4dafcbe93dff87f92021c2f2ff8a3bf288f71de",
     "selectedExecutedGroups": [
       "browser",
       "checks",
@@ -1040365,298 +1040845,302 @@
       "root",
       "subsystems"
     ],
-    "rejectedEvidence": {
-      "case-not-passed-in-bound-xml": 90,
-      "unbound-default-file-producer": 14
-    },
+    "rejectedEvidence": {},
     "inputArtifactsSha256": {
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/source-inputs.json": "74501da07a78cf6ac65e5ce36b6562b1b6de00dc7b8be41b77403dada4934237",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/build.txt": "4c504bea088d96cd4190cf26f316a7c346684579d2ad1ad3d0d62df72ebe8533",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/ci.txt": "d9e8f8d221354603d7f870ec57b8727ccd54beba49a2b710a321b0360ca82161",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/additional.txt": "4e5c3c44ae21b562c1058a372ea97f47f70c830842aaa63f1b8c327314e35e7c",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/coverage.txt": "e53fb8353c14ae4056d45e84af26524e0686a8437396a0405c1a3b035435ebe5",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/source-inputs.json": "61b98f005ca2b3660374ff03474a291241e732ba6e84483575b58114e1de4ddc",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/build.txt": "3beb2b04d1e47232b23d90ce6c7f0ddda6699bdfd434262a741b80cbf48cfddf",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/ci.txt": "54cb2345b3622d58eb69ad18f8f9088d121c2c03cd98cd24de9a9097de22b99f",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/additional.txt": "182d7f7dedbc6c292cf448eca8c9971101889796b197325dcc8072026e5893c7",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/coverage.txt": "510bfbecf30ec08c175f1d1859d13165a3905467c6ed854c3b0fb0564e957e66",
       "/workspace/maxbooster7.5/reports/test-verification/orchestration/desktop-transport-setup.txt": "34e4c21cd6741e6d6f5bf648ac28f51444d3f7b339423e1e8eec658260a43cbc",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/node.txt": "1baf5bbb09d04d0f9e009f1e187689fd94acc2edb497f0727b5cce6c21856046",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/python.txt": "108c801cc0fcec617831a06d1c5b819b1b6cbb012e831f4ed3b253ddd36e2f52",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/node.txt": "3da488d383caac42967fc369d1969a400d5d8734ddc3b9df90ae5a8b6eb25c13",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/python.txt": "0e2843b56615ae3c86bd879f166b0dd8080492271fc2a6d43e2f365d39b04ed0",
       "/workspace/maxbooster7.5/reports/test-verification/orchestration/commerce.txt": "ccac9fe51bac3132654d091c7702cfdc4565ec86fec43090118e7aa818814422",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/subsystems.txt": "88030cd471b3f21dcd27eb464d95334acf3824babd418ce42c32f2f14e788990",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/browser.txt": "b6289de24e4a07bb0149ba76393fe4c2cf9adc5819deba0ea6cac530ede90a4f",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/http.txt": "e945c2769fa8e8b7a4c7bced22e4766a4314f5a6134d54f0e3edf1e8f2f8706b",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/pages.txt": "144a7fabc4a9ed7ca06958c4373eb2a048040a82e15bbd8f5dc1155ed04ad2e6",
-      "/workspace/maxbooster7.5/reports/test-verification/orchestration/bounded-http-load.txt": "fdb194fa59172efa7fc4361dd3592464f6c4c64bf741e8d147f9fdfcdfe06d9b",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/subsystems.txt": "f2e88a26e56443c650eba9080c8f2bcf1c76fce617af2f7e519512b4e4b179fe",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/browser.txt": "93cfa5a7fc8d7cd50f6341af77b22cab03e6245e431c32d9f2e28b508fdc447e",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/http.txt": "e0a8552b83bcbf5fe9a4f92de2df4141e856cdb6edc40d6220c5e07a51d27bad",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/pages.txt": "560814112826e265e0a2411fd91b94c63f721fc60a7687e8503ae376a4f610b0",
+      "/workspace/maxbooster7.5/reports/test-verification/orchestration/bounded-http-load.txt": "79131120cd417d72a6039857c8a731895434640d05bcd1fb721693c123d678c2",
       "/workspace/maxbooster7.5/reports/test-verification/orchestration/operations.txt": "5ee83fb149ba3c9a89025e85887183f982402c500ead4587898efcbd116d0549",
       "/workspace/maxbooster7.5/reports/test-verification/orchestration/types.txt": "2ffa91ca4d46f5e0ba57779604229aa88b9399d80e7e811d7627a6db927afa94",
       "/workspace/maxbooster7.5/reports/test-verification/orchestration/lint.txt": "06da543667ff102b992477b32f1825628ff2dfc482d6132e417c6e1e0c4501cb",
       "/workspace/maxbooster7.5/reports/test-verification/orchestration/audit.txt": "7747caf3fd124cefaf3022a5be83f36e73c0e0b8c0ab951d263cbcb931728855",
-      "/workspace/maxbooster7.5/reports/test-verification/case-results.json": "b6cf277968c736fce979393a217ff78645aa39ec2da83e973e595f4813724fa8",
-      "/workspace/maxbooster7.5/reports/test-verification/root/unit.junit.xml": "9d976bff5acee1f3536ee63bb4eb9223a7c91207c5a2c4d3ada66a584fcddd2a",
-      "/workspace/maxbooster7.5/reports/test-verification/root/additional.junit.xml": "c7e1dbda67e088e8cd0aa51046cce07b6f73f9cbe12b249d99aa4c6d1f13680e",
-      "/workspace/maxbooster7.5/reports/test-verification/root/coverage-unit.junit.xml": "7c7c467b6e9582acaba9133319445272e4270c51b66097437a7245da49676c33",
-      "/workspace/maxbooster7.5/reports/test-verification/python/results.json": "35358d62757eec89cfc6a798fd7a9840e1383b726623a4740983087be9ae6c3d",
-      "/workspace/maxbooster7.5/reports/test-verification/python/evaluations__maxcore-quality__test_protocol.xml": "c9ec7ca211db1bcb64532744a24e023224efaa68fd51c44089a033ea3b304018",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__audio__test_audio_analysis.xml": "703bddee3d6567a65b8a6f970bc6d9111adade155d44ed0ec3d5e31f0091fe4c",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__audio__test_controls.xml": "0874c70dd8a1b2cc42ff6ec6084c8333b08626ed78e4b55d33767443d52ba01e",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__audio__test_media_facade.xml": "3b3722d1e7ee386a2488d5bc522b82c1661b2400ec51e7b5b6c1dfaf29f2de7f",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__audio__test_short_duration.xml": "17bbbd61277a363d532312605485ecf5a6b6cb1d662f697e3a1879886022bd01",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_engine.xml": "5e15131d710e0ed4bb3ba74530ed76e12b29db678374d48e7d6cd0d1c8910159",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_lease.xml": "85fa4c63e90eab468030bf7fce5f894a406f9ea912a77b3bf6955d3aaf94501d",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_sources.xml": "a6897b5ef27a2860aa7e04aca1bc501ff8b7fcaa2c8da49a7cbb22512c376567",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__director__test_director.xml": "8a1863d23c033a8c0d1a1fb505ac6e3d5edf94382fc8bbdb77c89ff8ed5d8dc8",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__generation__test_campaign.xml": "3718292dff08b1d2fa5982e687d454cbf28603cdaaf77b3fce2bba517b74ce6b",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__native__tests__test_native_kernels.xml": "a39db25dd0beffb5d905e5557f50340f99bbe70680d4e1ec5d2682b32b31ab81",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_digital_backend_bridge.xml": "d6c5204604f4c886a2c714e51e8becf2e479840bac0905b49a1bb298ac8d4f0f",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_digital_gpu_comprehensive.xml": "cb7398ee014e0a72b65e1e932a146fe28bb0afecc1ffedacaca15785dae77a74",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_kernels.xml": "d8f0649555bf3cc99421a0519f76d5b725c2cb615aeff0212f868de884e3a75e",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_pocket_execution.xml": "dc27aabfff389bf53590c2d2ecde7de8e5127fddcde43cc9d69458545592c8a8",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_silicon_model.xml": "47188a237683451acd962ebd504fd032a269b5c42923dfbabfcd10e8bdc5e977",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__image__test_controls.xml": "ba33efc7f1dccfd3c09c592384d50699c75ab3fc62b33bee8d9fa3e48537e1b1",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__image__test_image_contract.xml": "cfb16db097bb19b48c5232d2f82ab18532a0ce2f0a70e030fe1d679fa1e440ea",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__backend__tests__test_select_backend.xml": "cbc95001acbcea63813af8d2bed3af0a6c03ad50648cbacfaae00c58bb96bf4d",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_gpu_native_orchestration.xml": "d821899b720f7c0e656fdbe3c231a09f5fa0675684f9d02044c69a3935891bac",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_hardware.xml": "2e7a98637cf4964c1168b93c1c0b40ea133c284ba2aef23dd4ee32460ebb24fc",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_maxcore.xml": "a0f0ff90692aa002f744005c73f20ddebcdeaf07713dc3a3b80221555f08fedc",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_precision.xml": "f54cee7346b4d1bddf6a3f28b9709c6d0ea52bd66647864fed2314d52ff1e06c",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_resource_plan.xml": "ae2ca13bead20afe6adfcbc20c9f153cffeabbd94c0804e5a896c6b271b0e047",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_silicon_simt_backend.xml": "73d81796d8d20da23686acf1e32b7fb8c786d71a83402b40aa794f612fe10a6c",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__model__test_generation_regressions.xml": "fa135850a42c8be8666144041ea20cfa04616f6b84df2ad77a93664a0ad42770",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__model__test_sampling_context.xml": "8a9846b60ea73df8e857b2730419ee553e7665586564db1e9bdd0f1872b990a8",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__native_analysis__test_text.xml": "1c0c72aca3960cca91337f5d20489518c199273045c4a34bca8186d982c7a8b3",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__native_analysis__test_website.xml": "b42f638a3ab0561565969bc8912ea5ef7c760824c54bb66961c22011bc9c524c",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_phase4.xml": "b7489a0717d196c6b2c125f8a3f73f0319d516f9f54fcde3d38f598880efa402",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_pipeline.xml": "7ed8f15775d3fee0c7361c2d6559a60de29297c95470c2a2cc93d019d36e3811",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_rcgs.xml": "1044f2904a67e2d6ddb2c820fe2370eec19250fc7c1afc8506617da69931a899",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.xml": "6657e0b8a27ec90099bb82878becd71c01703057ac86c7754d0bdb06e7aa7e07",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.xml": "723c523e55fe3ae4f8371fe9b5fd986b40fccef5503fa232e27ff31edb8ac011",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__test_quality_awareness.xml": "6aa4719ad3322cf292d65e883cdc7609ba5b322c75c0a705e9fbbe9f7f7f65ec",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__test_ranker_upgrades.xml": "28f254a10c4cd1109d806b99dfcd3fdecf9a36a5acc2fc68f0a2cc32c8d15e63",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__test_request_intelligence_trends.xml": "4504b04cb4856682f3d022b84c7c656a8d4b5cc661e88dd1e5f7c351d26f6b22",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_candidate.xml": "11de6a2ba62097f58d0eb9a2f281c20a898fc95313c53cf42d5638dd2d06bbac",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_candidate_generic.xml": "f4c0bfaa6d61f0b458bd81a3a836fb366df4489277290196097265c4da7efa19",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_candidate_manual.xml": "fd984b0759945ed5e7a1005724f4b79f61110141afc2a23e44107d9cd6039a84",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_live_learning.xml": "1b5ef9572d94a3fb14c0866172f58eaf959d825b33691d02d9c607fa7b3f57f1",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_public_content_model.xml": "b80fb72812b1b4e20157c5cb8564b56e4c4ed4f0eedd99a747831a8a0b221938",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__video__test_controls.xml": "0f38b49a7c7f4b1df55d1d42bf48704997991eefa8afe1b81daf9367df39a866",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__video__test_duration_contract.xml": "1b9aace6536cd5350a944c7355d77374953e71fda0c9c639791367217fc73d91",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__video__test_sampler_upgrades.xml": "95a70f8348a76c19ce279a8b8cee0f9954a91ca1d7bfc4a88dae1c2a6bad3182",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_admin_content_loop.xml": "8f07a848523482828ddd35db1544b181b65d741e83534597a5dd183ae4d16e15",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_artifact_delivery_contract.xml": "5a0b4e4cc3d39f4da777da5b6973fd0c1993be3086991501a81ad655aa238af0",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_audio_auto_growth.xml": "b9705322390238f32e17f222bb66d68d34f616ee1ffb16571c23536c28dce937",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_audio_bpm_key_match.xml": "351b3cf9936aede86aa6941c972acbd179da3584123ad166a68501b387c13fa9",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_audio_seeding_guard.xml": "2cb76b2a8da0e56d0b00170129917ecb7a5daf2dc6ec931bc817f46304f2d3c7",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_auto_selection.xml": "1c7691a443fac9d0dd675cfe68a73b77382a1a095ee0632630968af83cab18a9",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_auto_selection_scaling.xml": "f04a891a3be0b5e80a61f959ac033e7c03f6fb60cd7882d692183d8175fc9644",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_awareness_conditioner.xml": "fb8966731be01426a0320233b9701616f9e5d1bc488869f097cf330b9968d6bf",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_beat_context.xml": "78a9cae043f0fe4b655a54c481eaf0eaf394ecc469a49ba6ac9ad807c987dddd",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_campaign_rollout.xml": "a0b025ff39d80e2e54e14539402cf333c6ecb405f769cb11312c46e98a947d7d",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_checkpoint_release.xml": "53c00238bb8838867b90ec017b9a49d54636db860c7d613ac9cd32503b962eef",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.xml": "46cc31780770a24e82727f4f58a46b0ce7db8a5efb001cf797d66567ca53e5e3",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_dedicated_media_http.xml": "388f41f35c5c1d6632edc0e74a595d24d158d4a77e9388641760f35f35871dbb",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_diffusion_frame_resolution.xml": "18acfb380e33d1de012155e82f8e7092c87ed726fd0cb1ae6301589b7080f53c",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_documented_stack_restore.xml": "7cdc6f345887f5a5c9db1d0953a512c53e4fa044efe8fef2de4eade0add9d400",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_capability.xml": "7321f2cff29c5257c54369a6137573d054851f594b9dc59c66d3014e12d0f1eb",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_durable_delivery.xml": "eae51eb99da2bbcca90d230e5a47ede2676a948aa847ed9ce9bca5ee8b27b7f2",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_plan_contract.xml": "66eb6dad2f8d822170dedc9af443f8002d973dd24a85b1440d80c498ace7fa40",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_release_selection.xml": "e2147f8d1b634348732f443d240322d044583d61be090f9478fc07c6d6a6f2ea",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_restart_reconciliation.xml": "04fdc45699c0c5237aab4c19dae4c4a2ec514565f710d481dd2282886622477c",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_route_bindings.xml": "c40c3dcfb4932ed728ccf3f8aa66d16e0e4c64ff78f13cdce5d716080c63e64c",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_snapshot_contract.xml": "73e61100c84973bfd8061bf7f429110078a40e3587a4dd8d4f27f35fbcadabb9",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_incremental_candidate_inference.xml": "ddabfc1f241717d20f96f31469f3cf7545d1d1fe1e1d2440b85c36390e005061",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_intent_url_reader_safe_http.xml": "f9a3bf0b61f23191896009c748245d240b4449a23b4c07ac561ec97cb13620df",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_isolated_audio.xml": "560839618fed5fe47dcd78577a6b3f24a14cead2bda3c06b61c99abbd1506b4b",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_live_awareness_planner_http.xml": "fb793530bacf2f482e616de528f53459a649d7659383aeab71f60a51ec9c7dec",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_live_serving.xml": "f08db0dfe8060a4286dae563e9963e2e439128921bd89b580d74c9985ca08e1b",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_live_serving_integration.xml": "2fe2d896c6024f304e83615ee2735c11324838d23e236ed2454778caee8bc89f",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_local_canonical_storage.xml": "3e6999cfbf469dadc8422873541faee5c60043610bc609721b3a0b404aff05d3",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_media_delivery_contract.xml": "95dec8ea9646de7ae5527eb75ad58295387cd5b42d5355c25017aead6e0aeaaf",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_media_learning.xml": "3167fdb756887ec04a5e2c7e89ec97b288ddac18552c04ed7fef2eca2123c70d",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_native_analysis_api.xml": "f3f04cc86b3ffb459dc1f92dd61bcf54cc78ad819258aa3e092496f6c1286355",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_native_analysis_safe_http.xml": "d37af4354c8c5a39feda8e06b649c2d80f2875baa00be258221fd0cc00a0241d",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.xml": "b308772c752443b5bfcf8f59f14ff60e48aa79497983708ab94c56957c3b0c00",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_native_media_analysis.xml": "133a33eb6b628d5d8c07dd8225779b310139f2969ee224aece99f03cfeb6d7e5",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_original_quality_runner.xml": "9efa19dd13e6b3237a933ae1e85ff1715680d93ca55f5f8cda9d5428f73a2825",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_platform_awareness_wiring.xml": "d02910b27c0cb93a586837353713264af0244ae8bfb96cc3f085eeca7da04b4a",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_public_fetch_proxy.xml": "c793b5e6cdea0576e48b1ebdc3de1af5e34e5f1d956ae3aeacb76be39009c924",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_public_peak_curriculum.xml": "bd40fe461fde6083d62eee15e8e1713665e82b9c3535496afb60f655a4b0e3ce",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_safe_feed_xml.xml": "992ce3cd36d62e85ddc8d8156757c63972df5ebe12d5c5e55f7a3c93c96a7336",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_sast_runtime_remediation.xml": "a80a9b52487ef7b800f1ddf6917d85f906bf26233659c66d68ec72be7bd759f6",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_scoped_batch_admission.xml": "e43afa1a50e765dfaebbb60d65660fda58ba06a8aeecd830c716b955a2f300f9",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_script_byte_budget.xml": "9d7e55994bf9638f53213984c4f2a308271cbbc2ad62c85e650e5297f158f16f",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_social_ad_beacon.xml": "c7d4d5a79e205655cc493097dc52cbcddf2c96530941a2e38f42742643f88328",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_social_generation_controls.xml": "58e50eaec3adf2d1bcf191d41e437ef3275a5ba7fbf695699770a358773d909f",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_text_training_rights.xml": "94a55d20bb304385160779cdd8f50fdd9dbf2bc96d716f0e7876279fb7c10a71",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_trusted_http.xml": "50773357a112f3010f0c63ea1f877e40a3ad1010b21522850b812a8a4faf24ec",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_unavailable_inference_contracts.xml": "d12ca346d254742f6729fcfa6dc4d7f9ab2206f416cf90cb44984f6e27eda1d7",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_url_label_garble_guard.xml": "ca13fe3d71b0589b8c634693620577b3e5f7b7125452d984053689fc1b6200c4",
-      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_voiceover.xml": "0a40a585352d743cd4dd898509ce8e430c8ec35344ead35eb34d5a32d8f4561b",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_ltx_adapter_download.xml": "90922ab1c36935e322b94f2de190acf2e909f7a02b38ca078a92e60f98355d8f",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_portable_rust_toolchain.xml": "631d9d00ccfbfe9b957d49c4ca40908a8be37aa7a14334ef52dac9b36fa3dccb",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_production_fixture_support.xml": "ed4b98720a70ca7a2f07b4d098cba5daff2f94fca6567f4e67c1b550fca92642",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_secure_http.xml": "22b3d1bee2642fc44361ce1cf228f3b22cdf9f8083659304c244667505e7dcb2",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_torch_provenance.xml": "886511491dd24fb8266a2f9ffffa1feda3036152250f301c711300fbde7829b5",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_archived_quality_verifiers.xml": "01f8588ba7cd3b4bace7f89ee290de4f4e7ad7ef38c7c0961f70fb7d9951a8af",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_assertion_oracles.xml": "ed57a73e0a3725a3fd8ea493d2b259689e05d3a411a302d9382ca8105069fc20",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_endpoint_mount_resolution.xml": "4792daee56964af94e6a9d37647356d543d0ceb8a212bec63ea13427eb7cfb9c",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_launch_readiness_audit.xml": "8b8785155792f1627c1551027305fd5305d67d828289a32c1ceab2f18144e1f1",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_maxcore_analytics.xml": "e1ccd876450fee21f305bb984736c0df6efbf1be02c6b4e33c806ac3b3a72b5f",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_platform_evidence.xml": "40d7e109a825c399a32ea2a5ad93a80d755882444b5e7049db6a222140669907",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_platform_plan.xml": "9321dd7b61b21d3f0b5e5530e6a792f4c5a95d5637332c21f1895818b86b6e55",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_remediation.xml": "66438f972809c4cccdb8e18a582bf3448f0feca1d3bc7b1349230f125bbf25e1",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_summary_results.xml": "78e8f314a8edd3b85a13d361a051ede664991883ec84dbfacc8152fe3d0ccad6",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tests__urllib3-security-paths.xml": "98ded61b77a6c8615bc834fcc0f52537a07b9deec87bd8558f8aa2c4ede43d23",
-      "/workspace/maxbooster7.5/reports/test-verification/python/tools__sophia-agent-runner__tests__test_sophia.xml": "963aa02119ccba3312d5233d00ab8a10f25d1c36aa81a71deb6c037c333529c8",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/results.json": "8b0a136474b4007b80e6e43fb09f0a419cde209ae273c5f3736cfa3508b86930",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/beat-loop-lifecycle-postgres.test.xml": "5439bed8af186bd60256e97639e546a5b967748507c034251eee15bca2998103",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/business-integrity-postgres.test.xml": "ce8183c7813ae2ad21b2d3cc06df345a7dd59a82b4d75b9c66df16174af455b3",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/business-integrity.test.xml": "1f145f3b1a5ec57c08cb558de3818bde8f8906250e2fe767aed633b055ece8c0",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/compensation-races-postgres.test.xml": "5805ed3fd8788adb0db77af0fc821456b43db3a4662f871ddb5f14026427ffc9",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/database-commerce.test.xml": "e3c974e2859ea18d5b78cc148e54f5ebbc8f930929300eb7c4314cfa5d28401a",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-billing.test.xml": "685d335713fbe0aa4cfc5b9350a76ff47192ba738ad314f29de8b3fd244f73c5",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-commerce.test.xml": "f2518ccb2cbe5662a22e93fa4d52f52edd2bf827b0624ac9e50a8d4a1551d460",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-known-failures.xml": "273e05a38b7c2a81fd4fe82cc8fe2591116ef5b349bd3c1ef5b77906435445ca",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-legacy-services.test.xml": "166f6f00015e3e0782d22e66b61828f52b9d4f4ee655ecfadd4cdbf878559fca",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-registration.test.xml": "64b65d464bb1a3f4fcff8c4f67af132f4be5a23c05a3c5e69f191b09d11afe18",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-storefront.test.xml": "f4209e74ecce5e67108ae54810cc12ecd40a6bc99eb842d7a3717445b5fc8341",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-commerce.xml": "33406825dded38a84cce573a24fa6a2be954ab0e210a7c7859e1caa08538edc5",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-membership-auth.xml": "36e802c20d16184b49b9cdb75a651571ec6c7f384cc5c6704f21eb697ee5ccd1",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-services-webhooks.xml": "200e236b0adc97a66ee49371a3de5865a93e247aeb12ff4e539a8f59d8c20d31",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-stripe-resource-ownership.test.xml": "38d677556b9c70bf83819d1d6b8f1311bf6f7d740c676e732cdbaec0b558d057",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-stripe-test-transport.test.xml": "affafd40ef3167662483337a1a1b4cbb604248fd6af0ebdd6ee9436b3e7f5d93",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-topup-journal.xml": "422d77edc031aef4ec96b26871185f5fee1677637b704bf733f4b457b476fcf9",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/provider-only-preferences.test.xml": "8104df2b36152ba47986d8c8d49021be7acf78baebfe80799cffcfbd8c735c80",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/settlement-dispute-hold-postgres.test.xml": "343d46c5dd3887a462e32086e8d2794a06851add1a4b859c5f4f757fed70c127",
-      "/workspace/maxbooster7.5/reports/test-verification/commerce/subscription-authority-postgres.test.xml": "55492e5c8df76783b2e3c4e8ff906e6745e9db4681cb4257e1c8a62495a5cc66",
-      "/workspace/maxbooster7.5/reports/test-verification/integration-browser/http/integration.junit.xml": "aab8a623799eb54dc445f5603b86d93f98ede295aeddb28d80664134ca216018",
-      "/workspace/maxbooster7.5/reports/test-verification/node/results.json": "0156751a5e4cb168f9c325bbe1f381c3928d2ca373fadb7043430bc952cbe4b0",
-      "/workspace/maxbooster7.5/reports/test-verification/node/evaluations__maxcore-fused__live-api.test.mjs.txt": "4c6d0d43ba59cd8c72471b8016c5a35e4c53f2f5affe95dde870c0ee7313843a",
-      "/workspace/maxbooster7.5/reports/test-verification/node/evaluations__maxcore-fused__runner.test.mjs.txt": "091747194a7a27840aedf2e3e9dd64d64b7ba0cb5dd6f9bb977128ca7c6d16bc",
-      "/workspace/maxbooster7.5/reports/test-verification/node/script__security-consumers.test.cjs.txt": "e5e7d1dc6d39274ef355f803b2b7838f7363dcb4914c9220a94d1be517beb538",
-      "/workspace/maxbooster7.5/reports/test-verification/node/script__security-readiness.test.mjs.txt": "f8d3b22365417c9b253b99c1bbd5708368401c340fdba9a217d8dfd32562ad4f",
+      "/workspace/maxbooster7.5/reports/test-verification/case-results.json": "43380ae5e96dd15ec5a92536c99e8973b310df76316fc533f6500f545e8df0e8",
+      "/workspace/maxbooster7.5/reports/test-verification/root/unit.junit.xml": "c36747294406c08740d06f474ca4eed1795808e6d9ce67da64a785abc5c1cf11",
+      "/workspace/maxbooster7.5/reports/test-verification/root/additional.junit.xml": "5a71fcb7069857a74d017d83354e9bd6f67b38d04ff9fa4f21c66cfbc80e0e9b",
+      "/workspace/maxbooster7.5/reports/test-verification/root/coverage-unit.junit.xml": "7f6d966f06c1019cc1ec8984613b0eaaf1304dc56497f5891e8526dd7be487dd",
+      "/workspace/maxbooster7.5/reports/test-verification/python/results.json": "cf735e2c3daaf713e40911572be50dd96da640eba0219ff871858ae61b19fd5a",
+      "/workspace/maxbooster7.5/reports/test-verification/python/evaluations__maxcore-quality__test_protocol.xml": "b95eb906688a00c8261f4582b009ed1bcb97d03aec6e23e92a9a0654cfbddcd7",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__audio__test_audio_analysis.xml": "300517f2374dab2f421bbb9c931a5f651c2557bce69322ccf7d17a9dcea78fd2",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__audio__test_controls.xml": "43bef2fe1702aa79f33e330b397576f905ca8d975b558a94dc39c38901c808ac",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__audio__test_media_facade.xml": "b005b538ae32eaf7e2c086c56a2409c109450aca88f9efee0f5034ae2ba44ae1",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__audio__test_short_duration.xml": "c1ac6869709ebb50407694582526641f08c6dbbec40459fccc58b0c9d0e9dcf4",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_engine.xml": "9601331bae3e63ae329eb01fa8c880e131d5cc8d9efce6d70c5af084d7b0e120",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_lease.xml": "43e6704e8e03cfc84a1a4dad126ccaa2414aec7a139296d109293fbd38f7814c",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_sources.xml": "72718695d2a0811ed2d63388e097563117f06dfcac0384f7b4c5e0bbf6ecb163",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__director__test_director.xml": "3523f50d4f1c6b771f8880d28979d731803ba200a24b9e86d1c32c90e64690af",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__generation__test_campaign.xml": "2f09819b2d9ce036a7f1730f553351955fe7f4cbc01388efee578d00a2a9a2dd",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__native__tests__test_native_kernels.xml": "0e172e3db9df7dd79ebc581ce13871d8ac140709cba998b6e18720ce87336437",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_digital_backend_bridge.xml": "201dc654f16b19eab244217ea0395e5ea1b31dd6718e2f1b94635598bd2eed7a",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_digital_gpu_comprehensive.xml": "9a1680e5e8b329e14196b8172b98c1b06f4d9d904afc97da2d8759b11fef942a",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_kernels.xml": "3877dcabea4060057a8ab435096a8b7f606c859f3e8002855a231f7a49a212c4",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_pocket_execution.xml": "07f456576af31fdd50eca0b25cc95518ddd85aca175142d7acdc0ecf3349d46c",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__gpu__tests__test_silicon_model.xml": "5448c83aae7d0c52c831447f0685d0e1fa430335efcfbd8c5624f360871c4d44",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__image__test_controls.xml": "75782d82313a41d06824181b7d5af8450d526d0e7a22d9bfb1abb4a3a47b41e9",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__image__test_image_contract.xml": "c2aca1725b27f2acf6d0b9ef10036063db6db0e41af68f6928a03d0fdffa2d73",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__backend__tests__test_select_backend.xml": "8c0e1bb4d22b7acd71c58829ad23f4d012c4a0197288da7854750d032a15e1ef",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_gpu_native_orchestration.xml": "67485af8c94f66b1bce99d2704e320e32e4a1976554e9435405b65bcbef6f239",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_hardware.xml": "9ef7188bee08dadfc86adfbd2b77f2515f4b2184df36b68253747440cb6c0c0a",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_maxcore.xml": "2e9f2893e5a2a623a49f914416324bf8e5e53852e83fcd841bba6e793f685207",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_precision.xml": "566454eb6a24577ff434e3b01cdf54c28f9452ec843578f8e44fdcd964393f5f",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_resource_plan.xml": "dd808bd6d5839fc9ddb9b1192b749b343feeb782b346a679bcfb426afbbf7753",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_silicon_simt_backend.xml": "b51edd6e25e8dbf6d72aa480244667ff41f01c61e23cbf13ce95d224431b5360",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__model__test_generation_regressions.xml": "74220665e364d04c4531c82dfae930624762e522179353b5ba10c4669b520f22",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__model__test_sampling_context.xml": "173bb72092d2d2cdcc66dd587039529016c10e13826e280f4e7a02e2a1d1da25",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__native_analysis__test_text.xml": "d3f79e17b241c73e6d3d13b487448d1f2ed2713bdd5586e14830b03bab32caf0",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__native_analysis__test_website.xml": "5a614a128f97e33b5720ee957a8561af369048a4b6c71ca1cfbc8776984fe990",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_phase4.xml": "2091feacd7f4579061ac12dfa115ddbc23637e81a40794d3f9ada6a4183392c9",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_pipeline.xml": "dc7f95aac366f4667185e4830b1aa3b7bd75a79d4813f7ef8f9d414c500bd606",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_rcgs.xml": "27b7e8e3c9db66a596bd87e841165a12b0b65bcc809d745d14fe441a9ade627e",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.xml": "389020876912078321cf642e699b9aff145f4ce29abc57f7560a1ca68ef6b8fc",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.xml": "372af8916b60fe791f7854d339b77c8acfa0b6f9d3df786625a3627dda40d0ab",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__test_quality_awareness.xml": "b4768563133ff68affe95993f5575917e07d513a20c759a5f0f3284fe5168862",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__test_ranker_upgrades.xml": "71161a5bfd16d4a082638ed1744e562ebd3f909e4ed317c9559099e54ed290d2",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__test_request_intelligence_trends.xml": "48fbc973d4e66e8b4e012261df0beb617c76311e4cc5b7c91d51f96296a5f8f4",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_candidate.xml": "4e350671011f4944912dde97402d401507785e6d0050291abdc8e6733ba06761",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_candidate_generic.xml": "cca958f03dbf063003f9a418496b2de5c005d0da3b66adfc3f347b1974ab5bd8",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_candidate_manual.xml": "bf239f06b2986c796c61098a649ee31cd3d11057cd51aa36fcc717dd09638942",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_live_learning.xml": "ff0a05243290321fb4de29b285eaa8c226d43102fda996275472a073e4839661",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__training__test_public_content_model.xml": "c542df33b6e4bb3febfe099ad53f9362f87ea3ffd6abc7fe35b047b740d53d67",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__video__test_controls.xml": "cd82931199437c03a08b2e9f79e3ca4729d9858581c2efc610739fd0a01eb34a",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__video__test_duration_contract.xml": "1e0a775746d34786564468e24091d58aad463839e027dcdc3878daa0e01dc008",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__video__test_sampler_upgrades.xml": "21d5e16aeab38286988f6a28e1b98311339e5377ce60247959d1d2a482243f7c",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_admin_content_loop.xml": "9a5e80c5b4ad360eed524065e3e06eb48a0f0fac988f54f781d2cdee9e70ce61",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_artifact_delivery_contract.xml": "c1d3d272f505d3fe8007b187ea5a132dc0705c1ca572a6262d5cdc9b54eb05e8",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_audio_auto_growth.xml": "1d4443f49e1859793ee2dda5f75bcf918532971d107250cf8957bd56077d05a1",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_audio_bpm_key_match.xml": "826b67d9ff0cada713654976967aa3617da12d63ec156ca74bb2ec41a7f45316",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_audio_seeding_guard.xml": "f730b58a78d752a5bffdd3d5dc999448c89bb372ec11f35c26f739174779b550",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_auto_selection.xml": "b002e1b271010e156f4080d5a790bfc62440abcabd68f147a80b3621105ded1d",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_auto_selection_scaling.xml": "2ed53f1d62522289f5d93ace0edcae8f30b67bf28208aeef6b443c3f13046f82",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_awareness_conditioner.xml": "dbbb207eb412e3a87823e98b6a725ccf06da7c71fc40c606c5ee7662552133ea",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_beat_context.xml": "25c667a8f37beb232ed5f21545a03d5a01dbafaf92f5f2c15b018699da061867",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_campaign_rollout.xml": "0988fc0de121ddb74c5898ea28ad7a5d8b2dffccc4f38b63046fdb9b26d18ad2",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_checkpoint_release.xml": "f45247bb56e0eca7b67e6c99721475c01d11ca19f29691c2424b46aa7ff3c7fc",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.xml": "5cd5d3b9d0d2aefaf8565e8c06a3dacf9f7f3b4f5376771b22ddb1a5ce41e244",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_dedicated_media_http.xml": "67307143cca98aa6266a04d37f2a413fd4b95ccdce98680dfa4fc5b21375d3ee",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_diffusion_frame_resolution.xml": "d77965df8275734f64af97b6907279cccd3c55e1be41d4df44b1561507711720",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_documented_stack_restore.xml": "754e525337805ace00d002607147e070910f35f447c7a554a40597262e75e4d4",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_capability.xml": "d9c97d0f8665a210cc2c4d5f4f981e42b606883a6bc62e77429501a0613c2289",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_durable_delivery.xml": "bda7612a31210f467f1aa0a801b0ab6104377f3ce449da44d438780f3b36c40a",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_plan_contract.xml": "f5cdefb9fa61912119e7ec1917941976cd53894126c05bf0cbf3f6fa2e33ceb1",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_release_selection.xml": "d8f3beeb3cdac78c0bbbe93af01dc010220f1d7dce9b3175e234f2e53ec40d3c",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_restart_reconciliation.xml": "c4a6c79e3089596be763fa8de2c73ef9d33ec01379d952cfe003ba6a1efdf0ae",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_route_bindings.xml": "e090b030334d7e2d77a45f9e7f6213fa3f101d180f028c90733b5d011ca0e3bd",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_generation_snapshot_contract.xml": "c15212c21f720cd42084fb61d117034d93d0284983fd7ba6f9f651e7460bd1ec",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_incremental_candidate_inference.xml": "f11aa100d0f02b54c60e201a56554dda9ddb40522354a8c5af9da59fdf5502b9",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_intent_url_reader_safe_http.xml": "fd37f24c39f7afc33dffd96e98ef899fcbc13b47295177cc6619db6cb0a1d7d7",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_isolated_audio.xml": "0e7ea7476135e12614018c6bf1293a4bd4aef67a7f79a6b8de06ac3c94915fb9",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_live_awareness_planner_http.xml": "cf93247d0b6ecb8cf4be9f14e44de4a51ea5c9103a79d099e6a1f893a6f1e249",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_live_serving.xml": "1e935adf4f8b74a4026627e7ef38479b347f96b985ac744b3027b2b960f565df",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_live_serving_integration.xml": "22e3bc514453eb1e40122be28da5d265aef1a5f15a5ffe6e332dc998b9d2aed4",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_local_canonical_storage.xml": "57fecb8065d9c2bee0477c4dec62243ee098a8a3739897989d714366e0ec5fe0",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_media_delivery_contract.xml": "87ae454480deab712f4e26849fd108b67fc915114cbd837fe8128307e5ad1e31",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_media_learning.xml": "92bf3b6255367ccb7a3bc6beb27cc10668249baf440dac40cc2ec4c923e6f1c2",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_native_analysis_api.xml": "32b3610ded449eac4897b7b542387841d72154bee743bb8a39a199cfdf6892a9",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_native_analysis_safe_http.xml": "82ab9cc6bce7768ce8e1fa75df9d739cf488dd5e896f01fa85adb507fe5542e7",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.xml": "612e71fb11a63530e24d756f6d7638fa3c036d78d918de9e953a0bf442dae2fd",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_native_media_analysis.xml": "15513dc8f4a655a98b4786f2f8b663080cf2515a18ea979fa311fa152e6f76be",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_original_quality_runner.xml": "65b140e6698b05fb59b22f4abc02412705c969081f911ec77210d41e4639a1cb",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_platform_awareness_wiring.xml": "fa7d6e74981e68b02442163b567996281a42e8523b59b44558ff62ca5f9c9768",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_public_fetch_proxy.xml": "ef8d404be9d523d292c9d81cde439fa044495e500b99ba2a97d7a8c4b3262f2d",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_public_peak_curriculum.xml": "fea16a7b08750c048475b56ee6af6b1edcd2c0765450205c2d0efc7cbc783278",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_safe_feed_xml.xml": "5b1c903abadd6219abd86afb8e31023dedc5baee6cd8617c4fb6bc44530a81a8",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_sast_runtime_remediation.xml": "ee7d6b4189778482c11f0161deb519506fa840f4ae733d3905bac9b8d419cbc8",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_scoped_batch_admission.xml": "e74a459df63e1416194452190b956a3fa0ef405c6669be482a612fdc63b23d16",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_script_byte_budget.xml": "02ff0ef02bd0008e77c02fb0d4049bf348324eb34f6d4af1a5495f88b0bdb16e",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_social_ad_beacon.xml": "ef0e37b6e58434fa79c0cfde3699aea2be36dd7b49042f1f6ccb92beabd1c0d5",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_social_generation_controls.xml": "d94d6e9cfc038780cc922b32d242604301c06028f07629699bd70302b50634f8",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_text_training_rights.xml": "2d95034162e7efee69dd8d86ebef6f4766864e23b15b5cbf82eb914491675b30",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_trusted_http.xml": "abe9fda0f30b56bc3818512d05aa55be7970757cf2a59e458fdc76f466e1ceee",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_unavailable_inference_contracts.xml": "f43055a4108af7cfb0613271e543dc9dbb96f7211c8a37fb397f3ae8e767f1b7",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_url_label_garble_guard.xml": "886ecd24c05de43dae0bce41cabac9e2ccab8da51c34651a7b84fc6b4165bc0c",
+      "/workspace/maxbooster7.5/reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_voiceover.xml": "4dedb3f14de5481282cd07325e30d0c7b66677fafb57b28ba4877183f80f84fc",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_ltx_adapter_download.xml": "5870533e2da87f5acfe9e127fae17802d1a76d28ada2f2e52947a1a05d0c5749",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_portable_rust_toolchain.xml": "0a6f31412c8e59657ef4e2d68534d8af02f7053617373f49728a42867a201c42",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_production_fixture_support.xml": "a6fa8d7e7021c26b6f8a67d19287a86cf4e10494fe08cc97ea13e1164de9c497",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_secure_http.xml": "9ea248ff9373dec8f8f70a79734ca7499b28161068c1ca9f604fdc69b1f54e0a",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__test_torch_provenance.xml": "fd38b1d0e307eceefd0d06f0e4df0dfb22261acf32fdf6d1e70e7522352752a8",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_archived_quality_verifiers.xml": "fedfd8b1c3cef66273ec01e99662f6b244fe9c88168ba5eb611f0fef3a6e0cda",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_assertion_oracles.xml": "dfcb67240ebbd2f89dde3e358fed5afb796a903b086aa80690be5f1b49ab2c50",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_catalog_snapshot_ownership.xml": "6f322fb60fb62b5e14043206afb7be6358dfe3c30142442e27fec942489c4594",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_commerce_subject_selector.xml": "de7ea1714a5fbc1365fd92f72a6344a2d8e6b7de854ee5b448a3497639c4a166",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_endpoint_mount_resolution.xml": "a81ab40537058e1fafe6c1c98e48d8bd493c91959f4d9322c8b7bee696d6ab1b",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_launch_readiness_audit.xml": "e7d66415f07c4a206c9ee12719bd84c7f29b7a78fa049ee4fcd5eb8f1b1e72be",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_maxcore_analytics.xml": "9c9344b00c48dfe4a96971e12c04f4532ad58867c61a602744ef27e68634521c",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_platform_evidence.xml": "3d60d704cfe74140f139a6626f2e95748b5d71dfe53a4362bc1115a973463647",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_platform_plan.xml": "f5726a6d683c33b3d0064e03c1aca63e157cc495a6d171394013979c8645621b",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_python_factory_mounts.xml": "cff042624cdc60e10adc6892843a9069f5020cae63cca858c0082ebc72865d7f",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_python_runner_scheduling.xml": "ccfbbd0331caf41fa5c91e7778646b33c181cb65d9c3b43351dd113c7bcdd585",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_remediation.xml": "ef1b54cab10b25410e7fb1f9ae953e4532269da9fb7f951e68b9b7300c4c8927",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_report_progress.xml": "77242a62b98f8b79485eef596858ce611c5b5e78785adc5a8c8d33b095702a7a",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__testing__test_summary_results.xml": "8a4be265254c2bbcc8a01e8ef98619497558dbeefff76b69c7992e80bbe4f6e4",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tests__urllib3-security-paths.xml": "3e91d1248873d18953ca5b61616ee5becd63ba8c768ad474dc5e39de316a937b",
+      "/workspace/maxbooster7.5/reports/test-verification/python/tools__sophia-agent-runner__tests__test_sophia.xml": "75a8a4de37d7416ed1e0c399431f8ae823ac3ebb24bacdc2586aadc49b4f3340",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/results.json": "396d58e14fc053444bbe43b8cc9c9aa30db78b0b6e95f80875382e9c99ab2ee6",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/beat-loop-lifecycle-postgres.test.xml": "df062c045cf6e8501bf84a79da004018994072613d10662f1dd47fb86b780d49",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/business-integrity-postgres.test.xml": "d67a58b8bbcac5364de5723c44949d314c56c1b92199cc187f990daf1cbe5aef",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/business-integrity.test.xml": "a6f8342b644c43e78a06596ac273e816a9b50617a90e361a50b604269bf55830",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/compensation-races-postgres.test.xml": "4a94a499c26f508320dded6a06693ee22b9e86fcfada8a2c1ef3e0056410f393",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/database-commerce.test.xml": "18a33e359fa78ee389c49441a191be51a79e278940b0566fa026f1edb4d9b584",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-billing.test.xml": "44c8c073b565ddda8d8c734be74a3e5d13b4d64fd633ea20bae46fef6a7d002e",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-commerce.test.xml": "387ec9bd5b46233bb6b12a1f55770ac88fb8e03dbdd921bde6cad77ee5b1942d",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-known-failures.xml": "03f2a8f77502ba49d71a59fe87dd656d2c979d6bce72aacff6128a025bf42344",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-legacy-services.test.xml": "2c987d0e64721580463984740ee9e0381e1b229e9196e0ac8c4703659fb2576b",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-registration.test.xml": "e3e14be3e789a8a0132f17c69f7034f8a7313b843e8c602efb95a99e4d0e1b19",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-storefront.test.xml": "4230b248a010d0e6cf9fa94706736d9e4f17f13c4509efade5435b4d477cfd53",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-commerce.xml": "7fd52b2bc0c2f5fe6f573d449ef03f6d9888651fd6d83d006405adc0ee1441cc",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-membership-auth.xml": "1d2aea3e9d87d9c6f94bb7162e9643ec0f9f1498296e56db2ad28bda529373ea",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-services-webhooks.xml": "18fa543042b4dc19664b0b62bd2a9544d41573817735dd5d4746cfcc99841e34",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-stripe-resource-ownership.test.xml": "2cdd957100f144d3af8636a4be0ba24717de3e2a539b7397a860ce4b91328553",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-stripe-test-transport.test.xml": "7b899606ca35ec478aa032fe5186dc7863a1a20094d9b58546c82a391b8631b9",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-topup-journal.xml": "5a700aba91e5cef541f1794df4f2cf601c6ca0b3164c3c01d72c3ad572fdfbf6",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/provider-only-preferences.test.xml": "186d4d3be79341c4c3dbec8a13e5d3b76ade6ab3852224b2e7ba5d1947cb6b5d",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/settlement-dispute-hold-postgres.test.xml": "23d8d83876ba9cb86ba96a74abe9f4019a96e722261188551eb9303167474a93",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/subscription-authority-postgres.test.xml": "332a00aaf12f2ddcb36c8f0244389c813dc4d5229272aa8b422f31cf3495af3a",
+      "/workspace/maxbooster7.5/reports/test-verification/commerce/legacy-beat.xml": "968ca993d28c5ae35076ffcc57d63f2e923eaf3977d74e8907743dbcb849a461",
+      "/workspace/maxbooster7.5/reports/test-verification/integration-browser/http/integration.junit.xml": "639f87d5fc379c11345ab905bb30ae3466bc39e2fd1e500d2edadafab035b979",
+      "/workspace/maxbooster7.5/reports/test-verification/node/results.json": "c204e063ae967d10d78912d9fb92a77573e1771f5b460188be65b0e458ce68d5",
+      "/workspace/maxbooster7.5/reports/test-verification/node/evaluations__maxcore-fused__live-api.test.mjs.txt": "6ab9779e60138d4da95987103e9ea622a4abe5e74437ed8d85ac060495b966ad",
+      "/workspace/maxbooster7.5/reports/test-verification/node/evaluations__maxcore-fused__runner.test.mjs.txt": "758f99e6858793cd2be95e031b6e735f1f97c18c89627e863cbc0d9d588df310",
+      "/workspace/maxbooster7.5/reports/test-verification/node/script__security-consumers.test.cjs.txt": "a832b00edf2251b96b2e8f8ef8b6c8569baa72c71c2b9eeefcf9006c145d0b26",
+      "/workspace/maxbooster7.5/reports/test-verification/node/script__security-readiness.test.mjs.txt": "07786339935dc507fb889a993abacf0321a74aa154ada1d05a7da0540422647d",
       "/workspace/maxbooster7.5/reports/test-verification/node/scripts__test-data-runtime.mjs.txt": "242711c28769d54367a6457805412ab84368c7803b4899a07f42fa8e7b7d9d55",
       "/workspace/maxbooster7.5/reports/test-verification/node/scripts__test-fabric-deletion.mjs.txt": "7e291a999c5ae6ce0429f86e6a0a21f3d3c20825b9691326d172e5f8b989c8d5",
-      "/workspace/maxbooster7.5/reports/test-verification/node/server__logSanitizer.test.ts.txt": "f4542d67ea004465842180ef74f297e22237bc7d9042753106e3fd2dc80a2654",
-      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__accountErasureWorkflow.test.ts.txt": "a77246d25f35b9e9f3236e61bd1ffc4bcbbaf26696bfd1d380a58d740e08ab39",
-      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__commerce.isolated.test.mjs.txt": "2975c0ca81f62369507ea6472ad488a786b7b0f9e680165d263b144424dae1f0",
-      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__commerce__orchestrator.isolated.test.mjs.txt": "6a2b26f1d4191f128ffeacfac20a54b8575c7bb14ded0edc356aae879b60d3f5",
-      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__securityAuthority.test.ts.txt": "919e0366f974f7eebcee00c1eaa745faa03412f2b5122008991cac62db4dad09",
-      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__securityJwtChain.test.mjs.txt": "f6326b0e575b630be0a775cd4e55559b1a6714d2b9961eb30844d656fd27db1a",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__access-control-isolated.cjs.txt": "3ea059dae8432c5b4c3cbe4b4398f82fc93db78aabb379af52eb2238cb5ad103",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__account-analytics-browser.test.mjs.txt": "45b2698e61a0a4fd853df8a5440ca7b676449c56932c347fa5e86d9d4751b7d4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__account-analytics-contract.test.mjs.txt": "5ecde4878330e1787a5bb7c5566e00a1cfcdc7777e7280445a27a9bbcebc4c31",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__admin-governance-isolated.cjs.txt": "f5cc80cae18896d13f489b1bc83f9b71f12c28f5aaa9839bfa12d196055e09fb",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__audio-metadata-security.test.mjs.txt": "ee185ae4b58ab0a478f21e8908bdc636440d6112a79db99458eb0530dd6e51bd",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__beat-loop-test-safety.test.mjs.txt": "68cddabfc014f8671688f7951c254c2aabef33346e44786720b5c09cd3c9ced8",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__build-dependency-inputs.test.mjs.txt": "cfce7abc88a1028d26a2ba7c386c783717857934071f312d8b2f640c794a88b4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__build-native-cleanup.test.mjs.txt": "309ad83d5500c29d65eaf9139ae16208cd52a7c8ee4ba21755fc96fd510ebdce",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__closure-integrations-shared.cjs.txt": "fc14d29133fe6c544bda8346e8b2dc0a754ab1b587ce3928a706a7fa6ac144c4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__closure-integrations.cjs.txt": "629150363af6d7a00b279065a24772ec1da3a0f25449105ab43a43a2f5b894b4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__cold-runtime-readiness.test.mjs.txt": "dce44527048835e474a9192f9bea2246361a52d23ed56a3c1d15c5febfbab7a9",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__commerce-migration-gate.test.mjs.txt": "bc18d9cbb88a2bbb07800a914045efee2a400cc077232f44e5f33a8e5f131433",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__current-storage-joint-recovery.test.mjs.txt": "aa3bd1a00059acaa16a1627411c79ed2b5699ce485a9363583c9a0f6c4d3737f",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__database-backup-restore-postgres.test.mjs.txt": "20282b03ad1972d9451ebbd449999d083827d1d5459d57b1cb97267c39431fb7",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__database-recovery-schema.test.mjs.txt": "58d62ac803aad9795f995a67a2f226904471e63002a86ec015a739b2a97c2f4d",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__database-recovery-tools.test.mjs.txt": "ca6929b42c5e266846e647717e86510bf5e159c37603d7c72e60828ae80d72dc",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__dependency-advisories.test.mjs.txt": "ceafc046a561c01185db20c6f85bda9c178a12b4b33611fff1d07514729f3697",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__dependency-security-paths.test.mjs.txt": "75ef557c3457b96a3ca3eac5dd7de448815c0bf2e234f3f8a1df07803e948ffc",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__dependency-transport-teardown.test.mjs.txt": "73912d276a2751cbb4520152e409b0eed852a9466ca9fed97affad3bdecfe3c8",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-bootstrap.test.mjs.txt": "8a353603bc74a061863b8e550819a76784889b33f401bf27068b39b014d455e1",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-compressor-exit.test.mjs.txt": "591439a7673019dd016abaa071e489afb885ed58755c6636d486cc1d6260f7bb",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-contracts.cjs.txt": "29a080f674ad37ae81679c36af9aec4de14c4eb373bb3f2fa7b7b4f1ce08b30e",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-control-files.test.ts.txt": "80e6b60b9e070bea5975c761ba874e2f944c4367b4a5afa2d794562bee7baa0f",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-current-source.test.mjs.txt": "21351e1ab454caa77c5ee197a774b91ba157390f34e58fc4ae2eb8fd160eb64b",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-executive.test.mjs.txt": "b4a46ff01df0b08f883e630c46adeff270e4673e43008b6b43d210378d7318b9",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-image-size-gate.test.mjs.txt": "c71937fba5c922174dfdc13ac15c49825057531d4edbe4d593d3d082008fcab6",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-recovery-location.test.mjs.txt": "3106df4a635d867241b830c62c437b4d8dc247294c68a2e7c24a58cc3f533ff0",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-remainder-contract.test.mjs.txt": "29884b409bba45171abe8461415f5d51122b147c9c85d418d87b4dbf5e261bbb",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-rust-phase.test.mjs.txt": "3168d56b366093652b03a67827feb71f501bf5b5098b38bc42e7a0fdfbeb58d1",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__desktop-runtime-policy.test.mjs.txt": "476fe65a2cf14ac43d05e6d2ea82c4ab5ee34782852ab981fb868af96daa03c6",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__distribution-workflow-tenancy.test.mjs.txt": "680e2ce5bc86237b567ce31bf2a2bc3d0fec1cb09508d5095bba355bb7519a9b",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__dns-dependency-consumers.test.mjs.txt": "984b940408b661bea7965d20240993c84165c9c0820d3694ab0cece78d0971d6",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__electron-asar-launch-policy.test.mjs.txt": "d1261d90a5eb03eb1a0772aa6ef8cc0fa00029ea173a7514ddae868a1108c045",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__endpoint-topology.test.mjs.txt": "c92323c71e789e1035dd3287850c5d18851e263eeb0870bcaad37d15b534fe4f",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-deletion-postgres.test.mjs.txt": "2d91a8b191d7046aeeb77cccd567765a91737500c30b65bcd6ca9fc8c52fc9cc",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-imported-reconcile-postgres.test.mjs.txt": "0cd77d9b5d7827c965a621d7237d527a764b7c0dc2bb510f78de58c5b362f638",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-migration-outbox-postgres.test.mjs.txt": "d4c8a2e44236008912404243a038469bc3212dd35b7f2a0c1e329ea3d6097e7e",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-object-lineage.test.mjs.txt": "7f84df2db7db9c31e61b6f673384b4e9be6daae11369dd4e24a7b27e2696eed3",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-replica-generation.test.mjs.txt": "f1630e5a168b8eb744d7ed8df94c7dd04c9ab4bbc1b8c0ce4bc15444c96ad512",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-root-storage-postgres.test.mjs.txt": "cfa248f066e08a351a8d7c65fef9b8abf4759f40bd8db7640ee860909e5f0e7a",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-schema-generation.test.mjs.txt": "f8cc015488f115fb5a2658d7b84c6561e893897eaada0abf73591a5cfe0015b4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__finite-route-paths.test.mjs.txt": "0e23ea91072cd55bbd883a13fefda84b56c3c6ac3b6b7912242ffe3b9a17feab",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fixture-command-input.test.mjs.txt": "9c357503ce654c346f05a7046b7988d8cc325a05d64731817af08cc430ce2101",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__http-dependency-consumers.test.mjs.txt": "c2d8363a44bc8a292cf5412a309a17586a1f7ac686e1e6416176bbc39674b4d8",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__hybrid-storage-postgres.test.mjs.txt": "0ebc956b665a690a8147578a72435e5cf429c2cb4dedad0e9b9236435bfbe4bd",
+      "/workspace/maxbooster7.5/reports/test-verification/node/server__logSanitizer.test.ts.txt": "532430f3fbabbbebef7aeb81c872b2112094883ff86b9cbd6eca9ed9819f2043",
+      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__accountErasureWorkflow.test.ts.txt": "3687eec0671cbd26b7a4e38665b2bf3731929de3502d1d7015f963c7288e08ee",
+      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__commerce.isolated.test.mjs.txt": "fcd1945cf127750b8e3a639aa8979b8a9de1b11456bb9c2e8dd68f212aedb244",
+      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__commerce__orchestrator.isolated.test.mjs.txt": "99a559302b73345aa84f69b2092ef59dce5dfbdd8533d2478b575d3490b40c96",
+      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__securityAuthority.test.ts.txt": "5f95949f1ec859de58e58daf3166f71513cc22e27e9002e8f8e03b968d242ea9",
+      "/workspace/maxbooster7.5/reports/test-verification/node/server__services__securityJwtChain.test.mjs.txt": "98748cabeac7f40888312525d5107172d5b70df82ca16ef8fa5fce181dedde02",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__access-control-isolated.cjs.txt": "529241ded2cf093cc3908b91a83f08818f16712cf14cdc95dc69dc4853329a0e",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__account-analytics-browser.test.mjs.txt": "f89bbd02ca85e4210102d389ef32b7c0623534fb889824088387e2f15c8229f2",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__account-analytics-contract.test.mjs.txt": "f68fe9edcf82400e0046b0edd07c111bcd6e733e5fd89cd7976ce2016c7d37ef",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__admin-governance-isolated.cjs.txt": "880acc071e8b7a52e71c9ac9da99318a6b04876f55c2b85e84f31ae364fdf765",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__audio-metadata-security.test.mjs.txt": "491c84b6db91a6d4944d5e368e50b219ca0f3f522b0b3c50fd23ae952a3e8ceb",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__beat-loop-test-safety.test.mjs.txt": "4274e3a01355743a6e1933d518ca55d6d9bf0e188a70450b012fae24f457da73",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__build-dependency-inputs.test.mjs.txt": "bdb05c0142f79bd72b691a09a5d8a65557e5b1b0d0b9264dced15b877f95ac29",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__build-native-cleanup.test.mjs.txt": "1988610fa2171c43efc9cf801f98fc2a584f67015e990e3578fad1ae70277c3a",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__closure-integrations-shared.cjs.txt": "fa577a9edda07f7ffc176c311de8f634e0515c2da8eb6e16057dbfec366ec5e8",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__closure-integrations.cjs.txt": "d473cf00551bc5a510c70903509e2df7c47dd909e823d1114c9a586931ae5143",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__cold-runtime-readiness.test.mjs.txt": "2a3603261c4560fadcc8149e16095b2d7f5e1dd0fa4a85460c4fabceb6338997",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__commerce-migration-gate.test.mjs.txt": "7f8e603107d2850c7e9e73d5abfbade6bf2c910d00ad81dcdaba3e33c9a547be",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__current-storage-joint-recovery.test.mjs.txt": "e00f77c64beec8a7043454852dd66635060249052aaccf86852a33080258b825",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__database-backup-restore-postgres.test.mjs.txt": "09abd7be7eb19d5589f1f7be576f14cce6cacfa115c22ffd9be64a5513093c17",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__database-recovery-schema.test.mjs.txt": "b47c11cf29ab15d9dd9c47307b38b3a827ecc113fb26838c3fcec5dbf7f148d7",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__database-recovery-tools.test.mjs.txt": "bfb2bb961edff3b00acb422c0c2a0cc51b28b6c7cb719698a84a65982083bbac",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__dependency-advisories.test.mjs.txt": "b5c65f2b931206d80b0987bda168797d3059acd5557bfbc2f4f98356271da735",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__dependency-security-paths.test.mjs.txt": "578bd3aaf626532d652514de361c49f71ab91b43e78911d0e967b0cfa8313d08",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__dependency-transport-teardown.test.mjs.txt": "459b5eedcfabcf276a8e2b67bedaf49ca2827a1b7ccd443c0c6a2693e0ebfa87",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-bootstrap.test.mjs.txt": "724660328c3fca0ad0721bac5985dc35248224a3429db16285d3c4b1765c0d3b",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-compressor-exit.test.mjs.txt": "7144537efc92b01a6bd887c4bc5e7e4bc375a854b82c4c3056e8eb306eb42264",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-contracts.cjs.txt": "20db33239a20fce689213a8072cae060c60db41f522bd53649c2eceade7ea672",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-control-files.test.ts.txt": "b4cdf48959854f8c65a71f6d6d1a96e9201833247de30296f198866420bc7d6c",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-current-source.test.mjs.txt": "8b4ee70a3488db716a2cda0e5f920db8f5479a3df90c81b986ed706ea11a1381",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-executive.test.mjs.txt": "6c1efcaf9e8f7572eae931ca95388daf445b8370fe6077ad23f27b45531ce0db",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-image-size-gate.test.mjs.txt": "ed69d6cad5a3521e07b807e25e3b128133735392a64ac9ecb3aa628ac882f304",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-recovery-location.test.mjs.txt": "e67850677846f945f9ca5dfb7337be605333f97db9632e2a6feb99fbaf0f63d1",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-remainder-contract.test.mjs.txt": "cdf462b56ba812f723d7348beff243dbe90b15d99f57d81e92dd0cf60b46bc63",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__deployment-rust-phase.test.mjs.txt": "581308c254fa6458240ee3cc9e4eeaf1a1f0e5b8c56278e738c60fdf651acdfa",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__desktop-runtime-policy.test.mjs.txt": "35127e2f9085d37d5ed07936591c76d3a8145f53af57a27022895a04565259d6",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__distribution-workflow-tenancy.test.mjs.txt": "8e8cd37fb74503e1e86683efa989a62322d21aa6d9306cdea24349d926894166",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__dns-dependency-consumers.test.mjs.txt": "855218825c1a693052fa94aa32d755bac2996c6234708a198edda709ff108a74",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__electron-asar-launch-policy.test.mjs.txt": "5eb943fe0e0d4eede6256f275aea6ef897d9e8c4604c91d92fcb7ade61e7f92d",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__endpoint-topology.test.mjs.txt": "4f40cab819a17607c0736626b244cc93855f7a532559516712446e24f197030d",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-deletion-postgres.test.mjs.txt": "ae9f08d38b4fe43bca9437cf10266dbc5f51e67b8b73bc501cb0e955610d7ac2",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-imported-reconcile-postgres.test.mjs.txt": "572c092be48d7b5156c690919e50d12a3ac5e49b7c1f1b46ed5c5275037b61fb",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-migration-outbox-postgres.test.mjs.txt": "2afce17679cd41892184ba9266467fd1e07cde3b2a5dde633172a968fef2a5aa",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-object-lineage.test.mjs.txt": "cebf5e632913cf1d13a6c60cb36251340ec85d5f6a088c6588e50d8aa3dc5926",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-replica-generation.test.mjs.txt": "69d677ceb5f722d05c2799165d56bc90f2687509f6e3f4424b99cab67d547ff0",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-root-storage-postgres.test.mjs.txt": "4354686137b40c377e9aa11bc59e3b4182c1c751d2a44227078e2db4142de0f2",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fabric-schema-generation.test.mjs.txt": "4044337541b04d65a6f47a6331c528658683b0a959556413a29ac7d9f7aab284",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__finite-route-paths.test.mjs.txt": "d80180202c73da8fd0dec9e2462aa4bfafd1c9554bf2eb1004fd815242769125",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__fixture-command-input.test.mjs.txt": "878d30e2f9deb5fe1972701e19c8d4ba1e4e46a31b647dd3f1c601dbd2bc67c4",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__http-dependency-consumers.test.mjs.txt": "049aa4f827e859e5d8b3ed79e9caa1ed5f12835ee45f92e0342e4b7717944c84",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__hybrid-storage-postgres.test.mjs.txt": "beb37293a1a61bcd042cf24007d044c3c474601876e9619c2c7ec4434a959b4e",
       "/workspace/maxbooster7.5/reports/test-verification/node/tests__integration-webhooks.cjs.txt": "2bd12deb1492944cea24e104159dd82b6b021f0a87d7f837374c5ec8e1f4383b",
       "/workspace/maxbooster7.5/reports/test-verification/node/tests__integrations-readiness.cjs.txt": "81af353d256586d5e91da2d157ed9c141d2a958b8688648732155aef3bf688c5",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__isolated-acceptance-readiness.test.mjs.txt": "74a686df57f41e6f67ae2d3e8d219035820576942e14ec98034804389805036d",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__isolated-codec-guard.test.mjs.txt": "5354515b124f142370a7e6fbaf451a09f50dec2aaee3527681133b121553c7b1",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__labelgrid-retirement-boundaries.test.cjs.txt": "211c2ff7207a068ae47a36f189ca90e210b25ec4421951d03a173e354643fb62",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__layout-navigation-accessibility-browser.test.mjs.txt": "0bd8f0ab8f181fe0c0fd2eb5ae40edfb4ef8aa565042ee485b7a29a7104b43d4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__legacy-security-update.test.mjs.txt": "2fd37ffd185e63d234729f0237ccc25380dacf66ec34cc7ce226c6ea30b126d0",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__legacy-sendgrid-security-coherence.test.mjs.txt": "2eed74c678142fa35544c4f5f550ed642afd3692a8efc670ed4a2edd9c7a09cc",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__linux-vst3-build.test.mjs.txt": "6d6c96ca4374ec0b68f7f6249951ef9c636d8be64420b2e44105d34be2171009",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__marketplace-storefront-access.cjs.txt": "5b1b099178806efa9b1bbc7a408fbb70fd246b8a3451a354739c65ff2f62f1bb",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__maxcore-dev-dependency-security.test.mjs.txt": "57e520167debdc967d142899646602d69174b4d4c0b44d6b4d5031e4d2a553f5",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__neon-schema-contract.test.mjs.txt": "cc9eccac71a47e3def4b7b2013b8aa552415ad04870270d2ee98e5c0bb3ddb3e",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__nested-reconciliation.test.mjs.txt": "4834550152b8eff8f7e9609f358ebc3d395614d25efead65847e45fee6a2fe6c",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__npm-build-start-contract.test.mjs.txt": "921f0a2e01d2dd13656e7ab25dcdef9da86c6af955a5b67cf1e7f9efe5af29b0",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__owned-deployment-processes.test.mjs.txt": "31b2da062b6d3e5827f1029f9e490851c50bfbb918b4fa435f49f6442e26eef4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__parallel-build-cleanup.test.mjs.txt": "28b9ddf436dfe65168d6d0322f49863b948f67d06b93ae2a32bd7af04913efe3",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__patent-pdf-runtime.test.mjs.txt": "4ce1133dce5617cf2d2900d468150eaf80283d7ffb632c989341095caca8fe73",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__pdim-acknowledged-crash-capacity.test.mjs.txt": "c7c217ff4a48853279027fb571d40946ee34547887378e4f0edf3b6739590620",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__pdim-staging-archive.test.mjs.txt": "e01f8fbdbc4468d3b7ecfe9fd63a5be1163ece153c06a6aab100e3e873be81ce",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__pocket-durable-delete.test.mjs.txt": "8ac733aab9d1579d917a33c042e1b67db1e55b87184f3aece3f7548430bae96a",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__portable-python-isolation.test.mjs.txt": "cccb80b6953cf3f276f3a6f237dd60052889b3bee85499fc25c083b7ff0a130f",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__production-container-contract.test.mjs.txt": "52e934a659ab018339ffa605326bdefa640db7cd62f48ad9e58763e03212689b",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__production-simulation-resume.test.mjs.txt": "5598b8656b9fa1df52b2f8d423a43a7fc93c81d5d7bbb9f8e490fa1adc43a064",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__publishing-build-entry.test.mjs.txt": "7d117c72f21c856ca817313f3a56cbdcec4566bbfc3cb55b3c443a5c52302777",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__publishing-cache-isolation.test.mjs.txt": "ced2c38fd7af93ebc085b894cd7806b8f5381236a2b504a186343638333c077a",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__publishing-compression.test.mjs.txt": "e4a643ff493d65513461e33227885ef593f9c11268a7d922e52ba2b59712fc02",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__publishing-context.test.mjs.txt": "ed642eee639ed96b7e30bfa6ede0f8afe6b19715f9649266b4d57370129eea25",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__qs-security-contract.test.mjs.txt": "62c26724a06530ff1f285ee047e3a8234c53d78e1aae24ecdbf7ceda9215e05b",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__readiness-beta-history.test.mjs.txt": "555dc45b7dbb462f756356632c9862bf63203839b5c8d289668402949b1deed5",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__readiness-sast-scan.test.mjs.txt": "f992889269020ace8e705c7cfd26fd0fa611c85478a32a350d8e6339d01b82da",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__readiness-worker-composition.cjs.txt": "dff06df301af080eefed66071aaa7b49f4419d58ed1a861e888ca153d4ff2369",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__recovery-private-store.test.mjs.txt": "d3f6e71baa3c0f7456a53a39e3525d0a6ad2662703e2b5dea0214a3847db062c",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__recovery-snapshot-integrity.test.mjs.txt": "266c4df0f6c0c0f80d62be4e3e078cfa7288d4b9bd493e050c287a1ebb80a242",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__release-threads.test.mjs.txt": "5318d62fc5d979ea0cef482003347e16f5b660dce9df0a4f192c02b4f4998b49",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__replit-chunk-delete.test.mjs.txt": "9ba7c6c98991e7b2807c31ca08cc6dc5de6e29d29139a2f5243889c055314d79",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__replit-configuration.test.mjs.txt": "f3a5fbf130195e7b7d9b298f6b6d48a98ae73ef1123f20e3ee40060c0cb99108",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__replit-profile.contract.test.mjs.txt": "f5cfee815b002560d8b19cfca22a38655d78e6be5e804953a5e41de80764a4f1",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__request-validation-security.test.mjs.txt": "03e4c2c8440670adba7ff63a8a1401a72be241e5e65f3e1f320de98bb56c96b4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__restore-lock-safety.test.mjs.txt": "0e799828dc3dda3e12f7c5438252cb07b1f3d0dbc07ed174603547610f6a69a4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__resume-integration-contracts.cjs.txt": "9925f61b301d48c4a76c60f1d0dfac64cd51a6781e4688b4db37482e1031164b",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__runtime-artifact-gates.test.mjs.txt": "2add58164833406eb758c271138dcc3bace81dcf1f4a42a6078db8426db99f4f",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__runtime-bucket-restore.test.mjs.txt": "4bc86ba18b3857e380306495bcdd6d92962c49d9e83f654c3ab7948cf15ebee3",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__scheduled-post-receipt-compatibility.cjs.txt": "74f6ff91ad0acaec65633113556cd0fc5ee74b482d6b459c18c94d0ab1ccc458",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__security-alert-recipients-postgres.test.mjs.txt": "f31b0d8f002069fbfa43c679f98f87130f490c936868327b64df579ec2c6fe2e",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__selective-brand-icons.test.mjs.txt": "be711d14839ba60b4d780ed4140f213a056969879d385b681e044882a0a7c5d7",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__sendgrid-alert-transport.test.mjs.txt": "b8ec3f41e07968d923878c7fa7e19d2ceb7d84604a6f45b7d455a6694df793df",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__sharp-security.test.mjs.txt": "ff85fd8e6363f95f62bbc6c5de2f2ffa9dcd724d4402b23bbd74f3ea9799857f",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__social-media-jobs-postgres.test.mjs.txt": "3393bce0d788cc7633d76c9d4504024178572fdb89196cea9533a32a9e980509",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__social-oauth-state.cjs.txt": "dbd053acfec80e95634cb506f6a5ca2856f53552d1ccf246f59724f9a8f5a248",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__social-publish-now-postgres.test.mjs.txt": "35bdef5cf8bdeda788ccf3ec039b0edb6f57bd7fc9da6364b9c32e6729127a2a",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__source-capsule-admission.test.mjs.txt": "a4296af8194707c6b021b069eb01f54486ad52654eea82920c10926eaad00ba8",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__startup-health.test.mjs.txt": "d37db765fec610062343063074c2a4156964a1ee780f8ea768389a59a2ed696e",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__storage-chunk-shared-postgres.test.mjs.txt": "d5b4bf83281513f0c6fcf5bcd9a646a5d0dc3aede69ae94c74fa1370a62fe247",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__storefront-canonical-links.test.mjs.txt": "3ef57aab1590113dfc7d71c7c4f07dfbb836e582e5fca023312c44038eb15a20",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__subscription-checkout-isolated.test.mjs.txt": "b5332f3ac9664c7e5f626d76f74e9eb6e495d3939e28db634c8b8076d9b3a0fa",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__testing__coverage-provenance.test.mjs.txt": "88fbe49e0244e306d3663ea65832527a9568c6fa9202bea9601e1d26931ba7e8",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__tls-toolchain-consumer.test.mjs.txt": "e6239d975bd77ba2a5efdf1d37c9c1fd2e2f3ddbd95192c150944e2499bfc123",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__aiMediaResourceContracts.test.mjs.txt": "5f4717fe8205f358dd5a34e72f8e41901ce21f29b3bd03621032eb060e4a8933",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-account-boundary.test.mjs.txt": "44c76c57a9348b3ba8b1dbf9324da0d7c759e92ae30dc84ca95d08488df00e6e",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-auth-beta-contracts.test.mjs.txt": "c9b6aa613ce681ba0014e09cf78d5cd126c190d49f637e855df635d399e6ff02",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-offline-readiness.test.mjs.txt": "c3367431dafd819b020f2fff9431eaef4ba2d2012dd3681c5d57eeb595b09c29",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-sync-receipts.test.mjs.txt": "34dfca04646f1ac261a0852d27b2d9e75dbb748574e5bc3ccc53b7c42184962e",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-worker-handoff.test.mjs.txt": "144b88ac728c270581488a6593667a7e6b6ad3e56f7d22af0413a0f94ee421c8",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__generated-pdim-isolated.mjs.txt": "e879197a6fde208df14d4a65722e70a10946ba78e05f571f525c93a5272a4d5b",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__production-simulation-policy.test.mjs.txt": "6fbb2081981d67407e2cda1c816331a54e236bf3b3644a9bcb570964961183d4",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__vst3-binary-inspection.test.mjs.txt": "44e0494f11861af084f1c8584882ae8ce22ccdd2a90788c91136c9b0732e4896",
-      "/workspace/maxbooster7.5/reports/test-verification/node/tests__web-ci-scope.test.mjs.txt": "0c8a1c2ac13f06f80091526d420ae782e73acccea42ca699d8e416432f20c29a"
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__isolated-acceptance-readiness.test.mjs.txt": "c7d2d0e60e753af619d4404830975e9957b4da71f092f8a4ce30db1471941ac9",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__isolated-codec-guard.test.mjs.txt": "78433ad6e76c482eec0c90bcf824e62c9492f1fd472cb3d53f0a4c42f3e05610",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__labelgrid-retirement-boundaries.test.cjs.txt": "dc848cd4cd7fe1a9ff7234a64e99e5dcca83edb11f69e960614ea1705b8e495b",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__layout-navigation-accessibility-browser.test.mjs.txt": "7dce9f032f2aa2cca39c271f0173c52c9a19c1060722954ce6747ab795829243",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__legacy-security-update.test.mjs.txt": "4c8fe4bfbcdf7a99c5119413ad06cf72e74c8d19df201725a9a0851cfa4a8023",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__legacy-sendgrid-security-coherence.test.mjs.txt": "6414fda05d78c238f39753f108497ca51ab2866747c124d013e3df8cb3fb47af",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__linux-vst3-build.test.mjs.txt": "5ee3e54de37a85c411222ad562bb0aef688111dd52e329691bf0d2b24a66c169",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__marketplace-storefront-access.cjs.txt": "423eeaa7cebabb437ffe402555d47cece6b849ed42bb805c510722cb29efefd2",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__maxcore-dev-dependency-security.test.mjs.txt": "2598a0a1e6901a2bb6c891f9d7b75808c4ca35f9c0d1ab0be33b5dcd9898c5fa",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__neon-schema-contract.test.mjs.txt": "43a56c54e29d3cb68fd07c51bd16e80468444ac2ae5c0c1fae6bcef09510bc22",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__nested-reconciliation.test.mjs.txt": "10ab6f55266f91a3308e52c0d2ffab0d2a1532de637f8be9e371ce6847c025aa",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__npm-build-start-contract.test.mjs.txt": "c8931cbe53f5063d815450e37d82715281fd8f9d8ae52ee78c7202b387bbe88f",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__owned-deployment-processes.test.mjs.txt": "de1afca498487c2e269a48a0e16ac510e896c288925891d2669a07300489608c",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__parallel-build-cleanup.test.mjs.txt": "3b933b7a60a8d1352d406dcad972f6b8e7f943fd73f6b5417d99052f0798d84b",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__patent-pdf-runtime.test.mjs.txt": "4447b1f74db9ff0cdece21ce35f87de262b94b779f8f136712fa93bbeff8b4fd",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__pdim-acknowledged-crash-capacity.test.mjs.txt": "4fb88ae76777073571267f0b802daa067bcb7aafe89c060f5369f9fb97cbb389",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__pdim-staging-archive.test.mjs.txt": "16eabb91dd69838c0f79272595a8e4a7a273e2c838441e7d0e6b0e1d2f2db5ab",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__pocket-durable-delete.test.mjs.txt": "6a6ed1cef0ea338f26a87f6f5b49130d6e5e98944446c72c06180261ad4a5945",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__portable-python-isolation.test.mjs.txt": "38571b4d091f66317e6eb1f7c0188bfe58f7adbc2895415fc99eb8df8a2aa727",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__production-container-contract.test.mjs.txt": "adad9225342dcf3ebb72f6015e815b66aa985d5b88d7e8984d78c3d247f33698",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__production-simulation-resume.test.mjs.txt": "5316d0fd33533fb9de21bbe1563103e9b2b60b60ab75f49ccc09c3fecdf09679",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__publishing-build-entry.test.mjs.txt": "f9e08d05da5e5b865f83c606726d231e781eccd0b13920a16493a704e69bbcf9",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__publishing-cache-isolation.test.mjs.txt": "c36c53c2e1648b7d23d226edea58341213932fcd19018d4f1e33749eecdb5b0b",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__publishing-compression.test.mjs.txt": "173e91e8ec9e6e8c95330a074790982fa6718ddae9f0de5bb06fe0f61b5cbe8f",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__publishing-context.test.mjs.txt": "ad63e2f627fe07b61266c611cca29e155030a21a22cfff9d960c4245914d91e4",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__qs-security-contract.test.mjs.txt": "88c3314752f24ffdee53b91eeb363751bec565304dec42c917b33cc9479f02c5",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__readiness-beta-history.test.mjs.txt": "be519bcbabea46bb9c94f6f4f25510012897111b1ceb0a3cf243b1346dfb9196",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__readiness-sast-scan.test.mjs.txt": "a0cc6c636d6301de6223d74c9f9942476b72bc334ece4f362e57b5314c0ef193",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__readiness-worker-composition.cjs.txt": "e92e25bde652dd0a6762e4d44c8f05a0806fae17c3d2315422f7210238f2d181",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__recovery-private-store.test.mjs.txt": "0447feba6c7fb710e1c0e8416844b1600262db74b22aa031d4b2152d25aaa70f",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__recovery-snapshot-integrity.test.mjs.txt": "c4bb05b600664481ea79b81f95ae8fb020cea24655615a5abc15f2e57589a37c",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__release-threads.test.mjs.txt": "b0d47ccde89feb72adc4c860b6ebdced39def7e72b5a0e0fff3c125844dbf6b6",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__replit-chunk-delete.test.mjs.txt": "a7d4ed725064db26cc596f19e7a06138a95f8b061bd01771f566fd516f2d8fcd",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__replit-configuration.test.mjs.txt": "3dacbf703ac6aca0b5a6012ba61bebd50be8314a95e94ffb95ad0702db990bc3",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__replit-profile.contract.test.mjs.txt": "94d9bf085b0ccdf876d59ce96c69e9347113513c4615d0670d3f8f2b5ee40388",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__request-validation-security.test.mjs.txt": "203cb7f0a01de9caa3cb64142f8e9e2716dab7e2dff034023c0a46ab4ad9cb9a",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__restore-lock-safety.test.mjs.txt": "2fe87a7e92526fd5dfedc4e3c23427e5408a242d6c6a931a86dcf67f1511c1dd",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__resume-integration-contracts.cjs.txt": "8c9b9d33f91c077614e4a1738c52b15e41917a7e7978e7a43261fcc6479ab85a",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__runtime-artifact-gates.test.mjs.txt": "1e8b54e72a6b64021f40e82037fccf85e363c7b2e99432d16c42b7546601edd6",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__runtime-bucket-restore.test.mjs.txt": "27489a3e7253d4515008c471640459d25e5d907443a4b7bf736487430f4cc0ff",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__scheduled-post-receipt-compatibility.cjs.txt": "9aef287624e9cbbb761610fe2d0c43556a32b3dd0dfa7aaaaa94453eafbdeeb4",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__security-alert-recipients-postgres.test.mjs.txt": "bdc9a150f490b247dfcddf6f5686ac0b44186ba275c74a27256655cc07c6a285",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__selective-brand-icons.test.mjs.txt": "0477a41fadc5ebfb5b85498267659faf992b3ea259a24f58007259ac3102f6ab",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__sendgrid-alert-transport.test.mjs.txt": "053857fbb90c9aac2ae376a2eaf0e3def008f10831faea2df7d05502fd5716e7",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__sharp-security.test.mjs.txt": "cf9dfdbbea48cf485cdbfb5bc5c6934fc944988a6e39b9117425d2fb97ec43a0",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__social-media-jobs-postgres.test.mjs.txt": "382c9707a089071261b14e7d929c392601d0c8910a622f8c001d1c5d191aebf8",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__social-oauth-state.cjs.txt": "2716be41cd51edc4e280e7300cb667d00208d244ac0a92c1ffd4a38cfce34e71",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__social-publish-now-postgres.test.mjs.txt": "ea0de14ccc0fae857b665fae2c2fea1798f10bc4c9eeca3307cb53e820e603aa",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__source-capsule-admission.test.mjs.txt": "5d9fab9ac090fc381cc2b0f5d6888f0c7e862c433650836b966c0bf6d3ad2e17",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__startup-health.test.mjs.txt": "b711c423be9505e37bf8830a5df803a3ed8ea2f6d03d81ca348ba824babf9edb",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__storage-chunk-shared-postgres.test.mjs.txt": "43222f4c78f0727088c6c3ef9f8c2415d1a0f4b8756d5a42985bcbbe919f9935",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__storefront-canonical-links.test.mjs.txt": "355e3cb11b6af75eccb607ec76f04fa630dee8bf9bad2aa715825810cd07fb99",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__subscription-checkout-isolated.test.mjs.txt": "bb7ac1d1608553d563e1ea6590a902c0bc5c517d6c5fb9a3708e79147005259a",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__testing__coverage-coordinate-contract.test.mjs.txt": "460806c913da30fe3911e36acea3cd46679a364635a471c792c5e92b8e03d123",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__testing__coverage-provenance.test.mjs.txt": "57df635aa0a63124ce05543bc516375189e04e8493b62618211218178bb97037",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__tls-toolchain-consumer.test.mjs.txt": "2fafdb14f5a6288e66148e00f69a6d2dc6c320fc03f9dec0793b9ec6ddfb1058",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__aiMediaResourceContracts.test.mjs.txt": "f2b13e2d267358aee6df20d5e928e2b416421919262f5c7f129d183b0adfac6e",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-account-boundary.test.mjs.txt": "76aabb58132fa1950aad0b521ed7ba87686ab4be1c7329029e9d4552a9d23c6c",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-auth-beta-contracts.test.mjs.txt": "f462503ef18b18d328c6d7ac1c049f7b50612fe0100179af0c33c66d7a959dee",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-offline-readiness.test.mjs.txt": "02e62992204d24f76e59b4f7100678948a8047a595a2fca40077a908199f58db",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-sync-receipts.test.mjs.txt": "3202331c3bd3ddd9d15f58eda30c86691d7c348f9abd5b35bd8cda953b56d2d2",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__client-worker-handoff.test.mjs.txt": "d5d4a6bc4c8d7704668a944d4234413c1a8506c30bfb7cd7fc71e46074974d44",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__generated-pdim-isolated.mjs.txt": "71539e8b9af7ca4d0c438bd6e6dd4172628a86a2088afa8e4298518113a775e7",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__unit__production-simulation-policy.test.mjs.txt": "b91f773ce8b6ae4e497887f3af93bdbbb54a4e90391ddc7f9236f0a899f1fd37",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__vst3-binary-inspection.test.mjs.txt": "2210133945d39480f219d2cac705f853f18b33356dd7a775296ff7b0b8c2ebcd",
+      "/workspace/maxbooster7.5/reports/test-verification/node/tests__web-ci-scope.test.mjs.txt": "26b7ea2b67b612fbbc284f1b129d6587b7b7c5319f1727132efbb280ce155d6d"
     },
     "meaning": "Only exact leaf proofs bound to unchanged current source and actual selected commands qualify; overall master/coverage/launch approval is separate.",
     "executionBinding": {
-      "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
-      "startedAt": "2026-10-28T13:30:12.580402+00:00",
-      "sourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+      "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+      "startedAt": "2026-10-29T23:02:12.027944+00:00",
+      "sourceInputsSha256": "1331649284d57675d1b1c078e4dafcbe93dff87f92021c2f2ff8a3bf288f71de",
       "sourceInputsUnchanged": true,
       "changedSourceInputs": [],
       "selectedGroups": [
@@ -1040681,13 +1041165,13 @@
             "build"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:30:14.764621+00:00",
-          "durationSeconds": 22.28,
+          "startedAt": "2026-10-29T23:02:14.144149+00:00",
+          "durationSeconds": 19.488,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/build.txt",
-          "logSha256": "4c504bea088d96cd4190cf26f316a7c346684579d2ad1ad3d0d62df72ebe8533",
+          "logSha256": "3beb2b04d1e47232b23d90ce6c7f0ddda6699bdfd434262a741b80cbf48cfddf",
           "group": "checks",
           "id": "build"
         },
@@ -1040698,13 +1041182,13 @@
             "test:ci"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:30:37.045522+00:00",
-          "durationSeconds": 168.953,
+          "startedAt": "2026-10-29T23:02:33.632855+00:00",
+          "durationSeconds": 166.697,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/ci.txt",
-          "logSha256": "d9e8f8d221354603d7f870ec57b8727ccd54beba49a2b710a321b0360ca82161",
+          "logSha256": "54cb2345b3622d58eb69ad18f8f9088d121c2c03cd98cd24de9a9097de22b99f",
           "group": "root",
           "id": "ci",
           "unitReportFresh": true
@@ -1040721,13 +1041205,13 @@
             "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/additional.junit.xml"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:33:26.004956+00:00",
-          "durationSeconds": 0.822,
+          "startedAt": "2026-10-29T23:05:20.334133+00:00",
+          "durationSeconds": 0.817,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/additional.txt",
-          "logSha256": "4e5c3c44ae21b562c1058a372ea97f47f70c830842aaa63f1b8c327314e35e7c",
+          "logSha256": "182d7f7dedbc6c292cf448eca8c9971101889796b197325dcc8072026e5893c7",
           "group": "root",
           "id": "additional"
         },
@@ -1040742,13 +1041226,13 @@
             "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/coverage-unit.junit.xml"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:33:26.827305+00:00",
-          "durationSeconds": 241.114,
+          "startedAt": "2026-10-29T23:05:21.151584+00:00",
+          "durationSeconds": 220.157,
           "exitCode": 1,
           "timedOut": false,
           "status": "failed",
           "log": "reports/test-verification/orchestration/coverage.txt",
-          "logSha256": "e53fb8353c14ae4056d45e84af26524e0686a8437396a0405c1a3b035435ebe5",
+          "logSha256": "510bfbecf30ec08c175f1d1859d13165a3905467c6ed854c3b0fb0564e957e66",
           "group": "coverage",
           "id": "coverage",
           "coverageParseExclusions": []
@@ -1040759,8 +1041243,8 @@
             "scripts/patch-electron-builder-transport.mjs"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:37:27.945658+00:00",
-          "durationSeconds": 0.117,
+          "startedAt": "2026-10-29T23:09:01.312502+00:00",
+          "durationSeconds": 0.065,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -1040777,13 +1041261,13 @@
             "/workspace/maxbooster7.5/reports/test-verification/node"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:37:28.063339+00:00",
-          "durationSeconds": 150.134,
+          "startedAt": "2026-10-29T23:09:01.377831+00:00",
+          "durationSeconds": 133.206,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/node.txt",
-          "logSha256": "1baf5bbb09d04d0f9e009f1e187689fd94acc2edb497f0727b5cce6c21856046",
+          "logSha256": "3da488d383caac42967fc369d1969a400d5d8734ddc3b9df90ae5a8b6eb25c13",
           "group": "node",
           "id": "node"
         },
@@ -1040800,13 +1041284,13 @@
             "/workspace/maxbooster7.5/reports/test-verification/python/suites.md"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:39:58.198124+00:00",
-          "durationSeconds": 235.486,
+          "startedAt": "2026-10-29T23:11:14.584683+00:00",
+          "durationSeconds": 219.801,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/python.txt",
-          "logSha256": "108c801cc0fcec617831a06d1c5b819b1b6cbb012e831f4ed3b253ddd36e2f52",
+          "logSha256": "0e2843b56615ae3c86bd879f166b0dd8080492271fc2a6d43e2f365d39b04ed0",
           "group": "python",
           "id": "python"
         },
@@ -1040818,8 +1041302,8 @@
             "/workspace/maxbooster7.5/reports/test-verification/commerce"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:43:53.684669+00:00",
-          "durationSeconds": 44.397,
+          "startedAt": "2026-10-29T23:14:54.385631+00:00",
+          "durationSeconds": 41.656,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -1040844,13 +1041328,13 @@
             "/workspace/.go/cache"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:44:38.082320+00:00",
-          "durationSeconds": 49.604,
+          "startedAt": "2026-10-29T23:15:36.042195+00:00",
+          "durationSeconds": 40.874,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/subsystems.txt",
-          "logSha256": "88030cd471b3f21dcd27eb464d95334acf3824babd418ce42c32f2f14e788990",
+          "logSha256": "f2e88a26e56443c650eba9080c8f2bcf1c76fce617af2f7e519512b4e4b179fe",
           "group": "subsystems",
           "id": "subsystems"
         },
@@ -1040866,13 +1041350,13 @@
             "tests/studio-plugin-audio-browser.test.mjs"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:45:27.687375+00:00",
-          "durationSeconds": 7.972,
+          "startedAt": "2026-10-29T23:16:16.916987+00:00",
+          "durationSeconds": 7.657,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/browser.txt",
-          "logSha256": "b6289de24e4a07bb0149ba76393fe4c2cf9adc5819deba0ea6cac530ede90a4f",
+          "logSha256": "93cfa5a7fc8d7cd50f6341af77b22cab03e6245e431c32d9f2e28b508fdc447e",
           "group": "browser",
           "id": "browser"
         },
@@ -1040882,13 +1041366,13 @@
             "scripts/testing/integration-browser.mjs"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:45:35.661842+00:00",
-          "durationSeconds": 148.472,
+          "startedAt": "2026-10-29T23:16:24.576863+00:00",
+          "durationSeconds": 152.59,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/http.txt",
-          "logSha256": "e945c2769fa8e8b7a4c7bced22e4766a4314f5a6134d54f0e3edf1e8f2f8706b",
+          "logSha256": "e0a8552b83bcbf5fe9a4f92de2df4141e856cdb6edc40d6220c5e07a51d27bad",
           "group": "http",
           "id": "http"
         },
@@ -1040898,13 +1041382,13 @@
             "scripts/testing/page80-acceptance.mjs"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:48:04.134378+00:00",
-          "durationSeconds": 150.501,
+          "startedAt": "2026-10-29T23:18:57.167743+00:00",
+          "durationSeconds": 147.67,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/pages.txt",
-          "logSha256": "144a7fabc4a9ed7ca06958c4373eb2a048040a82e15bbd8f5dc1155ed04ad2e6",
+          "logSha256": "560814112826e265e0a2411fd91b94c63f721fc60a7687e8503ae376a4f610b0",
           "group": "pages",
           "id": "pages"
         },
@@ -1040915,13 +1041399,13 @@
             "--http-load"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:50:34.636605+00:00",
-          "durationSeconds": 52.737,
+          "startedAt": "2026-10-29T23:21:24.838991+00:00",
+          "durationSeconds": 50.712,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/bounded-http-load.txt",
-          "logSha256": "fdb194fa59172efa7fc4361dd3592464f6c4c64bf741e8d147f9fdfcdfe06d9b",
+          "logSha256": "79131120cd417d72a6039857c8a731895434640d05bcd1fb721693c123d678c2",
           "group": "load",
           "id": "bounded-http-load"
         },
@@ -1040935,8 +1041419,8 @@
             "/workspace/maxbooster7.5/reports/test-verification/operations"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:51:27.374543+00:00",
-          "durationSeconds": 23.099,
+          "startedAt": "2026-10-29T23:22:15.551434+00:00",
+          "durationSeconds": 20.307,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -1040952,8 +1041436,8 @@
             "check"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:51:50.474903+00:00",
-          "durationSeconds": 26.585,
+          "startedAt": "2026-10-29T23:22:35.858481+00:00",
+          "durationSeconds": 22.684,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -1040969,8 +1041453,8 @@
             "lint"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:52:17.061009+00:00",
-          "durationSeconds": 57.061,
+          "startedAt": "2026-10-29T23:22:58.542649+00:00",
+          "durationSeconds": 47.74,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -1040988,8 +1041472,8 @@
             "--json"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-28T13:53:14.123045+00:00",
-          "durationSeconds": 0.922,
+          "startedAt": "2026-10-29T23:23:46.282850+00:00",
+          "durationSeconds": 0.82,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -1041000,8 +1041484,8 @@
         }
       ]
     },
-    "executionBindingSha256": "4872faeb0a6f3989c8fbdf6fcd6a53e2be1eb5a4be0a59f03b87fee8c7229f9d",
-    "passingCases": 5173
+    "executionBindingSha256": "9698c17ccf4642ab84f8ecf7970c6112e28e43ee0934803d5c901401322c4c17",
+    "passingCases": 5408
   },
   "evidenceLinking": {
     "automaticCaseFields": [

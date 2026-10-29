@@ -1,0 +1,15 @@
+[
+  {
+    "control": "canonical unhandled runtime error plus four threshold failures",
+    "accepted": true
+  },
+  {
+    "control": "empty producer implementation inventory",
+    "accepted": true,
+    "verifiedImplementations": 0
+  },
+  {
+    "control": "duplicate TAP totals earlier failure overwritten by later zero",
+    "accepted": true
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "runId": "7f7d0e27-dfff-4160-90d7-b88ff01d904b",
+  "startedAt": "2026-10-29T23:17:57.507Z",
+  "finishedAt": "2026-10-29T23:17:58.372Z",
+  "exitCode": 0,
+  "cleanup": {
+    "processGroup": 438937,
+    "signals": [],
+    "complete": true,
+    "remainingLivePids": []
+  },
+  "firstBytesPreserved": true,
+  "secondOutcomePath": "/tmp/c5-outcome-Xy20BJ/coverage/command-outcomes/7f7d0e27-dfff-4160-90d7-b88ff01d904b.json",
+  "junitSha256": "c0cabf70b8f548c8a4cf8b9a92db66886928256ea8e2746a49cbb5cf33b133fd"
+}

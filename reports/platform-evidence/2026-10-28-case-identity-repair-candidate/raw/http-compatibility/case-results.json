@@ -1,0 +1,66 @@
+[
+  {
+    "group": "http",
+    "file": "tests/api-guards.test.ts",
+    "name": "Unauthenticated route guards > GET /api/auth/me \u2192 200 (public, returns null)",
+    "status": "passed",
+    "message": null,
+    "junit": "integration.junit.xml"
+  },
+  {
+    "group": "http",
+    "file": "tests/auth-flows.test.ts",
+    "name": "Full Auth Flow > 4. GET /api/auth/me returns user when authenticated",
+    "status": "passed",
+    "message": null,
+    "junit": "integration.junit.xml"
+  },
+  {
+    "group": "http",
+    "file": "tests/auth-flows.test.ts",
+    "name": "Full Auth Flow > 10. /api/auth/me returns null or 401 after logout",
+    "status": "passed",
+    "message": null,
+    "junit": "integration.junit.xml"
+  },
+  {
+    "group": "http",
+    "file": "tests/health.test.ts",
+    "name": "Liveness and Readiness Endpoints > GET /health returns 200",
+    "status": "passed",
+    "message": null,
+    "junit": "integration.junit.xml"
+  },
+  {
+    "group": "http",
+    "file": "tests/health.test.ts",
+    "name": "Liveness and Readiness Endpoints > GET /api/health returns 200",
+    "status": "passed",
+    "message": null,
+    "junit": "integration.junit.xml"
+  },
+  {
+    "group": "http",
+    "file": "tests/health.test.ts",
+    "name": "Liveness and Readiness Endpoints > GET /ready reflects the actual admitted dependency set",
+    "status": "passed",
+    "message": null,
+    "junit": "integration.junit.xml"
+  },
+  {
+    "group": "http",
+    "file": "tests/health.test.ts",
+    "name": "Liveness and Readiness Endpoints > GET /readyz uses the same truthful readiness contract",
+    "status": "passed",
+    "message": null,
+    "junit": "integration.junit.xml"
+  },
+  {
+    "group": "http",
+    "file": "tests/health.test.ts",
+    "name": "Liveness and Readiness Endpoints > GET /api/ping returns ok:true",
+    "status": "passed",
+    "message": null,
+    "junit": "integration.junit.xml"
+  }
+]

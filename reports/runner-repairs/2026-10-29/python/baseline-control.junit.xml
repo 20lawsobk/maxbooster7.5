@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="7" time="3.612" timestamp="2026-10-29T22:58:29.234472+00:00" hostname="af966a6fd55d"><testcase classname="onboarding-results.python-failure-2026-10-29.candidate.tests.testing.test_python_runner_scheduling.PythonRunnerScheduling" name="test_failed_ordinary_suite_is_retained_and_does_not_suppress_reader" time="0.373" /><testcase classname="onboarding-results.python-failure-2026-10-29.candidate.tests.testing.test_python_runner_scheduling.PythonRunnerScheduling" name="test_ordinary_suites_retain_real_parallelism" time="0.313" /><testcase classname="onboarding-results.python-failure-2026-10-29.candidate.tests.testing.test_python_runner_scheduling.PythonRunnerScheduling" name="test_quiescent_only_selector_retains_exact_selection" time="0.290" /><testcase classname="onboarding-results.python-failure-2026-10-29.candidate.tests.testing.test_python_runner_scheduling.PythonRunnerScheduling" name="test_reader_waits_for_actual_writer_cleanup_and_result_files" time="0.349"><failure message="AssertionError: 1 != 0 : failed   tests/testing/test_report_progress.py&#10;passed   tests/test_writer.py&#10;{&quot;summary&quot;: {&quot;passed&quot;: 1, &quot;failed&quot;: 1, &quot;timeout&quot;: 0, &quot;skipped&quot;: 0, &quot;blocked&quot;: 0, &quot;empty&quot;: 0}, &quot;counts&quot;: {&quot;tests&quot;: 2, &quot;failures&quot;: 1, &quot;errors&quot;: 0, &quot;skipped&quot;: 0}}">self = &lt;test_python_runner_scheduling.PythonRunnerScheduling testMethod=test_reader_waits_for_actual_writer_cleanup_and_result_files&gt;
+
+    def test_reader_waits_for_actual_writer_cleanup_and_result_files(self):
+        self.put('tests/test_writer.py', WRITER)
+        self.put(QUIESCENT, READER)
+        result, report = self.run_fixture()
+&gt;       self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+E       AssertionError: 1 != 0 : failed   tests/testing/test_report_progress.py
+E       passed   tests/test_writer.py
+E       {"summary": {"passed": 1, "failed": 1, "timeout": 0, "skipped": 0, "blocked": 0, "empty": 0}, "counts": {"tests": 2, "failures": 1, "errors": 0, "skipped": 0}}
+
+../onboarding-results/python-failure-2026-10-29/candidate/tests/testing/test_python_runner_scheduling.py:84: AssertionError</failure></testcase><testcase classname="onboarding-results.python-failure-2026-10-29.candidate.tests.testing.test_python_runner_scheduling.PythonRunnerScheduling" name="test_report_owned_and_state_copies_are_retained_without_execution" time="0.552"><failure message="AssertionError: 1 != 0 : passed   reports-archive/tests/test_current.py&#10;failed   .pdim-backup/tests/test_archived.py&#10;failed   reports/cohort/tests/test_archived.py&#10;{&quot;summary&quot;: {&quot;passed&quot;: 1, &quot;failed&quot;: 2, &quot;timeout&quot;: 0, &quot;skipped&quot;: 0, &quot;blocked&quot;: 0, &quot;empty&quot;: 0}, &quot;counts&quot;: {&quot;tests&quot;: 3, &quot;failures&quot;: 0, &quot;errors&quot;: 2, &quot;skipped&quot;: 0}}">self = &lt;test_python_runner_scheduling.PythonRunnerScheduling testMethod=test_report_owned_and_state_copies_are_retained_without_execution&gt;
+
+    def test_report_owned_and_state_copies_are_retained_without_execution(self):
+        historical = ('reports/cohort/tests/test_archived.py',
+                      'reports/cohort/test-archived.py',
+                      '.pdim-backup/tests/test_archived.py')
+        for name in historical:
+            self.put(name, 'raise RuntimeError("historical copy must never execute")\ndef test_old():\n    assert False\n')
+        current = 'reports-archive/tests/test_current.py'
+        self.put(current, 'def test_canonical_source():\n    assert True\n')
+        result, report = self.run_fixture()
+&gt;       self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+E       AssertionError: 1 != 0 : passed   reports-archive/tests/test_current.py
+E       failed   .pdim-backup/tests/test_archived.py
+E       failed   reports/cohort/tests/test_archived.py
+E       {"summary": {"passed": 1, "failed": 2, "timeout": 0, "skipped": 0, "blocked": 0, "empty": 0}, "counts": {"tests": 3, "failures": 0, "errors": 2, "skipped": 0}}
+
+../onboarding-results/python-failure-2026-10-29/candidate/tests/testing/test_python_runner_scheduling.py:139: AssertionError</failure></testcase><testcase classname="onboarding-results.python-failure-2026-10-29.candidate.tests.testing.test_python_runner_scheduling.PythonRunnerScheduling" name="test_retained_copy_selector_is_rejected_instead_of_running_history" time="0.598"><failure message="AssertionError: 1 != 2 : failed   reports/cohort/tests/test_archived.py&#10;{&quot;summary&quot;: {&quot;passed&quot;: 0, &quot;failed&quot;: 1, &quot;timeout&quot;: 0, &quot;skipped&quot;: 0, &quot;blocked&quot;: 0, &quot;empty&quot;: 0}, &quot;counts&quot;: {&quot;tests&quot;: 1, &quot;failures&quot;: 0, &quot;errors&quot;: 1, &quot;skipped&quot;: 0}}">self = &lt;test_python_runner_scheduling.PythonRunnerScheduling testMethod=test_retained_copy_selector_is_rejected_instead_of_running_history&gt;
+
+    def test_retained_copy_selector_is_rejected_instead_of_running_history(self):
+        historical = 'reports/cohort/tests/test_archived.py'
+        self.put(historical, 'raise RuntimeError("historical copy must never execute")\ndef test_old():\n    assert False\n')
+        self.put('tests/test_current.py', 'def test_current():\n    assert True\n')
+        self.run_fixture(files=('tests/test_current.py',))
+        result = subprocess.run([sys.executable, str(self.root / 'scripts/testing/run-python-suites.py'),
+                                 '--file', historical, '--output', str(self.root / 'denied')],
+                                cwd=self.root, text=True, capture_output=True, timeout=10)
+&gt;       self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+E       AssertionError: 1 != 2 : failed   reports/cohort/tests/test_archived.py
+E       {"summary": {"passed": 0, "failed": 1, "timeout": 0, "skipped": 0, "blocked": 0, "empty": 0}, "counts": {"tests": 1, "failures": 0, "errors": 1, "skipped": 0}}
+
+../onboarding-results/python-failure-2026-10-29/candidate/tests/testing/test_python_runner_scheduling.py:154: AssertionError</failure></testcase><testcase classname="onboarding-results.python-failure-2026-10-29.candidate.tests.testing.test_python_runner_scheduling.PythonRunnerScheduling" name="test_timed_out_ordinary_suite_is_retained_and_reader_executes" time="1.085" /></testsuite></testsuites>

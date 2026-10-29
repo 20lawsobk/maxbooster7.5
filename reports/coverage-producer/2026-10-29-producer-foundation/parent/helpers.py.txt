@@ -1,0 +1,156 @@
+
+def _artifact_signature(path):
+    """Observe an old artifact without following symlink ancestors."""
+    path = Path(path).absolute()
+    for member in (*reversed(path.parents), path):
+        if member.is_symlink():
+            raise ValueError('Coverage artifact has a symlink ancestor')
+    try:
+        value = path.stat()
+    except FileNotFoundError:
+        return None
+    if not stat.S_ISREG(value.st_mode):
+        raise ValueError('Coverage artifact is not a regular file')
+    return (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
+
+
+def _fresh_artifact(path, before, started_ns, finished_ns, maximum_bytes=32 * 1024 * 1024):
+    """Bind stable bytes created by this child window, retaining an exact SHA."""
+    observed = _artifact_signature(path)
+    if observed is None or observed == before:
+        raise ValueError('Coverage artifact is absent or unchanged from before the command')
+    if not started_ns <= observed[3] <= finished_ns:
+        raise ValueError('Coverage artifact mtime is outside the parent command window')
+    if observed[2] > maximum_bytes:
+        raise ValueError('Coverage artifact exceeds the bounded input size')
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
+    with os.fdopen(descriptor, 'rb') as stream:
+        initial = os.fstat(stream.fileno())
+        data = stream.read(maximum_bytes + 1)
+        final = os.fstat(stream.fileno())
+    identity = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
+    if len(data) > maximum_bytes or identity(initial) != identity(final) or identity(final) != observed or _artifact_signature(path) != observed:
+        raise ValueError('Coverage artifact changed while its bytes were captured')
+    return data, {'path': str(Path(path).absolute()), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data),
+                  'mtimeNs': observed[3], 'fresh': True}
+
+
+def _junit_counts(data):
+    """Check Vitest's root, every suite and every leaf instead of trusting totals."""
+    if b'<!DOCTYPE' in data.upper() or b'<!ENTITY' in data.upper():
+        raise ValueError('Coverage JUnit must not contain declarations or entities')
+    root = ElementTree.fromstring(data)
+    if root.tag != 'testsuites' or not list(root) or any(suite.tag != 'testsuite' for suite in root):
+        raise ValueError('Coverage JUnit must contain Vitest test suites')
+
+    def counter(element, key, optional=False):
+        raw = element.attrib.get(key, '0' if optional else '')
+        if not re.fullmatch(r'(?:0|[1-9][0-9]*)', raw):
+            raise ValueError('Coverage JUnit has an invalid integer counter')
+        return int(raw)
+
+    totals = {'total': 0, 'passed': 0, 'failed': 0, 'errors': 0, 'skipped': 0}
+    for suite in root:
+        counts = dict.fromkeys(totals, 0)
+        cases = list(suite)
+        if any(case.tag not in {'testcase', 'properties', 'system-out', 'system-err'} for case in cases):
+            raise ValueError('Coverage JUnit has unsupported nested suite elements')
+        for case in (case for case in cases if case.tag == 'testcase'):
+            counts['total'] += 1
+            outcomes = [child.tag for child in case if child.tag in {'failure', 'error', 'skipped'}]
+            if len(outcomes) > 1:
+                raise ValueError('Coverage JUnit has ambiguous leaf outcomes')
+            counts[{'failure': 'failed', 'error': 'errors', 'skipped': 'skipped'}.get(outcomes[0] if outcomes else '', 'passed')] += 1
+        for key, attribute in [('total', 'tests'), ('failed', 'failures'), ('errors', 'errors'), ('skipped', 'skipped')]:
+            if counter(suite, attribute, optional=attribute == 'skipped') != counts[key]:
+                raise ValueError('Coverage JUnit suite counters disagree with leaf outcomes')
+        for key in totals:
+            totals[key] += counts[key]
+    for key, attribute in [('total', 'tests'), ('failed', 'failures'), ('errors', 'errors'), ('skipped', 'skipped')]:
+        if counter(root, attribute, optional=attribute == 'skipped') != totals[key]:
+            raise ValueError('Coverage JUnit root counters disagree with leaf outcomes')
+    if totals['total'] == 0:
+        raise ValueError('Coverage JUnit contains no actual test cases')
+    return totals
+
+
+def _coverage_outcome(data, run_id, reporter_sha256, counts, parent_started_ns, parent_finished_ns):
+    outcome = json.loads(data)
+    if outcome.get('schemaVersion') != 1 or outcome.get('kind') != 'actual-public-Vitest-onTestRunEnd' or outcome.get('runId') != run_id:
+        raise ValueError('Coverage outcome does not belong to the parent command nonce')
+    if outcome.get('repositoryRoot') != str(ROOT) or outcome.get('reporterSha256') != reporter_sha256:
+        raise ValueError('Coverage outcome source/reporter identity changed')
+    if outcome.get('reason') not in {'passed', 'failed', 'interrupted'}:
+        raise ValueError('Coverage outcome lacks the public test-run-end reason')
+
+    def integer(value):
+        return type(value) is int and value >= 0
+
+    for field in ['unhandledErrorCount', 'moduleErrorCount', 'testCaseErrorCount', 'testModuleCount']:
+        if not integer(outcome.get(field)):
+            raise ValueError('Coverage outcome has an invalid error/module count')
+    if outcome['testModuleCount'] < 1:
+        raise ValueError('Coverage outcome contains no actual test modules')
+    actual = outcome.get('testCaseCounts')
+    if not isinstance(actual, dict) or set(actual) != {'total', 'passed', 'failed', 'skipped', 'pending'} or not all(integer(value) for value in actual.values()) or sum(actual[key] for key in actual if key != 'total') != actual['total']:
+        raise ValueError('Coverage outcome test counters are inconsistent')
+    if (actual['total'], actual['passed'], actual['failed'], actual['skipped'] + actual['pending']) != (counts['total'], counts['passed'], counts['failed'] + counts['errors'], counts['skipped']):
+        raise ValueError('Coverage public outcome and JUnit test counts disagree')
+    states = outcome.get('moduleStates')
+    if not isinstance(states, dict) or set(states) != {'passed', 'failed', 'skipped', 'pending', 'queued'} or not all(integer(value) for value in states.values()) or sum(states.values()) != outcome['testModuleCount']:
+        raise ValueError('Coverage module states are inconsistent')
+    try:
+        started = datetime.datetime.fromisoformat(outcome['startedAt'].replace('Z', '+00:00'))
+        finished = datetime.datetime.fromisoformat(outcome['finishedAt'].replace('Z', '+00:00'))
+        if started.tzinfo is None or finished.tzinfo is None:
+            raise ValueError('Coverage outcome timestamps lack timezone')
+        start_ns, finish_ns = int(started.timestamp() * 1_000_000_000), int(finished.timestamp() * 1_000_000_000)
+    except (KeyError, TypeError, AttributeError, OverflowError) as error:
+        raise ValueError('Coverage outcome has invalid timestamps') from error
+    if not parent_started_ns <= start_ns <= finish_ns <= parent_finished_ns:
+        raise ValueError('Coverage public outcome is outside the parent command window')
+    ready = outcome['reason'] == 'passed' and actual['passed'] == actual['total'] and outcome['unhandledErrorCount'] == 0 and outcome['moduleErrorCount'] == 0 and outcome['testCaseErrorCount'] == 0 and states['passed'] == outcome['testModuleCount']
+    return outcome, ready
+
+
+def run_coverage_command(command, logfile, timeout, output, extra_env=None, reporter_path=None):
+    """Parent-owned command receipt binds fresh JUnit and public lifecycle bytes."""
+    output = Path(output).absolute()
+    reporter = Path(reporter_path or ROOT / 'scripts/testing/coverage-outcome-reporter.mjs').absolute()
+    reporter_argument = '--reporter=' + str(reporter)
+    if command.count(reporter_argument) != 1:
+        raise ValueError('Coverage command must select exactly one public outcome reporter')
+    reporter_signature = _artifact_signature(reporter)
+    if reporter_signature is None:
+        raise ValueError('Coverage outcome reporter source is absent')
+    reporter_sha256 = hashlib.sha256(reporter.read_bytes()).hexdigest()
+    junit = output / 'root/coverage-unit.junit.xml'
+    outcome = output / 'coverage/command-outcome.json'
+    before = {'junit': _artifact_signature(junit), 'outcome': _artifact_signature(outcome)}
+    run_id = str(uuid.uuid4())
+    env = dict(extra_env or {})
+    env.update(MAXBOOSTER_TEST_COVERAGE_DIR=str(output / 'coverage'),
+               MAXBOOSTER_TEST_COVERAGE_OUTCOME=str(outcome), MAXBOOSTER_TEST_COVERAGE_RUN_ID=run_id)
+    started_ns = time.time_ns()
+    result = run_command(command, logfile, timeout, extra_env=env)
+    finished_ns = time.time_ns()
+    proof = {'schemaVersion': 1, 'kind': 'parent-bound-coverage-command-artifacts', 'runId': run_id,
+             'parentWindow': {'startedAtNs': started_ns, 'finishedAtNs': finished_ns},
+             'reporter': {'path': str(reporter), 'sha256': reporter_sha256}, 'status': 'invalid', 'validForAdmission': False}
+    result['coverageEvidence'] = proof
+    try:
+        junit_bytes, proof['junit'] = _fresh_artifact(junit, before['junit'], started_ns, finished_ns)
+        counts = _junit_counts(junit_bytes)
+        proof['junit']['counts'] = counts
+        outcome_bytes, proof['outcome'] = _fresh_artifact(outcome, before['outcome'], started_ns, finished_ns)
+        observed, ready = _coverage_outcome(outcome_bytes, run_id, reporter_sha256, counts, started_ns, finished_ns)
+        if _artifact_signature(reporter) != reporter_signature or hashlib.sha256(reporter.read_bytes()).hexdigest() != reporter_sha256:
+            raise ValueError('Coverage outcome reporter changed during command')
+        proof['outcome']['data'] = observed
+        proof['status'] = 'bound'
+        proof['validForAdmission'] = ready and not result['timedOut'] and result['exitCode'] in (0, 1)
+    except (OSError, ValueError, ElementTree.ParseError) as error:
+        proof['error'] = str(error)
+        result['status'] = 'failed'
+    return result
+

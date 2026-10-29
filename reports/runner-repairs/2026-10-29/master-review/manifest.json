@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "scope": "Independent read-only completed8a9 frozen-master review; outside-only candidate does not grant credit",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 3226,
+      "sha256": "605f3512ec02460b5bec92a5cd400fa37e731e564d6cfd0b51ee0a95c162b770"
+    },
+    {
+      "path": "acceptance-map-candidate.json",
+      "bytes": 8798,
+      "sha256": "98064ef08746b717d025c4934904aa3d6cf8a7f6c843abd1a0c15e4e44b303c4"
+    },
+    {
+      "path": "identity/current-unit-identities.json",
+      "bytes": 321,
+      "sha256": "25ce6079fd56bd7568684fe5ead2c6934668094b00f69b1765dc12493527d6c6"
+    },
+    {
+      "path": "identity/final-identity-review.json",
+      "bytes": 2891,
+      "sha256": "eca311d8ffba562e7442e1b3a03bc18ad36b2f81f4d0652792f3678fac6b43cd"
+    },
+    {
+      "path": "identity/reader-controls.json",
+      "bytes": 1170,
+      "sha256": "ee0aecf433401944077f28dbbe4eab0f2ba26e1ebf9a7db3b0bf38b915b4549f"
+    },
+    {
+      "path": "identity/review-after-master.py",
+      "bytes": 6820,
+      "sha256": "37021f2b69cc802e8642c069aab6854528daec29b403b8fc1f8d23c2c264d8c9"
+    },
+    {
+      "path": "identity/source-and-map-review.json",
+      "bytes": 2073,
+      "sha256": "68c2cd9dc0b0946e986549490cebb5db510d6436b434edce3be3eb4ba78f164e"
+    },
+    {
+      "path": "identity/title-only-review.json",
+      "bytes": 3369,
+      "sha256": "9d6fc6b02b1747983d2748cf7459a1b167f304b588eee4ce520d6491b757097f"
+    },
+    {
+      "path": "reconcile-extra.py",
+      "bytes": 6355,
+      "sha256": "dacd6c5079fdb839a44b7cb65037abcec1ff3bb3b7becb6f8efba1e11c4b658c"
+    },
+    {
+      "path": "reconciliation.json",
+      "bytes": 18521,
+      "sha256": "fdd15b08e42984e61f92ac35aac35f4fb20a509f8f8930be6db3d766f1d4b4ad"
+    },
+    {
+      "path": "retention-and-raw-baseline.json",
+      "bytes": 9363,
+      "sha256": "ced575540c8d487f5be69677cb27e2e0295bf7565f6c48ae5938ccaa8e0bc191"
+    },
+    {
+      "path": "review-retention.py",
+      "bytes": 7913,
+      "sha256": "00b4bdc93a01f30ff15b05c92084481f8c2ae061295ce0df6217f137734ef075"
+    }
+  ],
+  "productionReady": false
+}

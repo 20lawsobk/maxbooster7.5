@@ -1,0 +1,11 @@
+test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors (__main__.CatalogSnapshotOwnership.test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors) ... ok
+test_census_is_read_only_and_preserves_every_input_hash_and_result_counter (__main__.CatalogSnapshotOwnership.test_census_is_read_only_and_preserves_every_input_hash_and_result_counter) ... ok
+test_current_suite_is_canonical_and_report_copy_is_hashed_only (__main__.CatalogSnapshotOwnership.test_current_suite_is_canonical_and_report_copy_is_hashed_only) ... ok
+test_existing_current_classifications_and_assertions_are_preserved (__main__.CatalogSnapshotOwnership.test_existing_current_classifications_and_assertions_are_preserved) ... ok
+test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression (__main__.CatalogSnapshotOwnership.test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression) ... ok
+test_unique_report_replay_sources_remain_documented_without_active_commands (__main__.CatalogSnapshotOwnership.test_unique_report_replay_sources_remain_documented_without_active_commands) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.048s
+
+OK

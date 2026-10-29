@@ -1,0 +1,3 @@
+usage: run-node-suites.py [-h] [--output OUTPUT] [--file FILE]
+                          [--timeout TIMEOUT] [--list]
+run-node-suites.py: error: Not a canonical isolated Node test: reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs

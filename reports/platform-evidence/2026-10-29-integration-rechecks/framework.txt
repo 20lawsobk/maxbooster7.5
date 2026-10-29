@@ -1,0 +1,33 @@
+...................................................F....... [ 80%]
+..............                                                 [100%]
+=================================== FAILURES ===================================
+_ CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged _
+
+self = <test_report_progress.CountedProgressTests testMethod=test_real_collection_leaves_all_git_visible_files_unchanged>
+
+    def test_real_collection_leaves_all_git_visible_files_unchanged(self):
+        repo = SCRIPT.parents[2]
+        if not (repo / 'scripts/testing/common.py').exists(): repo = Path.cwd()
+        self.assertTrue((repo / 'scripts/testing/common.py').exists(), 'Run from the repository root')
+        def snapshot():
+            raw = subprocess.check_output(['git', 'ls-files', '-co', '--exclude-standard', '-z'], cwd=repo)
+            result = {}
+            for name in sorted(set(raw.decode().split('\0')) - {''}):
+                path = repo / name
+                if path.exists() or path.is_symlink():
+                    value = path.lstat()
+                    result[name] = (value.st_mode, value.st_size, value.st_mtime_ns)
+                else: result[name] = None
+            return result
+        before = snapshot()
+        measured = progress.collect(repo, repo / 'reports/test-verification', repo / 'reports/launch-readiness/current')
+        self.assertIn(measured['measurementStatus'], {'CURRENT', 'STALE'})
+>       self.assertEqual(snapshot(), before)
+E       AssertionError: {'.ag[755258 chars]ecks/commerce/legacy-beat.txt': (33152, 9690, [325276 chars]327)} != {'.ag[755258 chars]ecks/source-before.json': (33152, 518563, 1793[324802 chars]327)}
+E       Diff is 2429714 characters long. Set self.maxDiff to None to see it.
+
+tests/testing/test_report_progress.py:138: AssertionError
+=========================== short test summary info ============================
+FAILED tests/testing/test_report_progress.py::CountedProgressTests::test_real_collection_leaves_all_git_visible_files_unchanged - AssertionError: {'.ag[755258 chars]ecks/commerce/legacy-beat.txt': (33152, 9690, [325276 chars]327)} != {'.ag[755258 chars]ecks/source-before.json': (33152, 518563, 1793[324802 chars]327)}
+Diff is 2429714 characters long. Set self.maxDiff to None to see it.
+1 failed, 72 passed, 23 subtests passed in 14.72s

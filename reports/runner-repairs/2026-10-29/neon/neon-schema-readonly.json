@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "runtime": {
+    "node": "22.23.3",
+    "v8": "12.4.254.21-node.57"
+  },
+  "observedAt": "2026-10-29T22:33:23.011Z",
+  "scope": "Read-only schema metadata through the configured DATABASE_URL Neon binding; no application rows or credentials retained",
+  "productionReady": false,
+  "status": "observed",
+  "readOnly": true,
+  "checkedTables": 312,
+  "drift": [
+    {
+      "schema": "public",
+      "table": "fabric_catalog_fence",
+      "missingTable": true,
+      "missingColumns": [
+        "id",
+        "generation"
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "fabric_chunks",
+      "missingTable": false,
+      "missingColumns": [
+        "ref_count",
+        "physical_keys"
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "fabric_deletion_chunks",
+      "missingTable": true,
+      "missingColumns": [
+        "object_id",
+        "ordinal",
+        "chunk_id",
+        "state",
+        "location",
+        "done_nodes"
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "fabric_deletion_objects",
+      "missingTable": true,
+      "missingColumns": [
+        "object_id",
+        "object_data",
+        "created_at"
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "fabric_migration_jobs",
+      "missingTable": true,
+      "missingColumns": [
+        "id",
+        "chunk_id",
+        "from_node",
+        "to_node",
+        "source_key",
+        "target_key",
+        "size_bytes",
+        "checksum",
+        "state",
+        "created_at"
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "fabric_object_dependencies",
+      "missingTable": true,
+      "missingColumns": [
+        "object_id",
+        "base_object_id"
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "fabric_objects",
+      "missingTable": false,
+      "missingColumns": [
+        "dependencies_indexed"
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "hybrid_storage_files",
+      "missingTable": true,
+      "missingColumns": [
+        "key",
+        "user_id",
+        "blob_key",
+        "state",
+        "metadata",
+        "updated_at"
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "hybrid_storage_imports",
+      "missingTable": true,
+      "missingColumns": [
+        "source",
+        "imported_count",
+        "imported_at"
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "social_media_jobs",
+      "missingTable": true,
+      "missingColumns": [
+        "id",
+        "family",
+        "owner_id",
+        "status",
+        "result",
+        "error",
+        "lease_token",
+        "lease_expires_at",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "schemaSourceSha256": "ce79392f833de48cc9bf3fe1ab6f158558b64824ccdcecce03ba277713bb1411",
+  "schemaComparatorSha256": "7c0f6adfc4af59adae1b61e1817af2814b8b6291f53f0932347ff3b2aeef0522",
+  "transactionIsolation": "RepeatableRead",
+  "informationRead": [
+    "transaction_read_only",
+    "information_schema.columns"
+  ],
+  "finishedAt": "2026-10-29T22:33:29.063Z"
+}

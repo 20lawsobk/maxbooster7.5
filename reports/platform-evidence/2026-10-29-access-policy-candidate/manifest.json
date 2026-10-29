@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "status": "CANDIDATE_NOT_LANDED",
+  "actualHttpStatus": "NOT_RUN",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 4203,
+      "sha256": "f55f989e232eb32dbb50ed4b1110b02dc8c71be0a04596e8c69e3b1800c7d30d"
+    },
+    {
+      "path": "candidate.json",
+      "bytes": 1497,
+      "sha256": "8ad0812a98d601667699c5a0062d622f9f6add0bfaed496e28f54d39ece2f663"
+    },
+    {
+      "path": "helper-sql-acceptance.json",
+      "bytes": 1726,
+      "sha256": "7e0bee684a4438f24445c8f2039d8b867b8f994958d0282c7df66cda0193840b"
+    },
+    {
+      "path": "helper-sql-acceptance.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "helper-sql-acceptance.mjs",
+      "bytes": 5349,
+      "sha256": "a705797401af60e462935bd51ce6e723b7891a707afdc097343b70d123953f63"
+    },
+    {
+      "path": "source.patch",
+      "bytes": 15598,
+      "sha256": "fca1d17050777b0e99a5fd90471b94da954a7fd88d3f7d4bcce4e8b73b97c11c"
+    },
+    {
+      "path": "tests/billing-lifecycle.test.ts",
+      "bytes": 17322,
+      "sha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421"
+    },
+    {
+      "path": "tests/file-management.test.ts",
+      "bytes": 13670,
+      "sha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392"
+    },
+    {
+      "path": "tests/helpers-http-fixture.ts",
+      "bytes": 5761,
+      "sha256": "040ef393ee8d1122815424be716794c3b57331521420a4131afd93a0f2824837"
+    },
+    {
+      "path": "tests/platform-acceptance-map.json",
+      "bytes": 8798,
+      "sha256": "fdf034abff7cd2d870cae58f4ed49ee46d9d889772f9e324cf6d9998d3b56553"
+    }
+  ]
+}

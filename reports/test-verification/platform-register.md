@@ -13,7 +13,7 @@ This source register and the machine JSON distinguish declarations, static assoc
 | scannedTypeScriptJavaScriptFiles | 3408 |
 | actualCoverageFiles | 2653 |
 | requiredChecks | 33549 |
-| unverifiedChecks | 33543 |
+| unverifiedChecks | 33540 |
 | unknownMappings | 170 |
 | invalidEvidenceLinks | 0 |
 
@@ -140,7 +140,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/awareness` | 2 | 1 | 11 |
 | `main-endpoint-audit/backup` | 5 | 1 | 27 |
 | `main-endpoint-audit/batch` | 29 | 1 | 172 |
-| `main-endpoint-audit/billing` | 24 | 1 | 132 |
+| `main-endpoint-audit/billing` | 24 | 1 | 130 |
 | `main-endpoint-audit/boot-status` | 1 | 1 | 5 |
 | `main-endpoint-audit/bootstrap` | 1 | 1 | 5 |
 | `main-endpoint-audit/callback` | 1 | 1 | 6 |
@@ -259,7 +259,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/songwriting` | 8 | 1 | 45 |
 | `main-endpoint-audit/startup` | 1 | 1 | 5 |
 | `main-endpoint-audit/status` | 20 | 4 | 107 |
-| `main-endpoint-audit/storage` | 26 | 3 | 149 |
+| `main-endpoint-audit/storage` | 26 | 3 | 148 |
 | `main-endpoint-audit/storefront` | 47 | 1 | 270 |
 | `main-endpoint-audit/storefront-domains` | 22 | 1 | 124 |
 | `main-endpoint-audit/studio` | 225 | 9 | 1315 |
@@ -298,43 +298,38 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `native-source-declaration/rate` | 1 | 1 | 6 |
 | `native-source-declaration/zset` | 4 | 1 | 24 |
 | `python-decorator-ast/admin` | 2 | 1 | 12 |
+| `python-decorator-ast/analysis` | 5 | 1 | 32 |
+| `python-decorator-ast/analytics` | 3 | 1 | 17 |
 | `python-decorator-ast/analyze` | 7 | 2 | 44 |
 | `python-decorator-ast/api-keys` | 4 | 1 | 24 |
 | `python-decorator-ast/audio` | 6 | 1 | 40 |
 | `python-decorator-ast/audio-job` | 3 | 2 | 20 |
 | `python-decorator-ast/awareness` | 4 | 1 | 22 |
 | `python-decorator-ast/boostsheets` | 1 | 1 | 5 |
-| `python-decorator-ast/campaign` | 1 | 1 | 6 |
 | `python-decorator-ast/campaigns` | 6 | 1 | 35 |
-| `python-decorator-ast/capability` | 1 | 1 | 5 |
 | `python-decorator-ast/concurrency` | 1 | 1 | 5 |
-| `python-decorator-ast/config` | 1 | 1 | 5 |
 | `python-decorator-ast/content` | 3 | 2 | 19 |
 | `python-decorator-ast/control` | 7 | 1 | 41 |
 | `python-decorator-ast/coverage` | 5 | 1 | 26 |
 | `python-decorator-ast/dashboard` | 1 | 1 | 5 |
 | `python-decorator-ast/dataset` | 1 | 1 | 5 |
 | `python-decorator-ast/datasets` | 3 | 1 | 15 |
-| `python-decorator-ast/feedback` | 1 | 1 | 6 |
+| `python-decorator-ast/director` | 6 | 1 | 32 |
 | `python-decorator-ast/files` | 1 | 1 | 5 |
 | `python-decorator-ast/generate` | 16 | 3 | 112 |
 | `python-decorator-ast/generate-video` | 2 | 2 | 14 |
 | `python-decorator-ast/generation` | 1 | 1 | 6 |
 | `python-decorator-ast/gpu` | 10 | 2 | 51 |
 | `python-decorator-ast/health` | 4 | 3 | 24 |
-| `python-decorator-ast/image` | 1 | 1 | 7 |
 | `python-decorator-ast/infer` | 1 | 1 | 6 |
-| `python-decorator-ast/insights` | 1 | 1 | 6 |
 | `python-decorator-ast/knowledge` | 4 | 1 | 21 |
 | `python-decorator-ast/maxcore` | 2 | 1 | 11 |
 | `python-decorator-ast/memory` | 1 | 1 | 5 |
-| `python-decorator-ast/metrics` | 2 | 1 | 10 |
 | `python-decorator-ast/model` | 1 | 1 | 5 |
 | `python-decorator-ast/models` | 12 | 2 | 61 |
 | `python-decorator-ast/optimize` | 2 | 2 | 12 |
 | `python-decorator-ast/platform` | 14 | 1 | 86 |
-| `python-decorator-ast/platforms` | 1 | 1 | 5 |
-| `python-decorator-ast/predict` | 3 | 3 | 18 |
+| `python-decorator-ast/predict` | 2 | 2 | 12 |
 | `python-decorator-ast/proxy` | 5 | 1 | 34 |
 | `python-decorator-ast/ready` | 3 | 2 | 18 |
 | `python-decorator-ast/root` | 1 | 1 | 5 |
@@ -345,17 +340,14 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `python-decorator-ast/status` | 2 | 2 | 10 |
 | `python-decorator-ast/storage` | 15 | 1 | 83 |
 | `python-decorator-ast/sync` | 2 | 1 | 11 |
-| `python-decorator-ast/text` | 1 | 1 | 6 |
 | `python-decorator-ast/train` | 10 | 3 | 57 |
 | `python-decorator-ast/training` | 22 | 3 | 121 |
-| `python-decorator-ast/upload` | 1 | 1 | 6 |
 | `python-decorator-ast/url-parser` | 2 | 1 | 10 |
-| `python-decorator-ast/video` | 3 | 2 | 21 |
+| `python-decorator-ast/video` | 2 | 1 | 14 |
 | `python-decorator-ast/video-job` | 6 | 1 | 38 |
 | `python-decorator-ast/video-jobs` | 1 | 1 | 6 |
 | `python-decorator-ast/warm` | 2 | 1 | 11 |
 | `python-decorator-ast/watchdog` | 3 | 1 | 16 |
-| `python-decorator-ast/website` | 1 | 1 | 6 |
 | `typescript-router-ast/*path` | 1 | 1 | 5 |
 | `typescript-router-ast/<computed>` | 9 | 4 | 49 |
 | `typescript-router-ast/activate` | 1 | 1 | 6 |

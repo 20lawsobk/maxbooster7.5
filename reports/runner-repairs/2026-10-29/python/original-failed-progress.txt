@@ -1,0 +1,42 @@
+.........F...                                               [100%]
+=================================== FAILURES ===================================
+_ CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged _
+
+self = <tests.testing.test_report_progress.CountedProgressTests testMethod=test_real_collection_leaves_all_git_visible_files_unchanged>
+
+    def test_real_collection_leaves_all_git_visible_files_unchanged(self):
+        repo = SCRIPT.parents[2]
+        if not (repo / 'scripts/testing/common.py').exists(): repo = Path.cwd()
+        self.assertTrue((repo / 'scripts/testing/common.py').exists(), 'Run from the repository root')
+        def snapshot():
+            raw = subprocess.check_output(['git', 'ls-files', '-co', '--exclude-standard', '-z'], cwd=repo)
+            result = {}
+            for name in sorted(set(raw.decode().split('\0')) - {''}):
+                path = repo / name
+                if path.exists() or path.is_symlink():
+                    value = path.lstat()
+                    result[name] = (value.st_mode, value.st_size, value.st_mtime_ns)
+                else: result[name] = None
+            return result
+        before = snapshot()
+        try:
+            measured = progress.collect(repo, repo / 'reports/test-verification', repo / 'reports/launch-readiness/current')
+        except progress.InvalidEvidence:
+            # The canonical master executes this test before final reconciliation.
+            # It must reject mixed old summaries/new execution, without writing
+            # or turning that unfinished invocation into current acceptance.
+            master = json.loads((repo / 'reports/test-verification/orchestration/results.json').read_text())
+            self.assertFalse(master.get('finishedAt'), 'A completed inconsistent report must fail this check')
+            self.assertNotIn(master.get('status'), {'failed', 'executed_groups_passed'})
+        else:
+            self.assertIn(measured['measurementStatus'], {'CURRENT', 'STALE'})
+>       self.assertEqual(snapshot(), before)
+E       AssertionError: {'.ag[995846 chars] 1793313595058557959), 'reports/test-verificat[146016 chars]327)} != {'.ag[995846 chars] 1793195028770047054), 'reports/test-verificat[146016 chars]327)}
+E       Diff is 2587767 characters long. Set self.maxDiff to None to see it.
+
+tests/testing/test_report_progress.py:147: AssertionError
+=========================== short test summary info ============================
+FAILED tests/testing/test_report_progress.py::CountedProgressTests::test_real_collection_leaves_all_git_visible_files_unchanged
+1 failed, 12 passed, 13 subtests passed in 10.09s
+/workspace/.cloud-python/lib/python3.12/site-packages/coverage/control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-no-data-collected
+  self._warn("No data was collected.", slug="no-data-collected")

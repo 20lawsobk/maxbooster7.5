@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
-  "workingTreeInputDigest": "b9af01721cea662071425000bc1d60674309285433a7380f050ba998ba4c4a86",
+  "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "workingTreeInputDigest": "e632c1e9cfd5bfb58e3c9c1e3533e79fd7c15ddb5f769b38a6c95239e20e2f7a",
   "scope": "Canonical first-party tracked tests, operational acceptance scripts, test support and newly added testing runners; not runtime execution evidence",
   "caseEnumeration": "Literal source labels only, not a count of runtime test cases or coverage percentage",
   "counts": {
-    "canonicalTestFiles": 636,
-    "supportSourceFiles": 75,
-    "retainedSnapshotFiles": 71,
+    "canonicalTestFiles": 641,
+    "supportSourceFiles": 82,
+    "retainedSnapshotFiles": 78,
     "nonExecutableSupportFiles": 11,
     "byGroup": {
       "commerce": 21,
       "integration-browser": 26,
       "manual-destructive-provider": 37,
-      "python": 125,
+      "python": 130,
       "root-node": 125,
       "root-unit": 297,
-      "runner-support": 75,
+      "runner-support": 82,
       "subsystems": 5
     }
   },
@@ -3494,33 +3494,6 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
-      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-      "sha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
-      "category": "test",
-      "group": "root-node",
-      "runner": "node:test",
-      "cwd": ".",
-      "command": "python3 scripts/testing/run-node-suites.py --file reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
-      "prerequisites": [
-        "Node.js >=22.12",
-        "npm ci"
-      ],
-      "risks": [],
-      "status": "execution_not_inferred_from_inventory",
-      "purpose": "Real Chromium keyboard/AX regression for the shared application navigation. Authentication and unrelated widgets are fixtures; layout, navigation, buttons, icons and the production stylesheet execute unchanged.",
-      "caseTitles": [
-        "Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus",
-        "390px actual accessibility name: ${expected}",
-        "Settings is one link without nested button or link descendants",
-        "Closed mobile drawer cannot receive sequential keyboard focus",
-        "Menu control references existing drawer and exposes closed state",
-        "Opening with Enter moves focus into named mobile drawer",
-        "Escape closes drawer and restores opener focus and body scrolling",
-        "Desktop resize exposes real navigation and releases mobile inert state"
-      ],
-      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
-    },
-    {
       "path": "script/security-consumers.test.cjs",
       "sha256": "7a09f43d13461ad0e58801d4c448305a606870b22d045b3ca745b08d7a8a5080",
       "category": "test",
@@ -3766,7 +3739,7 @@
     },
     {
       "path": "scripts/testing/collect-node-coverage.mjs",
-      "sha256": "df4c18686189623a3aed4093bc912283b73a1f908cd88ae932d69cbb0766c965",
+      "sha256": "ca30e613b7caea6b6eebe947bf2abe0753a07d9bb5ee3a416eabcbb941bc4123",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3777,13 +3750,13 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "collect node coverage",
+      "purpose": "Collect one existing P1 suite using the shared Vite/provider typed contract.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
       "path": "scripts/testing/commerce-legacy-fixture.mjs",
-      "sha256": "da438be7781b009932e7ce5d6606f0697b48ed6c484071dc45a2bf38b6f668ad",
+      "sha256": "035f06113c85eeb27f2fcae51719de68ddb5c00512ae3cd774ba68ad093fc6ee",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3800,7 +3773,7 @@
     },
     {
       "path": "scripts/testing/common.py",
-      "sha256": "29b1af5de5defcbb4c82853dced9275db8260a9dd74a9c17ff6765b80a9d13bb",
+      "sha256": "d04c8fd61742e11409e4de31484104c42496dfb1c4167057c585634ce3ba28e6",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3812,6 +3785,23 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Process isolation and evidence helpers for the repository test runners.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/coverage-coordinate-contract.mjs",
+      "sha256": "30c0596394d7dc1d791efc1a672ff242a35e7efd61fdcfd079cc3e2e87956160",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Lossless versioned coordinate wire codec. No legacy JSON normalization.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -3833,6 +3823,23 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "scripts/testing/coverage-node-vite-entry.mjs",
+      "sha256": "55408bb72578dd95da299dbcc701362dc19b5b43a785c9d308d882f0ba94f015",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Real node:test entry; exactly one in-process suite, no listeners or watchers.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "scripts/testing/coverage-provenance.mjs",
       "sha256": "383546d025265e18e12f7ae81e412413133aebbc0297f23e5e3263528d78592c",
       "category": "support",
@@ -3846,6 +3853,40 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Fail-closed identity and map checks for separately collected coverage.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/coverage-raw-sidecar-reporter.cjs",
+      "sha256": "3bee4989bf9c32c0eecd070d4bf042e0bfa0137b9fc5049b1893ea70488a7040",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Public Istanbul reporter: lossless pre-JSON capture; counters are never changed.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/coverage-shared-provider.mjs",
+      "sha256": "ecc6a0313bca1e4b55539a56543b180da116b93f98768d1bf2be9844c5f98703",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Version-pinned shared public-Vite / actual coverage-v8 provider contract.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -3868,7 +3909,7 @@
     },
     {
       "path": "scripts/testing/generate-catalog.py",
-      "sha256": "177fc3778137b5e255b2fd6618ed3f184c9d6a74f7ed2327b2cef927e598ccfe",
+      "sha256": "e83b2f217d5d29c9c2d04406b6881ae8fab392d116337b28e8b7fbe77fc14ef3",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3887,7 +3928,7 @@
     },
     {
       "path": "scripts/testing/generate-platform-plan.py",
-      "sha256": "92322ef9dd196e67e135dab63766f4d7edca0e20fd72a0a1ecf0bac9d8896e23",
+      "sha256": "1bed33f216575ed782892cb437a9240d1a92e7a29cdfd946ca2f610c75b5bd58",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3920,8 +3961,25 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "scripts/testing/junit_evidence.py",
+      "sha256": "2f628127157479063886c0810b6d85dae3b3d1f6b826c43a92a8075c25ec7efb",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Read exact JUnit leaves without losing Python class scope. Unique names retain their existing identity. Only Python names repeated across distinct, explicit JUnit classnames are qualified. A repeated qualified name",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "scripts/testing/launch-readiness-audit.py",
-      "sha256": "67266d4052c84b45517ba2042dab2cf04131ad6bf14147726a5986015b823c36",
+      "sha256": "e7174c945cf2732281d5965fc63d53d6ac89a08a0c0fa75b0dd35df67f247fbd",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3955,7 +4013,7 @@
     },
     {
       "path": "scripts/testing/platform-register.py",
-      "sha256": "f8c4e518a50cfb66cce48e4b305b1760df6729ffbacbdaccaddb0708ab106257",
+      "sha256": "9371d6d03fb93bdcecc7cd9b676a043776c1f3b02065918934424c0525cec32a",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3967,6 +4025,23 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Index platform surfaces and require explicit behavioral evidence for closure. This source inventory never treats a route match, import, line coverage or page render as proof that a feature's business behavior passed.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/python_factory_mounts.py",
+      "sha256": "0685d52d329ce777bcb991d3752eb5fa3c15ef9240cfc8c37818fe43922e4701",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Bounded source topology for direct FastAPI router factories; never imports app code.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -3984,6 +4059,23 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Turn recorded test failures, exclusions and coverage gaps into repair tasks. Generating a guide does not repair a feature or make a failed check pass. Use --strict when unresolved tasks must make a master verification fail.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/report-progress.py",
+      "sha256": "ec0024fa83ea34aad9e03cb436438584ccb5b4c5854d5e876bf8ae13b2742cc7",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Report counted launch acceptance, separately from code implementation. Exit 0 means a current, internally consistent measurement, not launch approval. Exit 1 means historical/stale evidence; exit 2 means missing/invalid evidence.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -4006,7 +4098,7 @@
     },
     {
       "path": "scripts/testing/run-commerce.py",
-      "sha256": "c4d9a0b188f5e1eae9eaed3e0b56a9b1ac02bd7222f4cc7df60f78cc9c027919",
+      "sha256": "3f28e1853e0f2b39e3008e801829a267ca7333baeb603871e4147dff319c2479",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4040,7 +4132,7 @@
     },
     {
       "path": "scripts/testing/run-node-suites.py",
-      "sha256": "bdae9321758f45e4eb1c857918bbc000e50565c6b2b7acb50ba9ab7fa778998e",
+      "sha256": "30733c63ca033859719f576df6277e7b88fd895bcbb5510b592c58db7431ec7e",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4091,7 +4183,7 @@
     },
     {
       "path": "scripts/testing/run-python-suites.py",
-      "sha256": "4c54897643efcac387cac990f43cc3995eefd4fcba6b1123fded6ebd52c2e21a",
+      "sha256": "bd4e36f21886d1b6c81eba300ffc66892826842e1ffbfbf392dc66f28834e480",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4125,7 +4217,7 @@
     },
     {
       "path": "scripts/testing/summarize-results.py",
-      "sha256": "a9e5d062edf1f292b5d26212e430e320db6820c3717272e8226ab6a0ed1a9b30",
+      "sha256": "4171c579d8cb2d8c60737e3d399e3efc4909471d412fcc930beb6d603b01962e",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -5740,7 +5832,7 @@
     },
     {
       "path": "tests/billing-lifecycle.test.ts",
-      "sha256": "4fa8ee102099997981b1f1370e8b5162a494dec1c2835db1e47559920e143bfe",
+      "sha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -5767,6 +5859,7 @@
         "8. a valid signed event cannot replace a user's tier from unverified payload metadata",
         "9. GET /api/billing/subscription returns complete tier shape when authenticated",
         "10. GET /api/billing/subscription returns 401 when unauthenticated",
+        "access policy: GET /api/billing/subscription rejects ${denied.state} session",
         "11. GET /api/billing/plans returns a non-empty plan list without auth",
         "12. POST /api/billing/create-checkout-session rejects invalid plan"
       ],
@@ -7424,7 +7517,7 @@
     },
     {
       "path": "tests/file-management.test.ts",
-      "sha256": "65e4c00bd698becb27406b4fa804cedfc9b92d3d023b13c80f72bd7ad8cb04dc",
+      "sha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -7455,7 +7548,8 @@
         "10b. literal '..' segments in file key are rejected (never 200)",
         "10c. backslash and encoded-NUL keys are rejected (never 200)",
         "10d. restore of the deleted file makes it downloadable again",
-        "10. GET /api/storage/quota returns 401 or 403 without authentication"
+        "10. GET /api/storage/quota returns 401 or 403 without authentication",
+        "access policy: GET /api/storage/quota rejects ${denied.state} session"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -7857,7 +7951,7 @@
     },
     {
       "path": "tests/helpers-http-fixture.ts",
-      "sha256": "bfd04e3007011c9d4950a678c60f4916a7462239bfb3ff1433223e325dfdf451",
+      "sha256": "842e1ba63238541b529d7eaebdff4b4243bb79cabcbe767d338272e85655f13d",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -10614,6 +10708,39 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/testing/coverage-coordinate-contract.test.mjs",
+      "sha256": "a8ab58ce32ed28bad87e957269b3b68e401b330cb852537d61d3b58574b8c8c0",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/testing/coverage-coordinate-contract.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "finite coordinates roundtrip with original zero denominator and UTF16 source; rejects",
+      "caseTitles": [
+        "finite coordinates roundtrip with original zero denominator and UTF16 source",
+        "rejects",
+        "rejects unsupported shape",
+        "only attested end Infinity and full AST-proven synthetic else roundtrip",
+        "sentinel proof rejects",
+        "wire refuses absent, changed, duplicate or partial sentinel sidecar",
+        "authored helper remains original; authored policy lookalikes reject",
+        "public Vite transform/provider retains authored helper arrows and all zero original functions",
+        "actual Debugger UTF16 wrapper binding rejects stale maps and wrong prefix",
+        "wire rejects unsupported prototypes and accessors before serialization or cloning",
+        "manifest requires exact unique actual inspector records for all nine originals",
+        "manifest rejects",
+        "authoritative common inventory keeps C++ SQL locks and untracked code while excluding generated snapshots/coverage",
+        "public Istanbul inline and file contract reporters preserve raw typed maps/counters identically"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/testing/coverage-provenance.test.mjs",
       "sha256": "e9241993e3e42b57912f6e8450969f92d2aef2ffa85419c85f48be79135e4bfb",
       "category": "test",
@@ -10697,6 +10824,62 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/testing/test_catalog_snapshot_ownership.py",
+      "sha256": "1d366498a40f609f10f00dea4d615a69c3192f44e0897e23d4ad7fd1137a3d32",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_catalog_snapshot_ownership.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Keep report-owned source in the catalog without registering historical suites. parsed, never executed. MAXBOOSTER_CATALOG_SOURCE supports reviewing a candidate generator without changing the checkout; MAXBOOSTER_TEST_REPO_ROOT locates the",
+      "caseTitles": [
+        "CatalogSnapshotOwnership.test_current_suite_is_canonical_and_report_copy_is_hashed_only",
+        "CatalogSnapshotOwnership.test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression",
+        "CatalogSnapshotOwnership.test_existing_current_classifications_and_assertions_are_preserved",
+        "CatalogSnapshotOwnership.test_unique_report_replay_sources_remain_documented_without_active_commands",
+        "CatalogSnapshotOwnership.test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors",
+        "CatalogSnapshotOwnership.test_census_is_read_only_and_preserves_every_input_hash_and_result_counter"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_commerce_subject_selector.py",
+      "sha256": "53bb5f75f101a39dc40e2eb412520a2d1eefd82db46fac0b399d3fc14e70dff7",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_commerce_subject_selector.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Exercise the real legacy-commerce selector boundary without SQL or providers. fixture import sentinel and intercepted child-process calls. They verify selection and credential isolation, not the 14 production money-loop assertions. To review",
+      "caseTitles": [
+        "CommerceSubjectSelectorTests.test_missing_subject_selector_rejected",
+        "CommerceSubjectSelectorTests.test_relative_report_rejected",
+        "CommerceSubjectSelectorTests.test_absolute_subject_rejected",
+        "CommerceSubjectSelectorTests.test_traversal_subject_rejected",
+        "CommerceSubjectSelectorTests.test_unregistered_subject_rejected",
+        "CommerceSubjectSelectorTests.test_unknown_duplicate_or_ignored_arguments_rejected",
+        "CommerceSubjectSelectorTests.test_missing_registered_file_rejected",
+        "CommerceSubjectSelectorTests.test_symlink_redirection_outside_repository_rejected",
+        "CommerceSubjectSelectorTests.test_config_include_mismatch_rejected",
+        "CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected",
+        "CommerceSubjectSelectorTests.test_validated_subject_drives_actual_spawn_and_owned_cleanup",
+        "CommerceSubjectSelectorTests.test_runner_forwards_recorded_subject_and_strips_application_credentials"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/testing/test_endpoint_mount_resolution.py",
       "sha256": "f0bb84c0f26508cb200bcb893bf102bdd32032f4ed79a58a9939bfed312a0482",
       "category": "test",
@@ -10724,7 +10907,7 @@
     },
     {
       "path": "tests/testing/test_launch_readiness_audit.py",
-      "sha256": "44a81984703f06289255e59b1640d45edbc0c09e95b4dd79d0c78f0517103d18",
+      "sha256": "167bc13f022cb3eab80fffad8beb056dc2b5161022acb97b63ba910162cfe4a3",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -10796,7 +10979,7 @@
     },
     {
       "path": "tests/testing/test_platform_evidence.py",
-      "sha256": "7cad1816b277bb29e6f1bd43b877ffc98ba3fb92207368df5bd906f65eea7f06",
+      "sha256": "661ae5f953fc8c84c6e262d255f73b7f73afde2bb57f895435e22a36e2afa84d",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -10839,7 +11022,9 @@
         "test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof",
         "test_aggregate_browser_tap_cannot_assign_cases_to_files",
         "test_default_file_producer_requires_exact_command_and_numeric_success",
-        "test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass"
+        "test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass",
+        "test_real_python_class_scopes_share_extractor_and_linker_identity",
+        "test_duplicate_fully_qualified_python_scope_cannot_union_a_pass"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -10870,6 +11055,72 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/testing/test_python_factory_mounts.py",
+      "sha256": "6920abcc0232ff29384308a60016c5c5410dda653915a5f2118eb30a38b2c1de",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_factory_mounts.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Static factory topology must preserve declarations and fail closed on ambiguity.",
+      "caseTitles": [
+        "FactoryMounts.test_direct_import_alias_and_prefixes",
+        "FactoryMounts.test_constructor_alias_is_resolved_in_its_lexical_scope",
+        "FactoryMounts.test_same_module_factory_and_relative_import",
+        "FactoryMounts.test_assigned_router_and_optional_none_remain_conditional",
+        "FactoryMounts.test_optional_fastapi_none_fallback_requires_same_import_try",
+        "FactoryMounts.test_conditional_application_constructor_import_is_retained",
+        "FactoryMounts.test_module_app_and_router_binding_shadowing_reject",
+        "FactoryMounts.test_nested_scope_shadowing_does_not_replace_outer_bindings",
+        "FactoryMounts.test_decorated_async_generator_early_or_implicit_return_factories_reject",
+        "FactoryMounts.test_deferred_loop_comprehension_with_match_mounts_reject",
+        "FactoryMounts.test_ordinary_if_and_try_mounts_record_conditions",
+        "FactoryMounts.test_invalid_prefix_and_dynamic_spreads_reject",
+        "FactoryMounts.test_constructor_and_factory_call_before_import_reject",
+        "FactoryMounts.test_ambiguous_packages_and_reexport_cycles_reject",
+        "FactoryMounts.test_router_lifecycle_decorator_preserves_direct_route_topology",
+        "FactoryMounts.test_source_is_never_executed_and_unicode_prefix_preserved",
+        "FactoryMounts.test_finite_file_budget_fails_closed",
+        "FactoryMounts.test_importlib_consumer_loads_paired_helpers_without_sys_path",
+        "FactoryMounts.test_actual_consumer_retains_declaration_check_and_unknown_identities",
+        "FactoryMounts.test_multiple_mounts_retain_original_declaration_and_explicit_unknown",
+        "FactoryMounts.test_nonliteral_decorator_path_remains_unresolved"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_python_runner_scheduling.py",
+      "sha256": "e47e24cbf4eaf92675f3f632cceec832725085dd0a295e47a3b87ce52505a8dc",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_runner_scheduling.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Exercise Python worker isolation and quiescent read-only scheduling with real children. The fixtures use disposable Git repositories, pytest interpreters and report files. They do not import the application or inherit provider credentials. Run with the",
+      "caseTitles": [
+        "PythonRunnerScheduling.test_reader_waits_for_actual_writer_cleanup_and_result_files",
+        "PythonRunnerScheduling.test_ordinary_suites_retain_real_parallelism",
+        "PythonRunnerScheduling.test_failed_ordinary_suite_is_retained_and_does_not_suppress_reader",
+        "PythonRunnerScheduling.test_timed_out_ordinary_suite_is_retained_and_reader_executes",
+        "PythonRunnerScheduling.test_report_owned_and_state_copies_are_retained_without_execution",
+        "PythonRunnerScheduling.test_retained_copy_selector_is_rejected_instead_of_running_history",
+        "PythonRunnerScheduling.test_quiescent_only_selector_retains_exact_selection"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/testing/test_remediation.py",
       "sha256": "8149c44cc3304d98a817483d61ea70222e3ed5d165e74019aa6618c80333b779",
       "category": "test",
@@ -10895,8 +11146,43 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/testing/test_report_progress.py",
+      "sha256": "5ade36db3ec3369ac4bcb1803730772a6327dae9005503bdc99a94240a29426e",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_report_progress.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Behavior and malformed-evidence checks for the counted progress report.",
+      "caseTitles": [
+        "CountedProgressTests.test_independent_denominators_and_no_invented_implementation_or_test_total",
+        "CountedProgressTests.test_green_color_requires_all_gates_checks_and_no_blockers",
+        "CountedProgressTests.test_stale_keeps_only_historical_observation_and_no_current_pass_credit",
+        "CountedProgressTests.test_complete_current_launch_uses_audit_and_master_not_summary_approval",
+        "CountedProgressTests.test_complete_green_cannot_override_missing_failed_or_stale_master",
+        "CountedProgressTests.test_summary_claim_cannot_override_partial_or_unapproved_launch",
+        "CountedProgressTests.test_raw_fraction_is_separate_from_istanbul_truncated_percent",
+        "CountedProgressTests.test_missing_page_and_duplicate_page_cannot_reduce_eighty_page_target",
+        "CountedProgressTests.test_summary_counts_must_equal_actual_rows",
+        "CountedProgressTests.test_boolean_counts_are_rejected",
+        "CountedProgressTests.test_plan_and_readiness_statuses_must_agree",
+        "CountedProgressTests.test_duplicate_check_identity_is_not_counted_twice",
+        "CountedProgressTests.test_coverage_overflow_negative_boolean_and_stale_summary_are_rejected",
+        "CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent",
+        "CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged",
+        "CountedProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/testing/test_summary_results.py",
-      "sha256": "fb5b6359a39d2c46f1bf7f2132f1371bfd246a43dcea1182215aed1c64097bd7",
+      "sha256": "e93e6c9aaea1b2ff76dba533102a7a51b283488e6fa6ad09ff56a17867d4f0c0",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -10915,7 +11201,10 @@
         "test_master_plan_keeps_sandbox_mutations_opt_in_and_builds_before_http_load",
         "test_source_identity_detects_new_code_changes_and_excludes_generated_private_state",
         "test_provider_parse_exclusions_cannot_be_mistaken_for_complete_coverage",
-        "test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units"
+        "test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units",
+        "test_python_scopes_qualify_only_ambiguous_explicit_classes",
+        "test_python_missing_class_scope_stays_ambiguous",
+        "test_python_missing_names_or_blank_classes_never_acquire_a_usable_identity"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -11338,7 +11627,7 @@
     },
     {
       "path": "tests/unit/auth-page-age-policy.test.ts",
-      "sha256": "7daa3bc63ae43cba07f130fe4b1092d619c13e3422e70f27fe22cc97cfda8893",
+      "sha256": "22e0024e4084343f602b187c4223183feb4201f507e51611009c9bd4331f4fe5",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -12823,7 +13112,7 @@
     },
     {
       "path": "tests/unit/deployment-small-file-codec.test.ts",
-      "sha256": "86152f41af0eaf718e6ba8e62b8a87f9d7f8afdc96be7fa3ff20acbaee84a8bd",
+      "sha256": "6ed70a60ce032f07199006f202562f9d5a0a5e50f989a79eff3b067dddcb2d76",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -13430,7 +13719,7 @@
     },
     {
       "path": "tests/unit/email-provider-ack.test.ts",
-      "sha256": "f0dcae19451dd40cabd6fdfd047140c4c3774b49ed0fabd9c41d1a6c71966322",
+      "sha256": "c5b78d69f2243ef1044b27a735199b8b5c82b276e220854d8c87f417a211718a",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -13731,7 +14020,7 @@
     },
     {
       "path": "tests/unit/frontend-batch-response-contracts.test.ts",
-      "sha256": "5e3b278f498917a3b34a2c9b03e0c0a03ff27c178f20f05e76318f044981cf6d",
+      "sha256": "e0ff62ca2cac6a18bc64478e09904e6116d8930006c2fc6ec722ddd93106436d",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -14407,7 +14696,7 @@
     },
     {
       "path": "tests/unit/marketplace-storefront-page-contracts.test.ts",
-      "sha256": "2b5b251f5e7567a6c14559220d79c35c4d91e49a4f4496c361a8a66e26b45b94",
+      "sha256": "9d2177a22d4291da51d326e3706bf50f986aa82ef5c4361c492da1bf74a8ba4a",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -15613,7 +15902,7 @@
     },
     {
       "path": "tests/unit/password-policy.test.ts",
-      "sha256": "4d069984f095d5fa8ac65a6a90fb1956dbf6b376a276aee7213806feb0a2e341",
+      "sha256": "71161c56b54c0f12880fdd99e43dc223cbd9258618a2251dbb8ab5f2bcb55da7",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -16696,7 +16985,7 @@
     },
     {
       "path": "tests/unit/registrationCompletion.test.ts",
-      "sha256": "0cd757e641827b2e0e49f6a329ae8801cc4b664db3402da2cac01f82eaa235cc",
+      "sha256": "e9e2a92e364daa6a97b175331a232cd55c377e06deeccea0f8e2213d4bd1a649",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -16724,7 +17013,7 @@
     },
     {
       "path": "tests/unit/registrationCompletionBoundary.test.ts",
-      "sha256": "1701903ddd3b95a85c975c9548ec0cf12389c1a39700e29eb7e50137d19e61a9",
+      "sha256": "4a5e097fd4f1f9af3fc9fcc91f05364525829aa0d1404ca12cd210124275d6f5",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -18442,7 +18731,7 @@
     },
     {
       "path": "tests/unit/subscriptionCheckout.test.ts",
-      "sha256": "3e18dff432215b587e17438f6bc4df47470ec6f23964ff2b1a3d38cfc2df8b4a",
+      "sha256": "5eb3f59466a40e4423ce77a165704eb82943ea4ab1ab5f0f396a82137a4e6db5",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -18526,7 +18815,7 @@
     },
     {
       "path": "tests/unit/support-ticket-validation.test.ts",
-      "sha256": "c05ba4430018bcb4f8414ba997e2d7bdbebd512cafaf7952e753ac53d7fe5ae0",
+      "sha256": "81b7acf28cc1401d2f17d75f966e9d20502d25c1d55819db44dc6244feee26f6",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -19132,7 +19421,7 @@
     },
     {
       "path": "vitest.platform.config.ts",
-      "sha256": "19db3933ad5515138a5831dc7f064f7f2f5622ce027ab76f02a6ed611c6c7438",
+      "sha256": "b76f7ba10df4bc4f434beff4775984865881ea7e756f77673b94f878a658ac48",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -19440,6 +19729,21 @@
       "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
     },
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "sha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
+      "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
+    },
+    {
+      "path": "reports/coverage-producer/2026-10-28-keepnames-final/independent-review/staged/tests/database-backup-restore-postgres.test.mjs",
+      "sha256": "152e20065c6d37035290e6786a22b8180fa0f1e80984a1b00bf72485616fc567",
+      "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
+    },
+    {
+      "path": "reports/coverage-producer/2026-10-28-keepnames-final/independent-review/staged/tests/testing/coverage-provenance.test.mjs",
+      "sha256": "e9241993e3e42b57912f6e8450969f92d2aef2ffa85419c85f48be79135e4bfb",
+      "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
+    },
+    {
       "path": "reports/fix-all/.snapshots/imports-1785703854037/server/database-performance-test.ts",
       "sha256": "c7ef4bcd20adb3f81105de19f2a5afd2699c8164f701c6a0a01b56ac1034478e",
       "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
@@ -19503,6 +19807,26 @@
       "path": "reports/fix-all/.snapshots/ts-server-1786102456133/server/tests/load-testing/simpleLoadTest.ts",
       "sha256": "501a464cf381ab8d5fe89a3793320f026aa00d18097db2417cefead7fc5a3f3e",
       "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
+    },
+    {
+      "path": "reports/mapping-audit/2026-10-28-topology-final/candidate/tests/endpoint-topology.test.mjs",
+      "sha256": "4b97011ea7147ee3fed7eaaf8650b897fb7a3af9ebd14531f8226f3979c09aec",
+      "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
+    },
+    {
+      "path": "reports/mapping-audit/2026-10-28-topology-final/candidate/tests/finite-route-paths.test.mjs",
+      "sha256": "f05acb9390269a2b36a553cb9c940475d4e050528f2d1a1ac1e78f3a303e9264",
+      "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
+    },
+    {
+      "path": "reports/mapping-audit/2026-10-28-topology-final/candidate/tests/testing/test_endpoint_mount_resolution.py",
+      "sha256": "f0bb84c0f26508cb200bcb893bf102bdd32032f4ed79a58a9939bfed312a0482",
+      "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
+    },
+    {
+      "path": "reports/mapping-audit/2026-10-28-topology-final/historical-helper/finite-route-paths.before.test.mjs",
+      "sha256": "74eb80dd9c532f465d786fd9f83a7fa4f1af20a01c671fd0103b4135d86d3d2e",
+      "reason": "Retained generated/historical copy; canonical source test is indexed instead; not an independently executed suite"
     }
   ],
   "supportFiles": [
@@ -19558,7 +19882,7 @@
     },
     {
       "path": "tests/platform-acceptance-map.json",
-      "sha256": "3762913a9145117de82cce57ef5232978093e8d8a79c99dc8b24f5fb8e402315",
+      "sha256": "98064ef08746b717d025c4934904aa3d6cf8a7f6c843abd1a0c15e4e44b303c4",
       "reason": "Non-executable test data/documentation/fixture"
     }
   ]

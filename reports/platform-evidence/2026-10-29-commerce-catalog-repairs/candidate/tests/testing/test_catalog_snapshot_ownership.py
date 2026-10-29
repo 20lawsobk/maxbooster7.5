@@ -1,0 +1,191 @@
+"""Keep report-owned source in the catalog without registering historical suites.
+
+Run directly with Python, or with the isolated Python runner. Fixture source is
+parsed, never executed. MAXBOOSTER_CATALOG_SOURCE supports reviewing a candidate
+generator without changing the checkout; MAXBOOSTER_TEST_REPO_ROOT locates the
+owning Node runner when this test itself is staged outside the repository.
+"""
+from contextlib import redirect_stderr, redirect_stdout
+import hashlib
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path
+import shlex
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+
+
+REPO = Path(os.environ.get("MAXBOOSTER_TEST_REPO_ROOT", Path(__file__).resolve().parents[2]))
+CATALOG_SOURCE = Path(os.environ.get("MAXBOOSTER_CATALOG_SOURCE", REPO / "scripts/testing/generate-catalog.py"))
+NODE_SOURCE = REPO / "scripts/testing/run-node-suites.py"
+NODE_TEST = "import test from 'node:test';\nthrow new Error('fixture source must never execute');\ntest('current assertion', () => {});\n"
+
+
+def load_source(name, source):
+    spec = importlib.util.spec_from_file_location(name, source)
+    module = importlib.util.module_from_spec(spec)
+    # The Node runner imports its metadata-only common module; no app is imported.
+    with patch.object(sys, "path", [str(REPO / "scripts/testing"), *sys.path]):
+        spec.loader.exec_module(module)
+    return module
+
+
+class CatalogSnapshotOwnership(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="maxbooster-catalog-")
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.catalog = load_source("catalog_snapshot_subject", CATALOG_SOURCE)
+        self.catalog.ROOT = self.root
+        self.catalog.INVENTORY = self.root / "reports/test-verification/test-inventory.json"
+        self.catalog.CATALOG = self.root / "docs/testing/catalog.md"
+        self.catalog.git = lambda *args: "fixture-revision"
+        self.paths = []
+        self.catalog.input_paths = lambda: sorted(self.paths)
+        self.put("scripts/testing/run-node-suites.py", NODE_SOURCE.read_text(), indexed=False)
+
+    def put(self, name, source, indexed=True):
+        file = self.root / name
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(source)
+        if indexed:
+            self.paths.append(name)
+        return file
+
+    def rows(self, data):
+        return {row["path"]: row for row in data["entries"]}
+
+    def snapshots(self, data):
+        return {row["path"]: row for row in data["generatedSnapshots"]}
+
+    def test_current_suite_is_canonical_and_report_copy_is_hashed_only(self):
+        current = "tests/current.test.mjs"
+        historical = "reports/accessibility-audit/cohort/test-before.mjs"
+        self.put(current, NODE_TEST)
+        old_file = self.put(historical, NODE_TEST)
+        data = self.catalog.collect()
+        self.assertEqual(set(self.rows(data)), {current})
+        self.assertEqual(set(self.snapshots(data)), {historical})
+        self.assertEqual(self.snapshots(data)[historical]["sha256"], hashlib.sha256(old_file.read_bytes()).hexdigest())
+        self.assertEqual(self.rows(data)[current]["caseTitles"], ["current assertion"])
+        self.assertEqual(self.rows(data)[current]["category"], "test")
+        self.assertEqual(data["counts"]["canonicalTestFiles"], 1)
+
+    def test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression(self):
+        retained = (
+            "reports/cohort/test-before.mjs",
+            "reports/cohort/.snapshots/test-before.mjs",
+            ".pdim-backup/tests/current.test.mjs",
+        )
+        current = ("tests/test-before.mjs", "reports-archive/test-before.mjs")
+        for name in (*retained, *current):
+            self.put(name, NODE_TEST)
+        data = self.catalog.collect()
+        self.assertEqual(set(self.snapshots(data)), set(retained))
+        self.assertEqual(set(self.rows(data)), set(current))
+        for name in retained:
+            self.assertNotIn("command", self.snapshots(data)[name])
+        self.assertEqual(data["counts"]["retainedSnapshotFiles"], 3)
+
+    def test_existing_current_classifications_and_assertions_are_preserved(self):
+        sources = {
+            "tests/current.test.mjs": (NODE_TEST, "root-node", "node:test", "test"),
+            "tests/unit/current.test.ts": ("import { test } from 'vitest';\ntest('typed assertion', () => {});", "root-unit", "vitest", "test"),
+            "tests/test_current.py": ("def test_python_assertion():\n    assert True\n", "python", "pytest", "test"),
+            "tests/unit/beat-sale-money-loop.test.ts": ("import { test } from 'vitest';\ntest('real money assertion', () => {});", "commerce", "vitest", "test"),
+            "scripts/smoke-test.sh": ("#!/bin/sh\nexit 0\n", "manual-destructive-provider", "bash", "test"),
+            "scripts/testing/fixture-helper.py": ("raise RuntimeError('support must never execute')\n", "runner-support", "support", "support"),
+        }
+        self.put("vitest.config.ts", "export default { test: { include: ['tests/unit/**/*.test.ts'], exclude: [] } };", indexed=False)
+        for name, (source, *_) in sources.items():
+            self.put(name, source)
+        before = self.catalog.collect()
+        self.put("reports/cohort/test-before.mjs", NODE_TEST)
+        after = self.catalog.collect()
+        self.assertEqual(before["entries"], after["entries"])
+        for name, (_, group, runner, category) in sources.items():
+            row = self.rows(after)[name]
+            self.assertEqual((row["group"], row["runner"], row["category"]), (group, runner, category), name)
+        self.assertEqual(self.rows(after)["tests/unit/beat-sale-money-loop.test.ts"]["caseTitles"], ["real money assertion"])
+
+    def test_unique_report_replay_sources_remain_documented_without_active_commands(self):
+        replay = "reports/cohort/tests/replay-validator.mjs"
+        recipe = "reports/cohort/test-replay.py"
+        self.put(replay, "// Report-only validator: replay explicitly against its retained evidence.\n" + NODE_TEST)
+        self.put(recipe, "def test_retained_recipe():\n    raise RuntimeError('historical replay must not execute')\n")
+        self.put("reports/cohort/README.md", "Explicit historical replay instructions.\n")
+        support = "reports/cohort/tests/README.md"
+        self.put(support, "Retained fixture instructions, not executable.\n")
+        data = self.catalog.collect()
+        self.assertEqual(set(self.snapshots(data)), {replay, recipe})
+        self.assertEqual(self.rows(data), {})
+        self.assertEqual({row["path"] for row in data["supportFiles"]}, {support})
+        rendered = self.catalog.render(data)
+        self.assertIn("## Retained generated and historical copies", rendered)
+        for name in (replay, recipe):
+            self.assertIn(f"`{name}`", rendered)
+            self.assertIn(self.snapshots(data)[name]["sha256"], rendered)
+            self.assertNotIn(f"--file {name}", rendered)
+
+    def test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors(self):
+        current = ("tests/current.test.mjs", "tests/current-contract.test.ts", "scripts/test-data-runtime.mjs")
+        separately_owned = ("tests/studio-plugin-audio-browser.test.mjs", "tests/payment-processing/pay.test.mjs")
+        historical = ("reports/cohort/test-before.mjs", "reports/cohort/.snapshots/test-before.mjs")
+        for name in (*current, *separately_owned, *historical):
+            self.put(name, NODE_TEST)
+        data = self.catalog.collect()
+        runner = load_source("catalog_node_builder_subject", NODE_SOURCE)
+        runner.ROOT = self.root
+        output = self.root / "must-not-be-created"
+        with patch.object(runner.subprocess, "check_output", return_value="\n".join(self.paths)):
+            discovered = set(runner.discover())
+            canonical = {row["path"] for row in data["entries"] if row["group"] == "root-node"}
+            self.assertEqual(canonical, discovered)
+            self.assertEqual(canonical, set(current))
+            for name in canonical:
+                command = shlex.split(self.rows(data)[name]["command"])
+                self.assertEqual(command, ["python3", "scripts/testing/run-node-suites.py", "--file", name])
+                out = io.StringIO()
+                with patch.object(sys, "argv", [str(NODE_SOURCE), "--file", name, "--list", "--output", str(output)]), redirect_stdout(out):
+                    self.assertEqual(runner.main(), 0)
+                self.assertEqual(json.loads(out.getvalue()), [name])
+            for name in historical:
+                error = io.StringIO()
+                with patch.object(sys, "argv", [str(NODE_SOURCE), "--file", name, "--list", "--output", str(output)]), redirect_stderr(error):
+                    with self.assertRaises(SystemExit) as rejected:
+                        runner.main()
+                self.assertEqual(rejected.exception.code, 2)
+                self.assertIn("Not a canonical isolated Node test: " + name, error.getvalue())
+        self.assertFalse(output.exists())
+
+    def test_census_is_read_only_and_preserves_every_input_hash_and_result_counter(self):
+        current = "tests/current.test.mjs"
+        historical = "reports/cohort/test-before.mjs"
+        snapshot = ".pdim-old/tests/test_retained.py"
+        self.put(current, NODE_TEST)
+        self.put(historical, NODE_TEST)
+        self.put(snapshot, "def test_old():\n    assert False\n")
+        self.put("reports/test-verification/master-results.json", '{"pages":80,"sections":2162,"assertions":53020}\n')
+        self.put("vitest.platform.config.ts", "export default { test: { coverage: { thresholds: { lines: 100 } } } };", indexed=False)
+        before = {str(p.relative_to(self.root)): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        data = self.catalog.collect()
+        again = self.catalog.collect()
+        after = {str(p.relative_to(self.root)): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        self.assertEqual(before, after)
+        self.assertEqual(data, again)
+        indexed = data["entries"] + data["generatedSnapshots"] + data["supportFiles"]
+        self.assertEqual({row["path"] for row in indexed}, {current, historical, snapshot})
+        expected_digest = hashlib.sha256(json.dumps(sorted((row["path"], row["sha256"]) for row in indexed), separators=(",", ":")).encode()).hexdigest()
+        self.assertEqual(data["workingTreeInputDigest"], expected_digest)
+        self.assertEqual(set(self.snapshots(data)), {historical, snapshot})
+        self.assertEqual(json.loads((self.root / "reports/test-verification/master-results.json").read_text()), {"pages": 80, "sections": 2162, "assertions": 53020})
+        self.assertFalse(self.catalog.INVENTORY.exists())
+        self.assertFalse(self.catalog.CATALOG.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

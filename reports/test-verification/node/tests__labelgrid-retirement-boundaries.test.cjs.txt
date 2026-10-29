@@ -2,25 +2,25 @@ TAP version 13
 # Subtest: startup, admin, catalog and DSP analytics do not load the retired SDK
 ok 1 - startup, admin, catalog and DSP analytics do not load the retired SDK
   ---
-  duration_ms: 3.018125
+  duration_ms: 2.511211
   type: 'test'
   ...
 # Subtest: historical catalog reads are owner-scoped and retain legacy IDs, UPC and ISRC
 ok 2 - historical catalog reads are owner-scoped and retain legacy IDs, UPC and ISRC
   ---
-  duration_ms: 19.85805
+  duration_ms: 18.305511
   type: 'test'
   ...
 # Subtest: shared Too Lost selection fails explicitly without authorization
 ok 3 - shared Too Lost selection fails explicitly without authorization
   ---
-  duration_ms: 7.185094
+  duration_ms: 19.331569
   type: 'test'
   ...
 # Subtest: shared Too Lost selection retains the authorizing account identity
 ok 4 - shared Too Lost selection retains the authorizing account identity
   ---
-  duration_ms: 14.119259
+  duration_ms: 21.74963
   type: 'test'
   ...
 1..4
@@ -31,4 +31,4 @@ ok 4 - shared Too Lost selection retains the authorizing account identity
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 170.474444
+# duration_ms 183.043549

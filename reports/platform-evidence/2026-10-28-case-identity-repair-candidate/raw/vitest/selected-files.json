@@ -1,0 +1,12 @@
+[
+  "tests/unit/auth-page-age-policy.test.ts",
+  "tests/unit/deployment-small-file-codec.test.ts",
+  "tests/unit/email-provider-ack.test.ts",
+  "tests/unit/frontend-batch-response-contracts.test.ts",
+  "tests/unit/marketplace-storefront-page-contracts.test.ts",
+  "tests/unit/password-policy.test.ts",
+  "tests/unit/registrationCompletion.test.ts",
+  "tests/unit/registrationCompletionBoundary.test.ts",
+  "tests/unit/subscriptionCheckout.test.ts",
+  "tests/unit/support-ticket-validation.test.ts"
+]

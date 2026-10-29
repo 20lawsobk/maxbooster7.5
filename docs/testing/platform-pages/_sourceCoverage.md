@@ -251247,15 +251247,15 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/instrument.ts",
   "statements": {
-    "covered": 0,
+    "covered": 24,
     "total": 104
   },
   "functions": {
-    "covered": 0,
+    "covered": 1,
     "total": 14
   },
   "branches": {
-    "covered": 0,
+    "covered": 10,
     "total": 93
   },
   "uncoveredFunctions": [
@@ -251278,10 +251278,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "name": "captureSentryException",
       "line": 167
-    },
-    {
-      "name": "captureSentryMessage",
-      "line": 181
     },
     {
       "name": "sendSentryHeartbeat",
@@ -251317,14 +251313,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     }
   ],
   "uncoveredStatementLines": [
-    24,
-    25,
-    30,
-    36,
-    38,
-    40,
-    41,
-    42,
     48,
     51,
     52,
@@ -251334,10 +251322,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     61,
     62,
     68,
-    76,
-    81,
-    86,
-    88,
     89,
     92,
     93,
@@ -251346,7 +251330,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     110,
     113,
     114,
-    119,
     120,
     121,
     126,
@@ -251355,22 +251338,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     134,
     137,
     141,
-    144,
     145,
     146,
     150,
-    155,
     171,
     172,
     173,
-    186,
     187,
     188,
-    199,
-    200,
-    203,
-    204,
-    205,
     208,
     209,
     210,
@@ -251387,8 +251362,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     244,
     245,
     250,
-    260,
-    261,
     271,
     272,
     275,
@@ -364970,7 +364943,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/dsp/instruments/pianoEngines.ts",
   "statements": {
-    "covered": 601,
+    "covered": 602,
     "total": 610
   },
   "functions": {
@@ -364991,11 +364964,10 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     26,
     27,
     28,
-    873,
-    874,
-    876,
-    877,
-    878
+    880,
+    881,
+    883,
+    884
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -376771,11 +376743,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/maxcoreClient.ts",
   "statements": {
-    "covered": 176,
+    "covered": 177,
     "total": 278
   },
   "functions": {
-    "covered": 23,
+    "covered": 24,
     "total": 34
   },
   "branches": {
@@ -376806,10 +376778,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "name": "(anonymous_11)",
       "line": 143
-    },
-    {
-      "name": "(anonymous_18)",
-      "line": 217
     },
     {
       "name": "(anonymous_19)",
@@ -376857,7 +376825,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     156,
     171,
     174,
-    218,
     262,
     263,
     264,

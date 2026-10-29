@@ -1,0 +1,27 @@
+{
+  "scope": "Existing historical d9 workflows observed read-only; no dispatch, rerun, billing or account change",
+  "observedAt": "2026-10-29T22:34:14.100082+00:00",
+  "headSha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+  "runCount": 2,
+  "jobCount": 10,
+  "stepCount": 0,
+  "jobConclusions": {
+    "failure": 7,
+    "skipped": 3
+  },
+  "billingLockedFailureAnnotations": 7,
+  "workflowRuns": [
+    {
+      "name": "Build Desktop Apps",
+      "id": 40746138378,
+      "url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138378"
+    },
+    {
+      "name": "Build Mobile Apps",
+      "id": 40746138552,
+      "url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138552"
+    }
+  ],
+  "currentLocalSourceCI": "UNVERIFIED: these workflows did not execute and belong to historical d9, not local8a9 or its new source edits",
+  "productionReady": false
+}

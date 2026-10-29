@@ -1,0 +1,63 @@
+{
+  "scope": "Final read-only delta/source/evidence review of producer-time foundation only; no coverage admission or global merge",
+  "observedAt": "2026-10-29T23:19:15.358344+00:00",
+  "status": "PASS_NO_MATERIAL_FOUNDATION_DEFECT_FOUND",
+  "sourceSha256": {
+    "parent/candidate/scripts/testing/run-all.py": "b64f351c43a24f5e61fea8130baecba352e0fa2036c9b96f8ed2123b630a44d7",
+    "reporter/scripts/testing/coverage-outcome-reporter.mjs": "8f98f6ddf10431532d0972157191c3ae96354758fe19b51a0d4636ed537fd219",
+    "parent/candidate/tests/testing/test_coverage_command_binding.py": "fcaac833ae622278364e95e797eae3a5638b92541326e2adbbdac6158f1cedd5",
+    "reporter/tests/testing/coverage-outcome-reporter.test.mjs": "539fb9ea8fc934ee3dcd26e243697f7bc2bee8320f3736bc4377e39229b0a27b"
+  },
+  "priorFindingResolution": {
+    "reporterFixtureFirstJUnitReadBeforeSecondCommand": true,
+    "reporterFixtureRetainsSeparateSecondJUnitAndHash": true,
+    "actualFirstAndSecondJunitBytesDifferAndMatchOwnReceipts": true,
+    "crossIntegrationPreservesBothActualJunitEpochs": true,
+    "danglingSymlinkAncestorRejectedWithLstat": true
+  },
+  "retainedEvidenceChecks": [
+    {
+      "scope": "reporter actual repeat",
+      "receipt": "reporter/actual-runs-final/10-repeat/receipt.json",
+      "xml": "junit.xml",
+      "junitHashMatches": true,
+      "ownWindowMatches": true,
+      "runIdMatchesOutcome": true
+    },
+    {
+      "scope": "reporter actual repeat",
+      "receipt": "reporter/actual-runs-final/10-repeat/repeat.json",
+      "xml": "second-junit.xml",
+      "junitHashMatches": true,
+      "ownWindowMatches": true,
+      "runIdMatchesOutcome": true
+    },
+    {
+      "scope": "actual parent + public Vitest repeat",
+      "receipt": "cross-actual-current-final/repeat/parent-command-receipt.json",
+      "xml": "first-actual.junit.xml",
+      "junitHashMatches": true,
+      "outcomeHashMatches": true,
+      "boundAndEligibleTestOutcome": true
+    },
+    {
+      "scope": "actual parent + public Vitest repeat",
+      "receipt": "cross-actual-current-final/repeat/repeat-parent-command-receipt.json",
+      "xml": "evidence/root/coverage-unit.junit.xml",
+      "junitHashMatches": true,
+      "outcomeHashMatches": true,
+      "boundAndEligibleTestOutcome": true
+    }
+  ],
+  "observedRetainedTestResults": {
+    "parent": "13 tests OK in parent/tests-repeat-safe-final.txt",
+    "reporter": "11 tests PASS 0fail 0skip in reporter/tests-final.txt",
+    "cross": "4 actual modes passed in cross-integration-current-final.txt"
+  },
+  "testsRerunByReviewer": false,
+  "limits": [
+    "Foundation is not P2 admission. Downstream must verify exact command/threshold-only failure and full raw/global provenance before counter credit.",
+    "Source freshness remains guarded by the enclosing master source inventory."
+  ],
+  "repositoryWrites": []
+}

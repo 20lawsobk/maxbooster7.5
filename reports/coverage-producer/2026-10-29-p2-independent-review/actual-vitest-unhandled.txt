@@ -1,0 +1,12 @@
+JUNIT report written to /workspace/onboarding-results/c5-admission-independent-review/runtime-control/junit.xml
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+------------|---------|----------|---------|---------|-------------------
+File        | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------|---------|----------|---------|---------|-------------------
+All files   |       0 |        0 |       0 |       0 |                   
+ subject.ts |       0 |        0 |       0 |       0 | 1                 
+------------|---------|----------|---------|---------|-------------------
+ERROR: Coverage for lines (0%) does not meet global threshold (100%)
+ERROR: Coverage for functions (0%) does not meet global threshold (100%)
+ERROR: Coverage for statements (0%) does not meet global threshold (100%)
+ERROR: Coverage for branches (0%) does not meet global threshold (100%)

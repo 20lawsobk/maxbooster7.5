@@ -1,0 +1,298 @@
+TAP version 13
+# Subtest: exact complete canonical fixture is accepted without changing inputs
+ok 1 - exact complete canonical fixture is accepted without changing inputs
+  ---
+  duration_ms: 4.136999
+  type: 'test'
+  ...
+# Subtest: rejects canonical incomplete master
+ok 2 - rejects canonical incomplete master
+  ---
+  duration_ms: 0.565514
+  type: 'test'
+  ...
+# Subtest: rejects canonical changed source
+ok 3 - rejects canonical changed source
+  ---
+  duration_ms: 0.255446
+  type: 'test'
+  ...
+# Subtest: rejects canonical stale source
+ok 4 - rejects canonical stale source
+  ---
+  duration_ms: 0.203838
+  type: 'test'
+  ...
+# Subtest: rejects canonical wrong revision
+ok 5 - rejects canonical wrong revision
+  ---
+  duration_ms: 0.228395
+  type: 'test'
+  ...
+# Subtest: rejects canonical duplicate canonical job
+ok 6 - rejects canonical duplicate canonical job
+  ---
+  duration_ms: 0.248325
+  type: 'test'
+  ...
+# Subtest: rejects canonical wrong actual command
+ok 7 - rejects canonical wrong actual command
+  ---
+  duration_ms: 0.261355
+  type: 'test'
+  ...
+# Subtest: rejects canonical wrong cwd
+ok 8 - rejects canonical wrong cwd
+  ---
+  duration_ms: 0.227213
+  type: 'test'
+  ...
+# Subtest: rejects canonical tampered command log
+ok 9 - rejects canonical tampered command log
+  ---
+  duration_ms: 0.376298
+  type: 'test'
+  ...
+# Subtest: rejects canonical partial JUnit
+ok 10 - rejects canonical partial JUnit
+  ---
+  duration_ms: 0.563201
+  type: 'test'
+  ...
+# Subtest: rejects canonical failed assertion
+ok 11 - rejects canonical failed assertion
+  ---
+  duration_ms: 0.311831
+  type: 'test'
+  ...
+# Subtest: rejects canonical skipped assertion
+ok 12 - rejects canonical skipped assertion
+  ---
+  duration_ms: 0.17214
+  type: 'test'
+  ...
+# Subtest: rejects canonical JUnit outside command window
+ok 13 - rejects canonical JUnit outside command window
+  ---
+  duration_ms: 0.176637
+  type: 'test'
+  ...
+# Subtest: rejects canonical nonthreshold failure
+ok 14 - rejects canonical nonthreshold failure
+  ---
+  duration_ms: 0.247965
+  type: 'test'
+  ...
+# Subtest: rejects canonical lowered threshold
+ok 15 - rejects canonical lowered threshold
+  ---
+  duration_ms: 0.170898
+  type: 'test'
+  ...
+# Subtest: rejects canonical parse exclusions
+ok 16 - rejects canonical parse exclusions
+  ---
+  duration_ms: 0.398291
+  type: 'test'
+  ...
+# Subtest: rejects canonical counter mutation
+ok 17 - rejects canonical counter mutation
+  ---
+  duration_ms: 0.160122
+  type: 'test'
+  ...
+# Subtest: rejects canonical wrong provider contract
+ok 18 - rejects canonical wrong provider contract
+  ---
+  duration_ms: 0.161634
+  type: 'test'
+  ...
+# Subtest: rejects canonical sidecar outside window
+ok 19 - rejects canonical sidecar outside window
+  ---
+  duration_ms: 0.155926
+  type: 'test'
+  ...
+# Subtest: rejects canonical duplicate original
+ok 20 - rejects canonical duplicate original
+  ---
+  duration_ms: 0.319493
+  type: 'test'
+  ...
+# Subtest: rejects canonical global JSON changed
+ok 21 - rejects canonical global JSON changed
+  ---
+  duration_ms: 0.185981
+  type: 'test'
+  ...
+# Subtest: rejects canonical optional policy changed
+ok 22 - rejects canonical optional policy changed
+  ---
+  duration_ms: 0.159411
+  type: 'test'
+  ...
+# Subtest: exact complete producer fixture is accepted without changing inputs
+ok 23 - exact complete producer fixture is accepted without changing inputs
+  ---
+  duration_ms: 1.540427
+  type: 'test'
+  ...
+# Subtest: rejects producer old producer source
+ok 24 - rejects producer old producer source
+  ---
+  duration_ms: 0.293694
+  type: 'test'
+  ...
+# Subtest: rejects producer old producer revision
+ok 25 - rejects producer old producer revision
+  ---
+  duration_ms: 0.223067
+  type: 'test'
+  ...
+# Subtest: rejects producer test substituted
+ok 26 - rejects producer test substituted
+  ---
+  duration_ms: 0.202917
+  type: 'test'
+  ...
+# Subtest: rejects producer producer failure
+ok 27 - rejects producer producer failure
+  ---
+  duration_ms: 0.249056
+  type: 'test'
+  ...
+# Subtest: rejects producer owned children alive
+ok 28 - rejects producer owned children alive
+  ---
+  duration_ms: 0.199241
+  type: 'test'
+  ...
+# Subtest: rejects producer missing parent bounds
+ok 29 - rejects producer missing parent bounds
+  ---
+  duration_ms: 0.229146
+  type: 'test'
+  ...
+# Subtest: rejects producer snapshot beyond parent window
+ok 30 - rejects producer snapshot beyond parent window
+  ---
+  duration_ms: 0.269057
+  type: 'test'
+  ...
+# Subtest: rejects producer overlapping canonical invocation
+ok 31 - rejects producer overlapping canonical invocation
+  ---
+  duration_ms: 0.277259
+  type: 'test'
+  ...
+# Subtest: rejects producer raw counters substituted
+ok 32 - rejects producer raw counters substituted
+  ---
+  duration_ms: 0.372883
+  type: 'test'
+  ...
+# Subtest: rejects producer duplicate actual script
+ok 33 - rejects producer duplicate actual script
+  ---
+  duration_ms: 2.474558
+  type: 'test'
+  ...
+# Subtest: rejects producer duplicate subject
+ok 34 - rejects producer duplicate subject
+  ---
+  duration_ms: 0.290058
+  type: 'test'
+  ...
+# Subtest: rejects producer producer snapshot reuse
+ok 35 - rejects producer producer snapshot reuse
+  ---
+  duration_ms: 0.501027
+  type: 'test'
+  ...
+# Subtest: rejects producer snapshot identity reuse
+ok 36 - rejects producer snapshot identity reuse
+  ---
+  duration_ms: 0.354085
+  type: 'test'
+  ...
+# Subtest: rejects producer global baseline changed
+ok 37 - rejects producer global baseline changed
+  ---
+  duration_ms: 0.593867
+  type: 'test'
+  ...
+# Subtest: rejects producer actual TAP changed
+ok 38 - rejects producer actual TAP changed
+  ---
+  duration_ms: 0.200423
+  type: 'test'
+  ...
+# Subtest: rejects producer actual TAP failure
+ok 39 - rejects producer actual TAP failure
+  ---
+  duration_ms: 0.199381
+  type: 'test'
+  ...
+# Subtest: rejects producer non-test command
+ok 40 - rejects producer non-test command
+  ---
+  duration_ms: 0.193202
+  type: 'test'
+  ...
+# Subtest: rejects producer missing original profile
+ok 41 - rejects producer missing original profile
+  ---
+  duration_ms: 0.347315
+  type: 'test'
+  ...
+# Subtest: exact addition retains every map, original ID and zero untouched function/branch
+ok 42 - exact addition retains every map, original ID and zero untouched function/branch
+  ---
+  duration_ms: 0.439073
+  type: 'test'
+  ...
+# Subtest: rejects counter merge map differs
+ok 43 - rejects counter merge map differs
+  ---
+  duration_ms: 0.15221
+  type: 'test'
+  ...
+# Subtest: rejects counter merge counter IDs differ
+ok 44 - rejects counter merge counter IDs differ
+  ---
+  duration_ms: 0.139751
+  type: 'test'
+  ...
+# Subtest: rejects counter merge arm lost
+ok 45 - rejects counter merge arm lost
+  ---
+  duration_ms: 0.235105
+  type: 'test'
+  ...
+# Subtest: rejects counter merge negative count
+ok 46 - rejects counter merge negative count
+  ---
+  duration_ms: 0.146522
+  type: 'test'
+  ...
+# Subtest: rejects counter merge nonfinite count
+ok 47 - rejects counter merge nonfinite count
+  ---
+  duration_ms: 0.113361
+  type: 'test'
+  ...
+# Subtest: rejects counter merge unsafe overflow
+ok 48 - rejects counter merge unsafe overflow
+  ---
+  duration_ms: 0.185721
+  type: 'test'
+  ...
+1..48
+# tests 48
+# suites 0
+# pass 48
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 556.408894

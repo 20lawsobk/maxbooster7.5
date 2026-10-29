@@ -1,0 +1,1204 @@
+{"level":30,"time":1793264515476,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Observability] Sentry active — errors will be captured and reported"}
+
+============================
+Hi, looks like you are running TensorFlow.js in Node.js. To speed things up dramatically, install our node backend, visit https://github.com/tensorflow/tfjs-node for more details. 
+============================
+{"level":40,"time":1793264515682,"pid":318644,"hostname":"af966a6fd55d","msg":"[db] DATABASE_REPLICA_URLS not set — all queries routed to primary in production"}
+{"level":30,"time":1793264515682,"pid":318644,"hostname":"af966a6fd55d","msg":"📊 Monitoring system initialized"}
+{"level":30,"time":1793264515684,"pid":318644,"hostname":"af966a6fd55d","msg":"🛡️  Self-Healing Security Engine initializing..."}
+{"level":30,"time":1793264515722,"pid":318644,"hostname":"af966a6fd55d","msg":"[PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms"}
+{"level":30,"time":1793264515723,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis] PDIM active — routing Redis operations through PDIM"}
+{"level":30,"time":1793264515757,"pid":318644,"hostname":"af966a6fd55d","msg":"[LocalPDIM] Local PDIM exec server started on port 41395 (local fsynced AOF and snapshots)"}
+{"level":30,"time":1793264515760,"pid":318644,"hostname":"af966a6fd55d","msg":"🔍 Running startup probes..."}
+{"level":30,"time":1793264515769,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264515769,"pid":318644,"hostname":"af966a6fd55d","msg":"🛡️ LOADING MANDATORY SECURITY MIDDLEWARE"}
+{"level":30,"time":1793264515769,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264515769,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Request ID middleware"}
+{"level":30,"time":1793264515769,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Request logging middleware"}
+{"level":30,"time":1793264515769,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Helmet security headers (deferred to securityMiddleware — avoids CSP downgrade)"}
+{"level":30,"time":1793264515769,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ CORS middleware (production allowlist enforced)"}
+{"level":30,"time":1793264515769,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Prototype pollution protection"}
+{"level":30,"time":1793264515770,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Rate limiting middleware (max: 1000/15min, backend: Redis, skip: disabled)"}
+{"level":30,"time":1793264515770,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Strict rate limiting for auth endpoints (skip: disabled)"}
+{"level":30,"time":1793264515770,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Self-Healing Security Engine (10x healing speed)"}
+{"level":30,"time":1793264515770,"pid":318644,"hostname":"af966a6fd55d","msg":"────────────────────────────────────────────────────────"}
+{"level":30,"time":1793264515770,"pid":318644,"hostname":"af966a6fd55d","msg":"   Loaded: 8 | Failed: 0"}
+{"level":30,"time":1793264515770,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✅ All mandatory middleware loaded successfully"}
+{"level":30,"time":1793264515770,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264515770,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Mandatory safety middleware applied"}
+{"level":40,"time":1793264515794,"pid":318644,"hostname":"af966a6fd55d","msg":"[ScaleConfig] DATABASE_REPLICA_URLS is not set. All database reads hit the primary instance. Create a Neon read replica and set DATABASE_REPLICA_URLS=<connection_string> to activate dbRead routing and double effective DB throughput."}
+{"level":40,"time":1793264515794,"pid":318644,"hostname":"af966a6fd55d","msg":"[ScaleConfig] Neither REDIS_URL nor REDIS_CLUSTER_URLS is set. Redis is required in production."}
+{"level":30,"time":1793264515794,"pid":318644,"hostname":"af966a6fd55d","msg":"[ScaleConfig] Validation complete — 1 warning(s), 1 error(s). See above for remediation steps."}
+{"level":30,"time":1793264515795,"pid":318644,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] Local mode disabled (MAXCORE_LOCAL=0) — using remote MaxCore URL."}
+{"level":40,"time":1793264515993,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️  Stripe setup skipped - invalid API key"}
+{"level":30,"time":1793264516034,"pid":318644,"hostname":"af966a6fd55d","msg":"[MaxCoreAI] Configured — local subsystem: http://[REDACTED]:40001 | MaxCore is the only AI source"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: stripe"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: sendgrid"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: socialApi"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: twitter"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: facebook"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: instagram"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: linkedin"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: tiktok"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: tiktok_sandbox"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: youtube"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: threads"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: googlebusiness"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: aiService"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: labelGrid"}
+{"level":30,"time":1793264516037,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: dsp"}
+{"level":30,"time":1793264516038,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 External service circuit breakers initialized"}
+{"level":40,"time":1793264516038,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️  Resend API key not configured. Email features will be disabled."}
+{"level":30,"time":1793264516048,"pid":318644,"hostname":"af966a6fd55d","msg":"📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend"}
+{"level":40,"time":1793264516060,"pid":318644,"hostname":"af966a6fd55d","msg":"VAPID keys not configured - Web Push disabled"}
+{"level":30,"time":1793264516121,"pid":318644,"hostname":"af966a6fd55d","msg":"[DataTransfer] Distribution data transfer service initialized"}
+{"level":30,"time":1793264516121,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-spotify"}
+{"level":30,"time":1793264516121,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-apple_music"}
+{"level":30,"time":1793264516121,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-youtube_music"}
+{"level":30,"time":1793264516121,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-deezer"}
+{"level":30,"time":1793264516121,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-soundcloud"}
+{"level":30,"time":1793264516121,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-tidal"}
+{"level":30,"time":1793264516121,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-bandcamp"}
+{"level":30,"time":1793264516121,"pid":318644,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-audiomack"}
+{"level":30,"time":1793264516131,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)"}
+{"level":30,"time":1793264516284,"pid":318644,"hostname":"af966a6fd55d","msg":"Sharp module loaded for image processing"}
+{"level":30,"time":1793264516288,"pid":318644,"hostname":"af966a6fd55d","msg":"[SystemIntelligence] Reasoning engine initialized — watching all error and security signals"}
+{"level":30,"time":1793264516360,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264516362,"pid":318644,"hostname":"af966a6fd55d","msg":"📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)"}
+{"level":30,"time":1793264516369,"pid":318644,"hostname":"af966a6fd55d","msg":"[ChainFixer] Chain error auto-fixer active — monitoring 28 error patterns (adaptive cooldowns, daily un-suppress)"}
+{"level":30,"time":1793264516373,"pid":318644,"hostname":"af966a6fd55d","msg":"[ChainFixer] Autofix directive loaded (6945 bytes): # Max Booster Autonomous Fix Directive"}
+{"level":30,"time":1793264516374,"pid":318644,"hostname":"af966a6fd55d","msg":"[PlatformAutoFixer] Started — probing all subsystems (adaptive: 30s/10s/5s by health)"}
+{"level":30,"time":1793264516375,"pid":318644,"hostname":"af966a6fd55d","msg":"[Directive] Executor active — running the autofix directive phases every 15 min (first cycle now)"}
+{"level":30,"time":1793264516381,"pid":318644,"hostname":"af966a6fd55d","msg":"🔬 Starting post-deploy self-test..."}
+{"level":30,"time":1793264516742,"pid":318644,"hostname":"af966a6fd55d","msg":"9:01:56 AM [express] serving on port 44247 (early listen — full init in progress)"}
+{"level":30,"time":1793264516748,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516749,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+(node:318644) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{"level":40,"time":1793264516765,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️ Remote MaxCore probe failed"}
+{"level":30,"time":1793264516771,"pid":318644,"hostname":"af966a6fd55d","msg":"   └─ Loaded 0 blocked IPs from database"}
+{"level":30,"time":1793264516771,"pid":318644,"hostname":"af966a6fd55d","msg":"🛡️  Self-Healing Security Engine ACTIVE"}
+{"level":30,"time":1793264516771,"pid":318644,"hostname":"af966a6fd55d","msg":"   └─ SLO Targets: MTTD<50ms, MTTR<250ms, Recovery<500ms"}
+{"level":30,"time":1793264516771,"pid":318644,"hostname":"af966a6fd55d","msg":"   └─ Healing Speed: 10x faster than attacks"}
+{"level":30,"time":1793264516772,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ PDIM probe ready (1011ms)"}
+{"level":30,"time":1793264516775,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Database probe ready (attempt 1, 1015ms)"}
+{"level":40,"time":1793264516775,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️ Startup completed in degraded mode (1 probe(s) degraded)"}
+{"level":30,"time":1793264516778,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Session store initialized (PDIM)"}
+{"level":30,"time":1793264516778,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Origin validation enabled (SameSite=Lax + Origin header check)"}
+{"level":30,"time":1793264516778,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ CSRF protection enabled (double-submit cookie, with safe exemptions)"}
+{"level":30,"time":1793264516778,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264516778,"pid":318644,"hostname":"af966a6fd55d","msg":"🛡️ INITIALIZING PRODUCTION SAFETY SYSTEMS"}
+{"level":30,"time":1793264516778,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264516778,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"🔐 ENVIRONMENT VALIDATION"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ DATABASE_URL"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ NEON_DATABASE_URL - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ NEON_PRIMARY_URL - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ DATABASE_REPLICA_URLS - not set (optional)"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ SESSION_SECRET"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TOKEN_ENCRYPTION_KEY - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ BOOSTERSTATE_SECRET - not set (optional)"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ NODE_ENV"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ PORT"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ BOOSTERSTATE_SIDECAR_PORT - not set (optional)"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ APP_URL"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ DOMAIN - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ BASE_DOMAIN - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ BASE_URL - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ SITE_URL - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ CORS_ORIGIN - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ MAX_CONCURRENT_REQUESTS - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ NODE_OPTIONS - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ UV_THREADPOOL_SIZE - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ ENABLE_SELF_EVOLUTION - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ STOREFRONT_URL_FORMAT - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ ADMIN_EMAIL - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ ADMIN_USERNAME - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ ADMIN_PASSWORD - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✗ STRIPE_SECRET_KEY - MISSING (required)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✗ STRIPE_PUBLISHABLE_KEY - MISSING (required)"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ STRIPE_WEBHOOK_SECRET"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ VITE_STRIPE_PUBLIC_KEY - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✗ SENDGRID_API_KEY - MISSING (required)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ SENDGRID_FROM_EMAIL - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ RESEND_API_KEY - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ AI_SERVER_URL - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ AI_SERVER_KEY - invalid format"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ MAXCORE_ADMIN_KEY - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ MBS_AI_TRAINING_URL - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ MBS_AI_TRAINING_KEY - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ AI_Training_Server - not set (optional)"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ PEER_TRAINING_NODE - not set (optional)"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ STORAGE_HTTP_URL"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ STORAGE_BEARER_TOKEN"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ STORAGE_PROVIDER - not set (optional)"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ PDIM_EXEC_URL"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ PDIM_HTTP_EXEC_URL"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ PDIM_EXEC_TOKEN"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ PDIM_BEARER_TOKEN"}
+{"level":30,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ POCKET_DIMENSION_KEY"}
+{"level":40,"time":1793264516779,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ REPLIT_BUCKET_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ REDIS_URL - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ REDIS_CLUSTER_URLS - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TWITTER_API_KEY - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TWITTER_API_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TWITTER_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TWITTER_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ FACEBOOK_APP_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ FACEBOOK_APP_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ INSTAGRAM_APP_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ INSTAGRAM_APP_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_CLIENT_KEY - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_ENV - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_SANDBOX_CLIENT_KEY - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_SANDBOX_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_SANDBOX_REDIRECT_URI - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_SANDBOX_SCOPES - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ YOUTUBE_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ YOUTUBE_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GOOGLE_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GOOGLE_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GOOGLE_BUSINESS_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GOOGLE_BUSINESS_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ LINKEDIN_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ LINKEDIN_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ THREADS_APP_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ THREADS_APP_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ SPOTIFY_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ SPOTIFY_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ VAPID_PUBLIC_KEY - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ VAPID_PRIVATE_KEY - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ VAPID_SUBJECT - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ FCM_PROJECT_ID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ FCM_CLIENT_EMAIL - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ FCM_SERVICE_ACCOUNT_KEY - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TWILIO_ACCOUNT_SID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TWILIO_AUTH_TOKEN - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TWILIO_PHONE_NUMBER - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TWILIO_VERIFY_SERVICE_SID - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ EXA_API_KEY - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TAVILY_API_KEY - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ SENTRY_DSN - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ VITE_SENTRY_DSN - not set (optional)"}
+{"level":40,"time":1793264516780,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ MAXMIND_ACCOUNT_ID - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ MAXMIND_LICENSE_KEY - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GEODB_PATH - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GEODNS_ENABLED - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ REGION_MAP - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ DNS_SERVER_IP - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ DNS_PORT - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ DNSSEC_ENABLED - not set (optional)"}
+{"level":30,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ ACME_ENABLED"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ ACME_CONTACT_EMAIL - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ ACME_DIRECTORY_URL - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GITHUB_TOKEN - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GITHUB_PAT - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GITHUB_PERSONAL_ACCESS_TOKEN [redacted] not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ GITHUB_REPO - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ LABELGRID_API_URL - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ LABELGRID_API_TOKEN - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ LABELGRID_API_TOKEN1 - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ LABELGRID_WEBHOOK_URL - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_SANDBOX_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_ENVIRONMENT - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_REDIRECT_URI - not set (optional)"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_SANDBOX_REDIRECT_URL - not set (optional)"}
+{"level":30,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"────────────────────────────────────────────────────────"}
+{"level":30,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   Valid: 14 | Missing: 3 | Invalid: 0"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   ❌ Environment validation FAILED"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":""}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"   Critical errors:"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"     - MISSING: STRIPE_SECRET_KEY - Stripe secret API key"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"     - MISSING: STRIPE_PUBLISHABLE_KEY - Stripe publishable API key"}
+{"level":40,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"     - MISSING: SENDGRID_API_KEY - SendGrid API key for email delivery"}
+{"level":30,"time":1793264516781,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264516783,"pid":318644,"hostname":"af966a6fd55d","msg":"[Audit] Audit logger initialized"}
+{"level":30,"time":1793264516784,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Audit logger initialized"}
+{"level":30,"time":1793264516784,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264516784,"pid":318644,"hostname":"af966a6fd55d","msg":"📊 VERIFYING DATABASE INDEXES"}
+{"level":30,"time":1793264516784,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264516788,"pid":318644,"hostname":"af966a6fd55d","msg":"[PDIM] First successful response after 1066ms — entering 10s settling window"}
+{"level":30,"time":1793264516789,"pid":318644,"hostname":"af966a6fd55d","msg":"   Batch check: 0/52 indexes already exist"}
+{"level":30,"time":1793264516793,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_users_email on users(email)"}
+{"level":30,"time":1793264516795,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_users_subscription_tier on users(subscription_tier)"}
+{"level":30,"time":1793264516797,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_users_created_at on users(created_at)"}
+{"level":30,"time":1793264516799,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_analytics_user_id on analytics(user_id)"}
+{"level":30,"time":1793264516802,"pid":318644,"hostname":"af966a6fd55d","msg":"[Directive] Cycle 1 clean — scorecard {\"stability\":100,\"correctness\":100,\"integration_reliability\":100,\"security\":100,\"production_readiness\":100}"}
+{"level":30,"time":1793264516804,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_analytics_date on analytics(date)"}
+{"level":30,"time":1793264516806,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_analytics_user_date on analytics(user_id, date)"}
+{"level":30,"time":1793264516808,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_instant_payouts_user_id on instant_payouts(user_id)"}
+{"level":30,"time":1793264516809,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_instant_payouts_status on instant_payouts(status)"}
+{"level":30,"time":1793264516810,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_instant_payouts_created_at on instant_payouts(created_at)"}
+{"level":30,"time":1793264516811,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_releases_user_id on releases(user_id)"}
+{"level":30,"time":1793264516813,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_releases_status on releases(status)"}
+{"level":30,"time":1793264516815,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_releases_release_date on releases(release_date)"}
+{"level":30,"time":1793264516817,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_campaigns_user_id on social_campaigns(user_id)"}
+{"level":30,"time":1793264516825,"pid":318644,"hostname":"af966a6fd55d","msg":"🔬 Self-test complete: 5 passed, 0 failed, 0 skipped"}
+{"level":30,"time":1793264516825,"pid":318644,"hostname":"af966a6fd55d","msg":"   Recommendation: healthy"}
+{"level":30,"time":1793264516825,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_campaigns_scheduled_at on social_campaigns(scheduled_at)"}
+{"level":30,"time":1793264516829,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_campaigns_status on social_campaigns(status)"}
+{"level":30,"time":1793264516830,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_listings_user_id on listings(user_id)"}
+{"level":30,"time":1793264516831,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_api_keys_user_id on api_keys(user_id)"}
+{"level":30,"time":1793264516833,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_api_keys_key_hash on api_keys(key_hash)"}
+{"level":30,"time":1793264516834,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_workspace_audit_log_user_id on workspace_audit_log(user_id)"}
+{"level":30,"time":1793264516835,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_workspace_audit_log_action on workspace_audit_log(action)"}
+{"level":30,"time":1793264516836,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_workspace_audit_log_created_at on workspace_audit_log(created_at)"}
+{"level":30,"time":1793264516838,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_ip_blacklist_expires_at on ip_blacklist(expires_at)"}
+{"level":30,"time":1793264516839,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_ip_blacklist_ip on ip_blacklist(ip)"}
+{"level":30,"time":1793264516840,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_ip_blacklist_is_active on ip_blacklist(is_active)"}
+{"level":30,"time":1793264516841,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_learning_data_created_at on autopilot_learning_data(created_at)"}
+{"level":30,"time":1793264516843,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_learning_data_posting_day on autopilot_learning_data(posting_day_of_week, posting_hour)"}
+{"level":30,"time":1793264516844,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_learning_data_user_platform on autopilot_learning_data(user_id, platform)"}
+{"level":30,"time":1793264516845,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_learning_data_engagement_rate on autopilot_learning_data(engagement_rate)"}
+{"level":30,"time":1793264516846,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_accounts_user_id on social_accounts(user_id)"}
+{"level":30,"time":1793264516848,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_accounts_active_expires on social_accounts(is_active, token_expires_at)"}
+{"level":30,"time":1793264516849,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_accounts_platform_user on social_accounts(platform, user_id)"}
+{"level":30,"time":1793264516851,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_preferences_user_id on autopilot_preferences(user_id)"}
+{"level":30,"time":1793264516852,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_preferences_active on autopilot_preferences(is_active)"}
+{"level":30,"time":1793264516853,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_users_stripe_customer_id on users(stripe_customer_id)"}
+{"level":30,"time":1793264516855,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_subscriptions_stripe_subscription_id on subscriptions(stripe_subscription_id)"}
+{"level":30,"time":1793264516856,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_system_logs_timestamp on system_logs(timestamp)"}
+{"level":30,"time":1793264516857,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_system_logs_level on system_logs(level)"}
+{"level":30,"time":1793264516858,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_system_logs_user_id on system_logs(user_id)"}
+{"level":30,"time":1793264516859,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_music_workflow_automations_user_id on music_workflow_automations(user_id)"}
+{"level":30,"time":1793264516861,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_music_workflow_execution_logs_template_id on music_workflow_execution_logs(template_id)"}
+{"level":30,"time":1793264516862,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_music_workflow_execution_logs_user_id on music_workflow_execution_logs(user_id)"}
+{"level":30,"time":1793264516863,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_music_workflow_execution_logs_executed_at on music_workflow_execution_logs(executed_at)"}
+{"level":30,"time":1793264516865,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_orders_seller_id on orders(seller_id)"}
+{"level":30,"time":1793264516866,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_orders_seller_id_status on orders(seller_id, status)"}
+{"level":30,"time":1793264516867,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_orders_user_id on orders(user_id)"}
+{"level":30,"time":1793264516868,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_orders_status on orders(status)"}
+{"level":30,"time":1793264516869,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_storefront_follows_storefront_id on storefront_follows(storefront_id)"}
+{"level":30,"time":1793264516871,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_storefront_follows_user_id on storefront_follows(user_id)"}
+{"level":30,"time":1793264516872,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_storefront_ratings_storefront_id on storefront_ratings(storefront_id)"}
+{"level":30,"time":1793264516874,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_storefronts_user_id on storefronts(user_id)"}
+{"level":30,"time":1793264516875,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_royalty_transactions_user_id on royalty_transactions(user_id)"}
+{"level":30,"time":1793264516876,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_royalty_transactions_release_id on royalty_transactions(release_id)"}
+{"level":30,"time":1793264516876,"pid":318644,"hostname":"af966a6fd55d","msg":"────────────────────────────────────────────────────────"}
+{"level":30,"time":1793264516876,"pid":318644,"hostname":"af966a6fd55d","msg":"   Created: 52 | Skipped: 0 | Failed: 0"}
+{"level":30,"time":1793264516876,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264516876,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Database indexes verified"}
+{"level":30,"time":1793264516876,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Database indexes verified"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: topup.reversed"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: charge.refunded"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: refund.created"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: refund.updated"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: refund.failed"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: charge.dispute.created"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: charge.dispute.updated"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: charge.dispute.closed"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Refund webhook handlers registered"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Kill switch ready (global killed: false)"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"────────────────────────────────────────────────────────"}
+{"level":40,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"   ⚠ Safety systems initialized with 3 warnings"}
+{"level":30,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":40,"time":1793264516877,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️ Safety systems initialized with warnings: MISSING: STRIPE_SECRET_KEY - Stripe secret API key, MISSING: STRIPE_PUBLISHABLE_KEY - Stripe publishable API key, MISSING: SENDGRID_API_KEY - SendGrid API key for email delivery"}
+{"level":30,"time":1793264516878,"pid":318644,"hostname":"af966a6fd55d","msg":"WebSocket session store configured"}
+{"level":30,"time":1793264516878,"pid":318644,"hostname":"af966a6fd55d","msg":"General notification WebSocket server initialized at /ws"}
+{"level":30,"time":1793264516878,"pid":318644,"hostname":"af966a6fd55d","msg":"Realtime collaboration server initialized"}
+{"level":30,"time":1793264516879,"pid":318644,"hostname":"af966a6fd55d","msg":"🚀 BullMQ workers initializing (Redis-backed, ack + DLQ + retry)..."}
+{"level":30,"time":1793264516879,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264516879,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264516880,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264516880,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264516880,"pid":318644,"hostname":"af966a6fd55d","msg":"📋 Active BullMQ workers (staggered startup — 5s apart after PDIM is ready):"}
+{"level":30,"time":1793264516880,"pid":318644,"hostname":"af966a6fd55d","msg":"   - Audio     (concurrency: 6)"}
+{"level":30,"time":1793264516881,"pid":318644,"hostname":"af966a6fd55d","msg":"   - CSV       (concurrency: 4)"}
+{"level":30,"time":1793264516881,"pid":318644,"hostname":"af966a6fd55d","msg":"   - Analytics (concurrency: 8)"}
+{"level":30,"time":1793264516881,"pid":318644,"hostname":"af966a6fd55d","msg":"   - Email     (concurrency: 16)"}
+{"level":30,"time":1793264516885,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Weekly insights cron job scheduled (Every Monday at 9 AM EST)"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516886,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264516888,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance"}
+{"level":30,"time":1793264516889,"pid":318644,"hostname":"af966a6fd55d","msg":"[StudioCollab] WebSocket server initialized on path: /ws/studio"}
+{"level":30,"time":1793264516889,"pid":318644,"hostname":"af966a6fd55d","msg":"Studio collaboration WebSocket server initialized"}
+{"level":30,"time":1793264516889,"pid":318644,"hostname":"af966a6fd55d","msg":"Presence manager ready"}
+{"level":30,"time":1793264517007,"pid":318644,"hostname":"af966a6fd55d","msg":"[3b79af7d-6d01-4e80-a0cf-01ef810fe693] GET /api/csrf-token - 404 (7ms)"}
+{"level":30,"time":1793264517007,"pid":318644,"hostname":"af966a6fd55d","msg":"9:01:57 AM [express] GET /api/csrf-token 404 in 4ms"}
+{"level":30,"time":1793264517513,"pid":318644,"hostname":"af966a6fd55d","msg":"[56f57c08-2b25-4bb1-bf08-037183b6e2ba] GET /api/csrf-token - 404 (2ms)"}
+{"level":30,"time":1793264517513,"pid":318644,"hostname":"af966a6fd55d","msg":"9:01:57 AM [express] GET /api/csrf-token 404 in 3ms"}
+{"level":30,"time":1793264517891,"pid":318644,"hostname":"af966a6fd55d","msg":"[Workers] PDIM stable after 2 probe(s) (1005ms) — starting BullMQ workers"}
+{"level":30,"time":1793264517891,"pid":318644,"hostname":"af966a6fd55d","msg":"⏳ BullMQ workers listening for jobs (staggered)..."}
+{"level":30,"time":1793264517891,"pid":318644,"hostname":"af966a6fd55d","msg":"Background workers initialized"}
+{"level":30,"time":1793264517894,"pid":318644,"hostname":"af966a6fd55d","intervalMs":60000,"batchSize":20,"msg":"[domainVerify] worker started (multi-method DoH verification)"}
+{"level":30,"time":1793264517894,"pid":318644,"hostname":"af966a6fd55d","msg":"Domain verification worker started"}
+{"level":30,"time":1793264517905,"pid":318644,"hostname":"af966a6fd55d","intervalHours":6,"msg":"[DomainLifecycle] lifecycle job scheduled"}
+{"level":30,"time":1793264517905,"pid":318644,"hostname":"af966a6fd55d","msg":"[domainVerify] Domain lifecycle job started"}
+{"level":30,"time":1793264517916,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Scalable rate limiter applied"}
+{"level":30,"time":1793264517916,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Admission control applied (max concurrent: 5000)"}
+{"level":30,"time":1793264517916,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ API response cache initialized (9 cached routes)"}
+{"level":30,"time":1793264517947,"pid":318644,"hostname":"af966a6fd55d","msg":"Accessibility routes registered"}
+[Python] required interpreter unavailable — Python-backed operations cannot run
+{"level":40,"time":1793264518133,"pid":318644,"hostname":"af966a6fd55d","msg":"Too Lost OAuth app credentials are not configured for the production environment (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET). Distribution features are unavailable until the required Too Lost OAuth configuration is present."}
+{"level":40,"time":1793264518138,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️  LabelGrid API token not configured. Distribution features will use simulated mode."}
+{"level":40,"time":1793264518138,"pid":318644,"hostname":"af966a6fd55d","msg":"   Set LABELGRID_API_TOKEN1 (production-scoped token) in your environment to enable real distribution."}
+{"level":30,"time":1793264518485,"pid":318644,"hostname":"af966a6fd55d","msg":"Sharp module loaded for DSP policy checking"}
+{"level":30,"time":1793264518490,"pid":318644,"hostname":"af966a6fd55d","msg":"[MaxCore] Peer mode: http — http://localhost:8000"}
+{"level":30,"time":1793264518541,"pid":318644,"hostname":"af966a6fd55d","msg":"🔐 Token refresh monitor started (checking every minute)"}
+{"level":30,"time":1793264518542,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264518548,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: socialMedia (direct)"}
+{"level":30,"time":1793264518548,"pid":318644,"hostname":"af966a6fd55d","msg":"[routes] socialMedia router registered directly at /api/social"}
+{"level":30,"time":1793264519396,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Database resilience monitoring started"}
+{"level":30,"time":1793264519396,"pid":318644,"hostname":"af966a6fd55d","msg":"🧠 Memory thresholds: Warning=768MB, Critical=1024MB (production)"}
+{"level":30,"time":1793264519401,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: downloads"}
+{"level":40,"time":1793264519403,"pid":318644,"hostname":"af966a6fd55d","msg":"❌ STRIPE CONFIGURATION ERROR in stripeService.ts:"}
+{"level":40,"time":1793264519403,"pid":318644,"hostname":"af966a6fd55d","msg":"   Missing or invalid Stripe secret key."}
+{"level":40,"time":1793264519403,"pid":318644,"hostname":"af966a6fd55d","msg":"   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)"}
+{"level":40,"time":1793264519403,"pid":318644,"hostname":"af966a6fd55d","msg":"   Configure a Stripe secret key or supported proxy credential binding."}
+{"level":40,"time":1793264519403,"pid":318644,"hostname":"af966a6fd55d","msg":"[Billing] STRIPE_SECRET_KEY not configured. Billing endpoints will return errors."}
+{"level":30,"time":1793264519435,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: storefrontDomains"}
+{"level":30,"time":1793264519435,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: dns"}
+{"level":30,"time":1793264519435,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Timing Optimizer service initialized"}
+{"level":30,"time":1793264519435,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Content Variant Generator service initialized"}
+{"level":30,"time":1793264519435,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Algorithm Intelligence service initialized"}
+{"level":30,"time":1793264519438,"pid":318644,"hostname":"af966a6fd55d","msg":"AutopilotCoordinatorService initialized"}
+{"level":30,"time":1793264519439,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: collaborations"}
+{"level":30,"time":1793264519440,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: seo"}
+{"level":30,"time":1793264519440,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: search"}
+{"level":30,"time":1793264519450,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: helpDesk"}
+{"level":30,"time":1793264519495,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: dnsManager"}
+{"level":30,"time":1793264519495,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: analytics"}
+{"level":30,"time":1793264519496,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: autopilotLearning"}
+{"level":30,"time":1793264519496,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: v1Analytics"}
+{"level":30,"time":1793264519496,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route function: reliability"}
+{"level":30,"time":1793264519496,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: selfHealingApi"}
+{"level":30,"time":1793264519496,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: pressKit"}
+{"level":30,"time":1793264519496,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: storefront"}
+{"level":30,"time":1793264519496,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: storage"}
+{"level":30,"time":1793264519497,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: offline"}
+{"level":30,"time":1793264519497,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: sendgridWebhook"}
+{"level":30,"time":1793264519498,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: certifiedAnalytics"}
+{"level":30,"time":1793264519498,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: analyticsAlerts"}
+{"level":30,"time":1793264519505,"pid":318644,"hostname":"af966a6fd55d","msg":"🧬 Self-Evolution Engine initialized"}
+{"level":30,"time":1793264519558,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: monitoring"}
+{"level":30,"time":1793264519559,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: billing"}
+{"level":30,"time":1793264519559,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: payouts"}
+{"level":30,"time":1793264519559,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: kyc"}
+{"level":30,"time":1793264519559,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264519559,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264519560,"pid":318644,"hostname":"af966a6fd55d","msg":"📱 Social media queues initialized (boosterstate-backed)"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: studioGeneration"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: checkout.session.expired"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: checkout.session.completed"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: customer.subscription.created"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: customer.subscription.updated"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: customer.subscription.deleted"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: invoice.paid"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: invoice.payment_failed"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: payment_intent.succeeded"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: payment_intent.payment_failed"}
+{"level":30,"time":1793264519566,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: account.updated"}
+{"level":30,"time":1793264519567,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: transfer.created"}
+{"level":30,"time":1793264519567,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: payout.paid"}
+{"level":30,"time":1793264519567,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: payout.failed"}
+{"level":30,"time":1793264519567,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: ai"}
+{"level":30,"time":1793264519567,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: hybridStorage"}
+{"level":30,"time":1793264519567,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: growth"}
+{"level":30,"time":1793264519567,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: organic"}
+{"level":30,"time":1793264519568,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: retention"}
+{"level":30,"time":1793264519596,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: autopilotCoordinator"}
+{"level":30,"time":1793264519596,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: developerApi"}
+{"level":30,"time":1793264519596,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: resendWebhook"}
+{"level":30,"time":1793264519596,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: dnsNodeLocalStatus"}
+{"level":30,"time":1793264519596,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: playlistPitching"}
+{"level":30,"time":1793264519596,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: export"}
+{"level":30,"time":1793264519597,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: hns"}
+{"level":30,"time":1793264519598,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: invoices"}
+{"level":30,"time":1793264519598,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: socialOAuth"}
+{"level":30,"time":1793264519600,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: audioAnalysis"}
+{"level":30,"time":1793264519600,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: content-analysis"}
+{"level":30,"time":1793264519601,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: simulation"}
+{"level":30,"time":1793264519601,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: connectedAccounts"}
+{"level":30,"time":1793264519601,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: auth"}
+{"level":30,"time":1793264519601,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: multimodal"}
+{"level":30,"time":1793264519601,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Sharp Image Service initialized - production-ready image generation available"}
+{"level":30,"time":1793264519606,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: bootstrap"}
+{"level":30,"time":1793264519606,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: achievements"}
+{"level":30,"time":1793264519606,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: onboarding"}
+{"level":30,"time":1793264519606,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: personalization"}
+{"level":30,"time":1793264519606,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: releaseCountdown"}
+{"level":30,"time":1793264519606,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: dmca"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: advertisingAutopilot"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: dualAutopilot"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: autonomousSocial"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: autoUpdates"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: platformSync"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: autopilotPreferences"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: studioMarkers"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: studioPlugins"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: studioMidi"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: vstBridge"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: audioProcessing"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: sync"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: workspace"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: support"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: executiveDashboard"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: admin"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: adminMetrics"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: adminAuditLog"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: adminContentSampler"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: audit"}
+{"level":30,"time":1793264519607,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: testing"}
+{"level":30,"time":1793264519608,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: webhooksAdmin"}
+{"level":30,"time":1793264519608,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: logs"}
+{"level":30,"time":1793264519608,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: killSwitch"}
+{"level":30,"time":1793264519608,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: paymentBypass"}
+{"level":30,"time":1793264519608,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: security"}
+{"level":30,"time":1793264519608,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: adaptivePricing"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: contracts"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: careerCoach"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: arIntelligence"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: outreach"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: apiKeys"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: recoveryCodes"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: fanHub"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: fanMemberships"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: shows"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: merch"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: syncLicensing"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: publishing"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: uploads"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: status"}
+{"level":30,"time":1793264519612,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: socialBulk"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: studio"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: studioWarping"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: stripeWebhook"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: advertising"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: domainRegistrar"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: backup"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: autopilotKnowledge"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: studioComping"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: studioStems"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: adminBeatMoneyLoop"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: autopilot"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: promotionalTools"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: socialAI"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: socialApprovals"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: emailPreferences"}
+{"level":30,"time":1793264519614,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: marketplace"}
+{"level":30,"time":1793264519615,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ 24/7 Reliability endpoints configured"}
+{"level":30,"time":1793264519615,"pid":318644,"hostname":"af966a6fd55d","msg":"📊 Available endpoints:"}
+{"level":30,"time":1793264519615,"pid":318644,"hostname":"af966a6fd55d","msg":"   GET /api/system/health - Comprehensive system health"}
+{"level":30,"time":1793264519615,"pid":318644,"hostname":"af966a6fd55d","msg":"   GET /api/system/status - External monitoring status"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"   GET /api/system/metrics - Prometheus metrics"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"   GET /api/system/process - Process monitoring details"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"   GET /api/system/memory - Memory monitoring details"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"   GET /api/system/database - Database monitoring details"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"   GET /api/system/database/metrics - Database query telemetry"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"   GET /api/health/circuits - External service circuit breaker status"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"   GET /api/health/circuits/:name - Individual circuit status"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"   POST /api/health/circuits/:name/reset - Reset individual circuit"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"   POST /api/health/circuits/reset-all - Reset all circuits"}
+{"level":30,"time":1793264519616,"pid":318644,"hostname":"af966a6fd55d","msg":"OAuth callback redirect routes registered"}
+{"level":30,"time":1793264519622,"pid":318644,"hostname":"af966a6fd55d","msg":"Infrastructure scaling routes registered"}
+{"level":30,"time":1793264519628,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: unifiedContent"}
+{"level":30,"time":1793264519630,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: creativeModel"}
+{"level":30,"time":1793264519634,"pid":318644,"hostname":"af966a6fd55d","msg":"Collaboration routes registered"}
+{"level":30,"time":1793264519643,"pid":318644,"hostname":"af966a6fd55d","msg":"[MusicWorkflow] Scheduled workflow cron jobs initialized: monthly royalty reminder"}
+{"level":30,"time":1793264519643,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: musicWorkflowAutomations"}
+{"level":30,"time":1793264519670,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: fabric"}
+{"level":30,"time":1793264519673,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: labelSubmissions"}
+{"level":30,"time":1793264519677,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: radioPitches"}
+{"level":30,"time":1793264519679,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: venues"}
+{"level":30,"time":1793264519683,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: projectBudgets"}
+{"level":30,"time":1793264519686,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: sampleClearances"}
+{"level":30,"time":1793264519691,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: musicVideos"}
+{"level":30,"time":1793264519695,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: songwriting"}
+{"level":30,"time":1793264519700,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: fanCampaigns"}
+{"level":30,"time":1793264519704,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: customWorkflows"}
+{"level":30,"time":1793264519711,"pid":318644,"hostname":"af966a6fd55d","msg":"[MaxAssistantService] In-house Max AI assistant knowledge engine initialized — comprehensive edition with proactive prediction"}
+{"level":30,"time":1793264519712,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: assistant"}
+{"level":30,"time":1793264519713,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded route: maxcore-proxy"}
+{"level":30,"time":1793264519714,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264519715,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264519715,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264519715,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":40,"time":1793264519721,"pid":318644,"hostname":"af966a6fd55d","msg":"[SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect."}
+{"level":30,"time":1793264519724,"pid":318644,"hostname":"af966a6fd55d","msg":"Loaded 0 contracts from database"}
+{"level":30,"time":1793264519748,"pid":318644,"hostname":"af966a6fd55d","msg":"[OfflineCache] Pocket Dimension storage bubble opened (level-9 gzip, dedup)"}
+{"level":30,"time":1793264519755,"pid":318644,"hostname":"af966a6fd55d","msg":"📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)"}
+{"level":30,"time":1793264519755,"pid":318644,"hostname":"af966a6fd55d","msg":"🧬 No prior evolution state found — starting fresh"}
+{"level":30,"time":1793264519755,"pid":318644,"hostname":"af966a6fd55d","msg":"Evolution registry loaded: 0 active enhancement(s), 0 live"}
+{"level":30,"time":1793264519756,"pid":318644,"hostname":"af966a6fd55d","msg":"Silent deployment system on standby (set ENABLE_SELF_EVOLUTION=true to activate)"}
+{"level":30,"time":1793264519756,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264519756,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Auto-posting BullMQ worker started (concurrency: 5)"}
+{"level":30,"time":1793264519758,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264519758,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264519760,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Reloaded 0 pending posts"}
+{"level":30,"time":1793264519760,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Auto-posting service initialized (boosterstate-backed)"}
+{"level":30,"time":1793264519761,"pid":318644,"hostname":"af966a6fd55d","msg":"📅 Database backups scheduled (daily at 2 AM UTC)"}
+{"level":30,"time":1793264519761,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Database Backup Service initialized (Pocket Dimension storage)"}
+{"level":30,"time":1793264519761,"pid":318644,"hostname":"af966a6fd55d","msg":"   RPO Target: 24 hours"}
+{"level":30,"time":1793264519761,"pid":318644,"hostname":"af966a6fd55d","msg":"   RTO Target: 30 minutes"}
+{"level":30,"time":1793264519761,"pid":318644,"hostname":"af966a6fd55d","msg":"   Backup Schedule: Daily at 2 AM UTC"}
+{"level":30,"time":1793264519761,"pid":318644,"hostname":"af966a6fd55d","msg":"   Retention: 7 days"}
+{"level":30,"time":1793264519761,"pid":318644,"hostname":"af966a6fd55d","msg":"🔄 Starting scheduled database backup..."}
+{"level":30,"time":1793264519762,"pid":318644,"hostname":"af966a6fd55d","msg":"Fan delivery scheduler disabled; enable only after consent schema and mail configuration approval"}
+{"level":30,"time":1793264519762,"pid":318644,"hostname":"af966a6fd55d","msg":"[DnsNodeLocal] Disabled (set DNS_NODE_LOCAL=1 to run an internal-only dns-node instance for backend testing)."}
+{"level":30,"time":1793264519762,"pid":318644,"hostname":"af966a6fd55d","msg":"[Boot] Routes registered — boot stubs deactivated, real handlers active"}
+{"level":30,"time":1793264519843,"pid":318644,"hostname":"af966a6fd55d","msg":"📚 Swagger documentation available at /api-docs"}
+{"level":30,"time":1793264519846,"pid":318644,"hostname":"af966a6fd55d","msg":"📱 Mobile Push Service: No credentials configured — mobile push unavailable. Set FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_KEY (+ FCM_CLIENT_EMAIL for raw key) to activate."}
+{"level":30,"time":1793264519846,"pid":318644,"hostname":"af966a6fd55d","msg":"📱 Mobile Push Service mode: unavailable"}
+{"level":40,"time":1793264519853,"pid":318644,"hostname":"af966a6fd55d","msg":"🖥️ Desktop Push Service: VAPID keys not set — desktop push unavailable"}
+{"level":30,"time":1793264519853,"pid":318644,"hostname":"af966a6fd55d","msg":"🖥️  Desktop Push Service ready: false"}
+{"level":30,"time":1793264519855,"pid":318644,"hostname":"af966a6fd55d","msg":"[Health] Core probes registered: database, redis, routes, audit, automation, maxcore"}
+{"level":30,"time":1793264519860,"pid":318644,"hostname":"af966a6fd55d","msg":"[ReEngagement] Next run in 3 hours"}
+{"level":30,"time":1793264519860,"pid":318644,"hostname":"af966a6fd55d","msg":"[Retention] Re-engagement cron started"}
+{"level":30,"time":1793264519990,"pid":318644,"hostname":"af966a6fd55d","msg":"[acme/renewal] disabled (ACME_ENABLED!=true) — cron not started"}
+{"level":30,"time":1793264519992,"pid":318644,"hostname":"af966a6fd55d","msg":"[GeoDNS] Monthly database refresh cron scheduled (1st of month, 03:15 UTC)"}
+{"level":30,"time":1793264519995,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264519996,"pid":318644,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793264519996,"pid":318644,"hostname":"af966a6fd55d","msg":"[Retention] Dunning processor enqueued (6h interval)"}
+{"level":30,"time":1793264519996,"pid":318644,"hostname":"af966a6fd55d","msg":"[Retention] Health score batch processor enqueued (24h interval)"}
+{"level":30,"time":1793264519996,"pid":318644,"hostname":"af966a6fd55d","msg":"[Retention] Feature event buffer flush enqueued (60s interval)"}
+{"level":30,"time":1793264519996,"pid":318644,"hostname":"af966a6fd55d","msg":"[Engagement] Social engagement refresh cron started (8h interval)"}
+{"level":30,"time":1793264519998,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [SPA] Vite/static handler ready — boot fallback deactivated"}
+{"level":30,"time":1793264519998,"pid":318644,"hostname":"af966a6fd55d","msg":"9:01:59 AM [express] all middleware and routes registered — kicking off autonomous systems"}
+{"level":30,"time":1793264519999,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264519999,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264519999,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793264520001,"pid":318644,"hostname":"af966a6fd55d","msg":""}
+{"level":30,"time":1793264520001,"pid":318644,"hostname":"af966a6fd55d","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264520001,"pid":318644,"hostname":"af966a6fd55d","msg":"🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)"}
+{"level":30,"time":1793264520001,"pid":318644,"hostname":"af966a6fd55d","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264520001,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [DistributedCache] Connected (PDIM)"}
+{"level":30,"time":1793264520001,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [DistributedCache] Connected (deferred)"}
+{"level":30,"time":1793264520001,"pid":318644,"hostname":"af966a6fd55d","msg":"[APICache] Cross-pod invalidation poller started (adaptive 200–5000 ms interval)"}
+{"level":40,"time":1793264520002,"pid":318644,"hostname":"af966a6fd55d","msg":"❌ Failed to initialize Stripe prices: Stripe is not configured (missing/invalid STRIPE_SECRET_KEY) — cannot set up products and prices"}
+{"level":40,"time":1793264520008,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️ ADMIN_EMAIL not set - skipping admin initialization"}
+{"level":30,"time":1793264520008,"pid":318644,"hostname":"af966a6fd55d","msg":"🎛️ Seeding plugin catalog..."}
+{"level":30,"time":1793264520015,"pid":318644,"hostname":"af966a6fd55d","msg":"[87bc4424-2bd9-456e-b3a8-5bcb93c2fc3b] GET /api/csrf-token - 200 (295ms)"}
+{"level":30,"time":1793264520015,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:00 AM [express] GET /api/csrf-token 200 in 293ms"}
+{"level":40,"time":1793264520102,"pid":318644,"hostname":"af966a6fd55d","err":{"type":"Error","message":"No executable, versioned psql candidate found on PATH","stack":"[ACCESSOR]"},"msg":"❌ Scheduled backup failed:"}
+{"level":30,"time":1793264520183,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Plugin catalog: 434 inserted, 0 updated (rev rev-enrich-v1)"}
+{"level":30,"time":1793264520452,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Factory genre presets: 3180 inserted, 0 refreshed (rev rev-enrich-v1)"}
+{"level":30,"time":1793264520452,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Plugin catalog seeded"}
+{"level":30,"time":1793264520454,"pid":318644,"hostname":"af966a6fd55d","msg":"📋 Seeding studio templates..."}
+{"level":30,"time":1793264520459,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Seeded 8 built-in templates"}
+{"level":30,"time":1793264520461,"pid":318644,"hostname":"af966a6fd55d","msg":"🏪 Seeding storefront templates..."}
+{"level":30,"time":1793264520473,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Seeded 17 storefront templates"}
+{"level":30,"time":1793264520480,"pid":318644,"hostname":"af966a6fd55d","msg":"Seeding achievements..."}
+{"level":30,"time":1793264520487,"pid":318644,"hostname":"af966a6fd55d","msg":"Created 16 achievement(s)"}
+{"level":30,"time":1793264520487,"pid":318644,"hostname":"af966a6fd55d","msg":"Achievement seeding complete!"}
+{"level":30,"time":1793264520487,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Achievements seeded"}
+{"level":30,"time":1793264520490,"pid":318644,"hostname":"af966a6fd55d","msg":"Status page service created: 3571adcf-1993-4663-bae7-c94485ed7c7d - Web Application"}
+{"level":30,"time":1793264520490,"pid":318644,"hostname":"af966a6fd55d","msg":"Status page service created: 0d4c3e8a-9c2e-4fc5-8ea5-7bf593f88e97 - API"}
+{"level":30,"time":1793264520491,"pid":318644,"hostname":"af966a6fd55d","msg":"Status page service created: 81753d0b-a4a4-4f93-b0ed-49891784cc32 - Music Distribution"}
+{"level":30,"time":1793264520492,"pid":318644,"hostname":"af966a6fd55d","msg":"Status page service created: 9c7124a6-8903-401c-b300-a87a4143ca09 - Audio Processing"}
+{"level":30,"time":1793264520492,"pid":318644,"hostname":"af966a6fd55d","msg":"Status page service created: 25ce590e-23b6-4fde-903a-fa5873a15954 - Payment Processing"}
+{"level":30,"time":1793264520493,"pid":318644,"hostname":"af966a6fd55d","msg":"Status page service created: b7db2a5d-261d-4665-abd6-3b23e0979af7 - Analytics"}
+{"level":30,"time":1793264520494,"pid":318644,"hostname":"af966a6fd55d","msg":"Status page service created: c9605337-5702-4d4f-86d7-0ff63d0a9701 - Email Delivery"}
+{"level":30,"time":1793264520494,"pid":318644,"hostname":"af966a6fd55d","msg":"Status page service created: c9a85890-8d20-45b5-8531-cb7a75b17170 - File Storage"}
+{"level":30,"time":1793264520494,"pid":318644,"hostname":"af966a6fd55d","msg":"Default status page services initialized"}
+{"level":30,"time":1793264520494,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Status page services initialized"}
+{"level":30,"time":1793264520500,"pid":318644,"hostname":"af966a6fd55d","msg":"🎵 Initializing AI Music Intelligence Models..."}
+{"level":30,"time":1793264520504,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: stem_separator_v1"}
+{"level":30,"time":1793264520508,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for stem_separator_v1"}
+{"level":30,"time":1793264520510,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: genre_preset_engine_v1"}
+{"level":30,"time":1793264520512,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for genre_preset_engine_v1"}
+{"level":30,"time":1793264520514,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: reference_matcher_v1"}
+{"level":30,"time":1793264520518,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for reference_matcher_v1"}
+{"level":30,"time":1793264520521,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: lufs_meter_v1"}
+{"level":30,"time":1793264520530,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for lufs_meter_v1"}
+{"level":30,"time":1793264520532,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: creative_planner_v1"}
+{"level":30,"time":1793264520534,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for creative_planner_v1"}
+{"level":30,"time":1793264520535,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: beat_sync_alignment_v1"}
+{"level":30,"time":1793264520539,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for beat_sync_alignment_v1"}
+{"level":30,"time":1793264520540,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: video_creative_scorer_v1"}
+{"level":30,"time":1793264520542,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for video_creative_scorer_v1"}
+{"level":30,"time":1793264520544,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: keyframe_style_selector_v1"}
+{"level":30,"time":1793264520546,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for keyframe_style_selector_v1"}
+{"level":30,"time":1793264520546,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ AI Music Intelligence Models initialized"}
+{"level":30,"time":1793264520549,"pid":318644,"hostname":"af966a6fd55d","msg":"📊 Initializing AI Insights Engine Models..."}
+{"level":30,"time":1793264520552,"pid":318644,"hostname":"af966a6fd55d","msg":"[941116f2-4836-4fbc-b757-bfac2f5d0336] GET /api/csrf-token - 200 (33ms)"}
+{"level":30,"time":1793264520552,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:00 AM [express] GET /api/csrf-token 200 in 33ms"}
+{"level":30,"time":1793264520557,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: time_series_predictor_v1"}
+{"level":30,"time":1793264520563,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for time_series_predictor_v1"}
+{"level":30,"time":1793264520566,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: cohort_analyzer_v1"}
+{"level":30,"time":1793264520568,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for cohort_analyzer_v1"}
+{"level":30,"time":1793264520570,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: churn_predictor_v1"}
+{"level":30,"time":1793264520572,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for churn_predictor_v1"}
+{"level":30,"time":1793264520573,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: revenue_forecaster_v1"}
+{"level":30,"time":1793264520575,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for revenue_forecaster_v1"}
+{"level":30,"time":1793264520576,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: anomaly_detector_v1"}
+{"level":30,"time":1793264520577,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for anomaly_detector_v1"}
+{"level":30,"time":1793264520577,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ AI Insights Engine Models initialized"}
+{"level":30,"time":1793264520581,"pid":318644,"hostname":"af966a6fd55d","msg":"🚀 Initializing AI Content Models..."}
+{"level":30,"time":1793264520583,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: content_multilingual_v1"}
+{"level":30,"time":1793264520584,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for content_multilingual_v1"}
+{"level":30,"time":1793264520585,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: brand_voice_analyzer_v1"}
+{"level":30,"time":1793264520586,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for brand_voice_analyzer_v1"}
+{"level":30,"time":1793264520587,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: trend_detector_v1"}
+{"level":30,"time":1793264520588,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for trend_detector_v1"}
+{"level":30,"time":1793264520589,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: hashtag_optimizer_v1"}
+{"level":30,"time":1793264520590,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Created version for hashtag_optimizer_v1"}
+{"level":30,"time":1793264520590,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ AI Content Models initialized"}
+{"level":30,"time":1793264520590,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ AI models seeded"}
+{"level":30,"time":1793264520600,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ System settings seeded (20 defaults)"}
+{"level":30,"time":1793264520609,"pid":318644,"hostname":"af966a6fd55d","msg":"   ✓ Alert rules seeded (12 defaults)"}
+{"level":30,"time":1793264520609,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Admin account initialized"}
+{"level":30,"time":1793264520612,"pid":318644,"hostname":"af966a6fd55d","msg":"Seeded 10 default onboarding tasks"}
+{"level":30,"time":1793264520643,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Storage] Hybrid Storage initialized (Replit Object Storage + Pocket Dimension)"}
+{"level":30,"time":1793264520643,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Storage] Auto-tiering scheduler started (every 6 hours)"}
+{"level":30,"time":1793264520652,"pid":318644,"hostname":"af966a6fd55d","msg":"[PocketFabric] Registered cluster node 0: fabric-cluster-0 (us-east)"}
+{"level":30,"time":1793264520653,"pid":318644,"hostname":"af966a6fd55d","msg":"[PocketFabric] Registered cluster node 1: fabric-cluster-1 (us-west)"}
+{"level":30,"time":1793264520653,"pid":318644,"hostname":"af966a6fd55d","msg":"[PocketFabric] Registered cluster node 2: fabric-cluster-2 (eu-west)"}
+{"level":30,"time":1793264520654,"pid":318644,"hostname":"af966a6fd55d","msg":"[PocketFabric] Cluster ready — 3 Pocket Dimension node(s) active"}
+{"level":30,"time":1793264520669,"pid":318644,"hostname":"af966a6fd55d","msg":"[FabricRebalancer] Background rebalancer started"}
+{"level":30,"time":1793264520669,"pid":318644,"hostname":"af966a6fd55d","msg":"[AutoCluster] Started — min=3 max=Infinity up≥70% down≤40% ema_alpha=0.3 maxSpawn=5 spawnCooldown=10min drainCooldown=30min"}
+{"level":30,"time":1793264520669,"pid":318644,"hostname":"af966a6fd55d","msg":"[PocketFabric] Single-owner auto-cluster manager started"}
+{"level":30,"time":1793264520669,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [PocketFabric] Distributed fabric storage initialized"}
+{"level":30,"time":1793264520669,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: pocket-fabric-autocluster"}
+{"level":30,"time":1793264520677,"pid":318644,"hostname":"af966a6fd55d","msg":"[AUTONOMOUS] Starting 24/7 autonomous operations..."}
+{"level":30,"time":1793264520678,"pid":318644,"hostname":"af966a6fd55d","msg":"[AUTONOMOUS] 24/7 operations started successfully"}
+{"level":30,"time":1793264520678,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autonomous Service started on worker 0"}
+{"level":30,"time":1793264520678,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autonomous Service initialized - Running: true"}
+{"level":30,"time":1793264520678,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autonomous-service"}
+{"level":30,"time":1793264520682,"pid":318644,"hostname":"af966a6fd55d","msg":"[AutonomousScheduler] Waiting 75s for startup PDIM burst to settle before registering BullMQ repeatable jobs…"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Send Email"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Post to Social Media"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Distribute Music"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Generate Analytics Report"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: AI Mix Track"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: AI Master Track"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Upload Beat to Marketplace"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Process Payment"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Send Notification"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Backup Data"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Create Promotional Video"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Create Social Media Video"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Create Lyric Video"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Create Audio Visualizer Video"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: Time Based"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: User Activity"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: Performance Threshold"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: Revenue Threshold"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: Stream Threshold"}
+{"level":30,"time":1793264520684,"pid":318644,"hostname":"af966a6fd55d","msg":"🎯 Trigger registered: Schedule"}
+{"level":30,"time":1793264520685,"pid":318644,"hostname":"af966a6fd55d","msg":"🎯 Trigger registered: Event"}
+{"level":30,"time":1793264520685,"pid":318644,"hostname":"af966a6fd55d","msg":"🎯 Trigger registered: Webhook"}
+{"level":30,"time":1793264520685,"pid":318644,"hostname":"af966a6fd55d","msg":"📂 Loading workflows from storage..."}
+{"level":30,"time":1793264520685,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Automation System initialized"}
+{"level":30,"time":1793264520685,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: automation-system"}
+{"level":30,"time":1793264520685,"pid":318644,"hostname":"af966a6fd55d","msg":"🚀 Automation engine started"}
+{"level":30,"time":1793264520685,"pid":318644,"hostname":"af966a6fd55d","msg":"🤖 Automation system initialized"}
+{"level":30,"time":1793264520702,"pid":318644,"hostname":"af966a6fd55d","msg":"🚀 Platform Self-Updating System started"}
+{"level":30,"time":1793264520703,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Auto-Upgrade System ENABLED"}
+{"level":30,"time":1793264520703,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autonomous-updates"}
+{"level":30,"time":1793264520717,"pid":318644,"hostname":"af966a6fd55d","msg":"Auto-posting queue processor started"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Autopilot scheduler started (every 15 minutes)"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autonomous Autopilot loaded"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autonomous-autopilot"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autopilot Engine loaded"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autopilot-engine"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Auto-Posting Service V1 initialized"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: auto-posting-v1"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Auto-Posting Service V2 initialized"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: auto-posting-v2"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Auto Post Generator initialized"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: auto-post-generator"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autopilot Publisher initialized"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autopilot-publisher"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264520718,"pid":318644,"hostname":"af966a6fd55d","msg":"🤖 AUTONOMOUS SYSTEMS READY"}
+{"level":30,"time":1793264520720,"pid":318644,"hostname":"af966a6fd55d","msg":"[MaxCoreSync] Initialized — health probe running, authoritative state refresh scheduled every 10 min"}
+{"level":30,"time":1793264520720,"pid":318644,"hostname":"af966a6fd55d","msg":"[DB] Keepalive started — pinging primary + replica every 25s to prevent Neon cold-start latency"}
+{"level":30,"time":1793264520720,"pid":318644,"hostname":"af966a6fd55d","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1793264520723,"pid":318644,"hostname":"af966a6fd55d","msg":"[DNS] ✅ Authoritative nameserver online — max-booster.com → [REDACTED] (UDP+TCP :53)"}
+{"level":30,"time":1793264520723,"pid":318644,"hostname":"af966a6fd55d","msg":"[DNS] 📋 NS records: ns1.max-booster.com + ns2.max-booster.com → [REDACTED]"}
+{"level":30,"time":1793264520726,"pid":318644,"hostname":"af966a6fd55d","msg":"[MaxCoreSync] PDIM ✅ reachable — Redis-compatible layer active"}
+{"level":40,"time":1793264520728,"pid":318644,"hostname":"af966a6fd55d","msg":"[MaxCoreSync] MaxCore inference ⚠️ unreachable — http://[REDACTED]:40001 (will retry on first inference request)"}
+{"level":40,"time":1793264520728,"pid":318644,"hostname":"af966a6fd55d","msg":"[MaxCoreSync] Training peer not configured — PEER_TRAINING_NODE / MBS_AI_TRAINING_KEY missing"}
+{"level":30,"time":1793264520729,"pid":318644,"hostname":"af966a6fd55d","msg":"[DNS] Custom domain cache warmed — 0 active domain(s) loaded."}
+{"level":30,"time":1793264521009,"pid":318644,"hostname":"af966a6fd55d","hasSession":true,"hasUserId":false,"sessionPrefix":"d3950637","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1793264521009,"pid":318644,"hostname":"af966a6fd55d","msg":"[Auth/me] No sessionId cookie present in request"}
+{"level":30,"time":1793264521010,"pid":318644,"hostname":"af966a6fd55d","msg":"[b93bd3e5-0b60-47d0-8e8c-9f2bd627a3c0] GET /api/auth/me - 200 (31ms)"}
+{"level":30,"time":1793264521011,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:01 AM [express] GET /api/auth/me 200 in 29ms"}
+{"level":30,"time":1793264521397,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":40,"time":1793264521740,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1793264521748,"pid":318644,"hostname":"af966a6fd55d","msg":"[203bc7ae-15cd-4a2c-9ca4-e2d0c606929c] POST /api/auth/register - 200 (446ms)"}
+{"level":30,"time":1793264521749,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:01 AM [express] POST /api/auth/register 200 in 397ms"}
+{"level":30,"time":1793264522096,"pid":318644,"hostname":"af966a6fd55d","userId":"60cc8d63-d118-4e6b-8e4e-978d7074560e","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1793264522103,"pid":318644,"hostname":"af966a6fd55d","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1793264522103,"pid":318644,"hostname":"af966a6fd55d","msg":"Sent notification to user 60cc8d63-d118-4e6b-8e4e-978d7074560e"}
+{"level":30,"time":1793264522103,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Notification sent to user 60cc8d63-d118-4e6b-8e4e-978d7074560e: New Login Detected"}
+{"level":30,"time":1793264522111,"pid":318644,"hostname":"af966a6fd55d","msg":"[38ac661c-956e-4f3f-b6bd-dcb801562792] POST /api/auth/login - 200 (319ms)"}
+{"level":30,"time":1793264522112,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] POST /api/auth/login 200 in 319ms"}
+{"level":30,"time":1793264522131,"pid":318644,"hostname":"af966a6fd55d","msg":"[PocketDimension] Created storage space for user 60cc8d63-d118-4e6b-8e4e-978d7074560e"}
+{"level":30,"time":1793264522157,"pid":318644,"hostname":"af966a6fd55d","hasSession":true,"hasUserId":true,"sessionPrefix":"d0724936","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1793264522159,"pid":318644,"hostname":"af966a6fd55d","msg":"[e317b5c5-0186-4fe6-a87c-347a0f329677] GET /api/auth/me - 200 (35ms)"}
+{"level":30,"time":1793264522160,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] GET /api/auth/me 200 in 34ms"}
+{"level":40,"time":1793264522168,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/storage/upload"}
+{"level":40,"time":1793264522169,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"CSRF validation failed: Missing CSRF cookie - POST /api/storage/upload"}
+{"level":30,"time":1793264522169,"pid":318644,"hostname":"af966a6fd55d","msg":"[07d8163a-c470-47b4-b429-3daaa0bbdf15] POST /api/storage/upload - 403 (2ms)"}
+{"level":30,"time":1793264522170,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] POST /api/storage/upload 403 in 2ms"}
+{"level":40,"time":1793264522177,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/hybrid-storage/upload"}
+{"level":30,"time":1793264522327,"pid":318644,"hostname":"af966a6fd55d","msg":"[bbce79a5-9512-4dc3-a3df-25a04ae7188d] POST /upload - 200 (153ms)"}
+{"level":30,"time":1793264522327,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] POST /api/hybrid-storage/upload 200 in 153ms"}
+{"level":30,"time":1793264522397,"pid":318644,"hostname":"af966a6fd55d","msg":"[095fdfae-4846-4679-8275-8bb88f04228c] GET /api/storage/file/60cc8d63-d118-4e6b-8e4e-978d7074560e/9d0730d5-667b-4701-8843-2275b772256a-private-hybrid.wav - 200 (67ms)"}
+{"level":30,"time":1793264522398,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] GET /api/storage/file/60cc8d63-d118-4e6b-8e4e-978d7074560e/9d0730d5-667b-4701-8843-2275b772256a-private-hybrid.wav 200 in 54ms"}
+{"level":30,"time":1793264522440,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":40,"time":1793264522752,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1793264522760,"pid":318644,"hostname":"af966a6fd55d","msg":"[57a3fc94-553b-41ce-9f73-3dbedbe08a29] POST /api/auth/register - 200 (359ms)"}
+{"level":30,"time":1793264522760,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] POST /api/auth/register 200 in 342ms"}
+{"level":30,"time":1793264522810,"pid":318644,"hostname":"af966a6fd55d","hasSession":true,"hasUserId":true,"sessionPrefix":"8155d83d","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1793264522812,"pid":318644,"hostname":"af966a6fd55d","msg":"[6e840bd9-d343-4ceb-9af2-77ec4456590f] GET /api/auth/me - 200 (35ms)"}
+{"level":30,"time":1793264522813,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] GET /api/auth/me 200 in 35ms"}
+{"level":30,"time":1793264522849,"pid":318644,"hostname":"af966a6fd55d","msg":"[78b31ac5-e708-412c-8bef-71c86c2991f4] GET /api/storage/file/60cc8d63-d118-4e6b-8e4e-978d7074560e/9d0730d5-667b-4701-8843-2275b772256a-private-hybrid.wav - 403 (33ms)"}
+{"level":30,"time":1793264522850,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] GET /api/storage/file/60cc8d63-d118-4e6b-8e4e-978d7074560e/9d0730d5-667b-4701-8843-2275b772256a-private-hybrid.wav 403 in 32ms"}
+{"level":30,"time":1793264522880,"pid":318644,"hostname":"af966a6fd55d","msg":"[88b2df41-2b6f-4fbe-907f-0aa8d7d7e5b9] GET /file/60cc8d63-d118-4e6b-8e4e-978d7074560e%2F9d0730d5-667b-4701-8843-2275b772256a-private-hybrid.wav - 403 (28ms)"}
+{"level":30,"time":1793264522881,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] GET /api/hybrid-storage/file/60cc8d63-d118-4e6b-8e4e-978d7074560e%2F9d0730d5-667b-4701-8843-2275b772256a-private-hybrid.wav 403 in 27ms"}
+{"level":40,"time":1793264522885,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/hybrid-storage/file/60cc8d63-d118-4e6b-8e4e-978d7074560e%2F9d0730d5-667b-4701-8843-2275b772256a-private-hybrid.wav"}
+{"level":30,"time":1793264522962,"pid":318644,"hostname":"af966a6fd55d","msg":"[c5f2de93-4045-487d-a15d-0d36464465ea] DELETE /file/60cc8d63-d118-4e6b-8e4e-978d7074560e%2F9d0730d5-667b-4701-8843-2275b772256a-private-hybrid.wav - 200 (80ms)"}
+{"level":30,"time":1793264522962,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:02 AM [express] DELETE /api/hybrid-storage/file/60cc8d63-d118-4e6b-8e4e-978d7074560e%2F9d0730d5-667b-4701-8843-2275b772256a-private-hybrid.wav 200 in 79ms"}
+{"level":40,"time":1793264522973,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/storage/upload"}
+{"level":30,"time":1793264523237,"pid":318644,"hostname":"af966a6fd55d","msg":"File uploaded: users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav by user 60cc8d63-d118-4e6b-8e4e-978d7074560e"}
+{"level":40,"time":1793264523244,"pid":318644,"hostname":"af966a6fd55d","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1793264523244,"pid":318644,"hostname":"af966a6fd55d","msg":"Sent notification to user 60cc8d63-d118-4e6b-8e4e-978d7074560e"}
+{"level":30,"time":1793264523245,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Notification sent to user 60cc8d63-d118-4e6b-8e4e-978d7074560e: Upload Complete"}
+{"level":30,"time":1793264523245,"pid":318644,"hostname":"af966a6fd55d","msg":"[723854e1-7ff4-459a-8cf7-81fd777c5eb0] POST /upload - 200 (285ms)"}
+{"level":30,"time":1793264523246,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] POST /api/storage/upload 200 in 285ms"}
+{"level":30,"time":1793264523293,"pid":318644,"hostname":"af966a6fd55d","msg":"[9979f58f-eb85-4c29-8eba-ae27e68247ef] GET /api/storage/file/users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav - 200 (42ms)"}
+{"level":30,"time":1793264523293,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/file/users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav 200 in 43ms"}
+{"level":30,"time":1793264523329,"pid":318644,"hostname":"af966a6fd55d","msg":"[PocketDimension] Created storage space for user 0c2ba6bb-d165-4958-ba36-f78e07cd18e0"}
+{"level":30,"time":1793264523333,"pid":318644,"hostname":"af966a6fd55d","msg":"[641486a4-48e3-4a60-885b-43cb956642f3] GET /api/storage/file/users/00000000-dead-beef-0000-000000000000/audio/foreign.wav - 403 (36ms)"}
+{"level":30,"time":1793264523334,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/file/users/00000000-dead-beef-0000-000000000000/audio/foreign.wav 403 in 35ms"}
+{"level":40,"time":1793264523340,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/storage/file/users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav"}
+{"level":30,"time":1793264523381,"pid":318644,"hostname":"af966a6fd55d","msg":"[SoftDelete] File soft deleted: users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav by user 60cc8d63-d118-4e6b-8e4e-978d7074560e"}
+{"level":30,"time":1793264523384,"pid":318644,"hostname":"af966a6fd55d","msg":"[88a0d989-a4cd-4ef3-8c12-2889df900623] DELETE /file/users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav - 200 (48ms)"}
+{"level":30,"time":1793264523385,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] DELETE /api/storage/file/users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav 200 in 48ms"}
+{"level":40,"time":1793264523451,"pid":318644,"hostname":"af966a6fd55d","key":"users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav","deletedAt":"2026-10-29T09:02:03.379Z","msg":"Storage file serve: rejected, tracking row is soft-deleted"}
+{"level":40,"time":1793264523453,"pid":318644,"hostname":"af966a6fd55d","msg":"[b927294a-f98d-4755-a609-e720c745717d] GET /api/storage/file/users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav - 404 (65ms)"}
+{"level":30,"time":1793264523453,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/file/users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav 404 in 41ms"}
+{"level":40,"time":1793264523462,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/storage/file/users/00000000-dead-beef-0000-000000000001/audio/fake.wav"}
+{"level":30,"time":1793264523489,"pid":318644,"hostname":"af966a6fd55d","msg":"[a1ff1abb-aebe-42c5-bd06-dd4108310425] DELETE /file/users/00000000-dead-beef-0000-000000000001/audio/fake.wav - 403 (34ms)"}
+{"level":30,"time":1793264523490,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] DELETE /api/storage/file/users/00000000-dead-beef-0000-000000000001/audio/fake.wav 403 in 33ms"}
+{"level":30,"time":1793264523551,"pid":318644,"hostname":"af966a6fd55d","msg":"[e6a05b47-b2e0-42f3-892d-f6d81cb8bd77] GET /quota - 200 (58ms)"}
+{"level":30,"time":1793264523551,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/quota 200 in 57ms"}
+{"level":30,"time":1793264523600,"pid":318644,"hostname":"af966a6fd55d","msg":"[5451d917-9938-4703-955e-6a5765aa1a33] GET /api/storage/file/users%2Fsomeone%2F%252e%252e%2F%252e%252e%2Fetc%2Fpasswd - 403 (46ms)"}
+{"level":30,"time":1793264523601,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/file/users%2Fsomeone%2F%252e%252e%2F%252e%252e%2Fetc%2Fpasswd 403 in 27ms"}
+{"level":40,"time":1793264523618,"pid":318644,"hostname":"af966a6fd55d","threatId":"0229fcca27090ebe","threatType":"path_traversal","msg":"Security alert has no administrator recipients; structured threat evidence retained"}
+{"level":30,"time":1793264523620,"pid":318644,"hostname":"af966a6fd55d","msg":"⚡ Threat healed in 6ms (Detection: 1ms, Response: 3ms, Recovery: 2ms)"}
+{"level":40,"time":1793264523649,"pid":318644,"hostname":"af966a6fd55d","key":"etc/passwd","hadHybridMeta":false,"downloadError":"File not found: etc/passwd","msg":"Storage file serve: not found in hybrid storage or storageService"}
+{"level":40,"time":1793264523651,"pid":318644,"hostname":"af966a6fd55d","msg":"[ac8db086-95f0-4d51-ab50-85a0ec5c97af] GET /api/storage/file/etc/passwd - 404 (48ms)"}
+{"level":30,"time":1793264523652,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/file/etc/passwd 404 in 36ms"}
+{"level":40,"time":1793264523653,"pid":318644,"hostname":"af966a6fd55d","threatId":"b8b171d68136bee7","threatType":"path_traversal","msg":"Security alert has no administrator recipients; structured threat evidence retained"}
+{"level":30,"time":1793264523655,"pid":318644,"hostname":"af966a6fd55d","msg":"⚡ Threat healed in 3ms (Detection: 1ms, Response: 1ms, Recovery: 1ms)"}
+{"level":40,"time":1793264523695,"pid":318644,"hostname":"af966a6fd55d","msg":"[ad5167c2-dfb8-4a78-ad21-2706ecb128d8] GET /api/storage/file/users%5Cx%5Csecrets - 400 (41ms)"}
+{"level":30,"time":1793264523696,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/file/users%5Cx%5Csecrets 400 in 30ms"}
+{"level":40,"time":1793264523736,"pid":318644,"hostname":"af966a6fd55d","msg":"[535459e8-2dec-4172-9fb4-149a3e7b8b96] GET /api/storage/file/users%2Fx%2Ffile%00.wav - 400 (38ms)"}
+{"level":30,"time":1793264523737,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/file/users%2Fx%2Ffile%00.wav 400 in 27ms"}
+{"level":40,"time":1793264523741,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/storage/restore/users%2F60cc8d63-d118-4e6b-8e4e-978d7074560e%2Faudio%2F2effcdde-70f9-410d-8ebb-67680ce026c2%2Ftest.wav"}
+{"level":30,"time":1793264523776,"pid":318644,"hostname":"af966a6fd55d","msg":"[SoftDelete] File restored: users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav by user 60cc8d63-d118-4e6b-8e4e-978d7074560e"}
+{"level":30,"time":1793264523777,"pid":318644,"hostname":"af966a6fd55d","msg":"[ad6e1592-2f1a-4917-94da-0f29c9ac4928] POST /restore/users%2F60cc8d63-d118-4e6b-8e4e-978d7074560e%2Faudio%2F2effcdde-70f9-410d-8ebb-67680ce026c2%2Ftest.wav - 200 (38ms)"}
+{"level":30,"time":1793264523778,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] POST /api/storage/restore/users%2F60cc8d63-d118-4e6b-8e4e-978d7074560e%2Faudio%2F2effcdde-70f9-410d-8ebb-67680ce026c2%2Ftest.wav 200 in 38ms"}
+{"level":30,"time":1793264523823,"pid":318644,"hostname":"af966a6fd55d","msg":"[217b9644-bd7f-4c46-b99f-7a77ab5788fe] GET /api/storage/file/users%2F60cc8d63-d118-4e6b-8e4e-978d7074560e%2Faudio%2F2effcdde-70f9-410d-8ebb-67680ce026c2%2Ftest.wav - 200 (42ms)"}
+{"level":30,"time":1793264523824,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/file/users%2F60cc8d63-d118-4e6b-8e4e-978d7074560e%2Faudio%2F2effcdde-70f9-410d-8ebb-67680ce026c2%2Ftest.wav 200 in 42ms"}
+{"level":40,"time":1793264523831,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/storage/file/users%2F60cc8d63-d118-4e6b-8e4e-978d7074560e%2Faudio%2F2effcdde-70f9-410d-8ebb-67680ce026c2%2Ftest.wav"}
+{"level":30,"time":1793264523859,"pid":318644,"hostname":"af966a6fd55d","msg":"[SoftDelete] File soft deleted: users/60cc8d63-d118-4e6b-8e4e-978d7074560e/audio/2effcdde-70f9-410d-8ebb-67680ce026c2/test.wav by user 60cc8d63-d118-4e6b-8e4e-978d7074560e"}
+{"level":30,"time":1793264523860,"pid":318644,"hostname":"af966a6fd55d","msg":"[e38ae3e9-6242-442c-a70f-fc077629e6a2] DELETE /file/users%2F60cc8d63-d118-4e6b-8e4e-978d7074560e%2Faudio%2F2effcdde-70f9-410d-8ebb-67680ce026c2%2Ftest.wav - 200 (32ms)"}
+{"level":30,"time":1793264523861,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] DELETE /api/storage/file/users%2F60cc8d63-d118-4e6b-8e4e-978d7074560e%2Faudio%2F2effcdde-70f9-410d-8ebb-67680ce026c2%2Ftest.wav 200 in 32ms"}
+{"level":30,"time":1793264523892,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/storage/quota, cookie present: false, session exists: true"}
+{"level":30,"time":1793264523895,"pid":318644,"hostname":"af966a6fd55d","msg":"[9feffe60-a6db-49b6-8472-f42d2e7543e0] GET /quota - 401 (31ms)"}
+{"level":30,"time":1793264523895,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/quota 401 in 31ms"}
+{"level":30,"time":1793264523943,"pid":318644,"hostname":"af966a6fd55d","msg":"[4edf99a2-b63f-4cce-9c0c-7ab095e5f48b] GET /quota - 200 (46ms)"}
+{"level":30,"time":1793264523943,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/quota 200 in 30ms"}
+{"level":30,"time":1793264523972,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/storage/quota, cookie present: true, session exists: true"}
+{"level":30,"time":1793264523974,"pid":318644,"hostname":"af966a6fd55d","msg":"[4228c5c7-77fb-469d-81dc-accdcf6ae8d6] GET /quota - 401 (22ms)"}
+{"level":30,"time":1793264523974,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:03 AM [express] GET /api/storage/quota 401 in 22ms"}
+{"level":30,"time":1793264524008,"pid":318644,"hostname":"af966a6fd55d","msg":"[1d265c8d-3a6a-4aad-90bd-30377b66347a] GET /quota - 200 (28ms)"}
+{"level":30,"time":1793264524008,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 200 in 28ms"}
+{"level":30,"time":1793264524048,"pid":318644,"hostname":"af966a6fd55d","msg":"[badbafb8-0031-4c68-9080-5966f3b8a197] GET /quota - 200 (38ms)"}
+{"level":30,"time":1793264524049,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 200 in 27ms"}
+{"level":30,"time":1793264524075,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/storage/quota, cookie present: true, session exists: true"}
+{"level":30,"time":1793264524081,"pid":318644,"hostname":"af966a6fd55d","msg":"[81f06fe9-95bc-443d-b857-97cd55ad6785] GET /quota - 401 (25ms)"}
+{"level":30,"time":1793264524082,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 401 in 26ms"}
+{"level":30,"time":1793264524117,"pid":318644,"hostname":"af966a6fd55d","msg":"[50316e86-7617-4eae-9720-da87b173912f] GET /quota - 200 (30ms)"}
+{"level":30,"time":1793264524118,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 200 in 29ms"}
+{"level":30,"time":1793264524152,"pid":318644,"hostname":"af966a6fd55d","msg":"[9e65541b-855a-4339-b0bf-cca3070bc9b5] GET /quota - 200 (32ms)"}
+{"level":30,"time":1793264524153,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 200 in 24ms"}
+{"level":30,"time":1793264524195,"pid":318644,"hostname":"af966a6fd55d","msg":"[a1f9a2c2-32cb-465b-9931-32c34f22e084] GET /quota - 401 (32ms)"}
+{"level":30,"time":1793264524195,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 401 in 31ms"}
+{"level":30,"time":1793264524227,"pid":318644,"hostname":"af966a6fd55d","msg":"[9e8d0442-6b19-41fb-afb3-c79fa00ed643] GET /quota - 200 (26ms)"}
+{"level":30,"time":1793264524227,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 200 in 26ms"}
+{"level":30,"time":1793264524270,"pid":318644,"hostname":"af966a6fd55d","msg":"[2304b8c5-5b07-407a-83da-0806be1b0542] GET /quota - 200 (38ms)"}
+{"level":30,"time":1793264524271,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 200 in 26ms"}
+{"level":30,"time":1793264524306,"pid":318644,"hostname":"af966a6fd55d","msg":"[861ecf24-7511-448a-9eff-291cd11c5bac] GET /quota - 403 (26ms)"}
+{"level":30,"time":1793264524307,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 403 in 25ms"}
+{"level":30,"time":1793264524339,"pid":318644,"hostname":"af966a6fd55d","msg":"[1d5b6b25-6cc9-4421-80b1-8a844f8186f2] GET /quota - 200 (28ms)"}
+{"level":30,"time":1793264524339,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 200 in 27ms"}
+{"level":30,"time":1793264524380,"pid":318644,"hostname":"af966a6fd55d","msg":"[1602d085-5e2e-47f9-a913-5eb76e73bba9] GET /quota - 200 (39ms)"}
+{"level":30,"time":1793264524381,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 200 in 28ms"}
+{"level":30,"time":1793264524397,"pid":318644,"hostname":"af966a6fd55d","msg":"[PermanentFixer] No permanent overrides saved yet — running with default constants"}
+{"level":30,"time":1793264524423,"pid":318644,"hostname":"af966a6fd55d","msg":"[0bded131-df05-4f88-876f-c93f8e4573a4] GET /quota - 403 (32ms)"}
+{"level":30,"time":1793264524423,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 403 in 31ms"}
+{"level":30,"time":1793264524460,"pid":318644,"hostname":"af966a6fd55d","msg":"[336805ed-4a18-452e-9f99-add417830624] GET /quota - 200 (31ms)"}
+{"level":30,"time":1793264524460,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/storage/quota 200 in 31ms"}
+{"level":30,"time":1793264524726,"pid":318644,"hostname":"af966a6fd55d","msg":"[ae88bac7-a813-420d-96eb-c495c0c3e653] GET /api/csrf-token - 200 (35ms)"}
+{"level":30,"time":1793264524727,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:04 AM [express] GET /api/csrf-token 200 in 24ms"}
+{"level":30,"time":1793264524782,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":40,"time":1793264525118,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1793264525123,"pid":318644,"hostname":"af966a6fd55d","msg":"[00d8cec0-8efa-4842-bc8a-989d87e0a2a5] POST /api/auth/register - 200 (380ms)"}
+{"level":30,"time":1793264525123,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] POST /api/auth/register 200 in 363ms"}
+{"level":40,"time":1793264525201,"pid":318644,"hostname":"af966a6fd55d","msg":"[6ceb29c2-acae-4219-8967-a12f6beca911] POST /api/auth/register - 400 (72ms)"}
+{"level":30,"time":1793264525202,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] POST /api/auth/register 400 in 71ms"}
+{"level":30,"time":1793264525431,"pid":318644,"hostname":"af966a6fd55d","msg":"[PocketDimension] Created storage space for user 05b52ca7-b7fe-4e0e-8baa-a7b36bd17e70"}
+{"level":30,"time":1793264525485,"pid":318644,"hostname":"af966a6fd55d","userId":"05b52ca7-b7fe-4e0e-8baa-a7b36bd17e70","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1793264525488,"pid":318644,"hostname":"af966a6fd55d","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1793264525489,"pid":318644,"hostname":"af966a6fd55d","msg":"Sent notification to user 05b52ca7-b7fe-4e0e-8baa-a7b36bd17e70"}
+{"level":30,"time":1793264525489,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Notification sent to user 05b52ca7-b7fe-4e0e-8baa-a7b36bd17e70: New Login Detected"}
+{"level":30,"time":1793264525494,"pid":318644,"hostname":"af966a6fd55d","msg":"[523f8dc0-5045-497f-80e1-f17d50e2273c] POST /api/auth/login - 200 (289ms)"}
+{"level":30,"time":1793264525494,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] POST /api/auth/login 200 in 288ms"}
+{"level":30,"time":1793264525521,"pid":318644,"hostname":"af966a6fd55d","hasSession":true,"hasUserId":true,"sessionPrefix":"ab9d6381","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1793264525523,"pid":318644,"hostname":"af966a6fd55d","msg":"[e3d3b78c-9c34-4c9e-83ec-a74f13ecc17e] GET /api/auth/me - 200 (25ms)"}
+{"level":30,"time":1793264525523,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] GET /api/auth/me 200 in 25ms"}
+{"level":30,"time":1793264525553,"pid":318644,"hostname":"af966a6fd55d","msg":"[e7ef6fb3-e7b0-4c4e-8c73-a90aaa5625a5] GET /api/auth/onboarding-status - 200 (26ms)"}
+{"level":30,"time":1793264525554,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] GET /api/auth/onboarding-status 200 in 25ms"}
+{"level":30,"time":1793264525580,"pid":318644,"hostname":"af966a6fd55d","msg":"[b078d16d-3bb3-4ae7-bdee-a870237ecbb6] GET /api/auth/profile - 200 (24ms)"}
+{"level":30,"time":1793264525581,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] GET /api/auth/profile 200 in 24ms"}
+{"level":30,"time":1793264525612,"pid":318644,"hostname":"af966a6fd55d","msg":"[4ed052ca-6a77-4eb9-8046-20c53f6f955d] GET /sessions - 200 (27ms)"}
+{"level":30,"time":1793264525612,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] GET /api/auth/sessions 200 in 27ms"}
+{"level":30,"time":1793264525639,"pid":318644,"hostname":"af966a6fd55d","msg":"[a859a0bb-a3ef-4d3f-9b69-e4dbbf18755d] GET /api/auth/login-history - 200 (24ms)"}
+{"level":30,"time":1793264525639,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] GET /api/auth/login-history 200 in 23ms"}
+{"level":40,"time":1793264525644,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/logout"}
+{"level":30,"time":1793264525671,"pid":318644,"hostname":"af966a6fd55d","msg":"[4963c5e8-ed31-443a-93cf-cba8d203d6c8] POST /api/auth/logout - 200 (29ms)"}
+{"level":30,"time":1793264525672,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] POST /api/auth/logout 200 in 29ms"}
+{"level":30,"time":1793264525706,"pid":318644,"hostname":"af966a6fd55d","hasSession":true,"hasUserId":false,"sessionPrefix":"e256cb49","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1793264525706,"pid":318644,"hostname":"af966a6fd55d","msg":"[Auth/me] No sessionId cookie present in request"}
+{"level":30,"time":1793264525707,"pid":318644,"hostname":"af966a6fd55d","msg":"[2cd16ee2-f9b5-467d-86ae-592d2c6aa324] GET /api/auth/me - 200 (32ms)"}
+{"level":30,"time":1793264525707,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] GET /api/auth/me 200 in 21ms"}
+{"level":30,"time":1793264525742,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1793264525977,"pid":318644,"hostname":"af966a6fd55d","msg":"[604ee385-837c-4071-bd92-bb255733d0f3] POST /api/auth/login - 401 (267ms)"}
+{"level":30,"time":1793264525977,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:05 AM [express] POST /api/auth/login 401 in 255ms"}
+{"level":30,"time":1793264526002,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/social/callback/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526007,"pid":318644,"hostname":"af966a6fd55d","msg":"[2bccc3b1-1b55-4e95-8e7d-c4cad106fe57] GET /callback/youtube - 302 (26ms)"}
+{"level":30,"time":1793264526007,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/social/callback/youtube 302 in 26ms"}
+{"level":30,"time":1793264526033,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/social/callback/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526041,"pid":318644,"hostname":"af966a6fd55d","msg":"[6f6e2b0b-2a06-4705-a5ee-64c88050076d] GET /callback/youtube - 302 (31ms)"}
+{"level":30,"time":1793264526041,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/social/callback/youtube 302 in 30ms"}
+{"level":30,"time":1793264526063,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/social/callback/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526064,"pid":318644,"hostname":"af966a6fd55d","msg":"[a9effb5b-02b7-4d62-9f27-03b403c5d9f6] GET /callback/youtube - 302 (21ms)"}
+{"level":30,"time":1793264526065,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/social/callback/youtube 302 in 21ms"}
+{"level":30,"time":1793264526086,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/social/callback/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526088,"pid":318644,"hostname":"af966a6fd55d","msg":"[08099132-2976-438a-b790-71e9fc72085a] GET /callback/youtube - 302 (21ms)"}
+{"level":30,"time":1793264526088,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/social/callback/youtube 302 in 20ms"}
+{"level":40,"time":1793264526091,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/social/connect/youtube"}
+{"level":40,"time":1793264526092,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"CSRF validation failed: Missing CSRF cookie - POST /api/social/connect/youtube"}
+{"level":30,"time":1793264526092,"pid":318644,"hostname":"af966a6fd55d","msg":"[24aa9d61-9b40-48dc-af80-28b230f25ae1] POST /api/social/connect/youtube - 403 (1ms)"}
+{"level":30,"time":1793264526092,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] POST /api/social/connect/youtube 403 in 1ms"}
+{"level":40,"time":1793264526095,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/social/connect/youtube"}
+{"level":30,"time":1793264526113,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/social/connect/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526116,"pid":318644,"hostname":"af966a6fd55d","msg":"[f77b58aa-417e-498c-8722-f41c6badd828] POST /connect/youtube - 401 (21ms)"}
+{"level":30,"time":1793264526116,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] POST /api/social/connect/youtube 401 in 21ms"}
+{"level":30,"time":1793264526142,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/social/platforms, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526144,"pid":318644,"hostname":"af966a6fd55d","msg":"[65bd8ec7-36a6-4c9c-a856-28ce039fd855] GET /platforms - 401 (26ms)"}
+{"level":30,"time":1793264526144,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/social/platforms 401 in 25ms"}
+{"level":30,"time":1793264526170,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/social/connections, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526173,"pid":318644,"hostname":"af966a6fd55d","msg":"[995685c9-73cb-4c60-8238-af865f7d9bd0] GET /connections - 401 (26ms)"}
+{"level":30,"time":1793264526173,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/social/connections 401 in 26ms"}
+{"level":30,"time":1793264526202,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/google, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526203,"pid":318644,"hostname":"af966a6fd55d","msg":"[e05c28ef-f3ee-409a-b3d7-a90b50a760cd] GET /api/auth/google - 302 (28ms)"}
+{"level":30,"time":1793264526203,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/auth/google 302 in 18ms"}
+{"level":30,"time":1793264526234,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/google/callback, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526235,"pid":318644,"hostname":"af966a6fd55d","msg":"[870914a2-43c1-48e2-b41e-e5ecaa3e4a8c] GET /api/auth/google/callback - 302 (30ms)"}
+{"level":30,"time":1793264526236,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/auth/google/callback 302 in 29ms"}
+{"level":30,"time":1793264526258,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/google/callback, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526258,"pid":318644,"hostname":"af966a6fd55d","msg":"[6e51deef-0439-4694-ab8b-dc6e1006d487] GET /api/auth/google/callback - 302 (20ms)"}
+{"level":30,"time":1793264526259,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/auth/google/callback 302 in 20ms"}
+{"level":30,"time":1793264526288,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/oauth/initiate, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526293,"pid":318644,"hostname":"af966a6fd55d","msg":"[7657b011-369e-456c-828e-925dc93b7eba] GET /api/auth/oauth/initiate - 401 (32ms)"}
+{"level":30,"time":1793264526293,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/auth/oauth/initiate 401 in 31ms"}
+{"level":30,"time":1793264526316,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526583,"pid":318644,"hostname":"af966a6fd55d","userId":"05b52ca7-b7fe-4e0e-8baa-a7b36bd17e70","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1793264526588,"pid":318644,"hostname":"af966a6fd55d","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1793264526588,"pid":318644,"hostname":"af966a6fd55d","msg":"Sent notification to user 05b52ca7-b7fe-4e0e-8baa-a7b36bd17e70"}
+{"level":30,"time":1793264526588,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Notification sent to user 05b52ca7-b7fe-4e0e-8baa-a7b36bd17e70: New Login Detected"}
+{"level":30,"time":1793264526591,"pid":318644,"hostname":"af966a6fd55d","msg":"[e8fe6327-8d4c-48ab-96f9-9f0c50ce7b64] POST /api/auth/login - 200 (296ms)"}
+{"level":30,"time":1793264526592,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] POST /api/auth/login 200 in 296ms"}
+{"level":30,"time":1793264526624,"pid":318644,"hostname":"af966a6fd55d","msg":"[d1b9878d-697c-4b81-82c5-fb866a91c6f2] GET /api/auth/oauth/initiate - 307 (28ms)"}
+{"level":30,"time":1793264526624,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/auth/oauth/initiate 307 in 28ms"}
+{"level":30,"time":1793264526644,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/oauth/callback, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526646,"pid":318644,"hostname":"af966a6fd55d","msg":"[e1f5c23a-4bbd-4254-830b-d4f9b175b883] GET /api/auth/oauth/callback - 302 (21ms)"}
+{"level":30,"time":1793264526647,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/auth/oauth/callback 302 in 20ms"}
+{"level":30,"time":1793264526668,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/oauth/callback, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526670,"pid":318644,"hostname":"af966a6fd55d","msg":"[6b994862-7c89-4c33-b149-ce702a292aa3] GET /api/auth/oauth/callback - 302 (22ms)"}
+{"level":30,"time":1793264526670,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/auth/oauth/callback 302 in 21ms"}
+{"level":30,"time":1793264526691,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/google, cookie present: false, session exists: true"}
+{"level":30,"time":1793264526692,"pid":318644,"hostname":"af966a6fd55d","msg":"[452df9e0-f65d-440b-94b4-727aca5633b7] GET /api/auth/google - 302 (20ms)"}
+{"level":30,"time":1793264526693,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/auth/google 302 in 19ms"}
+{"level":30,"time":1793264526909,"pid":318644,"hostname":"af966a6fd55d","msg":"[cf78cfba-f7d5-4d30-9f1b-245bbb625525] GET /api/csrf-token - 200 (30ms)"}
+{"level":30,"time":1793264526910,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:06 AM [express] GET /api/csrf-token 200 in 20ms"}
+{"level":30,"time":1793264526951,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":40,"time":1793264527246,"pid":318644,"hostname":"af966a6fd55d","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1793264527248,"pid":318644,"hostname":"af966a6fd55d","msg":"[cda8a5f8-b94c-4b1f-b876-f271141e0016] POST /api/auth/register - 200 (326ms)"}
+{"level":30,"time":1793264527248,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/auth/register 200 in 316ms"}
+{"level":30,"time":1793264527534,"pid":318644,"hostname":"af966a6fd55d","userId":"02b73e85-ff91-4002-a818-c9b4cc34b6eb","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1793264527537,"pid":318644,"hostname":"af966a6fd55d","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1793264527538,"pid":318644,"hostname":"af966a6fd55d","msg":"Sent notification to user 02b73e85-ff91-4002-a818-c9b4cc34b6eb"}
+{"level":30,"time":1793264527538,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Notification sent to user 02b73e85-ff91-4002-a818-c9b4cc34b6eb: New Login Detected"}
+{"level":30,"time":1793264527543,"pid":318644,"hostname":"af966a6fd55d","msg":"[85598cbb-d900-42a1-a2db-c729d4360e7f] POST /api/auth/login - 200 (287ms)"}
+{"level":30,"time":1793264527543,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/auth/login 200 in 286ms"}
+{"level":30,"time":1793264527562,"pid":318644,"hostname":"af966a6fd55d","msg":"[PocketDimension] Created storage space for user 02b73e85-ff91-4002-a818-c9b4cc34b6eb"}
+{"level":30,"time":1793264527571,"pid":318644,"hostname":"af966a6fd55d","hasSession":true,"hasUserId":true,"sessionPrefix":"85e9ef5d","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1793264527572,"pid":318644,"hostname":"af966a6fd55d","msg":"[5824e15e-3daf-4473-995d-a0ba0ca8c2a0] GET /api/auth/me - 200 (23ms)"}
+{"level":30,"time":1793264527573,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] GET /api/auth/me 200 in 23ms"}
+{"level":30,"time":1793264527601,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/webhooks/stripe, cookie present: false, session exists: true"}
+{"level":40,"time":1793264527602,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Missing stripe-signature header"}
+{"level":40,"time":1793264527602,"pid":318644,"hostname":"af966a6fd55d","msg":"[40674bca-00e6-4d98-b8e9-462b87e42aad] POST /api/webhooks/stripe - 400 (23ms)"}
+{"level":30,"time":1793264527603,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/webhooks/stripe 400 in 22ms"}
+{"level":30,"time":1793264527624,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/webhooks/stripe, cookie present: false, session exists: true"}
+{"level":40,"time":1793264527625,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Missing stripe-signature header"}
+{"level":40,"time":1793264527625,"pid":318644,"hostname":"af966a6fd55d","msg":"[51c84524-73e8-4750-b0ad-c81c66d006e7] POST /api/webhooks/stripe - 400 (18ms)"}
+{"level":30,"time":1793264527625,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/webhooks/stripe 400 in 18ms"}
+{"level":30,"time":1793264527647,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/webhooks/stripe, cookie present: false, session exists: true"}
+{"level":40,"time":1793264527648,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Signature verification failed: No signatures found matching the expected signature for payload. Are you passing the raw request body you received from Stripe? \n If a webhook request is being forwarded by a third-party tool, ensure that the exact request body, including JSON formatting and new line style, is preserved.\n\nLearn more about webhook signing and explore webhook integration examples for various frameworks at https://docs.stripe.com/webhooks/signature\n"}
+{"level":30,"time":1793264527648,"pid":318644,"hostname":"af966a6fd55d","msg":"[ae879961-2ad7-48f2-9ea5-fb9de6842806] POST /api/webhooks/stripe - 401 (20ms)"}
+{"level":30,"time":1793264527649,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/webhooks/stripe 401 in 19ms"}
+{"level":30,"time":1793264527688,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/webhooks/stripe, cookie present: false, session exists: true"}
+{"level":30,"time":1793264527688,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: customer.subscription.created (evt_test_e46d5bc1c9478fd4)"}
+{"level":30,"time":1793264527689,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: customer.subscription.created (evt_test_e46d5bc1c9478fd4)"}
+{"level":40,"time":1793264527693,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Handler failed for customer.subscription.created (evt_test_e46d5bc1c9478fd4): Stripe is not configured"}
+{"level":50,"time":1793264527695,"pid":318644,"hostname":"af966a6fd55d","msg":"[AUDIT] [payment] stripe_webhook_processing_failed - FAILED [Object: null prototype] {\n  userId: 'cus_unlinked_a7ffb1be1a232a96',\n  targetId: 'evt_test_e46d5bc1c9478fd4',\n  details: [Object: null prototype] {\n    eventType: 'customer.subscription.created',\n    eventId: 'evt_test_e46d5bc1c9478fd4',\n    customerRef: 'cus_unlinked_a7ffb1be1a232a96',\n    message: 'Stripe is not configured'\n  }\n}"}
+{"level":50,"time":1793264527696,"pid":318644,"hostname":"af966a6fd55d","msg":"[b4aeaaea-1c2c-4925-b5de-0952cd61257b] POST / - 500 (31ms)"}
+{"level":30,"time":1793264527697,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/webhooks/stripe 500 in 31ms"}
+{"level":30,"time":1793264527730,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/webhooks/stripe, cookie present: false, session exists: true"}
+{"level":30,"time":1793264527731,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: checkout.session.completed (evt_cs_6fc207ba3e503036)"}
+{"level":30,"time":1793264527731,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: checkout.session.completed (evt_cs_6fc207ba3e503036)"}
+{"level":30,"time":1793264527733,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe] Checkout completed: cs_test_a098a6a040d4bb16"}
+{"level":30,"time":1793264527734,"pid":318644,"hostname":"af966a6fd55d","msg":"[AUDIT] [payment] payment_charge - SUCCESS [Object: null prototype] {\n  userId: 'unknown',\n  targetId: 'cs_test_a098a6a040d4bb16',\n  details: [Object: null prototype] { amount: 0 }\n}"}
+{"level":30,"time":1793264527735,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe] checkout.session.completed: user 02b73e85-ff91-4002-a818-c9b4cc34b6eb tier set to monthly"}
+{"level":30,"time":1793264527737,"pid":318644,"hostname":"af966a6fd55d","msg":"[3062d319-295a-431a-9f1d-86d3f18aaedc] POST / - 200 (25ms)"}
+{"level":30,"time":1793264527737,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/webhooks/stripe 200 in 25ms"}
+{"level":30,"time":1793264527809,"pid":318644,"hostname":"af966a6fd55d","msg":"[ad0ca82e-6f87-4ae9-b6f8-5e7736577ac6] GET /subscription - 200 (51ms)"}
+{"level":30,"time":1793264527810,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] GET /api/billing/subscription 200 in 50ms"}
+{"level":30,"time":1793264527841,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/webhooks/stripe, cookie present: false, session exists: true"}
+{"level":30,"time":1793264527842,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: checkout.session.completed (evt_idem_5f0e996980ea2f04)"}
+{"level":30,"time":1793264527842,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: checkout.session.completed (evt_idem_5f0e996980ea2f04)"}
+{"level":30,"time":1793264527844,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe] Checkout completed: cs_test_662b54123f8c2e9d"}
+{"level":30,"time":1793264527845,"pid":318644,"hostname":"af966a6fd55d","msg":"[AUDIT] [payment] payment_charge - SUCCESS [Object: null prototype] {\n  userId: 'unknown',\n  targetId: 'cs_test_662b54123f8c2e9d',\n  details: [Object: null prototype] { amount: 0 }\n}"}
+{"level":30,"time":1793264527846,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe] checkout.session.completed: user 02b73e85-ff91-4002-a818-c9b4cc34b6eb tier set to monthly"}
+{"level":30,"time":1793264527848,"pid":318644,"hostname":"af966a6fd55d","msg":"[7e566ede-e636-4a2b-a5c2-735ad50c7c7c] POST / - 200 (34ms)"}
+{"level":30,"time":1793264527848,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/webhooks/stripe 200 in 24ms"}
+{"level":30,"time":1793264527868,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/webhooks/stripe, cookie present: false, session exists: true"}
+{"level":30,"time":1793264527869,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: checkout.session.completed (evt_idem_5f0e996980ea2f04)"}
+{"level":30,"time":1793264527869,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: checkout.session.completed (evt_idem_5f0e996980ea2f04)"}
+{"level":30,"time":1793264527871,"pid":318644,"hostname":"af966a6fd55d","msg":"[c0c331a1-4c0c-4fef-9db7-5e2d1cf62a45] POST / - 200 (21ms)"}
+{"level":30,"time":1793264527872,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/webhooks/stripe 200 in 20ms"}
+{"level":30,"time":1793264527930,"pid":318644,"hostname":"af966a6fd55d","msg":"[24a89c24-7cbe-43d7-9fc2-f18e1cf9a4dd] GET /subscription - 200 (56ms)"}
+{"level":30,"time":1793264527931,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] GET /api/billing/subscription 200 in 56ms"}
+{"level":30,"time":1793264527972,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/webhooks/stripe, cookie present: false, session exists: true"}
+{"level":30,"time":1793264527973,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: customer.subscription.created (evt_test_8c6909d01b905618)"}
+{"level":30,"time":1793264527973,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Verified event: customer.subscription.created (evt_test_8c6909d01b905618)"}
+{"level":40,"time":1793264527977,"pid":318644,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Handler failed for customer.subscription.created (evt_test_8c6909d01b905618): Stripe is not configured"}
+{"level":50,"time":1793264527978,"pid":318644,"hostname":"af966a6fd55d","msg":"[AUDIT] [payment] stripe_webhook_processing_failed - FAILED [Object: null prototype] {\n  userId: 'cus_authority_6b21ada604c6dec6',\n  targetId: 'evt_test_8c6909d01b905618',\n  details: [Object: null prototype] {\n    eventType: 'customer.subscription.created',\n    eventId: 'evt_test_8c6909d01b905618',\n    customerRef: 'cus_authority_6b21ada604c6dec6',\n    message: 'Stripe is not configured'\n  }\n}"}
+{"level":50,"time":1793264527981,"pid":318644,"hostname":"af966a6fd55d","msg":"[0cfd2c7f-bfd9-4c89-93d4-d2c0703ef750] POST / - 500 (32ms)"}
+{"level":30,"time":1793264527981,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:07 AM [express] POST /api/webhooks/stripe 500 in 31ms"}
+{"level":30,"time":1793264528078,"pid":318644,"hostname":"af966a6fd55d","msg":"[c7cb3f9c-deaf-42d2-b9de-5757ada2f275] GET /subscription - 200 (88ms)"}
+{"level":30,"time":1793264528079,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 87ms"}
+{"level":30,"time":1793264528100,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/billing/subscription, cookie present: false, session exists: true"}
+{"level":30,"time":1793264528111,"pid":318644,"hostname":"af966a6fd55d","msg":"[4fd5c8d9-594a-45bf-a45e-abd9e4eb3813] GET /subscription - 401 (31ms)"}
+{"level":30,"time":1793264528112,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 401 in 30ms"}
+{"level":30,"time":1793264528176,"pid":318644,"hostname":"af966a6fd55d","msg":"[9f01ca33-0569-4f0c-a1bf-9e8355f57e9c] GET /subscription - 200 (62ms)"}
+{"level":30,"time":1793264528176,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 54ms"}
+{"level":30,"time":1793264528207,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/billing/subscription, cookie present: true, session exists: true"}
+{"level":30,"time":1793264528222,"pid":318644,"hostname":"af966a6fd55d","msg":"[5bfc4d5e-5e1e-40e2-a03b-7b7d67a2bbff] GET /subscription - 401 (38ms)"}
+{"level":30,"time":1793264528222,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 401 in 37ms"}
+{"level":30,"time":1793264528288,"pid":318644,"hostname":"af966a6fd55d","msg":"[e3f68602-cd2a-44dc-8001-eea682f5fdbe] GET /subscription - 200 (59ms)"}
+{"level":30,"time":1793264528288,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 59ms"}
+{"level":30,"time":1793264528369,"pid":318644,"hostname":"af966a6fd55d","msg":"[e938bc75-dabd-4da1-812b-f9807e80f1d2] GET /subscription - 200 (71ms)"}
+{"level":30,"time":1793264528369,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 47ms"}
+{"level":30,"time":1793264528401,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/billing/subscription, cookie present: true, session exists: true"}
+{"level":30,"time":1793264528414,"pid":318644,"hostname":"af966a6fd55d","msg":"[15d9f07e-49b9-491b-8600-6720740ab994] GET /subscription - 401 (36ms)"}
+{"level":30,"time":1793264528415,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 401 in 35ms"}
+{"level":30,"time":1793264528462,"pid":318644,"hostname":"af966a6fd55d","msg":"[55f476c7-39e7-4774-a3a9-85b1779f82cd] GET /subscription - 200 (42ms)"}
+{"level":30,"time":1793264528463,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 41ms"}
+{"level":30,"time":1793264528513,"pid":318644,"hostname":"af966a6fd55d","msg":"[54fa5e23-1bbb-496e-90ff-62875ea869e6] GET /subscription - 200 (48ms)"}
+{"level":30,"time":1793264528514,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 40ms"}
+{"level":30,"time":1793264528554,"pid":318644,"hostname":"af966a6fd55d","msg":"[29dd9d9f-b971-465b-8806-15d99453e943] GET /subscription - 401 (32ms)"}
+{"level":30,"time":1793264528555,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 401 in 32ms"}
+{"level":30,"time":1793264528606,"pid":318644,"hostname":"af966a6fd55d","msg":"[fba6a4aa-eb04-41a9-9a62-1f2dda30bc93] GET /subscription - 200 (47ms)"}
+{"level":30,"time":1793264528606,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 47ms"}
+{"level":30,"time":1793264528659,"pid":318644,"hostname":"af966a6fd55d","msg":"[1cae7888-3cda-489c-8323-8363e932d9b1] GET /subscription - 200 (50ms)"}
+{"level":30,"time":1793264528659,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 41ms"}
+{"level":30,"time":1793264528699,"pid":318644,"hostname":"af966a6fd55d","msg":"[1ae5f971-3194-4310-8bd7-6a188ec3f036] GET /subscription - 403 (31ms)"}
+{"level":30,"time":1793264528700,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 403 in 31ms"}
+{"level":30,"time":1793264528751,"pid":318644,"hostname":"af966a6fd55d","msg":"[64784d52-8f1d-403b-adbb-1eb515ce01c0] GET /subscription - 200 (47ms)"}
+{"level":30,"time":1793264528751,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 47ms"}
+{"level":30,"time":1793264528826,"pid":318644,"hostname":"af966a6fd55d","msg":"[043172ea-2cd6-4f4b-ab89-458a043de026] GET /subscription - 200 (71ms)"}
+{"level":30,"time":1793264528826,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 59ms"}
+{"level":30,"time":1793264528866,"pid":318644,"hostname":"af966a6fd55d","msg":"[d1e1ac59-e6ef-46de-b72a-1e72adc744c3] GET /subscription - 403 (31ms)"}
+{"level":30,"time":1793264528866,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 403 in 31ms"}
+{"level":30,"time":1793264528910,"pid":318644,"hostname":"af966a6fd55d","msg":"[d979d21c-15b6-476a-a912-19cb841e7d6a] GET /subscription - 200 (41ms)"}
+{"level":30,"time":1793264528910,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/subscription 200 in 40ms"}
+{"level":30,"time":1793264528937,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/billing/plans, cookie present: false, session exists: true"}
+{"level":30,"time":1793264528957,"pid":318644,"hostname":"af966a6fd55d","msg":"[0b26d852-13dc-44fa-81b7-6ee3cf4e2666] GET /plans - 200 (45ms)"}
+{"level":30,"time":1793264528957,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:08 AM [express] GET /api/billing/plans 200 in 37ms"}
+{"level":40,"time":1793264528965,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/billing/create-checkout-session"}
+{"level":40,"time":1793264529018,"pid":318644,"hostname":"af966a6fd55d","msg":"[c7aabbcc-9b2d-407a-a657-f0a6d827abd3] POST /create-checkout-session - 400 (55ms)"}
+{"level":30,"time":1793264529018,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] POST /api/billing/create-checkout-session 400 in 55ms"}
+{"level":30,"time":1793264529249,"pid":318644,"hostname":"af966a6fd55d","hasSession":true,"hasUserId":false,"sessionPrefix":"164e1a56","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1793264529249,"pid":318644,"hostname":"af966a6fd55d","msg":"[Auth/me] No sessionId cookie present in request"}
+{"level":30,"time":1793264529250,"pid":318644,"hostname":"af966a6fd55d","msg":"[c2c23dda-c3b8-4868-855e-9e01dfbb1536] GET /api/auth/me - 200 (50ms)"}
+{"level":30,"time":1793264529250,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/auth/me 200 in 23ms"}
+{"level":30,"time":1793264529277,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/notifications, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529279,"pid":318644,"hostname":"af966a6fd55d","msg":"[121768a8-eb45-4c0f-ae2b-058bc7a81a6d] GET /api/auth/notifications - 401 (22ms)"}
+{"level":30,"time":1793264529279,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/auth/notifications 401 in 21ms"}
+{"level":30,"time":1793264529301,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/sessions, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529303,"pid":318644,"hostname":"af966a6fd55d","msg":"[8bfce967-3479-43ca-854b-a45c9a210634] GET /sessions - 401 (20ms)"}
+{"level":30,"time":1793264529304,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/auth/sessions 401 in 20ms"}
+{"level":30,"time":1793264529324,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/auth/login-history, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529326,"pid":318644,"hostname":"af966a6fd55d","msg":"[07ea8303-78d8-41c4-a7fe-587604446a36] GET /api/auth/login-history - 401 (20ms)"}
+{"level":30,"time":1793264529326,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/auth/login-history 401 in 19ms"}
+{"level":30,"time":1793264529345,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/admin/users, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529356,"pid":318644,"hostname":"af966a6fd55d","msg":"[96bdfb8c-171b-4b23-9645-b72e93c40482] GET /users - 401 (27ms)"}
+{"level":30,"time":1793264529356,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/admin/users 401 in 27ms"}
+{"level":30,"time":1793264529386,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/marketplace/my-beats, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529391,"pid":318644,"hostname":"af966a6fd55d","msg":"[d822c0fb-f135-45f1-a9a5-da56f9d79624] GET /my-beats - 401 (31ms)"}
+{"level":30,"time":1793264529392,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/marketplace/my-beats 401 in 31ms"}
+{"level":40,"time":1793264529397,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/marketplace/listings"}
+{"level":40,"time":1793264529397,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"CSRF validation failed: Missing CSRF cookie - POST /api/marketplace/listings"}
+{"level":30,"time":1793264529398,"pid":318644,"hostname":"af966a6fd55d","msg":"[3a548085-c342-469a-9e7b-3d92fc067aa9] POST /api/marketplace/listings - 403 (2ms)"}
+{"level":30,"time":1793264529398,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] POST /api/marketplace/listings 403 in 2ms"}
+{"level":30,"time":1793264529422,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/distribution/releases, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529423,"pid":318644,"hostname":"af966a6fd55d","msg":"[0beb85c9-2011-41f3-8e4f-01cb81bc0400] GET /releases - 401 (23ms)"}
+{"level":30,"time":1793264529423,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/distribution/releases 401 in 23ms"}
+{"level":30,"time":1793264529444,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/royalties, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529445,"pid":318644,"hostname":"af966a6fd55d","msg":"[54bee680-74f8-4ead-92ab-f045a9228aec] GET /api/royalties - 401 (19ms)"}
+{"level":30,"time":1793264529445,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/royalties 401 in 19ms"}
+{"level":30,"time":1793264529471,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/workspace, cookie present: false, session exists: true"}
+{"level":40,"time":1793264529476,"pid":318644,"hostname":"af966a6fd55d","msg":"[f3ecf439-9ae1-469d-8c45-393969c74197] GET /api/workspace - 404 (28ms)"}
+{"level":30,"time":1793264529477,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/workspace 404 in 28ms"}
+{"level":30,"time":1793264529511,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/analytics/overview, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529514,"pid":318644,"hostname":"af966a6fd55d","msg":"[2a5353fc-0b62-4bae-b9fc-54e45361d3ba] GET /overview - 401 (35ms)"}
+{"level":30,"time":1793264529514,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/analytics/overview 401 in 21ms"}
+{"level":40,"time":1793264529517,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/billing/create-checkout-session"}
+{"level":40,"time":1793264529517,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"CSRF validation failed: Missing CSRF cookie - POST /api/billing/create-checkout-session"}
+{"level":30,"time":1793264529518,"pid":318644,"hostname":"af966a6fd55d","msg":"[ba8887f0-0b86-42ce-8514-9c9c0a664cfd] POST /api/billing/create-checkout-session - 403 (1ms)"}
+{"level":30,"time":1793264529518,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] POST /api/billing/create-checkout-session 403 in 1ms"}
+{"level":40,"time":1793264529520,"pid":318644,"hostname":"af966a6fd55d","msg":"[aceef8c1-d951-4213-ae43-6849e80054ed] POST /api/create-checkout-session - 400 (1ms)"}
+{"level":30,"time":1793264529520,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] POST /api/create-checkout-session 400 in 1ms"}
+{"level":30,"time":1793264529539,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/files/list, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529540,"pid":318644,"hostname":"af966a6fd55d","msg":"[f46ac99a-2127-4184-9ff2-827ffa872903] GET /list - 401 (19ms)"}
+{"level":30,"time":1793264529541,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/files/list 401 in 19ms"}
+{"level":30,"time":1793264529565,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/artist-profiles, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529572,"pid":318644,"hostname":"af966a6fd55d","msg":"[f5968e37-b621-44ce-96c3-3cb3798fa1de] GET / - 401 (30ms)"}
+{"level":30,"time":1793264529572,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/artist-profiles 401 in 29ms"}
+{"level":30,"time":1793264529594,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/achievements, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529596,"pid":318644,"hostname":"af966a6fd55d","msg":"[f9181555-21ac-429f-b462-6fc57b1ee153] GET / - 401 (22ms)"}
+{"level":30,"time":1793264529597,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/achievements 401 in 21ms"}
+{"level":30,"time":1793264529624,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/shows, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529626,"pid":318644,"hostname":"af966a6fd55d","msg":"[5599058c-3cea-4b4b-9ced-60dced792174] GET / - 401 (27ms)"}
+{"level":30,"time":1793264529627,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/shows 401 in 23ms"}
+{"level":30,"time":1793264529648,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/merch, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529650,"pid":318644,"hostname":"af966a6fd55d","msg":"[59fff218-952e-4f87-8073-5e059e0c03a0] GET / - 401 (21ms)"}
+{"level":30,"time":1793264529650,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/merch 401 in 20ms"}
+{"level":30,"time":1793264529669,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/label-submissions, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529671,"pid":318644,"hostname":"af966a6fd55d","msg":"[59c727f6-60e3-45d4-80ab-b0c8a635d34f] GET / - 401 (19ms)"}
+{"level":30,"time":1793264529671,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/label-submissions 401 in 19ms"}
+{"level":30,"time":1793264529691,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/venues, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529693,"pid":318644,"hostname":"af966a6fd55d","msg":"[af0929c1-ff55-4143-8892-9f5258e77678] GET / - 401 (21ms)"}
+{"level":30,"time":1793264529693,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/venues 401 in 20ms"}
+{"level":30,"time":1793264529722,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/music-videos, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529724,"pid":318644,"hostname":"af966a6fd55d","msg":"[7349c62e-5ba0-4c48-b315-ca9a1c7baafc] GET / - 401 (29ms)"}
+{"level":30,"time":1793264529725,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/music-videos 401 in 20ms"}
+{"level":30,"time":1793264529745,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/fan-campaigns, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529748,"pid":318644,"hostname":"af966a6fd55d","msg":"[2154cc4c-f293-4f82-bc76-1315e82f648a] GET / - 401 (21ms)"}
+{"level":30,"time":1793264529748,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/fan-campaigns 401 in 21ms"}
+{"level":30,"time":1793264529769,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/collaboration, cookie present: false, session exists: true"}
+{"level":40,"time":1793264529773,"pid":318644,"hostname":"af966a6fd55d","msg":"[5ecebc67-dffc-424c-a392-d3cc868529d8] GET /api/collaboration - 404 (23ms)"}
+{"level":30,"time":1793264529774,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/collaboration 404 in 23ms"}
+{"level":30,"time":1793264529801,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/files/not-a-uuid/download, cookie present: false, session exists: true"}
+{"level":40,"time":1793264529804,"pid":318644,"hostname":"af966a6fd55d","msg":"[0876c594-a1db-4599-bc02-b31426bea382] GET /not-a-uuid/download - 400 (28ms)"}
+{"level":30,"time":1793264529804,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/files/not-a-uuid/download 400 in 27ms"}
+{"level":30,"time":1793264529826,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/artist-profiles/bad-id, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529828,"pid":318644,"hostname":"af966a6fd55d","msg":"[94581927-5125-44e8-acce-b55a96288a38] GET /bad-id - 401 (22ms)"}
+{"level":30,"time":1793264529828,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/artist-profiles/bad-id 401 in 21ms"}
+{"level":40,"time":1793264529831,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/artist-profiles/bad-id"}
+{"level":40,"time":1793264529831,"pid":318644,"hostname":"af966a6fd55d","ip":"[REDACTED]","userAgent":"node","msg":"CSRF validation failed: Missing CSRF cookie - POST /api/artist-profiles/bad-id"}
+{"level":30,"time":1793264529831,"pid":318644,"hostname":"af966a6fd55d","msg":"[517db742-da90-4dec-9079-991a7d523c44] POST /api/artist-profiles/bad-id - 403 (1ms)"}
+{"level":30,"time":1793264529831,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] POST /api/artist-profiles/bad-id 403 in 0ms"}
+{"level":30,"time":1793264529850,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/files/';%20DROP%20TABLE%20users;%20--/download, cookie present: false, session exists: true"}
+{"level":40,"time":1793264529853,"pid":318644,"hostname":"af966a6fd55d","msg":"[384967c1-ba4e-48fd-9059-2268bd0ca143] GET /';%20DROP%20TABLE%20users;%20--/download - 400 (21ms)"}
+{"level":30,"time":1793264529853,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/files/';%20DROP%20TABLE%20users;%20--/download 400 in 20ms"}
+{"level":30,"time":1793264529878,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/marketplace/beats, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529891,"pid":318644,"hostname":"af966a6fd55d","msg":"[526355aa-86f0-477c-b814-1a66c0266c88] GET /beats - 200 (31ms)"}
+{"level":30,"time":1793264529891,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] GET /api/marketplace/beats 200 in 30ms"}
+{"level":30,"time":1793264529912,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/errors, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529926,"pid":318644,"hostname":"af966a6fd55d","msg":"[Client Error] test error | stack: Error: test | url: /test"}
+{"level":30,"time":1793264529927,"pid":318644,"hostname":"af966a6fd55d","msg":"[d580d0d5-9aea-4694-aa99-ba468625bd93] POST /api/errors - 200 (33ms)"}
+{"level":30,"time":1793264529927,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] POST /api/errors 200 in 32ms"}
+{"level":30,"time":1793264529947,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/errors, cookie present: false, session exists: true"}
+{"level":30,"time":1793264529963,"pid":318644,"hostname":"af966a6fd55d","msg":"[Client Error] flood test 0 | stack:  | url: /test"}
+{"level":30,"time":1793264529964,"pid":318644,"hostname":"af966a6fd55d","msg":"[50e25c69-4652-4343-8171-12481977c994] POST /api/errors - 200 (35ms)"}
+{"level":30,"time":1793264529964,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:09 AM [express] POST /api/errors 200 in 35ms"}
+{"level":30,"time":1793264530004,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/errors, cookie present: false, session exists: true"}
+{"level":30,"time":1793264530018,"pid":318644,"hostname":"af966a6fd55d","msg":"[Client Error] flood test 1 | stack:  | url: /test"}
+{"level":30,"time":1793264530018,"pid":318644,"hostname":"af966a6fd55d","msg":"[6e28e066-ac6b-43e8-8525-da91f5d71d50] POST /api/errors - 200 (52ms)"}
+{"level":30,"time":1793264530018,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:10 AM [express] POST /api/errors 200 in 34ms"}
+{"level":30,"time":1793264530042,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/errors, cookie present: false, session exists: true"}
+{"level":30,"time":1793264530053,"pid":318644,"hostname":"af966a6fd55d","msg":"[Client Error] flood test 2 | stack:  | url: /test"}
+{"level":30,"time":1793264530054,"pid":318644,"hostname":"af966a6fd55d","msg":"[8aa68bef-f11d-4354-8aa7-4ff95d90a448] POST /api/errors - 200 (34ms)"}
+{"level":30,"time":1793264530054,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:10 AM [express] POST /api/errors 200 in 34ms"}
+{"level":30,"time":1793264530080,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/errors, cookie present: false, session exists: true"}
+{"level":30,"time":1793264530095,"pid":318644,"hostname":"af966a6fd55d","msg":"[Client Error] flood test 3 | stack:  | url: /test"}
+{"level":30,"time":1793264530095,"pid":318644,"hostname":"af966a6fd55d","msg":"[85fb66f9-eab2-4ba4-880a-1f057e0c6245] POST /api/errors - 200 (39ms)"}
+{"level":30,"time":1793264530096,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:10 AM [express] POST /api/errors 200 in 35ms"}
+{"level":30,"time":1793264530122,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/errors, cookie present: false, session exists: true"}
+{"level":30,"time":1793264530135,"pid":318644,"hostname":"af966a6fd55d","msg":"[Client Error] flood test 4 | stack:  | url: /test"}
+{"level":30,"time":1793264530135,"pid":318644,"hostname":"af966a6fd55d","msg":"[d39c6549-7aa5-41a2-9078-27ee64384f96] POST /api/errors - 200 (37ms)"}
+{"level":30,"time":1793264530135,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:10 AM [express] POST /api/errors 200 in 37ms"}
+{"level":30,"time":1793264530157,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/errors, cookie present: false, session exists: true"}
+{"level":30,"time":1793264530174,"pid":318644,"hostname":"af966a6fd55d","msg":"[Client Error] flood test 5 | stack:  | url: /test"}
+{"level":30,"time":1793264530174,"pid":318644,"hostname":"af966a6fd55d","msg":"[6e7f45fe-c570-4dfd-80da-3bbf0a5d6450] POST /api/errors - 200 (37ms)"}
+{"level":30,"time":1793264530175,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:10 AM [express] POST /api/errors 200 in 36ms"}
+{"level":30,"time":1793264530388,"pid":318644,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793264530395,"pid":318644,"hostname":"af966a6fd55d","msg":"🔍 Initializing comprehensive audit system..."}
+{"level":30,"time":1793264530395,"pid":318644,"hostname":"af966a6fd55d","msg":"🔍 Starting comprehensive audit..."}
+{"level":40,"time":1793264530398,"pid":318644,"hostname":"af966a6fd55d","err":{"type":"Error","message":"ENOENT: no such file or directory, open '/tmp/maxbooster-http-tests-E78VEY/cwd/client/index.html'","stack":"[ACCESSOR]","errno":-2,"code":"ENOENT","syscall":"open","path":"/tmp/maxbooster-http-tests-E78VEY/cwd/client/index.html"},"msg":"WCAG check failed"}
+{"level":40,"time":1793264530401,"pid":318644,"hostname":"af966a6fd55d","err":{"type":"Error","message":"ENOENT: no such file or directory, open '/tmp/maxbooster-http-tests-E78VEY/cwd/client/index.html'","stack":"[ACCESSOR]","errno":-2,"code":"ENOENT","syscall":"open","path":"/tmp/maxbooster-http-tests-E78VEY/cwd/client/index.html"},"msg":"SEO meta-tags check failed"}
+{"level":40,"time":1793264530402,"pid":318644,"hostname":"af966a6fd55d","err":{"type":"Error","message":"ENOENT: no such file or directory, open '/tmp/maxbooster-http-tests-E78VEY/cwd/client/index.html'","stack":"[ACCESSOR]","errno":-2,"code":"ENOENT","syscall":"open","path":"/tmp/maxbooster-http-tests-E78VEY/cwd/client/index.html"},"msg":"SEO structured-data check failed"}
+{"level":30,"time":1793264530405,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Audit completed. Overall score: 99/100"}
+{"level":30,"time":1793264530405,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Audit system initialized"}
+{"level":50,"time":1793264530415,"pid":318644,"hostname":"af966a6fd55d","msg":"[b78167ae-4380-400f-bb77-6781f81bda2b] GET /api/ready - 503 (59ms)"}
+{"level":30,"time":1793264530415,"pid":318644,"hostname":"af966a6fd55d","msg":"9:02:10 AM [express] GET /api/ready 503 in 49ms"}
+{"level":30,"time":1793264530429,"pid":318644,"hostname":"af966a6fd55d","msg":"[56137cd5-5fbc-46e0-957a-ac8711ede1d3] GET / - 200 (7ms)"}
+{"level":30,"time":1793264530688,"pid":318644,"hostname":"af966a6fd55d","msg":"[Shutdown] Received SIGTERM, starting graceful shutdown..."}
+Error [ConnectionError]: [PDIM] Redis client disconnected
+    at node:internal/deps/undici/undici:15270:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async run (/workspace/maxbooster7.5/server/lib/pdimClient.ts:1096:21)
+Error [ConnectionError]: [PDIM] Redis client disconnected
+    at node:internal/deps/undici/undici:15270:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async run (/workspace/maxbooster7.5/server/lib/pdimClient.ts:1096:21)
+Error [ConnectionError]: [PDIM] Redis client disconnected
+    at node:internal/deps/undici/undici:15270:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async run (/workspace/maxbooster7.5/server/lib/pdimClient.ts:1096:21)
+{"level":30,"time":1793264530689,"pid":318644,"hostname":"af966a6fd55d","msg":"Shutting down auto-posting service..."}
+{"level":30,"time":1793264530689,"pid":318644,"hostname":"af966a6fd55d","msg":"[Shutdown] HTTP server closed"}
+{"level":40,"time":1793264530692,"pid":318644,"hostname":"af966a6fd55d","err":{"type":"ConnectionError","message":"[PDIM] Redis client disconnected","stack":"[ACCESSOR]","name":"ConnectionError"},"msg":"Auto-post BullMQ worker error:"}
+{"level":30,"time":1793264530692,"pid":318644,"hostname":"af966a6fd55d","msg":"🛑 Database backup schedule stopped and active runs drained"}
+{"level":30,"time":1793264530692,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ Auto-posting service shut down gracefully"}
+{"level":30,"time":1793264530693,"pid":318644,"hostname":"af966a6fd55d","msg":"\n🛑 Received shutdownWorkers, shutting down workers..."}
+{"level":30,"time":1793264530697,"pid":318644,"hostname":"af966a6fd55d","msg":"✅ All BullMQ workers closed (audio, csv, analytics, email, autonomous)"}
+{"level":30,"time":1793264530697,"pid":318644,"hostname":"af966a6fd55d","msg":"[Shutdown] BullMQ workers drained"}
+{"level":30,"time":1793264530697,"pid":318644,"hostname":"af966a6fd55d","msg":"[Shutdown] Autopilot coordinator persists flushed"}
+{"level":30,"time":1793264530698,"pid":318644,"hostname":"af966a6fd55d","msg":"[Shutdown] Local MaxCore subsystem stopped"}
+{"level":30,"time":1793264530698,"pid":318644,"hostname":"af966a6fd55d","msg":"[Shutdown] Local dns-node subsystem stopped"}
+{"level":30,"time":1793264530698,"pid":318644,"hostname":"af966a6fd55d","msg":"[DNS] Nameserver stopped."}
+{"level":30,"time":1793264530698,"pid":318644,"hostname":"af966a6fd55d","msg":"[Shutdown] PlatformAutoFixer stopped"}
+{"level":30,"time":1793264530698,"pid":318644,"hostname":"af966a6fd55d","msg":"[Shutdown] Database pool closed"}

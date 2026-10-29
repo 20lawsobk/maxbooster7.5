@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/workspace/.cloud-tools/node_modules/node/bin/node",
+    "/workspace/maxbooster7.5/node_modules/vitest/vitest.mjs",
+    "run",
+    "--config",
+    "/tmp/c5-outcome-V4HRe4/vitest.config.mjs",
+    "--reporter=junit",
+    "--reporter=/workspace/onboarding-results/c5-producer-foundation/reporter/scripts/testing/coverage-outcome-reporter.mjs",
+    "--outputFile=/tmp/c5-outcome-V4HRe4/junit.xml"
+  ],
+  "startedAt": "2026-10-29T23:14:58.666Z",
+  "finishedAt": "2026-10-29T23:14:59.421Z",
+  "exitCode": 0,
+  "signal": null,
+  "timedOut": false,
+  "cleanup": {
+    "processGroup": 434468,
+    "signals": [],
+    "complete": true,
+    "remainingLivePids": []
+  },
+  "runId": "326eb191-368e-4efb-8d7e-13e6613f68da",
+  "reporterSha256": "0c59c00b83bfb763de13a827f86ad8ee67a7999e781a9fdc4044be2f8a42a119",
+  "outcomeSha256": "97caddd205bfe0e913dc3eecfc843ae44d43367009a8a179dde899fc020246f3",
+  "junitSha256": "4970cee1efc2733668fe9c34fcbb49f9c4753bcc466f611b20264fd562539b08",
+  "scope": "Owned actual installed Vitest lifecycle fixture, not application execution or coverage credit"
+}

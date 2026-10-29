@@ -1,0 +1,603 @@
+diff --git a/scripts/testing/commerce-legacy-fixture.mjs b/scripts/testing/commerce-legacy-fixture.mjs
+--- a/scripts/testing/commerce-legacy-fixture.mjs
++++ b/scripts/testing/commerce-legacy-fixture.mjs
+@@ -1,15 +1,79 @@
+ // Execute the legacy beat-sale integration suite on an owned Unix-socket database.
+ // No application credentials, running app or provider transport are inherited.
+-import { mkdtemp, mkdir, symlink, writeFile, readFile, readdir, rm } from 'node:fs/promises';
++import { mkdtemp, mkdir, symlink, writeFile, readFile, readdir, rm, realpath, stat } from 'node:fs/promises';
+ import path from 'node:path';
+ import os from 'node:os';
+ import net from 'node:net';
+ import { spawn, execFileSync } from 'node:child_process';
+-import { startDisposablePostgres } from '../../tests/payment-processing/helpers-database-postgres.mjs';
++import { createHash } from 'node:crypto';
++import { fileURLToPath } from 'node:url';
+ 
+-const report = process.argv[2];
+-if (!report) throw new Error('Pass an absolute JUnit report path');
+-const root = process.cwd();
++// Fail closed before importing the fixture or allocating any owned resources.
++// A positional Vitest filter must agree with the registered, static config include;
++// otherwise a selector token could be present in evidence without being executed.
++const [report, selectorFlag, subject, ...extra] = process.argv.slice(2);
++if (!report || !path.isAbsolute(report)) throw new Error('Pass an absolute JUnit report path');
++if (selectorFlag !== '--subject-file' || !subject || extra.length) {
++  throw new Error('Pass exactly --subject-file tests/unit/beat-sale-money-loop.test.ts after the JUnit path');
++}
++if (subject !== 'tests/unit/beat-sale-money-loop.test.ts') {
++  throw new Error('The subject must be the registered repository-relative legacy beat suite');
++}
++const root = await realpath(process.cwd());
++const configFile = 'vitest.beat-loop.config.ts';
++for (const file of [subject, configFile]) {
++  const absolute = path.join(root, file);
++  if (await realpath(absolute) !== absolute || !(await stat(absolute)).isFile()) {
++    throw new Error('The subject and config must be regular files inside the repository without symlink redirection');
++  }
++}
++const configSource = await readFile(path.join(root, configFile), 'utf8');
++const { default: ts } = await import('typescript');
++const syntax = ts.createSourceFile(configFile, configSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
++function properties(object, allowed) {
++  if (!object || !ts.isObjectLiteralExpression(object)) throw new Error('Legacy Vitest selection must be static');
++  const result = new Map();
++  for (const property of object.properties) {
++    if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)
++      || !allowed.has(property.name.text) || result.has(property.name.text)) {
++      throw new Error('Unsupported legacy Vitest config may ignore the subject selector');
++    }
++    result.set(property.name.text, property.initializer);
++  }
++  return result;
++}
++const exports = syntax.statements.filter(statement => ts.isExportAssignment(statement));
++const declaration = exports.length === 1 && exports[0].expression;
++const imports = syntax.statements.filter(statement => ts.isImportDeclaration(statement)
++  && ts.isStringLiteral(statement.moduleSpecifier) && statement.moduleSpecifier.text === 'vitest/config');
++const bindings = imports.length === 1 && imports[0].importClause?.namedBindings;
++const definesConfig = bindings && ts.isNamedImports(bindings) && bindings.elements.length === 1
++  && bindings.elements[0].name.text === 'defineConfig' && !bindings.elements[0].propertyName;
++if (!definesConfig || !syntax.statements.every(statement => ts.isImportDeclaration(statement) || exports.includes(statement))
++  || syntax.parseDiagnostics.length || !declaration || !ts.isCallExpression(declaration)
++  || !ts.isIdentifier(declaration.expression) || declaration.expression.text !== 'defineConfig'
++  || declaration.arguments.length !== 1) {
++  throw new Error('Legacy Vitest selection must use a static defineConfig object');
++}
++const configProperties = properties(declaration.arguments[0], new Set(['test', 'resolve']));
++const testProperties = properties(configProperties.get('test'), new Set([
++  'include', 'setupFiles', 'fileParallelism', 'maxWorkers', 'testTimeout', 'hookTimeout',
++]));
++const include = testProperties.get('include');
++if (!include || !ts.isArrayLiteralExpression(include) || include.elements.length !== 1
++  || !ts.isStringLiteral(include.elements[0]) || include.elements[0].text !== subject) {
++  throw new Error('Legacy Vitest include does not execute the selected subject');
++}
++const command = ['node_modules/vitest/vitest.mjs', 'run', subject, '--config', configFile,
++  '--reporter=verbose', '--reporter=junit', `--outputFile=${path.resolve(report)}`];
++const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
++console.log('Legacy subject selection: ' + JSON.stringify({
++  schemaVersion: 1, subject, subjectSha256: sha256(await readFile(path.join(root, subject))),
++  config: configFile, configSha256: sha256(configSource),
++  adapterSha256: sha256(await readFile(fileURLToPath(import.meta.url))),
++  command: [process.execPath, ...command],
++}));
++const { startDisposablePostgres } = await import('../../tests/payment-processing/helpers-database-postgres.mjs');
+ const temp = await mkdtemp(path.join(os.tmpdir(), 'beat-sale-verification-'));
+ const base = { PATH: process.env.PATH, HOME: temp, LANG: 'C', TZ: 'UTC',
+   ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}) };
+@@ -57,8 +121,7 @@
+     BEAT_LOOP_TEST_DATABASE_URL: url.href, NODE_OPTIONS: `--import=${guard}`, REDIS_URL: `redis://127.0.0.1:${redisPort}`,
+     ENABLE_BACKUPS: 'false', ENABLE_FAN_DELIVERY_WORKER: 'false', ACME_ENABLED: 'false', DNS_NODE_LOCAL: '0' };
+   const code = await new Promise((resolve, reject) => {
+-    child = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--config', 'vitest.beat-loop.config.ts',
+-      '--reporter=verbose', '--reporter=junit', `--outputFile=${path.resolve(report)}`], { env, detached: true, stdio: 'inherit' });
++    child = spawn(process.execPath, command, { env, detached: true, stdio: 'inherit' });
+     const timer = setTimeout(() => { try { process.kill(-child.pid, 'SIGTERM'); } catch {} }, 180_000);
+     child.once('error', error => { clearTimeout(timer); reject(error); });
+     child.once('close', (status, signal) => { testFinished = true; clearTimeout(timer); resolve(signal ? 124 : status ?? 1); });
+diff --git a/scripts/testing/run-commerce.py b/scripts/testing/run-commerce.py
+--- a/scripts/testing/run-commerce.py
++++ b/scripts/testing/run-commerce.py
+@@ -69,8 +69,10 @@
+         jobs = [(p.stem, str(p.relative_to(ROOT)), [node, '--test', '--test-concurrency=1',
+                  '--test-reporter=tap', '--test-reporter-destination=stdout', '--test-reporter=junit',
+                  f'--test-reporter-destination={output / (p.stem + ".xml")}', str(p.relative_to(ROOT))]) for p in files]
+-        jobs.append(('legacy-beat', 'tests/unit/beat-sale-money-loop.test.ts', [node,
+-                     'scripts/testing/commerce-legacy-fixture.mjs', str(output / 'legacy-beat.xml')]))
++        legacy_subject = 'tests/unit/beat-sale-money-loop.test.ts'
++        jobs.append(('legacy-beat', legacy_subject, [node,
++                     'scripts/testing/commerce-legacy-fixture.mjs', str(output / 'legacy-beat.xml'),
++                     '--subject-file', legacy_subject]))
+         jobs.append(('provider-report-summary', 'tests/payment-processing/real-stripe-api.mjs', [node,
+                      'tests/payment-processing/real-stripe-api.mjs', '--self-test-summary']))
+         if args.only and not any(args.only in (name, Path(file).name) for name, file, _ in jobs):
+diff --git a/scripts/testing/generate-catalog.py b/scripts/testing/generate-catalog.py
+--- a/scripts/testing/generate-catalog.py
++++ b/scripts/testing/generate-catalog.py
+@@ -74,7 +74,9 @@
+ 
+ 
+ def snapshot(p: str) -> bool:
+-    return p.startswith(".pdim-") or p.startswith("reports/") and "/.snapshots/" in p
++    # Report-owned test copies and replay sources are retained evidence, not
++    # canonical suites, regardless of whether the report uses .snapshots/.
++    return p.startswith((".pdim-", "reports/"))
+ 
+ 
+ def test_candidate(p: str, source: str) -> bool:
+diff --git a/tests/testing/test_commerce_subject_selector.py b/tests/testing/test_commerce_subject_selector.py
+new file mode 100644
+--- /dev/null
++++ b/tests/testing/test_commerce_subject_selector.py
+@@ -0,0 +1,274 @@
++"""Exercise the real legacy-commerce selector boundary without SQL or providers.
++
++Run with Python unittest. These framework tests use an owned temporary project,
++fixture import sentinel and intercepted child-process calls. They verify selection
++and credential isolation, not the 14 production money-loop assertions. To review
++an unlanded candidate, set MAXBOOSTER_SELECTOR_SOURCE_ROOT to its repository-shaped
++root and MAXBOOSTER_SELECTOR_DEPENDENCY_ROOT to the installed checkout.
++"""
++import contextlib
++import hashlib
++import io
++import json
++import os
++from pathlib import Path
++import runpy
++import shutil
++import subprocess
++import sys
++import tempfile
++import unittest
++from unittest.mock import patch
++
++SOURCE_ROOT = Path(os.environ.get('MAXBOOSTER_SELECTOR_SOURCE_ROOT', Path(__file__).resolve().parents[2]))
++DEPENDENCY_ROOT = Path(os.environ.get('MAXBOOSTER_SELECTOR_DEPENDENCY_ROOT', SOURCE_ROOT))
++SUBJECT = 'tests/unit/beat-sale-money-loop.test.ts'
++CONFIG = 'vitest.beat-loop.config.ts'
++NODE = shutil.which('node')
++
++AUDIT_PRELOAD = '''
++import childProcess from 'node:child_process';
++import { appendFileSync } from 'node:fs';
++import { syncBuiltinESMExports } from 'node:module';
++for (const name of ['spawn', 'spawnSync', 'exec', 'execSync', 'execFile', 'execFileSync', 'fork']) {
++  childProcess[name] = () => {
++    appendFileSync(process.env.FRAMEWORK_TRACE, JSON.stringify({operation:'unexpected-child', name}) + '\\n');
++    throw new Error('Framework boundary: unexpected child process');
++  };
++}
++syncBuiltinESMExports();
++'''
++
++SPAWN_PRELOAD = '''
++import childProcess from 'node:child_process';
++import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
++import { EventEmitter } from 'node:events';
++import { syncBuiltinESMExports } from 'node:module';
++import path from 'node:path';
++const trace = entry => appendFileSync(process.env.FRAMEWORK_TRACE, JSON.stringify(entry) + '\\n');
++const owned = new Map();
++let nextPid = 40000;
++childProcess.execFileSync = (binary, args) => {
++  trace({operation:'schema-tool', args});
++  const config = JSON.parse(readFileSync(args.find(value => value.startsWith('--config=')).slice(9), 'utf8'));
++  mkdirSync(config.out, {recursive:true});
++  writeFileSync(path.join(config.out, '0000_framework.sql'), '-- framework-only SQL transport sentinel');
++};
++childProcess.spawn = (binary, args, options) => {
++  const child = new EventEmitter();
++  child.pid = ++nextPid; child.exitCode = null; child.signalCode = null;
++  child.stdout = new EventEmitter(); child.stderr = new EventEmitter();
++  owned.set(child.pid, child);
++  trace({operation:'spawn', binary, args, environmentKeys:Object.keys(options.env).sort(),
++    isolatedDatabase:options.env.READINESS_ISOLATED_PG === '1',
++    egressGuard:options.env.READINESS_EGRESS_GUARD === '1',
++    guardPreload:options.env.NODE_OPTIONS?.includes('loopback-guard.mjs') ?? false});
++  if (binary === 'redis-server') {
++    setImmediate(() => child.stdout.emit('data', Buffer.from('Ready to accept connections')));
++  } else {
++    setImmediate(() => { child.exitCode = 0; child.emit('close', 0, null); });
++  }
++  return child;
++};
++process.kill = (pid, signal) => {
++  const child = owned.get(-pid);
++  if (!child) throw new Error('Attempt to signal an unowned framework process');
++  trace({operation:'signal', signal});
++  setImmediate(() => { child.signalCode = signal; child.emit('exit', null, signal); });
++  return true;
++};
++syncBuiltinESMExports();
++'''
++
++
++class CommerceSubjectSelectorTests(unittest.TestCase):
++    def setUp(self):
++        self.temporary = tempfile.TemporaryDirectory(prefix='commerce-selector-framework-')
++        self.addCleanup(self.temporary.cleanup)
++        self.root = Path(self.temporary.name)
++        self.adapter = self.root / 'scripts/testing/commerce-legacy-fixture.mjs'
++        self.adapter.parent.mkdir(parents=True)
++        shutil.copyfile(SOURCE_ROOT / 'scripts/testing/commerce-legacy-fixture.mjs', self.adapter)
++        (self.root / SUBJECT).parent.mkdir(parents=True)
++        (self.root / SUBJECT).write_text('// Owned framework subject sentinel, never executed as a product test.\n')
++        (self.root / CONFIG).write_text((DEPENDENCY_ROOT / CONFIG).read_text())
++        (self.root / 'node_modules').symlink_to(DEPENDENCY_ROOT / 'node_modules', target_is_directory=True)
++        helper = self.root / 'tests/payment-processing/helpers-database-postgres.mjs'
++        helper.parent.mkdir(parents=True)
++        helper.write_text('''
++import { appendFileSync } from 'node:fs';
++appendFileSync(process.env.FRAMEWORK_TRACE, JSON.stringify({operation:'fixture-import'}) + '\\n');
++export async function startDisposablePostgres() { throw new Error('Unreachable framework fixture'); }
++throw new Error('Framework fixture import sentinel; no database was started');
++''')
++        self.helper = helper
++        self.trace = self.root / 'trace.jsonl'
++        self.tmp = self.root / 'owned-tmp'
++        self.tmp.mkdir()
++        self.preload = self.root / 'audit-preload.mjs'
++        self.preload.write_text(AUDIT_PRELOAD)
++        self.report = self.root / 'report.xml'
++
++    def invoke(self, arguments, preload=None):
++        env = {key: value for key, value in os.environ.items()
++               if key in ('PATH', 'LD_LIBRARY_PATH', 'SystemRoot')}
++        env.update({'HOME': str(self.root), 'TMPDIR': str(self.tmp), 'LANG': 'C', 'TZ': 'UTC',
++                    'FRAMEWORK_TRACE': str(self.trace),
++                    'NODE_OPTIONS': '--import=' + str(preload or self.preload),
++                    'DATABASE_URL': 'framework-forbidden-inherited-database',
++                    'STRIPE_SECRET_KEY': 'framework-forbidden-inherited-provider',
++                    'SESSION_SECRET': 'framework-forbidden-inherited-session'})
++        return subprocess.run([NODE, str(self.adapter), *map(str, arguments)], cwd=self.root,
++                              env=env, capture_output=True, text=True, timeout=30)
++
++    def assert_rejected_before_resources(self, arguments, message):
++        result = self.invoke(arguments)
++        self.assertNotEqual(result.returncode, 0)
++        self.assertIn(message, result.stderr)
++        self.assertFalse(self.trace.exists(), 'Rejected selection imported a fixture or spawned a child')
++        self.assertEqual(list(self.tmp.iterdir()), [], 'Rejected selection allocated fixture temporary files')
++        self.assertFalse(self.report.exists())
++        self.assertNotIn('Legacy subject selection:', result.stdout)
++
++    def selected(self):
++        return [self.report, '--subject-file', SUBJECT]
++
++    def test_missing_subject_selector_rejected(self):
++        self.assert_rejected_before_resources([self.report], 'Pass exactly --subject-file')
++
++    def test_relative_report_rejected(self):
++        self.assert_rejected_before_resources(['report.xml', '--subject-file', SUBJECT], 'absolute JUnit report path')
++
++    def test_absolute_subject_rejected(self):
++        self.assert_rejected_before_resources([self.report, '--subject-file', self.root / SUBJECT], 'registered repository-relative')
++
++    def test_traversal_subject_rejected(self):
++        self.assert_rejected_before_resources([self.report, '--subject-file', '../' + SUBJECT], 'registered repository-relative')
++
++    def test_unregistered_subject_rejected(self):
++        self.assert_rejected_before_resources([self.report, '--subject-file', 'tests/unit/other.test.ts'], 'registered repository-relative')
++
++    def test_unknown_duplicate_or_ignored_arguments_rejected(self):
++        for extra in (['--ignored'], ['--subject-file', SUBJECT], ['--config', CONFIG]):
++            with self.subTest(extra=extra):
++                self.assert_rejected_before_resources([*self.selected(), *extra], 'Pass exactly --subject-file')
++
++    def test_missing_registered_file_rejected(self):
++        (self.root / SUBJECT).unlink()
++        self.assert_rejected_before_resources(self.selected(), 'ENOENT')
++
++    def test_symlink_redirection_outside_repository_rejected(self):
++        with tempfile.TemporaryDirectory(prefix='commerce-selector-outside-') as outside:
++            external = Path(outside) / 'subject.ts'
++            external.write_text('// outside owned fixture')
++            (self.root / SUBJECT).unlink()
++            (self.root / SUBJECT).symlink_to(external)
++            self.assert_rejected_before_resources(self.selected(), 'without symlink redirection')
++
++    def test_config_include_mismatch_rejected(self):
++        config = self.root / CONFIG
++        config.write_text(config.read_text().replace(SUBJECT, 'tests/unit/other.test.ts'))
++        self.assert_rejected_before_resources(self.selected(), 'include does not execute the selected subject')
++
++    def test_selection_changing_or_dynamic_config_rejected(self):
++        original = (self.root / CONFIG).read_text()
++        alternatives = {
++            'exclude': original.replace('test: {', 'test: { exclude: ["**/*"],'),
++            'root': original.replace('defineConfig({', 'defineConfig({ root: "other",'),
++            'spread': original.replace('test: {', 'test: { ...other,'),
++            'dynamic-include': original.replace('include: ["' + SUBJECT + '"]', 'include: subjects'),
++            'duplicate-include': original.replace('test: {', 'test: { include: ["other"],'),
++            'wrong-defineConfig-import': original.replace('from "vitest/config"', 'from "other"'),
++            'extra-config-code': 'const ignored = {};\n' + original,
++        }
++        for kind, source in alternatives.items():
++            with self.subTest(kind=kind):
++                (self.root / CONFIG).write_text(source)
++                self.assert_rejected_before_resources(self.selected(), 'Vitest')
++
++    def test_validated_subject_drives_actual_spawn_and_owned_cleanup(self):
++        # Deliberately intercepted framework transports; these are not SQL tests.
++        self.helper.write_text('''
++import { appendFileSync } from 'node:fs';
++const trace = entry => appendFileSync(process.env.FRAMEWORK_TRACE, JSON.stringify(entry) + '\\n');
++trace({operation:'fixture-import'});
++export async function startDisposablePostgres() {
++  trace({operation:'fixture-start'});
++  return {pool:{options:{user:'framework',host:'/owned/framework/socket'},
++    async query() { trace({operation:'sql-transport'}); return {rows:[]}; }},
++    async stop() { trace({operation:'fixture-stop'}); }};
++}
++''')
++        (self.root / 'shared').mkdir()
++        (self.root / 'shared/schema.ts').write_text('// framework schema transport')
++        (self.root / 'migrations').mkdir()
++        (self.root / 'scripts/readiness-egress-guard.mjs').write_text('import { syncBuiltinESMExports } from "node:module";\n')
++        preload = self.root / 'spawn-preload.mjs'
++        preload.write_text(SPAWN_PRELOAD)
++        result = self.invoke(self.selected(), preload=preload)
++        self.assertEqual(result.returncode, 0, result.stderr)
++        rows = [json.loads(line) for line in self.trace.read_text().splitlines()]
++        spawns = [row for row in rows if row['operation'] == 'spawn']
++        self.assertEqual(len(spawns), 2)
++        child = spawns[1]
++        self.assertEqual(child['args'][:5], ['node_modules/vitest/vitest.mjs', 'run', SUBJECT, '--config', CONFIG])
++        self.assertTrue(child['isolatedDatabase'] and child['egressGuard'] and child['guardPreload'])
++        for spawn in spawns:
++            self.assertTrue({'DATABASE_URL', 'STRIPE_SECRET_KEY', 'SESSION_SECRET', 'FRAMEWORK_TRACE'}.isdisjoint(spawn['environmentKeys']))
++        selection = json.loads(next(line.removeprefix('Legacy subject selection: ') for line in result.stdout.splitlines()
++                                    if line.startswith('Legacy subject selection: ')))
++        self.assertEqual(selection['subject'], SUBJECT)
++        for file, key in ((SUBJECT, 'subjectSha256'), (CONFIG, 'configSha256'),
++                          ('scripts/testing/commerce-legacy-fixture.mjs', 'adapterSha256')):
++            self.assertEqual(selection[key], hashlib.sha256((self.root / file).read_bytes()).hexdigest())
++        self.assertEqual(selection['command'][1:], child['args'])
++        self.assertIn({'operation': 'fixture-stop'}, rows)
++        self.assertIn('Fixture cleanup complete:', result.stdout)
++        self.assertEqual(list(self.tmp.iterdir()), [])
++        self.assertFalse(self.report.exists(), 'Framework interception must not fabricate a product JUnit receipt')
++
++    def test_runner_forwards_recorded_subject_and_strips_application_credentials(self):
++        module = runpy.run_path(str(SOURCE_ROOT / 'scripts/testing/run-commerce.py'))
++        module['main'].__globals__['ROOT'] = self.root
++        calls = []
++
++        class StoppedProcess:
++            returncode = 1
++            def communicate(self, timeout):
++                return 'Framework stopped before any real fixture execution', None
++
++        def popen(command, **kwargs):
++            calls.append((command, kwargs))
++            return StoppedProcess()
++
++        def check_output(command, **kwargs):
++            if command[1:2] == ['-p']:
++                return '22\n'
++            if command[1:] == ['--version']:
++                return 'v22.0.0\n'
++            if command == ['git', 'rev-parse', 'HEAD']:
++                return 'framework-only-revision\n'
++            raise AssertionError('Unexpected process command')
++
++        output = self.root / 'runner-output'
++        with patch.object(sys, 'argv', ['run-commerce.py', '--output', str(output), '--only', 'legacy-beat']), \
++             patch.object(module['shutil'], 'which', return_value=NODE), \
++             patch.object(module['subprocess'], 'check_output', side_effect=check_output), \
++             patch.object(module['subprocess'], 'Popen', side_effect=popen), \
++             patch.dict(os.environ, {'DATABASE_URL': 'framework-forbidden', 'STRIPE_SECRET_KEY': 'framework-forbidden',
++                                     'NODE_OPTIONS': '--framework-forbidden'}, clear=False), \
++             contextlib.redirect_stdout(io.StringIO()):
++            self.assertEqual(module['main'](), 1)
++        self.assertEqual(len(calls), 1)
++        command, options = calls[0]
++        record = json.loads((output / 'results.json').read_text())['commands'][0]
++        self.assertEqual(record['path'], SUBJECT)
++        self.assertEqual(command[-2:], ['--subject-file', record['path']])
++        self.assertEqual(record['command'], command[1:])
++        self.assertEqual(record['status'], 'failed')
++        self.assertTrue({'DATABASE_URL', 'STRIPE_SECRET_KEY', 'NODE_OPTIONS'}.isdisjoint(options['env']))
++        self.assertTrue(options['start_new_session'])
++
++
++if __name__ == '__main__':
++    unittest.main()
+diff --git a/tests/testing/test_catalog_snapshot_ownership.py b/tests/testing/test_catalog_snapshot_ownership.py
+new file mode 100644
+--- /dev/null
++++ b/tests/testing/test_catalog_snapshot_ownership.py
+@@ -0,0 +1,191 @@
++"""Keep report-owned source in the catalog without registering historical suites.
++
++Run directly with Python, or with the isolated Python runner. Fixture source is
++parsed, never executed. MAXBOOSTER_CATALOG_SOURCE supports reviewing a candidate
++generator without changing the checkout; MAXBOOSTER_TEST_REPO_ROOT locates the
++owning Node runner when this test itself is staged outside the repository.
++"""
++from contextlib import redirect_stderr, redirect_stdout
++import hashlib
++import importlib.util
++import io
++import json
++import os
++from pathlib import Path
++import shlex
++import sys
++import tempfile
++import unittest
++from unittest.mock import patch
++
++
++REPO = Path(os.environ.get("MAXBOOSTER_TEST_REPO_ROOT", Path(__file__).resolve().parents[2]))
++CATALOG_SOURCE = Path(os.environ.get("MAXBOOSTER_CATALOG_SOURCE", REPO / "scripts/testing/generate-catalog.py"))
++NODE_SOURCE = REPO / "scripts/testing/run-node-suites.py"
++NODE_TEST = "import test from 'node:test';\nthrow new Error('fixture source must never execute');\ntest('current assertion', () => {});\n"
++
++
++def load_source(name, source):
++    spec = importlib.util.spec_from_file_location(name, source)
++    module = importlib.util.module_from_spec(spec)
++    # The Node runner imports its metadata-only common module; no app is imported.
++    with patch.object(sys, "path", [str(REPO / "scripts/testing"), *sys.path]):
++        spec.loader.exec_module(module)
++    return module
++
++
++class CatalogSnapshotOwnership(unittest.TestCase):
++    def setUp(self):
++        self.temp = tempfile.TemporaryDirectory(prefix="maxbooster-catalog-")
++        self.addCleanup(self.temp.cleanup)
++        self.root = Path(self.temp.name)
++        self.catalog = load_source("catalog_snapshot_subject", CATALOG_SOURCE)
++        self.catalog.ROOT = self.root
++        self.catalog.INVENTORY = self.root / "reports/test-verification/test-inventory.json"
++        self.catalog.CATALOG = self.root / "docs/testing/catalog.md"
++        self.catalog.git = lambda *args: "fixture-revision"
++        self.paths = []
++        self.catalog.input_paths = lambda: sorted(self.paths)
++        self.put("scripts/testing/run-node-suites.py", NODE_SOURCE.read_text(), indexed=False)
++
++    def put(self, name, source, indexed=True):
++        file = self.root / name
++        file.parent.mkdir(parents=True, exist_ok=True)
++        file.write_text(source)
++        if indexed:
++            self.paths.append(name)
++        return file
++
++    def rows(self, data):
++        return {row["path"]: row for row in data["entries"]}
++
++    def snapshots(self, data):
++        return {row["path"]: row for row in data["generatedSnapshots"]}
++
++    def test_current_suite_is_canonical_and_report_copy_is_hashed_only(self):
++        current = "tests/current.test.mjs"
++        historical = "reports/accessibility-audit/cohort/test-before.mjs"
++        self.put(current, NODE_TEST)
++        old_file = self.put(historical, NODE_TEST)
++        data = self.catalog.collect()
++        self.assertEqual(set(self.rows(data)), {current})
++        self.assertEqual(set(self.snapshots(data)), {historical})
++        self.assertEqual(self.snapshots(data)[historical]["sha256"], hashlib.sha256(old_file.read_bytes()).hexdigest())
++        self.assertEqual(self.rows(data)[current]["caseTitles"], ["current assertion"])
++        self.assertEqual(self.rows(data)[current]["category"], "test")
++        self.assertEqual(data["counts"]["canonicalTestFiles"], 1)
++
++    def test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression(self):
++        retained = (
++            "reports/cohort/test-before.mjs",
++            "reports/cohort/.snapshots/test-before.mjs",
++            ".pdim-backup/tests/current.test.mjs",
++        )
++        current = ("tests/test-before.mjs", "reports-archive/test-before.mjs")
++        for name in (*retained, *current):
++            self.put(name, NODE_TEST)
++        data = self.catalog.collect()
++        self.assertEqual(set(self.snapshots(data)), set(retained))
++        self.assertEqual(set(self.rows(data)), set(current))
++        for name in retained:
++            self.assertNotIn("command", self.snapshots(data)[name])
++        self.assertEqual(data["counts"]["retainedSnapshotFiles"], 3)
++
++    def test_existing_current_classifications_and_assertions_are_preserved(self):
++        sources = {
++            "tests/current.test.mjs": (NODE_TEST, "root-node", "node:test", "test"),
++            "tests/unit/current.test.ts": ("import { test } from 'vitest';\ntest('typed assertion', () => {});", "root-unit", "vitest", "test"),
++            "tests/test_current.py": ("def test_python_assertion():\n    assert True\n", "python", "pytest", "test"),
++            "tests/unit/beat-sale-money-loop.test.ts": ("import { test } from 'vitest';\ntest('real money assertion', () => {});", "commerce", "vitest", "test"),
++            "scripts/smoke-test.sh": ("#!/bin/sh\nexit 0\n", "manual-destructive-provider", "bash", "test"),
++            "scripts/testing/fixture-helper.py": ("raise RuntimeError('support must never execute')\n", "runner-support", "support", "support"),
++        }
++        self.put("vitest.config.ts", "export default { test: { include: ['tests/unit/**/*.test.ts'], exclude: [] } };", indexed=False)
++        for name, (source, *_) in sources.items():
++            self.put(name, source)
++        before = self.catalog.collect()
++        self.put("reports/cohort/test-before.mjs", NODE_TEST)
++        after = self.catalog.collect()
++        self.assertEqual(before["entries"], after["entries"])
++        for name, (_, group, runner, category) in sources.items():
++            row = self.rows(after)[name]
++            self.assertEqual((row["group"], row["runner"], row["category"]), (group, runner, category), name)
++        self.assertEqual(self.rows(after)["tests/unit/beat-sale-money-loop.test.ts"]["caseTitles"], ["real money assertion"])
++
++    def test_unique_report_replay_sources_remain_documented_without_active_commands(self):
++        replay = "reports/cohort/tests/replay-validator.mjs"
++        recipe = "reports/cohort/test-replay.py"
++        self.put(replay, "// Report-only validator: replay explicitly against its retained evidence.\n" + NODE_TEST)
++        self.put(recipe, "def test_retained_recipe():\n    raise RuntimeError('historical replay must not execute')\n")
++        self.put("reports/cohort/README.md", "Explicit historical replay instructions.\n")
++        support = "reports/cohort/tests/README.md"
++        self.put(support, "Retained fixture instructions, not executable.\n")
++        data = self.catalog.collect()
++        self.assertEqual(set(self.snapshots(data)), {replay, recipe})
++        self.assertEqual(self.rows(data), {})
++        self.assertEqual({row["path"] for row in data["supportFiles"]}, {support})
++        rendered = self.catalog.render(data)
++        self.assertIn("## Retained generated and historical copies", rendered)
++        for name in (replay, recipe):
++            self.assertIn(f"`{name}`", rendered)
++            self.assertIn(self.snapshots(data)[name]["sha256"], rendered)
++            self.assertNotIn(f"--file {name}", rendered)
++
++    def test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors(self):
++        current = ("tests/current.test.mjs", "tests/current-contract.test.ts", "scripts/test-data-runtime.mjs")
++        separately_owned = ("tests/studio-plugin-audio-browser.test.mjs", "tests/payment-processing/pay.test.mjs")
++        historical = ("reports/cohort/test-before.mjs", "reports/cohort/.snapshots/test-before.mjs")
++        for name in (*current, *separately_owned, *historical):
++            self.put(name, NODE_TEST)
++        data = self.catalog.collect()
++        runner = load_source("catalog_node_builder_subject", NODE_SOURCE)
++        runner.ROOT = self.root
++        output = self.root / "must-not-be-created"
++        with patch.object(runner.subprocess, "check_output", return_value="\n".join(self.paths)):
++            discovered = set(runner.discover())
++            canonical = {row["path"] for row in data["entries"] if row["group"] == "root-node"}
++            self.assertEqual(canonical, discovered)
++            self.assertEqual(canonical, set(current))
++            for name in canonical:
++                command = shlex.split(self.rows(data)[name]["command"])
++                self.assertEqual(command, ["python3", "scripts/testing/run-node-suites.py", "--file", name])
++                out = io.StringIO()
++                with patch.object(sys, "argv", [str(NODE_SOURCE), "--file", name, "--list", "--output", str(output)]), redirect_stdout(out):
++                    self.assertEqual(runner.main(), 0)
++                self.assertEqual(json.loads(out.getvalue()), [name])
++            for name in historical:
++                error = io.StringIO()
++                with patch.object(sys, "argv", [str(NODE_SOURCE), "--file", name, "--list", "--output", str(output)]), redirect_stderr(error):
++                    with self.assertRaises(SystemExit) as rejected:
++                        runner.main()
++                self.assertEqual(rejected.exception.code, 2)
++                self.assertIn("Not a canonical isolated Node test: " + name, error.getvalue())
++        self.assertFalse(output.exists())
++
++    def test_census_is_read_only_and_preserves_every_input_hash_and_result_counter(self):
++        current = "tests/current.test.mjs"
++        historical = "reports/cohort/test-before.mjs"
++        snapshot = ".pdim-old/tests/test_retained.py"
++        self.put(current, NODE_TEST)
++        self.put(historical, NODE_TEST)
++        self.put(snapshot, "def test_old():\n    assert False\n")
++        self.put("reports/test-verification/master-results.json", '{"pages":80,"sections":2162,"assertions":53020}\n')
++        self.put("vitest.platform.config.ts", "export default { test: { coverage: { thresholds: { lines: 100 } } } };", indexed=False)
++        before = {str(p.relative_to(self.root)): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
++        data = self.catalog.collect()
++        again = self.catalog.collect()
++        after = {str(p.relative_to(self.root)): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
++        self.assertEqual(before, after)
++        self.assertEqual(data, again)
++        indexed = data["entries"] + data["generatedSnapshots"] + data["supportFiles"]
++        self.assertEqual({row["path"] for row in indexed}, {current, historical, snapshot})
++        expected_digest = hashlib.sha256(json.dumps(sorted((row["path"], row["sha256"]) for row in indexed), separators=(",", ":")).encode()).hexdigest()
++        self.assertEqual(data["workingTreeInputDigest"], expected_digest)
++        self.assertEqual(set(self.snapshots(data)), {historical, snapshot})
++        self.assertEqual(json.loads((self.root / "reports/test-verification/master-results.json").read_text()), {"pages": 80, "sections": 2162, "assertions": 53020})
++        self.assertFalse(self.catalog.INVENTORY.exists())
++        self.assertFalse(self.catalog.CATALOG.exists())
++
++
++if __name__ == "__main__":
++    unittest.main()

@@ -4417,6 +4417,8 @@ External prerequisites remain unverified until actual execution evidence exists.
     "research/sources/youtube-snippets.md",
     "scripts/production-provider-simulation-worker.ts",
     "scripts/production-provider-simulation.mjs",
+    "scripts/testing/coverage-shared-provider.d.mts",
+    "scripts/testing/coverage-shared-provider.mjs",
     "server/monitoring/emailMonitor.ts",
     "server/routes/analytics-internal.ts",
     "server/routes/api/analyticsAlerts.ts",

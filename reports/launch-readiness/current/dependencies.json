@@ -3031,7 +3031,7 @@
     },
     {
       "file": "package.json",
-      "sha256": "b5aa58bb5b6fc2263c07855a50c7159ddada8a5a2c9468c6295a77f4b1faa28e",
+      "sha256": "410446cea7e63d427f1335891cdea3843fa63068de1174da84419f477620514e",
       "scope": "declared-dependency-inventory-not-installation-proof",
       "consumerScope": "shared frontend/backend/build/native root graph",
       "declarations": {

@@ -1,0 +1,25 @@
+{
+  "scope": "Actual integrated Python topology and import regressions, no runtime availability claim",
+  "beforeSha256": "d65944dd4a7a04b5cdb782e3396916f589187cdb64b79ac35546d6c90920b1f7",
+  "afterSha256": "d65944dd4a7a04b5cdb782e3396916f589187cdb64b79ac35546d6c90920b1f7",
+  "unchanged": true,
+  "result": {
+    "command": [
+      "/workspace/.cloud-python/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/testing/test_python_factory_mounts.py",
+      "tests/testing/test_endpoint_mount_resolution.py",
+      "--junitxml=reports/platform-evidence/2026-10-29-integration-rechecks/python-topology.xml"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-29T22:05:45.796386+00:00",
+    "durationSeconds": 0.517,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/platform-evidence/2026-10-29-integration-rechecks/python-topology.txt",
+    "logSha256": "784cfd283d0bc0eaed63ca52340eeeab475579941fae4480e670e50b06cf812f"
+  }
+}

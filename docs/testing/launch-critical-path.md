@@ -284,3 +284,43 @@ and retains canonical typed originals. No profiles are merged. Continue P2
 source/command/time/snapshot admission, then the existing P3–P7, C6/C7 and M5–M9
 dependency chains. All 20 shared lanes and every one of the 2,162 business
 sections remain required; this checkpoint changes none of their acceptance.
+
+The subsequent frozen `5eb416a0` master completed 19:02:12–19:24:26
+America/Detroit. [All raw evidence](../../reports/test-verification/history/2026-10-29-5eb416a0-master/README.md)
+is preserved in 593 hash-verified members, plus a separate launch/progress
+archive. Common inputs remained unchanged. Sixteen of 17 ordinary commands
+passed; only the requested 100% coverage command failed. Strict platform and
+remediation also remain failed. Node records 125 canonical files, 740 TAP
+passes, two skips and zero failures. Python records 117 passing files, one
+skipped file, 19 blocked operational files and zero failed files; raw JUnit has
+1,583 cases, zero failures/errors and 12 skips. HTTP has 499 passes and nine skips.
+
+All nine exact policy bundles now bind 23 real HTTP references: 9/33,549
+accepted checks, zero invalid links and zero rejected leaf evidence. Plan
+acceptance is 9/53,034. All original 53,020 and midpoint 53,033 work IDs remain,
+along with every page, section and mapping warning. Current launch freshness
+is PASS, but all 80 pages remain Red. Coverage retains 2,653 files and unchanged
+denominators: lines 29,398/224,013 (13.12%), statements 31,305/240,335 (13.02%),
+functions 4,156/47,857 (8.68%), branches 13,937/158,578 (8.78%). These measured
+acceptance fractions do not estimate implementation completion.
+
+Next M5 work follows confirmed complete request chains. The initial proposed
+Python alias change is withdrawn: the imported TypeScript API already translates
+those aliases. The actual generation transport policy omits planned target paths
+from its finite recovery/deadline classification. Client requests also need body
+deadlines, cancellation and authoritative project identity before late audio
+insertion. The imported multimodal worker separately loses its validated private
+owner and has unbounded downstream calls; its main-UI scope must be distinguished.
+Each remains open until its actual source and integrated adverse cases pass.
+
+The P2 counter-admission proposal remains review-blocked: JUnit replacement,
+hidden unhandled runtime errors, incomplete implementation inventory, output
+symlink ancestry and duplicate TAP totals require explicit guards. The reviewed
+producer foundation supplies fresh parent-bound JUnit and public Vitest run-end
+outcomes; landing and full current-source execution remain separate. No profile
+has been merged. The [retained proposals and counterexamples](../../reports/coverage-producer/2026-10-29-p2-review-blocked/README.md)
+preserve failures, while [the new foundation](../../reports/coverage-producer/2026-10-29-producer-foundation/README.md)
+documents its narrower proof. C5/P2–P7, all other languages, all page journeys,
+WCAG/manual review, actual Replit/provider/native/recovery/global-capacity gates
+remain required. The fresh [read-only Neon and historical CI observations](../../reports/runner-repairs/2026-10-29/README.md)
+confirm external gates remain open; no production schema or account was changed.

@@ -1,237 +1,294 @@
-[13:33:28.414] INFO (224788): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:33:28.426] INFO (224788): [LocalPDIM] Local PDIM exec server started on port 15556 (local fsynced AOF and snapshots)
-[13:33:28.445] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:28.473] INFO (224788): [PDIM] First successful response after 60ms — entering 10s settling window
-[13:33:28.640] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:28.700] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:28.743] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:28.744] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:28.796] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:28.796] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:29.376] INFO (224788): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:33:29.377] INFO (224788): [Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor
-[13:33:29.381] INFO (224788): [Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor
-[13:33:29.388] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:29.388] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:29.389] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:29.389] INFO (224788): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:33:29.391] INFO (224788): [PDIM] First successful response after 15ms — entering 10s settling window
-[13:34:27.010] INFO (225339): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:34:36.494] WARN (227067): [MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout
-[13:34:36.532] WARN (227067): [MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close
-[13:34:51.759] INFO (228297): 🔧 Action registered: Send Email
-[13:34:51.760] INFO (228297): 🔧 Action registered: Post to Social Media
-[13:34:51.760] INFO (228297): 🔧 Action registered: Distribute Music
-[13:34:51.760] INFO (228297): 🔧 Action registered: Generate Analytics Report
-[13:34:51.760] INFO (228297): 🔧 Action registered: AI Mix Track
-[13:34:51.760] INFO (228297): 🔧 Action registered: AI Master Track
-[13:34:51.760] INFO (228297): 🔧 Action registered: Upload Beat to Marketplace
-[13:34:51.761] INFO (228297): 🔧 Action registered: Process Payment
-[13:34:51.761] INFO (228297): 🔧 Action registered: Send Notification
-[13:34:51.761] INFO (228297): 🔧 Action registered: Backup Data
-[13:34:51.761] INFO (228297): 🔧 Action registered: Create Promotional Video
-[13:34:51.761] INFO (228297): 🔧 Action registered: Create Social Media Video
-[13:34:51.761] INFO (228297): 🔧 Action registered: Create Lyric Video
-[13:34:51.761] INFO (228297): 🔧 Action registered: Create Audio Visualizer Video
-[13:34:51.761] INFO (228297): 🔍 Condition registered: Time Based
-[13:34:51.761] INFO (228297): 🔍 Condition registered: User Activity
-[13:34:51.761] INFO (228297): 🔍 Condition registered: Performance Threshold
-[13:34:51.761] INFO (228297): 🔍 Condition registered: Revenue Threshold
-[13:34:51.762] INFO (228297): 🔍 Condition registered: Stream Threshold
-[13:34:51.762] INFO (228297): 🎯 Trigger registered: Schedule
-[13:34:51.762] INFO (228297): 🎯 Trigger registered: Event
-[13:34:51.762] INFO (228297): 🎯 Trigger registered: Webhook
-[13:34:51.762] INFO (228297): 📂 Loading workflows from storage...
-[13:34:51.764] INFO (228297): 🚀 Automation engine started
-[13:34:51.764] INFO (228297): 🤖 Automation system initialized
-[13:34:51.770] INFO (228297): 📊 Generating analytics report (full) for user undefined
-[13:34:51.778] WARN (228297): generate-analytics-report action failed
+[23:05:23.164] INFO (404759): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:05:23.179] INFO (404759): [LocalPDIM] Local PDIM exec server started on port 15556 (local fsynced AOF and snapshots)
+[23:05:23.200] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:23.246] INFO (404759): [PDIM] First successful response after 83ms — entering 10s settling window
+[23:05:23.413] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:23.466] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:23.502] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:23.502] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:23.536] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:23.536] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:24.084] INFO (404759): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:05:24.084] INFO (404759): [Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor
+[23:05:24.088] INFO (404759): [Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor
+[23:05:24.095] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:24.095] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:24.095] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:24.095] INFO (404759): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:05:24.099] INFO (404759): [PDIM] First successful response after 15ms — entering 10s settling window
+[23:06:25.885] INFO (405532): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:06:30.135] WARN (406876): [MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout
+[23:06:30.173] WARN (406876): [MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close
+[23:06:50.128] INFO (408009): 🔧 Action registered: Send Email
+[23:06:50.128] INFO (408009): 🔧 Action registered: Post to Social Media
+[23:06:50.128] INFO (408009): 🔧 Action registered: Distribute Music
+[23:06:50.128] INFO (408009): 🔧 Action registered: Generate Analytics Report
+[23:06:50.128] INFO (408009): 🔧 Action registered: AI Mix Track
+[23:06:50.128] INFO (408009): 🔧 Action registered: AI Master Track
+[23:06:50.129] INFO (408009): 🔧 Action registered: Upload Beat to Marketplace
+[23:06:50.129] INFO (408009): 🔧 Action registered: Process Payment
+[23:06:50.129] INFO (408009): 🔧 Action registered: Send Notification
+[23:06:50.129] INFO (408009): 🔧 Action registered: Backup Data
+[23:06:50.129] INFO (408009): 🔧 Action registered: Create Promotional Video
+[23:06:50.129] INFO (408009): 🔧 Action registered: Create Social Media Video
+[23:06:50.129] INFO (408009): 🔧 Action registered: Create Lyric Video
+[23:06:50.129] INFO (408009): 🔧 Action registered: Create Audio Visualizer Video
+[23:06:50.129] INFO (408009): 🔍 Condition registered: Time Based
+[23:06:50.129] INFO (408009): 🔍 Condition registered: User Activity
+[23:06:50.129] INFO (408009): 🔍 Condition registered: Performance Threshold
+[23:06:50.129] INFO (408009): 🔍 Condition registered: Revenue Threshold
+[23:06:50.129] INFO (408009): 🔍 Condition registered: Stream Threshold
+[23:06:50.130] INFO (408009): 🎯 Trigger registered: Schedule
+[23:06:50.130] INFO (408009): 🎯 Trigger registered: Event
+[23:06:50.130] INFO (408009): 🎯 Trigger registered: Webhook
+[23:06:50.130] INFO (408009): 📂 Loading workflows from storage...
+[23:06:50.132] INFO (408009): 🚀 Automation engine started
+[23:06:50.132] INFO (408009): 🤖 Automation system initialized
+[23:06:50.139] INFO (408009): 📊 Generating analytics report (full) for user undefined
+[23:06:50.147] WARN (408009): generate-analytics-report action failed
     err: {
       "type": "Error",
       "message": "generate-analytics-report requires a userId",
       "stack":
           [ACCESSOR]
     }
-[13:34:51.781] INFO (228297): 🎛️ Auto-mixing project undefined
-[13:34:51.781] WARN (228297): ai-mix-track action failed
+[23:06:50.149] INFO (408009): 🎛️ Auto-mixing project undefined
+[23:06:50.150] WARN (408009): ai-mix-track action failed
     err: {
       "type": "Error",
       "message": "ai-mix-track requires trackId (studio project id)",
       "stack":
           [ACCESSOR]
     }
-[13:34:51.782] INFO (228297): 🎚️ Mastering project undefined
-[13:34:51.784] WARN (228297): ai-master-track action failed
+[23:06:50.150] INFO (408009): 🎚️ Mastering project undefined
+[23:06:50.152] WARN (408009): ai-master-track action failed
     err: {
       "type": "Error",
       "message": "ai-master-track requires trackId (studio project id)",
       "stack":
           [ACCESSOR]
     }
-[13:34:51.784] WARN (228297): 🎶 upload-beat action invoked but is not implemented — no beat was uploaded or listed
-[13:34:51.785] WARN (228297): 💳 process-payment action invoked for undefined undefined but is not implemented — no payment was processed
-[13:34:51.785] INFO (228297): 💾 Running backup-data for user undefined (database)
-[13:34:52.809] INFO (228297): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
-[13:34:52.906] WARN (228297): backup-data action failed
+[23:06:50.153] WARN (408009): 🎶 upload-beat action invoked but is not implemented — no beat was uploaded or listed
+[23:06:50.153] WARN (408009): 💳 process-payment action invoked for undefined undefined but is not implemented — no payment was processed
+[23:06:50.153] INFO (408009): 💾 Running backup-data for user undefined (database)
+[23:06:50.862] INFO (408009): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:06:50.980] WARN (408009): backup-data action failed
     err: {
       "type": "Error",
       "message": "Could not query PostgreSQL server major with installed psql clients: /workspace/.cloud-system/usr/lib/postgresql/17/bin/psql (17.11): server version query exited with code 2",
       "stack":
           [ACCESSOR]
     }
-[13:34:52.907] INFO (228297): 🎬 Rendering promo video for tiktok
-[13:34:53.008] INFO (228297): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:34:53.031] INFO (228297): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:34:53.205] WARN (228297): create-promo-video action failed
+[23:06:50.981] INFO (408009): 🎬 Rendering promo video for tiktok
+[23:06:51.097] INFO (408009): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:06:51.119] INFO (408009): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:06:51.260] WARN (408009): create-promo-video action failed
     err: {
       "type": "Error",
       "message": "A target platform is required for video generation",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.206] INFO (228297): 📹 Rendering social video for: 
-[13:34:53.206] WARN (228297): create-social-video action failed
+[23:06:51.261] INFO (408009): 📹 Rendering social video for: 
+[23:06:51.261] WARN (408009): create-social-video action failed
     err: {
       "type": "Error",
       "message": "create-social-video requires at least one platform",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.207] INFO (228297): 🎤 Rendering lyric video (default)
-[13:34:53.207] WARN (228297): create-lyric-video action failed
+[23:06:51.262] INFO (408009): 🎤 Rendering lyric video (default)
+[23:06:51.262] WARN (408009): create-lyric-video action failed
     err: {
       "type": "Error",
       "message": "create-lyric-video requires audioUrl",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.208] INFO (228297): 🌊 Rendering visualizer video (default)
-[13:34:53.208] WARN (228297): create-visualizer-video action failed
+[23:06:51.262] INFO (408009): 🌊 Rendering visualizer video (default)
+[23:06:51.262] WARN (408009): create-visualizer-video action failed
     err: {
       "type": "Error",
       "message": "create-visualizer-video requires audioUrl",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.209] INFO (228297): 🔔 Sending notification: t
-[13:34:53.274] WARN (228297): VAPID keys not configured - Web Push disabled
-[13:34:53.565] INFO (228297): 🔌 Circuit breaker initialized: stripe
-[13:34:53.565] INFO (228297): 🔌 Circuit breaker initialized: sendgrid
-[13:34:53.565] INFO (228297): 🔌 Circuit breaker initialized: socialApi
-[13:34:53.565] INFO (228297): 🔌 Circuit breaker initialized: twitter
-[13:34:53.565] INFO (228297): 🔌 Circuit breaker initialized: facebook
-[13:34:53.565] INFO (228297): 🔌 Circuit breaker initialized: instagram
-[13:34:53.565] INFO (228297): 🔌 Circuit breaker initialized: linkedin
-[13:34:53.566] INFO (228297): 🔌 Circuit breaker initialized: tiktok
-[13:34:53.566] INFO (228297): 🔌 Circuit breaker initialized: tiktok_sandbox
-[13:34:53.566] INFO (228297): 🔌 Circuit breaker initialized: youtube
-[13:34:53.566] INFO (228297): 🔌 Circuit breaker initialized: threads
-[13:34:53.566] INFO (228297): 🔌 Circuit breaker initialized: googlebusiness
-[13:34:53.566] INFO (228297): 🔌 Circuit breaker initialized: aiService
-[13:34:53.566] INFO (228297): 🔌 Circuit breaker initialized: labelGrid
-[13:34:53.566] INFO (228297): 🔌 Circuit breaker initialized: dsp
-[13:34:53.566] INFO (228297): 🔌 External service circuit breakers initialized
-[13:34:53.572] WARN (228297): ⚠️  Resend API key not configured. Email features will be disabled.
-[13:34:53.573] INFO (228297): 📧 Sending email to undefined: s
-[13:34:53.573] WARN (228297): send-email action failed
+[23:06:51.263] INFO (408009): 🔔 Sending notification: t
+[23:06:51.320] WARN (408009): VAPID keys not configured - Web Push disabled
+[23:06:51.476] INFO (408009): 🔌 Circuit breaker initialized: stripe
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: sendgrid
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: socialApi
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: twitter
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: facebook
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: instagram
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: linkedin
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: tiktok
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: tiktok_sandbox
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: youtube
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: threads
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: googlebusiness
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: aiService
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: labelGrid
+[23:06:51.477] INFO (408009): 🔌 Circuit breaker initialized: dsp
+[23:06:51.477] INFO (408009): 🔌 External service circuit breakers initialized
+[23:06:51.490] WARN (408009): ⚠️  Resend API key not configured. Email features will be disabled.
+[23:06:51.490] INFO (408009): 📧 Sending email to undefined: s
+[23:06:51.491] WARN (408009): send-email action failed
     err: {
       "type": "Error",
       "message": "no userId resolvable for email",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.574] INFO (228297): 📊 Generating analytics report (full) for user undefined
-[13:34:53.574] WARN (228297): generate-analytics-report action failed
+[23:06:51.491] INFO (408009): 📊 Generating analytics report (full) for user undefined
+[23:06:51.492] WARN (408009): generate-analytics-report action failed
     err: {
       "type": "Error",
       "message": "generate-analytics-report requires a userId",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.575] INFO (228297): 🎛️ Auto-mixing project undefined
-[13:34:53.575] WARN (228297): ai-mix-track action failed
+[23:06:51.492] INFO (408009): 🎛️ Auto-mixing project undefined
+[23:06:51.492] WARN (408009): ai-mix-track action failed
     err: {
       "type": "Error",
       "message": "ai-mix-track requires trackId (studio project id)",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.575] INFO (228297): 🎚️ Mastering project undefined
-[13:34:53.575] WARN (228297): ai-master-track action failed
+[23:06:51.492] INFO (408009): 🎚️ Mastering project undefined
+[23:06:51.492] WARN (408009): ai-master-track action failed
     err: {
       "type": "Error",
       "message": "ai-master-track requires trackId (studio project id)",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.575] WARN (228297): 🎶 upload-beat action invoked but is not implemented — no beat was uploaded or listed
-[13:34:53.576] WARN (228297): 💳 process-payment action invoked for undefined undefined but is not implemented — no payment was processed
-[13:34:53.576] INFO (228297): 💾 Running backup-data for user undefined (database)
-[13:34:53.603] WARN (228297): backup-data action failed
+[23:06:51.493] WARN (408009): 🎶 upload-beat action invoked but is not implemented — no beat was uploaded or listed
+[23:06:51.493] WARN (408009): 💳 process-payment action invoked for undefined undefined but is not implemented — no payment was processed
+[23:06:51.493] INFO (408009): 💾 Running backup-data for user undefined (database)
+[23:06:51.527] WARN (408009): backup-data action failed
     err: {
       "type": "Error",
       "message": "Could not query PostgreSQL server major with installed psql clients: /workspace/.cloud-system/usr/lib/postgresql/17/bin/psql (17.11): server version query exited with code 2",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.603] INFO (228297): 🎬 Rendering promo video for tiktok
-[13:34:53.604] WARN (228297): create-promo-video action failed
+[23:06:51.527] INFO (408009): 🎬 Rendering promo video for tiktok
+[23:06:51.528] WARN (408009): create-promo-video action failed
     err: {
       "type": "Error",
       "message": "A target platform is required for video generation",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.604] INFO (228297): 📹 Rendering social video for: 
-[13:34:53.604] WARN (228297): create-social-video action failed
+[23:06:51.528] INFO (408009): 📹 Rendering social video for: 
+[23:06:51.528] WARN (408009): create-social-video action failed
     err: {
       "type": "Error",
       "message": "create-social-video requires at least one platform",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.604] INFO (228297): 🎤 Rendering lyric video (default)
-[13:34:53.604] WARN (228297): create-lyric-video action failed
+[23:06:51.528] INFO (408009): 🎤 Rendering lyric video (default)
+[23:06:51.528] WARN (408009): create-lyric-video action failed
     err: {
       "type": "Error",
       "message": "create-lyric-video requires audioUrl",
       "stack":
           [ACCESSOR]
     }
-[13:34:53.604] INFO (228297): 🌊 Rendering visualizer video (default)
-[13:34:53.605] WARN (228297): create-visualizer-video action failed
+[23:06:51.529] INFO (408009): 🌊 Rendering visualizer video (default)
+[23:06:51.529] WARN (408009): create-visualizer-video action failed
     err: {
       "type": "Error",
       "message": "create-visualizer-video requires audioUrl",
       "stack":
           [ACCESSOR]
     }
-[13:35:05.002] INFO (228392): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
-[13:35:05.313] INFO (228392): [LocalPDIM] Local PDIM exec server started on port 38147 (local fsynced AOF and snapshots)
-[13:35:05.339] INFO (228392): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:35:05.365] INFO (228392): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:05.383] INFO (228392): [PDIM] First successful response after 45ms — entering 10s settling window
-[13:35:05.399] INFO (228392): 📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)
-[13:35:05.523] INFO (228392): 📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)
-[13:35:05.527] WARN (228392): [Storage] PDIM write failed for key=missing-token.wav — suppressing repeats for 30 s
+[23:06:58.275] INFO (408141): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:06:59.004] INFO (408162): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:06:59.239] INFO (408162): [LocalPDIM] Local PDIM exec server started on port 43967 (local fsynced AOF and snapshots)
+[23:06:59.257] INFO (408162): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:06:59.277] INFO (408162): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:06:59.292] INFO (408162): [PDIM] First successful response after 35ms — entering 10s settling window
+[23:06:59.307] INFO (408162): 📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)
+[23:06:59.406] INFO (408162): 📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)
+[23:06:59.411] WARN (408162): [Storage] PDIM write failed for key=missing-token.wav — suppressing repeats for 30 s
     err: {
       "type": "Error",
       "message": "Canonical local PDIM endpoint requires the inherited private channel token",
       "stack":
           [ACCESSOR]
     }
-[13:35:05.531] INFO (228392): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:12.733] WARN (228494): Failed to record registration consents
-    userId: "16352d09-b972-4977-91c3-8aadd93a7586"
+[23:06:59.413] INFO (408162): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:00.490] INFO (408250): [AdvancedSocialAI] GPT-5.2 level social AI engine initialized
+[23:07:00.491] INFO (408250): [AdvancedSocialAI] MaxCore generated 2 social variant(s) for user user-1
+[23:07:00.493] INFO (408250): [AdvancedSocialAI] MaxCore generated 1 social variant(s) for user cache-context-user
+[23:07:00.493] INFO (408250): [AdvancedSocialAI] Cache hit for key=cache-context-user|instagram|7e5f650010d4674ff81642b02ddb0a6
+[23:07:00.493] INFO (408250): [AdvancedSocialAI] MaxCore generated 1 social variant(s) for user cache-context-user
+[23:07:00.493] INFO (408250): [AdvancedSocialAI] MaxCore generated 1 social variant(s) for user cache-context-user
+[23:07:03.352] INFO (408429): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:07:05.134] INFO (408513): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: stripe
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: sendgrid
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: socialApi
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: twitter
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: facebook
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: instagram
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: linkedin
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: tiktok
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: tiktok_sandbox
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: youtube
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: threads
+[23:07:05.135] INFO (408513): 🔌 Circuit breaker initialized: googlebusiness
+[23:07:05.136] INFO (408513): 🔌 Circuit breaker initialized: aiService
+[23:07:05.136] INFO (408513): 🔌 Circuit breaker initialized: labelGrid
+[23:07:05.136] INFO (408513): 🔌 Circuit breaker initialized: dsp
+[23:07:05.136] INFO (408513): 🔌 External service circuit breakers initialized
+[23:07:05.139] INFO (408513): ✅ Resend EmailService initialized
+[23:07:05.139] INFO (408513): ✅ Resend initialized for email notifications
+[23:07:05.140] WARN (408513): Resend rejected the email:
+    err: {
+      "type": "validation_error",
+      "message": "Invalid `from` field",
+      "stack":
+          
+      "name": "validation_error"
+    }
+[23:07:05.141] INFO (408513): ✅ Notification sent to user user-1: Test
+[23:07:05.143] INFO (408513): 📧 Email sent to [REDACTED]
+[23:07:05.143] INFO (408513): ✅ Notification sent to user user-2: Test
+[23:07:05.536] INFO (408520): [ParallelBlockCompressor] 1 worker(s) ready for CPU-core-parallel block compression
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-xrpo7xvy/nondestructive-release-0T0MR4/verify-DVGqXY/.pdim-scratch-example-408814/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[pdim-restore] Extracting members.pdim (zstd-19) → /tmp/maxbooster-test-xrpo7xvy/nondestructive-release-0T0MR4/verify-gPseQt/.pdim-scratch-example-408837/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for members.pdim
+[pdim-restore] ✅ example/ restored from members.pdim
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-xrpo7xvy/release-cache-source-change-NF6wEw/verify-hqUUpS/.pdim-scratch-example-408870/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-xrpo7xvy/release-cache-7tRSyg/verify-1p9nb5/.pdim-scratch-example-408893/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[23:07:10.880] INFO (408786): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-xrpo7xvy/release-cache-7tRSyg/verify-MWgVD3/.pdim-scratch-example-408934/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[23:07:12.041] INFO (408959): 🔐 Token refresh monitor started (checking every minute)
+[23:07:12.042] WARN (408959): [SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect.
+[23:07:13.609] WARN (409008): Failed to record registration consents
+    userId: "36a65c3c-1e44-484d-8478-d6cac2500257"
     err: {
       "type": "Error",
-      "message": "Failed query: \n      INSERT INTO consent_logs (\n        user_id,\n        consent_type,\n        action,\n        version,\n        ip_address,\n        user_agent,\n        metadata,\n        created_at\n      )\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $[REDACTED]jsonb,\n        NOW()\n      )\n    \nparams: 16352d09-b972-4977-91c3-8aadd93a7586,privacy,accepted,1.0.0,[REDACTED],fixture-agent,{\"source\":\"registration\"}: new row for relation \"consent_logs\" violates check constraint \"fail_first_privacy_write\"",
+      "message": "Failed query: \n      INSERT INTO consent_logs (\n        user_id,\n        consent_type,\n        action,\n        version,\n        ip_address,\n        user_agent,\n        metadata,\n        created_at\n      )\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $[REDACTED]jsonb,\n        NOW()\n      )\n    \nparams: 36a65c3c-1e44-484d-8478-d6cac2500257,privacy,accepted,1.0.0,[REDACTED],fixture-agent,{\"source\":\"registration\"}: new row for relation \"consent_logs\" violates check constraint \"fail_first_privacy_write\"",
       "stack":
           [ACCESSOR]
           caused by: [ACCESSOR]
       "query": "\n      INSERT INTO consent_logs (\n        user_id,\n        consent_type,\n        action,\n        version,\n        ip_address,\n        user_agent,\n        metadata,\n        created_at\n      )\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $[REDACTED]jsonb,\n        NOW()\n      )\n    ",
       "params": [
-        "16352d09-b972-4977-91c3-8aadd93a7586",
+        "36a65c3c-1e44-484d-8478-d6cac2500257",
         "privacy",
         "accepted",
         "1.0.0",
@@ -240,125 +297,65 @@
         "{\"source\":\"registration\"}"
       ]
     }
-[13:35:12.769] INFO (228494): Registration consents recorded for user 963e18c0-4a1c-4b9d-bee0-c23a9c0ebca5, age: 36
-[13:35:13.995] INFO (228547): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
-[13:35:16.951] INFO (228734): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:35:17.266] INFO (228803): [ParallelBlockCompressor] 1 worker(s) ready for CPU-core-parallel block compression
-[13:35:18.359] INFO (228957): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:35:18.520] INFO (228950): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:35:18.520] INFO (228950): 🔌 Circuit breaker initialized: stripe
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: sendgrid
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: socialApi
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: twitter
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: facebook
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: instagram
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: linkedin
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: tiktok
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: tiktok_sandbox
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: youtube
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: threads
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: googlebusiness
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: aiService
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: labelGrid
-[13:35:18.521] INFO (228950): 🔌 Circuit breaker initialized: dsp
-[13:35:18.521] INFO (228950): 🔌 External service circuit breakers initialized
-[13:35:18.523] INFO (228950): ✅ Resend EmailService initialized
-[13:35:18.523] INFO (228950): ✅ Resend initialized for email notifications
-[13:35:18.525] WARN (228950): Resend rejected the email:
-    err: {
-      "type": "validation_error",
-      "message": "Invalid `from` field",
-      "stack":
-          
-      "name": "validation_error"
-    }
-[13:35:18.526] INFO (228950): ✅ Notification sent to user user-1: Test
-[13:35:18.527] INFO (228950): 📧 Email sent to [REDACTED]
-[13:35:18.527] INFO (228950): ✅ Notification sent to user user-2: Test
-[13:35:19.509] INFO (228976): 🔐 Token refresh monitor started (checking every minute)
-[13:35:19.510] WARN (228976): [SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect.
-[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-n7o0uphy/nondestructive-release-rGxOu3/verify-gb83Db/.pdim-scratch-example-229055/ (staging for example/) ...
-[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
-[pdim-restore] ✅ example/ restored from example.pdim
-[pdim-restore] Extracting members.pdim (zstd-19) → /tmp/maxbooster-test-n7o0uphy/nondestructive-release-rGxOu3/verify-E8988w/.pdim-scratch-example-229085/ (staging for example/) ...
-[pdim-restore] bsdtar not found — falling back to GNU tar for members.pdim
-[pdim-restore] ✅ example/ restored from members.pdim
-[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-n7o0uphy/release-cache-source-change-WnsrgQ/verify-wiDolR/.pdim-scratch-example-229118/ (staging for example/) ...
-[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
-[pdim-restore] ✅ example/ restored from example.pdim
-[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-n7o0uphy/release-cache-q2CuJk/verify-9uE0sA/.pdim-scratch-example-229141/ (staging for example/) ...
-[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
-[pdim-restore] ✅ example/ restored from example.pdim
-[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-n7o0uphy/release-cache-q2CuJk/verify-Q6Dq8i/.pdim-scratch-example-229171/ (staging for example/) ...
-[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
-[pdim-restore] ✅ example/ restored from example.pdim
-[13:35:21.878] INFO (229188): [AdvancedSocialAI] GPT-5.2 level social AI engine initialized
-[13:35:21.879] INFO (229188): [AdvancedSocialAI] MaxCore generated 2 social variant(s) for user user-1
-[13:35:21.882] INFO (229188): [AdvancedSocialAI] MaxCore generated 1 social variant(s) for user cache-context-user
-[13:35:21.882] INFO (229188): [AdvancedSocialAI] Cache hit for key=cache-context-user|instagram|7e5f650010d4674ff81642b02ddb0a6
-[13:35:21.882] INFO (229188): [AdvancedSocialAI] MaxCore generated 1 social variant(s) for user cache-context-user
-[13:35:21.882] INFO (229188): [AdvancedSocialAI] MaxCore generated 1 social variant(s) for user cache-context-user
-[13:35:29.836] INFO (229535): 📱 Social media queues initialized (boosterstate-backed)
-Wed, 28 Oct 2026 13:35:32 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
-[13:35:35.355] INFO (229659): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:35:36.438] ERROR (229721): [MaxCoreLocal] external/maxcore is missing, a restore capsule (external_maxcore.pdim) is present, but dist/pdim-restore.mjs does not exist so it cannot be auto-restored in dev — run `npm run build` once to produce it, or `bash scripts/bootstrap-maxcore.sh` after restoring the directory manually. MaxCore will stay unreachable until then.
-[13:35:36.347] ERROR (229721): [MaxCoreLocal] Failed to ensure maxcore schema: ECONNREFUSED
-[13:35:36.438] INFO (229721): [MaxCoreLocal] Waiting for external/maxcore background capsule restore to land (0s)…
-Wed, 28 Oct 2026 13:35:39 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
-Wed, 28 Oct 2026 13:35:40 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
-Wed, 28 Oct 2026 13:35:44 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
-Wed, 28 Oct 2026 13:35:46 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
-[13:35:47.149] INFO (230185): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:35:48.954] INFO (230247): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:35:49.001] WARN (230247): VAPID keys not configured - Web Push disabled
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: stripe
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: sendgrid
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: socialApi
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: twitter
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: facebook
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: instagram
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: linkedin
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: tiktok
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: tiktok_sandbox
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: youtube
-[13:35:49.116] INFO (230247): 🔌 Circuit breaker initialized: threads
-[13:35:49.117] INFO (230247): 🔌 Circuit breaker initialized: googlebusiness
-[13:35:49.117] INFO (230247): 🔌 Circuit breaker initialized: aiService
-[13:35:49.117] INFO (230247): 🔌 Circuit breaker initialized: labelGrid
-[13:35:49.117] INFO (230247): 🔌 Circuit breaker initialized: dsp
-[13:35:49.117] INFO (230247): 🔌 External service circuit breakers initialized
-[13:35:49.120] WARN (230247): ⚠️  Resend API key not configured. Email features will be disabled.
-[13:35:49.138] INFO (230247): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:35:49.148] INFO (230247): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
-[13:35:49.268] INFO (230247): Sharp module loaded for image processing
-[13:35:52.381] WARN (230382): Mobile token remove error:
+[23:07:13.618] INFO (409008): Registration consents recorded for user d0d0c712-3b3c-4f9d-b6c3-d01fc5e5d2a7, age: 36
+[23:07:16.412] INFO (409108): 📱 Social media queues initialized (boosterstate-backed)
+Thu, 29 Oct 2026 23:07:21 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+[23:07:22.479] ERROR (409314): [MaxCoreLocal] Failed to ensure maxcore schema: ECONNREFUSED
+[23:07:24.711] INFO (409479): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+Thu, 29 Oct 2026 23:07:27 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+Thu, 29 Oct 2026 23:07:28 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+Thu, 29 Oct 2026 23:07:30 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+[23:07:31.654] INFO (409790): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+Thu, 29 Oct 2026 23:07:32 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+[23:07:34.184] INFO (409825): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:07:34.225] WARN (409825): VAPID keys not configured - Web Push disabled
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: stripe
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: sendgrid
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: socialApi
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: twitter
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: facebook
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: instagram
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: linkedin
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: tiktok
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: tiktok_sandbox
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: youtube
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: threads
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: googlebusiness
+[23:07:34.301] INFO (409825): 🔌 Circuit breaker initialized: aiService
+[23:07:34.302] INFO (409825): 🔌 Circuit breaker initialized: labelGrid
+[23:07:34.302] INFO (409825): 🔌 Circuit breaker initialized: dsp
+[23:07:34.302] INFO (409825): 🔌 External service circuit breakers initialized
+[23:07:34.303] WARN (409825): ⚠️  Resend API key not configured. Email features will be disabled.
+[23:07:34.322] INFO (409825): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:07:34.326] INFO (409825): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:07:34.402] INFO (409825): Sharp module loaded for image processing
+[23:07:38.986] INFO (410040): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:07:39.032] INFO (410040): [PDIM] First successful response after 47ms — entering 10s settling window
+[23:07:39.032] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:39.040] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:39.046] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:39.052] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:39.062] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:39.062] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:39.062] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:39.062] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:39.062] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:39.068] INFO (410040): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:07:40.980] WARN (410380): Mobile token remove error:
     err: {
       "type": "Error",
       "message": "database unavailable",
       "stack":
           [ACCESSOR]
     }
-[13:35:52.409] WARN (230382): Push unsubscribe error:
+[23:07:41.003] WARN (410380): Push unsubscribe error:
     err: {
       "type": "Error",
       "message": "database unavailable",
       "stack":
           [ACCESSOR]
     }
-[13:35:54.934] INFO (230891): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:35:57.226] INFO (231338): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:35:57.283] INFO (231338): [PDIM] First successful response after 58ms — entering 10s settling window
-[13:35:57.283] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:57.291] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:57.298] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:57.305] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:57.317] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:57.317] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:57.318] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:57.318] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:57.318] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:57.324] INFO (231338): ✅ [PDIM] Connected via HTTP exec endpoint
-[13:35:58.368] WARN (231351): [ARIntelligence] /catalog-gap failed
+[23:07:41.977] WARN (410950): [ARIntelligence] /catalog-gap failed
     err: {
       "type": "Error",
       "message": "offline",
@@ -366,78 +363,129 @@ Wed, 28 Oct 2026 13:35:46 GMT router deprecated handlers that are Promise-like a
           [ACCESSOR]
       "status": 503
     }
-[13:36:04.157] INFO (231519): [AutoCluster] Eval — 0/0 healthy util=0.0% raw=0 B/s ema=0 B/s projection=48.0h projected=0 B
-[13:36:04.158] INFO (231519): [AutoCluster] ScaleDown skipped — already at min (0)
-[13:36:04.158] INFO (231519): [AutoCluster] Cluster balanced — no action needed
-[13:36:04.163] WARN (231519): [FabricRebalancer] Pending migration prevents node retirement
+[23:07:46.845] INFO (420106): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:07:49.711] INFO (420196): Fetching career coach recommendations for user owner
+[23:07:49.712] WARN (420196): Error fetching career coach recommendations: private upstream configuration
+[23:07:50.610] INFO (420259): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:07:50.906] INFO (420280): [MaxCoreAI] Configured — local subsystem: http://stub-maxcore | MaxCore is the only AI source
+[23:07:51.631] INFO (420308): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:07:51.792] INFO (420287): [AutoCluster] Eval — 0/0 healthy util=0.0% raw=0 B/s ema=0 B/s projection=48.0h projected=0 B
+[23:07:51.793] INFO (420287): [AutoCluster] ScaleDown skipped — already at min (0)
+[23:07:51.793] INFO (420287): [AutoCluster] Cluster balanced — no action needed
+[23:07:51.796] WARN (420287): [FabricRebalancer] Pending migration prevents node retirement
     err: {
       "type": "Error",
       "message": "target verification unavailable",
       "stack":
           [ACCESSOR]
     }
-[13:36:05.140] INFO (231552): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
-[13:36:05.160] INFO (231552): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:36:05.201] INFO (231552): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:36:05.243] INFO (231552): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
-[13:36:05.243] INFO (231552): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
-[13:36:05.244] INFO (231552): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
-[13:36:05.244] INFO (231552): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion posted in 2ms — next in 60 min
-[13:36:05.247] INFO (231552): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={"genre":"afrobeats","mood":"uplifting"}
-[13:36:05.247] INFO (231552): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
-[13:36:05.247] INFO (231552): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
-[13:36:05.247] INFO (231552): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion posted in 0ms — next in 60 min
-[13:36:05.248] INFO (231552): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
-[13:36:05.248] INFO (231552): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
-[13:36:05.248] INFO (231552): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
-[13:36:05.248] INFO (231552): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion not posted: No connected social accounts in 0ms — next in 60 min
-[13:36:05.249] INFO (231552): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
-[13:36:05.249] INFO (231552): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
-[13:36:05.259] WARN (231552): [BeatMoneyLoop] ❌ Cycle test-cycle-id failed after 0ms: Generation rejected
+[23:07:52.295] WARN (420308): [RateLimiter] PDIM not configured — global rate limiter disabled (dev mode)
+[23:07:52.296] WARN (420308): [RateLimiter] PDIM not configured — api rate limiter disabled (dev mode)
+[23:07:52.296] WARN (420308): [RateLimiter] PDIM not configured — ai rate limiter disabled (dev mode)
+[23:07:52.296] WARN (420308): [RateLimiter] PDIM not configured — auth rate limiter disabled (dev mode)
+[23:07:55.282] INFO (420461): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:07:55.305] INFO (420461): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:07:55.353] INFO (420461): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:07:55.379] INFO (420461): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[23:07:55.380] INFO (420461): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:07:55.380] INFO (420461): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[23:07:55.380] INFO (420461): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion posted in 1ms — next in 60 min
+[23:07:55.383] INFO (420461): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={"genre":"afrobeats","mood":"uplifting"}
+[23:07:55.383] INFO (420461): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:07:55.383] INFO (420461): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[23:07:55.383] INFO (420461): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion posted in 0ms — next in 60 min
+[23:07:55.384] INFO (420461): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[23:07:55.384] INFO (420461): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:07:55.384] INFO (420461): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[23:07:55.384] INFO (420461): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion not posted: No connected social accounts in 0ms — next in 60 min
+[23:07:55.385] INFO (420461): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[23:07:55.385] INFO (420461): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:07:55.394] WARN (420461): [BeatMoneyLoop] ❌ Cycle test-cycle-id failed after 1ms: Generation rejected
     err: {
       "type": "Error",
       "message": "Generation rejected",
       "stack":
           [ACCESSOR]
     }
-[13:36:05.263] INFO (231552): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
-[13:36:05.263] INFO (231552): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
-[13:36:05.263] INFO (231552): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
-[13:36:05.264] WARN (231552): [BeatMoneyLoop] test-cycle-id promotion step failed
+[23:07:55.398] INFO (420461): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[23:07:55.398] INFO (420461): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:07:55.398] INFO (420461): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[23:07:55.399] WARN (420461): [BeatMoneyLoop] test-cycle-id promotion step failed
     err: {
       "type": "Error",
       "message": "Promotion rejected",
       "stack":
           [ACCESSOR]
     }
-[13:36:05.264] INFO (231552): [BeatMoneyLoop] Cycle test-cycle-id sold; social promotion not posted: Promotion rejected in 1ms — next in 60 min
-[13:36:05.266] INFO (231552): [BeatMoneyLoop] campaign test-cycle-id posted to instagram, tiktok (2 posts)
-[13:36:05.266] WARN (231552): [BeatMoneyLoop] campaign test-cycle-id was not posted: No social posts were created: Campaign activated! Posted 0 times.
-[13:36:05.338] INFO (231558): Fetching career coach recommendations for user owner
-[13:36:05.339] WARN (231558): Error fetching career coach recommendations: private upstream configuration
-[13:36:07.234] INFO (231669): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:36:07.970] WARN (231669): [RateLimiter] PDIM not configured — global rate limiter disabled (dev mode)
-[13:36:07.970] WARN (231669): [RateLimiter] PDIM not configured — api rate limiter disabled (dev mode)
-[13:36:07.970] WARN (231669): [RateLimiter] PDIM not configured — ai rate limiter disabled (dev mode)
-[13:36:07.970] WARN (231669): [RateLimiter] PDIM not configured — auth rate limiter disabled (dev mode)
-[13:36:08.487] INFO (231717): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:36:13.782] INFO (231913): 📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)
-[13:36:14.035] INFO (231913): 📱 Social media queues initialized (boosterstate-backed)
-[13:36:14.074] WARN (231913): Error checking backoff state:
+[23:07:55.399] INFO (420461): [BeatMoneyLoop] Cycle test-cycle-id sold; social promotion not posted: Promotion rejected in 1ms — next in 60 min
+[23:07:55.410] INFO (420461): [BeatMoneyLoop] campaign test-cycle-id posted to instagram, tiktok (2 posts)
+[23:07:55.410] WARN (420461): [BeatMoneyLoop] campaign test-cycle-id was not posted: No social posts were created: Campaign activated! Posted 0 times.
+[23:07:56.755] INFO (420527): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:08:00.526] INFO (420684): [DataTransfer] Distribution data transfer service initialized
+[23:08:00.527] INFO (420684): 🔌 Circuit breaker initialized: streaming-spotify
+[23:08:00.527] INFO (420684): 🔌 Circuit breaker initialized: streaming-apple_music
+[23:08:00.528] INFO (420684): 🔌 Circuit breaker initialized: streaming-youtube_music
+[23:08:00.528] INFO (420684): 🔌 Circuit breaker initialized: streaming-deezer
+[23:08:00.528] INFO (420684): 🔌 Circuit breaker initialized: streaming-soundcloud
+[23:08:00.530] INFO (420684): 🔌 Circuit breaker initialized: streaming-tidal
+[23:08:00.531] INFO (420684): 🔌 Circuit breaker initialized: streaming-bandcamp
+[23:08:00.531] INFO (420684): 🔌 Circuit breaker initialized: streaming-audiomack
+[23:08:00.544] INFO (420684): [DataTransfer] Created import job transfer_1793315280544_84982a1 for user user-1 from spotify_profile_scan
+[23:08:00.547] INFO (420684): [DataTransfer] Imported release from spotify profile: First Light
+[23:08:00.547] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280544_84982a1: 1 imported, 0 failed
+[23:08:00.547] INFO (420684): [DataTransfer] Created import job transfer_1793315280547_4efc9d7 for user user-1 from deezer_profile_scan
+[23:08:00.548] INFO (420684): [DataTransfer] Merged existing release from deezer: First Light
+[23:08:00.548] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280547_4efc9d7: 1 imported, 0 failed
+[23:08:00.552] INFO (420684): [DataTransfer] Created import job transfer_1793315280551_4e46e00 for user user-1 from spotify_profile_scan
+[23:08:00.552] INFO (420684): [DataTransfer] Imported release from spotify profile: First Light
+[23:08:00.552] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280551_4e46e00: 1 imported, 0 failed
+[23:08:00.552] INFO (420684): [DataTransfer] Created import job transfer_1793315280552_9a72002 for user user-1 from spotify_profile_scan
+[23:08:00.553] INFO (420684): [DataTransfer] Merged existing release from spotify: First Light
+[23:08:00.553] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280552_9a72002: 1 imported, 0 failed
+[23:08:00.555] INFO (420684): [DataTransfer] Created import job transfer_1793315280555_77440d3 for user user-1 from spotify_profile_scan
+[23:08:00.555] INFO (420684): [DataTransfer] Imported release from spotify profile: First Light
+[23:08:00.555] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280555_77440d3: 1 imported, 0 failed
+[23:08:00.555] INFO (420684): [DataTransfer] Created import job transfer_1793315280555_77440d3 for user user-1 from apple_music_profile_scan
+[23:08:00.556] INFO (420684): [DataTransfer] Merged existing release from apple_music: First Light
+[23:08:00.556] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280555_77440d3: 1 imported, 0 failed
+[23:08:00.557] INFO (420684): [DataTransfer] Created import job transfer_1793315280557_d8566bc for user user-1 from spotify_profile_scan
+[23:08:00.557] INFO (420684): [DataTransfer] Created import job transfer_1793315280557_d8566bc for user user-1 from apple_music_profile_scan
+[23:08:00.558] INFO (420684): [DataTransfer] Imported release from spotify profile: First Light
+[23:08:00.558] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280557_d8566bc: 1 imported, 0 failed
+[23:08:00.558] INFO (420684): [DataTransfer] Merged existing release from apple_music: First Light
+[23:08:00.558] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280557_d8566bc: 1 imported, 0 failed
+[23:08:00.558] WARN (420684): [DataTransfer] Skipping release "First Light" from non-canonical artist "Different Artist"
+[23:08:00.558] INFO (420684): [DataTransfer] Created import job transfer_1793315280558_5f81917 for user user-1 from spotify_profile_scan
+[23:08:00.558] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280558_5f81917: 0 imported, 0 failed
+[23:08:00.559] INFO (420684): [DataTransfer] Created import job transfer_1793315280559_4e1674f for user user-1 from spotify_profile_scan
+[23:08:00.560] INFO (420684): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
+[23:08:00.560] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280559_4e1674f: 1 imported, 0 failed
+[23:08:00.560] INFO (420684): [DataTransfer] Created import job transfer_1793315280560_80dbc18 for user user-1 from spotify_profile_scan
+[23:08:00.560] INFO (420684): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
+[23:08:00.560] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280560_80dbc18: 1 imported, 0 failed
+[23:08:00.561] INFO (420684): [DataTransfer] Created import job transfer_1793315280561_b26c702 for user user-1 from spotify_profile_scan
+[23:08:00.562] INFO (420684): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
+[23:08:00.562] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280561_b26c702: 1 imported, 0 failed
+[23:08:00.562] INFO (420684): [DataTransfer] Created import job transfer_1793315280562_4cfedcc for user user-1 from spotify_profile_scan
+[23:08:00.563] INFO (420684): [DataTransfer] Imported release from spotify profile: First Light
+[23:08:00.563] INFO (420684): [DataTransfer] Profile catalog import transfer_1793315280562_4cfedcc: 1 imported, 0 failed
+[23:08:01.787] INFO (420756): 📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)
+[23:08:02.034] INFO (420756): 📱 Social media queues initialized (boosterstate-backed)
+[23:08:02.062] WARN (420756): Error checking backoff state:
     err: {
       "type": "Error",
       "message": "storage offline",
       "stack":
           [ACCESSOR]
     }
-[13:36:14.076] WARN (231913): Error checking backoff state:
+[23:08:02.063] WARN (420756): Error checking backoff state:
     err: {
       "type": "Error",
       "message": "storage offline",
       "stack":
           [ACCESSOR]
     }
-[13:36:14.078] WARN (231913): Error checking rate limit:
+[23:08:02.066] WARN (420756): Error checking rate limit:
     err: {
       "type": "Error",
       "message": "Social publishing backoff state is unavailable: storage offline",
@@ -445,75 +493,26 @@ Wed, 28 Oct 2026 13:35:46 GMT router deprecated handlers that are Promise-like a
           [ACCESSOR]
           caused by: [ACCESSOR]
     }
-[13:36:14.662] INFO (231945): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:36:15.553] INFO (231968): [DataTransfer] Distribution data transfer service initialized
-[13:36:15.555] INFO (231968): 🔌 Circuit breaker initialized: streaming-spotify
-[13:36:15.555] INFO (231968): 🔌 Circuit breaker initialized: streaming-apple_music
-[13:36:15.555] INFO (231968): 🔌 Circuit breaker initialized: streaming-youtube_music
-[13:36:15.555] INFO (231968): 🔌 Circuit breaker initialized: streaming-deezer
-[13:36:15.555] INFO (231968): 🔌 Circuit breaker initialized: streaming-soundcloud
-[13:36:15.555] INFO (231968): 🔌 Circuit breaker initialized: streaming-tidal
-[13:36:15.555] INFO (231968): 🔌 Circuit breaker initialized: streaming-bandcamp
-[13:36:15.555] INFO (231968): 🔌 Circuit breaker initialized: streaming-audiomack
-[13:36:15.566] INFO (231968): [DataTransfer] Created import job transfer_1793194575565_a702157 for user user-1 from spotify_profile_scan
-[13:36:15.570] INFO (231968): [DataTransfer] Imported release from spotify profile: First Light
-[13:36:15.571] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575565_a702157: 1 imported, 0 failed
-[13:36:15.571] INFO (231968): [DataTransfer] Created import job transfer_1793194575571_2087bde for user user-1 from deezer_profile_scan
-[13:36:15.572] INFO (231968): [DataTransfer] Merged existing release from deezer: First Light
-[13:36:15.572] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575571_2087bde: 1 imported, 0 failed
-[13:36:15.575] INFO (231968): [DataTransfer] Created import job transfer_1793194575575_297a4c8 for user user-1 from spotify_profile_scan
-[13:36:15.576] INFO (231968): [DataTransfer] Imported release from spotify profile: First Light
-[13:36:15.576] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575575_297a4c8: 1 imported, 0 failed
-[13:36:15.576] INFO (231968): [DataTransfer] Created import job transfer_1793194575576_ce8675b for user user-1 from spotify_profile_scan
-[13:36:15.576] INFO (231968): [DataTransfer] Merged existing release from spotify: First Light
-[13:36:15.577] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575576_ce8675b: 1 imported, 0 failed
-[13:36:15.578] INFO (231968): [DataTransfer] Created import job transfer_1793194575578_f0a4f36 for user user-1 from spotify_profile_scan
-[13:36:15.579] INFO (231968): [DataTransfer] Imported release from spotify profile: First Light
-[13:36:15.579] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575578_f0a4f36: 1 imported, 0 failed
-[13:36:15.579] INFO (231968): [DataTransfer] Created import job transfer_1793194575579_2bed9d4 for user user-1 from apple_music_profile_scan
-[13:36:15.579] INFO (231968): [DataTransfer] Merged existing release from apple_music: First Light
-[13:36:15.579] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575579_2bed9d4: 1 imported, 0 failed
-[13:36:15.581] INFO (231968): [DataTransfer] Created import job transfer_1793194575581_068b06e for user user-1 from spotify_profile_scan
-[13:36:15.581] INFO (231968): [DataTransfer] Created import job transfer_1793194575581_068b06e for user user-1 from apple_music_profile_scan
-[13:36:15.581] INFO (231968): [DataTransfer] Imported release from spotify profile: First Light
-[13:36:15.581] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575581_068b06e: 1 imported, 0 failed
-[13:36:15.581] INFO (231968): [DataTransfer] Merged existing release from apple_music: First Light
-[13:36:15.581] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575581_068b06e: 1 imported, 0 failed
-[13:36:15.582] WARN (231968): [DataTransfer] Skipping release "First Light" from non-canonical artist "Different Artist"
-[13:36:15.582] INFO (231968): [DataTransfer] Created import job transfer_1793194575582_f187e07 for user user-1 from spotify_profile_scan
-[13:36:15.582] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575582_f187e07: 0 imported, 0 failed
-[13:36:15.584] INFO (231968): [DataTransfer] Created import job transfer_1793194575584_7742627 for user user-1 from spotify_profile_scan
-[13:36:15.585] INFO (231968): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
-[13:36:15.585] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575584_7742627: 1 imported, 0 failed
-[13:36:15.585] INFO (231968): [DataTransfer] Created import job transfer_1793194575585_d9e43cc for user user-1 from spotify_profile_scan
-[13:36:15.585] INFO (231968): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
-[13:36:15.585] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575585_d9e43cc: 1 imported, 0 failed
-[13:36:15.586] INFO (231968): [DataTransfer] Created import job transfer_1793194575586_97e76e9 for user user-1 from spotify_profile_scan
-[13:36:15.586] INFO (231968): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
-[13:36:15.586] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575586_97e76e9: 1 imported, 0 failed
-[13:36:15.587] INFO (231968): [DataTransfer] Created import job transfer_1793194575587_61bfb60 for user user-1 from spotify_profile_scan
-[13:36:15.587] INFO (231968): [DataTransfer] Imported release from spotify profile: First Light
-[13:36:15.587] INFO (231968): [DataTransfer] Profile catalog import transfer_1793194575587_61bfb60: 1 imported, 0 failed
-[13:36:24.967] INFO (232361): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:36:25.767] INFO (232361): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
-[13:36:25.817] INFO (232361): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:36:25.818] INFO (232370): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
-[13:36:25.827] INFO (232370): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:36:27.448] INFO (232480): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:36:27.739] INFO (232471): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
-[13:36:27.761] INFO (232493): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:36:34.626] INFO (232757): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
-[13:36:41.366] INFO (233018): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:36:42.771] INFO (233064): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
-[13:36:42.790] INFO (233064): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
-[13:36:42.818] INFO (233064): Sharp module loaded for image processing
-[13:36:43.142] INFO (233064): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:08:05.504] INFO (420980): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:08:06.771] INFO (421069): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:08:07.625] INFO (421117): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:08:08.337] INFO (421117): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:08:08.367] INFO (421117): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:08:09.004] INFO (421151): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:08:09.011] INFO (421151): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:08:10.185] INFO (421223): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:08:17.452] INFO (421583): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:08:19.529] INFO (421629): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:08:21.821] INFO (421727): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[23:08:21.837] INFO (421727): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:08:21.866] INFO (421727): Sharp module loaded for image processing
+[23:08:22.138] INFO (421727): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
 JUNIT report written to /workspace/maxbooster7.5/reports/test-verification/root/coverage-unit.junit.xml
  % Coverage report from v8
 -------------------|---------|----------|---------|---------|-------------------
 File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
 -------------------|---------|----------|---------|---------|-------------------
-All files          |   13.01 |     8.78 |    8.68 |   13.11 |                   
+All files          |   13.02 |     8.78 |    8.68 |   13.12 |                   
  ...in plugins dsp |       0 |        0 |       0 |       0 |                   
   BasePlugin.ts    |       0 |        0 |       0 |       0 | 11-106            
   ChorusPlugin.ts  |       0 |        0 |       0 |       0 | 4-156             
@@ -2433,7 +2432,7 @@ All files          |   13.01 |     8.78 |    8.68 |   13.11 |
   index.ts         |   44.44 |       25 |       0 |   57.14 | 9,26,39-42        
  .../db/src/schema |     100 |      100 |     100 |     100 |                   
   index.ts         |     100 |      100 |     100 |     100 |                   
- server            |    7.02 |     5.36 |    6.87 |    7.11 |                   
+ server            |    7.23 |      5.5 |    6.92 |    7.32 |                   
   ...dvertising.ts |       0 |        0 |       0 |       0 | 5-817             
   audit-system.ts  |       0 |        0 |       0 |       0 | 8-1188            
   auth.ts          |       0 |        0 |       0 |       0 | 10-234            
@@ -2450,7 +2449,7 @@ All files          |   13.01 |     8.78 |    8.68 |   13.11 |
   ...generation.ts |       0 |        0 |       0 |       0 | 11-876            
   index.ts         |       0 |        0 |       0 |       0 | 13-2069           
   init-admin.ts    |       0 |        0 |       0 |       0 | 37-2012           
-  instrument.ts    |       0 |        0 |       0 |       0 | 24-314            
+  instrument.ts    |   23.07 |    10.75 |    7.14 |   25.55 | ...08-250,271-314 
   logSanitizer.ts  |   81.81 |    69.04 |     100 |     100 | ...35,42-48,53-58 
   logger.ts        |   90.47 |    71.42 |   71.42 |      90 | 82,86             
   monitoring.ts    |       0 |        0 |       0 |       0 | 41-228            
@@ -2829,7 +2828,7 @@ All files          |   13.01 |     8.78 |    8.68 |   13.11 |
   ...yaltyRates.ts |       0 |      100 |       0 |       0 | 22-122            
   ...hievements.ts |       0 |        0 |       0 |       0 | 6-216             
   ...tTemplates.ts |       0 |        0 |       0 |       0 | 6-162             
- server/services   |   12.62 |    11.86 |   12.16 |   12.74 |                   
+ server/services   |   12.62 |    11.86 |   12.17 |   12.74 |                   
   ...icsService.ts |    7.14 |        0 |       5 |       8 | ...05-133,140-172 
   ...ionService.ts |       0 |        0 |       0 |       0 | 23-310            
   ...reHandlers.ts |       0 |        0 |       0 |       0 | 17-61             
@@ -3009,7 +3008,7 @@ All files          |   13.01 |     8.78 |    8.68 |   13.11 |
   maxcore.ts       |       0 |        0 |       0 |       0 | 33-90             
   ...tTransport.ts |   70.68 |    64.28 |      50 |   83.33 | ...40,145-146,152 
   ...reAudioJob.ts |   93.33 |    91.07 |   71.42 |     100 | 26-28,48,83       
-  maxcoreClient.ts |    63.3 |    59.51 |   67.64 |    66.4 | ...60,681,693,728 
+  maxcoreClient.ts |   63.66 |    59.51 |   70.58 |   66.79 | ...60,681,693,728 
   ...eConnector.ts |   79.59 |    66.66 |   63.63 |   81.39 | 60-73,154-155     
   ...lTransport.ts |   95.83 |    85.36 |     100 |   95.83 | 53                
   ...eneService.ts |       0 |        0 |       0 |       0 | 34-339            
@@ -3219,13 +3218,13 @@ All files          |   13.01 |     8.78 |    8.68 |   13.11 |
   ...ionEngines.ts |   94.48 |     86.3 |     100 |   94.07 | ...50-457,815-823 
   reverbEngines.ts |   98.06 |    93.44 |     100 |   97.93 | ...79-683,704,883 
   vocalEngines.ts  |   98.14 |    94.97 |     100 |   98.01 | ...12-713,950-957 
- ...sp/instruments |   94.95 |    67.02 |   97.92 |    94.8 |                   
+ ...sp/instruments |   94.96 |    67.02 |   97.92 |   94.82 |                   
   ...nthEngines.ts |    99.7 |       50 |     100 |   99.69 | 1001-1002         
   bassEngines.ts   |     100 |       50 |     100 |     100 | 567               
   drumsEngines.ts  |   72.13 |    57.61 |     100 |   71.85 | ...1608,1621-1641 
   ...nthEngines.ts |   99.85 |      100 |   98.93 |   99.83 | 83                
   padsEngines.ts   |     100 |     87.5 |     100 |     100 | 214               
-  pianoEngines.ts  |   98.52 |    83.33 |   98.75 |   98.55 | 26-28,873-878     
+  pianoEngines.ts  |   98.68 |    83.33 |   98.75 |   98.73 | 26-28,880-884     
   ...lerEngines.ts |   94.04 |    72.46 |   86.36 |   94.89 | ...63,500,505-506 
   ...ngsEngines.ts |     100 |    66.66 |     100 |     100 | 172-890           
   ...nthEngines.ts |   99.51 |    86.95 |   98.93 |   99.61 | 126,1390-1391     
@@ -3350,7 +3349,7 @@ All files          |   13.01 |     8.78 |    8.68 |   13.11 |
  shared/video      |       0 |        0 |       0 |       0 |                   
   ...ererEngine.ts |       0 |        0 |       0 |       0 | 151-241           
 -------------------|---------|----------|---------|---------|-------------------
-ERROR: Coverage for lines (13.11%) does not meet global threshold (100%)
+ERROR: Coverage for lines (13.12%) does not meet global threshold (100%)
 ERROR: Coverage for functions (8.68%) does not meet global threshold (100%)
-ERROR: Coverage for statements (13.01%) does not meet global threshold (100%)
+ERROR: Coverage for statements (13.02%) does not meet global threshold (100%)
 ERROR: Coverage for branches (8.78%) does not meet global threshold (100%)

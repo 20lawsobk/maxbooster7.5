@@ -2,55 +2,55 @@ TAP version 13
 # Subtest: Replit publishing selects the current guarded bootstrap executive shell
 ok 1 - Replit publishing selects the current guarded bootstrap executive shell
   ---
-  duration_ms: 2.188674
+  duration_ms: 2.422387
   type: 'test'
   ...
 # Subtest: legacy recovery publishing helper packs and reenters with indicators {}
 ok 2 - legacy recovery publishing helper packs and reenters with indicators {}
   ---
-  duration_ms: 1189.029885
+  duration_ms: 1097.25144
   type: 'test'
   ...
 # Subtest: legacy recovery publishing helper packs and reenters with indicators {"REPLIT_DEPLOYMENT":"","REPLIT_DEPLOYMENT_ID":""}
 ok 3 - legacy recovery publishing helper packs and reenters with indicators {"REPLIT_DEPLOYMENT":"","REPLIT_DEPLOYMENT_ID":""}
   ---
-  duration_ms: 1072.862704
+  duration_ms: 1003.60887
   type: 'test'
   ...
 # Subtest: legacy recovery publishing helper packs and reenters with indicators {"REPLIT_DEPLOYMENT":"1","REPLIT_DEPLOYMENT_ID":"runtime-present"}
 ok 4 - legacy recovery publishing helper packs and reenters with indicators {"REPLIT_DEPLOYMENT":"1","REPLIT_DEPLOYMENT_ID":"runtime-present"}
   ---
-  duration_ms: 1089.607397
+  duration_ms: 1025.025146
   type: 'test'
   ...
 # Subtest: legacy recovery publishing helper rejects inherited authorization without npm or filesystem mutation
 ok 5 - legacy recovery publishing helper rejects inherited authorization without npm or filesystem mutation
   ---
-  duration_ms: 346.518481
+  duration_ms: 323.624342
   type: 'test'
   ...
 # Subtest: legacy recovery publishing diagnostics retain npm failure and never claim successful completion
 ok 6 - legacy recovery publishing diagnostics retain npm failure and never claim successful completion
   ---
-  duration_ms: 316.093942
+  duration_ms: 256.353382
   type: 'test'
   ...
 # Subtest: interrupted publishing recovers before npm and preserves later edits
 ok 7 - interrupted publishing recovers before npm and preserves later edits
   ---
-  duration_ms: 1065.146102
+  duration_ms: 922.878982
   type: 'test'
   ...
 # Subtest: partial, mismatched and ambiguous contexts leave source and recovery bytes unchanged
 ok 8 - partial, mismatched and ambiguous contexts leave source and recovery bytes unchanged
   ---
-  duration_ms: 732.59412
+  duration_ms: 656.81017
   type: 'test'
   ...
 # Subtest: conflicting local and publishing journals reject before any restore
 ok 9 - conflicting local and publishing journals reject before any restore
   ---
-  duration_ms: 432.930519
+  duration_ms: 515.389038
   type: 'test'
   ...
 1..9
@@ -61,4 +61,4 @@ ok 9 - conflicting local and publishing journals reject before any restore
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 6406.724645
+# duration_ms 5958.515982

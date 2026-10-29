@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.029733549">
+    <testsuite name="actual.test.ts" timestamp="2026-10-29T23:15:54.194Z" hostname="af966a6fd55d" tests="2" failures="0" errors="0" skipped="0" time="0.029733549">
+        <testcase classname="actual.test.ts" name="first actual passing case" time="0.001839916">
+        </testcase>
+        <testcase classname="actual.test.ts" name="second actual passing case" time="0.02610295">
+        </testcase>
+    </testsuite>
+</testsuites>

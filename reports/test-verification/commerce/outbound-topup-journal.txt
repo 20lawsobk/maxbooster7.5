@@ -2,19 +2,19 @@ TAP version 13
 # Subtest: lost top-up create response remains unresolved through a later successful run
 ok 1 - lost top-up create response remains unresolved through a later successful run
   ---
-  duration_ms: 0.94158
+  duration_ms: 0.758554
   type: 'test'
   ...
 # Subtest: legacy creation-in-flight journal cannot masquerade as no cleanup needed
 ok 2 - legacy creation-in-flight journal cannot masquerade as no cleanup needed
   ---
-  duration_ms: 0.140793
+  duration_ms: 0.114894
   type: 'test'
   ...
 # Subtest: preflight-only blocker and verified owned cleanup retain distinct verdicts
 ok 3 - preflight-only blocker and verified owned cleanup retain distinct verdicts
   ---
-  duration_ms: 0.214394
+  duration_ms: 0.102234
   type: 'test'
   ...
 1..3
@@ -25,4 +25,4 @@ ok 3 - preflight-only blocker and verified owned cleanup retain distinct verdict
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 69.69384
+# duration_ms 59.648673

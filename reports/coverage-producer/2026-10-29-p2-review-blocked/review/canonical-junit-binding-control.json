@@ -1,0 +1,1 @@
+{"scope":"historical guard-level review only; no current-source admission","canonicalActualTests":2771,"alteredTests":1,"accepted":true,"reason":"canonical parent job binds log SHA but no JUnit artifact SHA/count digest"}

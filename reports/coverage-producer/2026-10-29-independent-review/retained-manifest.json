@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "scope": "Independent retained-byte manifest; original candidate and review statuses remain historical",
+  "copiedAt": "2026-10-29T22:11:31.611837+00:00",
+  "originalSource": "/workspace/onboarding-results/c5-independent-review/latest",
+  "productionReady": false,
+  "configuredCredentialMatches": 0,
+  "symlinksCopied": 0,
+  "filesAtOrOver100MiB": 0,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 1879,
+      "sha256": "eeb4715e444cd63ae44afa6cc8be70c21e25d76e1a472032832d1ea450fea6d0"
+    },
+    {
+      "path": "actual-raw-binding-check.json",
+      "bytes": 824,
+      "sha256": "436c40b1d508e8492c38230617ebbe808a84221af17f39bd51a14db06a7e6eb4"
+    },
+    {
+      "path": "actual-raw-binding-check.mjs",
+      "bytes": 3015,
+      "sha256": "03be839f1e71f30c8f18a0fe5b3f98288d30e9157cb04ceceb1781476805c091"
+    },
+    {
+      "path": "actual-raw-binding-check.txt",
+      "bytes": 57,
+      "sha256": "375edd655f41989c9b65d4a1c82f0349029b671135abd7c83593ff0084337957"
+    },
+    {
+      "path": "collect-node-coverage.mjs",
+      "bytes": 10899,
+      "sha256": "58bbbed4978e46909a1af16b42572f90a75384ef8d9654be41f2f7773376c63b"
+    },
+    {
+      "path": "coverage-coordinate-contract.mjs",
+      "bytes": 11529,
+      "sha256": "30c0596394d7dc1d791efc1a672ff242a35e7efd61fdcfd079cc3e2e87956160"
+    },
+    {
+      "path": "coverage-coordinate-contract.test.mjs",
+      "bytes": 11429,
+      "sha256": "43d3fb20bea666caed03f361616a969f408eb8dccb333659c6e9200e1fbf5a9e"
+    },
+    {
+      "path": "coverage-node-vite-entry.mjs",
+      "bytes": 7612,
+      "sha256": "55408bb72578dd95da299dbcc701362dc19b5b43a785c9d308d882f0ba94f015"
+    },
+    {
+      "path": "coverage-provenance.mjs",
+      "bytes": 19616,
+      "sha256": "383546d025265e18e12f7ae81e412413133aebbc0297f23e5e3263528d78592c"
+    },
+    {
+      "path": "coverage-raw-sidecar-reporter.cjs",
+      "bytes": 3142,
+      "sha256": "85f30fcd211daf109b674d91c42ebf3630fae1cd11ebddad1d86048760849157"
+    },
+    {
+      "path": "coverage-shared-provider.mjs",
+      "bytes": 11597,
+      "sha256": "cd66fc0cd1d6f1b1756626f2f689a0972e9858e9ad3ad4c7e5d4f8efa04a1415"
+    },
+    {
+      "path": "framework.txt",
+      "bytes": 8423,
+      "sha256": "2066a13d841c25364dbfd9073b7c2ff15661167b686a08e9f8e4666dfa25eb65"
+    },
+    {
+      "path": "review-receipt.json",
+      "bytes": 477,
+      "sha256": "7662fab29d0c18798ad45923db3a759635e2eb422d24cf6c8e4d48d6002c615e"
+    },
+    {
+      "path": "snapshot.json",
+      "bytes": 1259,
+      "sha256": "2d8ea514266faf112134f0d2132da756e08391f5d9f2c81e66f6363c4a59560b"
+    }
+  ],
+  "snapshotSourceEntriesVerified": 7,
+  "reviewedCounts": {
+    "portableFramework": 48,
+    "historicalReaderDiagnostics": 5,
+    "freshRuntimeProof": false,
+    "globalCountersAdmitted": false
+  }
+}

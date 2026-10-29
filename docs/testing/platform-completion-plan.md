@@ -118,9 +118,9 @@ Generated from the complete source register and page business-section analyses. 
     "frontendContracts": 932,
     "sourceCoverageFiles": 2653,
     "unknownMappings": 170,
-    "repositoryFiles": 5532,
+    "repositoryFiles": 5546,
     "sharedSubsystems": 20,
-    "workItems": 53020,
+    "workItems": 53034,
     "businessSectionPages": 80,
     "businessSectionTasks": 2162,
     "businessDimensionSteps": 12972

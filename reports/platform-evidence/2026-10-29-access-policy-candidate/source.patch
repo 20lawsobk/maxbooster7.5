@@ -1,0 +1,324 @@
+--- a/tests/billing-lifecycle.test.ts
++++ b/tests/billing-lifecycle.test.ts
+@@ -11,7 +11,7 @@
+  */
+ import { describe, it, expect } from "vitest";
+ import crypto from "crypto";
+-import { withFixtureDatabase } from "./helpers-http-fixture";
++import { withFixtureDatabase, withFixtureAccountPolicyState, FIXTURE_ACCOUNT_POLICY_DENIALS } from "./helpers-http-fixture";
+ 
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ const WEBHOOK_PATH = "/api/webhooks/stripe";
+@@ -384,16 +384,52 @@
+     const saved = authCookies;
+     const savedCsrf = csrfToken;
+     authCookies = "";
+-    const r = await api("GET", "/api/billing/subscription");
+-    expect([401, 403]).toContain(r.status);
+-    authCookies = saved;
+-    csrfToken = savedCsrf;
+-  });
++    csrfToken = "";
++    try {
++      const r = await api("GET", "/api/billing/subscription");
++      expect(r.status).toBe(401);
++      // Exact error-only response proves no subscription/account fields leak.
++      expect(r.json).toEqual({ error: "Authentication required" });
++    } finally {
++      authCookies = saved;
++      csrfToken = savedCsrf;
++    }
++  });
++
++
++  for (const denied of FIXTURE_ACCOUNT_POLICY_DENIALS) {
++    it(`access policy: GET /api/billing/subscription rejects ${denied.state} session`, async () => {
++      const clientHeaders = { "x-maxbooster-fixture-client": `account-policy-${denied.state}` };
++      // Warm the exact same URL first: a cached success cannot authorize a
++      // later forbidden state. Each request hydrates authoritative user state.
++      expect((await api("GET", "/api/billing/subscription", undefined, clientHeaders)).status).toBe(200);
++      const savedCookies = authCookies;
++      const savedCsrf = csrfToken;
++      try {
++        await withFixtureAccountPolicyState(testUser.email, denied.state, async () => {
++          const result = await api("GET", "/api/billing/subscription", undefined, clientHeaders);
++          expect(result.status).toBe(denied.status);
++          expect(result.json).toEqual(denied.body);
++        });
++      } finally {
++        // Disabled-session lookup may issue an anonymous cookie; retain the
++        // original session for the SQL-restored account and subsequent cases.
++        authCookies = savedCookies;
++        csrfToken = savedCsrf;
++      }
++      expect((await api("GET", "/api/billing/subscription", undefined, clientHeaders)).status).toBe(200);
++    });
++  }
+ 
+   it("11. GET /api/billing/plans returns a non-empty plan list without auth", async () => {
+-    const r = await api("GET", "/api/billing/plans");
+-    expect(r.status).toBe(200);
+-    const body = r.json as Record<string, unknown>;
++    // A direct request carries no session, authorization or inherited cookie jar.
++    const response = await fetch(`${BASE}/api/billing/plans`, {
++      signal: AbortSignal.timeout(15000),
++      redirect: "manual",
++    });
++    expect(response.status).toBe(200);
++    expect(response.headers.get("content-type")).toContain("application/json");
++    const body = await response.json() as Record<string, unknown>;
+     expect(Array.isArray(body.plans)).toBe(true);
+     const plans = body.plans as Array<Record<string, unknown>>;
+     expect(plans.length).toBeGreaterThan(0);
+--- a/tests/file-management.test.ts
++++ b/tests/file-management.test.ts
+@@ -11,7 +11,7 @@
+  */
+ import { describe, it, expect } from "vitest";
+ 
+-import { provisionFixtureEntitlement } from "./helpers-http-fixture";
++import { provisionFixtureEntitlement, withFixtureAccountPolicyState, FIXTURE_ACCOUNT_POLICY_DENIALS } from "./helpers-http-fixture";
+ 
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ 
+@@ -307,9 +307,39 @@
+     const savedCsrf = csrfToken;
+     authCookies = "";
+     csrfToken = "";
+-    const r = await apiJson("GET", "/api/storage/quota");
+-    expect([401, 403]).toContain(r.status);
+-    authCookies = saved;
+-    csrfToken = savedCsrf;
+-  });
++    try {
++      const r = await apiJson("GET", "/api/storage/quota");
++      expect(r.status).toBe(401);
++      // Error-only response must not expose usage, limits, files or user data.
++      expect(r.json).toEqual({ error: "Authentication required" });
++    } finally {
++      authCookies = saved;
++      csrfToken = savedCsrf;
++    }
++  });
++
++  for (const denied of FIXTURE_ACCOUNT_POLICY_DENIALS) {
++    it(`access policy: GET /api/storage/quota rejects ${denied.state} session`, async () => {
++      const clientHeaders = { "x-maxbooster-fixture-client": `account-policy-${denied.state}` };
++      // Warm the exact same URL first: a cached success cannot authorize a
++      // later forbidden state. Each request hydrates authoritative user state.
++      expect((await apiJson("GET", "/api/storage/quota", undefined, clientHeaders)).status).toBe(200);
++      const savedCookies = authCookies;
++      const savedCsrf = csrfToken;
++      try {
++        await withFixtureAccountPolicyState(testUser.email, denied.state, async () => {
++          const result = await apiJson("GET", "/api/storage/quota", undefined, clientHeaders);
++          expect(result.status).toBe(denied.status);
++          expect(result.json).toEqual(denied.body);
++        });
++      } finally {
++        // Disabled-session lookup may issue an anonymous cookie; retain the
++        // original session for the SQL-restored account and subsequent cases.
++        authCookies = savedCookies;
++        csrfToken = savedCsrf;
++      }
++      expect((await apiJson("GET", "/api/storage/quota", undefined, clientHeaders)).status).toBe(200);
++    });
++  }
++
+ });
+--- a/tests/helpers-http-fixture.ts
++++ b/tests/helpers-http-fixture.ts
+@@ -34,3 +34,74 @@
+     return user.rows[0].id;
+   });
+ }
++
++/** Actual session policy, including pre-router authority/user hydration.
++ * Suspended/banned rows are excluded by the authoritative session store;
++ * unverified MFA is excluded by attachUser. These sessions receive the same
++ * error-only 401 as an anonymous request, before requireAuth's expiry checks.
++ */
++export const FIXTURE_ACCOUNT_POLICY_DENIALS = [
++  { state: "suspended", status: 401, body: { error: "Authentication required" } },
++  { state: "banned", status: 401, body: { error: "Authentication required" } },
++  { state: "mfa-required", status: 401, body: { error: "Authentication required" } },
++  { state: "trial-expired", status: 403, body: {
++    error: "Your 30-day trial has expired. Please contact support to continue using Max Booster.",
++    trialExpired: true,
++  } },
++  { state: "subscription-expired", status: 403, body: {
++    error: "Your monthly subscription has expired. Please renew your subscription to continue using Max Booster.",
++    subscriptionExpired: true, plan: "monthly",
++  } },
++] as const;
++
++type FixtureAccountPolicyState = typeof FIXTURE_ACCOUNT_POLICY_DENIALS[number]["state"];
++
++/** Change only this owned synthetic user's policy fields, then restore the
++ * original SQL values even if an HTTP assertion fails. No auth epoch, session,
++ * provider, payment or application authorization implementation is replaced.
++ */
++export async function withFixtureAccountPolicyState<T>(
++  email: string, state: FixtureAccountPolicyState, operation: () => Promise<T>,
++): Promise<T> {
++  if (!FIXTURE_ACCOUNT_POLICY_DENIALS.some(row => row.state === state)) {
++    throw new Error("Unsupported fixture account policy state");
++  }
++  return withFixtureDatabase(email, async client => {
++    const original = await client.query(
++      `SELECT id, role, subscription_status, subscription_tier, trial_ends_at::text AS trial_ends_at,
++              subscription_ends_at::text AS subscription_ends_at, two_factor_enabled FROM users WHERE email=$1`, [email],
++    );
++    if (original.rowCount !== 1 || original.rows[0].role !== "user") {
++      throw new Error("Expected one ordinary owned synthetic fixture account");
++    }
++    const saved = original.rows[0];
++    const expired = new Date("2000-01-01T00:00:00.000Z");
++    try {
++      // Clear other policy conditions so each case isolates the selected gate.
++      const changed = await client.query(
++        `UPDATE users SET subscription_status=$1, subscription_tier='monthly',
++                trial_ends_at=$2, subscription_ends_at=$3, two_factor_enabled=$4
++         WHERE id=$5 AND email=$6 RETURNING id`,
++        [state === "suspended" || state === "banned" ? state : "active",
++          state === "trial-expired" ? expired : null,
++          state === "subscription-expired" ? expired : null,
++          state === "mfa-required", saved.id, email],
++      );
++      if (changed.rowCount !== 1) throw new Error("Fixture account policy update lost its owner");
++      return await operation();
++    } finally {
++      const restored = await client.query(
++        `UPDATE users SET subscription_status=$1, subscription_tier=$2,
++                trial_ends_at=$3, subscription_ends_at=$4, two_factor_enabled=$5
++         WHERE id=$6 AND email=$7
++         RETURNING id, role, subscription_status, subscription_tier, trial_ends_at::text AS trial_ends_at,
++                   subscription_ends_at::text AS subscription_ends_at, two_factor_enabled`,
++        [saved.subscription_status, saved.subscription_tier, saved.trial_ends_at,
++          saved.subscription_ends_at, saved.two_factor_enabled, saved.id, email],
++      );
++      if (restored.rowCount !== 1 || JSON.stringify(restored.rows[0]) !== JSON.stringify(saved)) {
++        throw new Error("Fixture account policy was not restored to its original SQL values");
++      }
++    }
++  });
++}
+--- a/tests/platform-acceptance-map.json
++++ b/tests/platform-acceptance-map.json
+@@ -61,7 +61,115 @@
+         {
+           "testFile": "tests/api-guards.test.ts",
+           "testSha256": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
+-          "caseName": "Unauthenticated route guards > GET /api/auth/me → 200 (public, returns null)",
++          "caseName": "Unauthenticated route guards > GET /api/auth/me \u2192 200 (public, returns null)",
++          "group": "http"
++        }
++      ]
++    },
++    {
++      "checkId": "api-3f640ac3745d3b6a/access-policy",
++      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
++      "cases": [
++        {
++          "testFile": "tests/billing-lifecycle.test.ts",
++          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
++          "caseName": "Billing Webhook Lifecycle > 9. GET /api/billing/subscription returns complete tier shape when authenticated",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/billing-lifecycle.test.ts",
++          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
++          "caseName": "Billing Webhook Lifecycle > 10. GET /api/billing/subscription returns 401 when unauthenticated",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/billing-lifecycle.test.ts",
++          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
++          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects suspended session",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/billing-lifecycle.test.ts",
++          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
++          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects banned session",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/billing-lifecycle.test.ts",
++          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
++          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects mfa-required session",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/billing-lifecycle.test.ts",
++          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
++          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects trial-expired session",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/billing-lifecycle.test.ts",
++          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
++          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects subscription-expired session",
++          "group": "http"
++        }
++      ]
++    },
++    {
++      "checkId": "api-0772b8611dc21e1d/access-policy",
++      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
++      "cases": [
++        {
++          "testFile": "tests/file-management.test.ts",
++          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
++          "caseName": "File Management (Storage Round-Trip) > 9. GET /api/storage/quota returns quota info when authenticated",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/file-management.test.ts",
++          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
++          "caseName": "File Management (Storage Round-Trip) > 10. GET /api/storage/quota returns 401 or 403 without authentication",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/file-management.test.ts",
++          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
++          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects suspended session",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/file-management.test.ts",
++          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
++          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects banned session",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/file-management.test.ts",
++          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
++          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects mfa-required session",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/file-management.test.ts",
++          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
++          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects trial-expired session",
++          "group": "http"
++        },
++        {
++          "testFile": "tests/file-management.test.ts",
++          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
++          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects subscription-expired session",
++          "group": "http"
++        }
++      ]
++    },
++    {
++      "checkId": "api-51e06323624f6bc1/access-policy",
++      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
++      "cases": [
++        {
++          "testFile": "tests/billing-lifecycle.test.ts",
++          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
++          "caseName": "Billing Webhook Lifecycle > 11. GET /api/billing/plans returns a non-empty plan list without auth",
+           "group": "http"
+         }
+       ]
