@@ -123,6 +123,11 @@ export class DurableDeletionOutbox<Query> {
 
   async finish(objectId: string): Promise<boolean> {
     return this.db.transaction(async tx => {
+      // Finalization is only valid after a durable deletion claim. Without this
+      // guard, a missing journal appears fully drained and could delete live
+      // segment metadata for an object that was never claimed.
+      const claimed = rows(await tx.execute(this.sql`SELECT 1 FROM fabric_deletion_objects WHERE object_id=${objectId} FOR UPDATE`));
+      if (!claimed.length) return false;
       const pending = rows(await tx.execute(this.sql`SELECT 1 FROM fabric_deletion_chunks WHERE object_id=${objectId} AND state <> 'complete' LIMIT 1`));
       if (pending.length) return false;
       if (this.options.segments !== false) await tx.execute(this.sql`DELETE FROM fabric_segments WHERE object_id=${objectId}`);
