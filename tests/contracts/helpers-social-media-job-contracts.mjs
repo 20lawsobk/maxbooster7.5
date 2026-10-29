@@ -95,7 +95,7 @@ export function defineSocialMediaJobContracts(hooks, loadSubjects) {
     test("completed jobs require actual asset references and cannot persist an oversized result", async () => {
       const lease = await first.create("video", "video_validation", "owner");
       await assert.rejects(first.finish(lease, { status: "done", result: { success: true } }), /durable asset URL/);
-      for (const url of [{}, 42, "", "javascript:alert(1)", "file:///tmp/private.mp4", "//foreign.test/video", "https://user:password@foreign.test/video"]) {
+      for (const url of [{}, 42, "", "javascript:alert(1)", "file:///tmp/private.mp4", "//foreign.test/video", "/\\foreign.test/video", "/\tforeign.test/video", "https://user:password@foreign.test/video"]) {
         await assert.rejects(first.finish(lease, { status: "done", result: { url } }), /durable asset URL/);
       }
       await assert.rejects(first.finish(lease, { status: "done", result: { url: result.url, excess: "x".repeat(1048576) } }), /too large/);
