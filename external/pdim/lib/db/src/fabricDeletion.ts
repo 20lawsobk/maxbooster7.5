@@ -83,9 +83,12 @@ export class DurableDeletionOutbox<Query> {
           return job.location;
         }
         if (job.state !== "pending") throw new Error(`Unknown deletion state: ${job.state}`);
+        // An absent or non-positive reference is inconsistent accounting, not
+        // permission to complete a deletion or remove potentially live bytes.
         const loc = rows<Location & { ref_count: number }>(await tx.execute(this.sql`UPDATE fabric_chunks
-          SET ref_count=ref_count-1 WHERE id=${chunkId} RETURNING *`))[0];
-        if (!loc || loc.ref_count > 0) {
+          SET ref_count=ref_count-1 WHERE id=${chunkId} AND ref_count > 0 RETURNING *`))[0];
+        if (!loc) throw new Error(`Deletion chunk reference missing or invalid: ${chunkId}`);
+        if (loc.ref_count > 0) {
           await tx.execute(this.sql`UPDATE fabric_deletion_chunks SET state='complete'
             WHERE object_id=${key.object_id} AND ordinal=${key.ordinal}`);
           return null;
