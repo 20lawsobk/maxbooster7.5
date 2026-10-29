@@ -1512,37 +1512,10 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const currentAvatarUrl = req.user.avatarUrl;
-
-      // If user has an avatar, try to delete the file
-      if (currentAvatarUrl) {
-        try {
-          const fs = await import("fs/promises");
-          const path = await import("path");
-
-          // Extract the file path from the URL (assuming it's stored locally)
-          // Avatar URLs are typically like /uploads/avatars/filename.ext
-          if (
-            currentAvatarUrl.startsWith("/uploads/") ||
-            currentAvatarUrl.startsWith("uploads/")
-          ) {
-            const filePath = path.join(
-              process.cwd(),
-              currentAvatarUrl.replace(/^\//, ""),
-            );
-            await fs.unlink(filePath).catch(() => {
-              // File might not exist, that's ok
-              logger.info(
-                { filePath },
-                "Avatar file not found or already deleted",
-              );
-            });
-          }
-        } catch (fsError) {
-          // File deletion is best-effort, continue even if it fails
-          logger.warn({ err: fsError }, "Avatar file deletion skipped");
-        }
-      }
+      // The avatar URL is profile data and can be set by the user during
+      // onboarding. Never treat it as a trusted filesystem path: unlinking
+      // from this value permits traversal and deletion of another file.
+      // Storage-backed orphan cleanup must use trusted, owner-bound IDs.
 
       await storage.updateUser(req.user.id, {
         avatarUrl: null,
