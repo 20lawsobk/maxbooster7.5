@@ -1616,6 +1616,16 @@ export async function registerRoutes(
             hybridStorageService.getMetadata(key)?.isPublic !== true) {
           return res.status(403).json({ message: "Access denied" });
         }
+        // A direct key without a tracking row has no proven owner outside
+        // the requester's own users/ namespace. Only authoritative hybrid
+        // ownership/public metadata or verified paid access can authorize it.
+        const hybridAuthorizationMeta = hybridStorageService.getMetadata(key);
+        if (!row && !key.startsWith(`users/${req.user.id}/`) &&
+            stemAccess !== true &&
+            hybridAuthorizationMeta?.userId !== req.user.id &&
+            hybridAuthorizationMeta?.isPublic !== true) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         if (row?.deletedAt) {
           logger.warn(
             { key, deletedAt: row.deletedAt },
