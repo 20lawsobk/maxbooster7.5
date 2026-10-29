@@ -836,6 +836,8 @@ export class HybridStorageService {
     const entry = this.fileIndex.get(key);
     if (!entry || entry?.tier === "cold" || entry?.isDeduplicated) return false;
 
+    const previousTier = entry.tier;
+    const previousLocation = entry.location;
     try {
       // PDIM-only: file is already in pocket-dimension; just update the index entry.
       entry.tier = "cold";
@@ -847,6 +849,10 @@ export class HybridStorageService {
       );
       return true;
     } catch (error) {
+      // A rejected index write must not leave a local tier transition visible.
+      // The legacy whole-index format still needs durable fencing for concurrency.
+      entry.tier = previousTier;
+      entry.location = previousLocation;
       logger.warn(
         { err: error },
         `[HybridStorage] Failed to tier down ${key}:`,
@@ -860,12 +866,18 @@ export class HybridStorageService {
     // All files remain in Pocket Dimension.
   }
 
-  async runAutoTiering(): Promise<{ tieredDown: number; tieredUp: number }> {
+  async runAutoTiering(userId?: string): Promise<{ tieredDown: number; tieredUp: number }> {
+    // Undefined is reserved for the trusted background maintenance scheduler.
+    // Authenticated routes must supply their caller identity, never an empty scope.
+    if (userId !== undefined && !userId) {
+      throw new Error("Hybrid auto-tiering requires a valid user identity");
+    }
     await this.initialize();
 
     let tieredDown = 0;
 
     for (const [key, entry] of this.fileIndex) {
+      if (userId && entry.userId !== userId) continue;
       if (entry?.isDeduplicated) continue;
       const decision = this.determineTier(entry);
       // PDIM-only: tier-up is disabled (no Replit hot tier). Only tier-down runs,
@@ -1230,11 +1242,11 @@ export class HybridStorageService {
   }
 
   async optimizeStorage(
-    _userId: string,
+    userId: string,
   ): Promise<{ tieredDown: number; tieredUp: number; deduplicated: number }> {
     await this.initialize();
 
-    const result = await this.runAutoTiering();
+    const result = await this.runAutoTiering(userId);
     // Do not turn existing primary records into references in place.
     // A primary may already back cross-user deduplicated records: changing
     // it into a reference would create a chain rejected by read/loadIndex.

@@ -1288,9 +1288,11 @@ router.post(
 router.post(
   "/hybrid/auto-tier",
   requireAuth,
-  async (_req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const result = await hybridStorageService?.runAutoTiering();
+      // An authenticated maintenance request may only mutate its own files.
+      // The scheduler retains the separately trusted unscoped operation.
+      const result = await hybridStorageService?.runAutoTiering(req.user!.id);
 
       logger.info(
         `[HybridStorage] Auto-tiering: ${result?.tieredDown} down, ${result?.tieredUp} up`,
