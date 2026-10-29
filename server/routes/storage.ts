@@ -222,35 +222,32 @@ router.post(
               .limit(1);
           }
         }
-        if (!storageRow) {
-          logger.error({ key }, "[Storage] No user storage row; preserve bytes for reconciliation");
-          return res.status(500).json({ error: "Upload could not be recorded" });
-        }
-
-        const [receipt] = await db
-          .insert(userStorageFiles)
-          .values({
-            userId,
-            storageId: storageRow.id,
-            fileName: safeFileName,
-            fileKey: key,
-            mimeType: req.file.mimetype,
-            sizeBytes: req.file.size,
-            folder: category,
-            metadata: { category, uploadedVia: "storage/upload" },
-          })
-          .onConflictDoNothing()
-          .returning({ id: userStorageFiles.id });
-        if (!receipt) {
-          // A conflict is not a new receipt. Never claim success or delete
-          // bytes that may already belong to another successful request.
-          return res.status(409).json({ error: "Upload could not be recorded; check your files before retrying" });
+        if (storageRow) {
+          await db
+            .insert(userStorageFiles)
+            .values({
+              userId,
+              storageId: storageRow.id,
+              fileName: safeFileName,
+              fileKey: key,
+              mimeType: req.file.mimetype,
+              sizeBytes: req.file.size,
+              folder: category,
+              metadata: { category, uploadedVia: "storage/upload" },
+            })
+            .onConflictDoNothing();
         }
       } catch (trackErr) {
-        // A SQL write may have committed before its response was lost.
-        // Destructive rollback can delete a concurrent or committed object.
-        logger.error({ err: trackErr, key }, "[Storage] Upload receipt uncertain; preserve bytes for reconciliation");
-        return res.status(500).json({ error: "Upload could not be recorded; check your files before retrying" });
+        // Tracking is mandatory: an untracked object is invisible to quota
+        // accounting and can never be deleted. Compensate by removing the
+        // just-uploaded object and failing the request.
+        logger.error({ err: trackErr }, "[Storage] Failed to track uploaded file — rolling back upload:");
+        try {
+          await storageService?.deleteFile(key);
+        } catch (cleanupErr) {
+          logger.error({ err: cleanupErr }, "[Storage] Rollback delete failed for untracked upload:");
+        }
+        return res.status(500).json({ error: "Upload could not be recorded" });
       }
 
       const responseFile = {
