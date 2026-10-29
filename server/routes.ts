@@ -1622,16 +1622,23 @@ export async function registerRoutes(
 
       let fileBuffer: Buffer | null = null;
       let storageTier = "unknown";
-      let hybridReadError: unknown;
-
-      const hybridMeta = hybridStorageService.getMetadata(key);
+      const hybridMeta = await hybridStorageService.getMetadata(key);
       if (hybridMeta) {
+        // The stored owner is not the requesting principal. Authorize before
+        // reading bytes; marketplace access requires a verified entitlement.
+        if (hybridMeta.userId !== req.user.id && !hybridMeta.isPublic && stemAccess !== true) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         storageTier = `${hybridMeta.tier}/${hybridMeta.location}`;
         try {
-          fileBuffer = await hybridStorageService.read(hybridMeta.userId, key);
+          fileBuffer = await hybridStorageService.read(
+            stemAccess === true ? hybridMeta.userId : req.user.id, key,
+          );
         } catch (err) {
-          hybridReadError = err;
-          fileBuffer = null;
+          // A known hybrid object with unavailable/corrupt bytes must never
+          // fall back to an unrelated direct-storage object with the same key.
+          logger.warn({ err, key }, "Storage file serve: hybrid read failed");
+          return res.status(503).json({ message: "File unavailable" });
         }
       }
 
@@ -1648,10 +1655,6 @@ export async function registerRoutes(
             {
               key,
               hadHybridMeta: Boolean(hybridMeta),
-              hybridReadError:
-                hybridReadError instanceof Error
-                  ? hybridReadError.message
-                  : hybridReadError,
               downloadError: err instanceof Error ? err.message : err,
             },
             "Storage file serve: not found in hybrid storage or storageService",
