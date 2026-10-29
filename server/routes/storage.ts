@@ -222,8 +222,10 @@ router.post(
               .limit(1);
           }
         }
-        if (storageRow) {
-          await db
+        if (!storageRow) {
+          throw new Error("Upload storage record is unavailable");
+        }
+        const [trackedFile] = await db
             .insert(userStorageFiles)
             .values({
               userId,
@@ -235,18 +237,15 @@ router.post(
               folder: category,
               metadata: { category, uploadedVia: "storage/upload" },
             })
-            .onConflictDoNothing();
+            .onConflictDoNothing()
+            .returning({ id: userStorageFiles.id });
+        if (!trackedFile) {
+          throw new Error("Upload tracking receipt was not created");
         }
       } catch (trackErr) {
-        // Tracking is mandatory: an untracked object is invisible to quota
-        // accounting and can never be deleted. Compensate by removing the
-        // just-uploaded object and failing the request.
-        logger.error({ err: trackErr }, "[Storage] Failed to track uploaded file — rolling back upload:");
-        try {
-          await storageService?.deleteFile(key);
-        } catch (cleanupErr) {
-          logger.error({ err: cleanupErr }, "[Storage] Rollback delete failed for untracked upload:");
-        }
+        // A failed SQL call may have committed its receipt. Never delete
+        // potentially owned bytes after an uncertain tracking outcome.
+        logger.error({ err: trackErr, key }, "[Storage] Upload tracking outcome uncertain; preserve bytes for reconciliation");
         return res.status(500).json({ error: "Upload could not be recorded" });
       }
 
