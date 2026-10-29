@@ -275,9 +275,9 @@ export async function initializeFabric(): Promise<void> {
       }
     }
 
-    // Heal accounting on boot: first rebuild chunk reference counts from live
-    // objects (GC'ing orphans and migrating pre-refCount rows), then derive
-    // per-node usage from the surviving chunks so telemetry starts truthful.
+    // Conservatively reconcile proven references. In-flight writes may index
+    // chunks before object publication; never delete bytes from an incomplete
+    // startup snapshot. Then reconcile node usage.
     await fabricStorage.reconcileRefCounts();
     await fabricStorage.reconcileNodeUsage();
 
