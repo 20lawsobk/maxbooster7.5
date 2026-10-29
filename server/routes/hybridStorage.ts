@@ -16,6 +16,16 @@ import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
+
+// Express has already decoded route params. Never decode a second time:
+// double-encoded slashes or dot segments must not change the storage key.
+function normalizeHybridFileKey(raw: string): string | null {
+  if (!raw || raw.startsWith("/") || raw.includes("\\") || raw.includes("\0") ||
+      raw.includes("%") || raw.split("/").some(part => !part || part === "." || part === "..")) {
+    return null;
+  }
+  return raw;
+}
 const upload = createHardenedUpload({
   maxFileSize: 100 * 1024 * 1024, // 100MB max
   maxFiles: 1,
@@ -72,7 +82,8 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = normalizeHybridFileKey(req.params.fileKey as string);
+      if (!fileKey) return res.status(400).json({ error: "Invalid file key" });
 
       const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -113,7 +124,8 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = normalizeHybridFileKey(req.params.fileKey as string);
+      if (!fileKey) return res.status(400).json({ error: "Invalid file key" });
 
       const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -170,7 +182,8 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = normalizeHybridFileKey(req.params.fileKey as string);
+      if (!fileKey) return res.status(400).json({ error: "Invalid file key" });
 
       const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -292,7 +305,8 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = normalizeHybridFileKey(req.params.fileKey as string);
+      if (!fileKey) return res.status(400).json({ error: "Invalid file key" });
 
       const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
