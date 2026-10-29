@@ -4,6 +4,7 @@ import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { randomUUID } from "crypto";
 import { storageService } from "../services/storageService.js";
 import { hybridStorageService } from "../services/hybridStorageService.js";
+import { classifyHybridDownloadMimeType } from "../services/hybridDownloadHeaders.js";
 import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import path from "path";
@@ -1083,9 +1084,20 @@ router.get(
 
       const contentType =
         metadata?.mimeType || mimeTypes[ext] || "application/octet-stream";
+      const safeDownload = classifyHybridDownloadMimeType(contentType);
       const totalLength = buffer.length;
       const range = req.headers.range;
-      res.setHeader("Content-Type", contentType);
+      // This legacy hybrid endpoint also serves untrusted uploaded MIME.
+      // Keep range support, but never render HTML/SVG/script in our origin.
+      res.setHeader("Cache-Control", "private, no-store");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      if (safeDownload.disposition === "attachment") {
+        res.attachment(metadata?.originalName || "download");
+      } else {
+        res.setHeader("Content-Disposition", "inline");
+      }
+      // Express attachment() infers a MIME from the filename: override it.
+      res.setHeader("Content-Type", safeDownload.contentType);
       res.setHeader("X-Storage-Tier", metadata?.tier || "unknown");
       res.setHeader("Accept-Ranges", "bytes");
 
