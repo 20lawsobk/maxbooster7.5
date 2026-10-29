@@ -41,6 +41,13 @@ test("real SQL deletion journals survive node/commit failures and fence concurre
       }
       (async()=>{ try {
         await outbox.initialize();
+        // A finalization call without a claim must not delete a live object's
+        // segment rows, even though there are no pending deletion chunks.
+        await seed();
+        await query("INSERT INTO fabric_segments(object_id) VALUES ('object')");
+        assert.equal(await outbox.finish('object'), false);
+        assert.equal((await query("SELECT count(*)::integer AS n FROM fabric_segments WHERE object_id='object'")).rows[0].n, 1);
+        assert.equal((await query("SELECT count(*)::integer AS n FROM fabric_objects WHERE id='object'")).rows[0].n, 1);
         await seed();
         await Promise.all([outbox.claim('object'),new DeletionOutbox().claim('object')]);
         assert.equal((await query('SELECT count(*)::integer AS n FROM fabric_objects')).rows[0].n,0);
