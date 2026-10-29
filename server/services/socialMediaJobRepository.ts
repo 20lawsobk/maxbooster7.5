@@ -23,8 +23,13 @@ export function mediaJobAssetUrl(result: Record<string, unknown> | undefined): s
   try {
     // Root-relative application URLs and explicit HTTP(S) asset URLs are the
     // renderer contract. A protocol-relative host or a local file is not one.
-    if (value.startsWith("//") || (!value.startsWith("/") && !/^https?:\/\//i.test(value))) return undefined;
+    // WHATWG URL parsing treats a slash followed by a backslash as an
+    // external authority. Never accept such strings as local asset URLs.
+    if (/[\u0000-\u001f\u007f\\]/.test(value)) return undefined;
+    const rootRelative = value.startsWith("/");
+    if (value.startsWith("//") || (!rootRelative && !/^https?:\/\//i.test(value))) return undefined;
     const parsed = new URL(value, "https://maxbooster.invalid");
+    if (rootRelative && parsed.origin !== "https://maxbooster.invalid") return undefined;
     return ["http:", "https:"].includes(parsed.protocol) && !parsed.username && !parsed.password ? value : undefined;
   } catch { return undefined; }
 }
