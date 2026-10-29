@@ -18,6 +18,7 @@ import {
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
+import { classifyHybridDownloadMimeType } from "../services/hybridDownloadHeaders.js";
 
 const router = Router();
 const upload = createHardenedUpload({
@@ -106,12 +107,20 @@ router.get(
 
       const data = await hybridStorageService?.read(userId, fileKey);
 
+      // Uploaded MIME and filename are untrusted. Only inert media may
+      // render inline; active/unknown content is an attachment with nosniff.
+      const downloadHeaders = classifyHybridDownloadMimeType(metadata?.mimeType);
       res.setHeader("Cache-Control", "private, no-store");
-      res.setHeader("Content-Type", metadata?.mimeType);
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename="${metadata.originalName}"`,
-      );
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      if (downloadHeaders.disposition === "attachment") {
+        // Express uses content-disposition's filename escaping; never
+        // interpolate untrusted names directly into an HTTP header.
+        res.attachment(metadata.originalName || "download");
+      } else {
+        res.setHeader("Content-Disposition", "inline");
+      }
+      // Set after res.attachment(), which infers a MIME from the extension.
+      res.setHeader("Content-Type", downloadHeaders.contentType);
       res.setHeader("Content-Length", data?.length);
       res.setHeader("X-Storage-Tier", metadata?.tier);
       res.setHeader("X-Storage-Location", metadata?.location);
