@@ -262,7 +262,7 @@ router.post(
         error: "Upload failed due to server error",
         outcome: "upload_failed",
         details: {
-          reason: error instanceof Error ? error.message : "Unknown error",
+          // Never return provider, filesystem, or database exception text.
           canRetry: true,
         },
       });
@@ -390,7 +390,7 @@ router.post("/bulk-restore", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { fileIds } = req.body;
+    const { fileIds } = req.body ?? {};
 
     if (!Array.isArray(fileIds) || fileIds.length === 0) {
       return res.status(400).json({ error: "No files specified" });
@@ -401,6 +401,17 @@ router.post("/bulk-restore", async (req: Request, res: Response) => {
       return res
         .status(400)
         .json({ error: "Too many files in one request (max 500)" });
+    }
+    // Reject malformed and duplicate IDs before any database mutation.
+    if (
+      !fileIds.every(
+        (id: unknown) =>
+          typeof id === "string" &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+      ) ||
+      new Set(fileIds).size !== fileIds.length
+    ) {
+      return res.status(400).json({ error: "Invalid or duplicate file IDs" });
     }
 
     const results = {
@@ -451,7 +462,7 @@ router.post("/bulk-restore", async (req: Request, res: Response) => {
         } catch (err) {
           results.failed.push({
             id: fileId,
-            error: err instanceof Error ? err.message : "Unknown error",
+            error: "File restoration failed",
           });
         }
       }),
@@ -732,7 +743,7 @@ router.post("/bulk-delete", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { fileIds, permanent = false } = req.body;
+    const { fileIds, permanent = false } = req.body ?? {};
 
     if (!Array.isArray(fileIds) || fileIds?.length === 0) {
       return res.status(400).json({ error: "No files specified" });
@@ -741,6 +752,20 @@ router.post("/bulk-delete", async (req: Request, res: Response) => {
       return res
         .status(400)
         .json({ error: "Too many files in one request (max 500)" });
+    }
+    // A string such as "false" is truthy and must never authorize permanent deletion.
+    if (typeof permanent !== "boolean") {
+      return res.status(400).json({ error: "permanent must be a boolean" });
+    }
+    if (
+      !fileIds.every(
+        (id: unknown) =>
+          typeof id === "string" &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+      ) ||
+      new Set(fileIds).size !== fileIds.length
+    ) {
+      return res.status(400).json({ error: "Invalid or duplicate file IDs" });
     }
 
     const results = {
@@ -791,7 +816,7 @@ router.post("/bulk-delete", async (req: Request, res: Response) => {
         } catch (err) {
           results?.failed.push({
             id: fileId,
-            error: err instanceof Error ? err?.message : "Unknown error",
+            error: "File deletion failed",
           });
         }
       }),
