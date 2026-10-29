@@ -38,7 +38,7 @@ try {
     const contentSha256 = createHash("sha256").update(bytes).digest("hex");
     assert.equal(contentSha256, file.contentHash);
     assert.equal(bytes.length, file.sizeBytes);
-    const metadata = hybridStorageService.getMetadata(key);
+    const metadata = await hybridStorageService.getMetadata(key);
     assert(metadata);
     assert.equal(metadata.userId, owner);
     owners.set(owner, (owners.get(owner) ?? 0) + 1);
@@ -48,7 +48,7 @@ try {
   const ownershipEvidence: string[] = [];
   for (const [owner, count] of [...owners].sort(([left], [right]) =>
     left.localeCompare(right))) {
-    assert.equal(hybridStorageService.listFiles(owner).length, count);
+    assert.equal((await hybridStorageService.listFiles(owner)).length, count);
     ownershipEvidence.push(`${owner}\0${count}`);
   }
 

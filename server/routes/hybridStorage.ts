@@ -16,6 +16,16 @@ import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
+
+// Express has already decoded route params. Never decode a second time:
+// double-encoded slashes or dot segments must not change the storage key.
+function normalizeHybridFileKey(raw: string): string | null {
+  if (!raw || raw.startsWith("/") || raw.includes("\\") || raw.includes("\0") ||
+      raw.includes("%") || raw.split("/").some(part => !part || part === "." || part === "..")) {
+    return null;
+  }
+  return raw;
+}
 const upload = createHardenedUpload({
   maxFileSize: 100 * 1024 * 1024, // 100MB max
   maxFiles: 1,
@@ -72,9 +82,10 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = normalizeHybridFileKey(req.params.fileKey as string);
+      if (!fileKey) return res.status(400).json({ error: "Invalid file key" });
 
-      const metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res.status(404).json({ error: "File not found" });
       }
@@ -85,10 +96,11 @@ router.get(
 
       const data = await hybridStorageService?.read(userId, fileKey);
 
+      res.setHeader("Cache-Control", "private, no-store");
       res.setHeader("Content-Type", metadata?.mimeType);
       res.setHeader(
         "Content-Disposition",
-        `inline; filename="${metadata.originalName}"`,
+        `inline; filename="${metadata.originalName.replace(/[\r\n"\\]/g, "_")}"`,
       );
       res.setHeader("Content-Length", data?.length);
       res.setHeader("X-Storage-Tier", metadata?.tier);
@@ -112,9 +124,10 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = normalizeHybridFileKey(req.params.fileKey as string);
+      if (!fileKey) return res.status(400).json({ error: "Invalid file key" });
 
-      const metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res.status(404).json({ error: "File not found" });
       }
@@ -146,7 +159,7 @@ router.get("/files", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { tier, location, folder } = req.query;
 
-    const files = hybridStorageService?.listFiles(userId, {
+    const files = await hybridStorageService?.listFiles(userId, {
       tier: tier as StorageTier | undefined,
       location: location as StorageLocation | undefined,
       folder: folder as string | undefined,
@@ -169,9 +182,10 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = normalizeHybridFileKey(req.params.fileKey as string);
+      if (!fileKey) return res.status(400).json({ error: "Invalid file key" });
 
-      const metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res.status(404).json({ error: "File not found" });
       }
@@ -201,7 +215,7 @@ router.post("/migrate", requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const metadata = hybridStorageService?.getMetadata(fileKey);
+    const metadata = await hybridStorageService?.getMetadata(fileKey);
     if (!metadata) {
       return res.status(404).json({ error: "File not found" });
     }
@@ -218,7 +232,7 @@ router.post("/migrate", requireAuth, async (req: Request, res: Response) => {
     );
 
     if (success) {
-      const newMetadata = hybridStorageService?.getMetadata(fileKey);
+      const newMetadata = await hybridStorageService?.getMetadata(fileKey);
       res.json({ success: true, metadata: newMetadata });
     } else {
       res.status(500).json({ error: "Migration failed" });
@@ -291,9 +305,10 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = normalizeHybridFileKey(req.params.fileKey as string);
+      if (!fileKey) return res.status(400).json({ error: "Invalid file key" });
 
-      const metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res.status(404).json({ error: "File not found" });
       }
