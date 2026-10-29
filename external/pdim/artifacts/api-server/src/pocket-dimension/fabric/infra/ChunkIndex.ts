@@ -107,10 +107,9 @@ export class ChunkIndex {
   }
 
   /**
-   * Rebuild reference counts from the authoritative set of live object→chunk
-   * references and drop any orphaned chunk rows (refCount 0). Used at boot to
-   * heal drift and migrate rows created before refCount existed. Returns the ids
-   * of orphaned chunks so the caller can free their physical bytes.
+   * Raise undercounted live references. Unknown references can belong to an
+   * interrupted publication, so boot never lowers counts or infers deletion
+   * permission from a missing object. Returns retained rows for diagnostics.
    */
   async reconcileRefCounts(
     counts: Map<ChunkId, number>,
@@ -120,13 +119,12 @@ export class ChunkIndex {
     for (const row of rows) {
       const next = counts.get(row.id) ?? 0;
       if (next <= 0) {
+        // An in-flight or interrupted writer may have indexed bytes before its
+        // object publication. A missing live-object reference is not a deletion
+        // receipt. Preserve it until an explicit durable owner releases it.
         orphans.push(this.rowToChunk(row));
-        await db.delete(fabricChunks).where(eq(fabricChunks.id, row.id));
-      } else if (next !== row.refCount) {
-        await db
-          .update(fabricChunks)
-          .set({ refCount: next })
-          .where(eq(fabricChunks.id, row.id));
+      } else if (next > row.refCount) {
+        await db.update(fabricChunks).set({ refCount: next }).where(eq(fabricChunks.id, row.id));
       }
     }
     return orphans;

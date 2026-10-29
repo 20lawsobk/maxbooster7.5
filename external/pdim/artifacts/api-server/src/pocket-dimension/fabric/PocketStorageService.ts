@@ -1194,11 +1194,10 @@ export class PocketStorageService {
   }
 
   /**
-   * Rebuild chunk reference counts from the authoritative set of live objects
-   * and garbage-collect any orphaned chunks (no remaining references). Run at
-   * boot to heal accounting drift and migrate chunk rows created before
-   * reference counting existed. Pair with {@link reconcileNodeUsage} afterwards
-   * so per-node usage reflects only surviving chunks.
+   * Reconcile confirmed references without treating an incomplete object
+   * snapshot as permission to garbage-collect indexed chunks. An interrupted
+   * writer may index bytes before its object row becomes visible.
+   * Physical deletion requires a separate durable, fenced release.
    */
   async reconcileRefCounts(): Promise<void> {
     const objects = await this.objectIndex.listAllObjects();
@@ -1208,17 +1207,10 @@ export class PocketStorageService {
         counts.set(cid, (counts.get(cid) ?? 0) + 1);
       }
     }
-    const orphans = await this.chunkIndex.reconcileRefCounts(counts);
-    for (const loc of orphans) {
-      for (const nodeId of loc.nodeIds) {
-        await this.chunkStoreFactory(nodeId)
-          .deleteChunk(loc.id)
-          .catch(() => {});
-      }
-    }
-    if (orphans.length > 0) {
-      logger.info(
-        `[PocketFabric] Reconciled refcounts — GC'd ${orphans.length} orphan chunk(s)`,
+    const retained = await this.chunkIndex.reconcileRefCounts(counts);
+    if (retained.length > 0) {
+      logger.warn(
+        `[PocketFabric] Retained ${retained.length} unproven chunk(s); no snapshot-based physical GC performed`,
       );
     }
   }
