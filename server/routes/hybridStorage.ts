@@ -100,7 +100,7 @@ router.get(
       res.setHeader("Content-Type", metadata?.mimeType);
       res.setHeader(
         "Content-Disposition",
-        `inline; filename="${metadata.originalName.replace(/[\\r\\n"\\\\]/g, "_")}"`,
+        `inline; filename="${metadata.originalName.replace(/[\r\n"\\]/g, "_")}"`,
       );
       res.setHeader("Content-Length", data?.length);
       res.setHeader("X-Storage-Tier", metadata?.tier);
