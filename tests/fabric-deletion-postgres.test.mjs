@@ -61,6 +61,26 @@ test("real SQL deletion journals survive node/commit failures and fence concurre
         assert.deepEqual(await usage(),[{id:'a',used:10},{id:'b',used:10}]);
         await outbox.finish('object');
 
+        // Inconsistent reference counts must leave the journal pending and
+        // must never authorize a physical delete or a negative decrement.
+        await seed(0);
+        await outbox.claim('object');
+        let unsafeRemoves = 0;
+        const countError = error => /Deletion chunk reference missing or invalid/.test(
+          String(error?.message) + ' ' + String(error?.cause?.message));
+        await assert.rejects(outbox.drainChunk('chunk', async () => { unsafeRemoves++; }), countError);
+        assert.equal(unsafeRemoves, 0);
+        assert.deepEqual((await query('SELECT ref_count FROM fabric_chunks')).rows, [{ref_count:0}]);
+        assert.deepEqual((await query('SELECT state FROM fabric_deletion_chunks')).rows, [{state:'pending'}]);
+
+        // A missing chunk index is corruption, not an already-complete release.
+        await seed();
+        await outbox.claim('object');
+        await query("DELETE FROM fabric_chunks WHERE id='chunk'");
+        await assert.rejects(outbox.drainChunk('chunk', async () => { unsafeRemoves++; }), countError);
+        assert.equal(unsafeRemoves, 0);
+        assert.deepEqual((await query('SELECT state FROM fabric_deletion_chunks')).rows, [{state:'pending'}]);
+
         await seed();
         await outbox.claim('object');
         let releaseFence, announceFence;
