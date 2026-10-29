@@ -960,27 +960,15 @@ router.post("/validate", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/scan", requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { fileId } = req.body;
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    res.json({
-      success: true,
-      fileId,
-      scanResult: {
-        clean: true,
-        threats: [],
-        scannedAt: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "File scan failed:");
-    res.status(500).json({
-      error: error instanceof Error ? error?.message : "Scan failed",
-    });
-  }
+router.post("/scan", requireAuth, (_req: Request, res: Response) => {
+  // There is no file-malware scanner behind this endpoint. Returning a
+  // fabricated "clean" verdict would falsely certify unexamined bytes.
+  // Fail closed until an actual scanner with verified results is integrated.
+  res.setHeader("Cache-Control", "private, no-store");
+  return res.status(503).json({
+    success: false,
+    error: "File scanning is unavailable; no scan was performed",
+  });
 });
 
 function formatBytes(bytes: number): string {
