@@ -177,7 +177,7 @@ class CandidateTrainingBackend(HyperGPUBackend):
 
     @staticmethod
     def _sample(logits, history, generated, rng, temperature, top_p, top_k,
-                repetition_penalty, min_length, eos=258):
+                repetition_penalty, min_length, eos=258, allowed_tokens=None):
         if (not np.isfinite(temperature) or temperature < 0 or
                 not np.isfinite(top_p) or not 0 < top_p <= 1 or
                 type(top_k) is not int or not 0 <= top_k <= len(logits) or
@@ -194,6 +194,16 @@ class CandidateTrainingBackend(HyperGPUBackend):
         scores[[256, 257]] = -np.inf
         if generated < min_length:
             scores[eos] = -np.inf
+        if allowed_tokens is not None:
+            if (not isinstance(allowed_tokens, (tuple, list)) or not allowed_tokens
+                    or any(type(token) is not int or not 0 <= token < len(scores)
+                           for token in allowed_tokens)):
+                raise ValueError("Invalid sampling token constraint")
+            mask = np.ones(len(scores), dtype=bool)
+            mask[list(allowed_tokens)] = False
+            scores[mask] = -np.inf
+        if not np.isfinite(scores).any():
+            raise ValueError("No admissible sampling token")
         if temperature == 0:
             return int(np.argmax(scores))
         scores /= temperature

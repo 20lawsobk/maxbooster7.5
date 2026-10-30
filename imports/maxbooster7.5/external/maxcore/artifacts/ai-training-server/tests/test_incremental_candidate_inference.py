@@ -9,6 +9,7 @@ import torch
 from ai_model.gpu.candidate_training import array
 from ai_model.model.candidate_model import CandidateTransformer, PublicContentTransformer
 from ai_model.model.inference_budget import inference_deadline
+from ai_model.model.candidate_tokenizer import Utf8GenerationState
 
 
 def reference_logits(model, ids):
@@ -114,10 +115,14 @@ class IncrementalCandidateInferenceTests(unittest.TestCase):
                 ids = [model.tokenizer.bos_id] + model.tokenizer.encode("same complete prompt")
                 rng = model.backend.dispatch("rng", 83)
                 generated = []
+                # Share the output grammar, not the forward computation.
+                utf8 = Utf8GenerationState()
                 for position in range(40):
                     logits, _ = model.backend.dispatch("transformer_forward", w, np.array([ids]), model.model_config)
                     token = model.backend.dispatch("sample", logits[0, -1], ids, position,
-                                                   rng, temperature, 1., 32, 1., 40)
+                                                   rng, temperature, 1., 32, 1., 40, 258,
+                                                   utf8.allowed_tokens(40 - position))
+                    utf8.advance(token)
                     generated.append(token)
                     ids.append(token)
                 actual = model.generate("same complete prompt", max_new_tokens=40, min_length=40,

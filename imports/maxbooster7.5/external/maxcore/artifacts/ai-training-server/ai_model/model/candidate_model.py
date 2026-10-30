@@ -10,7 +10,7 @@ import torch
 from torch import nn
 
 from ai_model.gpu.candidate_training import CandidateTrainingBackend, array, tensor
-from ai_model.model.candidate_tokenizer import CandidateByteTokenizer
+from ai_model.model.candidate_tokenizer import CandidateByteTokenizer, Utf8GenerationState
 from ai_model.model.sampling_context import sampling_context
 from ai_model.model.inference_budget import check_inference_budget
 
@@ -53,6 +53,7 @@ class CandidateModel(nn.Module):
                 f"Full prompt plus generation budget exceeds {self.context}-byte context; "
                 "no prompt truncation or inference performed")
         generated = []
+        utf8 = Utf8GenerationState()
         rng = self.backend.dispatch("rng", seed)
         if type(min_length) is not int or not 0 <= min_length <= limit:
             raise ValueError(f"min_length must be an integer in 0..{limit}")
@@ -86,14 +87,16 @@ class CandidateModel(nn.Module):
                 scores = array(self(torch.tensor([window], dtype=torch.long))[0])
             token = self.backend.dispatch("sample", scores, ids, len(generated), rng,
                                           temperature, top_p, top_k,
-                                          repetition_penalty, min_length)
+                                          repetition_penalty, min_length, self.tokenizer.eos_id,
+                                          utf8.allowed_tokens(max_new_tokens - len(generated)))
             if token == self.tokenizer.eos_id:
                 break
+            utf8.advance(token)
             generated.append(token)
             ids.append(token)
         check_inference_budget()
         raw = self.tokenizer.decode_bytes(generated)
-        return {"text": raw.decode("utf-8", errors="replace"), "bytes_hex": raw.hex(),
+        return {"text": raw.decode("utf-8", errors="strict"), "bytes_hex": raw.hex(),
                 "token_ids": generated, "smoke_only": getattr(self, "smoke_only", True)}
 
     @classmethod
