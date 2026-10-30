@@ -1,0 +1,512 @@
+import { useState, useMemo, useRef } from "react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Logo } from "@/components/ui/Logo";
+import {
+  Lock,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  X,
+  AlertTriangle,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { getNewPasswordError } from "@shared/passwordPolicy";
+
+interface PasswordStrength {
+  score: number;
+  label: string;
+  color: string;
+  requirements: { met: boolean; text: string }[];
+}
+
+const getPasswordStrength = (password: string): PasswordStrength => {
+  const requirements = [
+    { met: password.length >= 8, text: "At least 8 characters" },
+    { met: /[A-Z]/.test(password), text: "One uppercase letter" },
+    { met: /[a-z]/.test(password), text: "One lowercase letter" },
+    { met: /[0-9]/.test(password), text: "One number" },
+    { met: /[^A-Za-z0-9]/.test(password), text: "One special character" },
+  ];
+
+  const score = requirements.filter((r) => r.met).length;
+
+  if (score <= 1)
+    return { score, label: "Weak", color: "bg-red-500", requirements };
+  if (score <= 2)
+    return { score, label: "Fair", color: "bg-orange-500", requirements };
+  if (score <= 3)
+    return { score, label: "Good", color: "bg-yellow-500", requirements };
+  if (score <= 4)
+    return { score, label: "Strong", color: "bg-green-500", requirements };
+  return { score, label: "Very Strong", color: "bg-green-600", requirements };
+};
+
+async function readResetResponse(response: Response): Promise<Record<string, unknown>> {
+  const data: unknown = await response.json().catch(() => null);
+  return data && typeof data === "object" && !Array.isArray(data)
+    ? data as Record<string, unknown>
+    : {};
+}
+
+export default function ResetPassword() {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{
+    password?: string;
+    confirmPassword?: string;
+  }>({});
+  const requestInFlight = useRef(false);
+  const { toast } = useToast();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+
+  const tokenError = !token
+    ? "No reset token provided. Please request a new password reset link."
+    : null;
+
+  const passwordStrength = useMemo(
+    () => getPasswordStrength(password),
+    [password],
+  );
+
+  const validatePassword = getNewPasswordError;
+
+  const validateConfirmPassword = (value: string): string | undefined => {
+    if (!value) return "Please confirm your password";
+    if (value !== password) return "Passwords do not match";
+    return undefined;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (requestInFlight.current) return;
+    setError("");
+    if (!token) {
+      setError("No reset token provided. Please request a new password reset link.");
+      return;
+    }
+
+    const passwordError = validatePassword(password);
+    const confirmError = validateConfirmPassword(confirmPassword);
+
+    if (passwordError || confirmError) {
+      setFieldErrors({
+        password: passwordError,
+        confirmPassword: confirmError,
+      });
+      return;
+    }
+
+    requestInFlight.current = true;
+    setFieldErrors({});
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        signal: AbortSignal.timeout(30_000),
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ token, password }),
+      });
+
+      const data = await readResetResponse(response);
+      const message =
+        typeof data.message === "string"
+          ? data.message
+          : "";
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          setError("Too many password reset attempts. Please wait a few minutes before trying again.");
+        } else if (message.toLowerCase().includes("already used")) {
+          setError(
+            "This password reset link has already been used. Please request a new one.",
+          );
+        } else if (message.toLowerCase().includes("invalid or expired")) {
+          setError("This password reset link is invalid or expired. Please request a new one.");
+        } else if (message.toLowerCase().includes("expired")) {
+          setError(
+            "This password reset link has expired. Please request a new one.",
+          );
+        } else if (message.toLowerCase().includes("invalid")) {
+          setError(
+            "This password reset link is invalid. Please request a new one.",
+          );
+        } else {
+          setError(
+            message ||
+              `The server returned an unexpected response (${response.status}). Please try again.`,
+          );
+        }
+        return;
+      }
+
+      if (data.success !== true) {
+        setError("The server did not confirm the password reset. Please try signing in or request a new reset link.");
+        return;
+      }
+
+      setPassword("");
+      setConfirmPassword("");
+      setSuccess(true);
+      toast({
+        title: "Password Reset Successfully",
+        description: "You can now log in with your new password.",
+      });
+    } catch (error) {
+      setError(
+        "Unable to connect to the server. Please check your internet connection and try again.",
+      );
+    } finally {
+      requestInFlight.current = false;
+      setLoading(false);
+    }
+  };
+
+  if (tokenError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex flex-col">
+        <div className="p-4 sm:p-6">
+          <Link href="/">
+            <div className="cursor-pointer">
+              <Logo size="md" />
+            </div>
+          </Link>
+        </div>
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+          <Card className="w-full max-w-md dark:bg-gray-900 dark:border-gray-700">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <CardTitle className="text-2xl dark:text-white">
+                Invalid Reset Link
+              </CardTitle>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                {tokenError}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Link href="/forgot-password">
+                <Button
+                  className="w-full"
+                  data-testid="button-request-new-link"
+                >
+                  Request New Reset Link
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  data-testid="button-back-to-login"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Login
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex flex-col">
+        <div className="p-4 sm:p-6">
+          <Link href="/">
+            <div className="cursor-pointer">
+              <Logo size="md" />
+            </div>
+          </Link>
+        </div>
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+          <Card className="w-full max-w-md dark:bg-gray-900 dark:border-gray-700">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <CardTitle className="text-2xl dark:text-white">
+                Password Reset Complete
+              </CardTitle>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                Your password has been successfully reset. You can now log in
+                with your new password.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Link href="/login">
+                <Button className="w-full" data-testid="button-go-to-login">
+                  Go to Login
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex flex-col">
+      <div className="p-4 sm:p-6">
+        <Link href="/">
+          <div className="cursor-pointer">
+            <Logo size="md" />
+          </div>
+        </Link>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+        <Card className="w-full max-w-md dark:bg-gray-900 dark:border-gray-700">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+              <Lock className="h-6 w-6 text-blue-600" />
+            </div>
+            <CardTitle className="text-2xl dark:text-white">
+              Reset Your Password
+            </CardTitle>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Enter your new password below
+            </p>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {error && (
+              <Link href="/forgot-password" className="block mb-4 text-sm text-primary hover:underline">
+                Request a new reset link
+              </Link>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading}>
+              <div className="space-y-1">
+                <Label htmlFor="password">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your new password"
+                    value={password}
+                    onChange={(e) => {
+                      const nextPassword = e.target.value;
+                      setPassword(nextPassword);
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        ...(prev.password
+                          ? {
+                              password: validatePassword(e.target.value),
+                            }
+                          : {}),
+                        ...(confirmPassword
+                          ? {
+                              confirmPassword:
+                                confirmPassword !== nextPassword
+                                  ? "Passwords do not match"
+                                  : undefined,
+                            }
+                          : {}),
+                      }));
+                    }}
+                    onBlur={() =>
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        password: validatePassword(password),
+                      }))
+                    }
+                    required
+                    disabled={loading}
+                    autoComplete="new-password"
+                    className={`pr-10 ${fieldErrors.password ? "border-destructive" : ""}`}
+                    aria-invalid={!!fieldErrors.password}
+                    aria-describedby={fieldErrors.password ? "password-error" : undefined}
+                    data-testid="input-new-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                    aria-label={
+                      showPassword ? "Hide new password" : "Show new password"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                {password && (
+                  <div className="space-y-2 mt-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                          style={{
+                            width: `${(passwordStrength.score / 5) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <span
+                        className={`text-xs font-medium ${
+                          passwordStrength.score <= 2
+                            ? "text-red-600"
+                            : passwordStrength.score <= 3
+                              ? "text-yellow-600"
+                              : "text-green-600"
+                        }`}
+                      >
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1">
+                      {passwordStrength.requirements.map((req, i) => (
+                        <div
+                          key={i}
+                          className={`text-xs flex items-center gap-1 ${req.met ? "text-green-600" : "text-gray-500"}`}
+                        >
+                          {req.met ? (
+                            <CheckCircle className="h-3 w-3" />
+                          ) : (
+                            <X className="h-3 w-3" />
+                          )}
+                          {req.text}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {fieldErrors.password && (
+                  <p id="password-error" className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {fieldErrors.password}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your new password"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (fieldErrors.confirmPassword) {
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          confirmPassword:
+                            e.target.value !== password
+                              ? "Passwords do not match"
+                              : undefined,
+                        }));
+                      }
+                    }}
+                    onBlur={() =>
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        confirmPassword:
+                          validateConfirmPassword(confirmPassword),
+                      }))
+                    }
+                    required
+                    disabled={loading}
+                    autoComplete="new-password"
+                    className={`pr-10 ${fieldErrors.confirmPassword ? "border-destructive" : ""}`}
+                    aria-invalid={!!fieldErrors.confirmPassword}
+                    aria-describedby={fieldErrors.confirmPassword ? "confirm-password-error" : undefined}
+                    data-testid="input-confirm-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={loading}
+                    aria-label={
+                      showConfirmPassword
+                        ? "Hide confirmed password"
+                        : "Show confirmed password"
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                {confirmPassword && password === confirmPassword && (
+                  <p className="text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Passwords match
+                  </p>
+                )}
+                {fieldErrors.confirmPassword && (
+                  <p id="confirm-password-error" className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {fieldErrors.confirmPassword}
+                  </p>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={
+                  loading ||
+                  !!fieldErrors.password ||
+                  !!fieldErrors.confirmPassword
+                }
+                data-testid="button-reset-password"
+              >
+                {loading ? "Resetting Password..." : "Reset Password"}
+              </Button>
+
+              <div className="text-center">
+                <Link href="/login">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm"
+                    data-testid="link-back-to-login"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    Back to Login
+                  </Button>
+                </Link>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

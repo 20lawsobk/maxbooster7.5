@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.cache
+coverage
+*.min.js
+*.min.css
+AI training server
+maxbooster7.5
+attached_assets
+data
+public

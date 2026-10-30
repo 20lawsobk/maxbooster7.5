@@ -1,0 +1,20 @@
+---
+name: Too Lost OAuth credentials
+description: Too Lost app IDs and client credentials are valid for token issuance, but catalog and distribution endpoints require a user-authorized OAuth token.
+---
+
+Too Lost's client ID and client secret can successfully obtain a bearer token with `client_credentials`, but that application token is rejected by `/v1/me` and `/v1/releases`. The service therefore needs an authorization-code user connection with stored access and refresh tokens for real catalog and distribution calls.
+
+Sandbox API requests use `https://api-sandbox.toolost.com/v1`, but browser OAuth uses `https://sandbox.toolost.com/oauth`; production credentials use `https://toolost.com/oauth`. Using the wrong host for the corresponding operation can produce provider errors even with a valid pair.
+
+The live sandbox catalog endpoint is `GET /v1/lookup/platforms` and its successful response is `{data: {platforms: string[]}}`, not a list of platform objects. Catalog parsing must unwrap the nested envelope and derive stable slugs from each name.
+
+**Why:** A successful `/oauth/token` response alone can falsely suggest the integration is ready; the API distinguishes app authentication from a user-authorized account.
+
+**How to apply:** Keep the API and OAuth base URLs separate, complete and verify the browser OAuth connect flow before treating Too Lost as connected, and validate live response shape before mapping provider catalog entries.
+
+The per-user Too Lost service loads its OAuth row asynchronously. Real API methods must rely on `ensureValidToken()` to reload the row; a synchronous `isApiConfigured()` check at the start of a request can incorrectly return an empty catalog during that load window. Catalog callers must also select the user's connection first and the admin-owned connection second.
+
+**Why:** The artist catalog scanner created a fresh service instance for every request, so its immediate configuration check returned false even when a valid connection existed, causing the UI to show no live releases.
+
+**How to apply:** Resolve the effective connection before account-level catalog reads, instantiate the service for the connection owner, and let the real request path perform token loading/refresh.

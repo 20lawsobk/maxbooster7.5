@@ -1,0 +1,1064 @@
+// @ts-nocheck
+/**
+ * Unified AI Services Controller for Max Booster
+ *
+ * Integrates and coordinates all custom AI services:
+ * - Content Generation (NLP)
+ * - Sentiment Analysis
+ * - Recommendation Engine
+ * - Ad Optimization
+ * - Social Autopilot
+ * - Time Series Forecasting
+ * - Model Registry Management
+ *
+ * MaxCore owns inference and public live awareness. Its shared HTTP client
+ * obtains canonical context before content generation; unavailable awareness
+ * or generation capability is an explicit dependency error.
+ */
+
+import { logger } from "../logger.js";
+import * as aiAnalyticsService from "./aiAnalyticsService.js";
+import {
+  type GenerationOptions,
+  type CaptionResult,
+} from "../../shared/ml/nlp/ContentGenerator.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+export { MaxCoreAIClient } from "./maxcoreClient.js";
+import {
+  type FullAnalysisResult,
+  type SentimentResult,
+} from "../../shared/ml/nlp/SentimentAnalyzer.js";
+import {
+  type RecommendationResult,
+  type SimilarityResult,
+  type TrackData,
+  type ArtistData,
+  type UserInteraction,
+} from "../../shared/ml/models/RecommendationEngine.js";
+import {
+  type Campaign,
+  type CampaignScore,
+  type BudgetOptimizationResult,
+  type CreativePrediction,
+  type ROIForecast,
+} from "../../shared/ml/models/AdOptimizationEngine.js";
+import { type Platform, type ContentType, type BestTimeResult, type ContentTypeRecommendation, type ViralPotentialScore, type ScheduleOptimization, type HistoricalPost, type AudienceInsights } from "../../shared/ml/models/SocialAutopilotEngine.js";
+import {
+  type MetricType,
+  type PredictionHorizon,
+  type ForecastResult,
+} from "../../shared/ml/models/AdvancedTimeSeriesModel.js";
+import { evolutionRegistry } from "./evolutionRegistry.js";
+import { evolutionConsumers } from "./evolutionConsumers.js";
+
+// ============================================================================
+// SELF-EVOLUTION POSTING-OPTIMIZATION → MANUAL GENERATION
+// Maps a prioritized media format (from the posting_optimization knob's
+// `contentFormatPriority`) onto this controller's contentType enum so the
+// manual "generate a post" path biases the same way the autopilot engine and
+// advancedSocialAIService do. Storytelling has no equivalent here, so carousel
+// maps to the closest interaction-driving type ('engagement').
+// ============================================================================
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+export interface UserGenerationContext {
+  artistBio?: string;
+  genre?: string;
+  brandVoice?: string;
+  targetAudience?: string;
+  contentThemes?: string[];
+  avoidTopics?: string[];
+  preferredHashtags?: string[];
+  recentPostSnippets?: string[];
+  artistName?: string;
+}
+
+export interface ContentGenerationOptions extends GenerationOptions {
+  userId?: string;
+  projectId?: string;
+  userContext?: UserGenerationContext;
+  // Rich content context — feeds directly into MaxCore for better AI output
+  keywords?: string[];
+  mood?: string;
+  extraContext?: string;
+  album?: string;
+  releaseDate?: string;
+  similarArtists?: string[];
+  bodyPreview?: string;
+  description?: string;
+  label?: string;
+  tracklist?: string[];
+  viewCount?: number | null;
+  likeCount?: number | null;
+  intent?: unknown;
+  direction?: unknown;
+  context?: unknown;
+  awareness?: unknown;
+}
+
+export interface SentimentAnalysisOptions {
+  text: string;
+  includeEmotions?: boolean;
+  includeToxicity?: boolean;
+  includeAspects?: boolean;
+  aspects?: string[];
+}
+
+export interface RecommendationOptions {
+  userId: string;
+  type: "tracks" | "artists" | "similar";
+  seedIds?: string[];
+  limit?: number;
+  hybridWeight?: number;
+}
+
+export interface AdOptimizationOptions {
+  campaign: Campaign;
+  action: "score" | "optimize_budget" | "predict_creative" | "forecast_roi";
+  campaigns?: Campaign[];
+  totalBudget?: number;
+  forecastPeriod?: number;
+}
+
+export interface EngagementPredictionOptions {
+  platform: Platform;
+  content: {
+    text: string;
+    contentType: ContentType;
+    hashtags: string[];
+    topics: string[];
+    hasEmoji: boolean;
+    scheduledTime?: Date;
+  };
+  action:
+    | "predict_engagement"
+    | "viral_potential"
+    | "best_time"
+    | "recommend_type"
+    | "optimize_schedule";
+  postsPerWeek?: number;
+}
+
+export interface ForecastOptions {
+  metric: MetricType;
+  horizon: PredictionHorizon;
+  historicalData: number[];
+  timestamps?: Date[];
+}
+
+export interface AIHealthStatus {
+  overall: "healthy" | "degraded" | "unhealthy";
+  lastChecked: Date;
+  services: {
+    modelRegistry: ServiceHealth;
+    contentGenerator: ServiceHealth;
+    sentimentAnalyzer: ServiceHealth;
+    recommendationEngine: ServiceHealth;
+    adOptimizationEngine: ServiceHealth;
+    socialAutopilotEngine: ServiceHealth;
+    timeSeriesModel: ServiceHealth;
+    legacyAIService: ServiceHealth;
+    analyticsService: ServiceHealth;
+  };
+  modelStats: {
+    registeredModels: number;
+    activeModels: number;
+    trainedModels: number;
+  };
+}
+
+export interface ServiceHealth {
+  status: "healthy" | "degraded" | "unhealthy" | "uninitialized";
+  initialized: boolean;
+  lastError?: string;
+  responseTimeMs?: number;
+}
+
+export interface UnifiedAIResult<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  processingTimeMs: number;
+  source: string;
+  confidence?: number;
+}
+
+// ============================================================================
+// MAXCORE AI CLIENT — calls the trained model server (Priority 1)
+// ============================================================================
+// MaxCoreAIClient is defined in ./maxcoreClient?.ts (TF-free) and re-exported
+// above via: export { MaxCoreAIClient } from './maxcoreClient.js'
+// ============================================================================
+
+export class UnifiedAIController {
+  private static instance: UnifiedAIController;
+
+  private initialized: boolean = false;
+  private initializationPromise: Promise<void> | null = null;
+  private lastHealthCheck: Date = new Date();
+  private healthCache: AIHealthStatus | null = null;
+
+  private constructor() {
+  }
+
+  public static getInstance(): UnifiedAIController {
+    if (!UnifiedAIController?.instance) {
+      UnifiedAIController.instance = new UnifiedAIController();
+    }
+    return UnifiedAIController?.instance;
+  }
+
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
+
+  public async initialize(): Promise<void> {
+    if (this.initialized) return;
+
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = this.performInitialization();
+    await this.initializationPromise;
+  }
+
+  private async performInitialization(): Promise<void> {
+    const startTime = Date.now();
+    logger.info("🤖 Initializing Unified AI Controller...");
+
+    try {
+      this.initialized = true;
+      const duration = Date.now() - startTime;
+      logger.info(`✅ Unified AI Controller initialized in ${duration}ms`);
+    } catch (error) {
+      logger.warn(
+        { err: error },
+        "Failed to initialize Unified AI Controller:",
+      );
+      throw error;
+    }
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+  }
+
+  // ============================================================================
+  // CONTENT GENERATION
+  // ============================================================================
+
+  /**
+   * Surfaces the Self-Evolution posting_optimization guidance into the manual
+   * "generate a post" path so the artist-clicked button biases the same way the
+   * autopilot engine and advancedSocialAIService do. Reads
+   * evolutionRegistry?.getPostingOptimization(platform) and:
+   *
+   *  - engagementTargeting==='high' steers the objective toward 'engagement'
+   *    (mirrors the autopilot/advanced paths).
+   *  - contentFormatPriority biases contentType toward the prioritized media
+   *    format, but ONLY when the caller did not pin a contentType — an explicit
+   *    caller choice always wins.
+   *
+   * Returns the EFFECTIVE contentType (caller's pin or the bias) and an optional
+   * objective. Fully reversible: when no active knob exists getPostingOptimization
+   * returns null and the caller's values pass through unchanged.
+   */
+  private applyPostingOptimization(
+    platform: string | undefined,
+    callerContentType: ContentGenerationOptions["contentType"],
+  ): {
+    contentType?: ContentGenerationOptions["contentType"];
+    objective?: "engagement";
+  } {
+    const result: {
+      contentType?: ContentGenerationOptions["contentType"];
+      objective?: "engagement";
+    } = {};
+    if (callerContentType) result.contentType = callerContentType;
+    try {
+      const key = platform?.toLowerCase();
+      const posting = key
+        ? evolutionRegistry?.getPostingOptimization(key)
+        : null;
+      if (!posting) return result;
+
+      if (posting?.engagementTargeting === "high") {
+        result.objective = "engagement";
+      }
+
+      if (!callerContentType && Array.isArray(posting?.contentFormatPriority)) {
+        result.contentType = evolutionConsumers.preferredFormat(posting.contentFormatPriority);
+      }
+
+      const applied: string[] = [];
+      if (result?.objective) applied?.push("objective");
+      if (!callerContentType && result?.contentType) applied?.push("contentType");
+      if (applied?.length > 0) {
+        logger.info(
+          `[UnifiedAI] Applied self-evolution posting_optimization for ${key}: ${applied?.join(", ")}`,
+        );
+      }
+      return result;
+    } catch (err) {
+      logger.warn(
+        { err },
+        "[UnifiedAI] Failed to apply evolution posting_optimization",
+      );
+      return result;
+    }
+  }
+
+  public async generateContent(
+    options: ContentGenerationOptions,
+  ): Promise<UnifiedAIResult<CaptionResult>> {
+    const startTime = Date.now();
+    await this.ensureInitialized();
+
+    try {
+      const platformAliases: Record<string, string> = {
+        threads: "instagram",
+        googlebusiness: "facebook",
+      };
+      const mappedPlatform =
+        options?.platform && platformAliases[options?.platform]
+          ? platformAliases[options?.platform]
+          : options?.platform || "instagram";
+
+      // Self-Evolution posting_optimization: bias contentType / objective from
+      // the live registry (keyed by the artist-facing platform, not the alias)
+      // so the manual "generate a post" button honors the same guidance the
+      // autopilot and scheduled paths already do. Caller-pinned values win.
+      const posting = this.applyPostingOptimization(
+        options?.platform,
+        options?.contentType,
+      );
+      const effectiveContentType = posting?.contentType;
+      const effectiveObjective = posting?.objective;
+
+      const ctx = options?.userContext;
+
+      // MaxCore is the only generation source; no fabricated local fallback.
+      //
+      // ── Two-tier payload strategy ────────────────────────────────────────────
+      // TIER 1 — topic (short subject keyword, ≤300 chars)
+      //   Used by MaxCore for genre/platform/style matching.
+      //   Contains: artist, track, album, label, URL metadata.
+      //   Does NOT contain the user's instruction — that goes in extra_context.
+      //
+      // TIER 2 — extra_context (full creative directive, never truncated)
+      //   The user's verbatim instruction is placed FIRST so MaxCore's LLM
+      //   treats it as the primary generation directive. Supporting metadata
+      //   (stats, tracklist, body preview) follows as supplementary context.
+      //
+      // This separation is the difference between MaxCore generating generic
+      // music captions vs. actually following what the user asked for.
+
+      const artist = ctx?.artistName || options.artistName;
+
+      // Build a clean topic from metadata — no user instruction text
+      const baseTopic = options.topic || options.genre || "new music";
+      const topicParts: string[] = [baseTopic];
+      if (artist && !baseTopic.toLowerCase().includes(artist.toLowerCase())) {
+        topicParts.push(`by ${artist}`);
+      }
+      if (
+        options.trackTitle &&
+        !baseTopic.toLowerCase().includes(options.trackTitle.toLowerCase())
+      ) {
+        topicParts.push(`"${options.trackTitle}"`);
+      }
+      if (options.mood) topicParts.push(options.mood);
+      if (options.keywords?.length)
+        topicParts.push(options.keywords.slice(0, 4).join(", "));
+      // MaxCore's content endpoint resolves a URL only when `topic` is itself
+      // a URL/URI. Appending artist/track metadata turns a URL into freeform
+      // text ("https://... by Artist"), which bypasses MaxCore's URL parser and
+      // causes captions to be about the literal URL. Preserve URL topics
+      // verbatim; supporting metadata still travels in extra_context below.
+      const topicLooksLikeUrl =
+        /^(?:https?:\/\/|spotify:)/i.test(baseTopic.trim());
+      const enrichedTopic = topicLooksLikeUrl
+        ? baseTopic.trim()
+        : topicParts.join(" — ").slice(0, 300);
+
+      // ── Build extra_context — user instruction FIRST, then supporting detail ──
+      const extraParts: string[] = [];
+      // User's verbatim instruction is the primary creative directive
+      if (options?.extraContext) extraParts?.push(options?.extraContext);
+      // Supporting metadata follows
+      if (options?.album) extraParts?.push(`Album: ${options?.album}`);
+      if (options?.releaseDate)
+        extraParts?.push(`Released: ${options?.releaseDate}`);
+      if (options?.label) extraParts?.push(`Label: ${options?.label}`);
+      if (options?.tracklist?.length)
+        extraParts?.push(
+          `Tracklist: ${options?.tracklist?.slice(0, 4).join(", ")}`,
+        );
+      if (options?.viewCount != null && options?.viewCount > 0) {
+        extraParts?.push(
+          `${
+            options?.viewCount / 1_000_000 >= 1
+              ? (options?.viewCount / 1_000_000).toFixed(1) + "M"
+              : (options?.viewCount / 1000).toFixed(0) + "K"
+          } views`,
+        );
+      }
+      if (options?.likeCount != null && options?.likeCount > 0) {
+        extraParts?.push(`${(options?.likeCount / 1000).toFixed(0)}K likes`);
+      }
+      if (options?.bodyPreview) {
+        const clean = options?.bodyPreview
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 180);
+        if (clean) extraParts?.push(clean);
+      } else if (options?.description) {
+        const clean = options?.description
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 180);
+        if (clean) extraParts?.push(clean);
+      }
+      const combinedExtra = extraParts?.length
+        ? extraParts?.join(" | ")
+        : undefined;
+
+      // /api/generate/content is the structured endpoint on the remote server.
+      // It builds caption = hook + "\n\n" + body + "\n\n" + cta server-side,
+      // so the caption field is always clean (never raw model token output).
+      // Pass all available structured fields so MaxCore has full context.
+      const mcPayload: Record<string, unknown> = {
+        platform: mappedPlatform,
+        topic: enrichedTopic,
+        tone: options.tone || "energetic",
+        genre: options.genre || ctx?.genre,
+        artist_name: artist,
+        brand_voice: ctx?.brandVoice,
+        target_audience: ctx?.targetAudience,
+        preferred_hashtags: ctx?.preferredHashtags,
+        intent: options.intent,
+        direction: options.direction,
+        context: options.context,
+        awareness: options.awareness,
+      };
+      // If the caller supplied a verbatim user instruction, pass it as a
+      // dedicated `instruction` field AND prepend it in extra_context so MaxCore
+      // receives it through both channels regardless of API version.
+      if (options?.extraContext) {
+        mcPayload.instruction = options?.extraContext;
+        mcPayload.prompt = options?.extraContext;
+      }
+      // Artist bio / context
+      if (ctx?.artistBio) mcPayload.artist_context = ctx?.artistBio;
+      // Content guidance
+      if (ctx?.contentThemes?.length)
+        mcPayload.content_themes = ctx?.contentThemes;
+      if (ctx?.avoidTopics?.length) mcPayload.avoid_topics = ctx?.avoidTopics;
+      if (ctx?.recentPostSnippets?.length)
+        mcPayload.recent_post_snippets = ctx?.recentPostSnippets;
+      // Effective content_type / objective — caller-pinned contentType (or the
+      // Self-Evolution contentFormatPriority bias when unpinned) and the
+      // engagementTargeting='high' objective are forwarded so MaxCore actually
+      // shapes the post around them. Without this the knob would silently no-op.
+      if (effectiveContentType) mcPayload.content_type = effectiveContentType;
+      if (effectiveObjective) mcPayload.objective = effectiveObjective;
+      // Release / project metadata
+      if (options.album) mcPayload.album = options?.album;
+      if (options.releaseDate) mcPayload.release_date = options?.releaseDate;
+      if (options.label) mcPayload.label = options?.label;
+      if (options.tracklist?.length) mcPayload.tracklist = options?.tracklist;
+      // extra_context: user instruction FIRST (already placed first in extraParts),
+      // followed by supporting metadata. Never truncated — MaxCore needs the full text.
+      if (combinedExtra) mcPayload.extra_context = combinedExtra;
+
+      logger.debug(
+        `[UnifiedAI] MaxCore payload topic="${enrichedTopic.slice(0, 60)}" instruction="${(options.extraContext ?? "").slice(0, 80)}"`,
+      );
+
+      const mcRaw = await MaxCoreAIClient?.infer<unknown>(
+        "/api/generate/content",
+        mcPayload,
+      );
+
+      // MaxCore is the ONLY source — throw explicitly (HTTP 503) when it returns
+      // nothing rather than falling through to a "please retry" local response.
+      const mc = requireMaxCore(
+        (mcRaw as any)?.caption || (mcRaw as any)?.hook ? mcRaw : null,
+        "unified AI",
+      );
+
+      {
+        const caption =
+          (mc as any)?.caption ||
+          `${(mc as any)?.hook}\n\n${(mc as any)?.body || ""}\n\n${(mc as any)?.cta || ""}`.trim();
+
+        // ── Enrich hashtags with artist-specific keywords ─────────────────────
+        // MaxCore always returns generic platform hashtags (#fyp, #viral, etc.).
+        // Merge the user's actual keywords (from URL metadata, labels, etc.)
+        // so the post reaches the right audience. Keep MaxCore's hashtags but
+        // prepend keyword-derived ones, capped at 15 total.
+        // Sanitize MaxCore hashtags: drop anything that contains "—", quotes,
+        // spaces, or is longer than 40 chars — these are enriched topic strings
+        // that MaxCore occasionally echoes back as hashtags rather than real tags.
+        const mcHashtags: string[] = (
+          Array.isArray((mc as any)?.hashtags) ? ((mc as any)?.hashtags ?? []) : []
+        ).filter(
+          (h: string) =>
+            typeof h === "string" &&
+            h.startsWith("#") &&
+            h.length <= 40 &&
+            !/[—\s"'«»]/.test(h),
+        );
+        const keywordHashtags = (options?.keywords ?? [])
+          .filter((k: string) => k && k?.length > 1)
+          .map((k: string) =>
+            k?.startsWith("#") ? k : `#${k?.replace(/\s+/g, "").toLowerCase()}`,
+          )
+          .filter((h: string) => !mcHashtags?.includes(h));
+        // Also derive hashtag from artist name if available and not already present
+        const artistTag = artist
+          ? `#${artist?.replace(/\s+/g, "").toLowerCase()}`
+          : null;
+        if (
+          artistTag &&
+          !mcHashtags?.includes(artistTag) &&
+          !keywordHashtags?.includes(artistTag)
+        ) {
+          keywordHashtags?.unshift(artistTag);
+        }
+        const enrichedHashtags = [...keywordHashtags, ...mcHashtags].slice(
+          0,
+          15,
+        );
+
+        return {
+          success: true,
+          data: {
+            caption,
+            hashtags: enrichedHashtags.length ? enrichedHashtags : mcHashtags,
+            tone: options.tone || "energetic",
+            toneMatch: (mc as any).confidence || 0.95,
+            platform: mappedPlatform,
+            charCount: caption.length,
+            hook: (mc as any).hook,
+            body: (mc as any).body,
+            cta: (mc as any).cta,
+          } as CaptionResult,
+          processingTimeMs: Date.now() - startTime,
+          source: "MaxCoreAI",
+          confidence: (mc as any).confidence || 0.95,
+        };
+      }
+    } catch (error) {
+      logger.warn({ err: error }, "[UnifiedAI] generateContent error:");
+      if ((error as { status?: number })?.status === 503) throw error;
+      // Re-throw AIUnavailableError so the route handler can return HTTP 503
+      // instead of collapsing it into a success:false / HTTP 500 response.
+      if (error instanceof AIUnavailableError) throw error;
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error?.message : "Content generation failed",
+        processingTimeMs: Date.now() - startTime,
+        source: "MaxCoreAI",
+      };
+    }
+  }
+
+  public async generateSocialContent(options: {
+    platform?: Platform;
+    contentType: "post" | "story" | "video" | "ad";
+    tone: "professional" | "casual" | "energetic" | "promotional";
+    customPrompt?: string;
+    musicData?: {
+      genre: string;
+      mood: string;
+      title: string;
+      artist: string;
+    };
+  }): Promise<UnifiedAIResult<{ content: string[] }>> {
+    throw new AIUnavailableError(
+      "unowned social generation path is disabled; use authenticated MaxCore social generation",
+    );
+  }
+
+  public generateHashtags(options: {
+    topic?: string;
+    genre?: string;
+    platform?: Platform;
+    tone?: "professional" | "casual" | "energetic" | "promotional";
+    count?: number;
+  }): string[] {
+    throw new AIUnavailableError(
+      "hashtag generation: MaxCore does not expose a dedicated hashtag contract",
+    );
+  }
+
+  // ============================================================================
+  // SENTIMENT ANALYSIS
+  // ============================================================================
+
+  public async analyzeSentiment(
+    options: SentimentAnalysisOptions,
+  ): Promise<UnifiedAIResult<FullAnalysisResult | SentimentResult>> {
+    const startTime = Date.now();
+    await this.ensureInitialized();
+
+    try {
+      // MaxCore is the ONLY source — no local SentimentAnalyzer fallback.
+      const mcRaw = await MaxCoreAIClient?.infer<Record<string, unknown>>(
+        "/analyze/sentiment",
+        {
+          text: options.text,
+          includeEmotions: options.includeEmotions,
+          includeToxicity: options.includeToxicity,
+        },
+      );
+      const mc = requireMaxCore(mcRaw, "sentiment analysis");
+      // A non-null response with no usable sentiment signal is unavailability.
+      if (!(mc.sentiment || mc.label)) {
+        throw new AIUnavailableError("sentiment analysis");
+      }
+      return {
+        success: true,
+        data: mc as unknown as FullAnalysisResult,
+        processingTimeMs: Date.now() - startTime,
+        source: "MaxCoreAI",
+        confidence: (mc.confidence as number | undefined) || 0.92,
+      };
+    } catch (error) {
+      if (error instanceof AIUnavailableError) throw error;
+      // MaxCore is the sole source; any failure means the feature is unavailable.
+      logger.warn({ err: error }, "Sentiment analysis failed:");
+      throw new AIUnavailableError("sentiment analysis");
+    }
+  }
+
+  public async analyzeToxicity(text: string) {
+    // MaxCore-only: toxicity is a sentiment sub-analysis served by MaxCore.
+    const mc = requireMaxCore(
+      await MaxCoreAIClient?.infer<Record<string, unknown>>(
+        "/analyze/sentiment",
+        { text, includeToxicity: true },
+      ),
+      "toxicity analysis",
+    );
+    return mc.toxicity ?? mc;
+  }
+
+  public async detectEmotions(text: string) {
+    // MaxCore-only: emotion detection is a sentiment sub-analysis via MaxCore.
+    const mc = requireMaxCore(
+      await MaxCoreAIClient?.infer<Record<string, unknown>>(
+        "/analyze/sentiment",
+        { text, includeEmotions: true },
+      ),
+      "emotion detection",
+    );
+    return mc.emotions ?? mc;
+  }
+
+  // ============================================================================
+  // RECOMMENDATIONS
+  // ============================================================================
+
+  public async getRecommendations(
+    options: RecommendationOptions,
+  ): Promise<UnifiedAIResult<RecommendationResult | SimilarityResult[]>> {
+    throw new AIUnavailableError(
+      "recommendations: MaxCore does not expose a dedicated recommendation contract",
+    );
+  }
+
+  public addTrackData(tracks: TrackData[]): void {
+    throw new AIUnavailableError("local recommendation model is disabled");
+  }
+
+  public addArtistData(artists: ArtistData[]): void {
+    throw new AIUnavailableError("local recommendation model is disabled");
+  }
+
+  public recordInteraction(interaction: UserInteraction): void {
+    throw new AIUnavailableError("local recommendation model is disabled");
+  }
+
+  // ============================================================================
+  // AD OPTIMIZATION
+  // ============================================================================
+
+  public async optimizeAd(
+    options: AdOptimizationOptions,
+  ): Promise<
+    UnifiedAIResult<
+      | CampaignScore
+      | BudgetOptimizationResult
+      | CreativePrediction
+      | ROIForecast
+    >
+  > {
+    const startTime = Date.now();
+    await this.ensureInitialized();
+
+    try {
+      // MaxCore is the ONLY source — no local AdOptimizationEngine fallback.
+      const mcRaw = await MaxCoreAIClient?.infer<Record<string, unknown>>(
+        "/optimize/ad",
+        {
+          action: options.action,
+          campaign: options.campaign,
+          campaigns: options.campaigns,
+          totalBudget: options.totalBudget,
+          forecastPeriod: options.forecastPeriod,
+        },
+      );
+      const mc = requireMaxCore(mcRaw, "ad optimization");
+      // A non-null response with no usable optimization payload is unavailability.
+      if (
+        !(
+          mc?.score !== undefined ||
+          mc?.allocations ||
+          mc?.predictedCTR !== undefined ||
+          mc?.expectedROI !== undefined ||
+          mc?.confidence !== undefined
+        )
+      ) {
+        throw new AIUnavailableError("ad optimization");
+      }
+      return {
+        success: true,
+        data: mc as unknown as
+          | CampaignScore
+          | BudgetOptimizationResult
+          | CreativePrediction
+          | ROIForecast,
+        processingTimeMs: Date.now() - startTime,
+        source: "MaxCoreAI",
+        confidence: (mc.confidence as number | undefined) || 0.9,
+      };
+    } catch (error) {
+      if (error instanceof AIUnavailableError) throw error;
+      logger.warn({ err: error }, "Ad optimization failed:");
+      throw new AIUnavailableError("ad optimization");
+    }
+  }
+
+  public async generateAdCampaign(
+    config: {
+      targetAudience: {
+        age: string;
+        interests: string[];
+        location: string;
+        demographics: string;
+      };
+      budget: number;
+      campaignType: "awareness" | "conversion" | "engagement" | "viral";
+    },
+    musicData: unknown,
+  ) {
+    throw new AIUnavailableError(
+      "ad campaign generation requires an authenticated user id for MaxCore ownership",
+    );
+  }
+
+  // ============================================================================
+  // SOCIAL ENGAGEMENT PREDICTION
+  // ============================================================================
+
+  public async predictEngagement(
+    options: EngagementPredictionOptions,
+  ): Promise<
+    UnifiedAIResult<
+      | BestTimeResult
+      | ContentTypeRecommendation
+      | ViralPotentialScore
+      | ScheduleOptimization
+    >
+  > {
+    throw new AIUnavailableError(
+      "engagement prediction: current MaxCore endpoint is heuristic, not a model prediction contract",
+    );
+  }
+
+  public loadHistoricalPosts(posts: HistoricalPost[]): void {
+    throw new AIUnavailableError("local social prediction model is disabled");
+  }
+
+  public loadAudienceInsights(insights: AudienceInsights[]): void {
+    throw new AIUnavailableError("local social prediction model is disabled");
+  }
+
+  public detectTrends(platforms: Platform[]) {
+    throw new AIUnavailableError(
+      "social trend detection: MaxCore does not expose a dedicated trend contract",
+    );
+  }
+
+  public adaptContent(
+    content: { text: string; hashtags: string[]; mentions: string[] },
+    originalPlatform: Platform,
+    targetPlatform: Platform,
+  ) {
+    throw new AIUnavailableError(
+      "cross-platform content adaptation: use MaxCore social generation for the target platform",
+    );
+  }
+
+  // ============================================================================
+  // TIME SERIES FORECASTING
+  // ============================================================================
+
+  public async forecastMetrics(
+    options: ForecastOptions,
+  ): Promise<UnifiedAIResult<ForecastResult>> {
+    throw new AIUnavailableError(
+      "metric forecasting: MaxCore does not expose a dedicated forecasting contract",
+    );
+  }
+
+  public async predictAnalyticsMetric(userId: string, params: {
+    metric: "streams" | "engagement" | "revenue";
+    timeframe: "7d" | "30d" | "90d";
+  }) {
+    await this.ensureInitialized();
+    return aiAnalyticsService.predictMetric(userId, params);
+  }
+
+  public async predictChurn() {
+    await this.ensureInitialized();
+    return aiAnalyticsService?.predictChurn();
+  }
+
+  public async forecastRevenue(timeframe: string = "30d") {
+    await this.ensureInitialized();
+    return aiAnalyticsService?.forecastRevenue(timeframe);
+  }
+
+  public async detectAnomalies() {
+    await this.ensureInitialized();
+    return aiAnalyticsService?.detectAnomalies();
+  }
+
+  public async generateInsights() {
+    await this.ensureInitialized();
+    return aiAnalyticsService?.generateInsights();
+  }
+
+  // ============================================================================
+  // MODEL REGISTRY
+  // ============================================================================
+
+  public async getRegisteredModels(filter?: {
+    status?: string;
+    type?: string;
+  }) {
+    throw new AIUnavailableError(
+      "local model registry is disabled; MaxCore owns model lifecycle",
+    );
+  }
+
+  public async registerModel(options: {
+    name: string;
+    version: string;
+    type:
+      | "classification"
+      | "regression"
+      | "clustering"
+      | "timeseries"
+      | "nlp"
+      | "audio"
+      | "recommendation"
+      | "multimodal";
+    inputShape: number[];
+    outputShape: number[];
+    parameters?: Record<string, unknown>;
+    tags?: string[];
+    description?: string;
+  }) {
+    throw new AIUnavailableError(
+      "local model registration is disabled; MaxCore owns model lifecycle",
+    );
+  }
+
+  public async getModelPerformance(modelId: string) {
+    throw new AIUnavailableError(
+      "local model performance registry is disabled",
+    );
+  }
+
+  // ============================================================================
+  // HEALTH CHECK
+  // ============================================================================
+
+  public async getAIHealthStatus(): Promise<AIHealthStatus> {
+    const now = new Date();
+
+    if (
+      this.healthCache &&
+      now?.getTime() - this.lastHealthCheck.getTime() < 30000
+    ) {
+      return this.healthCache;
+    }
+
+    const maxcoreAvailable = await MaxCoreAIClient.isAvailable();
+    const unavailable: ServiceHealth = {
+      status: "unhealthy",
+      initialized: false,
+      lastError: "Local intermediary disabled",
+    };
+    const maxcore: ServiceHealth = {
+      status: maxcoreAvailable ? "healthy" : "unhealthy",
+      initialized: maxcoreAvailable,
+      lastError: maxcoreAvailable ? undefined : "MaxCore unavailable",
+    };
+    const services: AIHealthStatus["services"] = {
+      modelRegistry: unavailable,
+      contentGenerator: maxcore,
+      sentimentAnalyzer: maxcore,
+      recommendationEngine: unavailable,
+      adOptimizationEngine: maxcore,
+      socialAutopilotEngine: maxcore,
+      timeSeriesModel: unavailable,
+      legacyAIService: unavailable,
+      analyticsService: unavailable,
+    };
+
+    const healthyCount = Object.values(services).filter(
+      (s) => s?.status === "healthy",
+    ).length;
+    const totalCount = Object.keys(services).length;
+
+    const overall: "healthy" | "degraded" | "unhealthy" =
+      maxcoreAvailable ? "degraded" : "unhealthy";
+
+    this.healthCache = {
+      overall,
+      lastChecked: now,
+      services,
+      modelStats: {
+        registeredModels: 0,
+        activeModels: 0,
+        trainedModels: 0,
+      },
+    };
+
+    this.lastHealthCheck = now;
+    return this.healthCache;
+  }
+
+  private async checkServiceHealth(
+    _name: string,
+    healthCheck: () => Promise<unknown>,
+  ): Promise<ServiceHealth> {
+    const startTime = Date.now();
+    try {
+      await healthCheck();
+      return {
+        status: "healthy",
+        initialized: true,
+        responseTimeMs: Date.now() - startTime,
+      };
+    } catch (error) {
+      return {
+        status: "unhealthy",
+        initialized: this.initialized,
+        lastError: error instanceof Error ? error?.message : "Unknown error",
+        responseTimeMs: Date.now() - startTime,
+      };
+    }
+  }
+
+  private checkSyncServiceHealth(
+    _name: string,
+    healthCheck: () => any,
+  ): ServiceHealth {
+    const startTime = Date.now();
+    try {
+      healthCheck();
+      return {
+        status: "healthy",
+        initialized: true,
+        responseTimeMs: Date.now() - startTime,
+      };
+    } catch (error) {
+      return {
+        status: "unhealthy",
+        initialized: this.initialized,
+        lastError: error instanceof Error ? error?.message : "Unknown error",
+        responseTimeMs: Date.now() - startTime,
+      };
+    }
+  }
+
+  // ============================================================================
+  // UTILITY METHODS
+  // ============================================================================
+
+  public isInitialized(): boolean {
+    return this.initialized;
+  }
+
+  public getServiceStats() {
+    return {
+      initialized: this.initialized,
+      timeSeriesModelsLoaded: 0,
+      lastHealthCheck: this.lastHealthCheck,
+    };
+  }
+
+  // ============================================================================
+  // PERSONAL AD NETWORK - ORGANIC GROWTH METHODS
+  // ============================================================================
+
+  public async optimizeOrganicGrowth(options: {
+    profiles: unknown[];
+    content: Record<string, unknown>;
+    goals: Record<string, unknown>;
+  }): Promise<UnifiedAIResult<unknown>> {
+    throw new AIUnavailableError(
+      "organic growth optimization: MaxCore has no verified contract",
+    );
+  }
+
+  public async calculateOrganicROI(
+    results: Record<string, unknown>,
+  ): Promise<UnifiedAIResult<unknown>> {
+    throw new AIUnavailableError(
+      "organic ROI prediction: MaxCore has no verified prediction contract",
+    );
+  }
+
+  public async generateOrganicSchedule(options: {
+    profiles: unknown[];
+    contentQueue: unknown[];
+    goals: Record<string, unknown>;
+  }): Promise<UnifiedAIResult<unknown>> {
+    throw new AIUnavailableError(
+      "organic schedule prediction: MaxCore engagement endpoint is heuristic",
+    );
+  }
+
+  public async analyzePersonalAdNetwork(
+    userId?: string,
+  ): Promise<UnifiedAIResult<unknown>> {
+    throw new AIUnavailableError(
+      "personal ad-network analysis: MaxCore has no verified analysis contract",
+    );
+  }
+}
+
+// ============================================================================
+// SINGLETON EXPORT
+// ============================================================================
+
+export const unifiedAIController = UnifiedAIController?.getInstance();
+
+export default unifiedAIController;

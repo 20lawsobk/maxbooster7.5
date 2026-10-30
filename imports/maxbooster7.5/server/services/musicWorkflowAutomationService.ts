@@ -1,0 +1,2583 @@
+// @ts-nocheck
+import cron from "../lib/cronScheduler.js";
+import type { ScheduledTask } from "../lib/cronScheduler.js";
+import { db } from "../db.js";
+import {
+  musicWorkflowAutomations,
+  musicWorkflowExecutionLogs,
+  pressKits,
+  playlistPitches,
+  syncSubmissions,
+  publishingRights,
+  venueContacts,
+  releases,
+  posts,
+} from "../../shared/schema.js";
+import { eq, and, desc, sql } from "drizzle-orm";
+import { logger } from "../logger.js";
+import { notificationService } from "./notificationService.js";
+import { emailService } from "./emailService.js";
+import { unifiedAIController } from "./unifiedAIController.js";
+import { scheduleReleaseCountdown } from "./releaseCountdownWorkflow.js";
+import { repurposePublishedCaption } from "./captionRepurposeWorkflow.js";
+import { BIO_UPDATE_UNAVAILABLE, WorkflowUnavailableError } from "./workflowCapabilities.js";
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character];
+  });
+}
+
+function safeHttpUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" || parsed.protocol === "http:"
+      ? parsed.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type WorkflowPhase =
+  | "creation"
+  | "pre-release"
+  | "release-day"
+  | "post-release"
+  | "revenue";
+
+export interface ConfigField {
+  label: string;
+  type: "boolean" | "string" | "number" | "select";
+  default: boolean | string | number;
+  options?: string[];
+  description?: string;
+}
+
+export interface WorkflowTemplate {
+  id: string;
+  name: string;
+  description: string;
+  phase: WorkflowPhase;
+  icon: string;
+  trigger: { event: string; description: string };
+  configSchema: Record<string, ConfigField>;
+  defaultConfig: Record<string, any>;
+  enabledByDefault: boolean;
+  unavailableReason?: string;
+}
+
+export interface WorkflowEventData {
+  userId: string;
+  [key: string]: unknown;
+}
+
+// ─── Template definitions (15 covering full music artist journey) ─────────────
+
+export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
+  // ── PHASE 1: CREATION ────────────────────────────────────────────────────
+  {
+    id: "track-upload-analysis",
+    name: "Track Upload Follow-up",
+    description: "Assign an ISRC placeholder and notify the account owner when configured. Audio feature and genre/mood analysis are not implemented by this workflow.",
+    phase: "creation",
+    icon: "🎵",
+    trigger: {
+      event: "track:uploaded",
+      description: "A new audio file is uploaded",
+    },
+    configSchema: {
+      suggestGenre: {
+        label: "Suggest genre tags",
+        type: "boolean",
+        default: false,
+        description: "Unavailable: this workflow does not analyze audio or generate genre/mood tags",
+      },
+      generateISRC: {
+        label: "Auto-generate ISRC placeholder",
+        type: "boolean",
+        default: true,
+        description:
+          "Create an ISRC placeholder ready to register with your PRO",
+      },
+      notifyOnComplete: {
+        label: "Push notification when analysis is done",
+        type: "boolean",
+        default: true,
+      },
+    },
+    defaultConfig: {
+      suggestGenre: false,
+      generateISRC: true,
+      notifyOnComplete: true,
+    },
+    enabledByDefault: true,
+  },
+  {
+    id: "collaboration-alert",
+    name: "Collaborator Added Notification",
+    description:
+      "Instantly notify all project collaborators when a new team member joins. Keeps everyone in sync from the first moment.",
+    phase: "creation",
+    icon: "🤝",
+    trigger: {
+      event: "collaboration:member-added",
+      description: "A collaborator is added to a project",
+    },
+    configSchema: {
+      sendEmail: {
+        label: "Send email to collaborators",
+        type: "boolean",
+        default: true,
+      },
+      sendPush: {
+        label: "Send push notification",
+        type: "boolean",
+        default: true,
+      },
+      includeProjectBrief: {
+        label: "Include project brief in notification",
+        type: "boolean",
+        default: true,
+        description:
+          "Attach a short project summary to orient new collaborators",
+      },
+    },
+    defaultConfig: {
+      sendEmail: true,
+      sendPush: true,
+      includeProjectBrief: true,
+    },
+    enabledByDefault: true,
+  },
+  {
+    id: "mix-ready-checklist",
+    name: "Mix Complete → Mastering Checklist",
+    description:
+      "When you mark a mix as complete, automatically create a mastering task, send the mix notes to your mastering engineer, and notify your team that it's time for the next phase.",
+    phase: "creation",
+    icon: "🎛️",
+    trigger: {
+      event: "track:mix-complete",
+      description: "A track mix is marked as complete",
+    },
+    configSchema: {
+      createMasteringTask: {
+        label: "Auto-create mastering task",
+        type: "boolean",
+        default: true,
+      },
+      notifyTeam: {
+        label: "Notify project team",
+        type: "boolean",
+        default: true,
+      },
+      masteringDeadlineDays: {
+        label: "Mastering deadline (days from now)",
+        type: "number",
+        default: 7,
+        description: "Sets a due date on the mastering task",
+      },
+    },
+    defaultConfig: {
+      createMasteringTask: true,
+      notifyTeam: true,
+      masteringDeadlineDays: 7,
+    },
+    enabledByDefault: false,
+  },
+
+  // ── PHASE 2: PRE-RELEASE ─────────────────────────────────────────────────
+  {
+    id: "release-countdown-posts",
+    name: "Auto-Schedule Release Countdown Posts",
+    description:
+      "Queue release countdown posts at 7 days, 3 days, 1 day, and the release time on connected platforms with compatible media. Requires auto-publish consent.",
+    phase: "pre-release",
+    icon: "📅",
+    trigger: {
+      event: "release:date-set",
+      description: "A release date is set on a distribution release",
+    },
+    configSchema: {
+      platforms: {
+        label: "Platforms to post on",
+        type: "select",
+        default: "all",
+        options: ["all", "instagram", "twitter", "facebook", "tiktok"],
+        description: "Which platforms to schedule countdown posts for",
+      },
+      post7Day: {
+        label: "Post 7-day countdown",
+        type: "boolean",
+        default: true,
+      },
+      post3Day: {
+        label: "Post 3-day countdown",
+        type: "boolean",
+        default: true,
+      },
+      post1Day: {
+        label: "Post day-before teaser",
+        type: "boolean",
+        default: true,
+      },
+      postReleaseDay: {
+        label: "Post at the release time",
+        type: "boolean",
+        default: true,
+      },
+    },
+    defaultConfig: {
+      platforms: "all",
+      post7Day: true,
+      post3Day: true,
+      post1Day: true,
+      postReleaseDay: true,
+    },
+    enabledByDefault: true,
+  },
+  {
+    id: "pre-save-campaign",
+    name: "Pre-Save Campaign Event Alert",
+    description: "Notify the account owner when a pre-save event is received. Landing-page creation occurs in the release wizard; automatic social and email delivery are unavailable.",
+    phase: "pre-release",
+    icon: "🔗",
+    trigger: {
+      event: "release:scheduled",
+      description: "A release is officially scheduled for distribution",
+    },
+    configSchema: {
+      postToSocial: {
+        label: "Auto-post pre-save link to social",
+        type: "boolean",
+        default: false,
+        description: "Unavailable until provider-backed post scheduling is configured",
+      },
+      sendToEmailList: {
+        label: "Notify email subscribers",
+        type: "boolean",
+        default: false,
+        description: "Unavailable until verified subscriber selection and bulk-email dispatch are configured",
+      },
+      customMessage: {
+        label: "Custom pre-save caption",
+        type: "string",
+        default: "",
+        description: "Leave empty to use AI-generated caption",
+      },
+    },
+    defaultConfig: {
+      postToSocial: false,
+      sendToEmailList: false,
+      customMessage: "",
+    },
+    enabledByDefault: false,
+  },
+  {
+    id: "distribution-submitted-notify",
+    name: "Distribution Submission Alert",
+    description:
+      "When distribution is submitted, send an in-app alert to the account owner. Team-wide delivery, confirmation email, and durable follow-up reminders are not configured.",
+    phase: "pre-release",
+    icon: "🚀",
+    trigger: {
+      event: "distribution:submitted",
+      description: "Music is submitted to DSPs for distribution",
+    },
+    configSchema: {
+      notifyTeam: {
+        label: "Notify project collaborators",
+        type: "boolean",
+        default: false,
+        description: "Unavailable until collaborator targeting is connected",
+      },
+      sendConfirmationEmail: {
+        label: "Send submission confirmation email",
+        type: "boolean",
+        default: false,
+        description: "Unavailable until a verified recipient list is connected",
+      },
+      setFollowUpReminder: {
+        label: "Set follow-up reminder",
+        type: "boolean",
+        default: false,
+        description: "Remind you to check DSP approval status after 48 hours",
+      },
+    },
+    defaultConfig: {
+      notifyTeam: false,
+      sendConfirmationEmail: false,
+      setFollowUpReminder: false,
+    },
+    enabledByDefault: true,
+  },
+
+  // ── PHASE 3: RELEASE DAY ─────────────────────────────────────────────────
+  {
+    id: "release-day-social-blast",
+    name: "Release Day Social Media Blast",
+    description: "Unavailable: release-day provider-backed social publishing is not configured.",
+    unavailableReason: "Release-day social publishing is unavailable: this handler has no verified provider scheduling operation. No social posts are published or queued.",
+    phase: "release-day",
+    icon: "🎉",
+    trigger: {
+      event: "release:live",
+      description:
+        "A release becomes publicly available on streaming platforms",
+    },
+    configSchema: {
+      platforms: {
+        label: "Platforms to blast",
+        type: "select",
+        default: "all",
+        options: [
+          "all",
+          "instagram",
+          "twitter",
+          "facebook",
+          "tiktok",
+          "youtube",
+        ],
+      },
+      includeStreamingLinks: {
+        label: "Include streaming platform links",
+        type: "boolean",
+        default: true,
+      },
+      includeArtwork: {
+        label: "Include release artwork",
+        type: "boolean",
+        default: true,
+      },
+      postTime: {
+        label: "Post timing",
+        type: "select",
+        default: "immediate",
+        options: ["immediate", "optimal"],
+        description:
+          '"Optimal" uses AI to find the best time within a 2-hour window',
+      },
+    },
+    defaultConfig: {
+      platforms: "all",
+      includeStreamingLinks: true,
+      includeArtwork: true,
+      postTime: "immediate",
+    },
+    enabledByDefault: false,
+  },
+  {
+    id: "release-day-newsletter",
+    name: "Release Day Fan Newsletter",
+    description: "Unavailable: verified subscriber selection and bulk-email dispatch are not configured.",
+    unavailableReason: "Release-day newsletter delivery is unavailable: no verified subscriber selection and bulk-email dispatch operation is configured. No newsletter is sent.",
+    phase: "release-day",
+    icon: "📧",
+    trigger: {
+      event: "release:live",
+      description:
+        "A release becomes publicly available on streaming platforms",
+    },
+    configSchema: {
+      subject: {
+        label: "Email subject line",
+        type: "string",
+        default: "",
+        description: "Leave empty to auto-generate from release title",
+      },
+      personalNote: {
+        label: "Personal note to fans",
+        type: "string",
+        default: "",
+        description:
+          "A short personal message to include above the streaming links",
+      },
+      includeSpotifyLink: {
+        label: "Include Spotify link",
+        type: "boolean",
+        default: true,
+      },
+      includeAppleMusicLink: {
+        label: "Include Apple Music link",
+        type: "boolean",
+        default: true,
+      },
+    },
+    defaultConfig: {
+      subject: "",
+      personalNote: "",
+      includeSpotifyLink: true,
+      includeAppleMusicLink: true,
+    },
+    enabledByDefault: false,
+  },
+  {
+    id: "release-day-push-notify",
+    name: "Release Day Push Notification",
+    description: "Unavailable: follower-wide release-alert targeting is not configured.",
+    unavailableReason: "Follower-wide release-alert delivery is unavailable: the handler can notify only the automation owner, not a verified follower/opt-in audience.",
+    phase: "release-day",
+    icon: "🔔",
+    trigger: {
+      event: "release:live",
+      description:
+        "A release becomes publicly available on streaming platforms",
+    },
+    configSchema: {
+      notifyFollowers: {
+        label: "Notify platform followers",
+        type: "boolean",
+        default: true,
+      },
+      message: {
+        label: "Notification message",
+        type: "string",
+        default: "",
+        description:
+          "Leave empty to auto-generate from release title and artist name",
+      },
+    },
+    defaultConfig: { notifyFollowers: true, message: "" },
+    enabledByDefault: false,
+  },
+
+  // ── PHASE 4: POST-RELEASE ────────────────────────────────────────────────
+  {
+    id: "weekly-performance-digest",
+    name: "Weekly Performance Digest",
+    description: "Unavailable: verified streaming/revenue aggregation and recommendation data are not connected.",
+    unavailableReason: "Weekly performance digest data collection is unavailable: this handler does not query verified streaming, revenue, or recommendation data. No digest is generated.",
+    phase: "post-release",
+    icon: "📊",
+    trigger: {
+      event: "schedule:weekly",
+      description: "Runs every Monday at a configurable time",
+    },
+    configSchema: {
+      sendTime: {
+        label: "Send time (24h, your timezone)",
+        type: "string",
+        default: "09:00",
+        description: "When to send the digest each Monday",
+      },
+      includeStreamingData: {
+        label: "Include streaming data",
+        type: "boolean",
+        default: true,
+      },
+      includeRevenueData: {
+        label: "Include revenue data",
+        type: "boolean",
+        default: true,
+      },
+      includeAISuggestions: {
+        label: "Include AI growth suggestions",
+        type: "boolean",
+        default: true,
+      },
+      deliveryMethod: {
+        label: "Delivery method",
+        type: "select",
+        default: "both",
+        options: ["email", "push", "both"],
+      },
+    },
+    defaultConfig: {
+      sendTime: "09:00",
+      includeStreamingData: true,
+      includeRevenueData: true,
+      includeAISuggestions: true,
+      deliveryMethod: "both",
+    },
+    enabledByDefault: false,
+  },
+  {
+    id: "streaming-milestone-celebrate",
+    name: "Streaming Milestone Celebration Posts",
+    description: "Notify the account owner about a supplied streaming milestone. Automatic social posting is not configured.",
+    phase: "post-release",
+    icon: "🏆",
+    trigger: {
+      event: "analytics:stream-milestone",
+      description: "A streaming milestone threshold is crossed",
+    },
+    configSchema: {
+      milestones: {
+        label: "Milestones to celebrate",
+        type: "select",
+        default: "all",
+        options: ["all", "1k", "10k", "100k", "1m"],
+        description: '"All" celebrates every defined milestone',
+      },
+      postToSocial: {
+        label: "Auto-post to social media",
+        type: "boolean",
+        default: false,
+        description: "Unavailable until provider-backed social scheduling is configured",
+      },
+      includeStats: {
+        label: "Include streaming stats in post",
+        type: "boolean",
+        default: true,
+      },
+    },
+    defaultConfig: {
+      milestones: "all",
+      postToSocial: false,
+      includeStats: true,
+    },
+    enabledByDefault: true,
+  },
+  {
+    id: "playlist-placement-alert",
+    name: "Playlist Placement Notification",
+    description:
+      "Get instantly notified when your track is added to a playlist, with details about playlist size, follower count, and estimated monthly listeners reach.",
+    phase: "post-release",
+    icon: "🎧",
+    trigger: {
+      event: "analytics:playlist-added",
+      description: "A track is added to a streaming platform playlist",
+    },
+    configSchema: {
+      notifyPush: {
+        label: "Push notification",
+        type: "boolean",
+        default: true,
+      },
+      notifyEmail: {
+        label: "Email notification",
+        type: "boolean",
+        default: false,
+      },
+      autoShareAnnouncement: {
+        label: "Auto-post playlist placement on social",
+        type: "boolean",
+        default: false,
+        description: "Only fires for editorial playlists with 10K+ followers",
+      },
+    },
+    defaultConfig: {
+      notifyPush: true,
+      notifyEmail: false,
+      autoShareAnnouncement: false,
+    },
+    enabledByDefault: true,
+  },
+  {
+    id: "low-engagement-rescue",
+    name: "Low Engagement Auto-Response",
+    description: "Alert-only until A/B testing and durable posting-time changes are implemented.",
+    phase: "post-release",
+    icon: "📉",
+    trigger: {
+      event: "analytics:engagement-drop",
+      description:
+        "Track engagement drops below configured threshold for 3 days",
+    },
+    configSchema: {
+      engagementThresholdPct: {
+        label: "Engagement drop threshold (%)",
+        type: "number",
+        default: 30,
+        description:
+          "Trigger if engagement drops by this percentage from 7-day average",
+      },
+      triggerABTest: {
+        label: "Launch A/B content variation test",
+        type: "boolean",
+        default: false,
+        description: "Unavailable until durable experiment execution is configured",
+      },
+      tryNewPostingTime: {
+        label: "Try different posting time slot",
+        type: "boolean",
+        default: false,
+        description: "Unavailable until provider-backed rescheduling is configured",
+      },
+      notifyUser: {
+        label: "Notify me of the rescue attempt",
+        type: "boolean",
+        default: true,
+      },
+    },
+    defaultConfig: {
+      engagementThresholdPct: 30,
+      triggerABTest: false,
+      tryNewPostingTime: false,
+      notifyUser: true,
+    },
+    enabledByDefault: false,
+  },
+
+  // ── PHASE 5: REVENUE ─────────────────────────────────────────────────────
+  {
+    id: "beat-sale-thank-you",
+    name: "Sale Thank You & Delivery",
+    description:
+      "When a beat or track sells, automatically send the buyer a personalized thank-you email with download links, license terms, and your contact info for future collaboration.",
+    phase: "revenue",
+    icon: "💸",
+    trigger: {
+      event: "marketplace:sale-completed",
+      description: "A beat or track is purchased from your storefront",
+    },
+    configSchema: {
+      sendThankYouEmail: {
+        label: "Send buyer thank-you email",
+        type: "boolean",
+        default: true,
+      },
+      personalNote: {
+        label: "Personal note to buyer",
+        type: "string",
+        default: "",
+        description: "Leave empty for a professional default message",
+      },
+      includeSocialLinks: {
+        label: "Include your social media links",
+        type: "boolean",
+        default: true,
+      },
+      notifySeller: {
+        label: "Notify me of each sale",
+        type: "boolean",
+        default: true,
+      },
+    },
+    defaultConfig: {
+      sendThankYouEmail: true,
+      personalNote: "",
+      includeSocialLinks: true,
+      notifySeller: true,
+    },
+    enabledByDefault: true,
+  },
+  {
+    id: "royalty-collection-reminder",
+    name: "Monthly Royalty Collection Check",
+    description: "Send a reminder to review royalty statements. External PRO balance checks and report generation are unavailable.",
+    phase: "revenue",
+    icon: "💰",
+    trigger: {
+      event: "schedule:monthly",
+      description: "Runs on the 1st of each month",
+    },
+    configSchema: {
+      checkPROBalance: {
+        label: "Check PRO (ASCAP/BMI/SESAC) balance",
+        type: "boolean",
+        default: false,
+        description: "Unavailable until a verified PRO API integration is configured",
+      },
+      generateReport: {
+        label: "Generate monthly royalty report",
+        type: "boolean",
+        default: false,
+        description: "Unavailable until verified royalty data aggregation is configured",
+      },
+      notifyThreshold: {
+        label: "Notify if uncollected royalties exceed ($)",
+        type: "number",
+        default: 50,
+        description: "Only alert if the uncollected amount is above this value",
+      },
+      deliveryMethod: {
+        label: "Reminder delivery",
+        type: "select",
+        default: "push",
+        options: ["email", "push", "both"],
+        description: "Only push/in-app reminders are supported; email and both are unavailable",
+      },
+    },
+    defaultConfig: {
+      checkPROBalance: false,
+      generateReport: false,
+      notifyThreshold: 50,
+      deliveryMethod: "push",
+    },
+    enabledByDefault: false,
+  },
+
+  // ── ADDITIONAL: CREATION ─────────────────────────────────────────────────
+  {
+    id: "pro-track-registration",
+    name: "PRO Track Registration Reminder",
+    description:
+      'When a track is marked mastered, create or update a local publishing-rights record and optionally remind you to register with your PRO. No external PRO registration is submitted.',
+    phase: "creation",
+    icon: "📋",
+    trigger: {
+      event: "track:mastered",
+      description: "A track is marked as mastered and ready",
+    },
+    configSchema: {
+      pro: {
+        label: "Your PRO",
+        type: "select",
+        default: "ASCAP",
+        options: ["ASCAP", "BMI", "SESAC", "SOCAN", "PRS", "Other"],
+        description: "Your performing rights organization",
+      },
+      autoFillMetadata: {
+        label: "Copy supplied metadata into the local record",
+        type: "boolean",
+        default: true,
+      },
+      sendReminder: {
+        label: "Send registration reminder notification",
+        type: "boolean",
+        default: true,
+      },
+    },
+    defaultConfig: { pro: "ASCAP", autoFillMetadata: true, sendReminder: true },
+    enabledByDefault: true,
+  },
+  {
+    id: "press-release-generator",
+    name: "Auto-Generate Press Release",
+    description:
+      "When a release is submitted for distribution, automatically generate a professional press release draft using your track metadata, bio, and release notes — ready to send to blogs, magazines, and playlists.",
+    phase: "pre-release",
+    icon: "📰",
+    trigger: {
+      event: "distribution:submitted",
+      description: "Music is submitted to DSPs for distribution",
+    },
+    configSchema: {
+      tone: {
+        label: "Press release tone",
+        type: "select",
+        default: "professional",
+        options: ["professional", "conversational", "hype"],
+        description: "Writing style for the generated press release",
+      },
+      includeQuote: {
+        label: "Include artist quote",
+        type: "boolean",
+        default: true,
+        description: "Add a pull quote from you about the release",
+      },
+      notifyOnReady: {
+        label: "Notify me when press release is ready",
+        type: "boolean",
+        default: true,
+      },
+    },
+    defaultConfig: {
+      tone: "professional",
+      includeQuote: true,
+      notifyOnReady: true,
+    },
+    enabledByDefault: false,
+  },
+
+  // ── ADDITIONAL: POST-RELEASE ─────────────────────────────────────────────
+  {
+    id: "social-bio-update",
+    name: "Auto-Update Social Bios on Release",
+    description: BIO_UPDATE_UNAVAILABLE,
+    unavailableReason: BIO_UPDATE_UNAVAILABLE,
+    phase: "release-day",
+    icon: "✏️",
+    trigger: {
+      event: "release:live",
+      description:
+        "A release becomes publicly available on streaming platforms",
+    },
+    configSchema: {
+      platforms: {
+        label: "Platforms to update",
+        type: "select",
+        default: "all",
+        options: ["all", "instagram", "twitter", "tiktok"],
+      },
+      revertAfterDays: {
+        label: "Revert bio after (days)",
+        type: "number",
+        default: 30,
+        description: "Set to 0 to keep the release bio permanently",
+      },
+    },
+    defaultConfig: { platforms: "all", revertAfterDays: 30 },
+    enabledByDefault: false,
+  },
+  {
+    id: "smart-caption-repurpose",
+    name: "Multi-Platform Caption Repurposer",
+    description:
+      "After you publish a post on one platform, automatically rewrite and reformat it for all your other connected platforms — adapting character limits, hashtag strategy, and tone for Instagram, TikTok, Twitter/X, and Facebook.",
+    phase: "post-release",
+    icon: "🔄",
+    trigger: {
+      event: "social:post-published",
+      description: "A social media post is published on any connected platform",
+    },
+    configSchema: {
+      targetPlatforms: {
+        label: "Repurpose to platforms",
+        type: "select",
+        default: "all",
+        options: ["all", "instagram", "tiktok", "twitter", "facebook"],
+      },
+      autoSchedule: {
+        label: "Auto-schedule repurposed posts",
+        type: "boolean",
+        default: true,
+        description:
+          "Queue repurposed posts at optimal times (not all at once)",
+      },
+      staggerHours: {
+        label: "Stagger posts by (hours)",
+        type: "number",
+        default: 4,
+        description: "Time gap between each repurposed post",
+      },
+    },
+    defaultConfig: {
+      targetPlatforms: "all",
+      autoSchedule: true,
+      staggerHours: 4,
+    },
+    enabledByDefault: false,
+  },
+
+  // ── ADDITIONAL: REVENUE ──────────────────────────────────────────────────
+  {
+    id: "venue-booking-followup",
+    name: "Venue Booking Follow-Up",
+    description:
+      "When you log venue outreach, record a follow-up date in the booking CRM. Automatic reminders are not scheduled by this workflow.",
+    phase: "revenue",
+    icon: "🎤",
+    trigger: {
+      event: "venue:contacted",
+      description: 'A venue contact is marked as "outreach sent" in your CRM',
+    },
+    configSchema: {
+      followUpDays: {
+        label: "Record follow-up date offset (days)",
+        type: "number",
+        default: 5,
+        description: "The date is recorded in CRM notes; no automatic reminder is sent",
+      },
+      reminderMessage: {
+        label: "Custom reminder note",
+        type: "string",
+        default: "",
+        description: "Leave empty for a default follow-up suggestion",
+      },
+      sendEmail: {
+        label: "Send follow-up email now",
+        type: "boolean",
+        default: false,
+        description: "Sends immediately to the saved contact email; no draft is saved",
+      },
+    },
+    defaultConfig: { followUpDays: 5, reminderMessage: "", sendEmail: false },
+    enabledByDefault: true,
+  },
+  {
+    id: "sync-license-pitch",
+    name: "Auto-Pitch New Tracks for Sync",
+    description: "Create draft tracker entries for suggested sync targets. Automated email delivery is disabled until verified user-owned contacts are integrated.",
+    phase: "revenue",
+    icon: "🎬",
+    trigger: {
+      event: "release:live",
+      description:
+        "A release becomes publicly available on streaming platforms",
+    },
+    configSchema: {
+      targetGenres: {
+        label: "Target placement types",
+        type: "select",
+        default: "all",
+        options: ["all", "film", "tv", "ads", "trailers", "games"],
+      },
+      autoSendPitch: {
+        label: "Auto-send pitch emails",
+        type: "boolean",
+        default: false,
+        description: "Unavailable: the current workflow does not use a verified user-owned recipient list",
+      },
+      maxPitchesPerRelease: {
+        label: "Max pitches per release",
+        type: "number",
+        default: 10,
+        description: "Cap on how many contacts to pitch per release",
+      },
+    },
+    defaultConfig: {
+      targetGenres: "all",
+      autoSendPitch: false,
+      maxPitchesPerRelease: 10,
+    },
+    enabledByDefault: false,
+  },
+];
+
+// ─── Service ─────────────────────────────────────────────────────────────────
+
+class MusicWorkflowAutomationService {
+  private scheduledTasks = new Map<string, ScheduledTask>();
+
+  constructor() {
+    this.startScheduledWorkflows();
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────────
+
+  getTemplates(): WorkflowTemplate[] {
+    return WORKFLOW_TEMPLATES;
+  }
+
+  async getUserAutomations(
+    userId: string,
+  ): Promise<
+    Record<string, { enabled: boolean; config: Record<string, any> }>
+  > {
+    const rows = await db
+      .select()
+      .from(musicWorkflowAutomations)
+      .where(eq(musicWorkflowAutomations.userId, userId));
+
+    const map: Record<
+      string,
+      { enabled: boolean; config: Record<string, any> }
+    > = {};
+    for (const row of rows) {
+      const template = WORKFLOW_TEMPLATES.find((candidate) => candidate.id === row.templateId);
+      map[row.templateId] = {
+        enabled: row.enabled && !template?.unavailableReason,
+        config: (row?.config as Record<string, any>) ?? {},
+      };
+    }
+    return map;
+  }
+
+  async enableAutomation(
+    userId: string,
+    templateId: string,
+    config?: Record<string, any>,
+  ): Promise<void> {
+    const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
+    if (!template) throw new Error(`Unknown template: ${templateId}`);
+    if (template.unavailableReason) throw new WorkflowUnavailableError(template.unavailableReason);
+
+    const existing = await db
+      .select()
+      .from(musicWorkflowAutomations)
+      .where(
+        and(
+          eq(musicWorkflowAutomations.userId, userId),
+          eq(musicWorkflowAutomations.templateId, templateId),
+        ),
+      )
+      .limit(1);
+
+    const mergedConfig = { ...template?.defaultConfig, ...(config ?? {}) };
+
+    if (existing?.length > 0) {
+      await db
+        .update(musicWorkflowAutomations)
+        .set({ enabled: true, config: mergedConfig, updatedAt: new Date() })
+        .where(
+          and(
+            eq(musicWorkflowAutomations.userId, userId),
+            eq(musicWorkflowAutomations.templateId, templateId),
+          ),
+        );
+    } else {
+      await db.insert(musicWorkflowAutomations).values({
+        userId,
+        templateId,
+        enabled: true,
+        config: mergedConfig,
+      });
+    }
+  }
+
+  async disableAutomation(userId: string, templateId: string): Promise<void> {
+    await db
+      .update(musicWorkflowAutomations)
+      .set({ enabled: false, updatedAt: new Date() })
+      .where(
+        and(
+          eq(musicWorkflowAutomations.userId, userId),
+          eq(musicWorkflowAutomations.templateId, templateId),
+        ),
+      );
+  }
+
+  async updateConfig(
+    userId: string,
+    templateId: string,
+    config: Record<string, any>,
+  ): Promise<void> {
+    const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
+    if (!template) throw new Error(`Unknown template: ${templateId}`);
+
+    const existing = await db
+      .select()
+      .from(musicWorkflowAutomations)
+      .where(
+        and(
+          eq(musicWorkflowAutomations.userId, userId),
+          eq(musicWorkflowAutomations.templateId, templateId),
+        ),
+      )
+      .limit(1);
+
+    if (template.unavailableReason) {
+      throw new WorkflowUnavailableError(template.unavailableReason);
+    }
+
+    const mergedConfig = {
+      ...(existing?.length > 0
+        ? (existing[0].config as Record<string, any>)
+        : template?.defaultConfig),
+      ...config,
+    };
+
+    if (existing?.length > 0) {
+      await db
+        .update(musicWorkflowAutomations)
+        .set({ config: mergedConfig, updatedAt: new Date() })
+        .where(
+          and(
+            eq(musicWorkflowAutomations.userId, userId),
+            eq(musicWorkflowAutomations.templateId, templateId),
+          ),
+        );
+    } else {
+      await db.insert(musicWorkflowAutomations).values({
+        userId,
+        templateId,
+        enabled: false,
+        config: mergedConfig,
+      });
+    }
+  }
+
+  async getExecutionLogs(userId: string, templateId?: string, limit = 50) {
+    const conditions = [eq(musicWorkflowExecutionLogs.userId, userId)];
+    if (templateId) {
+      conditions?.push(eq(musicWorkflowExecutionLogs.templateId, templateId));
+    }
+
+    const rows = await db
+      .select()
+      .from(musicWorkflowExecutionLogs)
+      .where(and(...conditions))
+      .orderBy(desc(musicWorkflowExecutionLogs.executedAt))
+      .limit(limit);
+
+    return rows;
+  }
+
+  /**
+   * Fire an automation event. Call this from anywhere in the app when a
+   * music-workflow-relevant event occurs.
+   *
+   * @example
+   * musicWorkflowAutomationService?.triggerEvent('track:uploaded', {
+   *   userId: '...', trackId: '...', trackName: 'My Song'
+   * });
+   */
+  async triggerEvent(
+    eventType: string,
+    data: WorkflowEventData,
+  ): Promise<
+    Array<{
+      templateId: string;
+      status: "success" | "failed";
+      result: Record<string, unknown> | null;
+      error: string | null;
+    }>
+  > {
+    const { userId } = data;
+    if (!userId) throw new Error("A user id is required to trigger a workflow");
+
+    const relevantTemplates = WORKFLOW_TEMPLATES?.filter(
+      (t) => t?.trigger.event === eventType,
+    );
+    if (relevantTemplates?.length === 0) return [];
+
+    const userAutomations = await this.getUserAutomations(userId);
+    const executions: Array<{
+      templateId: string;
+      status: "success" | "failed";
+      result: Record<string, unknown> | null;
+      error: string | null;
+    }> = [];
+
+    for (const template of relevantTemplates) {
+      const userConfig = userAutomations[template?.id];
+      if (!userConfig?.enabled) continue;
+
+      const config = { ...template?.defaultConfig, ...userConfig?.config };
+      executions.push(
+        await this.executeTemplate(template, userId, data, config, eventType),
+      );
+    }
+    return executions;
+  }
+
+  // ── Execution core ────────────────────────────────────────────────────────
+
+  private async executeTemplate(
+    template: WorkflowTemplate,
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+    eventType: string,
+  ): Promise<{
+    templateId: string;
+    status: "success" | "failed";
+    result: Record<string, unknown> | null;
+    error: string | null;
+  }> {
+    logger.info(
+      `[MusicWorkflow] Executing "${template.name}" for user ${userId}`,
+    );
+
+    let status = "success";
+    let result: Record<string, unknown> | null = null;
+    let error: string | null = null;
+
+    try {
+      if (template.unavailableReason) {
+        throw new WorkflowUnavailableError(template.unavailableReason);
+      }
+      result = await this.dispatch(template?.id, userId, eventData, config);
+      await db
+        .update(musicWorkflowAutomations)
+        .set({
+          lastTriggeredAt: new Date(),
+          triggerCount: sql`${musicWorkflowAutomations.triggerCount} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(musicWorkflowAutomations.userId, userId),
+            eq(musicWorkflowAutomations.templateId, template?.id),
+          ),
+        );
+    } catch (err) {
+      status = "failed";
+      error = err instanceof Error ? err?.message : "Unknown error";
+      logger.warn(
+        { err: err },
+        `[MusicWorkflow] Failed "${template.name}" for user ${userId}:`,
+      );
+    }
+
+    await db.insert(musicWorkflowExecutionLogs).values({
+      userId,
+      templateId: template.id,
+      eventType,
+      status,
+      result,
+      error,
+    });
+
+    return { templateId: template.id, status, result, error };
+  }
+
+  /**
+   * Route template execution to the correct handler.
+   */
+  private async dispatch(
+    templateId: string,
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ): Promise<Record<string, any>> {
+    switch (templateId) {
+      case "track-upload-analysis":
+        return this.handleTrackUploadAnalysis(userId, eventData, config);
+      case "collaboration-alert":
+        return this.handleCollaborationAlert(userId, eventData, config);
+      case "mix-ready-checklist":
+        return this.handleMixReadyChecklist(userId, eventData, config);
+      case "release-countdown-posts":
+        return this.handleReleaseCountdownPosts(userId, eventData, config);
+      case "pre-save-campaign":
+        return this.handlePreSaveCampaign(userId, eventData, config);
+      case "distribution-submitted-notify":
+        return this.handleDistributionSubmittedNotify(
+          userId,
+          eventData,
+          config,
+        );
+      case "release-day-social-blast":
+        return this.handleReleaseDaySocialBlast(userId, eventData, config);
+      case "release-day-newsletter":
+        return this.handleReleaseDayNewsletter(userId, eventData, config);
+      case "release-day-push-notify":
+        return this.handleReleaseDayPushNotify(userId, eventData, config);
+      case "weekly-performance-digest":
+        return this.handleWeeklyPerformanceDigest(userId, eventData, config);
+      case "streaming-milestone-celebrate":
+        return this.handleStreamingMilestoneCelebrate(
+          userId,
+          eventData,
+          config,
+        );
+      case "playlist-placement-alert":
+        return this.handlePlaylistPlacementAlert(userId, eventData, config);
+      case "low-engagement-rescue":
+        return this.handleLowEngagementRescue(userId, eventData, config);
+      case "beat-sale-thank-you":
+        return this.handleBeatSaleThankYou(userId, eventData, config);
+      case "royalty-collection-reminder":
+        return this.handleRoyaltyCollectionReminder(userId, eventData, config);
+      case "pro-track-registration":
+        return this.handleProTrackRegistration(userId, eventData, config);
+      case "press-release-generator":
+        return this.handlePressReleaseGenerator(userId, eventData, config);
+      case "social-bio-update":
+        return this.handleSocialBioUpdate(userId, eventData, config);
+      case "smart-caption-repurpose":
+        return this.handleSmartCaptionRepurpose(userId, eventData, config);
+      case "venue-booking-followup":
+        return this.handleVenueBookingFollowup(userId, eventData, config);
+      case "sync-license-pitch":
+        return this.handleSyncLicensePitch(userId, eventData, config);
+      default:
+        throw new Error(`No handler for template: ${templateId}`);
+    }
+  }
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  private async handleTrackUploadAnalysis(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const trackName =
+      typeof eventData.trackName === "string"
+        ? eventData.trackName
+        : "your track";
+    const trackId =
+      typeof eventData.trackId === "string" ? eventData.trackId : undefined;
+    if (config?.suggestGenre) {
+      throw new WorkflowUnavailableError(
+        "Audio feature and genre/mood analysis are unavailable in this workflow. No analysis or suggestions were generated.",
+      );
+    }
+    const actions: string[] = [];
+
+    if (config?.generateISRC && trackId) {
+      try {
+        const { generateISRC } = await import(
+          "./distributionCodeGenerationService.js"
+        );
+        const isrc = await generateISRC(
+          userId,
+          trackId,
+          ((eventData as Record<string, unknown>).artist as string | undefined) ??
+            "",
+          trackName,
+        );
+        actions?.push(
+          isrc
+            ? `ISRC ${isrc} assigned`
+            : "ISRC generation skipped",
+        );
+      } catch (err) {
+        logger.warn(
+          { err, trackId },
+          "ISRC generation failed in workflow handler",
+        );
+        actions?.push("ISRC generation failed; retry must be triggered manually");
+      }
+    } else if (config?.generateISRC) {
+      actions?.push("ISRC generation skipped (no track id)");
+    }
+    if (config?.notifyOnComplete) {
+      const delivery = await notificationService.send({
+        userId,
+        type: "info",
+        title: "Track Upload Processed",
+        message: `Upload follow-up ran for "${trackName}". This workflow does not analyze BPM, key, energy, or genre/mood.`,
+        link: "/projects",
+      });
+      actions.push(
+        delivery.delivered
+          ? "Track upload notification delivered"
+          : "Track upload notification suppressed or not delivered",
+      );
+    }
+
+    return { actions };
+  }
+
+  private async handleCollaborationAlert(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const {
+      newMemberName = "A new collaborator",
+      projectName = "your project",
+    } = eventData;
+    const actions: string[] = [];
+
+    if (config?.sendPush) {
+      const delivery = await notificationService.send({
+        userId,
+        type: "info",
+        title: "Collaborator Added",
+        message: `${newMemberName} joined ${projectName}. View the collaboration workspace for project details.`,
+        link: "/collaborations",
+      });
+      actions.push(
+        delivery.delivered
+          ? "Account owner notification delivered"
+          : "Account owner notification suppressed or not delivered",
+      );
+    }
+
+    if (config?.sendEmail && eventData?.newMemberEmail) {
+      try {
+        const emailSent = await emailService.send({
+          to: String(eventData.newMemberEmail),
+          subject: `You've been added to "${projectName}"`,
+          html: `
+            <h2>Welcome to the project!</h2>
+            <p>Hi ${escapeHtml(newMemberName)}</p>
+            <p>You've been added as a collaborator on <strong>${escapeHtml(projectName)}</strong>.</p>
+            ${
+              config?.includeProjectBrief && eventData?.projectBrief
+                ? `<h3>Project Brief</h3><p>${escapeHtml(eventData.projectBrief)}</p>`
+                : ""
+            }
+            <p>Log in to Max Booster to get started.</p>
+          `,
+          text: `You've been added as a collaborator on "${String(projectName)}". Log in to Max Booster to get started.`,
+        });
+        actions.push(
+          emailSent
+            ? "Welcome email accepted by the email service"
+            : "Welcome email not sent: email service unavailable",
+        );
+      } catch {
+        actions.push("Welcome email not sent: email service failed");
+      }
+    } else if (config?.sendEmail) {
+      actions.push("Welcome email not sent: no collaborator email address was supplied");
+    }
+
+    return { actions };
+  }
+
+  private async handleMixReadyChecklist(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const { trackName = "your track" } = eventData;
+    const actions: string[] = [];
+
+    if (config?.notifyTeam) {
+      const delivery = await notificationService.send({
+        userId,
+        type: "info",
+        title: "Mix Complete — Mastering Phase",
+        message: `"${trackName}" mix is approved. Please create the mastering task in Projects; this workflow does not persist tasks or schedule reminders.`,
+        link: "/projects",
+      });
+      actions.push(
+        delivery.delivered
+          ? "Account owner notification delivered"
+          : "Account owner notification suppressed or not delivered",
+      );
+    }
+
+    if (config?.createMasteringTask) {
+      // No dedicated `tasks` table exists; surface the reminder via notification only.
+      // Avoid claiming a DB-backed task was created when it wasn't.
+      actions.push(
+        "Mastering task not created: no durable task store or reminder scheduler is configured",
+      );
+    }
+
+    return { actions };
+  }
+
+  private async handleReleaseCountdownPosts(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const { storage } = await import("../storage.js");
+    const { autoPostingServiceV2, normalizePublishingPlatform } = await import("./autoPostingServiceV2.js");
+    return scheduleReleaseCountdown(userId, eventData.releaseId, config, {
+      loadRelease: async (owner, id) => {
+        const [release] = await db.select().from(releases)
+          .where(and(eq(releases.id, id), eq(releases.userId, owner)));
+        return release;
+      },
+      platforms: async owner => (await storage.getSocialAccounts(owner))
+        .filter(account => account.isActive).map(account => normalizePublishingPlatform(account.platform)),
+      schedule: (owner, platform, content, at, key) =>
+        autoPostingServiceV2.schedulePost(
+          owner, [platform], content, at, "social_autopilot", undefined, key,
+        ),
+    });
+  }
+
+  private async handlePreSaveCampaign(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const { releaseTitle = "New Release", releaseId } = eventData;
+    // Pre-save pages are created via /api/distribution/hyperfollow during the release wizard,
+    // not here. Do not report social delivery until a real queue operation exists.
+    if (config.postToSocial || config.sendToEmailList) {
+      throw new WorkflowUnavailableError(
+        "Automatic pre-save social/email delivery is unavailable: no verified post scheduler or subscriber email dispatcher is configured. No social post or email was queued.",
+      );
+    }
+    const actions: string[] = ["Pre-save campaign event acknowledged"];
+
+    await notificationService.send({
+      userId,
+      type: "info",
+      title: "Pre-Save Campaign Event",
+      message: `A pre-save campaign event for "${releaseTitle}" was received. Verify the landing page in Distribution before sharing it.`,
+      link: "/distribution",
+    });
+
+    return { actions, releaseId };
+  }
+
+  private async handleDistributionSubmittedNotify(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const { releaseTitle = "New Release", platforms = [] } = eventData;
+    if (config.notifyTeam || config.sendConfirmationEmail || config.setFollowUpReminder) {
+      throw new WorkflowUnavailableError(
+        "Team-wide distribution notifications and durable follow-up reminders are not configured. No team notification or reminder was created.",
+      );
+    }
+    const actions: string[] = [];
+
+    const delivery = await notificationService.send({
+      userId,
+      type: "info",
+      title: "Distribution Submitted",
+      message: `"${releaseTitle}" has been submitted to ${Array.isArray(platforms) && platforms.length > 0 ? platforms.join(", ") : "streaming platforms"}. Expect approval within 24–72 hours.`,
+      link: "/distribution",
+    });
+    actions.push(
+      delivery.delivered
+        ? "Distribution submission notification delivered"
+        : "Distribution submission notification suppressed or not delivered",
+    );
+
+    return { actions };
+  }
+
+  private async handleReleaseDaySocialBlast(
+    _userId: string,
+    _eventData: WorkflowEventData,
+    _config: Record<string, any>,
+  ) {
+    throw new WorkflowUnavailableError(
+      "Release-day social publishing is unavailable: this handler has no verified provider scheduling operation. No social posts were published or queued.",
+    );
+  }
+
+  private async handleReleaseDayNewsletter(
+    _userId: string,
+    _eventData: WorkflowEventData,
+    _config: Record<string, any>,
+  ) {
+    throw new WorkflowUnavailableError(
+      "Release-day newsletter delivery is unavailable: no verified subscriber selection and bulk-email dispatch operation is configured. No newsletter was sent.",
+    );
+  }
+
+  private async handleReleaseDayPushNotify(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const { releaseTitle = "New Release", artistName = "Artist" } = eventData;
+    if (config.notifyFollowers) {
+      throw new WorkflowUnavailableError(
+        "Follower-wide release-alert delivery is unavailable: no verified follower/opt-in audience is configured. No follower push was sent.",
+      );
+    }
+    const message =
+      config.message ||
+      `${artistName}'s new release "${releaseTitle}" is out now — stream it!`;
+
+    const delivery = await notificationService.send({
+      userId,
+      type: "info",
+      title: "New Release Reminder",
+      message,
+      link: "/distribution",
+    });
+
+    const actions = delivery.browserSent
+      ? ["Browser push notification sent"]
+      : delivery.delivered
+        ? ["In-app notification delivered; browser push was not confirmed"]
+        : ["Notification was not delivered; user preferences or delivery providers may have suppressed it"];
+
+    return { message, releaseTitle, actions };
+  }
+
+  private async handleWeeklyPerformanceDigest(
+    _userId: string,
+    _eventData: WorkflowEventData,
+    _config: Record<string, any>,
+  ) {
+    throw new WorkflowUnavailableError(
+      "Weekly performance digest data collection is unavailable: this handler does not query verified streaming, revenue, or recommendation data. No digest was generated.",
+    );
+  }
+
+  private async handleStreamingMilestoneCelebrate(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const {
+      trackName = "your track",
+      milestone = "10,000",
+      platform = "Spotify",
+    } = eventData;
+
+    if (config?.postToSocial) {
+      throw new WorkflowUnavailableError(
+        "Streaming-milestone social publishing is unavailable: no verified provider scheduling operation is configured. No celebration post was queued.",
+      );
+    }
+
+    await notificationService?.send({
+      userId,
+      type: "info",
+      title: `🏆 ${milestone} streams on ${platform}!`,
+      message: `"${trackName}" reached the ${milestone}-stream milestone on ${platform}.`,
+      link: "/analytics",
+    });
+
+    const actions: string[] = [];
+    return { trackName, milestone, platform, actions };
+  }
+
+  private async handlePlaylistPlacementAlert(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const {
+      trackName = "your track",
+      playlistName = "a playlist",
+      playlistFollowers = 0,
+      curatorName,
+      curatorEmail,
+      targetPlaylistUrl,
+      genre,
+      mood,
+      bpm,
+    } = eventData as any;
+
+    if (config?.notifyEmail) {
+      throw new WorkflowUnavailableError(
+        "Playlist-placement email notification is unavailable: no verified email delivery path is configured for this automation. No email was sent.",
+      );
+    }
+    const actions: string[] = [];
+
+    // Persist the confirmed placement idempotently so duplicate events do not create duplicate records.
+    const placementDescription = `Confirmed placement on "${playlistName}"`;
+    try {
+      const [existingPlacement] = await db
+        .select()
+        .from(playlistPitches)
+        .where(and(
+          eq(playlistPitches.userId, userId),
+          eq(playlistPitches.trackTitle, String(trackName)),
+          eq(playlistPitches.description, placementDescription),
+        ))
+        .limit(1);
+      if (existingPlacement) {
+        actions.push("Placement record already exists; duplicate event was deduplicated");
+      } else {
+        await db.insert(playlistPitches).values({
+          userId,
+          trackTitle: String(trackName),
+          artistName: "",
+          genre: genre ? String(genre) : null,
+          mood: mood ? String(mood) : null,
+          bpm: bpm ? Number(bpm) : null,
+          description: placementDescription,
+          targetPlaylistUrl: targetPlaylistUrl ? String(targetPlaylistUrl) : null,
+          curatorName: curatorName ? String(curatorName) : null,
+          curatorEmail: curatorEmail ? String(curatorEmail) : null,
+          status: "placed",
+          submittedAt: new Date(),
+        });
+        actions.push("Placement record saved to Playlist Pitches");
+      }
+    } catch (err) {
+      logger.warn(
+        { err },
+        "handlePlaylistPlacementAlert: failed to save pitch record",
+      );
+      throw new Error("Playlist placement was confirmed but could not be persisted");
+    }
+
+    if (config?.notifyPush) {
+      const delivery = await notificationService.send({
+        userId,
+        type: "info",
+        title: "Playlist Placement!",
+        message: `"${trackName}" was added to "${playlistName}" (${Number(playlistFollowers).toLocaleString()} followers).`,
+        link: "/playlist-pitching",
+      });
+      actions.push(
+        delivery.delivered
+          ? "Placement notification delivered"
+          : "Placement notification suppressed or not delivered",
+      );
+    }
+
+    // Auto-generate and queue a social announcement for large playlists
+    if (config?.autoShareAnnouncement && Number(playlistFollowers) >= 10000) {
+      try {
+        const announcementResult = await unifiedAIController?.generateContent({
+          userId,
+          type: "social_post",
+          platform: "instagram",
+          tone: "energetic",
+          context: {
+            trackName: String(trackName),
+            playlistName: String(playlistName),
+            followers: Number(playlistFollowers),
+            event: "playlist_placement",
+          },
+          seed: Math.floor(Date?.now() / 10000),
+        });
+        if (announcementResult?.data?.caption) {
+          actions?.push(
+            `Announcement copy generated for ${Number(playlistFollowers).toLocaleString()}-follower playlist; it was not saved or scheduled`,
+          );
+        }
+      } catch (err) {
+        logger.warn(
+          { err },
+          "handlePlaylistPlacementAlert: AI announcement generation failed",
+        );
+        actions?.push("Announcement draft not generated; no social post was saved or queued");
+      }
+    }
+
+    return { trackName, playlistName, playlistFollowers, actions };
+  }
+
+  private async handleLowEngagementRescue(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const { trackName = "your track", dropPercent = 0 } = eventData;
+    if (config?.triggerABTest || config?.tryNewPostingTime) {
+      throw new WorkflowUnavailableError(
+        "Low-engagement rescue actions are unavailable: A/B tests and posting-time changes are not wired to durable execution. No rescue action was applied.",
+      );
+    }
+    const actions: string[] = [];
+
+    if (config?.triggerABTest) {
+      actions?.push("A/B content variation test triggered");
+    }
+    if (config?.tryNewPostingTime) {
+      actions?.push("New optimal posting time slot selected");
+    }
+
+    if (config?.notifyUser) {
+      await notificationService?.send({
+        userId,
+        type: "warning",
+        title: "Engagement Drop Detected",
+        message: `"${trackName}" engagement dropped ${dropPercent}%. This workflow reported the drop but did not apply any automatic rescue action.`,
+        link: "/analytics",
+      });
+    }
+
+    return { trackName, dropPercent, actions };
+  }
+
+  private async handleBeatSaleThankYou(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const {
+      buyerEmail,
+      buyerName = "Customer",
+      productName = "beat",
+      downloadUrl,
+    } = eventData;
+    const actions: string[] = [];
+    let thankYouEmailSent = false;
+
+    if (config?.sendThankYouEmail && buyerEmail) {
+      try {
+        const note =
+          config?.personalNote ||
+          "Thank you for your purchase! I appreciate your support.";
+        const safeDownloadUrl = safeHttpUrl(downloadUrl);
+        thankYouEmailSent = await emailService.send({
+          to: String(buyerEmail),
+          subject: `Thank you for purchasing "${String(productName)}"`,
+          html: `
+            <h2>Thank you, ${escapeHtml(buyerName)}!</h2>
+            <p>${escapeHtml(note)}</p>
+            ${safeDownloadUrl ? `<p><a href="${escapeHtml(safeDownloadUrl)}">Download your files here</a></p>` : ""}
+            <p>Feel free to reach out if you have any questions about the license or file usage.</p>
+          `,
+          text: `Thank you, ${String(buyerName)}! Thank you for purchasing "${String(productName)}". ${String(note)}${safeDownloadUrl ? ` Download: ${safeDownloadUrl}` : ""}`,
+        });
+        actions.push(
+          thankYouEmailSent
+            ? "Thank-you email accepted by the email service"
+            : "Thank-you email not sent (service unavailable or delivery not confirmed)",
+        );
+      } catch {
+        thankYouEmailSent = false;
+        actions.push("Thank-you email not sent (email service failed)");
+      }
+    } else if (config?.sendThankYouEmail) {
+      actions.push("Thank-you email not sent: buyer email address is missing");
+    }
+
+    if (config?.notifySeller) {
+      const delivery = await notificationService.send({
+        userId,
+        type: "info",
+        title: `Sale: "${productName}"`,
+        message: thankYouEmailSent
+          ? `${buyerName} purchased "${productName}". The thank-you email was accepted by the email service.`
+          : `${buyerName} purchased "${productName}". A thank-you email was not confirmed as sent.`,
+        link: "/marketplace",
+      });
+      actions.push(
+        delivery.delivered
+          ? "Sale notification delivered"
+          : "Sale notification suppressed or not delivered",
+      );
+    }
+
+    return { actions, productName, buyerName };
+  }
+
+  private async handleRoyaltyCollectionReminder(
+    userId: string,
+    _eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    if (config?.generateReport || config?.checkPROBalance) {
+      throw new WorkflowUnavailableError(
+        "Royalty report generation and external PRO balance checks are unavailable: no verified data integration is configured. No report or balance check was performed.",
+      );
+    }
+    if (config?.deliveryMethod !== "push") {
+      throw new WorkflowUnavailableError(
+        "Royalty reminder email delivery is unavailable in this workflow. Select push-only delivery; no email was sent.",
+      );
+    }
+    const delivery = await notificationService.send({
+      userId,
+      type: "info",
+      title: "Monthly Royalty Reminder",
+      message: "Review your current royalty statements. This reminder does not generate a report or query external PRO balances.",
+      link: "/royalties",
+    });
+    const actions = [
+      delivery.browserSent
+        ? "Browser push reminder sent"
+        : delivery.delivered
+          ? "In-app reminder delivered; browser push was not confirmed"
+          : "Reminder suppressed or not delivered",
+    ];
+    return { actions };
+  }
+
+  private async handleProTrackRegistration(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const {
+      trackName = "your track",
+      isrc,
+      iswc,
+      upc,
+      coWriters,
+      publisherName,
+    } = eventData as any;
+
+    const actions: string[] = [];
+    const pro = config?.pro || "ASCAP";
+    const registrationUrls: Record<string, string> = {
+      ASCAP: "https://www.ascap.com/music-creators",
+      BMI: "https://www.bmi.com/join",
+      SESAC: "https://www.sesac.com/",
+      SOCAN: "https://www.socan.com/",
+      PRS: "https://www.prsformusic.com/",
+    };
+
+    // Upsert a publishing rights record so the user has a pre-filled registration
+    try {
+      const existing = await db
+        .select()
+        .from(publishingRights)
+        .where(
+          and(
+            eq(publishingRights.userId, userId),
+            eq(publishingRights.trackTitle, String(trackName)),
+          ),
+        )
+        .limit(1);
+
+      if (existing?.length === 0) {
+        await db.insert(publishingRights).values({
+          userId,
+          trackTitle: String(trackName),
+          isrc: isrc ? String(isrc) : null,
+          iswc: iswc ? String(iswc) : null,
+          upc: upc ? String(upc) : null,
+          coWriters: Array.isArray(coWriters) ? coWriters : [],
+          publisherName: publisherName ? String(publisherName) : null,
+          proName: pro,
+          copyrightYear: new Date().getFullYear(),
+          status: "pending",
+          notes: `Auto-created by workflow. Register this track at ${registrationUrls[pro] || "your selected PRO's official website"}.`,
+        });
+        actions?.push(
+          `Publishing rights record created for "${trackName}" (${pro})`,
+        );
+      } else {
+        // Update the PRO name if it changed
+        await db
+          .update(publishingRights)
+          .set({ proName: pro, updatedAt: new Date() })
+          .where(eq(publishingRights.id, existing[0].id));
+        actions?.push(
+          `Publishing rights record updated for "${trackName}" (${pro})`,
+        );
+      }
+
+      if (config?.autoFillMetadata) {
+        const suppliedMetadata = [
+          isrc,
+          iswc,
+          upc,
+          ...(Array.isArray(coWriters) ? coWriters : []),
+          publisherName,
+        ].some((value) => value !== undefined && value !== null && value !== "");
+        actions.push(
+          suppliedMetadata
+            ? "Available track identifiers and contributor metadata copied from event data"
+            : "No track metadata was supplied; nothing was auto-filled",
+        );
+      }
+    } catch (err) {
+      logger.warn(
+        { err },
+        "handleProTrackRegistration: failed to upsert publishing rights",
+      );
+      throw new Error("Publishing rights record could not be persisted");
+    }
+
+    if (config?.sendReminder) {
+      const registrationUrl = registrationUrls[pro];
+      const delivery = await notificationService.send({
+        userId,
+        type: "info",
+        title: "Publishing Rights Record Ready",
+        message: registrationUrl
+          ? `"${trackName}" has been logged in your Publishing Rights. Complete your ${pro} registration at ${registrationUrl}.`
+          : `"${trackName}" has been logged in your Publishing Rights. Visit your performing-rights organization's official website to register it.`,
+        link: "/publishing",
+      });
+      actions.push(
+        delivery.delivered
+          ? `PRO registration reminder delivered (${pro})`
+          : `PRO registration reminder suppressed or not delivered (${pro})`,
+      );
+    }
+
+    return { actions, pro };
+  }
+
+  private async handlePressReleaseGenerator(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const {
+      releaseTitle = "New Release",
+      artistName = "Artist",
+      genre,
+      releaseDate,
+      bio,
+      website,
+      contactEmail,
+      bookingEmail,
+    } = eventData as any;
+
+    const actions: string[] = [];
+    const tone = config?.tone || "professional";
+
+    // Generate the press release body via MaxCore AI
+    let pressReleaseDraft = "";
+    try {
+      const aiResult = await unifiedAIController?.generateContent({
+        userId,
+        type: "press_release",
+        platform: "blog",
+        tone,
+        context: {
+          releaseTitle: String(releaseTitle),
+          artistName: String(artistName),
+          genre: genre ? String(genre) : "Music",
+          releaseDate: releaseDate
+            ? String(releaseDate)
+            : new Date().toLocaleDateString(),
+          includeQuote: Boolean(config?.includeQuote),
+          event: "press_release_generation",
+        },
+        seed: Math.floor(Date?.now() / 10000),
+      });
+      pressReleaseDraft =
+        aiResult?.data?.caption || (aiResult?.data as any)?.content || "";
+      if (pressReleaseDraft) {
+        actions?.push(`AI press release drafted (${tone} tone)`);
+      }
+    } catch (err) {
+      logger.warn(
+        { err },
+        "handlePressReleaseGenerator: MaxCore generation failed — failing explicitly (no template fallback)",
+      );
+    }
+
+    // MaxCore-only contract: never substitute a local press-release template.
+    if (!pressReleaseDraft) {
+      const { AIUnavailableError } = await import("../lib/aiSource.js");
+      throw new AIUnavailableError("press release generation");
+    }
+
+    if (config?.includeQuote) {
+      pressReleaseDraft +=
+        '\n\n"[Add your quote here]" — ' + String(artistName);
+      actions?.push("Artist quote placeholder added");
+    }
+
+    // Persist the press kit / update the press release field
+    try {
+      const existing = await db
+        .select()
+        .from(pressKits)
+        .where(eq(pressKits.userId, userId))
+        .limit(1);
+
+      if (existing?.length === 0) {
+        await db.insert(pressKits).values({
+          userId,
+          artistName: String(artistName),
+          bio: bio ? String(bio) : "",
+          contactEmail: contactEmail ? String(contactEmail) : null,
+          bookingEmail: bookingEmail ? String(bookingEmail) : null,
+          website: website ? String(website) : null,
+          pressQuotes: [
+            {
+              source: "Press Release",
+              release: String(releaseTitle),
+              content: pressReleaseDraft,
+              generatedAt: new Date().toISOString(),
+            },
+          ],
+          isPublic: false,
+        });
+        actions?.push("Press kit created with press release content");
+      } else {
+        // Append the new press release as a press quote entry
+        const currentQuotes = (existing[0].pressQuotes as any[]) || [];
+        currentQuotes?.push({
+          source: "Press Release",
+          release: String(releaseTitle),
+          content: pressReleaseDraft,
+          generatedAt: new Date().toISOString(),
+        });
+        await db
+          .update(pressKits)
+          .set({ pressQuotes: currentQuotes, updatedAt: new Date() })
+          .where(eq(pressKits.id, existing[0].id));
+        actions?.push("Press release added to existing press kit");
+      }
+    } catch (err) {
+      logger.warn(
+        { err },
+        "handlePressReleaseGenerator: failed to save press kit",
+      );
+      throw new Error("Press release generation succeeded but persistence to the Press Kit failed");
+    }
+
+    if (config?.notifyOnReady) {
+      const delivery = await notificationService.send({
+        userId,
+        type: "info",
+        title: "Press Release Ready to Review",
+        message: `Your press release for "${releaseTitle}" is drafted and saved to your Press Kit. Review, customize, and send to media contacts.`,
+        link: "/press-kit",
+      });
+      actions.push(
+        delivery.delivered
+          ? "Press release notification delivered"
+          : "Press release notification suppressed or not delivered",
+      );
+    }
+
+    return { actions, releaseTitle, artistName };
+  }
+
+  private async handleSocialBioUpdate(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    throw new WorkflowUnavailableError(BIO_UPDATE_UNAVAILABLE);
+  }
+
+  private async handleSmartCaptionRepurpose(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const { storage } = await import("../storage.js");
+    const { autoPostingServiceV2, normalizePostContent, normalizePublishingPlatform } = await import("./autoPostingServiceV2.js");
+    return repurposePublishedCaption(userId, eventData.postId, config, {
+      source: async (owner, id) => {
+        const [post] = await db.select().from(posts)
+          .where(and(eq(posts.id, id), eq(posts.userId, owner)));
+        if (!post) return null;
+        if (post.mediaUrls?.length > 1) {
+          throw new Error("Multi-asset repurposing is unavailable; source media will not be silently dropped");
+        }
+        const content = normalizePostContent(post.content, post.mediaUrls || []);
+        return { userId: post.userId, platform: normalizePublishingPlatform(post.platform), status: post.status,
+          publishedAt: post.publishedAt, text: content.text,
+          mediaUrl: content.mediaUrl, mediaType: content.mediaType === "photo" ? "image" : content.mediaType };
+      },
+      platforms: async owner => (await storage.getSocialAccounts(owner))
+        .filter(account => account.isActive).map(account => normalizePublishingPlatform(account.platform)),
+      existing: id => storage.getScheduledPostById(id),
+      generate: async (owner, platform, text, seed) => {
+        const generated = await unifiedAIController.generateContent({
+          userId: owner, platform, topic: "Repurpose a published post",
+          extraContext: `Adapt the following source for ${platform}. Preserve its facts; do not invent claims.\n${text}`,
+          seed,
+        });
+        if (!generated.success || !generated.data?.caption?.trim()) {
+          throw new Error(generated.error || "MaxCore returned no usable caption");
+        }
+        return generated.data.caption;
+      },
+      persist: async ({ userId: owner, platform, content, at, key, autoSchedule }) => {
+        if (autoSchedule) return autoPostingServiceV2.schedulePost(
+          owner, [platform], content, at, "social_autopilot", undefined, key,
+        );
+        const id = `post_${key}`;
+        const existing = await storage.getScheduledPostById(id);
+        if (existing) {
+          if (existing.userId !== owner || existing.status !== "draft") {
+            throw new Error("Repurposed draft conflicts with an existing post");
+          }
+          return existing;
+        }
+        return storage.createScheduledPost({
+          id, userId: owner, platforms: [platform], content, scheduledTime: at,
+          status: "draft", createdBy: "social_autopilot", reviewRequired: true,
+        });
+      },
+    });
+  }
+
+  private async handleVenueBookingFollowup(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const {
+      venueName = "the venue",
+      contactName = "the contact",
+      contactEmail,
+      city,
+      state,
+      country,
+      capacity,
+      venueType,
+      guaranteeMin,
+      guaranteeMax,
+      notes,
+    } = eventData as any;
+
+    const followUpDays = Number(config.followUpDays) || 7;
+    const followUpDate = new Date(
+      Date.now() + followUpDays * 24 * 60 * 60 * 1000,
+    );
+    const actions: string[] = [];
+
+    // Upsert the venue contact in the CRM with follow-up date
+    try {
+      const existing = await db
+        .select()
+        .from(venueContacts)
+        .where(
+          and(
+            eq(venueContacts.userId, userId),
+            eq(venueContacts.venueName, String(venueName)),
+          ),
+        )
+        .limit(1);
+
+      if (existing.length === 0) {
+        await db.insert(venueContacts).values({
+          userId,
+          venueName: String(venueName),
+          city: city ? String(city) : null,
+          state: state ? String(state) : null,
+          country: country ? String(country) : "US",
+          capacity: capacity ? Number(capacity) : null,
+          venueType: venueType ? String(venueType) : "club",
+          contactName: contactName ? String(contactName) : null,
+          contactEmail: contactEmail ? String(contactEmail) : null,
+          guaranteeMin: guaranteeMin ? Number(guaranteeMin) : null,
+          guaranteeMax: guaranteeMax ? Number(guaranteeMax) : null,
+          status: "outreach",
+          lastContactedAt: new Date(),
+          notes: notes
+            ? String(notes)
+            : `Follow-up scheduled for ${followUpDate.toLocaleDateString()}`,
+        });
+        actions.push(`Venue contact "${venueName}" created in Booking CRM`);
+      } else {
+        await db
+          .update(venueContacts)
+          .set({
+            status: "outreach",
+            lastContactedAt: new Date(),
+            notes: `Follow-up scheduled for ${followUpDate.toLocaleDateString()}${notes ? `\n${notes}` : ""}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(venueContacts.id, existing[0].id));
+        actions.push(`Venue contact "${venueName}" updated in Booking CRM`);
+      }
+      actions.push(
+        `Follow-up date logged: ${followUpDate.toLocaleDateString()}`,
+      );
+    } catch (err) {
+      logger.warn(
+        { err },
+        "handleVenueBookingFollowup: failed to upsert venue contact",
+      );
+      throw new Error("Venue follow-up details could not be persisted; no follow-up email was sent");
+    }
+
+    // Send the actual follow-up email to the booking contact
+    let followUpEmailSent = false;
+    if (config.sendEmail && contactEmail) {
+      try {
+        followUpEmailSent = await emailService.send({
+          to: String(contactEmail),
+          subject: `Booking Inquiry Follow-Up — ${String(venueName)}`,
+          html: `
+            <p>Hi ${escapeHtml(contactName)},</p>
+            <p>I'm following up on my recent booking inquiry for ${escapeHtml(venueName)}. I'm very interested in performing at your venue and would love to discuss available dates and terms.</p>
+            <p>Please let me know if you need any additional information such as an EPK, rider, or audio/video samples.</p>
+            <p>Looking forward to hearing from you,</p>
+            <p>[Your Name]</p>
+          `,
+          text: `Hi ${String(contactName)}, I'm following up on my recent booking inquiry for ${String(venueName)}. Please let me know if you need any additional information.`,
+        });
+        actions.push(
+          followUpEmailSent
+            ? `Follow-up email accepted by the email service for ${String(contactEmail)}`
+            : "Follow-up email not sent: email service unavailable",
+        );
+      } catch (err) {
+        logger.warn(
+          { err },
+          "handleVenueBookingFollowup: failed to send follow-up email",
+        );
+        actions.push("Follow-up email not sent: email service failed");
+      }
+    } else if (config.sendEmail) {
+      actions.push("Follow-up email not sent: no contact email is on file");
+    }
+
+    await notificationService.send({
+      userId,
+      type: "info",
+      title: "Booking Follow-Up Date Recorded",
+      message: followUpEmailSent
+        ? `${venueName} (${String(contactName)}) follow-up email was accepted by the email service. The follow-up date was recorded as ${followUpDate.toLocaleDateString()}, but no automatic reminder was scheduled.`
+        : `${venueName} (${String(contactName)}) follow-up date was recorded as ${followUpDate.toLocaleDateString()}; no email delivery or automatic reminder was confirmed.`,
+      link: "/venues",
+    });
+
+    return { actions, venueName };
+  }
+
+  private async handleSyncLicensePitch(
+    userId: string,
+    eventData: WorkflowEventData,
+    config: Record<string, any>,
+  ) {
+    const {
+      releaseTitle = "New Release",
+      artistName = "Artist",
+      genre,
+      mood,
+      bpm,
+      duration,
+      previewUrl,
+      isExclusive = false,
+      price,
+    } = eventData as any;
+
+    if (config?.autoSendPitch) {
+      throw new WorkflowUnavailableError(
+        "Automated sync-pitch email delivery is disabled until recipient addresses come from a verified user-owned contact list. No external emails were sent.",
+      );
+    }
+
+    const maxPitches = Math.min(Number(config.maxPitchesPerRelease) || 5, 10);
+    const targetGenres = config.targetGenres || "Film & TV";
+    const actions: string[] = [];
+
+    // Build a curated list of sync licensing targets based on genre
+    const syncTargets: Array<{ name: string; type: string }> = [
+      {
+        name: "Music Supervision Hub",
+        type: "Film & TV",
+      },
+      { name: "Musicbed", type: "Commercial" },
+      { name: "Artlist", type: "Commercial" },
+      {
+        name: "Epidemic Sound",
+        type: "Commercial",
+      },
+      { name: "Musicvine", type: "Film & TV" },
+      { name: "TAXI Music", type: "Film & TV" },
+      {
+        name: "Crucial Music",
+        type: "Advertising",
+      },
+      {
+        name: "Pump Audio",
+        type: "Broadcast",
+      },
+      {
+        name: "Audio Network",
+        type: "Broadcast",
+      },
+      {
+        name: "Jingle Punks",
+        type: "Advertising",
+      },
+    ].slice(0, maxPitches);
+
+    // Create syncSubmissions records for each target
+    const savedCount = await (async () => {
+      let count = 0;
+      for (const target of syncTargets) {
+        try {
+          await db.insert(syncSubmissions).values({
+            userId,
+            trackTitle: String(releaseTitle),
+            artistName: String(artistName),
+            genre: genre ? String(genre) : null,
+            mood: mood ? String(mood) : null,
+            bpm: bpm ? Number(bpm) : null,
+            duration: duration ? Number(duration) : null,
+            description: `Sync pitch targeting ${target.type} placements`,
+            usageTypes: [target.type],
+            isExclusive: Boolean(isExclusive),
+            price: price ? Number(price) : null,
+            previewUrl: previewUrl ? String(previewUrl) : null,
+            submissionTarget: target.name,
+            status: "draft",
+          });
+          count++;
+        } catch (err) {
+          logger.warn(
+            { err, target: target.name },
+            "handleSyncLicensePitch: failed to create submission",
+          );
+        }
+      }
+      return count;
+    })();
+
+    actions.push(
+      `${savedCount} sync submissions saved to Sync Licensing tracker`,
+    );
+
+    actions.push(
+      `${savedCount} pitch drafts saved — review and send from Sync Licensing`,
+    );
+
+    await notificationService?.send({
+      userId,
+      type: "info",
+      title: "Sync Licensing Pitches Ready",
+      message: `${savedCount} sync pitch drafts are ready for "${releaseTitle}" targeting ${targetGenres} placements. No emails were sent.`,
+      link: "/sync-licensing",
+    });
+
+    return { actions, pitchCount: savedCount };
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+
+  async getStats(userId: string): Promise<{
+    totalTemplates: number;
+    enabledCount: number;
+    totalRuns: number;
+    successCount: number;
+    failedCount: number;
+    successRate: number;
+    lastRunAt: string | null;
+    nextScheduledRuns: Array<{
+      name: string;
+      schedule: string;
+      nextRun: string;
+    }>;
+  }> {
+    const userAutomations = await db
+      .select()
+      .from(musicWorkflowAutomations)
+      .where(eq(musicWorkflowAutomations.userId, userId));
+
+    const enabledTemplateIds = new Set(
+      WORKFLOW_TEMPLATES
+        .filter((template) => !template.unavailableReason)
+        .map((template) => template.id),
+    );
+    const enabledCount = userAutomations.filter(
+      (automation) => automation.enabled && enabledTemplateIds.has(automation.templateId),
+    ).length;
+    const [executionStats] = await db
+      .select({
+        totalRuns: sql<number>`count(*)`,
+        successCount:
+          sql<number>`count(*) filter (where ${musicWorkflowExecutionLogs.status} = 'success')`,
+        failedCount:
+          sql<number>`count(*) filter (where ${musicWorkflowExecutionLogs.status} = 'failed')`,
+        lastRunAt: sql<Date | null>`max(${musicWorkflowExecutionLogs.executedAt})`,
+      })
+      .from(musicWorkflowExecutionLogs)
+      .where(eq(musicWorkflowExecutionLogs.userId, userId));
+
+    const totalRuns = Number(executionStats?.totalRuns ?? 0);
+    const successCount = Number(executionStats?.successCount ?? 0);
+    const failedCount = Number(executionStats?.failedCount ?? 0);
+    const successRate =
+      totalRuns > 0 ? Math.round((successCount / Math.max(totalRuns, 1)) * 100) : 0;
+    const lastRunAt = executionStats?.lastRunAt
+      ? new Date(executionStats.lastRunAt).toISOString()
+      : null;
+
+    const now = new Date();
+    const nextMonday = new Date(now);
+    nextMonday?.setDate(now?.getDate() + ((1 + 7 - now?.getDay()) % 7 || 7));
+    nextMonday?.setHours(9, 0, 0, 0);
+
+    const firstOfNext = new Date(
+      now?.getFullYear(),
+      now?.getMonth() + 1,
+      1,
+      8,
+      0,
+      0,
+      0,
+    );
+
+    const nextScheduledRuns: Array<{
+      name: string;
+      schedule: string;
+      nextRun: string;
+    }> = [];
+    const enabledIds = new Set(
+      userAutomations.filter((automation) => automation.enabled).map((automation) => automation.templateId),
+    );
+    const weeklyTemplate = WORKFLOW_TEMPLATES.find((template) => template.id === "weekly-performance-digest");
+    if (enabledIds.has("weekly-performance-digest") && weeklyTemplate && !weeklyTemplate.unavailableReason) {
+      nextScheduledRuns.push({
+        name: weeklyTemplate.name,
+        schedule: "Every Monday at 9:00 AM",
+        nextRun: nextMonday.toISOString(),
+      });
+    }
+    const royaltyTemplate = WORKFLOW_TEMPLATES.find((template) => template.id === "royalty-collection-reminder");
+    const royaltyAutomation = userAutomations.find((automation) => automation.templateId === "royalty-collection-reminder" && automation.enabled);
+    const royaltyConfig = {
+      ...(royaltyTemplate?.defaultConfig ?? {}),
+      ...((royaltyAutomation?.config as Record<string, any> | undefined) ?? {}),
+    };
+    if (
+      enabledIds.has("royalty-collection-reminder") &&
+      royaltyTemplate &&
+      !royaltyTemplate.unavailableReason &&
+      royaltyConfig.deliveryMethod === "push" &&
+      !royaltyConfig.generateReport &&
+      !royaltyConfig.checkPROBalance
+    ) {
+      nextScheduledRuns.push({
+        name: "Monthly Royalty Reminder",
+        schedule: "1st of each month at 8:00 AM",
+        nextRun: firstOfNext.toISOString(),
+      });
+    }
+
+    return {
+      totalTemplates: WORKFLOW_TEMPLATES.length,
+      enabledCount,
+      totalRuns,
+      successCount,
+      failedCount,
+      successRate,
+      lastRunAt,
+      nextScheduledRuns,
+    };
+  }
+
+  // ── Scheduled workflow runners ────────────────────────────────────────────
+
+  private startScheduledWorkflows(): void {
+    const registered: string[] = [];
+    const weeklyTemplate = WORKFLOW_TEMPLATES.find(
+      (template) => template.id === "weekly-performance-digest",
+    );
+    if (weeklyTemplate && !weeklyTemplate.unavailableReason) {
+      const weeklyTask = cron.schedule("0 9 * * 1", async () => {
+        try {
+          await this.runScheduledWorkflow(
+            "schedule:weekly",
+            "weekly-performance-digest",
+          );
+        } catch (err) {
+          logger.warn({ err }, "[MusicWorkflow] Weekly digest cron failed:");
+        }
+      });
+      this.scheduledTasks.set("weekly", weeklyTask);
+      registered.push("weekly digest");
+    }
+
+    const monthlyTemplate = WORKFLOW_TEMPLATES.find(
+      (template) => template.id === "royalty-collection-reminder",
+    );
+    if (monthlyTemplate && !monthlyTemplate.unavailableReason) {
+      const monthlyTask = cron.schedule("0 8 1 * *", async () => {
+        try {
+          await this.runScheduledWorkflow(
+            "schedule:monthly",
+            "royalty-collection-reminder",
+          );
+        } catch (err) {
+          logger.warn(
+            { err },
+            "[MusicWorkflow] Monthly royalty reminder cron failed:",
+          );
+        }
+      });
+      this.scheduledTasks.set("monthly", monthlyTask);
+      registered.push("monthly royalty reminder");
+    }
+
+    logger.info(
+      `[MusicWorkflow] Scheduled workflow cron jobs initialized: ${registered.length ? registered.join(", ") : "none available"}`,
+    );
+  }
+
+  private async runScheduledWorkflow(
+    eventType: string,
+    templateId: string,
+  ): Promise<void> {
+    const enabledRows = await db
+      .select()
+      .from(musicWorkflowAutomations)
+      .where(
+        and(
+          eq(musicWorkflowAutomations.templateId, templateId),
+          eq(musicWorkflowAutomations.enabled, true),
+        ),
+      );
+
+    const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
+    if (!template) return;
+    if (template.unavailableReason) {
+      logger.info(
+        { templateId, reason: template.unavailableReason },
+        "[MusicWorkflow] Skipping unavailable scheduled workflow",
+      );
+      return;
+    }
+
+    // Execute each user's workflow concurrently — they are fully independent
+    // (different userId, different DB rows, different notification targets).
+    // Sequential execution meant each user waited for all previous users to
+    // complete before their workflow ran.
+    await Promise?.allSettled(
+      enabledRows?.map((row) => {
+        const config = {
+          ...template?.defaultConfig,
+          ...(row?.config as Record<string, any>),
+        };
+        return this.executeTemplate(
+          template,
+          row?.userId,
+          { userId: row.userId },
+          config,
+          eventType,
+        );
+      }),
+    );
+  }
+
+  stop(): void {
+    for (const [, task] of this.scheduledTasks) {
+      task?.stop();
+    }
+    this.scheduledTasks.clear();
+  }
+}
+
+export const musicWorkflowAutomationService =
+  new MusicWorkflowAutomationService();

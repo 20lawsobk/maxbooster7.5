@@ -1,0 +1,830 @@
+import { billingAccountStatus } from "../../services/billingAccountStatus";
+/**
+ * STRIPE WEBHOOK ROUTES
+ *
+ * Handles Stripe webhook events with signature verification.
+ * Critical for payment security.
+ */
+
+import { Router, Request, Response } from "express";
+
+interface StripeWebhookRequest extends Omit<Request, "user"> {
+  stripeEvent: Stripe.Event;
+}
+import Stripe from "stripe";
+import { logger } from "../../logger.js";
+import { stripeWebhookMiddleware, handleWebhookEvent, registerWebhookHandler } from "../../safety/stripeWebhookSecurity";
+import { auditPayment } from "../../safety/auditLogger";
+import { db } from "../../db";
+import {
+  orders,
+  customerMemberships,
+  users,
+  storefrontOrders,
+  bogoPromotions,
+} from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
+import { notificationService } from "../../services/notificationService.js";
+import { dunningService } from "../../services/dunningService.js";
+import { instantPayoutService } from "../../services/instantPayoutService.js";
+import { env } from "../../config/env.js";
+import { subscriptionPlan } from "../../services/commercePolicy";
+import { settleMerchantCheckout } from "../../services/commerce/merchant";
+import { consumeMarketplaceCheckout } from "../../services/commerce/marketplaceCheckout";
+import { handleCommercePayoutEvent } from "../../services/commerce/payouts";
+import { currentSubscription } from "../../services/commerce/entitlements";
+import { installStripeMerchPaymentAdapter, handleGrowthMerchCheckout } from "../../services/commerce/growthMerch";
+
+const router = Router();
+installStripeMerchPaymentAdapter();
+registerWebhookHandler("checkout.session.expired",async event=>{
+  const session=event.data.object as Stripe.Checkout.Session;
+  if(session.metadata?.commerceKind==="merch") await handleGrowthMerchCheckout(event.id,session,true);
+  return {success:true,message:"Checkout expiry reconciled"};
+});
+
+// Register webhook handlers for various event types
+registerWebhookHandler("checkout.session.completed", async (event) => {
+  const session = event?.data.object as Stripe.Checkout.Session;
+  // Completion may precede payment for asynchronous payment methods.
+  // The async-success event below re-enters this same handler after payment.
+  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
+    return { success: true, message: "Checkout awaiting payment" };
+  }
+  if(
+    session.metadata?.commerceKind==="merchant" ||
+    session.metadata?.type==="storefront_purchase"
+  ) {
+    await settleMerchantCheckout(session);
+    try {
+      const paymentIntentId =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent?.id;
+      await auditPayment?.charge(
+        session.metadata?.buyerId || "unknown",
+        session.amount_total || 0,
+        paymentIntentId || session.id,
+        true,
+      );
+    } catch (auditError) {
+      logger.warn(
+        { err: auditError, sessionId: session.id },
+        "[Stripe] Payment audit failed after merchant settlement",
+      );
+    }
+    return {success:true,message:"Merchant settlement and entitlements booked"};
+  }
+  if(session.metadata?.commerceKind==="merch") {
+    await handleGrowthMerchCheckout(event.id,session);
+    return {success:true,message:"Merchandise settlement and inventory committed"};
+  }
+  logger.info(`[Stripe] Checkout completed: ${session?.id}`);
+
+  const failures: string[] = [];
+
+  if (session.metadata?.commerceKind==="marketplace" || session.metadata?.beatId) {
+    const { marketplaceService } = await import("../../services/marketplaceService.js");
+    await consumeMarketplaceCheckout(session,(id,payment)=>marketplaceService.processPayment(id,payment));
+    try {
+      await auditPayment?.charge(
+        session?.metadata?.userId || session?.metadata?.buyerId || "unknown",
+        session?.amount_total || 0,
+        (session?.payment_intent as string) || session?.id,
+        true,
+      );
+    } catch (auditError) {
+      logger.warn(
+        { err: auditError, sessionId: session?.id },
+        "[Stripe] Payment audit failed after marketplace settlement",
+      );
+    }
+    return {success:true,message:"Frozen marketplace order fulfilled"};
+  }
+
+  await auditPayment?.charge(
+    session?.metadata?.userId || session?.metadata?.buyerId || "unknown",
+    session?.amount_total || 0,
+    (session?.payment_intent as string) || session?.id,
+    true,
+  );
+
+  // Legacy storefront sessions (metadata.storefrontId with no commerce kind)
+  // predate the merchant-settlement flow: their orders live in
+  // storefront_orders and are completed here, not by settleMerchantCheckout
+  // (v2 merchant sessions already returned above). Confirm the update
+  // matched a row before reporting success — an unmatched session is a paid
+  // order nobody fulfilled, so it must fail and let Stripe retry.
+  const { storefrontId, promotionId } = session?.metadata || {};
+  if (storefrontId) {
+    try {
+      const updatedStorefrontOrders = await db
+        .update(storefrontOrders)
+        .set({ status: "completed" })
+        .where(eq(storefrontOrders.stripeSessionId, session?.id))
+        .returning({ id: storefrontOrders.id });
+
+      if (updatedStorefrontOrders?.length > 0) {
+        logger.info(
+          `[Stripe] Storefront orders marked completed for session ${session?.id}`,
+        );
+      } else {
+        logger.warn(
+          `[Stripe] No storefront order found for session ${session?.id}`,
+        );
+        failures.push(`storefront order update for session ${session?.id}`);
+      }
+
+      if (promotionId) {
+        const updatedPromotions = await db
+          .update(bogoPromotions)
+          .set({ redemptionCount: sql`${bogoPromotions.redemptionCount} + 1` })
+          .where(eq(bogoPromotions.id, promotionId))
+          .returning({ id: bogoPromotions.id });
+
+        if (updatedPromotions?.length > 0) {
+          logger.info(
+            `[Stripe] BOGO promotion ${promotionId} redemption count incremented`,
+          );
+        } else {
+          logger.warn(
+            `[Stripe] BOGO promotion ${promotionId} not found for redemption increment`,
+          );
+          failures.push(`BOGO promotion redemption for ${promotionId}`);
+        }
+      }
+    } catch (storefrontError) {
+      logger.warn({ detail: storefrontError }, "[Stripe] Failed to update storefront orders:");
+      failures.push(`storefront order update for session ${session?.id}`);
+    }
+  }
+
+  const {
+    type: sessionType,
+    customerId: memberCustomerId,
+    tierId: memberTierId,
+    storefrontId: memberStorefrontId,
+  } = session?.metadata || {};
+  if (
+    sessionType === "storefront_membership" &&
+    memberCustomerId &&
+    memberTierId
+  ) {
+    try {
+      const subscriptionId = session?.subscription as string | undefined;
+
+      const existing = await db
+        .select({ id: customerMemberships.id })
+        .from(customerMemberships)
+        .where(
+          and(
+            eq(customerMemberships.customerId, memberCustomerId),
+            eq(customerMemberships.tierId, memberTierId),
+            eq(customerMemberships.status, "active"),
+          ),
+        )
+        .limit(1);
+
+      if (!existing[0]) {
+        await db.insert(customerMemberships).values({
+          customerId: memberCustomerId,
+          tierId: memberTierId,
+          storefrontId: memberStorefrontId || "",
+          stripeSubscriptionId: subscriptionId || null,
+          status: "active",
+        });
+
+        logger.info(
+          `[Stripe] Storefront membership created: tier=${memberTierId}, customer=${memberCustomerId}`,
+        );
+      } else {
+        logger.info(
+          `[Stripe] Storefront membership already active for tier=${memberTierId}, customer=${memberCustomerId}, skipping`,
+        );
+      }
+    } catch (membershipError) {
+      logger.warn({ detail: membershipError }, "[Stripe] Failed to activate storefront membership:",
+      );
+      failures.push(
+        `membership activation for tier=${memberTierId}, customer=${memberCustomerId}`,
+      );
+    }
+  }
+
+  // For subscription-mode checkouts with a planId in metadata, update the user's
+  // tier immediately so they get access before customer?.subscription.created fires.
+  if (
+    (session?.mode === "subscription" || session?.metadata?.planId === "lifetime") &&
+    session?.customer &&
+    session?.metadata?.planId
+  ) {
+    const checkoutCusId =
+      typeof session?.customer === "string"
+        ? session?.customer
+        : (session?.customer as { id: string }).id;
+    const planId = subscriptionPlan(session.metadata);
+    try {
+      const updated = await db
+        .update(users)
+        .set({
+          subscriptionTier: planId,
+          subscriptionStatus: billingAccountStatus("active"),
+          ...(planId === "lifetime" ? { subscriptionEndsAt: null } : {}),
+          stripeSubscriptionId:
+            typeof session?.subscription === "string"
+              ? session?.subscription
+              : null,
+        })
+        .where(and(
+          eq(users.stripeCustomerId, checkoutCusId),
+          planId === "lifetime" ? sql`true` : sql`${users.subscriptionTier} IS DISTINCT FROM 'lifetime'`,
+        ))
+        .returning({ id: users.id });
+      if (updated?.length > 0) {
+        logger.info(
+          `[Stripe] checkout.session.completed: user ${updated[0].id} tier set to ${planId}`,
+        );
+      } else {
+        logger.warn(
+          `[Stripe] checkout.session.completed: no user found for customer ${checkoutCusId} to set tier ${planId}`,
+        );
+        failures.push(`tier update for customer ${checkoutCusId}`);
+      }
+    } catch (checkoutErr) {
+      logger.warn(
+        { err: checkoutErr },
+        "[Stripe] Failed to update tier on checkout.session.completed:",
+      );
+      failures.push(`tier update for customer ${checkoutCusId}`);
+    }
+  }
+
+  if (failures.length > 0) {
+    return {
+      success: false,
+      message: `Checkout session ${session?.id} processing incomplete: ${failures.join("; ")}`,
+    };
+  }
+
+  return { success: true, message: "Checkout session processed" };
+});
+
+registerWebhookHandler("customer.subscription.created", async (event) => {
+  const subscription = await currentSubscription(event);
+  if(!subscription) return {success:true,message:"Superseded subscription event"};
+  logger.info(
+    `[Stripe] Subscription created: ${subscription?.id} - Status: ${subscription?.status}`,
+  );
+
+  try {
+    const customerId =
+      typeof subscription?.customer === "string"
+        ? subscription?.customer
+        : subscription?.customer.id;
+
+    const tier = subscriptionPlan(subscription.metadata);
+    const endsAt = (subscription as any)?.current_period_end
+      ? new Date((subscription as any)?.current_period_end * 1000)
+      : null;
+
+    const updated = await db
+      .update(users)
+      .set({
+        subscriptionTier: tier,
+        subscriptionStatus: billingAccountStatus(subscription.status),
+        subscriptionEndsAt: endsAt,
+        stripeSubscriptionId: subscription.id,
+      })
+      .where(and(
+        eq(users.stripeCustomerId, customerId),
+        sql`${users.subscriptionTier} IS DISTINCT FROM 'lifetime'`,
+        sql`(${users.stripeSubscriptionId} IS NULL OR ${users.stripeSubscriptionId} = ${subscription.id})`,
+      ))
+      .returning({ id: users.id });
+
+    if (updated?.length > 0) {
+      logger.info(
+        `[Stripe] User ${updated[0].id} subscription created: tier=${tier}, status=${subscription?.status}`,
+      );
+      return { success: true, message: "Subscription created" };
+    }
+
+    logger.warn(
+      `[Stripe] No user found for Stripe customer ${customerId} on subscription.created`,
+    );
+    return {
+      // The event is valid and has been fully evaluated. A customer can exist
+      // in Stripe before its local account is created, so returning a failure
+      // here would make Stripe retry an event that cannot become applicable.
+      success: false,
+      message: `Subscription created event did not match current entitlement for customer ${customerId}; reconcile before acknowledging`,
+    };
+  } catch (err) {
+    logger.warn(
+      { err: err },
+      "[Stripe] Failed to update user on subscription.created:",
+    );
+    return {
+      success: false,
+      message: `Failed to update user on subscription.created: ${(err as Error)?.message || err}`,
+    };
+  }
+});
+
+registerWebhookHandler("customer.subscription.updated", async (event) => {
+  const subscription = await currentSubscription(event);
+  if(!subscription) return {success:true,message:"Superseded subscription event"};
+  logger.info(
+    `[Stripe] Subscription updated: ${subscription?.id} - Status: ${subscription?.status}`,
+  );
+
+  try {
+    const customerId =
+      typeof subscription?.customer === "string"
+        ? subscription?.customer
+        : subscription?.customer.id;
+
+    const tier = subscriptionPlan(subscription.metadata);
+    const endsAt = (subscription as any)?.current_period_end
+      ? new Date((subscription as any)?.current_period_end * 1000)
+      : null;
+
+    const updated = await db
+      .update(users)
+      .set({
+        subscriptionTier: tier,
+        subscriptionStatus: billingAccountStatus(subscription.status),
+        subscriptionEndsAt: endsAt,
+        stripeSubscriptionId: subscription.id,
+      })
+      .where(and(
+        eq(users.stripeCustomerId, customerId),
+        sql`${users.subscriptionTier} IS DISTINCT FROM 'lifetime'`,
+        sql`(${users.stripeSubscriptionId} IS NULL OR ${users.stripeSubscriptionId} = ${subscription.id})`,
+      ))
+      .returning({ id: users.id });
+
+    if (updated?.length > 0) {
+      logger.info(
+        `[Stripe] User ${updated[0].id} subscription updated: tier=${tier}, status=${subscription?.status}`,
+      );
+      const previousTier = subscription?.metadata?.previousPlanId;
+      if (subscription?.status === "active") {
+        if (previousTier && previousTier !== tier) {
+          notificationService
+            .sendSubscriptionChangedNotification(
+              updated[0].id,
+              previousTier,
+              tier,
+            )
+            .catch(() => {});
+        } else {
+          notificationService
+            .sendSubscriptionRenewedNotification(updated[0].id, tier)
+            .catch(() => {});
+        }
+      }
+      return { success: true, message: "Subscription updated" };
+    }
+
+    logger.warn(
+      `[Stripe] No user found for Stripe customer ${customerId} on subscription.updated`,
+    );
+    return {
+      success: false,
+      message: `No user found for Stripe customer ${customerId} on subscription.updated`,
+    };
+  } catch (err) {
+    logger.warn(
+      { err: err },
+      "[Stripe] Failed to update user on subscription.updated:",
+    );
+    return {
+      success: false,
+      message: `Failed to update user on subscription.updated: ${(err as Error)?.message || err}`,
+    };
+  }
+});
+
+registerWebhookHandler("customer.subscription.deleted", async (event) => {
+  const subscription = await currentSubscription(event);
+  if(!subscription) return {success:true,message:"Superseded subscription event"};
+  logger.info(`[Stripe] Subscription canceled: ${subscription?.id}`);
+
+  try {
+    const customerId =
+      typeof subscription?.customer === "string"
+        ? subscription?.customer
+        : subscription?.customer.id;
+
+    const updated = await db
+      .update(users)
+      .set({
+        subscriptionTier: "free",
+        subscriptionStatus: billingAccountStatus("canceled"),
+        subscriptionEndsAt: subscription.ended_at
+          ? new Date(subscription?.ended_at * 1000)
+          : new Date(),
+      })
+      .where(and(
+        eq(users.stripeCustomerId, customerId),
+        eq(users.stripeSubscriptionId, subscription.id),
+        sql`${users.subscriptionTier} IS DISTINCT FROM 'lifetime'`,
+      ))
+      .returning({ id: users.id });
+
+    if (updated?.length > 0) {
+      logger.info(
+        `[Stripe] User ${updated[0].id} subscription canceled, downgraded to free`,
+      );
+      return { success: true, message: "Subscription canceled" };
+    }
+
+    logger.warn(
+      `[Stripe] No user found for Stripe customer ${customerId} on subscription.deleted`,
+    );
+    return {
+      success: false,
+      message: `No user found for Stripe customer ${customerId} on subscription.deleted`,
+    };
+  } catch (err) {
+    logger.warn(
+      { err: err },
+      "[Stripe] Failed to update user on subscription.deleted:",
+    );
+    return {
+      success: false,
+      message: `Failed to update user on subscription.deleted: ${(err as Error)?.message || err}`,
+    };
+  }
+});
+
+registerWebhookHandler("invoice.paid", async (event) => {
+  const invoice = event?.data.object as Stripe.Invoice;
+  logger.info(
+    `[Stripe] Invoice paid: ${invoice?.id} - Amount: $${(invoice?.amount_paid / 100).toFixed(2)}`,
+  );
+
+  await auditPayment?.charge(
+    invoice?.customer as string,
+    invoice?.amount_paid,
+    ((invoice as any)?.payment_intent as string) || invoice?.id,
+    true,
+  );
+
+  try {
+    const resolved = await dunningService?.resolveSequence(invoice?.id, "paid");
+    if (resolved === false) {
+      return {
+        success: false,
+        message: `Failed to resolve dunning sequence for invoice ${invoice?.id}`,
+      };
+    }
+  } catch (err) {
+    logger.warn({ err: err }, "[Stripe] Failed to resolve dunning sequence:");
+    return {
+      success: false,
+      message: `Failed to resolve dunning sequence for invoice ${invoice?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+
+  return { success: true, message: "Invoice paid" };
+});
+
+registerWebhookHandler("invoice.payment_failed", async (event) => {
+  const invoice = event?.data.object as Stripe.Invoice;
+  logger.warn(`[Stripe] Payment failed: ${invoice?.id}`);
+
+  await auditPayment?.charge(
+    invoice?.customer as string,
+    invoice?.amount_due,
+    invoice?.id,
+    false,
+    "Payment failed",
+  );
+
+  try {
+    const customerId: string | undefined =
+      typeof invoice?.customer === "string"
+        ? invoice?.customer
+        : (invoice?.customer as unknown as Record<string, unknown>)?.id as string | undefined;
+
+    if (!customerId) {
+      logger.warn(
+        `[Stripe] invoice.payment_failed has no customer id: ${invoice?.id}`,
+      );
+      return {
+        success: false,
+        message: `invoice.payment_failed has no customer id for invoice ${invoice?.id}`,
+      };
+    }
+
+    const found = await db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(eq(users.stripeCustomerId, customerId))
+      .limit(1);
+
+    if (!found?.length) {
+      logger.warn(
+        `[Stripe] invoice.payment_failed: no user found for Stripe customer ${customerId}`,
+      );
+      return {
+        success: false,
+        message: `No user found for Stripe customer ${customerId} on invoice.payment_failed`,
+      };
+    }
+
+    const amount = invoice?.amount_due / 100;
+    const reason = ((invoice as unknown as Record<string, unknown>).last_payment_error as Record<string, unknown> | undefined)
+      ?.message as string | undefined;
+
+    // Notifications are best-effort — a delivery failure shouldn't mask
+    // whether the critical write (the dunning sequence row) succeeded.
+    await notificationService
+      ?.sendPaymentFailedNotification(found[0].id, amount, reason)
+      .catch((notifyErr: unknown) =>
+        logger.warn(
+          { err: notifyErr },
+          "[Stripe] Failed to send payment-failed user notification:",
+        ),
+      );
+    await notificationService
+      ?.sendAdminPaymentIssueNotification(
+        found[0].email!,
+        found[0].id,
+        amount,
+        reason,
+      )
+      .catch((notifyErr: unknown) =>
+        logger.warn(
+          { err: notifyErr },
+          "[Stripe] Failed to send payment-failed admin notification:",
+        ),
+      );
+
+    const started = await dunningService?.startSequence(
+      found[0].id,
+      invoice?.id,
+    );
+    if (started === false) {
+      return {
+        success: false,
+        message: `Failed to start dunning sequence for invoice ${invoice?.id}`,
+      };
+    }
+  } catch (err) {
+    logger.warn(
+      { err: err },
+      "[Stripe] Failed to process payment failure:",
+    );
+    return {
+      success: false,
+      message: `Failed to process invoice.payment_failed for invoice ${invoice?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+
+  return { success: true, message: "Payment failure recorded" };
+});
+
+registerWebhookHandler("payment_intent.succeeded", async (event) => {
+  const paymentIntent = event?.data.object as Stripe.PaymentIntent;
+  if (paymentIntent.metadata?.commerceKind === "merchant") {
+    return {
+      success: true,
+      message: "Merchant settlement is reconciled from its Checkout Session",
+    };
+  }
+  if(paymentIntent.metadata?.commerceKind==="marketplace") {
+    if(!paymentIntent.metadata.orderId) throw new Error("Marketplace payment needs canonical-order reconciliation");
+    const { marketplaceService } = await import("../../services/marketplaceService.js");
+    await marketplaceService.processPayment(paymentIntent.metadata.orderId,paymentIntent.id);
+    return {success:true,message:"Canonical marketplace payment fulfilled"};
+  }
+  logger.info(
+    `[Stripe] Payment intent succeeded: ${paymentIntent?.id} — amount: $${(paymentIntent?.amount / 100).toFixed(2)}`,
+  );
+
+  const userId = paymentIntent?.metadata?.userId;
+  if (!userId) {
+    logger.warn(
+      `[Stripe] payment_intent.succeeded has no userId in metadata: ${paymentIntent?.id}`,
+    );
+    return {
+      success: true,
+      message: "Payment intent succeeded (no user context)",
+    };
+  }
+
+  try {
+    if (paymentIntent.metadata?.planId === "lifetime" || paymentIntent.metadata?.tier === "lifetime" || paymentIntent.metadata?.planName === "lifetime") {
+      const customerId = typeof paymentIntent.customer === "string"
+        ? paymentIntent.customer : paymentIntent.customer?.id;
+      if (!customerId) throw new Error("Lifetime payment has no customer");
+      const updated = await db.update(users).set({
+        subscriptionTier: "lifetime",
+        subscriptionStatus: billingAccountStatus("active"),
+        subscriptionEndsAt: null,
+        stripeSubscriptionId: null,
+      }).where(and(eq(users.id, userId), eq(users.stripeCustomerId, customerId)))
+        .returning({ id: users.id });
+      if (updated.length !== 1) throw new Error("Lifetime payment customer does not match user");
+      return { success: true, message: "Lifetime entitlement granted" };
+    }
+    const [existingOrder] = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.stripePaymentIntentId, paymentIntent?.id))
+      .limit(1);
+
+    if (!existingOrder) {
+      logger.warn(
+        `[Stripe] payment_intent.succeeded: no order found for ${paymentIntent?.id} — may have been handled via checkout.session.completed or subscription event`,
+      );
+    } else {
+      logger.info(
+        `[Stripe] payment_intent.succeeded: order ${existingOrder?.id} confirmed for user ${userId}`,
+      );
+    }
+
+    await auditPayment?.charge(
+      userId,
+      paymentIntent?.amount,
+      paymentIntent?.id,
+      true,
+    );
+  } catch (err) {
+    logger.warn(`[Stripe] payment_intent.succeeded audit error: ${err}`);
+    return {
+      success: false,
+      message: `payment_intent.succeeded processing failed for ${paymentIntent?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+
+  return { success: true, message: "Payment intent succeeded and audited" };
+});
+
+// payment_intent.payment_failed has no order/subscription row of its own to
+// update (that lives in checkout.session.completed / invoice.payment_failed),
+// but it must still confirm the same kind of critical write its sibling
+// payment_intent.succeeded handler makes: a persisted payment audit record.
+registerWebhookHandler("payment_intent.payment_failed", async (event) => {
+  const paymentIntent = event?.data.object as Stripe.PaymentIntent;
+  const failureReason =
+    (paymentIntent as unknown as Record<string, any>)?.last_payment_error
+      ?.message || "Payment failed";
+  logger.warn(
+    `[Stripe] Payment failed: ${paymentIntent?.id} — ${failureReason}`,
+  );
+
+  try {
+    await auditPayment.charge(
+      paymentIntent?.metadata?.userId ||
+        paymentIntent?.metadata?.buyerId ||
+        "unknown",
+      paymentIntent?.amount || 0,
+      paymentIntent?.id,
+      false,
+      failureReason,
+    );
+  } catch (err) {
+    logger.warn(
+      { err },
+      "[Stripe] Failed to record payment_intent.payment_failed audit:",
+    );
+    return {
+      success: false,
+      message: `Failed to record payment failure audit for ${paymentIntent?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+
+  return { success: true, message: "Payment failure recorded" };
+});
+
+// Stripe Connect webhook handlers for payouts. Each one confirms its critical
+// write by delegating to instantPayoutService, which persists the matching
+// instant_payouts/users row (or, for account.application.deauthorized,
+// clears the stored Connect account id) and confirms every update actually
+// matched a row via `.returning()`. Every transfer/payout/account this
+// platform's Connect setup produces is tagged with an internal id at
+// creation time, so an event that cannot be matched to a local record is a
+// reconciliation gap, not a legitimate no-op — instantPayoutService throws
+// for that case (and for real DB errors) instead of resolving silently, and
+// these handlers turn any throw into success:false so Stripe retries.
+registerWebhookHandler("account.updated", async (event) => {
+  const account = event?.data.object as Stripe.Account;
+  logger.info(
+    `[Stripe Connect] Account updated: ${account?.id} - Charges enabled: ${account?.charges_enabled}`,
+  );
+  try {
+    await instantPayoutService.handleAccountWebhook(event);
+  } catch (err) {
+    logger.warn({ err }, "[Stripe Connect] Failed to process account.updated:");
+    return {
+      success: false,
+      message: `Failed to process account.updated for ${account?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+  return { success: true, message: "Account update processed" };
+});
+
+registerWebhookHandler("transfer.created", async (event) => {
+  const transfer = event?.data.object as Stripe.Transfer;
+  if(transfer.metadata?.commerceOperation) return {success:true,message:"Durable commerce transfer is reconciled by its operation worker"};
+  logger.info(
+    `[Stripe Connect] Transfer created: ${transfer?.id} - Amount: $${(transfer?.amount / 100).toFixed(2)}`,
+  );
+  try {
+    await instantPayoutService.handleTransferWebhook(event);
+  } catch (err) {
+    logger.warn(
+      { err },
+      "[Stripe Connect] Failed to process transfer.created:",
+    );
+    return {
+      success: false,
+      message: `Failed to process transfer.created for ${transfer?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+  return { success: true, message: "Transfer processed" };
+});
+
+registerWebhookHandler("payout.paid", async (event) => {
+  const payout = event?.data.object as Stripe.Payout;
+  if(await handleCommercePayoutEvent(event)) return {success:true,message:"Commerce bank payout reconciled"};
+  logger.info(
+    `[Stripe Connect] Payout completed: ${payout?.id} - Amount: $${(payout?.amount / 100).toFixed(2)}`,
+  );
+  try {
+    await instantPayoutService.handlePayoutWebhook(event);
+  } catch (err) {
+    logger.warn({ err }, "[Stripe Connect] Failed to process payout.paid:");
+    return {
+      success: false,
+      message: `Failed to process payout.paid for ${payout?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+  return { success: true, message: "Payout completion processed" };
+});
+
+registerWebhookHandler("payout.failed", async (event) => {
+  const payout = event?.data.object as Stripe.Payout;
+  if(await handleCommercePayoutEvent(event)) return {success:true,message:"Commerce failed payout reconciled"};
+  logger.warn(
+    `[Stripe Connect] Payout failed: ${payout?.id} - Reason: ${payout?.failure_message}`,
+  );
+  try {
+    await instantPayoutService.handlePayoutWebhook(event);
+  } catch (err) {
+    logger.warn({ err }, "[Stripe Connect] Failed to process payout.failed:");
+    return {
+      success: false,
+      message: `Failed to process payout.failed for ${payout?.id}: ${(err as Error)?.message || err}`,
+    };
+  }
+  return { success: true, message: "Payout failure processed" };
+});
+
+/**
+ * POST /api/webhooks/stripe
+ * Main webhook endpoint with signature verification
+ */
+router.post(
+  "/",
+  stripeWebhookMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const event = (req as StripeWebhookRequest).stripeEvent;
+
+      if (!event) {
+        return res.status(400).json({ error: "No event found" });
+      }
+
+      // Process the event
+      const result = await handleWebhookEvent(event);
+
+      if (result?.success) {
+        res.json({ received: true, message: result.message });
+      } else {
+        res.status(500).json({ error: result.message });
+      }
+    } catch (error) {
+      logger.warn({ err: error }, "[Stripe Webhook] Handler error:");
+      res.status(500).json({ error: "Webhook handler failed" });
+    }
+  },
+);
+
+/**
+ * GET /api/webhooks/stripe/health
+ * Health check for webhook endpoint
+ */
+router.get("/health", (_req: Request, res: Response) => {
+  res.json({
+    status: "ok",
+    webhookSecretConfigured: !!env?.STRIPE_WEBHOOK_SECRET,
+    stripeKeyConfigured: !!env?.STRIPE_SECRET_KEY,
+  });
+});
+
+export default router;

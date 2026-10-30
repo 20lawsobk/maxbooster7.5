@@ -1,0 +1,216 @@
+import type { Request, Response, NextFunction } from "express";
+import { jwtAuthService } from "../services/jwtAuthService.js";
+import { storage } from "../storage.js";
+import { logger } from "../logger.js";
+import { enforceAssurance, markVerifiedJwtFactor } from "./authAssurance.js";
+
+const PAID_FEATURE_PATHS = new Set([
+  "/api/ai/insights",
+  "/api/ai/optimize-content",
+]);
+const PAID_FEATURE_PREFIXES = ["/api/studio", "/api/songwriting"];
+
+type PaidFeatureUser = {
+  role?: string | null;
+  email?: string | null;
+  subscriptionStatus?: string | null;
+  subscriptionTier?: string | null;
+  isDemo?: boolean | null;
+};
+
+export function hasPaidFeatureAccess(user: PaidFeatureUser): boolean {
+  if (
+    user.role === "admin" ||
+    user.isDemo === true ||
+    user.email === "demo@maxbooster.ai"
+  ) {
+    return true;
+  }
+
+  return (
+    (user.subscriptionStatus === "active" ||
+      user.subscriptionStatus === "trialing") &&
+    Boolean(user.subscriptionTier && user.subscriptionTier !== "free")
+  );
+}
+
+export function isPaidFeatureRequest(
+  req: Pick<Request, "originalUrl" | "url">,
+): boolean {
+  const rawPath = req.originalUrl || req.url || "";
+  const path = rawPath.split("?", 1)[0].replace(/\/+$/, "") || "/";
+  return (
+    PAID_FEATURE_PATHS.has(path) ||
+    PAID_FEATURE_PREFIXES.some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    )
+  );
+}
+
+async function resolveJwtUser(req: Request): Promise<void> {
+  if (
+    req.isAuthenticated &&
+    req.isAuthenticated() &&
+    !req.headers.authorization
+  )
+    return;
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) return;
+
+  const token = authHeader?.substring(7);
+  try {
+    const decoded = await jwtAuthService?.verifyAccessToken(token);
+    if (decoded) {
+      const user = await storage.getUser(decoded?.userId);
+      if (user) {
+        req.user = user;
+        if (decoded.mfa === true) markVerifiedJwtFactor(req, user.id);
+        req.isAuthenticated = (() => true) as typeof req.isAuthenticated;
+      }
+    }
+  } catch (err) {
+    logger.warn({ err }, "[Auth] JWT verification error:");
+  }
+}
+
+export const requireAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  await resolveJwtUser(req);
+
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const user = req.user!;
+  if (!enforceAssurance(req, res)) return;
+
+  if (user?.email === "demo@maxbooster.ai") {
+    next();
+    return;
+  }
+
+  if (user?.role === "admin") {
+    next();
+    return;
+  }
+
+  const now = new Date();
+
+  if (user?.trialEndsAt) {
+    if (now > user?.trialEndsAt) {
+      res.status(403).json({
+        error:
+          "Your 30-day trial has expired. Please contact support to continue using Max Booster.",
+        trialExpired: true,
+      });
+      return;
+    }
+  }
+
+  if (user?.subscriptionEndsAt && user?.subscriptionTier !== "lifetime") {
+    if (now > user?.subscriptionEndsAt) {
+      const planName =
+        user?.subscriptionTier === "monthly" ? "monthly" : "yearly";
+      res.status(403).json({
+        error: `Your ${planName} subscription has expired. Please renew your subscription to continue using Max Booster.`,
+        subscriptionExpired: true,
+        plan: user.subscriptionTier,
+      });
+      return;
+    }
+  }
+
+  if (
+    isPaidFeatureRequest(req) &&
+    !hasPaidFeatureAccess(user as PaidFeatureUser)
+  ) {
+    res.status(403).json({
+      error: "Paid subscription required",
+      code: "PAID_SUBSCRIPTION_REQUIRED",
+      upgradeUrl: "/pricing",
+    });
+    return;
+  }
+
+  next();
+};
+
+/**
+ * Auth-only guard — verifies the user is logged in.
+ * Does NOT apply trial-expiry or subscription-expiry gates.
+ * Use only on endpoints that are intentionally available to any authenticated
+ * account. Paid feature endpoints must use `requireAuth` so their server-side
+ * entitlement policy cannot be bypassed by calling the API directly.
+ */
+export const requireAuthOnly = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  await resolveJwtUser(req);
+
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  if (enforceAssurance(req, res)) next();
+};
+
+export const requireAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  if (req.user.role === "admin") {
+    if (enforceAssurance(req, res)) return next();
+    return;
+  }
+  res.status(403).json({ error: "Admin access required" });
+};
+
+/**
+ * Enforces two-factor authentication on privileged routes.
+ * If the user has 2FA enabled but has not verified it this session,
+ * the request is rejected with 403 so they must complete the 2FA flow.
+ * Gates that don't require 2FA (e.g. the 2FA setup/verify routes themselves)
+ * should NOT use this middleware.
+ */
+export const require2FA = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const user = req.user;
+  if (!user) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  if (enforceAssurance(req, res)) next();
+};
+
+/** Privileged recovery operations require 2FA to be enabled, not merely
+ * conditionally verified when an account happens to have enabled it. */
+export const requireVerified2FA = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const user = req.user;
+  if (!user)
+    return res.status(401).json({ error: "Authentication required" });
+  if (!user.twoFactorEnabled) {
+    return res.status(403).json({
+      error: "Two-factor authentication must be enabled for this operation",
+      requiresTwoFactor: true,
+    });
+  }
+  if (enforceAssurance(req, res)) next();
+};

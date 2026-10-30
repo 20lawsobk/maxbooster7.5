@@ -1,0 +1,56 @@
+{
+  "checks": {
+    "ci-config": {
+      "required": true,
+      "weight": 4
+    },
+    "env-config": {
+      "required": true,
+      "weight": 3
+    },
+    "lint": {
+      "weight": 3
+    },
+    "migrations": {
+      "weight": 3
+    },
+    "production-build": {
+      "required": true,
+      "weight": 3
+    },
+    "readme": {
+      "weight": 2
+    },
+    "secrets-scan": {
+      "required": true,
+      "weight": 4
+    },
+    "todo-scan": {
+      "config": {
+        "failAt": 120,
+        "warnAt": 30
+      },
+      "weight": 2
+    },
+    "typecheck": {
+      "required": true,
+      "weight": 3
+    },
+    "unit-tests": {
+      "required": true,
+      "weight": 4
+    }
+  },
+  "description": "For multi-tenant software services. Engineering process (tests, CI, lint) and safe deploys carry the most weight.",
+  "displayName": "SaaS",
+  "name": "saas",
+  "notes": [
+    "Stricter TODO thresholds than generic: stale markers are tech debt your tenants feel.",
+    "Add tenant-isolation and rate-limit checks for multi-tenant tiers."
+  ],
+  "thresholds": {
+    "conditionalGo": 68,
+    "go": 87
+  },
+  "version": "1.0.0"
+}

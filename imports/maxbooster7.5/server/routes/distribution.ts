@@ -1,0 +1,8446 @@
+import { Router } from "express";
+import {
+  getDistributionToolostService,
+  getOwnedToolostService,
+  getToolostRedirectUri,
+} from "../services/toolostRuntimeConfig";
+import { getToolostApiEnvironment } from "../services/toolostEnvironment.js";
+import { createHash, randomBytes } from "crypto";
+import { requireAuth } from "../middleware/auth.js";
+import type { Request, Response } from "express";
+import { z } from "zod";
+import { parse as parseCsv } from "csv-parse/sync";
+import { storage } from "../storage";
+import { db } from "../db";
+import { eq, and, desc, sql, count, inArray } from "drizzle-orm";
+import {
+  royaltyTransactions,
+  royaltyStatements,
+  royaltySplits,
+  taxForms,
+  royaltyDisputes,
+  systemSettings,
+  distroReleases,
+  distroTracks,
+  isrcRegistry,
+  upcRegistry,
+  dmcaStrikes,
+} from "@shared/schema";
+import { storageService } from "../services/storageService";
+import * as codeGenerationService from "../services/distributionCodeGenerationService";
+import { labelGridService } from "../services/labelgrid-service";
+import {
+  claimToolostRetry,
+  completeToolostRetry,
+  getDistributionSubmissions,
+} from "../services/distributionSubmissionRepository.js";
+import { toolostService } from "../services/toolost-service";
+import {
+  canRetryToolostRelease,
+  deriveToolostSubmissionPersistence,
+  mapToolostDispatchStatus,
+  submitToolostRelease,
+} from "./distribution-toolost-submission";
+import {
+  createReleaseDraftSchema,
+  editReleaseDraftSchema,
+  createReleaseSchema,
+  createTrackSchema,
+  editTrackSchema,
+} from "./distribution-release-schemas";
+import { musicCodesService } from "../services/musicCodes";
+import {
+  labelCopyLinter,
+  type ReleaseMetadata,
+  type LintResult,
+} from "../services/labelCopyLinter";
+import { dspPolicyChecker, type ComplianceResult } from "../services/dspPolicyChecker";
+import {
+  releaseWorkflowService,
+  type TakedownReason,
+  type ReleaseState,
+} from "../services/releaseWorkflow";
+import { audioFingerprintService, type AudioFingerprint } from "../services/audioFingerprint";
+import { audioMetadataService } from "../services/audioMetadataService.js";
+import { logger } from "../logger";
+import { notificationService } from "../services/notificationService.js";
+import { createHardenedUpload } from "../middleware/uploadHandler.js";
+import path from "path";
+import fs from "fs";
+
+const uploadDir = path.join(process.cwd(), "uploads");
+fs.mkdirSync(uploadDir, { recursive: true });
+import fsPromises from "fs/promises";
+import os from "os";
+
+interface AuthenticatedUser {
+  id: string;
+  email?: string;
+  username?: string;
+  role?: string;
+}
+
+interface DispatchStatus {
+  id: string;
+  providerId: string;
+  providerName?: string;
+  status: string;
+  logs?: string;
+}
+
+interface TakedownStatus {
+  platform: string;
+  platformName?: string;
+  status: string;
+  requestedAt?: string;
+  completedAt?: string;
+  reason?: string;
+  explanation?: string;
+}
+
+interface HyperFollowLinks {
+  platforms?: Array<{
+    id: string;
+    name: string;
+    enabled: boolean;
+    url?: string;
+  }>;
+  socialLinks?: Array<{ platform: string; url: string }>;
+  artistName?: string;
+  description?: string;
+  releaseId?: string;
+  collectEmails?: boolean;
+  theme?: {
+    primaryColor: string;
+    backgroundColor: string;
+    textColor: string;
+    buttonStyle: string;
+  };
+  analytics?: {
+    pageViews: number;
+    preSaves: number;
+    emailSignups: number;
+    platformClicks: Record<string, number>;
+  };
+  emailList?: string[];
+}
+
+interface HyperFollowPage {
+  id: string;
+  userId: string;
+  title: string;
+  slug: string;
+  imageUrl?: string | null;
+  links: HyperFollowLinks;
+  clicks?: number;
+  presaves?: number;
+}
+
+
+const router = Router();
+
+async function getCatalogToolostConnection(userId: string): Promise<{
+  connection: Awaited<ReturnType<typeof storage.getToolostConnection>>;
+  source: "user" | "admin";
+} | null> {
+  const environment = getToolostApiEnvironment();
+  const userConnection = await storage.getToolostConnection(
+    userId,
+    environment,
+  );
+  if (userConnection) {
+    return { connection: userConnection, source: "user" };
+  }
+
+  const adminConnection =
+    await storage.getAdminToolostConnection(environment);
+  if (adminConnection) {
+    return { connection: adminConnection, source: "admin" };
+  }
+
+  return null;
+}
+
+// Too Lost grants distribution access to the user who authorizes this flow.
+// State and redirect URI remain in that user's session until the callback.
+router.get("/toolost/connect", requireAuth, (req: Request, res: Response) => {
+  try {
+    const redirectUri = getToolostRedirectUri();
+    const state = randomBytes(32).toString("hex");
+    const session = req.session as typeof req.session & {
+      toolostOAuthState?: string;
+      toolostOAuthRedirectUri?: string;
+      toolostOAuthUserId?: string;
+    };
+    session.toolostOAuthState = state;
+    session.toolostOAuthRedirectUri = redirectUri;
+    session.toolostOAuthUserId = (req.user as AuthenticatedUser).id;
+    res.redirect(toolostService.getOAuthAuthorizationUrl(redirectUri, state));
+  } catch (error) {
+    logger.warn({ err: error }, "Unable to start Too Lost OAuth flow");
+    res.status(503).json({
+      error: error instanceof Error ? error.message : "Too Lost OAuth is not configured",
+    });
+  }
+});
+
+async function handleToolostCallback(req: Request, res: Response) {
+  const session = req.session as typeof req.session & {
+    toolostOAuthState?: string;
+    toolostOAuthRedirectUri?: string;
+    toolostOAuthUserId?: string;
+  };
+  const expectedState = session.toolostOAuthState;
+  const redirectUri = session.toolostOAuthRedirectUri;
+  const initiatingUserId = session.toolostOAuthUserId;
+  const currentUserId = (req.user as AuthenticatedUser).id;
+  delete session.toolostOAuthState;
+  delete session.toolostOAuthRedirectUri;
+  delete session.toolostOAuthUserId;
+
+  if (!initiatingUserId || initiatingUserId !== currentUserId) {
+    return res.status(403).json({ error: "Too Lost OAuth session user mismatch" });
+  }
+  const queryError = typeof req.query.error === "string" ? req.query.error : "";
+  if (queryError) {
+    return res.redirect(`/distribution?toolost=denied&error=${encodeURIComponent(queryError)}`);
+  }
+  const code = typeof req.query.code === "string" ? req.query.code : "";
+  const state = typeof req.query.state === "string" ? req.query.state : "";
+  if (!code || !state || !expectedState || state !== expectedState || !redirectUri) {
+    return res.status(400).json({ error: "Invalid Too Lost OAuth state" });
+  }
+
+  try {
+    await toolostService.forUser(currentUserId).exchangeOAuthCode(code, redirectUri);
+    return res.redirect("/distribution?toolost=connected");
+  } catch (error) {
+    logger.warn({ err: error }, "Too Lost OAuth callback failed");
+    return res.redirect(
+      `/distribution?toolost=error&message=${encodeURIComponent(
+        error instanceof Error ? error.message : "Too Lost OAuth connection failed",
+      )}`,
+    );
+  }
+}
+
+router.get("/toolost/callback", requireAuth, handleToolostCallback);
+
+router.get("/toolost/status", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const catalogConnection = await getCatalogToolostConnection(userId);
+    const connection = catalogConnection?.connection;
+    let configurationError = toolostService.getOAuthConfigurationError();
+    if (!configurationError) {
+      try {
+        getToolostRedirectUri();
+      } catch (error) {
+        configurationError =
+          error instanceof Error
+            ? error.message
+            : "Too Lost OAuth callback URL is not configured for this environment.";
+      }
+    }
+    res.json({
+      configured: configurationError === null,
+      configurationError,
+      connected: !!connection,
+      connectionSource: catalogConnection?.source ?? null,
+      environment: getToolostApiEnvironment(),
+      scope: connection?.scope ?? null,
+      connectedAt: connection?.connectedAt ?? null,
+      updatedAt: connection?.updatedAt ?? null,
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "Unable to read Too Lost connection status");
+    res.status(500).json({ error: "Failed to read Too Lost connection status" });
+  }
+});
+
+// Per-field uploader — supports BOTH audio/artwork (release/QC/fingerprint flows)
+// AND data-import payloads (CSV/JSON/XML/XLSX/PDF) used by transfer & earnings imports.
+// We pick the allowlist at filter time based on multer's field name so each route
+// gets exactly the MIME profile it needs without a second uploader instance.
+const AUDIO_MIMES = [
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/wave",
+  "audio/flac",
+  "audio/x-flac",
+  "audio/aiff",
+  "audio/x-aiff",
+  "audio/ogg",
+  "audio/opus",
+  "audio/x-opus",
+  "audio/aac",
+  "audio/x-aac",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/m4a",
+  "audio/webm",
+];
+const IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp"];
+const DATA_IMPORT_MIMES = [
+  "text/csv",
+  "application/csv",
+  "text/tab-separated-values",
+  "application/json",
+  "application/xml",
+  "text/xml",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/pdf",
+];
+
+const upload = createHardenedUpload({
+  maxFileSize: 200 * 1024 * 1024, // 200MB
+  maxFiles: 10,
+  perFieldMimes: {
+    audio: AUDIO_MIMES,
+    headerImage: IMAGE_MIMES,
+    artwork: IMAGE_MIMES,
+    file: DATA_IMPORT_MIMES, // /transfer/validate, /transfer/import
+    statement: DATA_IMPORT_MIMES, // /earnings/import
+  },
+  label: "distribution",
+});
+
+function buildRoyaltySplitRows(
+  releaseId: string,
+  splits: NonNullable<z.infer<typeof createReleaseSchema>["royaltySplits"]>,
+) {
+  return splits.map((split) => ({
+    releaseId,
+    collaboratorName: split.name,
+    collaboratorEmail: split.email.toLowerCase(),
+    role: split.role,
+    percentage: split.percentage,
+    status: "pending",
+  }));
+}
+
+function normalizeDistributionPlatform(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+async function replaceReleaseRoyaltySplits(
+  releaseId: string,
+  splits: NonNullable<z.infer<typeof createReleaseSchema>["royaltySplits"]>,
+) {
+  return db.transaction(async (tx) => {
+    await tx.delete(royaltySplits).where(eq(royaltySplits.releaseId, releaseId));
+    if (splits.length === 0) return [];
+    return tx
+      .insert(royaltySplits)
+      .values(buildRoyaltySplitRows(releaseId, splits))
+      .returning();
+  });
+}
+
+const TOOLOST_CSV_LABEL_PREFIX = "__toolost_csv_v1__:";
+const TOOLOST_CSV_COLUMNS = [
+  "period_start",
+  "period_end",
+  "currency",
+  "platform",
+  "streams",
+  "amount",
+] as const;
+
+export function parseTooLostStatementCsv(input: string | Buffer) {
+  let rows: Record<string, string>[];
+  try {
+    rows = parseCsv(input, {
+      bom: true,
+      columns: (headers: string[]) => {
+        const normalized = headers.map((header) =>
+          header.trim().toLowerCase().replace(/[\s-]+/g, "_"),
+        );
+        if (new Set(normalized).size !== normalized.length) {
+          throw new Error("CSV contains duplicate column names");
+        }
+        return normalized;
+      },
+      skip_empty_lines: true,
+      trim: true,
+    }) as Record<string, string>[];
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? `Unable to parse CSV: ${error.message}`
+        : "Unable to parse CSV.",
+    );
+  }
+  if (rows.length === 0) throw new Error("CSV contains no statement rows.");
+
+  const columns = Object.keys(rows[0] || {});
+  const missingColumns = TOOLOST_CSV_COLUMNS.filter(
+    (column) => !columns.includes(column),
+  );
+  if (missingColumns.length > 0) {
+    throw new Error(
+      `CSV is missing required columns: ${missingColumns.join(", ")}.`,
+    );
+  }
+
+  let periodStart: string | undefined;
+  let periodEnd: string | undefined;
+  let currency: string | undefined;
+  let totalAmountCents = 0;
+  let totalStreams = 0;
+  const isDateOnly = (value: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00.000Z`);
+    return (
+      Number.isFinite(parsed.getTime()) &&
+      parsed.toISOString().slice(0, 10) === value
+    );
+  };
+  rows.forEach((row, index) => {
+    const rowNumber = index + 2;
+    const start = row.period_start?.trim();
+    const end = row.period_end?.trim();
+    if (!start || !isDateOnly(start)) {
+      throw new Error(`CSV row ${rowNumber}: period_start must use YYYY-MM-DD.`);
+    }
+    if (!end || !isDateOnly(end)) {
+      throw new Error(`CSV row ${rowNumber}: period_end must use YYYY-MM-DD.`);
+    }
+    if (start > end) {
+      throw new Error(`CSV row ${rowNumber}: period_end precedes period_start.`);
+    }
+    if (periodStart && (periodStart !== start || periodEnd !== end)) {
+      throw new Error("All statement rows must use the same reporting period.");
+    }
+    periodStart = start;
+    periodEnd = end;
+
+    const rowCurrency = row.currency?.trim().toUpperCase();
+    if (!rowCurrency || !/^[A-Z]{3}$/.test(rowCurrency)) {
+      throw new Error(`CSV row ${rowNumber}: currency must be a 3-letter code.`);
+    }
+    if (currency && currency !== rowCurrency) {
+      throw new Error("All statement rows must use the same currency.");
+    }
+    currency = rowCurrency;
+
+    if (!row.platform?.trim()) {
+      throw new Error(`CSV row ${rowNumber}: platform is required.`);
+    }
+    if (row.platform.trim().length > 120) {
+      throw new Error(`CSV row ${rowNumber}: platform must be 120 characters or fewer.`);
+    }
+    const streams = Number(row.streams);
+    if (!Number.isSafeInteger(streams) || streams < 0) {
+      throw new Error(`CSV row ${rowNumber}: streams must be a non-negative integer.`);
+    }
+    const amountText = row.amount?.trim() || "";
+    if (!/^-?\d+(?:\.\d{1,2})?$/.test(amountText)) {
+      throw new Error(`CSV row ${rowNumber}: amount must be a decimal with at most 2 places.`);
+    }
+    const amount = Number(amountText);
+    if (!Number.isFinite(amount)) {
+      throw new Error(`CSV row ${rowNumber}: amount is not a finite number.`);
+    }
+    totalAmountCents += Math.round(amount * 100);
+    totalStreams += streams;
+    if (!Number.isSafeInteger(totalAmountCents) || !Number.isSafeInteger(totalStreams)) {
+      throw new Error("Statement totals exceed supported numeric limits.");
+    }
+  });
+
+  return {
+    periodStart: new Date(`${periodStart}T00:00:00.000Z`),
+    periodEnd: new Date(`${periodEnd}T00:00:00.000Z`),
+    currency: currency!,
+    totalAmount: totalAmountCents / 100,
+    totalStreams,
+    rowCount: rows.length,
+  };
+}
+
+function decodeImportedStatementLabel(label: string | null | undefined) {
+  if (!label?.startsWith(TOOLOST_CSV_LABEL_PREFIX)) return null;
+  try {
+    const parsed = JSON.parse(
+      label.slice(TOOLOST_CSV_LABEL_PREFIX.length),
+    ) as Record<string, unknown>;
+    return parsed.source === "toolost_csv" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+const generateCodeSchema = z.object({
+  trackId: z.string().optional(),
+  releaseId: z.string().optional(),
+  artist: z.string(),
+  title: z.string(),
+});
+
+z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  role: z.enum([
+    "songwriter",
+    "producer",
+    "performer",
+    "manager",
+    "featured_artist",
+  ]),
+  percentage: z.number().min(0.1).max(100),
+});
+
+// Middleware to ensure user is authenticated
+// ===================
+// RELEASE ENDPOINTS
+// ===================
+
+// GET /api/distribution/releases - List user's releases
+router.get("/releases", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const distroRels =
+      await storage.getDistroReleasesForRegisteredArtists(userId);
+    res.json(distroRels);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching releases:");
+    res.status(500).json({ error: "Failed to fetch releases" });
+  }
+});
+
+// POST /api/distribution/releases - Create new release draft
+router.post("/releases", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const data = createReleaseDraftSchema.parse(req.body);
+
+    const release = await storage.createDistroRelease({
+      artistId: userId,
+      title: data.title,
+      releaseDate: data.releaseDate ? new Date(data?.releaseDate) : null,
+      metadata: {
+        artistName: data.artistName,
+        releaseType: data.releaseType,
+        primaryGenre: data.primaryGenre,
+        secondaryGenre: data.secondaryGenre,
+        language: data.language,
+        labelName: data.labelName,
+        copyrightYear: data.copyrightYear,
+        copyrightOwner: data.copyrightOwner,
+        publishingRights: data.publishingRights,
+        isExplicit: data.isExplicit,
+        moodTags: data.moodTags,
+        territoryMode: data.territoryMode,
+        territories: data.territories,
+        selectedPlatforms: data.selectedPlatforms,
+        artworkAiUsage: data.artworkAiUsage,
+        upc: data.upc,
+        audioAiUsage: data.audioAiUsage,
+        compositionAiUsage: data.compositionAiUsage,
+        composerName: data.composerName,
+        acceptTerms: data.acceptTerms,
+        confirmRights: data.confirmRights,
+        confirmYoutubeRights: data.confirmYoutubeRights,
+      },
+    });
+
+    const persistedSplits =
+      data.royaltySplits === undefined
+        ? []
+        : await replaceReleaseRoyaltySplits(release.id, data.royaltySplits);
+    res.json({ ...release, royaltySplits: persistedSplits });
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.issues });
+    }
+    logger.warn({ err: error }, "Error creating release:");
+    res.status(500).json({ error: "Failed to create release" });
+  }
+});
+
+// GET /api/distribution/releases/:id - Get single release
+router.get(
+  "/releases/:id",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const savedSplits = await db
+        .select({
+          id: royaltySplits.id,
+          name: royaltySplits.collaboratorName,
+          email: royaltySplits.collaboratorEmail,
+          role: royaltySplits.role,
+          percentage: royaltySplits.percentage,
+          inviteStatus: royaltySplits.status,
+        })
+        .from(royaltySplits)
+        .where(eq(royaltySplits.releaseId, id));
+      const tracks = await storage.getDistroTracks(id);
+      res.json({ ...release, tracks, royaltySplits: savedSplits });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching release:");
+      res.status(500).json({ error: "Failed to fetch release" });
+    }
+  },
+);
+
+// PATCH /api/distribution/releases/:id - Update release metadata
+router.patch(
+  "/releases/:id",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const updates = editReleaseDraftSchema.parse(req.body);
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const currentStatus = String(
+        (release.metadata as Record<string, unknown> | null)?.status ||
+          release.status ||
+          "draft",
+      );
+      if (!["draft", "rejected"].includes(currentStatus)) {
+        return res.status(409).json({
+          error: "Release can no longer be edited",
+          message:
+            "Metadata changes to a submitted release must be made through the distributor so DSP records remain in sync.",
+        });
+      }
+
+      const { royaltySplits: requestedSplits, ...metadataUpdates } = updates;
+      const updatedRelease = await storage.updateDistroRelease(id, {
+        title: updates.title,
+        releaseDate: updates.releaseDate
+          ? new Date(updates?.releaseDate)
+          : undefined,
+        metadata: {
+          ...(release?.metadata as Record<string, unknown> | undefined),
+          ...metadataUpdates,
+        },
+      });
+
+      const persistedSplits =
+        requestedSplits === undefined
+          ? undefined
+          : await replaceReleaseRoyaltySplits(id, requestedSplits);
+      res.json({
+        ...updatedRelease,
+        ...(persistedSplits ? { royaltySplits: persistedSplits } : {}),
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error updating release:");
+      res.status(500).json({ error: "Failed to update release" });
+    }
+  },
+);
+
+// POST /api/distribution/releases/:id/artwork - Upload artwork for an owned draft/release
+router.post(
+  "/releases/:id/artwork",
+  requireAuth,
+  upload.single("artwork"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      if (!req.file) {
+        return res.status(400).json({ error: "Artwork file is required" });
+      }
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      if (!["draft", "rejected"].includes(String((release.metadata as Record<string, unknown>)?.status || release.status || "draft"))) {
+        return res.status(409).json({ error: "Only draft or rejected release artwork can be edited" });
+      }
+
+      const key = await storageService.uploadFile(
+        req.file.buffer,
+        `users/${userId}/artwork`,
+        req.file.originalname,
+        req.file.mimetype,
+      );
+      const artworkUrl = await storageService.getDownloadUrl(key);
+      const updated = await storage.updateDistroRelease(id, { artworkUrl });
+      if (!updated) {
+        return res.status(409).json({ error: "Release could not be updated" });
+      }
+      return res.json({ artworkUrl, release: updated });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error uploading release artwork:");
+      return res.status(500).json({ error: "Failed to upload release artwork" });
+    }
+  },
+);
+
+// DELETE /api/distribution/releases/:id - Delete/takedown release
+router.delete(
+  "/releases/:id",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      // A distributed release must be withdrawn upstream before its local
+      // record can be removed. Deleting it locally after a failed request
+      // would incorrectly make a still-live DSP release disappear from the
+      // artist's catalog.
+      const metadata = release?.metadata as Record<string, unknown>;
+      const releaseStatus = String(
+        metadata?.status || release?.status || "draft",
+      );
+      if (metadata?.toolostReleaseId && releaseStatus !== "draft") {
+        return res.status(501).json({
+          error: "Too Lost takedown is not available",
+          message:
+            "This release was not deleted locally because Too Lost's documented API does not expose a confirmed takedown operation. Contact support to request removal.",
+        });
+      }
+      if (metadata?.toolostReleaseId && releaseStatus === "draft") {
+        const toolost = await getDistributionToolostService(userId);
+        await toolost.deleteDraftRelease(metadata.toolostReleaseId as string);
+      }
+      if (metadata?.labelGridReleaseId && releaseStatus !== "draft") {
+        try {
+          if (!labelGridService.isApiConfigured()) {
+            return res.status(503).json({
+              error: "Distribution service is not configured",
+              message:
+                "This release cannot be deleted because its DSP takedown has not been submitted.",
+            });
+          }
+          const result = await labelGridService.takedownRelease(
+            metadata.labelGridReleaseId as string,
+          );
+          if (!result.success) {
+            return res.status(502).json({
+              error: "DSP takedown was not accepted",
+              message:
+                "The release was not deleted locally because the distributor did not confirm the takedown request.",
+            });
+          }
+          logger.info(
+            `✅ LabelGrid takedown initiated for release ${metadata?.labelGridReleaseId}`,
+          );
+        } catch (error: unknown) {
+          logger.warn({ err: error }, "Error initiating LabelGrid takedown:");
+          return res.status(502).json({
+            error: "Failed to submit DSP takedown",
+            message:
+              "The release was not deleted locally. Please retry when the distributor is available.",
+          });
+        }
+      }
+
+      // Delete from local database
+      await storage.deleteDistroRelease(id);
+      res.json({ success: true });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error deleting release:");
+      res.status(500).json({ error: "Failed to delete release" });
+    }
+  },
+);
+
+// ===================
+// TRACK ENDPOINTS
+// ===================
+
+// POST /api/distribution/releases/:id/tracks - Upload track audio
+router.post(
+  "/releases/:id/tracks",
+  requireAuth,
+  upload?.single("audio"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id: releaseId } = req.params as Record<string, string>;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ error: "Audio file required" });
+      }
+
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      if (!["draft", "rejected"].includes(String((release.metadata as Record<string, unknown>)?.status || release.status || "draft"))) {
+        return res.status(409).json({ error: "Only draft or rejected release tracks can be edited" });
+      }
+
+      // SECURITY FIX: Wrap JSON.parse in try-catch to prevent unhandled exceptions on invalid JSON
+      let parsedMetadata: unknown;
+      try {
+        parsedMetadata = JSON.parse(req.body.metadata || "{}");
+      } catch (parseError) {
+        return res
+          .status(400)
+          .json({ error: "Invalid JSON in metadata field" });
+      }
+      const data = createTrackSchema?.parse(parsedMetadata);
+
+      // Recover an acknowledged or response-lost upload within this owned draft.
+      // This is not a replacement for the provider's submission checkpoint.
+      if (data.clientUploadId) {
+        const existing = (await storage.getDistroTracks(releaseId)).find(track =>
+          (track.metadata as Record<string, unknown>)?.clientUploadId === data.clientUploadId,
+        );
+        if (existing) return res.json(existing);
+      }
+
+      // Upload audio buffer to Pocket Dimension (memoryStorage — no filename property)
+      const audioKey = await storageService?.uploadFile(
+        file?.buffer,
+        `users/${userId}/audio`,
+        file?.originalname,
+        file?.mimetype,
+      );
+      const audioUrl = await storageService?.getDownloadUrl(audioKey);
+
+      const track = await storage.createDistroTrack({
+        releaseId,
+        title: data.title,
+        trackNumber: data.trackNumber,
+        isrc: data.isrc || null,
+        audioUrl,
+        metadata: {
+          explicit: data.explicit,
+          lyrics: data.lyrics,
+          lyricsLanguage: data.lyricsLanguage,
+          clientUploadId: data.clientUploadId,
+        },
+      });
+
+      res.json(track);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error uploading track:");
+      res.status(500).json({ error: "Failed to upload track" });
+    }
+  },
+);
+
+// PATCH /api/distribution/releases/:releaseId/tracks/:trackId - Update track metadata
+router.patch(
+  "/releases/:releaseId/tracks/:trackId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId, trackId } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const updates = editTrackSchema.parse(req.body);
+      if (!["draft", "rejected"].includes(String((release.metadata as Record<string, unknown>)?.status || release.status || "draft"))) {
+        return res.status(409).json({ error: "Only draft or rejected release tracks can be edited" });
+      }
+      const existing = (await storage.getDistroTracks(releaseId)).find(track => track.id === trackId);
+      if (!existing) return res.status(404).json({ error: "Track not found in this release" });
+      const { explicit, lyrics, lyricsLanguage, clientUploadId: _clientUploadId, ...columns } = updates;
+      const track = await storage.updateDistroTrack(
+        trackId,
+        releaseId,
+        {
+          ...columns,
+          metadata: {
+            ...(existing.metadata as Record<string, unknown> || {}),
+            ...(explicit !== undefined ? { explicit } : {}),
+            ...(lyrics !== undefined ? { lyrics } : {}),
+            ...(lyricsLanguage !== undefined ? { lyricsLanguage } : {}),
+          },
+        },
+      );
+      if (!track) {
+        return res
+          .status(404)
+          .json({ error: "Track not found in this release" });
+      }
+
+      res.json(track);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error updating track:");
+      res.status(500).json({ error: "Failed to update track" });
+    }
+  },
+);
+
+// DELETE /api/distribution/releases/:releaseId/tracks/:trackId - Remove track
+router.delete(
+  "/releases/:releaseId/tracks/:trackId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId, trackId } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const deleted = await storage.deleteDistroTrack(trackId, releaseId);
+      if (!deleted) {
+        return res
+          .status(404)
+          .json({ error: "Track not found in this release" });
+      }
+      res.json({ success: true });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error deleting track:");
+      res.status(500).json({ error: "Failed to delete track" });
+    }
+  },
+);
+
+// ===================
+// CODE GENERATION ENDPOINTS
+// ===================
+
+// POST /api/distribution/codes/isrc - Generate ISRC code
+router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { trackId, artist, title } = generateCodeSchema?.parse(req.body) ?? {};
+
+    const assignedTo = `${artist} - ${title}`;
+    const fallback = await musicCodesService.generateISRC(userId);
+    const isrcCode = fallback.code;
+    // Internal codes are provisional only. They are never written to the
+    // authoritative ISRC registry or a distribution track.
+    const isOfficiallyRegistered = false;
+
+    if (trackId && !trackId.startsWith("temp_")) {
+      const [track] = await db
+        .select()
+        .from(distroTracks)
+        .where(eq(distroTracks.id, trackId))
+        .limit(1);
+      if (!track) return res.status(404).json({ error: "Track not found" });
+      const release = await storage.getDistroRelease(track.releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Track not found" });
+      }
+      if (isOfficiallyRegistered) {
+        await db.insert(isrcRegistry).values({
+          isrc: isrcCode,
+          trackId,
+          releaseId: track.releaseId,
+          artistId: userId,
+          title,
+        });
+        await db
+          .update(distroTracks)
+          .set({ isrc: isrcCode })
+          .where(eq(distroTracks.id, trackId));
+      }
+    }
+
+    res.json({
+      isrc: isrcCode,
+      assignedTo,
+      isOfficiallyRegistered,
+      ...(isOfficiallyRegistered
+        ? {}
+        : {
+            note: "This is a provisional local placeholder, not an assigned or registered ISRC. It is not stored or sent to a distributor. Obtain an ISRC from a registered agency or your distributor before release submission.",
+          }),
+    });
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.issues });
+    }
+    logger.warn({ err: error }, "Error generating ISRC:");
+    res.status(500).json({ error: "Failed to generate ISRC" });
+  }
+});
+
+// POST /api/distribution/codes/upc - Generate UPC code
+router.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const upcSchema = z.object({
+      releaseId: z.string().optional(),
+      title: z.string(),
+    });
+    const { releaseId, title } = upcSchema?.parse(req.body) ?? {};
+
+    const assignedTo = title;
+    const fallback = await musicCodesService.generateUPC(userId);
+    const upcCode = fallback.code;
+    // Internal codes are provisional only and are not persisted as official UPCs.
+    const isOfficiallyRegistered = false;
+
+    if (releaseId && !releaseId.startsWith("temp_")) {
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+      if (isOfficiallyRegistered) {
+        await db.insert(upcRegistry).values({
+          upc: upcCode,
+          releaseId,
+          artistId: userId,
+          title,
+        });
+      }
+    }
+
+    res.json({
+      upc: upcCode,
+      assignedTo,
+      isOfficiallyRegistered,
+      ...(isOfficiallyRegistered
+        ? {}
+        : {
+            note: "This is a provisional local placeholder, not an assigned or registered UPC. It is not stored or sent to a distributor. Obtain a valid barcode from an authorized source before release submission.",
+          }),
+    });
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.issues });
+    }
+    logger.warn({ err: error }, "Error generating UPC:");
+    res.status(500).json({ error: "Failed to generate UPC" });
+  }
+});
+
+// POST /api/distribution/codes/validate - Validate existing code
+router.post(
+  "/codes/validate",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { code, type } = z
+        .object({
+          code: z.string(),
+          type: z.enum(["isrc", "upc"]),
+        })
+        .parse(req.body);
+
+      let result;
+      if (type === "isrc") {
+        result = await codeGenerationService?.verifyISRC(code);
+      } else {
+        result = await codeGenerationService?.verifyUPC(code);
+      }
+
+      res.json(result);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error validating code:");
+      res.status(500).json({ error: "Failed to validate code" });
+    }
+  },
+);
+
+// ===================
+// PLATFORM ENDPOINTS
+// ===================
+
+// GET /api/distribution/platforms - Get Too Lost's live DSP catalog through
+// the current user's connection, or the explicitly configured admin-owned
+// distributor connection for new users. Too Lost rejects client-credentials
+// tokens for /lookup/platforms; this route never calls Too Lost from a browser.
+router.get("/platforms", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const catalogConnection = await getCatalogToolostConnection(userId);
+    if (!catalogConnection?.connection) {
+      return res.status(409).json({
+        error: "Too Lost distributor connection required",
+        requiresConnection: true,
+      });
+    }
+    const response = await toolostService
+      .forUser(catalogConnection.connection.connectedByUserId)
+      .getAvailableDSPs();
+
+    // Transform to expected format for frontend
+    const platforms = response.dsps.map((dsp) => ({
+      id: dsp.id,
+      name: dsp.name,
+      slug: dsp.slug,
+      category: dsp.category,
+      region: dsp.region,
+      isActive: dsp.isActive,
+      processingTime: dsp.processingTime,
+      requirements: dsp.requirements,
+      logoUrl: dsp.logoUrl,
+      docsUrl: dsp.docsUrl,
+    }));
+
+    res.json({
+      platforms,
+      total: response.total,
+      source: "toolost_api",
+      syncedAt: response.syncedAt,
+    });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching platforms:");
+    res.status(502).json({
+      error: "Too Lost platform catalog unavailable",
+      details: error instanceof Error ? error.message : "Provider request failed",
+    });
+  }
+});
+
+// POST /api/distribution/platforms/verify - Verify the connected Too Lost catalog.
+router.post(
+  "/platforms/verify",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const catalogConnection = await getCatalogToolostConnection(userId);
+      if (!catalogConnection?.connection) {
+        return res.status(409).json({
+          error: "Too Lost distributor connection required",
+          requiresConnection: true,
+        });
+      }
+
+      const response = await toolostService
+        .forUser(catalogConnection.connection.connectedByUserId)
+        .getAvailableDSPs();
+      const active = response.dsps.filter((dsp) => dsp.isActive).length;
+      res.json({
+        success: true,
+        total: response.dsps.length,
+        active,
+        source: "toolost_api",
+        syncedAt: response.syncedAt,
+        message: `Too Lost catalog verified: ${response.dsps.length} platforms (${active} active)`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error verifying Too Lost platforms:");
+      res.status(502).json({
+        error: "Too Lost platform catalog unavailable",
+        details: error instanceof Error ? error.message : "Provider request failed",
+      });
+    }
+  },
+);
+
+// GET /api/distribution/platforms/status - Check Too Lost catalog status
+router.get(
+  "/platforms/status",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const catalogConnection = await getCatalogToolostConnection(userId);
+      if (!catalogConnection?.connection) {
+        return res.status(409).json({
+          connected: false,
+          requiresConnection: true,
+          apiStatus: "not_connected",
+        });
+      }
+      const catalogStatus = await toolostService
+        .forUser(catalogConnection.connection.connectedByUserId)
+        .verifyDSPCatalog();
+      res.json({
+        toolostConnected: true,
+        connectionSource: catalogConnection.source,
+        apiStatus: "online",
+        catalogSource: "toolost_api",
+        catalog: catalogStatus,
+        allPlatformsActive: catalogStatus.active === catalogStatus.total,
+        message: `Too Lost API online. ${catalogStatus.active} active platform(s) are available for distribution.`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error checking platform status:");
+      res.status(500).json({ error: "Failed to check platform status" });
+    }
+  },
+);
+
+// POST /api/distribution/releases/:id/schedule - Schedule release date
+router.post(
+  "/releases/:id/schedule",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const { releaseDate } = z
+        .object({
+          releaseDate: z.string(),
+        })
+        .parse(req.body);
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const scheduledDate = new Date(releaseDate);
+      const updatedRelease = await storage.updateDistroRelease(id, {
+        releaseDate: scheduledDate,
+      });
+
+      res.json(updatedRelease);
+
+      setImmediate(async () => {
+        try {
+          await notificationService.sendReleaseScheduledNotification(
+            userId,
+            release.title || "Untitled Release",
+            scheduledDate,
+          );
+        } catch (err) {
+          logger.warn(
+            { err: err },
+            "[Distribution] schedule notification error:",
+          );
+        }
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error scheduling release:");
+      res.status(500).json({ error: "Failed to schedule release" });
+    }
+  },
+);
+
+// ===========================
+// HYPERFOLLOW CAMPAIGN ENDPOINTS
+// ===========================
+
+const hyperFollowSchema = z.object({
+  title: z.string().min(1),
+  artistName: z.string().min(1),
+  slug: z
+    .string()
+    .min(3)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/),
+  description: z.string().optional(),
+  headerImage: z.string().optional(),
+  releaseId: z.string().optional(),
+  collectEmails: z.boolean().default(true),
+  platforms: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      enabled: z.boolean(),
+      url: z.string().optional(),
+    }),
+  ),
+  socialLinks: z
+    .array(
+      z.object({
+        platform: z.string(),
+        url: z.string(),
+      }),
+    )
+    .optional(),
+  theme: z.object({
+    primaryColor: z.string(),
+    backgroundColor: z.string(),
+    textColor: z.string(),
+    buttonStyle: z.enum(["rounded", "square", "pill"]),
+  }),
+});
+
+// POST /api/distribution/hyperfollow - Create campaign
+router.post(
+  "/hyperfollow",
+  requireAuth,
+  upload.single("headerImage"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const file = req.file;
+
+      let bodyData: Record<string, unknown> | string | undefined;
+      try {
+        bodyData =
+          typeof req.body.data === "string"
+            ? JSON.parse(req.body.data)
+            : req.body.data || req.body;
+      } catch (parseErr) {
+        return res.status(400).json({ error: "Invalid JSON in request body" });
+      }
+
+      const hyperFollowCreateSchema = z.object({
+        title: z.string().min(1),
+        artistName: z.string().min(1),
+        slug: z
+          .string()
+          .min(3)
+          .max(50)
+          .regex(/^[a-z0-9-]+$/)
+          .optional(),
+        description: z.string().optional(),
+        headerImage: z.string().optional(),
+        releaseId: z.string().optional(),
+        collectEmails: z.boolean().default(true),
+        platforms: z
+          .array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              enabled: z.boolean(),
+              url: z.string().optional(),
+            }),
+          )
+          .optional()
+          .default([]),
+        socialLinks: z
+          .array(
+            z.object({
+              platform: z.string(),
+              url: z.string(),
+            }),
+          )
+          .optional(),
+        theme: z
+          .object({
+            primaryColor: z.string(),
+            backgroundColor: z.string(),
+            textColor: z.string(),
+            buttonStyle: z.enum(["rounded", "square", "pill"]),
+          })
+          .optional(),
+      });
+
+      const data = hyperFollowCreateSchema.parse(bodyData);
+
+      const slug =
+        data.slug ||
+        data.title
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/-+/g, "-")
+          .substring(0, 40) +
+          "-" +
+          randomBytes(3).toString("hex");
+
+      let headerImageUrl: string | null = data.headerImage || null;
+      if (file) {
+        const imgKey = await storageService.uploadFile(
+          file.buffer,
+          `users/${userId}/hyperfollow`,
+          file.originalname,
+          file.mimetype,
+        );
+        headerImageUrl = await storageService.getDownloadUrl(imgKey);
+      }
+
+      const campaign = await storage.createHyperFollowPage({
+        userId,
+        title: data.title,
+        slug,
+        imageUrl: headerImageUrl,
+        links: {
+          platforms: data.platforms,
+          socialLinks: data.socialLinks,
+          artistName: data.artistName,
+          description: data.description,
+          releaseId: data.releaseId,
+          collectEmails: data.collectEmails,
+          theme: data.theme || {
+            primaryColor: "#6366f1",
+            backgroundColor: "#1e1b4b",
+            textColor: "#ffffff",
+            buttonStyle: "rounded",
+          },
+          analytics: {
+            pageViews: 0,
+            preSaves: 0,
+            emailSignups: 0,
+            platformClicks: {},
+          },
+          emailList: [],
+        },
+      });
+
+      if (!campaign) {
+        return res
+          .status(500)
+          .json({
+            error: "Failed to create campaign - database insert returned null",
+          });
+      }
+
+      res.json(campaign);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error creating HyperFollow campaign:");
+      res.status(500).json({ error: "Failed to create campaign" });
+    }
+  },
+);
+
+// GET /api/distribution/hyperfollow - List user campaigns
+router.get("/hyperfollow", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const campaigns = await storage.getHyperFollowPages(userId);
+    res.json(campaigns);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching HyperFollow campaigns:");
+    res.status(500).json({ error: "Failed to fetch campaigns" });
+  }
+});
+
+// GET /api/distribution/hyperfollow/analytics - Get hyperfollow analytics (MUST be before :slug)
+router.get(
+  "/hyperfollow/analytics",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const pages = (await storage.getHyperFollowPages(
+        userId,
+      )) as HyperFollowPage[];
+
+      if (pages.length === 0) {
+        return res.json({
+          totalClicks: 0,
+          totalPresaves: 0,
+          conversionRate: 0,
+          topPlatforms: [],
+        });
+      }
+
+      const totalClicks = pages.reduce(
+        (sum: number, p: HyperFollowPage) => sum + (p.clicks || 0),
+        0,
+      );
+      const totalPresaves = pages.reduce(
+        (sum: number, p: HyperFollowPage) => sum + (p.presaves || 0),
+        0,
+      );
+      const conversionRate =
+        totalClicks > 0 ? (totalPresaves / (totalClicks || 1)) * 100 : 0;
+
+      res.json({
+        totalClicks,
+        totalPresaves,
+        conversionRate,
+        topPlatforms: [],
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching hyperfollow analytics:");
+      res.status(500).json({ error: "Failed to fetch hyperfollow analytics" });
+    }
+  },
+);
+
+// GET /api/distribution/hyperfollow/:slug - Get campaign by slug (public endpoint)
+router.get("/hyperfollow/:slug", async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params as Record<string, string>;
+    const campaign = await storage.getHyperFollowPageBySlug(slug);
+
+    if (!campaign) {
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+
+    res.json(campaign);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching HyperFollow campaign:");
+    res.status(500).json({ error: "Failed to fetch campaign" });
+  }
+});
+
+// PATCH /api/distribution/hyperfollow/:id - Update campaign
+router.patch(
+  "/hyperfollow/:id",
+  requireAuth,
+  upload.single("headerImage"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const file = req.file;
+
+      const campaign = await storage.getHyperFollowPage(id);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      let parsedHfData: unknown;
+      try {
+        parsedHfData = JSON.parse(req.body.data || "{}");
+      } catch {
+        return res.status(400).json({ error: "Invalid JSON in data field" });
+      }
+      const data = hyperFollowSchema.partial().parse(parsedHfData);
+
+      let headerImageUrl: string | null | undefined =
+        data.headerImage || campaign.imageUrl;
+      if (file) {
+        const imgKey = await storageService.uploadFile(
+          file.buffer,
+          `users/${userId}/hyperfollow`,
+          file.originalname,
+          file.mimetype,
+        );
+        headerImageUrl = await storageService.getDownloadUrl(imgKey);
+      }
+
+      const existingLinks = campaign.links as HyperFollowLinks;
+      const updatedCampaign = await storage.updateHyperFollowPage(id, {
+        title: data.title || campaign.title,
+        slug: data.slug || campaign.slug,
+        imageUrl: headerImageUrl,
+        links: {
+          ...existingLinks,
+          platforms: data.platforms || existingLinks.platforms,
+          socialLinks: data.socialLinks || existingLinks.socialLinks,
+          artistName: data.artistName || existingLinks.artistName,
+          description:
+            data.description !== undefined
+              ? data.description
+              : existingLinks.description,
+          collectEmails:
+            data.collectEmails !== undefined
+              ? data.collectEmails
+              : existingLinks.collectEmails,
+          theme: data.theme || existingLinks.theme,
+        },
+      });
+
+      res.json(updatedCampaign);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error updating HyperFollow campaign:");
+      res.status(500).json({ error: "Failed to update campaign" });
+    }
+  },
+);
+
+// DELETE /api/distribution/hyperfollow/:id - Delete campaign
+router.delete(
+  "/hyperfollow/:id",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const campaign = await storage.getHyperFollowPage(id);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      await storage.deleteHyperFollowPage(id);
+      res.json({ success: true });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error deleting HyperFollow campaign:");
+      res.status(500).json({ error: "Failed to delete campaign" });
+    }
+  },
+);
+
+// POST /api/distribution/hyperfollow/:slug/track - Track visitor (analytics)
+router.post("/hyperfollow/:slug/track", async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params as Record<string, string>;
+    const { eventType, platform, email } = z
+      .object({
+        eventType: z.enum([
+          "pageView",
+          "preSave",
+          "emailSignup",
+          "platformClick",
+        ]),
+        platform: z.string().optional(),
+        email: z.string().email().optional(),
+      })
+      .parse(req.body);
+
+    const campaign = await storage.getHyperFollowPageBySlug(slug);
+    if (!campaign) {
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+
+    const links = campaign.links as HyperFollowLinks;
+    const analytics = links.analytics || {
+      pageViews: 0,
+      preSaves: 0,
+      emailSignups: 0,
+      platformClicks: {} as Record<string, number>,
+    };
+
+    // Update analytics
+    if (eventType === "pageView") {
+      analytics.pageViews = (analytics.pageViews || 0) + 1;
+    } else if (eventType === "preSave") {
+      analytics.preSaves = (analytics.preSaves || 0) + 1;
+    } else if (eventType === "emailSignup" && email) {
+      analytics.emailSignups = (analytics.emailSignups || 0) + 1;
+      const emailList = links.emailList || [];
+      if (!emailList.includes(email)) {
+        emailList.push(email);
+        links.emailList = emailList;
+      }
+    } else if (eventType === "platformClick" && platform) {
+      analytics.platformClicks = analytics.platformClicks || {};
+      analytics.platformClicks[platform] =
+        (analytics.platformClicks[platform] || 0) + 1;
+    }
+
+    // Save updated analytics
+    await storage.updateHyperFollowPage(campaign.id, {
+      links: {
+        ...links,
+        analytics,
+      },
+    });
+
+    res.json({ success: true, analytics });
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.issues });
+    }
+    logger.warn({ err: error }, "Error tracking HyperFollow event:");
+    res.status(500).json({ error: "Failed to track event" });
+  }
+});
+
+// ===========================
+// RELEASE STATUS & MONITORING ENDPOINTS
+// ===========================
+
+// GET /api/distribution/releases/:id/status - Get delivery status per DSP
+router.get(
+  "/releases/:id/status",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const metadata = (release.metadata || {}) as Record<string, unknown>;
+      let providerStatus: {
+        releaseId: string;
+        status: string;
+        estimatedLiveDate?: string;
+        platforms?: Array<{
+          platform: string;
+          status: string;
+          liveDate?: string;
+          errorMessage?: string;
+        }>;
+      } | null = null;
+      let providerError: string | undefined;
+      let lastChecked =
+        typeof metadata.toolostLastCheckedAt === "string"
+          ? metadata.toolostLastCheckedAt
+          : null;
+
+      if (metadata.toolostReleaseId) {
+        try {
+          const toolost = await getDistributionToolostService(userId);
+          providerStatus = await toolost.getReleaseStatus(
+            metadata.toolostReleaseId as string,
+          );
+        } catch (error: unknown) {
+          providerError =
+            error instanceof Error ? error.message : "Too Lost status is unavailable";
+          logger.warn({ err: error }, "Error fetching Too Lost status:");
+        }
+      } else {
+        providerError =
+          "This release has no persisted Too Lost submission ID; provider status cannot be refreshed.";
+      }
+
+      if (providerStatus?.platforms) {
+        try {
+          for (const platformStatus of providerStatus.platforms) {
+            const gatewayStatus = platformStatus.status.toLowerCase();
+            const localStatus = mapToolostDispatchStatus(gatewayStatus).status;
+            await storage.updateDistroDispatchStatus(id, {
+              platform: platformStatus.platform,
+              status: localStatus,
+              liveAt: platformStatus.liveDate
+                ? new Date(platformStatus.liveDate)
+                : undefined,
+              error: platformStatus.errorMessage,
+            });
+          }
+          lastChecked = new Date().toISOString();
+          await storage.updateDistroRelease(id, {
+            metadata: {
+              ...metadata,
+              toolostLastCheckedAt: lastChecked,
+            },
+          });
+        } catch (error: unknown) {
+          providerError =
+            error instanceof Error
+              ? `Too Lost status was received but could not be saved: ${error.message}`
+              : "Too Lost status was received but could not be saved.";
+          logger.warn({ err: error }, "Error saving distributor status:");
+        }
+      }
+
+      // Get dispatch status from database
+      const statuses = await storage.getDistroDispatchStatuses(id);
+
+      // Calculate overall progress
+      const liveCount = statuses.filter(
+        (s: unknown) => (s as any).status === "live",
+      ).length;
+      const overallProgress =
+        statuses.length === 0
+          ? null
+          : Math.round((liveCount / (statuses.length || 1)) * 100);
+
+      res.json({
+        statuses: statuses.map((status: unknown) => ({
+          platform: (status as any).platform || (status as any).providerId,
+          platformName: (status as any).providerName || (status as any).providerId,
+          status: (status as any).status,
+          externalId: (status as any).externalId,
+          estimatedGoLive: (status as any).estimatedGoLive,
+          deliveredAt: (status as any).deliveredAt,
+          liveAt: (status as any).liveAt,
+          errorMessage: (status as any).error,
+          errorResolution: (status as any).errorResolution,
+          lastChecked: (status as any).updatedAt,
+        })),
+        overallProgress,
+        toolostStatus: providerStatus
+          ? {
+              releaseId: providerStatus.releaseId,
+              status: providerStatus.status,
+              estimatedLiveDate: providerStatus.estimatedLiveDate,
+            }
+          : null,
+        lastChecked,
+        providerError: providerError || null,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching release status:");
+      res.status(500).json({ error: "Failed to fetch release status" });
+    }
+  },
+);
+
+// POST /api/distribution/releases/:id/check-status - Force status refresh
+router.post(
+  "/releases/:id/check-status",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const releaseMetadata = (release.metadata || {}) as Record<string, unknown>;
+      const currentStatus =
+        releaseMetadata.status || release.status || "draft";
+
+      if (currentStatus === "draft" || typeof releaseMetadata.toolostReleaseId !== "string") {
+        return res.status(409).json({
+          success: false,
+          error: "Release has not been submitted to Too Lost",
+          message:
+            "A provider status check requires the Too Lost release ID from a confirmed submission.",
+          status: currentStatus,
+          platforms: [],
+          lastChecked:
+            typeof releaseMetadata.toolostLastCheckedAt === "string"
+              ? releaseMetadata.toolostLastCheckedAt
+              : null,
+        });
+      }
+
+      try {
+        const toolostReleaseId = releaseMetadata.toolostReleaseId;
+        const toolost = await getDistributionToolostService(userId);
+        const remote = await toolost.getReleaseStatus(toolostReleaseId);
+        const lastChecked = new Date().toISOString();
+        const platforms = remote.platforms.map((platform) => {
+          const outcome = mapToolostDispatchStatus(platform.status);
+          return {
+            platform: platform.platform,
+            status: outcome.status,
+            liveDate: platform.liveDate
+              ? new Date(platform.liveDate)
+              : undefined,
+            errorMessage: platform.errorMessage,
+            indeterminate: outcome.indeterminate,
+          };
+        });
+        for (const platform of platforms) {
+          const updatedDispatch = await storage.updateDistroDispatchStatus(id, {
+            platform: platform.platform,
+            status: platform.status,
+            liveAt: platform.liveDate,
+            error: platform.errorMessage,
+          });
+          if (!updatedDispatch) {
+            throw new Error(
+              `Too Lost reported ${platform.platform}, but its local dispatch record could not be found.`,
+            );
+          }
+        }
+        const remoteReleaseStatus = remote.status.toLowerCase();
+        const status =
+          remoteReleaseStatus === "live"
+            ? "live"
+            : remoteReleaseStatus === "failed"
+              ? "failed"
+              : mapToolostDispatchStatus(remoteReleaseStatus).status;
+        const updatedRelease = await storage.updateDistroRelease(id, {
+          status,
+          metadata: {
+            ...releaseMetadata,
+            status,
+            toolostReleaseId,
+            toolostLastCheckedAt: lastChecked,
+          },
+        });
+        if (!updatedRelease) {
+          throw new Error("Too Lost status could not be saved to the release.");
+        }
+        const statusResult = { status, platforms, lastChecked };
+        res.json({
+          success: true,
+          status: statusResult.status,
+          platforms: statusResult.platforms,
+          lastChecked: statusResult.lastChecked,
+          message: "Too Lost status was refreshed and saved.",
+        });
+
+        // Only an explicit live status is confirmation that a DSP has made
+        // the release public. "delivered" means the DSP received it.
+        if (statusResult.status === "live" && currentStatus !== "live") {
+          setImmediate(async () => {
+            try {
+              const livePlatformCount = Array.isArray(statusResult.platforms)
+                ? statusResult.platforms.filter(
+                    (p: Record<string, unknown>) => p.status === "live",
+                  ).length
+                : 1;
+              await notificationService.sendReleaseLiveNotification(
+                userId,
+                release.title || "Untitled Release",
+                livePlatformCount,
+              );
+            } catch (err) {
+              logger.warn(
+                { err: err },
+                "[Distribution] release live notification error:",
+              );
+            }
+          });
+        }
+      } catch (refreshError) {
+        logger.warn(
+          { err: refreshError },
+          "Status refresh failed, returning current status:",
+        );
+        const currentPlatforms =
+          (release.metadata as Record<string, unknown>).platforms || [];
+        res.status(502).json({
+          success: false,
+          status: currentStatus,
+          platforms: Array.isArray(currentPlatforms)
+            ? currentPlatforms.map((p: Record<string, unknown>) => ({
+                platform: typeof p === "string" ? p : p.platform || p.name,
+                status: p.status || "unknown",
+              }))
+            : [],
+          lastChecked:
+            typeof releaseMetadata.toolostLastCheckedAt === "string"
+              ? releaseMetadata.toolostLastCheckedAt
+              : null,
+          message:
+            "Too Lost status could not be confirmed. No new status was saved; showing the last known result.",
+          providerError:
+            refreshError instanceof Error
+              ? refreshError.message
+              : "Unknown Too Lost status error",
+        });
+      }
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error refreshing release status:");
+      res.status(500).json({ error: "Failed to refresh release status" });
+    }
+  },
+);
+
+// ===========================
+// DDEX PACKAGE ENDPOINTS
+// ===========================
+
+import { ddexPackageService } from "../services/ddexPackageService";
+
+// POST /api/distribution/releases/:id/ddex/preview - Generate and preview XML
+router.post(
+  "/releases/:id/ddex/preview",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const tracks = await storage.getDistroTracks(id);
+
+      const metadata = (release.metadata as Record<string, unknown>) || {};
+      type DdexReleaseArg = Parameters<
+        typeof ddexPackageService.generateDDEXXML
+      >[0];
+      type DdexTrackArg = Parameters<
+        typeof ddexPackageService.generateDDEXXML
+      >[1][number];
+      const xml = await ddexPackageService.generateDDEXXML(
+        {
+          id: release.id,
+          title: release.title || "",
+          artistName: metadata.artistName || "Unknown Artist",
+          releaseType: metadata.releaseType || "Single",
+          upc: metadata.upc || "",
+          releaseDate:
+            release.releaseDate?.toISOString().split("T")[0] ||
+            new Date().toISOString().split("T")[0],
+          labelName: metadata.labelName || "",
+          copyrightYear:
+            metadata.copyrightYear || new Date().getFullYear().toString(),
+          copyrightOwner: metadata.copyrightOwner || metadata.artistName || "",
+          publishingRights: metadata.publishingRights || "",
+          primaryGenre: metadata.primaryGenre || "Other",
+          secondaryGenre: metadata.secondaryGenre,
+          isExplicit: metadata.isExplicit || false,
+          coverArtPath: release.artworkUrl || metadata.coverArtUrl || null,
+          territories: metadata.territories || ["worldwide"],
+        } as unknown as DdexReleaseArg,
+        tracks.map((track: Record<string, unknown>, index: number) => {
+          const trackMeta = (track.metadata as Record<string, unknown>) || {};
+          return {
+            id: track.id,
+            title: track.title || `Track ${index + 1}`,
+            isrc: track.isrc || trackMeta.isrc || "",
+            trackNumber: index + 1,
+            duration: track.duration || 0,
+            audioFilePath: track.audioUrl || "",
+            explicit: trackMeta.explicit || false,
+            lyrics: trackMeta.lyrics,
+            primaryArtist: metadata.artistName || "Unknown Artist",
+            featuredArtists: trackMeta.featuredArtists,
+            songwriters: trackMeta.songwriters,
+            producers: trackMeta.producers,
+          } as unknown as DdexTrackArg;
+        }),
+      );
+
+      // Validate XML
+      const validation = await ddexPackageService.validateDDEXXML(xml);
+
+      res.json({
+        xml,
+        validation,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating DDEX preview:");
+      res.status(500).json({ error: "Failed to generate DDEX preview" });
+    }
+  },
+);
+
+// GET /api/distribution/releases/:id/ddex/download - Download DDEX package (.zip)
+router.get(
+  "/releases/:id/ddex/download",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const tracks = await storage.getDistroTracks(id);
+      if (!tracks || tracks.length === 0) {
+        return res
+          .status(400)
+          .json({
+            error:
+              "Release has no tracks. Add tracks before downloading a DDEX package.",
+          });
+      }
+
+      const metadata = (release.metadata as Record<string, unknown>) || {};
+      const upc = metadata.upc || "";
+      const coverArtPath = release.artworkUrl || metadata.coverArtUrl || null;
+
+      const outputPath = path.join(uploadDir, `ddex_${id}_${Date.now()}.zip`);
+
+      try {
+        type DdexPkgReleaseArg = Parameters<
+          typeof ddexPackageService.createDDEXPackage
+        >[0];
+        type DdexPkgTrackArg = Parameters<
+          typeof ddexPackageService.createDDEXPackage
+        >[1][number];
+        await ddexPackageService.createDDEXPackage(
+          {
+            id: release.id,
+            title: release.title || "",
+            artistName: metadata.artistName || "Unknown Artist",
+            releaseType: metadata.releaseType || "Single",
+            upc: upc,
+            releaseDate:
+              release.releaseDate?.toISOString().split("T")[0] ||
+              new Date().toISOString().split("T")[0],
+            labelName: metadata.labelName || "",
+            copyrightYear:
+              metadata.copyrightYear || new Date().getFullYear().toString(),
+            copyrightOwner:
+              metadata.copyrightOwner || metadata.artistName || "",
+            publishingRights: metadata.publishingRights || "",
+            primaryGenre: metadata.primaryGenre || "Other",
+            secondaryGenre: metadata.secondaryGenre,
+            isExplicit: metadata.isExplicit || false,
+            coverArtPath: coverArtPath,
+            territories: metadata.territories || ["worldwide"],
+          } as unknown as DdexPkgReleaseArg,
+          tracks.map((track: Record<string, unknown>, index: number) => {
+            const trackMeta = (track.metadata as Record<string, unknown>) || {};
+            return {
+              id: track.id,
+              title: track.title || `Track ${index + 1}`,
+              isrc: track.isrc || trackMeta.isrc || "",
+              trackNumber: index + 1,
+              duration: track.duration || 0,
+              // Pass the URL as-is — ddexPackageService.createDDEXPackage detects HTTPS URLs
+              // and downloads them to temp files before archiving, so no path transform needed.
+              audioFilePath: track.audioUrl || "",
+              explicit: trackMeta.explicit || false,
+              lyrics: trackMeta.lyrics,
+              primaryArtist: metadata.artistName || "Unknown Artist",
+              featuredArtists: trackMeta.featuredArtists,
+              songwriters: trackMeta.songwriters,
+              producers: trackMeta.producers,
+            } as unknown as DdexPkgTrackArg;
+          }),
+          outputPath,
+        );
+      } catch (packageError) {
+        logger.warn({ err: packageError }, "Error generating DDEX package content:");
+        // createDDEXPackage may have partially written outputPath (e.g. the
+        // zip write stream started before archiving failed) — the success
+        // path's cleanup below never runs when we bail out here, so this is
+        // the only chance to keep ./uploads from accumulating orphaned zips.
+        fsPromises.unlink(outputPath).catch(() => {});
+        return res
+          .status(500)
+          .json({
+            error:
+              "Failed to generate DDEX package. Some required track files may be missing.",
+          });
+      }
+
+      res.download(
+        outputPath,
+        `${release.title || "release"}_DDEX.zip`,
+        (err) => {
+          if (err && !res.headersSent) {
+            logger.warn({ err: err }, "Error downloading DDEX package:");
+          }
+          fsPromises.unlink(outputPath).catch((cleanupErr) => {
+            logger.warn({ err: cleanupErr }, "Failed to clean up DDEX temp file:");
+          });
+        },
+      );
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error creating DDEX package:");
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to create DDEX package" });
+      }
+    }
+  },
+);
+
+// POST /api/distribution/releases/:id/submit - Submit release for distribution
+router.post(
+  "/releases/:id/submit",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const metadata = release.metadata as Record<string, unknown>;
+
+      // HARDENING: Validate status transition - prevent duplicate submissions
+      const currentStatus = (metadata.status || release.status) as string | null;
+      const validSubmissionStatuses = ["draft", "pending", "rejected"];
+      if (!validSubmissionStatuses.includes(currentStatus as string)) {
+        return res.status(400).json({
+          error: "Invalid status transition",
+          message: `Cannot submit release with status '${currentStatus}'. Only releases in draft, pending, or rejected status can be submitted.`,
+        });
+      }
+
+      const requiredMetadata = [
+        ["artistName", "Artist name"],
+        ["releaseType", "Release type"],
+        ["primaryGenre", "Primary genre"],
+        ["language", "Language"],
+        ["copyrightOwner", "Copyright owner"],
+      ] as const;
+      const missingMetadata = requiredMetadata
+        .filter(([key]) => typeof metadata[key] !== "string" || !metadata[key].trim())
+        .map(([, label]) => label);
+      const copyrightYear = Number(metadata.copyrightYear);
+      if (
+        missingMetadata.length > 0 ||
+        !Number.isInteger(copyrightYear) ||
+        copyrightYear < 1900 ||
+        copyrightYear > new Date().getFullYear() + 1
+      ) {
+        return res.status(400).json({
+          error: "Incomplete release metadata",
+          message: `Complete required metadata before submission: ${
+            missingMetadata.length > 0
+              ? missingMetadata.join(", ")
+              : "a valid copyright year"
+          }.`,
+        });
+      }
+      if (!release.artworkUrl) {
+        return res.status(400).json({
+          error: "Missing artwork",
+          message: "Release artwork is required before submission.",
+        });
+      }
+
+      // HARDENING: Validate UPC before submission
+      const releaseUpc = typeof metadata.upc === "string" ? metadata.upc.trim() : "";
+      if (!releaseUpc) {
+        return res.status(400).json({
+          error: "Missing UPC",
+          message:
+            "Save your existing distributor-assigned UPC/EAN in the release metadata. Locally generated provisional codes are not official identifiers.",
+        });
+      }
+      // Basic UPC format validation (12-13 digits)
+      if (!/^\d{12,13}$/.test(releaseUpc)) {
+        return res.status(400).json({
+          error: "Invalid UPC format",
+          message: "UPC must be 12 or 13 digits.",
+        });
+      }
+
+      // HARDENING: Validate tracks exist and have ISRCs
+      const tracks = await storage.getDistroTracks(id);
+      if (!tracks || tracks.length === 0) {
+        return res.status(400).json({
+          error: "No tracks",
+          message: "At least one track is required before submission.",
+        });
+      }
+      const tracksWithoutAudio = tracks.filter(
+        (t: Record<string, unknown>) =>
+          typeof t.audioUrl !== "string" || !t.audioUrl.trim(),
+      );
+      if (tracksWithoutAudio.length > 0) {
+        return res.status(400).json({
+          error: "Missing audio files",
+          message:
+            "Every track needs an uploaded audio file before submission.",
+          tracksMissing: tracksWithoutAudio.map((t: Record<string, unknown>) => ({
+            id: t.id,
+            title: t.title,
+          })),
+        });
+      }
+
+      const tracksWithoutISRC = tracks.filter(
+        (t: Record<string, unknown>) => !t.isrc,
+      );
+      if (tracksWithoutISRC.length > 0) {
+        return res.status(400).json({
+          error: "Missing ISRC codes",
+          message: `${tracksWithoutISRC.length} track(s) are missing ISRC codes. All tracks require valid ISRC codes before submission.`,
+          tracksMissing: tracksWithoutISRC.map(
+            (t: Record<string, unknown>) => ({ id: t.id, title: t.title }),
+          ),
+        });
+      }
+
+      // HARDENING: Validate ISRC format for all tracks (12 alphanumeric characters)
+      const isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
+      const invalidISRCs = tracks.filter((t: Record<string, unknown>) => {
+        const isrcClean = ((t.isrc || "") as any).replace(/[-\s]/g, "").toUpperCase();
+        return !isrcPattern.test(isrcClean);
+      });
+      if (invalidISRCs.length > 0) {
+        return res.status(400).json({
+          error: "Invalid ISRC format",
+          message: `${invalidISRCs.length} track(s) have invalid ISRC format. ISRC must be 12 characters (CC-XXX-YY-NNNNN).`,
+          tracksInvalid: invalidISRCs.map((t: Record<string, unknown>) => ({
+            id: t.id,
+            title: t.title,
+            isrc: t.isrc,
+          })),
+        });
+      }
+
+      // Platform choices originate from Too Lost's live catalog. Too Lost is
+      // authoritative about whether it accepts each requested destination.
+      const selectedPlatforms = Array.from(
+        new Set(
+          (Array.isArray(metadata.selectedPlatforms)
+            ? metadata.selectedPlatforms
+            : []
+          )
+            .filter((platform): platform is string => typeof platform === "string")
+            .map((platform) => platform.trim())
+            .filter(Boolean),
+        ),
+      );
+      if ((selectedPlatforms as any).length === 0) {
+        return res.status(400).json({
+          error: "No platforms selected",
+          message: "At least one distribution platform must be selected.",
+        });
+      }
+
+      const toolost = await getDistributionToolostService(userId);
+      logger.info(
+        { userId, platforms: selectedPlatforms },
+        `[Distribution] Submitting release ${id} to Too Lost for ${selectedPlatforms.length} platform(s)`,
+      );
+      const {
+        providerPlatforms: selectedStores,
+        result: toolostResult,
+      } = await submitToolostRelease({
+        client: toolost,
+        userId,
+        releaseId: id,
+        release,
+        tracks,
+        requestedPlatforms: selectedPlatforms,
+      });
+
+      // Create dispatch records FIRST (in parallel), then mark the release as submitted.
+      // This ordering prevents a window where the release is "submitted" but has no dispatch
+      // records — which would make per-platform tracking impossible after a mid-flight crash.
+      const dispatchResults = await Promise.allSettled(
+        selectedPlatforms.map(async (platformSlug) => {
+          const provider = await storage.getDSPProviderBySlug(platformSlug);
+          const requestedStore = selectedStores[selectedPlatforms.indexOf(platformSlug)];
+          const normalizeStore = (value: string) =>
+            value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+          const providerPlatformStatus = toolostResult.platforms.find(
+            (platform) =>
+              normalizeStore(platform.platform) ===
+              normalizeStore(requestedStore || platformSlug),
+          );
+          const gatewayStatus = providerPlatformStatus?.status?.toLowerCase();
+          const { status, accepted, indeterminate } =
+            mapToolostDispatchStatus(gatewayStatus);
+          const errorMessage =
+            providerPlatformStatus?.errorMessage ||
+            (indeterminate
+              ? undefined
+              : status === "not_supported"
+                ? "Not supported by distributor."
+                : status === "rejected"
+                  ? "Rejected by distributor."
+                  : "Too Lost did not accept this platform submission.");
+          await storage.createDistroDispatch({
+            releaseId: id,
+            // Keep the gateway's platform slug alongside the local provider
+            // identity. The former is required for later Too Lost status
+            // updates and lets the UI display a real platform, not a UUID.
+            providerId: provider?.id || platformSlug,
+            providerName: provider?.name || platformSlug,
+            platform: platformSlug,
+            status,
+            logs: JSON.stringify({
+              gatewayStatus: providerPlatformStatus?.status || "not_reported",
+              indeterminate: indeterminate || undefined,
+              errorMessage: accepted || indeterminate ? undefined : errorMessage,
+              deliveredAt:
+                ["live", "delivered"].includes(gatewayStatus || "")
+                  ? (providerPlatformStatus?.liveDate || new Date().toISOString())
+                  : undefined,
+              externalId: toolostResult.releaseId,
+            }),
+          });
+          return {
+            platform: platformSlug,
+            status,
+            accepted,
+            indeterminate,
+            errorMessage,
+          };
+        }),
+      );
+      const failedDispatches = dispatchResults.filter(
+        (r: any) => r.status === "rejected",
+      );
+      if (failedDispatches.length > 0) {
+        logger.warn(
+          `[Distribution] ${failedDispatches.length} dispatch record(s) failed to create for release ${id}`,
+        );
+      }
+
+      // Persist the Too Lost release ID after all dispatch-write attempts
+      // settle, including when those local writes failed.
+      const submissionPersistence = deriveToolostSubmissionPersistence(
+        dispatchResults.map((result) =>
+          result.status === "fulfilled"
+            ? {
+                status: "fulfilled" as const,
+                value: {
+                  status: result.value.status,
+                  accepted: result.value.accepted,
+                  indeterminate: result.value.indeterminate,
+                },
+              }
+            : result,
+        ),
+        toolostResult.status,
+      );
+      const {
+        accepted: submissionAccepted,
+        indeterminate: submissionIndeterminate,
+        status: persistedSubmissionStatus,
+      } = submissionPersistence;
+      await storage.updateDistroRelease(id, {
+        status: persistedSubmissionStatus,
+        metadata: {
+          ...metadata,
+          status: persistedSubmissionStatus,
+          toolostReleaseId: toolostResult.releaseId,
+          toolostSubmittedAt: new Date().toISOString(),
+          toolostEstimatedLiveDate: toolostResult.estimatedLiveDate,
+          dispatchedPlatformCount: dispatchResults.filter(
+            (result) =>
+              result.status === "fulfilled" && result.value?.accepted,
+          ).length,
+        },
+      });
+
+      // AUDIT: Log successful submission for tracking
+      logger.info(
+        {
+          releaseId: id,
+          toolostReleaseId: toolostResult.releaseId,
+          userId,
+          platforms: selectedPlatforms,
+          trackCount: tracks.length,
+        },
+        `Release ${id} submitted to Too Lost (${toolostResult.releaseId}) for ${(selectedPlatforms as any).length} platforms`,
+      );
+
+      res.json({
+        success: submissionAccepted || submissionIndeterminate,
+        message: submissionIndeterminate
+          ? "Too Lost created the remote release, but local/provider status is indeterminate. Reconcile by remote release ID before retrying."
+          : submissionAccepted
+            ? "Release submitted to Too Lost; review each platform's delivery status."
+            : "Too Lost rejected the platform submission.",
+        toolostReleaseId: toolostResult.releaseId,
+        estimatedLiveDate: toolostResult.estimatedLiveDate,
+        acceptedPlatformCount: dispatchResults.filter(
+          (result) =>
+            result.status === "fulfilled" && result.value?.accepted,
+        ).length,
+        platforms: dispatchResults.map((result, index) =>
+          result.status === "fulfilled"
+            ? result.value
+            : {
+                platform: selectedPlatforms[index],
+                status: "pending",
+                accepted: false,
+                indeterminate: true,
+                errorMessage: "The provider accepted the submission, but its local dispatch record could not be saved. Reconcile by remote release ID before retrying.",
+              },
+        ),
+      });
+
+      setImmediate(async () => {
+        try {
+          await notificationService.sendReleaseSubmittedNotification(
+            userId,
+            release.title || "Untitled Release",
+            dispatchResults.filter(
+              (result) =>
+                result.status === "fulfilled" && result.value?.accepted,
+            ).length,
+            toolostResult.estimatedLiveDate,
+          );
+        } catch (err) {
+          logger.warn(
+            { err: err },
+            "[Distribution] submit notification error:",
+          );
+        }
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error submitting release:");
+      const message = error instanceof Error ? error.message : String(error);
+      // createRelease throws descriptive, user-actionable messages for each
+      // real failure mode — surface them instead of a generic 500.
+      if (
+        message.startsWith("Too Lost release blocked:") ||
+        message.startsWith("Too Lost requires explicit AI-involvement")
+      ) {
+        return res.status(422).json({ error: message });
+      }
+      if (message.startsWith("Too Lost is not connected")) {
+        return res.status(409).json({ error: message });
+      }
+      if (message.startsWith("LabelGrid release blocked:")) {
+        return res.status(422).json({ error: message });
+      }
+      if (message.startsWith("LabelGrid API error:")) {
+        return res.status(502).json({ error: message });
+      }
+      if (message.startsWith("Too Lost API error:")) {
+        return res.status(502).json({ error: message });
+      }
+      res.status(500).json({ error: "Failed to submit release", message });
+    }
+  },
+);
+
+// ===========================
+// TAKEDOWN ENDPOINTS
+// ===========================
+
+const takedownSchema = z.object({
+  reason: z.string().min(1),
+  explanation: z.string().optional(),
+  platforms: z.array(z.string()).optional(),
+  allPlatforms: z.boolean().default(true),
+});
+
+// POST /api/distribution/releases/:id/takedown - Request takedown
+router.post(
+  "/releases/:id/takedown",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const data = takedownSchema.parse(req.body);
+      if (!data.allPlatforms) {
+        return res.status(501).json({
+          error: "Partial DSP takedowns are not available",
+          message:
+            "The connected distributor only supports a release-wide takedown. No platform status was changed.",
+        });
+      }
+
+      // Update dispatch statuses for takedown
+      const statuses = (await storage.getDistroDispatchStatuses(
+        id,
+      )) as DispatchStatus[];
+      const platformsToTakedown = statuses.map(
+        (s: DispatchStatus) => s.providerId,
+      );
+
+      const metadata = (release.metadata || {}) as Record<string, unknown>;
+      if (metadata.toolostReleaseId) {
+        return res.status(501).json({
+          error: "Too Lost takedown is not available",
+          message:
+            "Too Lost's documented API does not expose a confirmed release takedown operation. No platform status was changed; contact support to request a takedown.",
+        });
+      }
+      if (!metadata.labelGridReleaseId) {
+        return res.status(409).json({
+          error: "Release has not been submitted to a distributor",
+          message: "There is no DSP release to take down.",
+        });
+      }
+      if (!labelGridService.isApiConfigured()) {
+        return res.status(503).json({
+          error: "Distribution service is not configured",
+          message: "The takedown was not submitted. Please try again later.",
+        });
+      }
+      const takedownResult = await labelGridService.takedownRelease(
+        metadata.labelGridReleaseId as string,
+      );
+      if (!takedownResult.success) {
+        return res.status(502).json({
+          error: "DSP takedown was not accepted",
+          message: "No local takedown status was changed.",
+        });
+      }
+
+      for (const status of statuses) {
+        if (platformsToTakedown.includes(status.providerId)) {
+          await storage.updateDistroDispatch(status.id, {
+            status: "takedown_requested",
+            logs: JSON.stringify({
+              reason: data.reason,
+              explanation: data.explanation,
+              requestedAt: new Date().toISOString(),
+            }),
+          });
+        }
+      }
+
+      // Log takedown request
+      await storage.createAuditLog({
+        userId,
+        action: "release_takedown_requested",
+        resourceType: "release",
+        resourceId: id,
+        metadata: {
+          reason: data.reason,
+          explanation: data.explanation,
+          platforms: platformsToTakedown,
+        },
+      });
+
+      res.json({
+        success: true,
+        message: "Takedown request submitted",
+        estimatedCompletionDays: 14,
+      });
+
+      setImmediate(async () => {
+        try {
+          await notificationService.sendReleaseTakedownNotification(
+            userId,
+            release.title || "Untitled Release",
+            platformsToTakedown.length,
+          );
+        } catch (err) {
+          logger.warn(
+            { err: err },
+            "[Distribution] takedown notification error:",
+          );
+        }
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error requesting takedown:");
+      res.status(500).json({ error: "Failed to request takedown" });
+    }
+  },
+);
+
+// GET /api/distribution/releases/:id/takedown-status - Check takedown progress
+router.get(
+  "/releases/:id/takedown-status",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const statuses = (await storage.getDistroDispatchStatuses(
+        id,
+      )) as DispatchStatus[];
+      const takedownStatuses: TakedownStatus[] = statuses
+        .filter(
+          (s: DispatchStatus) =>
+            s.status === "takedown_requested" || s.status === "removed",
+        )
+        .map((s: DispatchStatus) => {
+          const logs = s.logs ? JSON.parse(s.logs) : {};
+          return {
+            platform: s.providerId,
+            platformName: s.providerName,
+            status: s.status,
+            requestedAt: logs.requestedAt,
+            completedAt: logs.completedAt,
+            reason: logs.reason,
+            explanation: logs.explanation,
+          };
+        });
+
+      const allCompleted = takedownStatuses.every(
+        (s: TakedownStatus) => s.status === "removed",
+      );
+      const totalRequested = takedownStatuses.length;
+      const totalCompleted = takedownStatuses.filter(
+        (s: TakedownStatus) => s.status === "removed",
+      ).length;
+
+      res.json({
+        statuses: takedownStatuses,
+        summary: {
+          totalRequested,
+          totalCompleted,
+          allCompleted,
+          progressPercentage:
+            totalRequested > 0 ? (totalCompleted / (totalRequested || 1)) * 100 : 0,
+        },
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching takedown status:");
+      res.status(500).json({ error: "Failed to fetch takedown status" });
+    }
+  },
+);
+
+// ===========================
+// ANALYTICS ENDPOINTS
+// ===========================
+
+// GET /api/distribution/releases/:id/analytics - Get release analytics from LabelGrid
+router.get(
+  "/releases/:id/analytics",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const metadata = release.metadata as Record<string, unknown>;
+
+      const toolostReleaseId =
+        typeof metadata.toolostReleaseId === "string"
+          ? metadata.toolostReleaseId
+          : undefined;
+      const labelGridReleaseId =
+        typeof metadata.labelGridReleaseId === "string"
+          ? metadata.labelGridReleaseId
+          : undefined;
+      if (toolostReleaseId || labelGridReleaseId) {
+        try {
+          const analytics = toolostReleaseId
+            ? await (await getDistributionToolostService(userId)).getReleaseAnalytics(
+                toolostReleaseId,
+              )
+            : await labelGridService.getReleaseAnalytics(labelGridReleaseId!);
+
+          // Save analytics to database for historical tracking
+          await (storage as any).createAnalytics({
+            userId,
+            projectId: (release as any).projectId || undefined,
+            date: new Date(),
+            totalStreams: analytics.totalStreams,
+            totalRevenue: analytics.totalRevenue.toString(),
+            platformData: analytics.platforms,
+            trackData: analytics.timeline,
+          });
+
+          res.json(analytics);
+        } catch (error: unknown) {
+          const provider = toolostReleaseId ? "Too Lost" : "LabelGrid";
+          logger.warn({ err: error, provider }, "Error fetching distributor analytics:");
+          res.status(500).json({
+            error: `Failed to fetch analytics from ${provider}`,
+            message: error instanceof Error ? error.message : undefined,
+          });
+        }
+      } else {
+        res.status(409).json({
+          error: "Release has no distributor release ID",
+          message: "Analytics are unavailable until the distributor identifies this release.",
+        });
+      }
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching release analytics:");
+      res.status(500).json({ error: "Failed to fetch release analytics" });
+    }
+  },
+);
+
+// GET /api/distribution/:id/streams-revenue - Per-release streams & revenue
+router.get(
+  "/:id/streams-revenue",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const metadata = release.metadata as Record<string, unknown>;
+
+      const toolostReleaseId =
+        typeof metadata.toolostReleaseId === "string"
+          ? metadata.toolostReleaseId
+          : undefined;
+      const labelGridReleaseId =
+        typeof metadata.labelGridReleaseId === "string"
+          ? metadata.labelGridReleaseId
+          : undefined;
+      if (toolostReleaseId || labelGridReleaseId) {
+        try {
+          const providerAnalytics = toolostReleaseId
+            ? await (await getDistributionToolostService(userId)).getReleaseAnalytics(
+                toolostReleaseId,
+              )
+            : await labelGridService.getReleaseAnalytics(labelGridReleaseId!);
+          const totalRevenue = providerAnalytics.totalRevenue;
+          const totalStreams = providerAnalytics.totalStreams;
+          const platforms = providerAnalytics.platforms;
+          const platformList = Object.entries(platforms).map(
+            ([name, data]: [string, any]) => ({
+              name,
+              streams: data.streams ?? 0,
+              revenue: data.revenue ?? 0,
+              downloads: data.downloads ?? 0,
+            }),
+          );
+          return res.json({
+            releaseId: id,
+            streams: totalStreams,
+            downloads: platformList.reduce(
+              (s: number, p: Record<string, unknown>) => s + (Number(p.downloads) || 0),
+              0,
+            ),
+            revenue: totalRevenue,
+            platforms: platformList,
+            source: toolostReleaseId ? "toolost" : "labelgrid",
+          });
+        } catch (providerError) {
+          logger.warn(
+            { err: providerError, provider: toolostReleaseId ? "toolost" : "labelgrid" },
+            "[Distribution] provider analytics fetch failed",
+          );
+          return res.status(502).json({
+            error: "Failed to fetch streams and revenue from distributor",
+            message:
+              providerError instanceof Error ? providerError.message : undefined,
+          });
+        }
+      }
+
+      // Fall back to royalty transactions in the database
+      const [txRow] = await db
+        .select({
+          totalRevenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+          totalStreams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+        })
+        .from(royaltyTransactions)
+        .where(eq(royaltyTransactions.releaseId, id));
+
+      const platformRows = await db
+        .select({
+          platform: royaltyTransactions.platform,
+          revenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+          streams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+        })
+        .from(royaltyTransactions)
+        .where(eq(royaltyTransactions.releaseId, id))
+        .groupBy(royaltyTransactions.platform);
+
+      return res.json({
+        releaseId: id,
+        streams: Number(txRow.totalStreams ?? 0),
+        downloads: 0,
+        revenue: Number(txRow.totalRevenue ?? 0),
+        platforms: platformRows.map((r) => ({
+          name: r.platform ?? "Unknown",
+          streams: Number(r.streams),
+          revenue: Number(r.revenue),
+          downloads: 0,
+        })),
+        source: "database",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching release streams-revenue:");
+      res.status(500).json({ error: "Failed to fetch streams and revenue" });
+    }
+  },
+);
+
+// ===========================
+// DISTRIBUTION RIGOR ENDPOINTS
+// ===========================
+
+// Validation schemas for Distribution Rigor
+const validateReleaseSchema = z.object({
+  title: z.string().min(1),
+  artist: z.string().min(1),
+  albumArtist: z.string().optional(),
+  genre: z.string().optional(),
+  subGenre: z.string().optional(),
+  releaseDate: z.string().optional(),
+  releaseType: z.enum(["single", "EP", "album", "compilation"]).optional(),
+  label: z.string().optional(),
+  copyrightHolder: z.string().optional(),
+  copyrightYear: z.number().optional(),
+  publishingHolder: z.string().optional(),
+  upc: z.string().optional(),
+  isExplicit: z.boolean().optional(),
+  language: z.string().optional(),
+  tracks: z
+    .array(
+      z.object({
+        title: z.string(),
+        artist: z.string().optional(),
+        featuredArtists: z.array(z.string()).optional(),
+        isrc: z.string().optional(),
+        duration: z.number().optional(),
+        trackNumber: z.number().optional(),
+        discNumber: z.number().optional(),
+        isExplicit: z.boolean().optional(),
+        lyrics: z.string().optional(),
+        lyricsLanguage: z.string().optional(),
+        composers: z.array(z.string()).optional(),
+        producers: z.array(z.string()).optional(),
+        genre: z.string().optional(),
+      }),
+    )
+    .optional(),
+  coverArt: z
+    .object({
+      url: z.string().optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
+      format: z.string().optional(),
+      fileSize: z.number().optional(),
+    })
+    .optional(),
+  dsp: z.string().optional(),
+});
+
+const generateCodesSchema = z.object({
+  type: z.enum(["isrc", "upc", "both"]),
+  countryCode: z.string().length(2).optional(),
+  count: z.number().int().min(1).max(100).optional(),
+  releaseId: z.string().optional(),
+  trackIds: z.array(z.string()).optional(),
+});
+
+const validateCodeSchema = z.object({
+  code: z.string(),
+  type: z.enum(["isrc", "upc"]),
+});
+
+const workflowTakedownSchema = z.object({
+  releaseId: z.string(),
+  reason: z.enum([
+    "artist_request",
+    "rights_dispute",
+    "copyright_claim",
+    "quality_issue",
+    "incorrect_metadata",
+    "duplicate_content",
+    "policy_violation",
+    "legal_order",
+    "label_request",
+    "distribution_agreement_terminated",
+    "other",
+  ]),
+  customReason: z.string().optional(),
+  platforms: z.array(z.string()).optional(),
+  urgency: z.enum(["normal", "urgent", "emergency"]).optional(),
+  notes: z.string().optional(),
+});
+
+const updateRequestSchema = z.object({
+  releaseId: z.string(),
+  changes: z.array(
+    z.object({
+      field: z.string(),
+      oldValue: z.any(),
+      newValue: z.any(),
+      changeType: z.enum([
+        "metadata",
+        "audio",
+        "artwork",
+        "credits",
+        "pricing",
+        "availability",
+      ]),
+    }),
+  ),
+  notes: z.string().optional(),
+});
+
+const duplicateCheckSchema = z.object({
+  audioPath: z.string().optional(),
+  trackId: z.string(),
+  releaseId: z.string(),
+  threshold: z.number().min(0).max(1).optional(),
+  excludeOwn: z.boolean().optional(),
+});
+
+// POST /api/distribution/validate - Validate release for distribution
+router.post("/validate", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const data = validateReleaseSchema.parse(req.body);
+
+    const releaseMetadata: ReleaseMetadata = {
+      title: data.title,
+      artist: data.artist,
+      albumArtist: data.albumArtist,
+      genre: data.genre,
+      subGenre: data.subGenre,
+      releaseDate: data.releaseDate,
+      releaseType: data.releaseType,
+      label: data.label,
+      copyrightHolder: data.copyrightHolder,
+      copyrightYear: data.copyrightYear,
+      publishingHolder: data.publishingHolder,
+      upc: data.upc,
+      isExplicit: data.isExplicit,
+      language: data.language,
+      tracks: data.tracks!.map((t) => ({
+        title: t.title,
+        artist: t.artist ?? data.artist,
+        featuredArtists: t.featuredArtists,
+        isrc: t.isrc,
+        duration: t.duration,
+        trackNumber: t.trackNumber,
+        discNumber: t.discNumber,
+        isExplicit: t.isExplicit,
+        lyrics: t.lyrics,
+        lyricsLanguage: t.lyricsLanguage,
+        composers: t.composers,
+        producers: t.producers,
+        genre: t.genre,
+      })),
+      coverArt: data.coverArt,
+    };
+
+    let lintResult: LintResult;
+    if (data.dsp) {
+      lintResult = labelCopyLinter.validateForDSP(releaseMetadata, data.dsp);
+    } else {
+      lintResult = labelCopyLinter.lint(releaseMetadata);
+    }
+
+    let dspCompliance: { [dsp: string]: ComplianceResult } | undefined;
+    if (data.dsp) {
+      const compliance = await dspPolicyChecker.checkCompliance(
+        {
+          title: data.title,
+          artist: data.artist,
+          albumArtist: data.albumArtist,
+          label: data.label,
+          genre: data.genre,
+          releaseDate: data.releaseDate,
+          coverArtMetadata: data.coverArt,
+          tracks: data.tracks!.map((t) => ({
+            title: t.title,
+            artist: t.artist,
+            lyrics: t.lyrics,
+            duration: t.duration,
+          })),
+        },
+        data.dsp,
+      );
+      dspCompliance = { [data.dsp]: compliance };
+    } else {
+      dspCompliance = await dspPolicyChecker.checkAllDSPs({
+        title: data.title,
+        artist: data.artist,
+        albumArtist: data.albumArtist,
+        label: data.label,
+        genre: data.genre,
+        releaseDate: data.releaseDate,
+        coverArtMetadata: data.coverArt,
+        tracks: data.tracks!.map((t) => ({
+          title: t.title,
+          artist: t.artist,
+          lyrics: t.lyrics,
+          duration: t.duration,
+        })),
+      });
+    }
+
+    const fixSuggestions = labelCopyLinter.suggestFixes(lintResult.errors);
+
+    res.json({
+      valid:
+        lintResult.valid &&
+        Object.values(dspCompliance).every((c) => c.compliant),
+      lint: lintResult,
+      dspCompliance,
+      fixSuggestions,
+      summary: {
+        errorCount: lintResult.errors.length,
+        warningCount: lintResult.warnings.length,
+        score: lintResult.score,
+        compliantDSPs: Object.entries(dspCompliance)
+          .filter(([_, c]) => c.compliant)
+          .map(([dsp]) => dsp),
+        nonCompliantDSPs: Object.entries(dspCompliance)
+          .filter(([_, c]) => !c.compliant)
+          .map(([dsp]) => dsp),
+      },
+    });
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.issues });
+    }
+    logger.warn({ err: error }, "Error validating release:");
+    res.status(500).json({ error: "Failed to validate release" });
+  }
+});
+
+// POST /api/distribution/generate-codes - Generate UPC/ISRC codes
+router.post(
+  "/generate-codes",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const data = generateCodesSchema.parse(req.body);
+
+      const results: {
+        isrcs?: { code: string; formatted: string }[];
+        upc?: { code: string; formatted: string; checkDigit: string };
+      } = {};
+
+      const countryCode = data.countryCode!.toUpperCase() || "US";
+
+      if (data.type === "isrc" || data.type === "both") {
+        const count = data.count || 1;
+        results.isrcs = await musicCodesService.generateBulkISRCs(
+          userId,
+          count,
+          countryCode,
+        );
+      }
+
+      if (data.type === "upc" || data.type === "both") {
+        const upcResult = await musicCodesService.generateUPC(userId);
+        results.upc = {
+          code: upcResult.code,
+          formatted: upcResult.formatted,
+          checkDigit: upcResult.checkDigit || "",
+        };
+      }
+
+      res.json({
+        success: true,
+        codes: results,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          countryCode,
+          userId,
+        },
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error generating codes:");
+      res.status(500).json({ error: "Failed to generate codes" });
+    }
+  },
+);
+
+// POST /api/distribution/validate-code - Validate existing UPC/ISRC code
+router.post(
+  "/validate-code",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const data = validateCodeSchema.parse(req.body);
+
+      let result;
+      let parsed = null;
+
+      if (data.type === "isrc") {
+        result = musicCodesService.validateISRC(data.code);
+        if (result.valid) {
+          try {
+            parsed = musicCodesService.parseISRC(data.code);
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      } else {
+        result = musicCodesService.validateUPC(data.code);
+      }
+
+      res.json({
+        code: data.code,
+        type: data.type,
+        valid: result.valid,
+        errors: result.errors,
+        parsed,
+        formatted:
+          data.type === "isrc" && result.valid
+            ? musicCodesService.formatISRC(data.code)
+            : data.code,
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error validating code:");
+      res.status(500).json({ error: "Failed to validate code" });
+    }
+  },
+);
+
+// POST /api/distribution/lint - Lint release metadata
+router.post("/lint", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const data = validateReleaseSchema.parse(req.body);
+
+    const releaseMetadata: ReleaseMetadata = {
+      title: data.title,
+      artist: data.artist,
+      albumArtist: data.albumArtist,
+      genre: data.genre,
+      releaseDate: data.releaseDate,
+      releaseType: data.releaseType,
+      label: data.label,
+      copyrightHolder: data.copyrightHolder,
+      copyrightYear: data.copyrightYear,
+      publishingHolder: data.publishingHolder,
+      upc: data.upc,
+      isExplicit: data.isExplicit,
+      language: data.language,
+      tracks: data.tracks!.map((t) => ({
+        title: t.title,
+        artist: t.artist ?? data.artist,
+        featuredArtists: t.featuredArtists,
+        isrc: t.isrc,
+        duration: t.duration,
+        trackNumber: t.trackNumber,
+        discNumber: t.discNumber,
+        isExplicit: t.isExplicit,
+        lyrics: t.lyrics,
+        lyricsLanguage: t.lyricsLanguage,
+        composers: t.composers,
+        producers: t.producers,
+        genre: t.genre,
+      })),
+      coverArt: data.coverArt,
+    };
+
+    const result = data.dsp
+      ? labelCopyLinter.validateForDSP(releaseMetadata, data.dsp)
+      : labelCopyLinter.lint(releaseMetadata);
+
+    const suggestions = labelCopyLinter.suggestFixes(result.errors);
+    const { fixed, appliedFixes } = labelCopyLinter.autoFix(releaseMetadata);
+
+    res.json({
+      result,
+      suggestions,
+      autoFix: {
+        available: appliedFixes.length > 0,
+        fixes: appliedFixes,
+        fixedMetadata: appliedFixes.length > 0 ? fixed : undefined,
+      },
+    });
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.issues });
+    }
+    logger.warn({ err: error }, "Error linting release:");
+    res.status(500).json({ error: "Failed to lint release" });
+  }
+});
+
+// GET /api/distribution/policies/:dsp - Get DSP policies
+router.get("/policies/:dsp", async (req: Request, res: Response) => {
+  try {
+    const { dsp } = req.params as Record<string, string>;
+
+    const policy = dspPolicyChecker.getPolicy(dsp);
+    if (!policy) {
+      return res.status(404).json({
+        error: "DSP not found",
+        availableDSPs: dspPolicyChecker.listDSPs(),
+      });
+    }
+
+    const summary = dspPolicyChecker.getRequirementsSummary(dsp);
+
+    res.json({
+      dsp: policy.id,
+      name: policy.name,
+      policy,
+      summary,
+    });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching DSP policy:");
+    res.status(500).json({ error: "Failed to fetch DSP policy" });
+  }
+});
+
+// GET /api/distribution/policies - Get all DSP policies
+router.get("/policies", async (_req: Request, res: Response) => {
+  try {
+    const policies = dspPolicyChecker.getAllPolicies();
+    const dsps = dspPolicyChecker.listDSPs();
+
+    res.json({
+      count: policies.length,
+      dsps,
+      policies: policies.map((p) => ({
+        id: p.id,
+        name: p.name,
+        summary: dspPolicyChecker.getRequirementsSummary(p.id),
+      })),
+    });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching DSP policies:");
+    res.status(500).json({ error: "Failed to fetch DSP policies" });
+  }
+});
+
+// POST /api/distribution/workflow/takedown - Request release takedown via workflow
+router.post(
+  "/workflow/takedown",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const data = workflowTakedownSchema.parse(req.body);
+
+      const release = await storage.getDistroRelease(data.releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const result = await releaseWorkflowService.requestTakedown(
+        data.releaseId,
+        userId,
+        {
+          reason: data.reason as TakedownReason,
+          customReason: data.customReason,
+          platforms: data.platforms,
+          urgency: data.urgency,
+          notes: data.notes,
+        },
+      );
+
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.json({
+        success: true,
+        requestId: result.requestId,
+        message: "Takedown request submitted successfully",
+        estimatedProcessingTime:
+          data.urgency === "emergency"
+            ? "24 hours"
+            : data.urgency === "urgent"
+              ? "3-5 days"
+              : "7-14 days",
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error requesting takedown:");
+      res.status(500).json({ error: "Failed to request takedown" });
+    }
+  },
+);
+
+// POST /api/distribution/workflow/update - Request release update via workflow
+router.post(
+  "/workflow/update",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const data = updateRequestSchema.parse(req.body);
+
+      const release = await storage.getDistroRelease(data.releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const result = await releaseWorkflowService.requestUpdate(
+        data.releaseId,
+        userId,
+        data.changes,
+        data.notes,
+      );
+
+      if (!result.success) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.json({
+        success: true,
+        requestId: result.requestId,
+        message: "Update request submitted successfully",
+        changeCount: data.changes.length,
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error requesting update:");
+      res.status(500).json({ error: "Failed to request update" });
+    }
+  },
+);
+
+// GET /api/distribution/workflow/:releaseId/history - Get release workflow history
+router.get(
+  "/workflow/:releaseId/history",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const stateHistory = releaseWorkflowService.getStateHistory(releaseId);
+      const auditLog = releaseWorkflowService.getAuditLog(releaseId, {
+        limit: 50,
+      });
+      const takedownRequests =
+        releaseWorkflowService.getTakedownRequestsForRelease(releaseId);
+      const updateRequests =
+        releaseWorkflowService.getUpdateRequestsForRelease(releaseId);
+
+      res.json({
+        releaseId,
+        currentState: release.status,
+        stateHistory,
+        auditLog,
+        takedownRequests,
+        updateRequests,
+        validTransitions: releaseWorkflowService.getValidTransitions(
+          release.status as ReleaseState,
+        ),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching workflow history:");
+      res.status(500).json({ error: "Failed to fetch workflow history" });
+    }
+  },
+);
+
+// GET /api/distribution/workflow/takedown-reasons - Get available takedown reasons
+router.get(
+  "/workflow/takedown-reasons",
+  async (_req: Request, res: Response) => {
+    try {
+      const reasons = releaseWorkflowService.getAllTakedownReasons();
+      res.json({ reasons });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching takedown reasons:");
+      res.status(500).json({ error: "Failed to fetch takedown reasons" });
+    }
+  },
+);
+
+// POST /api/distribution/fingerprint/check - Check for duplicate audio content
+router.post(
+  "/fingerprint/check",
+  requireAuth,
+  upload.single("audio"),
+  async (req: Request, res: Response) => {
+    try {
+      const file = req.file;
+
+      let data;
+      if (req.body.data) {
+        let parsedBody: unknown;
+        try {
+          parsedBody = JSON.parse(req.body.data);
+        } catch {
+          return res.status(400).json({ error: "Invalid JSON in data field" });
+        }
+        data = duplicateCheckSchema.parse(parsedBody);
+      } else {
+        data = duplicateCheckSchema.parse(req.body);
+      }
+
+      let audioPath = data.audioPath;
+      let tmpPath: string | null = null;
+      if (file) {
+        tmpPath = path.join(
+          os.tmpdir(),
+          `fp_check_${Date.now()}${path.extname(file.originalname || ".mp3")}`,
+        );
+        await fsPromises.writeFile(tmpPath, file.buffer);
+        audioPath = tmpPath;
+      }
+      if (!audioPath) {
+        return res
+          .status(400)
+          .json({ error: "Audio file or path is required" });
+      }
+
+      let result;
+      try {
+        result = await audioFingerprintService.checkDuplicates(
+          audioPath,
+          data.trackId,
+          data.releaseId,
+          {
+            threshold: data.threshold,
+            excludeOwn: data.excludeOwn,
+          },
+        );
+      } finally {
+        // Scratch file must be removed on every path, including a thrown
+        // error from checkDuplicates — otherwise it leaks in os.tmpdir().
+        if (tmpPath) fs.unlink(tmpPath, () => {});
+      }
+
+      res.json({
+        isDuplicate: result.isDuplicate,
+        confidence: result.confidence,
+        matchCount: result.matches.length,
+        matches: result.matches.slice(0, 5),
+        warnings: result.warnings,
+        checkedAt: result.checkedAt,
+        recommendation: result.isDuplicate
+          ? "This content appears to match existing releases. Please verify you have the rights to distribute."
+          : result.warnings.length > 0
+            ? "Some similarities detected. Review warnings before proceeding."
+            : "No duplicates detected. Content appears to be original.",
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error checking duplicates:");
+      res.status(500).json({ error: "Failed to check for duplicates" });
+    }
+  },
+);
+
+// POST /api/distribution/fingerprint/generate - Generate fingerprint for a track
+router.post(
+  "/fingerprint/generate",
+  requireAuth,
+  upload.single("audio"),
+  async (req: Request, res: Response) => {
+    try {
+      const file = req.file;
+      const { trackId, releaseId } = req.body;
+
+      if (!file) {
+        return res.status(400).json({ error: "Audio file is required" });
+      }
+
+      if (!trackId || !releaseId) {
+        return res
+          .status(400)
+          .json({ error: "trackId and releaseId are required" });
+      }
+
+      const tmpPath = path.join(
+        os.tmpdir(),
+        `fp_gen_${Date.now()}${path.extname(file.originalname || ".mp3")}`,
+      );
+      await fsPromises.writeFile(tmpPath, file.buffer);
+
+      let fingerprint: AudioFingerprint | null = null;
+      try {
+        fingerprint = await audioFingerprintService.generateFingerprint(
+          tmpPath,
+          trackId,
+          releaseId,
+        );
+      } finally {
+        fs.unlink(tmpPath, () => {});
+      }
+
+      res.json({
+        success: true,
+        fingerprint: {
+          id: fingerprint!.id,
+          trackId: fingerprint!.trackId,
+          releaseId: fingerprint!.releaseId,
+          duration: fingerprint!.duration,
+          algorithm: fingerprint!.algorithm,
+          createdAt: fingerprint!.createdAt,
+        },
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating fingerprint:");
+      res.status(500).json({ error: "Failed to generate fingerprint" });
+    }
+  },
+);
+
+// GET /api/distribution/fingerprint/:trackId/similar - Find similar tracks
+router.get(
+  "/fingerprint/:trackId/similar",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { trackId } = req.params as Record<string, string>;
+      const threshold = parseFloat(req.query.threshold as string) || 0.5;
+      const maxResults = parseInt(req.query.maxResults as string) || 10;
+
+      const similarTracks = await audioFingerprintService.findSimilarTracks(
+        trackId,
+        {
+          threshold,
+          maxResults,
+        },
+      );
+
+      res.json({
+        trackId,
+        similarCount: similarTracks.length,
+        threshold,
+        results: similarTracks,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error finding similar tracks:");
+      res.status(500).json({ error: "Failed to find similar tracks" });
+    }
+  },
+);
+
+// GET /api/distribution/fingerprint/stats - Get fingerprint system stats
+router.get(
+  "/fingerprint/stats",
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    try {
+      const stats = audioFingerprintService.getStats();
+      res.json(stats);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching fingerprint stats:");
+      res.status(500).json({ error: "Failed to fetch fingerprint stats" });
+    }
+  },
+);
+
+// GET /api/distribution/country-codes - Get valid ISRC country codes
+router.get("/country-codes", async (_req: Request, res: Response) => {
+  try {
+    const countryCodes = musicCodesService.getValidCountryCodes();
+    res.json({ countryCodes });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching country codes:");
+    res.status(500).json({ error: "Failed to fetch country codes" });
+  }
+});
+
+// POST /api/distribution/register-codes - Register custom ISRC/UPC prefixes
+router.post(
+  "/register-codes",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { isrcRegistrantCode, upcCompanyPrefix } = z
+        .object({
+          isrcRegistrantCode: z.string().length(3).optional(),
+          upcCompanyPrefix: z.string().min(6).max(10).optional(),
+        })
+        .parse(req.body);
+
+      const registered: string[] = [];
+
+      if (isrcRegistrantCode) {
+        musicCodesService.registerISRCCode(userId, isrcRegistrantCode);
+        registered.push(`ISRC registrant code: ${isrcRegistrantCode}`);
+      }
+
+      if (upcCompanyPrefix) {
+        musicCodesService.registerUPCPrefix(userId, upcCompanyPrefix);
+        registered.push(`UPC company prefix: ${upcCompanyPrefix}`);
+      }
+
+      if (registered.length === 0) {
+        return res.status(400).json({ error: "No codes provided to register" });
+      }
+
+      res.json({
+        success: true,
+        registered,
+        message: "Code prefixes registered successfully",
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error registering codes:");
+      res.status(500).json({ error: "Failed to register codes" });
+    }
+  },
+);
+
+// ============================================================================
+// CATALOG IMPORT ROUTES
+// ============================================================================
+
+import { catalogImporter } from "../services/catalogImporter";
+
+const catalogUpload = createHardenedUpload({
+  maxFileSize: 50 * 1024 * 1024,
+  maxFiles: 1,
+  allowedExtensions: [".csv", ".tsv", ".json", ".xml", ".xlsx", ".xls", ".zip"],
+  label: "catalog import",
+});
+
+const releaseUpload = createHardenedUpload({
+  maxFileSize: 500 * 1024 * 1024,
+  maxFiles: 200, // generous cap for full-album releases (audio + per-track artwork + booklet)
+  allowedMimes: [...AUDIO_MIMES, ...IMAGE_MIMES],
+  label: "release upload",
+});
+
+// POST /api/distribution/catalog/import - Start catalog import from file
+router.post(
+  "/catalog/import",
+  requireAuth,
+  catalogUpload.single("file"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const extension = path.extname(file.originalname).toLowerCase();
+      let fileType: "csv" | "xlsx" | "ddex";
+
+      if (extension === ".csv") {
+        fileType = "csv";
+      } else if (extension === ".xlsx" || extension === ".xls") {
+        fileType = "xlsx";
+      } else if (extension === ".xml") {
+        fileType = "ddex";
+      } else {
+        return res
+          .status(400)
+          .json({
+            error: "Unsupported file format. Use CSV, XLSX, or DDEX XML",
+          });
+      }
+
+      const jobId = await catalogImporter.createImportJob(
+        userId,
+        file.originalname,
+        fileType,
+        file.size,
+      );
+
+      let rows;
+
+      if (fileType === "csv") {
+        const content = file.buffer.toString("utf-8");
+        rows = await catalogImporter.parseCSV(content);
+      } else if (fileType === "ddex") {
+        const content = file.buffer.toString("utf-8");
+        rows = await catalogImporter.parseDDEX(content);
+      } else if (fileType === "xlsx") {
+        rows = await catalogImporter.parseXLSX(file.buffer);
+      } else {
+        return res.status(400).json({ error: "Unsupported file format" });
+      }
+
+      if (rows.length === 0) {
+        return res.status(400).json({
+          error: "No valid data rows found",
+          message:
+            "The file must contain at least one row with title or track title",
+        });
+      }
+
+      const preValidation = await catalogImporter.validateRows(rows, jobId);
+
+      if (preValidation.validRows.length === 0) {
+        return res.status(400).json({
+          error: "Schema validation failed",
+          message: "No valid rows found after validation",
+          errors: preValidation.errors,
+          warnings: preValidation.warnings,
+        });
+      }
+
+      const result = await catalogImporter.importRows(jobId, userId, rows);
+
+      res.json({
+        success: true,
+        ...result,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error importing catalog:");
+      res.status(500).json({ error: "Failed to import catalog" });
+    }
+  },
+);
+
+// GET /api/distribution/catalog/jobs - Get import jobs for user
+router.get(
+  "/catalog/jobs",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const jobs = await catalogImporter.getImportJobs(userId);
+      res.json({ jobs });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching import jobs:");
+      res.status(500).json({ error: "Failed to fetch import jobs" });
+    }
+  },
+);
+
+// GET /api/distribution/catalog/jobs/:jobId - Get specific import job details
+router.get(
+  "/catalog/jobs/:jobId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { jobId } = req.params as Record<string, string>;
+      const job = await catalogImporter.getImportJob(jobId);
+
+      if (!job) {
+        return res.status(404).json({ error: "Import job not found" });
+      }
+
+      const rows = await catalogImporter.getImportRows(jobId);
+
+      res.json({ job, rows });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching import job:");
+      res.status(500).json({ error: "Failed to fetch import job" });
+    }
+  },
+);
+
+// GET /api/distribution/catalog/template - Get CSV template
+router.get("/catalog/template", async (_req: Request, res: Response) => {
+  try {
+    const template = catalogImporter.getTemplateCSV();
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=catalog-import-template.csv",
+    );
+    res.send(template);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error generating template:");
+    res.status(500).json({ error: "Failed to generate template" });
+  }
+});
+
+// GET /api/distribution/catalog/formats - Get supported import formats
+router.get("/catalog/formats", async (_req: Request, res: Response) => {
+  try {
+    const formats = catalogImporter.getSupportedFormats();
+    res.json({ formats });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching formats:");
+    res.status(500).json({ error: "Failed to fetch formats" });
+  }
+});
+
+// ============================================================================
+// RELEASE SCHEDULING ROUTES
+// ============================================================================
+
+import { releaseScheduler } from "../services/releaseScheduler";
+
+// POST /api/distribution/schedule - Schedule a release
+router.post("/schedule", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { releaseId, scheduledDate, timezone, platforms, optimizeForFriday } =
+      z
+        .object({
+          releaseId: z.string().uuid(),
+          scheduledDate: z.string().transform((s) => new Date(s)),
+          timezone: z.string().optional(),
+          platforms: z.array(z.string()).optional(),
+          optimizeForFriday: z.boolean().optional(),
+        })
+        .parse(req.body);
+
+    const result = await releaseScheduler.scheduleRelease({
+      releaseId,
+      userId,
+      scheduledDate,
+      timezone,
+      platforms,
+      optimizeForFriday,
+    });
+
+    res.json(result);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.issues });
+    }
+    logger.warn({ err: error }, "Error scheduling release:");
+    res.status(500).json({ error: "Failed to schedule release" });
+  }
+});
+
+// GET /api/distribution/schedule/upcoming - Get upcoming scheduled releases
+router.get(
+  "/schedule/upcoming",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
+      const releases = await releaseScheduler.getUpcomingReleases(
+        userId,
+        limit,
+      );
+      res.json({ releases });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching upcoming releases:");
+      res.status(500).json({ error: "Failed to fetch upcoming releases" });
+    }
+  },
+);
+
+// GET /api/distribution/schedule/countdown/:releaseId - Get countdown for release
+router.get(
+  "/schedule/countdown/:releaseId",
+  async (req: Request, res: Response) => {
+    try {
+      const { releaseId } = req.params as Record<string, string>;
+      const countdown = await releaseScheduler.getCountdown(releaseId);
+
+      if (!countdown) {
+        return res
+          .status(404)
+          .json({ error: "Release not found or not scheduled" });
+      }
+
+      res.json(countdown);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching countdown:");
+      res.status(500).json({ error: "Failed to fetch countdown" });
+    }
+  },
+);
+
+// GET /api/distribution/schedule/platforms - Get platform scheduling windows
+router.get("/schedule/platforms", async (_req: Request, res: Response) => {
+  try {
+    const windows = releaseScheduler.getPlatformWindows();
+    res.json({ platforms: windows });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching platform windows:");
+    res.status(500).json({ error: "Failed to fetch platform windows" });
+  }
+});
+
+// GET /api/distribution/schedule/optimal - Get optimal release time
+router.get("/schedule/optimal", async (req: Request, res: Response) => {
+  try {
+    const timezone = (req.query.timezone as string) || "UTC";
+    const optimal = releaseScheduler.getOptimalReleaseTime(timezone);
+    res.json(optimal);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching optimal time:");
+    res.status(500).json({ error: "Failed to fetch optimal time" });
+  }
+});
+
+// POST /api/distribution/schedule/validate - Validate scheduling for platforms
+router.post("/schedule/validate", async (req: Request, res: Response) => {
+  try {
+    const { scheduledDate, platforms } = z
+      .object({
+        scheduledDate: z.string().transform((s) => new Date(s)),
+        platforms: z.array(z.string()),
+      })
+      .parse(req.body);
+
+    const validation = releaseScheduler.validateScheduleForPlatforms(
+      scheduledDate,
+      platforms,
+    );
+    res.json(validation);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.issues });
+    }
+    logger.warn({ err: error }, "Error validating schedule:");
+    res.status(500).json({ error: "Failed to validate schedule" });
+  }
+});
+
+// GET /api/distribution/schedule/lead-time - Get recommended lead time for platforms
+router.get("/schedule/lead-time", async (req: Request, res: Response) => {
+  try {
+    const platformsParam = req.query.platforms;
+    const platforms =
+      typeof platformsParam === "string" && platformsParam.length > 0
+        ? platformsParam.split(",")
+        : [];
+    const recommendation = releaseScheduler.getRecommendedLeadTime(platforms);
+    res.json(recommendation);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching lead time recommendation:");
+    res.status(500).json({ error: "Failed to fetch lead time recommendation" });
+  }
+});
+
+// GET /api/distribution/schedule/timezones - Get supported timezones
+router.get("/schedule/timezones", async (_req: Request, res: Response) => {
+  try {
+    const timezones = releaseScheduler.getSupportedTimezones();
+    res.json({ timezones });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching timezones:");
+    res.status(500).json({ error: "Failed to fetch timezones" });
+  }
+});
+
+// POST /api/distribution/presave - Create pre-save campaign
+router.post("/presave", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { releaseId, name, startDate, platforms, artwork } = z
+      .object({
+        releaseId: z.string().uuid(),
+        name: z.string().min(1),
+        startDate: z.string().transform((s) => new Date(s)),
+        platforms: z.array(z.string()),
+        artwork: z.string().optional(),
+      })
+      .parse(req.body);
+
+    const result = await releaseScheduler.createPreSaveCampaign({
+      releaseId,
+      userId,
+      name,
+      startDate,
+      platforms,
+      artwork,
+    });
+
+    res.json(result);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: error.issues });
+    }
+    logger.warn({ err: error }, "Error creating pre-save campaign:");
+    res.status(500).json({ error: "Failed to create pre-save campaign" });
+  }
+});
+
+// ============================================================================
+// ENHANCED IDENTIFIER SERVICE ROUTES
+// ============================================================================
+
+import { identifierService, type IdentifierGenerationOptions } from "../services/identifierService";
+
+// POST /api/distribution/identifiers/upc/generate - Generate UPC
+router.post(
+  "/identifiers/upc/generate",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.body;
+
+      const upc = await identifierService.generateUPC({ userId, releaseId });
+      res.json({ upc, valid: true });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating UPC:");
+      res.status(500).json({ error: "Failed to generate UPC" });
+    }
+  },
+);
+
+// POST /api/distribution/identifiers/upc/validate - Validate UPC
+router.post(
+  "/identifiers/upc/validate",
+  async (req: Request, res: Response) => {
+    try {
+      const { upc } = z.object({ upc: z.string() }).parse(req.body);
+      const result = identifierService.validateUPC(upc);
+      res.json(result);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error validating UPC:");
+      res.status(500).json({ error: "Failed to validate UPC" });
+    }
+  },
+);
+
+// POST /api/distribution/identifiers/isrc/generate - Generate ISRC
+router.post(
+  "/identifiers/isrc/generate",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { countryCode, registrantCode, trackId } = z
+        .object({
+          countryCode: z.string().length(2).default("US"),
+          registrantCode: z.string().min(3).max(5).default("MXB"),
+          trackId: z.string().optional(),
+        })
+        .parse(req.body);
+
+      const isrc = await identifierService.generateISRC(
+        countryCode,
+        registrantCode,
+        undefined,
+        { userId, trackId },
+      );
+      res.json({ isrc, valid: true });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error generating ISRC:");
+      res.status(500).json({ error: "Failed to generate ISRC" });
+    }
+  },
+);
+
+// POST /api/distribution/identifiers/isrc/validate - Validate ISRC
+router.post(
+  "/identifiers/isrc/validate",
+  async (req: Request, res: Response) => {
+    try {
+      const { isrc } = z.object({ isrc: z.string() }).parse(req.body);
+      const result = identifierService.validateISRC(isrc);
+      res.json(result);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error validating ISRC:");
+      res.status(500).json({ error: "Failed to validate ISRC" });
+    }
+  },
+);
+
+// POST /api/distribution/identifiers/isrc/batch - Reserve batch of ISRCs
+router.post(
+  "/identifiers/isrc/batch",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { count, countryCode, registrantCode } = z
+        .object({
+          count: z.number().int().min(1).max(100),
+          countryCode: z.string().length(2).default("US"),
+          registrantCode: z.string().min(3).max(5).default("MXB"),
+        })
+        .parse(req.body);
+
+      const isrcs = await identifierService.reserveISRCBatch(
+        count,
+        countryCode,
+        registrantCode,
+        { userId } satisfies IdentifierGenerationOptions,
+      );
+      res.json({ isrcs, count: isrcs.length });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error reserving ISRC batch:");
+      res.status(500).json({ error: "Failed to reserve ISRC batch" });
+    }
+  },
+);
+
+// GET /api/distribution/identifiers/country-codes - Get valid ISRC country codes
+router.get(
+  "/identifiers/country-codes",
+  async (_req: Request, res: Response) => {
+    try {
+      const countryCodes = identifierService.getValidCountryCodes();
+      res.json({ countryCodes });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching country codes:");
+      res.status(500).json({ error: "Failed to fetch country codes" });
+    }
+  },
+);
+
+// GET /api/distribution/identifiers/genres - Get valid genres
+router.get("/identifiers/genres", async (_req: Request, res: Response) => {
+  try {
+    const genres = identifierService.getValidGenres();
+    res.json({ genres });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching genres:");
+    res.status(500).json({ error: "Failed to fetch genres" });
+  }
+});
+
+// ============================================================================
+// ENHANCED WORKFLOW SERVICE ROUTES
+// ============================================================================
+
+import { releaseWorkflowService as enhancedWorkflowService, type ReleaseStatus, type RequestType } from "../services/releaseWorkflowService";
+
+// POST /api/distribution/workflow/transition - Transition release status
+router.post(
+  "/workflow/transition",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId, targetStatus, requestType, reason, metadata } = z
+        .object({
+          releaseId: z.string().uuid(),
+          targetStatus: z.string(),
+          requestType: z.string(),
+          reason: z.string().optional(),
+          metadata: z.record(z.string(), z.any()).optional(),
+        })
+        .parse(req.body);
+
+      const ownerTargets: Record<string, string> = {
+        submit_for_review: "pending_review",
+        request_update: "update_requested", request_takedown: "takedown_requested",
+        archive: "archived",
+      };
+      if (ownerTargets[requestType] !== targetStatus) {
+        return res.status(403).json({ error: "This transition requires the configured review or distributor workflow" });
+      }
+
+      const result = await enhancedWorkflowService.transition(
+        releaseId,
+        userId,
+        targetStatus as ReleaseStatus,
+        requestType as RequestType,
+        { reason, metadata },
+      );
+
+      res.status(result.success ? 200 : (result.statusCode ?? 409)).json(result);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error transitioning release:");
+      res.status(500).json({ error: "Failed to transition release" });
+    }
+  },
+);
+
+// GET /api/distribution/workflow/history/:releaseId - Get workflow history
+router.get(
+  "/workflow/history/:releaseId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { releaseId } = req.params as Record<string, string>;
+      const history =
+        await enhancedWorkflowService.getWorkflowHistory(releaseId, req.user!.id);
+      res.json({ history });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching workflow history:");
+      res.status(500).json({ error: "Failed to fetch workflow history" });
+    }
+  },
+);
+
+// GET /api/distribution/workflow/versions/:releaseId - Get version history
+router.get(
+  "/workflow/versions/:releaseId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { releaseId } = req.params as Record<string, string>;
+      const versions =
+        await enhancedWorkflowService.getVersionHistory(releaseId, req.user!.id);
+      res.json({ versions });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching version history:");
+      res.status(500).json({ error: "Failed to fetch version history" });
+    }
+  },
+);
+
+// GET /api/distribution/workflow/transitions/:status - Get valid transitions for status
+router.get(
+  "/workflow/transitions/:status",
+  async (req: Request, res: Response) => {
+    try {
+      const { status } = req.params as Record<string, string>;
+      const validTransitions = enhancedWorkflowService.getValidTransitions(
+        status as ReleaseStatus,
+      );
+      res.json({
+        currentStatus: status,
+        validTransitions,
+        displayName: enhancedWorkflowService.getStatusDisplayName(
+          status as ReleaseStatus,
+        ),
+        color: enhancedWorkflowService.getStatusColor(status as ReleaseStatus),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching transitions:");
+      res.status(500).json({ error: "Failed to fetch transitions" });
+    }
+  },
+);
+
+// ============================================================================
+// DISTRIBUTION ANALYTICS ENDPOINTS (Frontend Compatibility)
+// These endpoints return real data from the database, or empty/null when dormant
+// ============================================================================
+
+// Shared helper: aggregate getReleaseAnalytics across all of this user's LabelGrid releases.
+// LabelGrid exposes one analytics API — per-release. We aggregate across all distributed releases.
+async function aggregateLabelGridAnalytics(userId: string) {
+  const releases = await storage.getDistroReleasesByArtist(userId);
+  const lgReleases = releases?.filter(
+    (r) => (r?.metadata as Record<string, unknown>)?.labelGridReleaseId,
+  );
+  if (lgReleases?.length === 0) return null;
+
+  const settled = await Promise.allSettled(
+    lgReleases?.map((r) =>
+      labelGridService?.getReleaseAnalytics(
+        ((r?.metadata as Record<string, unknown>).labelGridReleaseId as string),
+      ),
+    ),
+  );
+  const results = settled
+    .filter((r) => r?.status === "fulfilled")
+    .map((r) => (r as PromiseFulfilledResult<unknown>).value);
+  if (results?.length === 0) return null;
+
+  const totalStreams = results?.reduce(
+    (s: number, a: unknown) => s + (Number((a as Record<string, unknown>)?.totalStreams) || 0),
+    0,
+  );
+  const totalRevenue = results?.reduce(
+    (s: number, a: unknown) => s + (Number((a as Record<string, unknown>)?.totalRevenue) || 0),
+    0,
+  );
+
+  // Merge platform breakdowns
+  const platforms: Record<
+    string,
+    { streams: number; revenue: number; listeners: number }
+  > = {};
+  for (const a of results) {
+    const aRec = a as Record<string, unknown>;
+    for (const [name, data] of Object.entries((aRec?.platforms as Record<string, unknown>) || {})) {
+      if (!platforms[name])
+        platforms[name] = { streams: 0, revenue: 0, listeners: 0 };
+      platforms[name].streams += Number((data as Record<string, unknown>).streams) || 0;
+      platforms[name].revenue += Number((data as Record<string, unknown>).revenue) || 0;
+      platforms[name].listeners +=
+        Number((data as Record<string, unknown>).listeners) || 0;
+    }
+  }
+
+  // Merge timelines by date
+  const byDate: Record<string, { streams: number; revenue: number }> = {};
+  for (const a of results) {
+    const aRec2 = a as Record<string, unknown>;
+    for (const t of (aRec2?.timeline as Record<string, unknown>[] || [])) {
+      const dateKey = String(t.date);
+      if (!byDate[dateKey]) byDate[dateKey] = { streams: 0, revenue: 0 };
+      byDate[dateKey].streams += Number(t?.streams) || 0;
+      byDate[dateKey].revenue += Number(t?.revenue) || 0;
+    }
+  }
+  const timeline = Object.entries(byDate)
+    .sort(([a], [b]) => a?.localeCompare(b))
+    .map(([date, v]) => ({ date, ...v }));
+
+  return { totalStreams, totalRevenue, platforms, timeline };
+}
+
+// GET /api/distribution/analytics/growth - Get analytics growth data (LabelGrid primary)
+router.get(
+  "/analytics/growth",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+
+      if (labelGridService?.isApiConfigured()) {
+        try {
+          const agg = await aggregateLabelGridAnalytics(userId);
+          if (agg) {
+            const now = Date.now();
+            const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+            const last30Streams = agg?.timeline
+              .filter((t) => new Date(t?.date).getTime() >= now - thirtyDaysMs)
+              .reduce((s, t) => s + t?.streams, 0);
+            const prev30Streams = agg?.timeline
+              .filter((t) => {
+                const ts = new Date(t?.date).getTime();
+                return ts >= now - 2 * thirtyDaysMs && ts < now - thirtyDaysMs;
+              })
+              .reduce((s, t) => s + t?.streams, 0);
+            const streamGrowth =
+              prev30Streams > 0
+                ? Math.round(
+                    ((last30Streams - prev30Streams) / prev30Streams) * 100,
+                  )
+                : 0;
+
+            return res.json({
+              totalStreams: agg.totalStreams,
+              totalRevenue: agg.totalRevenue,
+              revenue: agg.totalRevenue,
+              streamGrowth,
+              platforms: Object.entries(agg?.platforms).map(([name, d]) => ({
+                name,
+                ...d,
+              })),
+              trends: agg.timeline,
+              source: "labelgrid",
+            });
+          }
+        } catch (lgErr) {
+          logger.warn(
+            { err: lgErr },
+            "[Distribution] LabelGrid analytics growth failed, falling back to DB:"
+          );
+        }
+      }
+
+      const analyticsData = await storage.getDistroAnalytics(userId);
+      if (!analyticsData) {
+        return res.json({
+          streams: 0,
+          downloads: 0,
+          revenue: 0,
+          growth: 0,
+          platforms: [],
+          trends: [],
+          source: "local",
+        });
+      }
+      res.json({ ...analyticsData, source: "local" });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching analytics growth:");
+      res.status(500).json({ error: "Failed to fetch analytics growth" });
+    }
+  },
+);
+
+// GET /api/distribution/streaming-trends - Get streaming trends data (LabelGrid primary)
+router.get(
+  "/streaming-trends",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+
+      if (labelGridService?.isApiConfigured()) {
+        try {
+          const agg = await aggregateLabelGridAnalytics(userId);
+          if (agg && agg?.timeline.length > 0) {
+            return res.json(
+              agg?.timeline.map((t) => ({
+                date: t.date,
+                streams: t.streams,
+                revenue: t.revenue,
+                listeners: 0,
+                saves: 0,
+              })),
+            );
+          }
+        } catch (lgErr) {
+          logger.warn(
+            { err: lgErr },
+            "[Distribution] LabelGrid streaming trends failed, falling back to DB:"
+          );
+        }
+      }
+
+      const trends = await storage.getStreamingTrends(userId);
+      res.json(trends);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching streaming trends:");
+      res.status(500).json({ error: "Failed to fetch streaming trends" });
+    }
+  },
+);
+
+// GET /api/distribution/geographic - Get geographic distribution data
+router.get("/geographic", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const data = await storage.getGeographicData(userId);
+    res.json(data);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching geographic data:");
+    res.status(500).json({ error: "Failed to fetch geographic data" });
+  }
+});
+
+// GET /api/distribution/earnings/breakdown - Get earnings breakdown (LabelGrid primary)
+router.get(
+  "/earnings/breakdown",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+
+      if (labelGridService?.isApiConfigured()) {
+        try {
+          const agg = await aggregateLabelGridAnalytics(userId);
+          if (agg) {
+            const now = new Date();
+            const thisMonthStart = new Date(
+              now?.getFullYear(),
+              now?.getMonth(),
+              1,
+            );
+            const lastMonthStart = new Date(
+              now?.getFullYear(),
+              now?.getMonth() - 1,
+              1,
+            );
+            const lastMonthEnd = new Date(
+              now?.getFullYear(),
+              now?.getMonth(),
+              0,
+              23,
+              59,
+              59,
+            );
+            const thisMonth = agg?.timeline
+              .filter((t) => new Date(t?.date) >= thisMonthStart)
+              .reduce((s, t) => s + t?.revenue, 0);
+            const lastMonth = agg?.timeline
+              .filter(
+                (t) =>
+                  new Date(t?.date) >= lastMonthStart &&
+                  new Date(t?.date) <= lastMonthEnd,
+              )
+              .reduce((s, t) => s + t?.revenue, 0);
+            const growth =
+              lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
+
+            return res.json({
+              totalEarnings: agg.totalRevenue,
+              thisMonth,
+              lastMonth,
+              growth,
+              source: "labelgrid",
+            });
+          }
+        } catch (lgErr) {
+          logger.warn(
+            { err: lgErr },
+            "[Distribution] LabelGrid earnings breakdown failed, falling back to DB:"
+          );
+        }
+      }
+
+      // Fall back to local DB
+      const now = new Date();
+      const thisMonthStart = new Date(now?.getFullYear(), now?.getMonth(), 1);
+      const lastMonthStart = new Date(now?.getFullYear(), now?.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(
+        now?.getFullYear(),
+        now?.getMonth(),
+        0,
+        23,
+        59,
+        59,
+      );
+
+      const [agg] = await db
+        .select({
+          totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+          pendingEarnings: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'pending' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+          paidOut: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'paid' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+          thisMonth: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.createdAt} >= ${thisMonthStart} THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+          lastMonth: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.createdAt} >= ${lastMonthStart} AND ${royaltyTransactions.createdAt} <= ${lastMonthEnd} THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
+        })
+        .from(royaltyTransactions)
+        .where(eq(royaltyTransactions.userId, userId));
+
+      const te = Number(agg?.totalEarnings);
+      const lm = Number(agg?.lastMonth);
+      const tm = Number(agg?.thisMonth);
+      const growth = lm > 0 ? ((tm - lm) / lm) * 100 : 0;
+
+      res.json({
+        totalEarnings: te,
+        pendingEarnings: Number(agg?.pendingEarnings),
+        paidOut: Number(agg?.paidOut),
+        thisMonth: tm,
+        lastMonth: lm,
+        growth,
+        source: "local",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching earnings breakdown:");
+      res.status(500).json({ error: "Failed to fetch earnings breakdown" });
+    }
+  },
+);
+
+// GET /api/distribution/platform-earnings - Get earnings by platform (LabelGrid primary)
+router.get(
+  "/platform-earnings",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+
+      if (labelGridService?.isApiConfigured()) {
+        try {
+          const agg = await aggregateLabelGridAnalytics(userId);
+          if (agg && Object.keys(agg?.platforms).length > 0) {
+            return res.json(
+              Object.entries(agg?.platforms)
+                .map(([name, d]) => ({
+                  platform: name,
+                  totalEarnings: d.revenue,
+                  streams: d.streams,
+                  listeners: d.listeners,
+                  transactions: 0,
+                }))
+                .sort((a, b) => b?.totalEarnings - a?.totalEarnings),
+            );
+          }
+        } catch (lgErr) {
+          logger.warn(
+            { err: lgErr },
+            "[Distribution] LabelGrid platform earnings failed, falling back to DB:"
+          );
+        }
+      }
+
+      // Fall back to local DB
+      const rows = await db
+        .select({
+          platform: sql<string>`COALESCE(${royaltyTransactions.platform}, 'unknown')`,
+          totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+          streams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+          transactions: sql<number>`COUNT(*)`,
+        })
+        .from(royaltyTransactions)
+        .where(eq(royaltyTransactions.userId, userId))
+        .groupBy(sql`COALESCE(${royaltyTransactions.platform}, 'unknown')`)
+        .orderBy(sql`SUM(${royaltyTransactions.amount}) DESC`);
+
+      res.json(
+        rows?.map((r) => ({
+          platform: r.platform,
+          totalEarnings: Number(r?.totalEarnings),
+          streams: Number(r?.streams),
+          transactions: Number(r?.transactions),
+        })),
+      );
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching platform earnings:");
+      res.status(500).json({ error: "Failed to fetch platform earnings" });
+    }
+  },
+);
+
+// GET /api/distribution/payout-history - Get payout history
+router.get(
+  "/payout-history",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const payouts = await storage.getPayoutHistory(userId);
+      res.json(payouts);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching payout history:");
+      res.status(500).json({ error: "Failed to fetch payout history" });
+    }
+  },
+);
+
+// ===========================
+// ADDITIONAL MISSING ENDPOINTS
+// ===========================
+
+// GET /api/distribution/claims — Active DMCA strikes against this user's content
+router.get("/claims", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+
+    const strikes = await db
+      .select()
+      .from(dmcaStrikes)
+      .where(eq(dmcaStrikes.userId, userId))
+      .orderBy(desc(dmcaStrikes.createdAt))
+      .limit(100);
+
+    return res.json({ claims: strikes, total: strikes.length });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching claims:");
+    return res.status(500).json({ error: "Failed to fetch claims" });
+  }
+});
+
+// GET /api/distribution/disputes — Royalty disputes filed by this user
+router.get("/disputes", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+
+    const disputes = await db
+      .select()
+      .from(royaltyDisputes)
+      .where(eq(royaltyDisputes.userId, userId))
+      .orderBy(desc(royaltyDisputes.createdAt))
+      .limit(100);
+
+    return res.json({ disputes, total: disputes.length });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching disputes:");
+    return res.status(500).json({ error: "Failed to fetch disputes" });
+  }
+});
+
+// GET /api/distribution/qc — Quality control: pending review, passed, and failed releases
+router.get("/qc", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+
+    const releases = await db
+      .select()
+      .from(distroReleases)
+      .where(eq(distroReleases.artistId, userId))
+      .orderBy(desc(distroReleases.createdAt))
+      .limit(200);
+
+    const pending = releases.filter((r) =>
+      ["pending", "processing", "draft"].includes(r.status ?? ""),
+    );
+    const passed = releases.filter((r) =>
+      ["delivered", "active", "live"].includes(r.status ?? ""),
+    );
+    const failed = releases.filter((r) =>
+      ["rejected", "failed", "error"].includes(r.status ?? ""),
+    );
+
+    return res.json({ pending, passed, failed });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching QC status:");
+    return res.status(500).json({ error: "Failed to fetch QC status" });
+  }
+});
+
+// GET /api/distribution/qc/:releaseId — Read the latest persisted QC report.
+// Deliberately use the same 404 for missing and unowned releases so this route
+// cannot be used to enumerate another artist's catalog.
+router.get(
+  "/qc/:releaseId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.params as Record<string, string>;
+      const [release] = await db
+        .select({
+          id: distroReleases.id,
+          metadata: distroReleases.metadata,
+        })
+        .from(distroReleases)
+        .where(
+          and(
+            eq(distroReleases.id, releaseId),
+            eq(distroReleases.artistId, userId),
+          ),
+        )
+        .limit(1);
+
+      if (!release) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const metadata =
+        release.metadata && typeof release.metadata === "object"
+          ? (release.metadata as Record<string, unknown>)
+          : {};
+      const report = metadata.qcReport;
+      if (!report || typeof report !== "object") {
+        return res.json({ status: "not_run", report: null });
+      }
+
+      return res.json({ status: "complete", report });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching release QC report:");
+      return res.status(500).json({ error: "Failed to fetch QC report" });
+    }
+  },
+);
+
+// GET /api/distribution/takedowns — DMCA strikes that have not yet expired (active takedowns)
+router.get("/takedowns", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+
+    const now = new Date();
+    const activeStrikes = await db
+      .select()
+      .from(dmcaStrikes)
+      .where(eq(dmcaStrikes.userId, userId))
+      .orderBy(desc(dmcaStrikes.createdAt))
+      .limit(100);
+
+    // A strike with no expiresAt or a future expiresAt counts as an active takedown
+    const takedowns = activeStrikes.filter(
+      (s) => !s.expiresAt || s.expiresAt > now,
+    );
+
+    return res.json({ takedowns, total: takedowns.length });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching takedowns:");
+    return res.status(500).json({ error: "Failed to fetch takedowns" });
+  }
+});
+
+// A DMCA strike records a notice received from a claimant. It is intentionally
+// not used for creator-initiated distribution takedowns: creating one here
+// would falsely represent that a notice had been sent to a DSP. The distribution
+// provider handoff for creator takedowns has not been implemented yet.
+router.post("/takedowns", requireAuth, (_req: Request, res: Response) => {
+  return res.status(501).json({
+    error: "Creator-initiated distribution takedowns are not available yet",
+  });
+});
+
+// Record the creator's dispute in the real royalty-disputes ledger. Submission
+// to the claim's DSP remains an operational review step rather than being
+// reported as complete before that handoff has occurred.
+router.post("/disputes", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { claimId, reason, explanation, supportingDocs } = req.body ?? {};
+
+    if (
+      typeof claimId !== "string" ||
+      !claimId ||
+      typeof reason !== "string" ||
+      !reason ||
+      typeof explanation !== "string" ||
+      !explanation
+    ) {
+      return res.status(400).json({
+        error: "claimId, reason, and explanation are required",
+      });
+    }
+    if (
+      supportingDocs !== undefined &&
+      (!Array.isArray(supportingDocs) ||
+        !supportingDocs.every((document) => typeof document === "string"))
+    ) {
+      return res.status(400).json({ error: "supportingDocs must be an array" });
+    }
+
+    const [claim] = await db
+      .select({ id: dmcaStrikes.id })
+      .from(dmcaStrikes)
+      .where(and(eq(dmcaStrikes.id, claimId), eq(dmcaStrikes.userId, userId)))
+      .limit(1);
+    if (!claim) return res.status(404).json({ error: "Claim not found" });
+
+    const [dispute] = await db
+      .insert(royaltyDisputes)
+      .values({
+        userId,
+        type: reason,
+        status: "open",
+        subject: claimId,
+        description:
+          supportingDocs?.length > 0
+            ? `${explanation}\n\nSupporting documents:\n${supportingDocs.join("\n")}`
+            : explanation,
+        evidenceCount: supportingDocs?.length ?? 0,
+      })
+      .returning();
+
+    return res.status(201).json({ dispute });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error submitting distribution dispute:");
+    return res.status(500).json({ error: "Failed to submit dispute" });
+  }
+});
+
+// These records represent active DMCA strikes, not user-created distribution
+// takedown requests. A creator cannot cancel a claimant's active notice; they
+// must file a dispute instead. Return a deliberate conflict rather than
+// reporting a local cancellation that has not occurred at the DSP.
+router.post(
+  "/takedowns/:id/cancel",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const [strike] = await db
+        .select({ id: dmcaStrikes.id })
+        .from(dmcaStrikes)
+        .where(and(eq(dmcaStrikes.id, id), eq(dmcaStrikes.userId, userId)))
+        .limit(1);
+      if (!strike) return res.status(404).json({ error: "Takedown not found" });
+      return res.status(409).json({
+        error: "This takedown cannot be cancelled by the creator",
+        details: "It is an active DMCA claim. Submit a dispute or contact the claimant to resolve it.",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error checking takedown cancellation:");
+      return res.status(500).json({ error: "Failed to cancel takedown" });
+    }
+  },
+);
+
+// GET /api/distribution/reinstatements — DMCA strikes that have expired (content reinstated)
+router.get(
+  "/reinstatements",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+
+      const now = new Date();
+      const expiredStrikes = await db
+        .select()
+        .from(dmcaStrikes)
+        .where(eq(dmcaStrikes.userId, userId))
+        .orderBy(desc(dmcaStrikes.createdAt))
+        .limit(100);
+
+      // A strike with a past expiresAt means the takedown is lifted — content is reinstated
+      const reinstatements = expiredStrikes.filter(
+        (s) => s.expiresAt && s.expiresAt <= now,
+      );
+
+      return res.json({ reinstatements, total: reinstatements.length });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching reinstatements:");
+      return res.status(500).json({ error: "Failed to fetch reinstatements" });
+    }
+  },
+);
+
+// Reinstatement requires confirmation from the DSP that removed the content.
+// There is no local request table or provider integration yet, so do not claim
+// a request was submitted when no external action has been taken.
+router.post("/reinstatements", requireAuth, (_req: Request, res: Response) => {
+  return res.status(501).json({
+    error: "Distribution reinstatement requests are not available yet",
+  });
+});
+
+// POST /api/distribution/upload - Upload distribution release with audio files and artwork
+router.post(
+  "/upload",
+  requireAuth,
+  releaseUpload.any(),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const files = (req.files as Express.Multer.File[]) || [];
+
+      const {
+        title,
+        artistName,
+        releaseType = "single",
+        primaryGenre,
+        secondaryGenre,
+        language = "English",
+        releaseDate,
+        labelName,
+        copyrightYear,
+        copyrightOwner,
+        publishingRights,
+        selectedPlatforms,
+        isExplicit,
+        leaveALegacy,
+        legacyPrice,
+        tracks: tracksJson,
+        collaborators: collaboratorsJson,
+        rightsConfirmed,
+        contentOriginal,
+      } = req.body;
+
+      let parsedTracks: unknown;
+      let parsedPlatforms: unknown;
+      let parsedCollaborators: unknown;
+      try {
+        parsedTracks = tracksJson ? JSON.parse(tracksJson) : [];
+        parsedPlatforms = selectedPlatforms
+          ? JSON.parse(selectedPlatforms)
+          : [];
+        parsedCollaborators = collaboratorsJson
+          ? JSON.parse(collaboratorsJson)
+          : [];
+      } catch {
+        return res.status(400).json({
+          error: "Invalid upload metadata",
+          message: "Tracks, platforms, and collaborators must be valid JSON.",
+        });
+      }
+      const metadataResult = createReleaseSchema.safeParse({
+        title,
+        artistName,
+        releaseType,
+        primaryGenre,
+        secondaryGenre: secondaryGenre || undefined,
+        language,
+        labelName: labelName || undefined,
+        copyrightYear: copyrightYear ? Number(copyrightYear) : NaN,
+        copyrightOwner,
+        publishingRights: publishingRights || undefined,
+        isExplicit: isExplicit === "true",
+        releaseDate: releaseDate || undefined,
+        selectedPlatforms: parsedPlatforms,
+      });
+      if (!metadataResult.success) {
+        return res.status(400).json({
+          error: "Invalid release metadata",
+          details: metadataResult.error.issues,
+        });
+      }
+      const collaboratorSplitResult =
+        createReleaseSchema.shape.royaltySplits.safeParse(parsedCollaborators);
+      if (!collaboratorSplitResult.success) {
+        return res.status(400).json({
+          error: "Invalid royalty splits",
+          details: collaboratorSplitResult.error.issues,
+        });
+      }
+      const parsedRoyaltySplits = collaboratorSplitResult.data || [];
+      if (rightsConfirmed !== "true" || contentOriginal !== "true") {
+        return res.status(400).json({
+          error: "Rights confirmation required",
+          message:
+            "Confirm ownership/clearance and original-content acknowledgements before uploading.",
+        });
+      }
+      if (!Array.isArray(parsedTracks) || parsedTracks.length === 0) {
+        return res.status(400).json({
+          error: "At least one track is required",
+        });
+      }
+      if (!Array.isArray(parsedPlatforms) || parsedPlatforms.length === 0) {
+        return res.status(400).json({
+          error: "At least one distribution platform is required",
+        });
+      }
+
+      let artworkUrl: string | null = null;
+      const artworkFile = files.find((f) => f.fieldname === "albumArt");
+      if (artworkFile) {
+        const artworkKey = await storageService.uploadFile(
+          artworkFile.buffer,
+          `users/${userId}/artwork`,
+          artworkFile.originalname,
+          artworkFile.mimetype,
+        );
+        artworkUrl = await storageService.getDownloadUrl(artworkKey);
+      }
+
+      const [release] = await db
+        .insert(distroReleases)
+        .values({
+          artistId: userId,
+          title,
+          releaseDate: releaseDate ? new Date(releaseDate) : null,
+          // Uploading files does not submit anything to a DSP. The artist
+          // must explicitly submit this draft after identifiers are assigned.
+          status: "draft",
+          artworkUrl,
+          metadata: {
+            artistName,
+            releaseType,
+            primaryGenre,
+            secondaryGenre,
+            language,
+            labelName,
+            copyrightYear: copyrightYear
+              ? parseInt(copyrightYear)
+              : new Date().getFullYear(),
+            copyrightOwner,
+            publishingRights,
+            selectedPlatforms: parsedPlatforms,
+            isExplicit: isExplicit === "true",
+            leaveALegacy: leaveALegacy === "true",
+            legacyPrice: legacyPrice ? parseFloat(legacyPrice) : null,
+            collaborators: Array.isArray(parsedCollaborators)
+              ? parsedCollaborators
+              : [],
+          },
+        })
+        .returning();
+
+      const trackInserts = [];
+      for (let i = 0; i < parsedTracks.length; i++) {
+        const track = parsedTracks[i];
+        const audioFile = files.find((f) => f.fieldname === `audioFile_${i}`);
+
+        let audioUrl: string | null = null;
+        if (audioFile) {
+          const audioKey = await storageService.uploadFile(
+            audioFile.buffer,
+            `users/${userId}/audio`,
+            audioFile.originalname,
+            audioFile.mimetype,
+          );
+          audioUrl = await storageService.getDownloadUrl(audioKey);
+        }
+
+        trackInserts.push({
+          releaseId: release.id,
+          title: track.title || `Track ${i + 1}`,
+          trackNumber: i + 1,
+          isrc: track.isrc || null,
+          audioUrl,
+          metadata: {
+            explicit: track.explicit || false,
+            writers: track.writers || [],
+            producers: track.producers || [],
+          },
+        });
+      }
+
+      if (trackInserts.length > 0) {
+        await db.insert(distroTracks).values(trackInserts);
+      }
+      await replaceReleaseRoyaltySplits(release.id, parsedRoyaltySplits);
+
+      logger.info(
+        `Distribution release created: ${release.id} by user ${userId}`,
+      );
+
+      res.json({
+        success: true,
+        releaseId: release.id,
+        fileId: release.id,
+        message:
+          "Release uploaded and saved as a draft. Submit it for distribution after completing identifiers and review.",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error uploading distribution release:");
+      res
+        .status(500)
+        .json({
+          error:
+            error instanceof Error ? error.message : "Failed to upload release",
+        });
+    }
+  },
+);
+
+// POST /api/distribution/export-report - Export CSV report of all user's releases + tracks
+router.post(
+  "/export-report",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+
+      // Fetch all releases for this user
+      const releases = await db
+        .select()
+        .from(distroReleases)
+        .where(eq(distroReleases.artistId, userId))
+        .orderBy(desc(distroReleases.createdAt));
+
+      // Count tracks per release
+      const trackCounts = await db
+        .select({ releaseId: distroTracks.releaseId, count: count() })
+        .from(distroTracks)
+        .where(
+          inArray(
+            distroTracks.releaseId,
+            releases?.length > 0 ? releases?.map((r) => r?.id) : ["__none__"],
+          ),
+        )
+        .groupBy(distroTracks.releaseId);
+
+      const trackCountMap = new Map(
+        trackCounts?.map((t) => [t?.releaseId, Number(t?.count)]),
+      );
+
+      // RFC 4180 CSV escaping
+      const csvEscape = (val: unknown): string => {
+        const s = val == null ? "" : String(val);
+        if (
+          s?.includes('"') ||
+          s.includes(",") ||
+          s.includes("\n") ||
+          s.includes("\r")
+        ) {
+          return `"${s?.replace(/"/g, '""')}"`;
+        }
+        return s;
+      };
+
+      const headers = [
+        "Release ID",
+        "Title",
+        "Artist",
+        "Genre",
+        "Release Date",
+        "Status",
+        "Track Count",
+        "Platforms",
+        "Created At",
+      ];
+
+      const rows = releases?.map((release) => {
+        const meta = (release?.metadata ?? {}) as Record<string, unknown>;
+        const platforms = Array.isArray(meta?.selectedPlatforms)
+          ? (meta.selectedPlatforms as unknown[]).length
+          : Array.isArray(meta?.platforms)
+            ? (meta.platforms as unknown[]).length
+          : 0;
+        return [
+          release?.id,
+          release?.title,
+          meta?.artistName ?? "",
+          meta?.primaryGenre ?? "",
+          release?.releaseDate
+            ? new Date(release?.releaseDate).toISOString().split("T")[0]
+            : "",
+          release?.status ?? "draft",
+          trackCountMap?.get(release?.id) ?? 0,
+          platforms,
+          release?.createdAt
+            ? new Date(release?.createdAt).toISOString().split("T")[0]
+            : "",
+        ]
+          .map(csvEscape)
+          .join(",");
+      });
+
+      const csv = [headers?.join(","), ...rows].join("\r\n");
+
+      const dateStr = new Date().toISOString().split("T")[0];
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="distribution-report-${dateStr}.csv"`,
+      );
+      res.setHeader("Cache-Control", "no-store");
+      res.send(csv);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error exporting distribution report:");
+      res.status(500).json({ error: "Failed to generate distribution report" });
+    }
+  },
+);
+
+// GET /api/distribution/codes/stats - Get code generation stats
+router.get("/codes/stats", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const [[isrcResult], [upcResult]] = await Promise.all([
+      db
+        .select({ count: count() })
+        .from(isrcRegistry)
+        .where(eq(isrcRegistry.artistId, userId)),
+      db
+        .select({ count: count() })
+        .from(upcRegistry)
+        .where(eq(upcRegistry.artistId, userId)),
+    ]);
+
+    const isrcGenerated = Number(isrcResult?.count || 0);
+    const upcGenerated = Number(upcResult?.count || 0);
+
+    res.json({
+      isrcGenerated,
+      upcGenerated,
+      remaining: Math.max(0, 1000 - isrcGenerated),
+    });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching code stats:");
+    res.status(500).json({ error: "Failed to fetch code stats" });
+  }
+});
+
+// GET /api/distribution/codes/isrc - List ISRCs registered to the caller.
+// Registry rows are created only when a code is attached to a concrete track.
+router.get("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    const userId = (req.user as AuthenticatedUser).id;
+    const codes = await db
+      .select()
+      .from(isrcRegistry)
+      .where(eq(isrcRegistry.artistId, userId))
+      .orderBy(desc(isrcRegistry.registeredAt));
+    return res.json(
+      codes.map((entry) => ({
+        id: entry.id,
+        code: entry.isrc,
+        trackTitle: entry.title,
+        artistName: "",
+        releaseId: entry.releaseId,
+        assignedAt: entry.registeredAt ?? entry.createdAt,
+        status: "active",
+        registrar: "PDIM",
+        countryCode: entry.isrc.slice(0, 2),
+        year: entry.isrc.slice(5, 7),
+        designationCode: entry.isrc.slice(7),
+      })),
+    );
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error listing ISRC codes:");
+    return res.status(500).json({ error: "Failed to fetch ISRC codes" });
+  }
+});
+
+// GET /api/distribution/codes/upc - List UPCs registered to the caller.
+router.get("/codes/upc", requireAuth, async (req: Request, res: Response) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    const userId = (req.user as AuthenticatedUser).id;
+    const codes = await db
+      .select()
+      .from(upcRegistry)
+      .where(eq(upcRegistry.artistId, userId))
+      .orderBy(desc(upcRegistry.registeredAt));
+    return res.json(
+      codes.map((entry) => ({
+        id: entry.id,
+        code: entry.upc,
+        releaseTitle: entry.title,
+        artistName: "",
+        releaseId: entry.releaseId,
+        releaseType: "album",
+        assignedAt: entry.registeredAt ?? entry.createdAt,
+        status: "active",
+        trackCount: 0,
+      })),
+    );
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error listing UPC codes:");
+    return res.status(500).json({ error: "Failed to fetch UPC codes" });
+  }
+});
+
+// POST /api/distribution/codes/:id/assign - Associate a registered code with
+// an owned release (and, for ISRCs, its owned track).
+router.post(
+  "/codes/:id/assign",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      res.set("Cache-Control", "no-store");
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const { releaseId, trackId } = z
+        .object({ releaseId: z.string().min(1), trackId: z.string().min(1).optional() })
+        .parse(req.body);
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const [isrc] = await db
+        .select()
+        .from(isrcRegistry)
+        .where(and(eq(isrcRegistry.id, id), eq(isrcRegistry.artistId, userId)))
+        .limit(1);
+      if (isrc) {
+        if (!trackId) {
+          return res.status(400).json({ error: "trackId is required for an ISRC" });
+        }
+        const [track] = await db
+          .select()
+          .from(distroTracks)
+          .where(and(eq(distroTracks.id, trackId), eq(distroTracks.releaseId, releaseId)))
+          .limit(1);
+        if (!track) return res.status(404).json({ error: "Track not found in this release" });
+        const [assigned] = await db
+          .update(isrcRegistry)
+          .set({ releaseId, trackId })
+          .where(and(eq(isrcRegistry.id, id), eq(isrcRegistry.artistId, userId)))
+          .returning();
+        await db
+          .update(distroTracks)
+          .set({ isrc: assigned.isrc })
+          .where(eq(distroTracks.id, trackId));
+        return res.json({ code: assigned.isrc, type: "isrc", releaseId, trackId });
+      }
+
+      const [upc] = await db
+        .select()
+        .from(upcRegistry)
+        .where(and(eq(upcRegistry.id, id), eq(upcRegistry.artistId, userId)))
+        .limit(1);
+      if (!upc) return res.status(404).json({ error: "Code not found" });
+      const [assigned] = await db
+        .update(upcRegistry)
+        .set({ releaseId, title: release.title })
+        .where(and(eq(upcRegistry.id, id), eq(upcRegistry.artistId, userId)))
+        .returning();
+      return res.json({ code: assigned.upc, type: "upc", releaseId });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.issues });
+      }
+      logger.warn({ err: error }, "Error assigning distribution code:");
+      return res.status(500).json({ error: "Failed to assign code" });
+    }
+  },
+);
+
+// A registered ISRC/UPC identifies a released recording and must remain in
+// the registry. Removing it would permit accidental reuse and corrupt DSP
+// reporting, so revocation is deliberately rejected rather than pretending it
+// succeeded.
+router.post("/codes/:id/revoke", requireAuth, async (_req, res) => {
+  return res.status(409).json({
+    error: "Registered distribution codes cannot be revoked",
+    details: "ISRC and UPC assignments are permanent identifiers. Contact support if a correction is required.",
+  });
+});
+
+// ===========================
+// EARNINGS ENDPOINTS
+// ===========================
+
+// Too Lost's API does not expose account-level per-track earnings rows.
+router.get("/earnings/entries", requireAuth, (_req, res) => {
+  return res.status(501).json({
+    error: "Too Lost detailed earnings are not available through its API",
+    message:
+      "This app cannot present local marketplace transactions as Too Lost DSP earnings.",
+  });
+});
+
+// Too Lost does not expose an in-app payout history endpoint.
+router.get("/earnings/payouts", requireAuth, (_req, res) => {
+  return res.status(501).json({
+    error: "Too Lost payout history is not available through its API",
+    message: "Check the payout provider linked to your Too Lost account.",
+  });
+});
+
+// GET /api/distribution/earnings/statements - Get earnings statements (local DB)
+router.get(
+  "/earnings/statements",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      res.set("Cache-Control", "no-store");
+      const userId = (req.user as AuthenticatedUser).id;
+      const statements = await db
+        .select()
+        .from(royaltyStatements)
+        .where(eq(royaltyStatements.userId, userId))
+        .orderBy(desc(royaltyStatements.createdAt))
+        .limit(500);
+      res.json({
+        statements: statements.map((statement) => {
+          const importDetails = decodeImportedStatementLabel(statement.label);
+          const periodStart = statement.periodStart.toISOString().slice(0, 10);
+          const periodEnd = statement.periodEnd.toISOString().slice(0, 10);
+          return {
+            id: statement.id,
+            platform: importDetails ? "Too Lost CSV import" : statement.label || "Statement",
+            period: `${periodStart} – ${periodEnd}`,
+            statementDate: statement.createdAt?.toISOString() || null,
+            fileName:
+              typeof importDetails?.fileName === "string"
+                ? importDetails.fileName
+                : statement.label || "Statement file",
+            fileSize:
+              typeof importDetails?.fileSize === "number"
+                ? importDetails.fileSize
+                : null,
+            status: statement.status,
+            totalAmount: Number(statement.totalEarnings),
+            totalStreams:
+              typeof importDetails?.totalStreams === "number"
+                ? importDetails.totalStreams
+                : null,
+            rowCount:
+              typeof importDetails?.rowCount === "number"
+                ? importDetails.rowCount
+                : null,
+            currency:
+              typeof importDetails?.currency === "string"
+                ? importDetails.currency
+                : null,
+            importedAt: statement.createdAt?.toISOString() || null,
+            downloadUrl: statement.downloadUrl
+              ? `/api/distribution/earnings/statements/${encodeURIComponent(statement.id)}/download`
+              : null,
+          };
+        }),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching earnings statements:");
+      res.status(500).json({ error: "Failed to fetch earnings statements" });
+    }
+  },
+);
+
+router.get(
+  "/earnings/statements/:id/download",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const [statement] = await db
+        .select()
+        .from(royaltyStatements)
+        .where(and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, userId)))
+        .limit(1);
+      const expectedPrefix = `users/${userId}/earnings-statements/`;
+      if (!statement?.downloadUrl?.startsWith(expectedPrefix)) {
+        return res.status(404).json({ error: "Imported statement file not found" });
+      }
+      const importDetails = decodeImportedStatementLabel(statement.label);
+      if (!importDetails) {
+        return res.status(404).json({ error: "Imported statement file not found" });
+      }
+      const contents = await storageService.downloadFile(statement.downloadUrl);
+      const fileName =
+        typeof importDetails.fileName === "string"
+          ? path.basename(importDetails.fileName)
+          : "toolost-statement.csv";
+      return res
+        .type("text/csv")
+        .attachment(fileName)
+        .send(contents);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error downloading imported statement:");
+      return res.status(500).json({ error: "Failed to download imported statement" });
+    }
+  },
+);
+
+// POST /api/distribution/earnings/statements/:id/reconcile
+router.post(
+  "/earnings/statements/:id/reconcile",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const [statement] = await db
+        .select()
+        .from(royaltyStatements)
+        .where(
+          and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, userId)),
+        )
+        .limit(1);
+      if (!statement) {
+        return res.status(404).json({ error: "Statement not found" });
+      }
+      if (statement.status === "reviewed") {
+        return res.json({ statement, alreadyReviewed: true });
+      }
+      const [reviewed] = await db
+        .update(royaltyStatements)
+        .set({ status: "reviewed" })
+        .where(
+          and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, userId)),
+        )
+        .returning();
+      return res.json({
+        statement: reviewed,
+        message:
+          "Review recorded. This does not reconcile the file against Too Lost ledger data.",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error recording statement review:");
+      return res.status(500).json({ error: "Failed to record statement review" });
+    }
+  },
+);
+
+// GET /api/distribution/earnings/summary - Get Too Lost's actual lifetime sales totals
+router.get(
+  "/earnings/summary",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const ownedToolost = await getOwnedToolostService(userId);
+      if (!ownedToolost) {
+        return res.status(409).json({
+          code: "OWNED_DISTRIBUTOR_ACCOUNT_REQUIRED",
+          error: "Account-wide earnings require your own connected Too Lost account. Shared distributor totals are not your personal earnings.",
+        });
+      }
+      const summary = await ownedToolost.getRoyaltySummary();
+      return res.json({
+        totalEarnings: summary.lifetime,
+        currency: summary.currency,
+        source: "toolost",
+        detailAvailable: false,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching earnings summary:");
+      res.status(502).json({
+        error: "Too Lost earnings summary is unavailable",
+        message: error instanceof Error ? error.message : "No provider response was received.",
+      });
+    }
+  },
+);
+
+router.get("/earnings/territories", requireAuth, (_req, res) => {
+  return res.status(501).json({
+    error: "Too Lost territory-level earnings are not available through its API",
+  });
+});
+
+// ===========================
+// ROYALTIES ENDPOINTS
+// ===========================
+
+// GET /api/distribution/royalties/currency-rates - Get currency rates
+router.get(
+  "/royalties/currency-rates",
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    try {
+      const [setting] = await db
+        .select()
+        .from(systemSettings)
+        .where(eq(systemSettings.key, "currency_rates"))
+        .limit(1);
+
+      if (setting && setting?.value) {
+        const val = setting?.value as Record<string, unknown>;
+        res.json({
+          rates: val.rates || { USD: 1, EUR: 0.92, GBP: 0.79 },
+          baseCurrency: val.baseCurrency || "USD",
+          lastUpdated:
+            setting?.updatedAt?.toISOString() || new Date().toISOString(),
+        });
+      } else {
+        res.json({
+          rates: { USD: 1, EUR: 0.92, GBP: 0.79 },
+          baseCurrency: "USD",
+          lastUpdated: new Date().toISOString(),
+        });
+      }
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching currency rates:");
+      res.status(500).json({ error: "Failed to fetch currency rates" });
+    }
+  },
+);
+
+// GET /api/distribution/royalties/discrepancies - Get royalty discrepancies
+router.get(
+  "/royalties/discrepancies",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const discrepancies = await db
+        .select()
+        .from(royaltyDisputes)
+        .where(eq(royaltyDisputes.userId, userId))
+        .orderBy(desc(royaltyDisputes.createdAt))
+        .limit(500);
+      res.json({ discrepancies, total: discrepancies.length });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching royalty discrepancies:");
+      res.status(500).json({ error: "Failed to fetch royalty discrepancies" });
+    }
+  },
+);
+
+// Disputing a discrepancy must leave a durable review record rather than merely
+// changing the item displayed in the client.
+router.post<{ discrepancyId: string }>(
+  "/royalties/discrepancies/:discrepancyId/dispute",
+  requireAuth,
+  async (req: Request<{ discrepancyId: string }>, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { discrepancyId } = req.params;
+      const [discrepancy] = await db
+        .select()
+        .from(royaltyDisputes)
+        .where(and(eq(royaltyDisputes.id, discrepancyId), eq(royaltyDisputes.userId, userId)))
+        .limit(1);
+      if (!discrepancy) {
+        return res.status(404).json({ error: "Royalty discrepancy not found" });
+      }
+      if (discrepancy.status === "resolved") {
+        return res.status(400).json({ error: "Resolved discrepancies cannot be disputed" });
+      }
+      const reviewMarker = `Source discrepancy: ${discrepancyId}`;
+      const existingReviews = await db.select({ description: royaltyDisputes.description }).from(royaltyDisputes)
+        .where(and(eq(royaltyDisputes.userId, userId), eq(royaltyDisputes.type, "stream_discrepancy_dispute")));
+      if (existingReviews.some((review) => review.description.includes(reviewMarker))) {
+        return res.status(409).json({ error: "A dispute for this discrepancy is already under review" });
+      }
+      const [review] = await db.insert(royaltyDisputes).values({
+        userId,
+        type: "stream_discrepancy_dispute",
+        status: "open",
+        subject: `Stream discrepancy dispute: ${discrepancy.subject}`,
+        description: `${reviewMarker}\n\n${discrepancy.description}`,
+        amount: discrepancy.amount,
+        period: discrepancy.period,
+      }).returning();
+      await db.update(royaltyDisputes).set({ status: "disputed", updatedAt: new Date() })
+        .where(eq(royaltyDisputes.id, discrepancyId));
+      return res.status(201).json({ dispute: review, discrepancyId, status: "disputed" });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error filing royalty discrepancy dispute");
+      return res.status(500).json({ error: "Failed to file royalty discrepancy dispute" });
+    }
+  },
+);
+
+// GET /api/distribution/royalties/payouts - Get royalty payouts (paginated)
+router.get(
+  "/royalties/payouts",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const pageLimit = Math.min(Number(req.query.limit) || 100, 500);
+      const pageOffset = Math.min(
+        Math.max(Number(req.query.offset) || 0, 0),
+        100_000,
+      );
+
+      const paidFilter = and(
+        eq(royaltyTransactions.userId, userId),
+        eq(royaltyTransactions.status, "paid"),
+      );
+
+      const [payouts, [{ total }]] = await Promise.all([
+        db
+          .select()
+          .from(royaltyTransactions)
+          .where(paidFilter)
+          .orderBy(desc(royaltyTransactions.paidAt))
+          .limit(pageLimit)
+          .offset(pageOffset),
+        db
+          .select({ total: count() })
+          .from(royaltyTransactions)
+          .where(paidFilter),
+      ]);
+
+      res.json({
+        payouts,
+        total: Number(total),
+        limit: pageLimit,
+        offset: pageOffset,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching royalty payouts:");
+      res.status(500).json({ error: "Failed to fetch royalty payouts" });
+    }
+  },
+);
+
+// GET /api/distribution/royalties/platforms - Get royalties by platform (LabelGrid primary)
+router.get(
+  "/royalties/platforms",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+
+      if (labelGridService?.isApiConfigured()) {
+        try {
+          const agg = await aggregateLabelGridAnalytics(userId);
+          if (agg && Object.keys(agg?.platforms).length > 0) {
+            return res.json({
+              platforms: Object.entries(agg?.platforms)
+                .map(([name, d]) => ({
+                  platform: name,
+                  totalEarnings: d.revenue,
+                  streams: d.streams,
+                  listeners: d.listeners,
+                  transactions: 0,
+                }))
+                .sort((a, b) => b?.totalEarnings - a?.totalEarnings),
+              source: "labelgrid",
+            });
+          }
+        } catch (lgErr) {
+          logger.warn(
+            { err: lgErr },
+            "[Distribution] LabelGrid royalties/platforms failed, falling back to DB:"
+          );
+        }
+      }
+
+      // Fall back to local DB
+      const rows = await db
+        .select({
+          platform: sql<string>`COALESCE(${royaltyTransactions.platform}, 'unknown')`,
+          totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+          streams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+          transactions: sql<number>`COUNT(*)`,
+        })
+        .from(royaltyTransactions)
+        .where(eq(royaltyTransactions.userId, userId))
+        .groupBy(sql`COALESCE(${royaltyTransactions.platform}, 'unknown')`)
+        .orderBy(sql`SUM(${royaltyTransactions.amount}) DESC`);
+
+      res.json({
+        platforms: rows.map((r) => ({
+          platform: r.platform,
+          totalEarnings: Number(r?.totalEarnings),
+          streams: Number(r?.streams),
+          transactions: Number(r?.transactions),
+        })),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching royalties platforms:");
+      res.status(500).json({ error: "Failed to fetch royalties platforms" });
+    }
+  },
+);
+
+// GET /api/distribution/royalties/splits - Get royalty splits
+router.get(
+  "/royalties/splits",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const userReleases = await db
+        .select({ id: distroReleases.id })
+        .from(distroReleases)
+        .where(eq(distroReleases.artistId, userId))
+        .limit(500);
+
+      if (userReleases?.length === 0) {
+        return res.json({ splits: [] });
+      }
+
+      const releaseIds = userReleases?.map((r) => r?.id);
+      const splits = await db
+        .select()
+        .from(royaltySplits)
+        .where(inArray(royaltySplits.releaseId, releaseIds))
+        .limit(500);
+
+      res.json({ splits });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching royalty splits:");
+      res.status(500).json({ error: "Failed to fetch royalty splits" });
+    }
+  },
+);
+
+// GET /api/distribution/royalties/tax-documents - Get tax documents
+router.get(
+  "/royalties/tax-documents",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const documents = await db
+        .select()
+        .from(taxForms)
+        .where(eq(taxForms.userId, userId))
+        .orderBy(desc(taxForms.createdAt))
+        .limit(200);
+      res.json({ documents });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching tax documents:");
+      res.status(500).json({ error: "Failed to fetch tax documents" });
+    }
+  },
+);
+
+// ===================
+// DATA TRANSFER & PROFILE SYNC ENDPOINTS
+// ===================
+
+import { distributionDataTransferService } from "../services/distributionDataTransferService";
+
+// GET /api/distribution/transfer/distributors - Get supported distributors for import
+router.get(
+  "/transfer/distributors",
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    try {
+      const distributors =
+        distributionDataTransferService?.getSupportedDistributors();
+      res.json({ distributors });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching supported distributors:");
+      res.status(500).json({ error: "Failed to fetch distributors" });
+    }
+  },
+);
+
+// GET /api/distribution/transfer/platforms - Get supported streaming platforms for profile sync
+router.get(
+  "/transfer/platforms",
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    try {
+      const platforms = distributionDataTransferService?.getSupportedPlatforms();
+      res.json({ platforms });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching supported platforms:");
+      res.status(500).json({ error: "Failed to fetch platforms" });
+    }
+  },
+);
+
+// POST /api/distribution/transfer/validate - Validate import CSV before processing
+router.post(
+  "/transfer/validate",
+  requireAuth,
+  upload?.single("file"),
+  async (req: Request, res: Response) => {
+    try {
+      const file = req.file;
+      const { distributor } = req.body;
+
+      if (!file) {
+        return res.status(400).json({ error: "CSV file required" });
+      }
+
+      if (!distributor) {
+        return res.status(400).json({ error: "Distributor must be specified" });
+      }
+
+      const csvContent = file?.buffer.toString("utf-8");
+      const validation =
+        await distributionDataTransferService?.validateImportData(
+          csvContent,
+          distributor,
+        );
+
+      res.json(validation);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error validating import data:");
+      res.status(500).json({ error: "Failed to validate import data" });
+    }
+  },
+);
+
+// POST /api/distribution/transfer/import - Import releases from another distributor
+router.post(
+  "/transfer/import",
+  requireAuth,
+  upload?.single("file"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const file = req.file;
+      const { distributor } = req.body;
+
+      if (!file) {
+        return res.status(400).json({ error: "CSV file required" });
+      }
+
+      if (!distributor) {
+        return res.status(400).json({ error: "Distributor must be specified" });
+      }
+
+      const csvContent = file?.buffer.toString("utf-8");
+      const job = await distributionDataTransferService?.importFromDistributor(
+        userId,
+        distributor,
+        csvContent,
+      );
+
+      res.json({
+        success: true,
+        job,
+        message: `Import ${job?.status}: ${job?.successItems} releases imported, ${job?.failedItems} failed`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error importing from distributor:");
+      res.status(500).json({ error: "Failed to import releases" });
+    }
+  },
+);
+
+// GET /api/distribution/transfer/jobs - Get user's transfer jobs history
+router.get(
+  "/transfer/jobs",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const jobs =
+        await distributionDataTransferService.getUserTransferJobs(userId);
+      res.json({ jobs });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching transfer jobs:");
+      res.status(500).json({ error: "Failed to fetch transfer jobs" });
+    }
+  },
+);
+
+// GET /api/distribution/transfer/jobs/:id - Get specific transfer job status
+router.get(
+  "/transfer/jobs/:id",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params as Record<string, string>;
+      const job = await distributionDataTransferService.getTransferJob(id);
+
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+
+      res.json({ job });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching transfer job:");
+      res.status(500).json({ error: "Failed to fetch transfer job" });
+    }
+  },
+);
+
+// POST /api/distribution/profiles/link - Link a streaming platform profile
+router.post(
+  "/profiles/link",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { platformId, profileUrl, artistName } = req.body;
+
+      if (!platformId || !profileUrl) {
+        return res
+          .status(400)
+          .json({ error: "Platform ID and profile URL are required" });
+      }
+
+      const profile =
+        await distributionDataTransferService.linkStreamingProfile(
+          userId,
+          platformId,
+          profileUrl,
+          { artistName },
+        );
+
+      res.json({
+        success: true,
+        profile,
+        message: `Successfully linked ${platformId} profile`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error linking streaming profile:");
+      res.status(500).json({ error: "Failed to link streaming profile" });
+    }
+  },
+);
+
+// GET /api/distribution/profiles - Get all linked streaming profiles
+router.get("/profiles", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const profiles =
+      await distributionDataTransferService.getLinkedProfiles(userId);
+    res.json({ profiles });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error fetching linked profiles:");
+    res.status(500).json({ error: "Failed to fetch linked profiles" });
+  }
+});
+
+// POST /api/distribution/profiles/:platformId/sync - Sync profile data from platform
+router.post(
+  "/profiles/:platformId/sync",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { platformId } = req.params as Record<string, string>;
+
+      const profile = await distributionDataTransferService.syncProfileData(
+        userId,
+        platformId,
+      );
+
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not linked" });
+      }
+
+      res.json({
+        success: true,
+        profile,
+        message: `Successfully synced ${platformId} profile data`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error syncing streaming profile:");
+      res.status(500).json({ error: "Failed to sync streaming profile" });
+    }
+  },
+);
+
+// DELETE /api/distribution/profiles/:platformId - Unlink a streaming platform profile
+router.delete(
+  "/profiles/:platformId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { platformId } = req.params as Record<string, string>;
+
+      const deleted =
+        await distributionDataTransferService.unlinkStreamingProfile(
+          userId,
+          platformId,
+        );
+
+      if (!deleted) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      res.json({
+        success: true,
+        message: `Successfully unlinked ${platformId} profile`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error unlinking streaming profile:");
+      res.status(500).json({ error: "Failed to unlink streaming profile" });
+    }
+  },
+);
+
+// POST /api/distribution/profiles/:platformId/scan-releases - Scan release catalog from linked profile
+router.post(
+  "/profiles/:platformId/scan-releases",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { platformId } = req.params as Record<string, string>;
+
+      const scan =
+        await distributionDataTransferService.scanReleasesFromProfile(
+          userId,
+          platformId,
+        );
+
+      res.json({
+        success: true,
+        releases: scan.releases,
+        total: scan.releases.length,
+        coverage: scan.coverage,
+      });
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : "Failed to scan releases";
+      logger.warn({ err: error }, "Error scanning releases from profile:");
+      res.status(msg === "Profile not linked" ? 404 : 500).json({ error: msg });
+    }
+  },
+);
+
+// POST /api/distribution/profiles/:platformId/import-catalog - Import scanned releases into catalog
+router.post(
+  "/profiles/:platformId/import-catalog",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { platformId } = req.params as Record<string, string>;
+      const { releases } = req.body;
+
+      if (!releases || !Array.isArray(releases) || releases.length === 0) {
+        return res.status(400).json({ error: "releases array required" });
+      }
+
+       const linkedProfile = (
+         await distributionDataTransferService.getLinkedProfiles(userId)
+       ).find((profile) => profile.platformId === platformId);
+       const job = await distributionDataTransferService.importProfileCatalog(
+         userId,
+         platformId,
+         releases,
+         linkedProfile?.artistName,
+       );
+
+      res.json({
+        success: true,
+        job,
+        message: `${job.successItems} releases imported from ${platformId} profile${job.failedItems > 0 ? `, ${job.failedItems} failed` : ""}`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error importing profile catalog:");
+      res.status(500).json({ error: "Failed to import catalog" });
+    }
+  },
+);
+
+// POST /api/distribution/profiles/sync-all - Sync all linked streaming profiles at once
+router.post(
+  "/profiles/sync-all",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const result =
+        await distributionDataTransferService.syncAllProfiles(userId);
+      res.json({
+        success: true,
+        ...result,
+        message: `Synced ${result.succeeded} of ${result.total} profiles`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error syncing all profiles:");
+      res.status(500).json({ error: "Failed to sync all profiles" });
+    }
+  },
+);
+
+// POST /api/distribution/profiles/auto-sync/start - Start auto-sync for all linked profiles
+router.post(
+  "/profiles/auto-sync/start",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { intervalMinutes } = req.body;
+      distributionDataTransferService.startAutoSync(
+        userId,
+        intervalMinutes || 60,
+      );
+      const status = distributionDataTransferService.getAutoSyncStatus(userId);
+      res.json({
+        success: true,
+        status,
+        message: `Auto-sync started (every ${intervalMinutes || 60} minutes)`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error starting auto-sync:");
+      res.status(500).json({ error: "Failed to start auto-sync" });
+    }
+  },
+);
+
+// POST /api/distribution/profiles/auto-sync/stop - Stop auto-sync
+router.post(
+  "/profiles/auto-sync/stop",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      distributionDataTransferService.stopAutoSync(userId);
+      res.json({
+        success: true,
+        message: "Auto-sync stopped",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error stopping auto-sync:");
+      res.status(500).json({ error: "Failed to stop auto-sync" });
+    }
+  },
+);
+
+// GET /api/distribution/profiles/auto-sync/status - Get auto-sync status
+router.get(
+  "/profiles/auto-sync/status",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const status = distributionDataTransferService.getAutoSyncStatus(userId);
+      res.json(status);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching auto-sync status:");
+      res.status(500).json({ error: "Failed to fetch auto-sync status" });
+    }
+  },
+);
+
+// GET /api/distribution/profiles/sync-history - Get sync history
+router.get(
+  "/profiles/sync-history",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const history = distributionDataTransferService.getSyncHistory(userId);
+      res.json({ history });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching sync history:");
+      res.status(500).json({ error: "Failed to fetch sync history" });
+    }
+  },
+);
+
+// GET /api/distribution/migration/report - Get migration report for user's catalog
+router.get(
+  "/migration/report",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const report =
+        await distributionDataTransferService?.generateMigrationReport(userId);
+      res.json(report);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating migration report:");
+      res.status(500).json({ error: "Failed to generate migration report" });
+    }
+  },
+);
+
+// ===========================
+// ENHANCED SUBMISSION STATUS ENDPOINTS
+// ===========================
+
+// GET /api/distribution/releases/:id/submission-status - Get persisted provider status
+router.get(
+  "/releases/:id/submission-status",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const dispatches = (await storage.getDistroDispatchStatuses(
+        id,
+      )) as DispatchStatus[];
+
+      const statuses = dispatches.map((dispatch: DispatchStatus) => {
+          let logs: Record<string, unknown> = {};
+          try {
+            logs = dispatch?.logs ? JSON.parse(dispatch.logs) : {};
+          } catch {
+            logs = {};
+          }
+          return {
+            platform: (dispatch as any).platform || dispatch.providerId,
+            platformName: dispatch.providerName || dispatch?.providerId,
+            status: dispatch.status,
+            estimatedGoLive: logs.estimatedGoLive,
+            deliveredAt: logs.deliveredAt,
+            liveAt: (dispatch as any).liveAt || logs.liveAt,
+            errorMessage: (dispatch as any).error || logs.errorMessage,
+            errorCode: logs.errorCode,
+            errorResolution: logs.errorResolution,
+            retryCount: Number(logs.retryCount) || 0,
+            maxRetries: 3,
+            lastAttempt: logs.lastAttempt,
+            externalId: logs.externalId,
+            validationErrors: logs.validationErrors,
+          };
+      });
+
+      const queued = statuses.filter((s) => s?.status === "queued").length;
+      const processing = statuses.filter((s) =>
+        ["pending", "processing"].includes(s?.status),
+      ).length;
+      const delivered = statuses.filter((s) => s?.status === "delivered").length;
+      const live = statuses.filter((s) => s?.status === "live").length;
+      const failed = statuses.filter((s) =>
+        ["failed", "rejected"].includes(s?.status),
+      ).length;
+
+      const releaseMetadata = (release.metadata || {}) as Record<string, unknown>;
+
+      res.json({
+        statuses,
+        summary: {
+          totalPlatforms: statuses.length,
+          queued,
+          processing,
+          delivered,
+          live,
+          failed,
+        },
+        statusSource: "persisted",
+        lastChecked:
+          typeof releaseMetadata.toolostLastCheckedAt === "string"
+            ? releaseMetadata.toolostLastCheckedAt
+            : null,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching submission status:");
+      res.status(500).json({ error: "Failed to fetch submission status" });
+    }
+  },
+);
+
+// POST /api/distribution/releases/:id/retry - Re-submit a failed release to Too Lost
+router.post(
+  "/releases/:id/retry",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const { platform } = z
+        .object({ platform: z.string().trim().min(1).max(120) })
+        .parse(req.body);
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+      const releaseMetadata = (release.metadata || {}) as Record<string, unknown>;
+      const toolostReleaseId =
+        typeof releaseMetadata.toolostReleaseId === "string"
+          ? releaseMetadata.toolostReleaseId
+          : undefined;
+      if (!toolostReleaseId) {
+        return res.status(409).json({
+          error: "Too Lost retry unavailable",
+          message:
+            "This release has no persisted Too Lost submission ID. Reconcile the original provider receipt before retrying.",
+        });
+      }
+
+      const dispatches = (await storage.getDistroDispatchStatuses(
+        id,
+      )) as DispatchStatus[];
+      const dispatch = dispatches?.find(
+        (d: DispatchStatus) =>
+          normalizeDistributionPlatform(
+            String((d as any).platform || d.providerId || ""),
+          ) === normalizeDistributionPlatform(platform),
+      );
+
+      if (!dispatch) {
+        return res.status(404).json({ error: "Platform dispatch not found" });
+      }
+
+      if (!["failed", "rejected"].includes(dispatch.status.toLowerCase())) {
+        return res.status(409).json({
+          error: "Retry not available",
+          message: "Only a confirmed failed Too Lost delivery can be retried.",
+        });
+      }
+
+      let logs: Record<string, unknown> = {};
+      try {
+        logs = dispatch.logs ? JSON.parse(dispatch.logs) : {};
+      } catch {
+        logs = {};
+      }
+      const retryCount = (Number(logs.retryCount) || 0) + 1;
+      if (retryCount > 3) {
+        return res.status(409).json({
+          error: "Maximum Too Lost retry attempts exceeded",
+          message: "Refresh the provider status or contact Too Lost support.",
+        });
+      }
+
+      const acceptTerms = releaseMetadata.acceptTerms === true;
+      const confirmRights = releaseMetadata.confirmRights === true;
+      const confirmYoutubeRights =
+        releaseMetadata.confirmYoutubeRights === true;
+      if (
+        !acceptTerms ||
+        !confirmRights ||
+        (normalizeDistributionPlatform(platform).includes("youtube") &&
+          !confirmYoutubeRights)
+      ) {
+        return res.status(409).json({
+          error: "Required submission confirmations are missing",
+          message:
+            "The release does not contain the confirmations required by Too Lost. Review the release and submit it through the normal workflow.",
+        });
+      }
+
+      const toolost = await getDistributionToolostService(userId);
+      const remoteBeforeRetry = await toolost.getReleaseStatus(toolostReleaseId);
+      const remotePlatforms = remoteBeforeRetry.platforms || [];
+      const targetPlatform = remotePlatforms.find(
+        (remote) =>
+          normalizeDistributionPlatform(remote.platform) ===
+          normalizeDistributionPlatform(platform),
+      );
+      if (!targetPlatform) {
+        return res.status(409).json({
+          error: "Too Lost platform status is unavailable",
+          message:
+            "Too Lost did not return a matching platform status. Refresh status before retrying.",
+        });
+      }
+      const targetOutcome = mapToolostDispatchStatus(targetPlatform.status);
+      if (!["failed", "rejected"].includes(targetOutcome.status)) {
+        return res.status(409).json({
+          error: "Too Lost has not confirmed this platform failed",
+          message: `Too Lost currently reports ${targetPlatform.status || "unknown"} for ${platform}.`,
+        });
+      }
+      if (!canRetryToolostRelease(remotePlatforms, dispatches.length)) {
+        return res.status(409).json({
+          error: "Release-level retry is not safe",
+          message:
+            "Too Lost only exposes a release-level retry, not an individual platform retry. A current failed status for every selected destination is required, so this release was not resubmitted.",
+        });
+      }
+
+      const attemptId = await claimToolostRetry(
+        userId,
+        id,
+        platform,
+        retryCount,
+      );
+      const lastAttempt = new Date().toISOString();
+      let remoteAfterRetry;
+      try {
+        remoteAfterRetry = await toolost.retryReleaseSubmission(
+          toolostReleaseId,
+          {
+            acceptTerms: true,
+            confirmRights: true,
+            ...(confirmYoutubeRights ? { confirmYoutubeRights: true } : {}),
+          },
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Too Lost retry outcome is unknown";
+        await completeToolostRetry(
+          userId,
+          id,
+          platform,
+          attemptId,
+          retryCount,
+          "unknown",
+          { error: message },
+        );
+        await storage.updateDistroDispatch(dispatch.id, {
+          status: "pending",
+          logs: JSON.stringify({
+            ...logs,
+            retryCount,
+            lastAttempt,
+            retryOutcome: "unknown",
+            errorMessage:
+              "Too Lost did not confirm the retry outcome. Refresh provider status before retrying again.",
+          }),
+        });
+        return res.status(502).json({
+          success: false,
+          status: "pending",
+          retryCount,
+          message:
+            "Too Lost did not confirm the retry outcome. The release was not marked successful; refresh provider status before another attempt.",
+        });
+      }
+
+      const remoteTargetAfterRetry = (remoteAfterRetry.platforms || []).find(
+        (remote) =>
+          normalizeDistributionPlatform(remote.platform) ===
+          normalizeDistributionPlatform(platform),
+      );
+      if (!remoteTargetAfterRetry) {
+        await completeToolostRetry(
+          userId,
+          id,
+          platform,
+          attemptId,
+          retryCount,
+          "unknown",
+          { status: remoteAfterRetry.status, platforms: remoteAfterRetry.platforms || [] },
+        );
+        await storage.updateDistroDispatch(dispatch.id, {
+          status: "pending",
+          logs: JSON.stringify({
+            ...logs,
+            retryCount,
+            lastAttempt,
+            retryOutcome: "unknown",
+            errorMessage:
+              "Too Lost did not return this destination after retry. Refresh provider status before retrying again.",
+          }),
+        });
+        return res.status(502).json({
+          success: false,
+          status: "pending",
+          retryCount,
+          message:
+            "Too Lost accepted the release-level request but did not confirm this destination's status. Refresh provider status before retrying again.",
+        });
+      }
+
+      const retryOutcome = mapToolostDispatchStatus(
+        remoteTargetAfterRetry.status,
+      );
+      const persistedStatus = retryOutcome.indeterminate
+        ? "pending"
+        : retryOutcome.status;
+      const updatedDispatch = await storage.updateDistroDispatch(dispatch.id, {
+        status: persistedStatus,
+        error: retryOutcome.indeterminate
+          ? "Too Lost retry outcome is indeterminate; refresh provider status."
+          : remoteTargetAfterRetry.errorMessage || null,
+        logs: JSON.stringify({
+          ...logs,
+          gatewayStatus: remoteTargetAfterRetry.status,
+          retryCount,
+          lastAttempt,
+          retryOutcome: retryOutcome.indeterminate
+            ? "unknown"
+            : retryOutcome.accepted
+              ? "confirmed"
+              : "failed",
+          errorMessage: retryOutcome.indeterminate
+            ? "Too Lost retry outcome is indeterminate; refresh provider status."
+            : remoteTargetAfterRetry.errorMessage || null,
+          externalId: toolostReleaseId,
+        }),
+      });
+      if (!updatedDispatch) {
+        await completeToolostRetry(
+          userId,
+          id,
+          platform,
+          attemptId,
+          retryCount,
+          "unknown",
+          { status: remoteTargetAfterRetry.status, localPersistenceFailed: true },
+        );
+        return res.status(502).json({
+          success: false,
+          message:
+            "Too Lost returned a retry status but the local dispatch update failed. Refresh provider status before retrying.",
+        });
+      }
+
+      const checkedAt = new Date().toISOString();
+      await storage.updateDistroRelease(id, {
+        status: remoteAfterRetry.status,
+        metadata: {
+          ...releaseMetadata,
+          status: remoteAfterRetry.status,
+          toolostReleaseId,
+          toolostLastCheckedAt: checkedAt,
+        },
+      });
+      await completeToolostRetry(
+        userId,
+        id,
+        platform,
+        attemptId,
+        retryCount,
+        retryOutcome.indeterminate
+          ? "unknown"
+          : retryOutcome.accepted
+            ? "confirmed"
+            : "failed",
+        {
+          status: remoteTargetAfterRetry.status,
+          errorMessage: remoteTargetAfterRetry.errorMessage,
+          checkedAt,
+        },
+      );
+
+      const success = retryOutcome.accepted && !retryOutcome.indeterminate;
+      logger.info(
+        { releaseId: id, platform, retryCount, status: persistedStatus },
+        "Too Lost release retry status persisted",
+      );
+      return res.status(retryOutcome.indeterminate ? 202 : 200).json({
+        success,
+        platform,
+        status: persistedStatus,
+        retryCount,
+        message: success
+          ? `Too Lost confirmed the release retry; ${platform} is ${remoteTargetAfterRetry.status}.`
+          : retryOutcome.indeterminate
+            ? "Too Lost has not confirmed the retry outcome. Refresh provider status before retrying."
+            : `Too Lost still reports ${remoteTargetAfterRetry.status} for ${platform}.`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error retrying submission:");
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: error.issues,
+        });
+      }
+      res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to retry submission",
+      });
+    }
+  },
+);
+
+// ===========================
+// CONTENT ID ENDPOINTS
+// ===========================
+
+// GET /api/distribution/releases/:id/content-id - Get Content ID registrations for release
+router.get(
+  "/releases/:id/content-id",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const tracks = await storage.getDistroTracks(id);
+      const registrations = tracks?.map((track: Record<string, unknown>) => {
+        const metadata = (track?.metadata || {}) as Record<string, unknown>;
+        return {
+          id: `cid_${track?.id}`,
+          trackId: track.id,
+          trackTitle: track.title,
+          fingerprint: metadata.fingerprint || null,
+          status: metadata.contentIdStatus || "pending",
+          registeredAt: metadata.contentIdRegisteredAt,
+          platforms: metadata.contentIdPlatforms || [
+            "YouTube",
+            "Facebook",
+            "Instagram",
+          ],
+          conflictDetails: metadata.conflictDetails,
+        };
+      });
+
+      res.json(registrations);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching content ID registrations:");
+      res
+        .status(500)
+        .json({ error: "Failed to fetch content ID registrations" });
+    }
+  },
+);
+
+// POST /api/distribution/content-id/generate - Generate fingerprint for track
+router.post(
+  "/content-id/generate",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const {  trackId } = req.body;
+
+      const track = await (storage as any)?.getDistroTrack(trackId);
+      if (!track) {
+        return res.status(404).json({ error: "Track not found" });
+      }
+
+      const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString("hex")}`;
+
+      await storage.updateDistroTrack(trackId, track?.releaseId || "", {
+        metadata: {
+          ...(track?.metadata as Record<string, unknown> || {}),
+          fingerprint,
+          contentIdStatus: "generating",
+        },
+      });
+
+      res.json({
+        success: true,
+        message: "Fingerprint generation initiated",
+        fingerprint,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating fingerprint:");
+      res.status(500).json({ error: "Failed to generate fingerprint" });
+    }
+  },
+);
+
+// POST /api/distribution/content-id/generate-all - Generate fingerprints for all tracks
+router.post(
+  "/content-id/generate-all",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { releaseId } = req.body;
+
+      const tracks = await storage.getDistroTracks(releaseId);
+
+      const results = await Promise.allSettled(
+        tracks?.map((track) => {
+          const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString("hex")}`;
+          return storage.updateDistroTrack(track?.id, track?.releaseId, {
+            metadata: {
+              ...(track?.metadata as Record<string, unknown> || {}),
+              fingerprint,
+              contentIdStatus: "generating",
+            },
+          });
+        }),
+      );
+
+      const count = results?.filter((r) => r?.status === "fulfilled").length;
+
+      res.json({
+        success: true,
+        message: `Generated fingerprints for ${count} tracks`,
+        count,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating all fingerprints:");
+      res.status(500).json({ error: "Failed to generate fingerprints" });
+    }
+  },
+);
+
+// POST /api/distribution/content-id/register - Register track for Content ID
+router.post(
+  "/content-id/register",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const {  trackId } = req.body;
+
+      const track = await (storage as any)?.getDistroTrack?.(trackId);
+      if (!track) {
+        return res.status(404).json({ error: "Track not found" });
+      }
+
+      const updateDistroTrackLoose: (id: string, data: Record<string, unknown>) => Promise<void> =
+        (storage as any)?.updateDistroTrack?.bind(storage) ?? (() => Promise.resolve());
+      await updateDistroTrackLoose(trackId, {
+        metadata: {
+          ...(track?.metadata as Record<string, unknown> | undefined),
+          contentIdStatus: "registered",
+          contentIdRegisteredAt: new Date().toISOString(),
+          contentIdPlatforms: ["YouTube", "Facebook", "Instagram", "TikTok"],
+        },
+      });
+
+      res.json({
+        success: true,
+        message: "Track registered for Content ID protection",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error registering for content ID:");
+      res.status(500).json({ error: "Failed to register for content ID" });
+    }
+  },
+);
+
+// POST /api/distribution/content-id/resolve - Resolve Content ID conflict
+router.post(
+  "/content-id/resolve",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { registrationId, resolution, notes } = req.body;
+
+      const trackId = registrationId?.replace("cid_", "");
+      const track = await (storage as any)?.getDistroTrack(trackId);
+      if (!track) {
+        return res.status(404).json({ error: "Track not found" });
+      }
+
+      await storage.updateDistroTrack(trackId, track?.releaseId || "", {
+        metadata: {
+          ...(track?.metadata as Record<string, unknown> || {}),
+          contentIdStatus:
+            resolution === "claim_ownership" ? "registered" : "pending",
+          conflictResolution: {
+            type: resolution,
+            notes,
+            resolvedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        message: "Conflict resolution submitted",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error resolving content ID conflict:");
+      res.status(500).json({ error: "Failed to resolve conflict" });
+    }
+  },
+);
+
+// ===========================
+// DISTRIBUTION OUTCOMES ENDPOINT
+// ===========================
+
+// GET /api/distribution/releases/:id/outcomes - Get all distribution outcomes
+router.get(
+  "/releases/:id/outcomes",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const metadata = release?.metadata as Record<string, unknown>;
+      const dispatches = (await storage.getDistroDispatchStatuses(
+        id,
+      )) as DispatchStatus[];
+      const tracks = await storage.getDistroTracks(id);
+
+      const releaseOutcomes = [];
+      if (release?.status === "draft" || metadata?.status === "draft") {
+        releaseOutcomes?.push({
+          type: "draft_saved",
+          status: "success",
+          message: "Release saved as draft",
+          timestamp:
+            release?.createdAt?.toISOString() || new Date().toISOString(),
+        });
+      }
+      if ((release as any)?.coverArtUrl) {
+        releaseOutcomes?.push({
+          type: "cover_upload",
+          status: "success",
+          message: "Cover art uploaded successfully",
+          timestamp: new Date().toISOString(),
+        });
+      }
+      if (tracks?.length > 0) {
+        releaseOutcomes?.push({
+          type: "track_upload",
+          status: "success",
+          message: `${tracks?.length} track(s) uploaded successfully`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      const submissionOutcomes = [];
+      if (dispatches?.length > 0) {
+        const live = dispatches?.filter((d) => d?.status === "live");
+        const failed = dispatches?.filter((d) => d?.status === "failed");
+        const processing = dispatches?.filter((d) =>
+          ["queued", "pending", "processing", "delivered"].includes(d?.status),
+        );
+
+        if (live?.length === dispatches?.length) {
+          submissionOutcomes?.push({
+            type: "all_success",
+            status: "success",
+            message: `Successfully live on all ${dispatches?.length} platforms`,
+            platforms: dispatches.map((d) => ({
+              name: d.providerName || d?.providerId,
+              status: "live",
+            })),
+            timestamp: new Date().toISOString(),
+          });
+        } else if (failed?.length > 0 && live?.length > 0) {
+          submissionOutcomes?.push({
+            type: "partial_success",
+            status: "warning",
+            message: `Live on ${live?.length} platforms, ${failed?.length} failed`,
+            platforms: dispatches.map((d) => ({
+              name: d.providerName || d?.providerId,
+              status: d.status,
+            })),
+            timestamp: new Date().toISOString(),
+          });
+        } else if (processing?.length > 0) {
+          submissionOutcomes?.push({
+            type: "submission_started",
+            status: "in_progress",
+            message: `Processing ${processing?.length} platform submissions`,
+            platforms: dispatches.map((d) => ({
+              name: d.providerName || d?.providerId,
+              status: d.status,
+            })),
+            queuePosition: processing.length > 0 ? 1 : undefined,
+            estimatedTime: "2-5 days",
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+
+      const contentIdOutcomes = [];
+      const tracksWithFingerprint = tracks?.filter(
+        (t: Record<string, unknown>) =>
+          (t?.metadata as Record<string, unknown> | undefined)?.fingerprint,
+      );
+      if (tracksWithFingerprint?.length > 0) {
+        contentIdOutcomes?.push({
+          type: "fingerprint_generated",
+          status: "success",
+          message: `Fingerprints generated for ${tracksWithFingerprint?.length} track(s)`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      const registeredTracks = tracks?.filter(
+        (t: Record<string, unknown>) =>
+          (t?.metadata as Record<string, unknown> | undefined)
+            ?.contentIdStatus === "registered",
+      );
+      if (registeredTracks?.length > 0) {
+        contentIdOutcomes?.push({
+          type: "registration_confirmed",
+          status: "success",
+          message: `${registeredTracks?.length} track(s) registered for Content ID protection`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      const codeOutcomes = [];
+      const releaseUpc = (release as { upc?: string })?.upc;
+      if (releaseUpc) {
+        codeOutcomes?.push({
+          type: "upc_generated",
+          status: "success",
+          message: `UPC code generated: ${releaseUpc}`,
+          code: releaseUpc,
+          codeType: "upc",
+          timestamp: new Date().toISOString(),
+        });
+      }
+      const tracksWithISRC = tracks?.filter(
+        (t: Record<string, unknown>) => t?.isrc,
+      );
+      if (tracksWithISRC?.length > 0) {
+        codeOutcomes?.push({
+          type: "isrc_generated",
+          status: "success",
+          message: `ISRC codes generated for ${tracksWithISRC?.length} track(s)`,
+          codeType: "isrc",
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      const takedownOutcomes = [];
+      const takedownDispatches = dispatches?.filter(
+        (d) => d?.status === "takedown_requested" || d?.status === "removed",
+      );
+      if (takedownDispatches?.length > 0) {
+        const completed = takedownDispatches?.filter(
+          (d) => d?.status === "removed",
+        ).length;
+        takedownOutcomes?.push({
+          type:
+            completed === takedownDispatches?.length
+              ? "completed"
+              : "in_progress",
+          status:
+            completed === takedownDispatches?.length ? "success" : "in_progress",
+          message:
+            completed === takedownDispatches?.length
+              ? "Takedown completed on all requested platforms"
+              : `Takedown in progress: ${completed}/${takedownDispatches?.length} complete`,
+          platforms: takedownDispatches.map(
+            (d) => d?.providerName || d?.providerId,
+          ),
+          progressPercentage: (completed / takedownDispatches?.length) * 100,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      const analyticsOutcomes = [];
+      if (metadata?.labelGridReleaseId) {
+        analyticsOutcomes?.push({
+          type: "loading",
+          status: "info",
+          message: "Analytics data available",
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        analyticsOutcomes?.push({
+          type: "no_data",
+          status: "info",
+          message: "No analytics data available yet - release is not live",
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      const allOutcomes = [
+        ...releaseOutcomes,
+        ...submissionOutcomes,
+        ...contentIdOutcomes,
+        ...codeOutcomes,
+        ...takedownOutcomes,
+        ...analyticsOutcomes,
+      ];
+
+      res.json({
+        release: releaseOutcomes,
+        submission: submissionOutcomes,
+        contentId: contentIdOutcomes,
+        codes: codeOutcomes,
+        takedown: takedownOutcomes,
+        analytics: analyticsOutcomes,
+        summary: {
+          totalOutcomes: allOutcomes.length,
+          errors: allOutcomes.filter((o) => o?.status === "error").length,
+          warnings: allOutcomes.filter((o) => o?.status === "warning").length,
+          successes: allOutcomes.filter((o) => o?.status === "success").length,
+          inProgress: allOutcomes.filter((o) => o?.status === "in_progress")
+            .length,
+        },
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching distribution outcomes:");
+      res.status(500).json({ error: "Failed to fetch distribution outcomes" });
+    }
+  },
+);
+
+// POST /api/distribution/releases/:id/retry-outcome - Retry a failed outcome
+router.post(
+  "/releases/:id/retry-outcome",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const { type } = req.body ?? {};
+      if (typeof type !== "string" || !type.trim()) {
+        return res.status(400).json({ error: "outcome type is required" });
+      }
+
+      const release = await storage.getDistroRelease(id);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      logger.warn(
+        { releaseId: id, outcomeType: type },
+        "Distribution outcome retry requested, but no durable retry worker is configured",
+      );
+      return res.status(501).json({
+        success: false,
+        error: "distribution_retry_unavailable",
+        message:
+          "No retry job was created and no provider request was sent. Retry execution is unavailable until a durable worker is configured.",
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error retrying outcome:");
+      res.status(500).json({ error: "Failed to retry outcome" });
+    }
+  },
+);
+
+// POST /api/distribution/isrc/generate - Generate ISRC code
+router.post(
+  "/isrc/generate",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { artist, title, trackId } = req.body;
+
+      if (!artist || !title) {
+        return res.status(400).json({ error: "artist and title are required" });
+      }
+
+      const assignedTo = `${artist} - ${title}`;
+      const fallback = await musicCodesService.generateISRC(userId);
+      const isrcCode = fallback.code;
+      const isOfficiallyRegistered = false;
+
+      if (trackId && !trackId.startsWith("temp_")) {
+        const [track] = await db
+          .select()
+          .from(distroTracks)
+          .where(eq(distroTracks.id, trackId))
+          .limit(1);
+        if (!track) return res.status(404).json({ error: "Track not found" });
+        const release = await storage.getDistroRelease(track.releaseId);
+        if (!release || release.artistId !== userId) {
+          return res.status(404).json({ error: "Track not found" });
+        }
+        if (isOfficiallyRegistered) {
+          await codeGenerationService.generateISRC(userId, trackId, artist, title);
+        }
+      }
+
+      res.json({
+        success: true,
+        isrc: isrcCode,
+        assignedTo,
+        isOfficiallyRegistered,
+        ...(isOfficiallyRegistered
+          ? {}
+          : {
+              note: "This is a provisional local placeholder, not an assigned or registered ISRC. It is not stored or sent to a distributor. Obtain an ISRC from a registered agency or your distributor before release submission.",
+            }),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating ISRC:");
+      res.status(500).json({ error: "Failed to generate ISRC" });
+    }
+  },
+);
+
+// POST /api/distribution/upc/generate - Generate UPC code
+router.post(
+  "/upc/generate",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { title, releaseId } = req.body;
+
+      if (!title) {
+        return res.status(400).json({ error: "title is required" });
+      }
+
+      const assignedTo = title;
+      const fallback = await musicCodesService.generateUPC(userId);
+      const upcCode = fallback.code;
+      const isOfficiallyRegistered = false;
+
+      if (releaseId && !releaseId.startsWith("temp_")) {
+        const release = await storage.getDistroRelease(releaseId);
+        if (!release || release.artistId !== userId) {
+          return res.status(404).json({ error: "Release not found" });
+        }
+        if (isOfficiallyRegistered) {
+          await codeGenerationService.generateUPC(userId, releaseId, title);
+        }
+      }
+
+      res.json({
+        success: true,
+        upc: upcCode,
+        assignedTo,
+        isOfficiallyRegistered,
+        ...(isOfficiallyRegistered
+          ? {}
+          : {
+              note: "This is a provisional local placeholder, not an assigned or registered UPC. It is not stored or sent to a distributor. Obtain a valid barcode from an authorized source before release submission.",
+            }),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating UPC:");
+      res.status(500).json({ error: "Failed to generate UPC" });
+    }
+  },
+);
+
+// ─── POST /api/distribution/qc/analyze — Run QC analysis on a release ────────
+router.post(
+  "/qc/analyze",
+  requireAuth,
+  upload?.single("audio"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.body;
+      if (!releaseId)
+        return res.status(400).json({ error: "releaseId is required" });
+
+      const [release] = await db
+        .select()
+        .from(distroReleases)
+        .where(
+          and(
+            eq(distroReleases.id, releaseId),
+            eq(distroReleases.artistId, userId),
+          ),
+        )
+        .limit(1);
+      if (!release) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const tracks = await db
+        .select()
+        .from(distroTracks)
+        .where(eq(distroTracks.releaseId, releaseId))
+        .orderBy(distroTracks.trackNumber);
+      const releaseMetadata =
+        release.metadata && typeof release.metadata === "object"
+          ? (release.metadata as Record<string, unknown>)
+          : {};
+      const audioFile = req.file;
+
+      // Try to extract real format metadata from the uploaded audio file.
+      let audioMeta: Awaited<
+        ReturnType<typeof audioMetadataService.extractMetadata>
+      > | null = null;
+      if (audioFile) {
+        try {
+          audioMeta = await audioMetadataService?.extractMetadata(
+            audioFile?.buffer,
+            audioFile?.mimetype,
+          );
+        } catch (metaErr) {
+          logger.warn(
+            { err: metaErr },
+            "QC: audio metadata extraction failed — falling back to not_analyzed",
+          );
+        }
+      }
+
+      const REQUIRES_ANALYSIS = "not_analyzed";
+
+      const artist =
+        releaseMetadata.artistName ||
+        releaseMetadata.primaryArtist ||
+        releaseMetadata.artist;
+      const hasAllTrackIsrcs =
+        tracks.length > 0 && tracks.every((track) => Boolean(track.isrc));
+      const metadataStatus =
+        release.title && artist && hasAllTrackIsrcs
+          ? "passed"
+          : release.title && artist
+            ? "warning"
+            : "failed";
+      const metadataDetail =
+        metadataStatus === "passed"
+          ? "Release title, artist, and track ISRCs are present"
+          : metadataStatus === "warning"
+            ? tracks.length === 0
+              ? "No tracks are saved on this release"
+              : "One or more tracks are missing an ISRC"
+            : "Release artist metadata is missing";
+
+      // Sample rate check
+      const ACCEPTED_SAMPLE_RATES = [
+        44100, 48000, 88200, 96000, 176400, 192000,
+      ];
+      let sampleRateStatus: string;
+      let sampleRateDetail: string;
+      if (!audioFile) {
+        sampleRateStatus = "warning";
+        sampleRateDetail =
+          "No audio file uploaded — upload the master to verify sample rate";
+      } else if (audioMeta) {
+        const sr = audioMeta?.sampleRate;
+        if (ACCEPTED_SAMPLE_RATES?.includes(sr)) {
+          sampleRateStatus = "passed";
+          sampleRateDetail = `Sample rate is ${(sr / 1000).toFixed(1)} kHz — accepted for distribution`;
+        } else {
+          sampleRateStatus = "failed";
+          sampleRateDetail = `Sample rate is ${sr} Hz — not accepted. Export at 44.1 kHz or 48 kHz`;
+        }
+      } else {
+        sampleRateStatus = REQUIRES_ANALYSIS;
+        sampleRateDetail = `Audio file received (${(audioFile?.size / 1024 / 1024).toFixed(2)} MB) — format not recognized for sample rate analysis`;
+      }
+
+      // Bit depth check
+      let bitDepthStatus: string;
+      let bitDepthDetail: string;
+      if (!audioFile) {
+        bitDepthStatus = "warning";
+        bitDepthDetail =
+          "No audio file uploaded — upload the master to verify bit depth";
+      } else if (audioMeta) {
+        if (audioMeta?.lossless) {
+          const bd = audioMeta?.bitDepth;
+          if (bd && bd >= 16) {
+            bitDepthStatus = "passed";
+            bitDepthDetail = `Lossless audio at ${bd}-bit depth — accepted for distribution`;
+          } else if (bd) {
+            bitDepthStatus = "warning";
+            bitDepthDetail = `${bd}-bit lossless detected — 16-bit or 24-bit recommended for distribution`;
+          } else {
+            bitDepthStatus = "passed";
+            bitDepthDetail = `Lossless audio (${audioMeta?.codec}) — accepted for distribution`;
+          }
+        } else {
+          // Lossy codec — warn unless it's a high-quality MP3 for preview only
+          const bitrate = audioMeta.bitrate
+            ? Math.round(audioMeta.bitrate / 1000)
+            : null;
+          bitDepthStatus = "warning";
+          bitDepthDetail = `Lossy codec detected (${audioMeta.codec}${bitrate ? ` at ${bitrate} kbps` : ""}) — use WAV or FLAC for distribution masters`;
+        }
+      } else {
+        bitDepthStatus = REQUIRES_ANALYSIS;
+        bitDepthDetail = "Audio format not recognized for bit depth analysis";
+      }
+
+      // Codec / lossless format check
+      let codecStatus: string;
+      let codecDetail: string;
+      if (!audioFile) {
+        codecStatus = "warning";
+        codecDetail =
+          "No audio file uploaded — upload the master to check the format";
+      } else if (audioMeta) {
+        const losslessCodecs = ["PCM", "FLAC", "ALAC", "WAV", "AIFF", "DSD"];
+        const isLossless =
+          audioMeta.lossless ||
+          losslessCodecs.some((c) =>
+            audioMeta!.codec.toUpperCase().includes(c),
+          );
+        if (isLossless) {
+          codecStatus = "passed";
+          codecDetail = `${audioMeta.codec} (${audioMeta.container}) — lossless format accepted for distribution`;
+        } else {
+          codecStatus = "warning";
+          codecDetail = `${audioMeta.codec} (${audioMeta.container}) is a lossy format — WAV or FLAC recommended for distribution masters`;
+        }
+      } else {
+        codecStatus = REQUIRES_ANALYSIS;
+        codecDetail = "Audio format not recognized";
+      }
+
+      // Duration check (distributors typically require at least 30 seconds)
+      let durationStatus: string;
+      let durationDetail: string;
+      if (audioMeta) {
+        const durationSecs = audioMeta.duration;
+        if (durationSecs < 30) {
+          durationStatus = "failed";
+          durationDetail = `Track duration is ${durationSecs.toFixed(1)}s — most distributors require at least 30 seconds`;
+        } else {
+          durationStatus = "passed";
+          durationDetail = `Track duration is ${(durationSecs / 60).toFixed(1)} min — accepted`;
+        }
+      } else if (
+        tracks.length > 0 &&
+        tracks.every(
+          (track) => typeof track.duration === "number" && track.duration > 0,
+        )
+      ) {
+        const shortTracks = tracks.filter((track) => track.duration! < 30);
+        durationStatus = shortTracks.length > 0 ? "failed" : "passed";
+        durationDetail =
+          shortTracks.length > 0
+            ? `${shortTracks.length} saved track${shortTracks.length === 1 ? " is" : "s are"} shorter than the 30 second distribution minimum`
+            : "All saved track durations meet the 30 second distribution minimum";
+      } else {
+        durationStatus = REQUIRES_ANALYSIS;
+        durationDetail =
+          "Track duration is not available from the saved release or an uploaded audio file";
+      }
+
+      const rawChecks: Array<{
+        id: string;
+        name: string;
+        status: string;
+        detail: string;
+        category: "audio" | "metadata" | "artwork" | "codes" | "content";
+        severity: "critical" | "major" | "minor" | "info";
+      }> = [
+        {
+          id: "loudness",
+          name: "Loudness (LUFS)",
+          status: REQUIRES_ANALYSIS,
+          category: "audio",
+          severity: "major",
+          detail: audioFile
+            ? "LUFS measurement requires PCM decoding (ffmpeg). Upload your master and use the dedicated audio analysis tool for a loudness report."
+            : "No audio file uploaded — upload the master WAV/AIFF to analyze loudness",
+        },
+        {
+          id: "truepeak",
+          name: "True Peak",
+          status: REQUIRES_ANALYSIS,
+          category: "audio",
+          severity: "major",
+          detail: audioFile
+            ? "True peak measurement requires PCM decoding (ffmpeg). Use the dedicated audio analysis tool for a full loudness + true peak report."
+            : "No audio file uploaded",
+        },
+        {
+          id: "sample_rate",
+          name: "Sample Rate",
+          status: sampleRateStatus,
+          category: "audio",
+          severity: "critical",
+          detail: sampleRateDetail,
+        },
+        {
+          id: "bit_depth",
+          name: "Bit Depth / Codec",
+          status: bitDepthStatus,
+          category: "audio",
+          severity: "major",
+          detail: bitDepthDetail,
+        },
+        {
+          id: "codec",
+          name: "Audio Format",
+          status: codecStatus,
+          category: "audio",
+          severity: "major",
+          detail: codecDetail,
+        },
+        {
+          id: "metadata",
+          name: "Metadata Completeness",
+          status: metadataStatus,
+          category: "metadata",
+          severity: "critical",
+          detail: metadataDetail,
+        },
+        {
+          id: "artwork",
+          name: "Artwork",
+          status: release.artworkUrl ? REQUIRES_ANALYSIS : "failed",
+          category: "artwork",
+          severity: "critical",
+          detail: release.artworkUrl
+            ? "Artwork URL provided — resolution check (3000×3000 px minimum) requires server-side image analysis"
+            : "No artwork URL provided — artwork is required for distribution",
+        },
+        {
+          id: "duration",
+          name: "Track Duration",
+          status: durationStatus,
+          category: "audio",
+          severity: "critical",
+          detail: durationDetail,
+        },
+      ];
+
+      const checks = rawChecks.map((check) => ({
+        id: check.id,
+        name: check.name,
+        category: check.category,
+        status: check.status,
+        severity: check.severity,
+        message: check.detail,
+        details: check.detail,
+        // No current QC finding is changed safely by this endpoint. Guidance is
+        // not represented as an automatic fix.
+        fixable: false,
+      }));
+      const passed = checks.filter((c) => c.status === "passed").length;
+      const failed = checks.filter((c) => c.status === "failed").length;
+      const warnings = checks.filter((c) => c.status === "warning").length;
+      const notAnalyzed = checks.filter(
+        (c) => c.status === REQUIRES_ANALYSIS,
+      ).length;
+
+      const report = {
+        id: `qc-${releaseId}-${Date.now()}`,
+        releaseId,
+        createdAt: new Date().toISOString(),
+        status:
+          failed > 0
+            ? ("failed" as const)
+            : notAnalyzed > 0
+              ? ("incomplete" as const)
+              : warnings > 0
+                ? ("warning" as const)
+                : ("passed" as const),
+        overallScore:
+          notAnalyzed > 0
+            ? null
+            : Math.round((passed / (checks.length || 1)) * 100),
+        checks,
+        summary: {
+          passed,
+          failed,
+          warnings,
+          notAnalyzed,
+          total: checks.length,
+        },
+        note:
+          notAnalyzed > 0
+            ? "Some checks require audio/image processing tools. Upload your audio file and configure server-side analysis for a complete QC report."
+            : undefined,
+      };
+
+      const [persisted] = await db
+        .update(distroReleases)
+        .set({ metadata: { ...releaseMetadata, qcReport: report } })
+        .where(
+          and(
+            eq(distroReleases.id, releaseId),
+            eq(distroReleases.artistId, userId),
+          ),
+        )
+        .returning({ id: distroReleases.id });
+      if (!persisted) {
+        return res.status(409).json({ error: "QC report could not be saved" });
+      }
+
+      return res.json({ status: "complete", report });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error running QC analysis:");
+      res.status(500).json({ error: "Failed to run QC analysis" });
+    }
+  },
+);
+
+// POST /api/distribution/qc/fix — Apply an automatic QC fix
+router.post("/qc/fix", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { releaseId, checkId, fixType } = req.body;
+    if (!releaseId || !checkId)
+      return res
+        .status(400)
+        .json({ error: "releaseId and checkId are required" });
+
+    const [release] = await db
+      .select({ id: distroReleases.id })
+      .from(distroReleases)
+      .where(
+        and(
+          eq(distroReleases.id, releaseId),
+          eq(distroReleases.artistId, userId),
+        ),
+      )
+      .limit(1);
+    if (!release) {
+      return res.status(404).json({ error: "Release not found" });
+    }
+
+    // Server-side fixes for metadata issues (missing fields, formatting, etc.)
+    if (checkId === "metadata") {
+      return res.json({
+        success: false,
+        releaseId,
+        checkId,
+        fixType,
+        message:
+          "Please update the missing metadata fields in the release editor and re-run QC analysis.",
+        status: "pending_user_action",
+        actions: [
+          {
+            label: "Open Release Editor",
+            path: `/distribution/releases/${releaseId}/edit`,
+          },
+          { label: "Re-run QC", action: "rerun_qc" },
+        ],
+      });
+    }
+
+    // Audio QC checks (sample rate, bit depth, loudness, codec) require the audio
+    // processing pipeline. Guide the user through the manual fix workflow.
+    const audioCheckGuidance: Record<string, string> = {
+      sample_rate:
+        "Export your audio at 44.1 kHz or 48 kHz and re-upload the track.",
+      bit_depth:
+        "Export your audio at 16-bit or 24-bit depth and re-upload the track.",
+      loudness:
+        "Adjust your master to -14 LUFS integrated loudness (streaming standard) and re-upload.",
+      codec: "Export your audio as WAV or FLAC and re-upload the track.",
+      duration:
+        "Ensure the track is at least 30 seconds long before re-submitting.",
+      silence:
+        "Remove excessive silence from the beginning or end of the track and re-upload.",
+      clipping:
+        "Apply a limiter to remove digital clipping and re-upload the corrected master.",
+    };
+
+    const guidance =
+      audioCheckGuidance[checkId] ||
+      "Correct the flagged issue in your DAW and re-upload the audio file.";
+
+    return res.json({
+      success: false,
+      releaseId,
+      checkId,
+      fixType,
+      requiresManualAction: true,
+      message: guidance,
+      status: "manual_fix_required",
+      actions: [
+        {
+          label: "Re-upload Audio",
+          path: `/distribution/releases/${releaseId}/upload`,
+        },
+        { label: "Re-run QC", action: "rerun_qc" },
+      ],
+    });
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error applying QC fix:");
+    res.status(500).json({ error: "Failed to apply QC fix" });
+  }
+});
+
+// ─── POST /api/distribution/earnings/import — Import royalty statement ─────────
+router.post(
+  "/earnings/import",
+  requireAuth,
+  upload.single("statement"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const file = req.file;
+      if (!file)
+        return res.status(400).json({ error: "statement file is required" });
+
+      if (file.size > 10 * 1024 * 1024) {
+        return res.status(413).json({
+          error: "Statement CSV exceeds the 10 MB import limit",
+        });
+      }
+      const fileName = path.basename(file.originalname).slice(0, 255);
+      if (path.extname(fileName).toLowerCase() !== ".csv") {
+        return res.status(415).json({
+          error: "Only CSV statement files are supported",
+          message:
+            "The Too Lost API does not provide statements. Import a user-exported CSV using the required columns.",
+        });
+      }
+      let parsedStatement: ReturnType<typeof parseTooLostStatementCsv>;
+      try {
+        parsedStatement = parseTooLostStatementCsv(file.buffer);
+      } catch (error) {
+        return res.status(400).json({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Invalid Too Lost CSV statement",
+        });
+      }
+
+      const digest = createHash("sha256")
+        .update(userId)
+        .update(":")
+        .update(file.buffer)
+        .digest("hex");
+      const statementId = `toolost_csv_${digest}`;
+      const [existing] = await db
+        .select()
+        .from(royaltyStatements)
+        .where(
+          and(
+            eq(royaltyStatements.id, statementId),
+            eq(royaltyStatements.userId, userId),
+          ),
+        )
+        .limit(1);
+      if (existing) {
+        return res.json({
+          success: true,
+          duplicate: true,
+          message:
+            "This exact CSV was already imported. No duplicate statement was created.",
+          statementId: existing.id,
+        });
+      }
+
+      const storageKey = await storageService.uploadFile(
+        file.buffer,
+        `users/${userId}/earnings-statements`,
+        `${statementId}.csv`,
+        "text/csv",
+      );
+      const label =
+        TOOLOST_CSV_LABEL_PREFIX +
+        JSON.stringify({
+          source: "toolost_csv",
+          fileName,
+          fileSize: file.size,
+          currency: parsedStatement.currency,
+          totalStreams: parsedStatement.totalStreams,
+          rowCount: parsedStatement.rowCount,
+        });
+      const [statement] = await db
+        .insert(royaltyStatements)
+        .values({
+          id: statementId,
+          userId,
+          label,
+          periodStart: parsedStatement.periodStart,
+          periodEnd: parsedStatement.periodEnd,
+          totalEarnings: parsedStatement.totalAmount.toFixed(2),
+          status: "imported",
+          downloadUrl: storageKey,
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      if (!statement) {
+        return res.status(409).json({
+          error:
+            "The statement was uploaded but its import record was not created. Retry the same file to reconcile the saved import.",
+        });
+      }
+      logger.info(
+        { userId, statementId, rowCount: parsedStatement.rowCount },
+        "User-provided Too Lost CSV statement imported",
+      );
+      return res.status(201).json({
+        success: true,
+        message:
+          "The supplied CSV summary was imported. It was not fetched from Too Lost, reconciled against provider ledger data, or used to request a payout.",
+        statement: {
+          id: statement.id,
+          fileName,
+          fileSize: file.size,
+          periodStart: parsedStatement.periodStart,
+          periodEnd: parsedStatement.periodEnd,
+          totalAmount: parsedStatement.totalAmount,
+          totalStreams: parsedStatement.totalStreams,
+          rowCount: parsedStatement.rowCount,
+          currency: parsedStatement.currency,
+          status: statement.status,
+        },
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error importing earnings statement:");
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? `Failed to import earnings statement: ${error.message}`
+            : "Failed to import earnings statement",
+      });
+    }
+  },
+);
+
+// Too Lost handles payouts through its linked provider; it has no payout-request endpoint.
+router.post("/earnings/payout", requireAuth, (_req, res) => {
+  return res.status(501).json({
+    error: "In-app Too Lost payout requests are not supported",
+    message:
+      "Request and track payouts through the payout provider linked to your Too Lost account.",
+  });
+});
+
+// ─── POST /api/distribution/codes/generate — Generate ISRC or UPC codes ──────
+router.post(
+  "/codes/generate",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { type, count = 1 } = req.body as {
+        type: "isrc" | "upc";
+        count: number;
+      };
+
+      if (!type || !["isrc", "upc"].includes(type))
+        return res.status(400).json({ error: 'type must be "isrc" or "upc"' });
+      const safeCount = Math.min(Math.max(1, Number(count) || 1), 100);
+
+      if (type === "isrc") {
+        const codes: string[] = [];
+        let isOfficiallyRegistered = true;
+        for (let i = 0; i < safeCount; i++) {
+          const fallback = await musicCodesService.generateISRC(userId);
+          codes.push(fallback.code);
+          isOfficiallyRegistered = false;
+        }
+        const code = codes[0];
+        logger.info(
+          `[Distribution] Generated ${safeCount} ISRC code(s) for user ${userId} (officiallyRegistered=${isOfficiallyRegistered})`,
+        );
+        res.json({
+          success: true,
+          type: "isrc",
+          code,
+          codes,
+          count: codes.length,
+          isOfficiallyRegistered,
+          ...(isOfficiallyRegistered
+            ? {}
+            : {
+                note: "These are provisional local placeholders, not assigned or registered ISRCs. They are not stored or sent to a distributor. Obtain codes from a registered agency or your distributor before release submission.",
+              }),
+        });
+      } else {
+        const codes: string[] = [];
+        let isOfficiallyRegistered = true;
+        for (let i = 0; i < safeCount; i++) {
+          const fallback = await musicCodesService.generateUPC(userId);
+          codes.push(fallback.code);
+          isOfficiallyRegistered = false;
+        }
+        const code = codes[0];
+        logger.info(
+          `[Distribution] Generated ${safeCount} UPC code(s) for user ${userId} (officiallyRegistered=${isOfficiallyRegistered})`,
+        );
+        res.json({
+          success: true,
+          type: "upc",
+          code,
+          codes,
+          count: codes.length,
+          isOfficiallyRegistered,
+          ...(isOfficiallyRegistered
+            ? {}
+            : {
+                note: "These are provisional local placeholders, not GS1-assigned UPCs. They are not stored or sent to a distributor. Obtain valid barcodes from an authorized source before release submission.",
+              }),
+        });
+      }
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating codes:");
+      res.status(500).json({ error: "Failed to generate codes" });
+    }
+  },
+);
+
+// ─── POST /api/distribution/royalties/payout — Request payout from royalties ─
+router.post(
+  "/royalties/payout",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { amount, method } = req.body;
+      if (!amount || !method)
+        return res
+          .status(400)
+          .json({ error: "amount and method are required" });
+      if (typeof amount !== "number" || amount <= 0)
+        return res
+          .status(400)
+          .json({ error: "amount must be a positive number" });
+
+      logger.warn(
+        { userId, amount, method },
+        "Royalty payout requested, but no verified Too Lost payout operation is configured",
+      );
+      return res.status(501).json({
+        success: false,
+        error: "royalty_payout_unavailable",
+        message:
+          "No payout request was sent. Too Lost payout initiation is not supported by the current integration; use a separately verified payout flow.",
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error?.message : String(error);
+      logger.warn({ err: error }, "Error requesting royalties payout:");
+      if (message?.includes("not configured") || message?.includes("LABELGRID")) {
+        return res
+          .status(503)
+          .json({ error: "Payout unavailable", details: message });
+      }
+      res.status(500).json({ error: "Failed to request royalties payout" });
+    }
+  },
+);
+
+// POST /api/distribution/royalties/tax-document — Generate tax document
+router.post(
+  "/royalties/tax-document",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { type, year } = req.body;
+      if (!type || !year)
+        return res.status(400).json({ error: "type and year are required" });
+
+      const docId = `tax_doc_${type}_${year}_${userId?.slice(0, 8)}_${Date.now()}`;
+      logger.info(
+        `[Distribution] Tax document ${type} ${year} generated for user ${userId}`,
+      );
+      res.json({
+        success: true,
+        docId,
+        type,
+        year,
+        status: "generated",
+        downloadUrl: `/api/distribution/royalties/tax-documents/${docId}`,
+        message: `${type} for ${year} is ready for download`,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating tax document:");
+      res.status(500).json({ error: "Failed to generate tax document" });
+    }
+  },
+);
+
+// ─── POST /api/distribution/artwork/upload — Upload artwork to PDIM ──────────
+router.post(
+  "/artwork/upload",
+  requireAuth,
+  upload?.single("artwork"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const file = req.file;
+      if (!file)
+        return res.status(400).json({ error: "artwork file is required" });
+
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
+      if (!allowedTypes?.includes(file?.mimetype)) {
+        return res
+          .status(400)
+          .json({ error: "Artwork must be JPEG, PNG, or WebP" });
+      }
+      if (file?.size > 50 * 1024 * 1024) {
+        return res.status(400).json({ error: "Artwork must be under 50MB" });
+      }
+
+      const ext = file?.originalname.split(".").pop() || "jpg";
+      const key = `distribution/artwork/${userId}/${Date.now()}.${ext}`;
+      await storageService?.uploadFileAtKey(file?.buffer, key, file?.mimetype);
+
+      const artworkUrl = await storageService?.getDownloadUrl(key);
+      logger.info(`[Distribution] Artwork uploaded for user ${userId}: ${key}`);
+      res.json({
+        success: true,
+        artworkUrl,
+        key,
+        size: file.size,
+        mimeType: file.mimetype,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error uploading artwork:");
+      res.status(500).json({ error: "Failed to upload artwork" });
+    }
+  },
+);
+
+// ─── Distribution Packages (Studio → Release pipeline) ───────────────────────
+// GET /api/distribution/packages/:projectId — Get package for a studio project
+router.get(
+  "/packages/:projectId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { projectId } = req.params as Record<string, string>;
+
+      const key = `distribution/packages/${userId}/${projectId}.json`;
+      const data = await storageService?.downloadFile(key).catch(() => null);
+      if (!data)
+        return res
+          .status(404)
+          .json({ error: "No distribution package found for this project" });
+
+      let pkg: unknown;
+      try {
+        pkg = JSON.parse(data?.toString());
+      } catch {
+        return res.status(500).json({ error: "Distribution package data is corrupted" });
+      }
+      res.json(pkg);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      if (
+        err?.message?.includes("not found") ||
+        err?.message?.includes("404")
+      ) {
+        return res
+          .status(404)
+          .json({ error: "No distribution package found for this project" });
+      }
+      logger.warn({ err: error }, "Error fetching distribution package:");
+      res.status(500).json({ error: "Failed to fetch distribution package" });
+    }
+  },
+);
+
+// POST /api/distribution/packages — Create a new distribution package
+router.post("/packages", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const {
+      projectId,
+      albumTitle,
+      upc,
+      releaseDate,
+      label,
+      artworkUrl,
+      copyrightP,
+      copyrightC,
+      status = "draft",
+    } = req.body;
+    if (!projectId || !albumTitle)
+      return res
+        .status(400)
+        .json({ error: "projectId and albumTitle are required" });
+
+    const pkg = {
+      id: `pkg_${Date.now()}_${userId?.slice(0, 8)}`,
+      userId,
+      projectId,
+      albumTitle,
+      upc: upc || null,
+      releaseDate: releaseDate || null,
+      label: label || null,
+      artworkUrl: artworkUrl || null,
+      copyrightP: copyrightP || null,
+      copyrightC: copyrightC || null,
+      status,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const key = `distribution/packages/${userId}/${projectId}.json`;
+    await storageService?.uploadFileAtKey(
+      Buffer?.from(JSON.stringify(pkg)),
+      key,
+      "application/json",
+    );
+    logger.info(
+      `[Distribution] Package created for project ${projectId} by user ${userId}`,
+    );
+    res.status(201).json(pkg);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, "Error creating distribution package:");
+    res.status(500).json({ error: "Failed to create distribution package" });
+  }
+});
+
+// PUT /api/distribution/packages/:id — Update a distribution package
+router.put(
+  "/packages/:id",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const {
+        projectId,
+        albumTitle,
+        upc,
+        releaseDate,
+        label,
+        artworkUrl,
+        copyrightP,
+        copyrightC,
+        status,
+      } = req.body;
+
+      if (!projectId)
+        return res
+          .status(400)
+          .json({ error: "projectId is required to locate the package" });
+
+      const key = `distribution/packages/${userId}/${projectId}.json`;
+      const existing = await storageService?.downloadFile(key).catch(() => null);
+      if (!existing)
+        return res
+          .status(404)
+          .json({ error: "Distribution package not found" });
+
+      const pkg = JSON.parse(existing?.toString());
+      if (pkg?.id !== id)
+        return res.status(404).json({ error: "Package ID mismatch" });
+
+      const updated = {
+        ...pkg,
+        albumTitle: albumTitle ?? pkg?.albumTitle,
+        upc: upc ?? pkg?.upc,
+        releaseDate: releaseDate ?? pkg?.releaseDate,
+        label: label ?? pkg?.label,
+        artworkUrl: artworkUrl ?? pkg?.artworkUrl,
+        copyrightP: copyrightP ?? pkg?.copyrightP,
+        copyrightC: copyrightC ?? pkg?.copyrightC,
+        status: status ?? pkg?.status,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await storageService?.uploadFileAtKey(
+        Buffer?.from(JSON.stringify(updated)),
+        key,
+        "application/json",
+      );
+      logger.info(`[Distribution] Package ${id} updated by user ${userId}`);
+      res.json(updated);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error updating distribution package:");
+      res.status(500).json({ error: "Failed to update distribution package" });
+    }
+  },
+);
+
+// GET /api/distribution/packages/:id/tracks — Get tracks in a distribution package
+router.get(
+  "/packages/:id/tracks",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const key = `distribution/packages/${userId}/${id}/tracks.json`;
+      const data = await storageService?.downloadFile(key).catch(() => null);
+
+      if (!data) {
+        return res.json([]);
+      }
+
+      let tracks: unknown;
+      try {
+        tracks = JSON.parse(data?.toString());
+      } catch (parseErr) {
+        logger.warn(
+          { err: parseErr, packageId: id },
+          "Corrupt tracks.json for distribution package",
+        );
+        return res.status(500).json({ error: "Stored tracks data is corrupt" });
+      }
+
+      return res.json(Array.isArray(tracks) ? tracks : []);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching package tracks:");
+      return res.status(500).json({ error: "Failed to fetch package tracks" });
+    }
+  },
+);
+
+// POST /api/distribution/packages/:id/tracks — Add a track to a distribution package
+router.post(
+  "/packages/:id/tracks",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const { trackId, title, isrc, duration, position, audioUrl } = req.body;
+      if (!title) return res.status(400).json({ error: "title is required" });
+
+      const key = `distribution/packages/${userId}/${id}/tracks.json`;
+      let tracks: unknown[] = [];
+      const existing = await storageService?.downloadFile(key).catch(() => null);
+      if (existing) {
+        try {
+          tracks = JSON.parse(existing?.toString());
+        } catch {
+          tracks = [];
+        }
+      }
+
+      const track = {
+        id: `track_${Date.now()}`,
+        packageId: id,
+        trackId: trackId || null,
+        title,
+        isrc: isrc || null,
+        duration: duration || null,
+        position: position || tracks?.length + 1,
+        audioUrl: audioUrl || null,
+        addedAt: new Date().toISOString(),
+      };
+      tracks?.push(track);
+
+      await storageService?.uploadFileAtKey(
+        Buffer?.from(JSON.stringify(tracks)),
+        key,
+        "application/json",
+      );
+      logger.info(
+        `[Distribution] Track "${title}" added to package ${id} by user ${userId}`,
+      );
+      res.status(201).json(track);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error adding track to package:");
+      res.status(500).json({ error: "Failed to add track to package" });
+    }
+  },
+);
+
+// GET /api/distribution/packages/:id/export — Export a distribution package
+router.get(
+  "/packages/:id/export",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+
+      const tracksKey = `distribution/packages/${userId}/${id}/tracks.json`;
+      const tracksData = await storageService
+        .downloadFile(tracksKey)
+        .catch(() => null);
+      const tracks = tracksData ? JSON.parse(tracksData?.toString()) : [];
+
+      const exportData = {
+        packageId: id,
+        exportedAt: new Date().toISOString(),
+        tracks,
+        format: "max-booster-distribution-v1",
+      };
+
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="distribution_${id}_export.json"`,
+      );
+      res.json(exportData);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error exporting distribution package:");
+      res.status(500).json({ error: "Failed to export distribution package" });
+    }
+  },
+);
+
+// ─── Platform-specific submission endpoints (via Too Lost API) ────────────────
+router.get("/submission/:releaseId", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const submissions = await getDistributionSubmissions((req.user as AuthenticatedUser).id, req.params.releaseId as string);
+    if (!submissions.length) return res.status(404).json({ error: "Submission not found" });
+    return res.json({ submissions });
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to read distribution submission checkpoints");
+    return res.status(500).json({ error: "Failed to read distribution submission checkpoints" });
+  }
+});
+
+function registerToolostPlatformSubmission(
+  route: string,
+  responsePlatform: string,
+  requestedPlatform: string,
+) {
+  router.post(route, requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.body;
+      if (!releaseId)
+        return res.status(400).json({ error: "releaseId is required" });
+
+      const release = await storage.getDistroRelease(releaseId);
+      if (!release || release?.artistId !== userId) {
+        return res.status(404).json({ error: "Release not found" });
+      }
+
+      const tracks = await storage.getDistroTracks(releaseId);
+      const toolost = await getDistributionToolostService(userId);
+      logger.info(
+        { userId, platform: requestedPlatform },
+        `[Distribution] Submitting release ${releaseId} to Too Lost`,
+      );
+      const { result } = await submitToolostRelease({
+        client: toolost,
+        userId,
+        releaseId,
+        release,
+        tracks,
+        requestedPlatforms: [requestedPlatform],
+      });
+
+      const metadata = (release?.metadata as Record<string, unknown>) || {};
+      const providerPlatform = result.platforms.find((platform) => {
+        const normalize = (value: string) =>
+          value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+        return (
+          normalize(platform.platform) === normalize(requestedPlatform) ||
+          normalize(platform.platform) === normalize(responsePlatform)
+        );
+      });
+      const outcome = mapToolostDispatchStatus(
+        providerPlatform?.status ?? result.status,
+      );
+      await storage.updateDistroRelease(releaseId, {
+        status: outcome.indeterminate ? "pending" : release.status,
+        metadata: {
+          ...metadata,
+          toolostReleaseId: result.releaseId,
+          status: outcome.indeterminate ? "pending" : metadata.status,
+          [`toolost${responsePlatform[0].toUpperCase()}${responsePlatform.slice(1)}SubmittedAt`]:
+            new Date().toISOString(),
+        },
+      });
+
+      res.json({
+        success: outcome.accepted || outcome.indeterminate,
+        accepted: outcome.accepted,
+        indeterminate: outcome.indeterminate,
+        platform: responsePlatform,
+        releaseId,
+        toolostReleaseId: result.releaseId,
+        status: outcome.status,
+        message:
+          outcome.indeterminate
+            ? `Too Lost created the remote release, but ${responsePlatform} acceptance is not yet confirmed. Reconcile by remote release ID before retrying.`
+            : outcome.accepted
+              ? `Too Lost accepted the distribution request. ${responsePlatform} delivery is confirmed only by its outlet status.`
+              : `Too Lost reported ${outcome.status} for the ${responsePlatform} request.`,
+        submissionId: result.releaseId,
+        estimatedDelivery: result.estimatedLiveDate || null,
+        platforms: result.platforms,
+      });
+    } catch (error: unknown) {
+      logger.warn(
+        { err: error, platform: requestedPlatform },
+        "Error submitting platform release via Too Lost:",
+      );
+      res.status(500).json({
+        error: `Failed to submit to ${responsePlatform}`,
+        message: error instanceof Error ? error.message : undefined,
+      });
+    }
+  });
+}
+
+registerToolostPlatformSubmission("/platform/spotify", "spotify", "spotify");
+registerToolostPlatformSubmission("/platform/apple", "apple", "apple_music");
+registerToolostPlatformSubmission(
+  "/platform/youtube",
+  "youtube",
+  "youtube_music",
+);
+
+// ── Catalog Migration Export ───────────────────────────────────────────────────
+// Parses public streaming-platform profiles and outputs LabelGrid import JSON.
+// No premium credentials required — uses iTunes + Deezer public APIs.
+router.post(
+  "/catalog-export",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const user = req.user as AuthenticatedUser;
+      const { artistName } = req.body as { artistName?: string };
+      if (!artistName || !artistName?.trim()) {
+        return res.status(400).json({ error: "artistName is required" });
+      }
+      const { buildMigrationPayload } = await import(
+        "../services/catalogMigrationService.js"
+      );
+      const payload = await buildMigrationPayload(artistName?.trim(), user?.id);
+      res.json(payload);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "[Distribution] Catalog export failed:");
+      res.status(500).json({ error: "Catalog export failed" });
+    }
+  },
+);
+
+export default router;

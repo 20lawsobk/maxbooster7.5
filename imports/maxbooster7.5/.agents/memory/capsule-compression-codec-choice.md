@@ -1,0 +1,91 @@
+---
+name: Deploy capsule compression codec choice and verification method
+description: Real zstd/xz/gzip benchmark results for this project's deploy capsules, and how to validate a codec swap without corrupting live data
+---
+
+# Deploy capsule compression: codec choice + verification method
+
+## The decision
+The user subsequently explicitly requested fusing historical Zstandard level 19
+with the current configuration. Keep level 19 plus the long match window for
+deployment archives, while preserving adaptive source compression and bounded
+scheduler concurrency.
+
+**Why:** The user requested this integration after the image-size failure.
+There is a known speed tradeoff: on the real four-payload, four-CPU workload, level 19 was still
+unfinished after 503 seconds; level 6 completed in 221 seconds including
+reentry backup creation. Codec comparisons alone had hidden the cost of the
+chosen compression level.
+
+**How to apply:** Benchmark both compression levels and include recovery
+overhead. Keep the full image-size gate; faster packing increases archive
+size. The older measurements below establish codec/restore behavior, not a
+requirement to retain level 19.
+
+## Publishing interruption and artifact reuse
+
+Keep level 19, but prepare and verify reusable artifacts before publishing when
+the payload is large. An internal executive budget is not a grant of extra
+publishing time; an interruption near ten minutes does not identify its sender.
+
+**Why:** A real publishing attempt spent almost five minutes on its adaptive
+source capsule and was interrupted shortly after runtime compression began,
+despite reporting substantial internal budget remaining.
+
+**How to apply:** Bind reuse to content and packing policy, not timestamps or
+lockfiles alone. Validate actual archive contents before cache admission and
+checksums on reuse. Keep cold-build behavior and the original shell scaffold.
+
+Include the archive engine's default exclusions in cache admission, not just
+the caller's extra patterns. Keep root-only exclusions scoped to the root.
+
+**Why:** The new identity scanner initially hashed live PDIM snapshot files
+that the actual capsule engine excluded; disappearing temporary snapshots
+then failed preparation and added unnecessary multi-gigabyte reads.
+
+Validate reuse through the configured shell phases, including runtime preparation,
+not only through the cache helper.
+
+**Why:** Standalone archive verification passed while publishing still deleted
+the source cache and downloaded Python over the prepared tree. Wildcard-excluded
+Python cache files also invalidated fingerprints even though they were not archived.
+
+**How to apply:** Preserve healthy prepared runtimes, align fingerprints with
+archive membership, and require actual shell-phase cache-hit evidence before
+claiming that preparation avoids repeated compression.
+
+## Historical codec comparison
+zstd at level 19 with a long-distance-matching window (`--long=27 -T0`) beats both gzip-9 and xz-9e simultaneously on ratio, compress time, AND decompress time for this project's actual capsule content (dependency trees / vendored subsystem checkouts). xz's small ratio edge (~5%) was not worth ~5x the compress time. Do not re-litigate this by guessing — the numbers below are real, on this project's real directories.
+
+**Why:** benchmarked gzip-9 vs zstd-19 vs xz-9e against the real `external/pdim` (499M) and `node_modules` (1.6G) trees. zstd won on every axis. Confirmed again during full production verification across all four real capsule directories.
+
+**How to apply:** if re-benchmarking after a major dependency/vendor-tree change, re-run the same three-way comparison rather than assuming the old numbers still hold — but expect zstd to keep winning for this kind of content (source/dependency trees compress very differently than already-compressed binaries).
+
+## Critical pitfall: benchmark the real restore code path, not a hand-rolled equivalent
+A naive `zstd -T0 -d | tar -x` or `tar -xzf` CLI pipe has measurably different performance than this project's actual restore path, which prefers `bsdtar` (libarchive) for atomic single-process extraction. Measured on `node_modules` (1.6G real content): a raw-pipe benchmark suggested ~15.7s to decompress the legacy gzip-9 capsule, but the real `restoreCapsule()` function (via bsdtar) actually took 25.7s. Always drive timing evidence through the actual shipped function/script, not a proxy shell command — the gap between "looks fine in a benchmark script" and "what boot actually does" can be large enough to flip a regression conclusion.
+
+Net result after switching to zstd-19 and measuring through the real restore path both times: node_modules decompression went from 25.7s (gzip-9) to 15.2s (zstd-19) — faster, not just smaller.
+
+## Small-file source capsules: process overhead matters
+
+Preserve compression quality while avoiding one CLI process per small source
+file and per verification read.
+
+**Why:** A publishing attempt was interrupted with only 2,769 of 11,768 files
+packed. A local 30-file encode/decode comparison measured 5.81s via CLI versus
+0.075s with native Node Zstandard, at the same level/window and comparable size.
+The interruption's sender was not identified; this measurement establishes a
+bottleneck, not proof of the platform's timeout policy.
+
+**How to apply:** Keep large-file adaptive compression separate. Verify native
+frames with the existing CLI decoder, old frames with the native decoder, and
+reopen/extract a persisted capsule in a fresh process.
+
+## Verification technique: hardlink copies for destructive-operation testing
+The real capsule packer deletes its source directory after packing (by design, to avoid double-shipping the bytes). To verify a real production directory survives a pack→restore round trip byte-identically without risking the live directory, snapshot it first with `cp -al <src> <scratch>` (hardlink copy, same filesystem). This is near-instant and uses no extra disk (inodes are shared) since it doesn't duplicate file content — only when the pack step later deletes ITS copy do the hardlinks to the original's inodes keep the real data safe. Confirmed safe and fast on multi-GB real trees (`node_modules`, `external/maxcore`, `external/pdim`).
+
+## Gotcha: live sidecar processes make point-in-time diffs look like false failures
+`external/maxcore` contains `artifacts/ai-training-server/data/local_kv.db` (+ `-shm`/`-wal`), which is actively read/written by a running child process (its own Python server) throughout normal operation. Any `diff -rq` snapshot comparison taken while that process is alive will show these 2-3 files as "differ" — confirmed via process list + mtime correlation, not a compression/restore bug. Before concluding a round-trip corrupted something, check whether the differing paths belong to a live-mutated data file rather than static vendored content.
+
+## Testability pattern: `isMainModule` guard for a zero-dependency ESM boot script
+A boot-time `.mjs` script with no framework (e.g. a capsule restore CLI invoked directly by `start.sh`) can still expose its internal functions (e.g. `restoreCapsule`, a codec→tar-flags mapper) for direct import in tests, as long as its side-effecting CLI dispatch is gated behind an `import.meta.url === pathToFileURL(process.argv[1]).href`-style main-module check. This lets a test import the real functions and call them against scratch paths without triggering the script's real dispatch against the true project root.

@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dns
+      POSTGRES_PASSWORD: dns
+      POSTGRES_DB: dns
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dns"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dns-api:
+    build:
+      context: ../services/dns-api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://dns:dns@postgres:5432/dns?sslmode=disable
+      PORT: "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  dns-authoritative:
+    build:
+      context: ../services/dns-authoritative
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://dns:dns@postgres:5432/dns?sslmode=disable
+      DNS_PORT: "53"
+      ZONE_REFRESH_INTERVAL: "5s"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Expose on host port 5353 to avoid conflicts with the system resolver
+    ports:
+      - "5353:53/udp"
+      - "5353:53/tcp"
+
+volumes:
+  postgres_data:

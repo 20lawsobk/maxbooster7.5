@@ -1,0 +1,60 @@
+import type { PluginDefinition } from "../server/services/pluginHostService";
+
+const MbBrassFlugelhornPlugin: PluginDefinition = {
+  id: "mb-brass-flugelhorn",
+  slug: "mb-brass-flugelhorn",
+  name: "MB Flugelhorn",
+  category: "instrument",
+  type: "brass" as any,
+  version: "1.0.0",
+  description: "Mellow flugelhorn with dark velvety tone",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "triangle", detune: 0, gain: 0.5 },
+    { type: "sawtooth", detune: 0, gain: 0.3 },
+    { type: "sine", detune: 0, gain: 0.2 },
+  ],
+  envelope: { attack: 0.04, decay: 0.3, sustain: 0.8, release: 0.2 },
+  parameters: [
+    {
+      id: "warmth",
+      name: "Warmth",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "vibrato",
+      name: "Vibrato",
+      type: "float",
+      defaultValue: 0.3,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "air",
+      name: "Air",
+      type: "float",
+      defaultValue: 0.2,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { warmth: 0.8, vibrato: 0.3, air: 0.2, volume: 0.8 },
+};
+
+export default MbBrassFlugelhornPlugin;

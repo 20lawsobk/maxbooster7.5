@@ -1,0 +1,11 @@
+server/monitoring/alertingService.ts(136,25): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+server/pocket-dimension/fabric/compression/DeltaEngine.ts(136,26): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+server/services/autopilotCoordinatorService.ts(460,46): error TS18048: 'options.startDate' is possibly 'undefined'.
+server/services/autopilotCoordinatorService.ts(465,46): error TS18048: 'options.endDate' is possibly 'undefined'.
+server/services/mlModelRegistry.ts(407,62): error TS18048: 'filter.minAccuracy' is possibly 'undefined'.
+server/services/pocket-dimension/fabric/compression/DeltaEngine.ts(136,26): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+server/services/releaseWorkflow.ts(591,48): error TS18048: 'options.startDate' is possibly 'undefined'.
+server/services/releaseWorkflow.ts(595,48): error TS18048: 'options.endDate' is possibly 'undefined'.

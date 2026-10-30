@@ -1,0 +1,60 @@
+import type { PluginDefinition } from "../server/services/pluginHostService";
+
+const MbVocalTalkboxPlugin: PluginDefinition = {
+  id: "mb-vocal-talkbox",
+  slug: "mb-vocal-talkbox",
+  name: "MB Talkbox",
+  category: "instrument",
+  type: "vocal" as any,
+  version: "1.0.0",
+  description: "Talkbox effect synth with vowel shaping",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sawtooth", detune: 0, gain: 0.6 },
+    { type: "square", detune: 0, gain: 0.3 },
+    { type: "sine", detune: 0, gain: 0.1 },
+  ],
+  envelope: { attack: 0.01, decay: 0.15, sustain: 0.9, release: 0.1 },
+  parameters: [
+    {
+      id: "vowel",
+      name: "Vowel Shape",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "drive",
+      name: "Drive",
+      type: "float",
+      defaultValue: 0.4,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "formant",
+      name: "Formant",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { vowel: 0.5, drive: 0.4, formant: 0.5, volume: 0.8 },
+};
+
+export default MbVocalTalkboxPlugin;

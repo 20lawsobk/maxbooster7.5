@@ -1,0 +1,1861 @@
+import os from "os";
+import { once } from "node:events";
+import { proxyLifetime, waitForProxyRecovery } from "../config/proxy-lifecycle.js";
+import { plannedGenerationDeadlineMs } from "../config/planned-generation-policy.js";
+import fs from "fs";
+import { Router, type IRouter, type Request, type Response } from "express";
+import { Agent, request as undiciRequest } from "undici";
+import rateLimit from "express-rate-limit";
+import { isPythonRestarting } from "../server-state.js";
+import { runActivation, getKeepaliveStatus } from "../keepalive.js";
+import { modelAuthHeaders, modelOwnedBody } from "../config/model-auth.js";
+import { isOperationallyReady } from "./health.js";
+import {
+  recordLatency,
+  recordRequest,
+  getP95LatencyMs,
+  getRequestsTotal,
+  getRequestsByRoute,
+} from "../metrics.js";
+
+const router: IRouter = Router();
+
+const MODEL_API_PORT = process.env.MODEL_API_PORT || "9878";
+const MODEL_API_BASE = `http://localhost:${MODEL_API_PORT}`;
+
+// Application-authorized callers supply an explicit service credential.
+// Never substitute server/admin credentials for unauthenticated requests.
+
+// ─── Keep-alive connection pool ─────────────────────────────────────────────
+// Reuse TCP connections to the Python server — eliminates per-request TCP
+// handshake overhead.  Pool tuned for high-concurrency AI proxy:
+//   connections: cpu*8 (min 64) — enough concurrent in-flight requests for
+//     all Node workers × expected generation bursts without queuing at the pool.
+//   keepAliveTimeout: 300s — matches uvicorn's timeout_keep_alive so the
+//     server side never closes first (avoids ECONNRESET under load).
+//   headersTimeout/bodyTimeout added per-request (see undiciRequest calls) so
+//     long model generations never get aborted by socket inactivity.
+const _keepAlivePool = new Agent({
+  keepAliveTimeout: 300_000,
+  keepAliveMaxTimeout: 600_000,
+  connections: Math.max(64, os.cpus().length * 8),
+  pipelining: 1,
+});
+
+// ─── Circuit Breaker ────────────────────────────────────────────────────────
+// After CB_FAILURE_THRESHOLD consecutive upstream failures the circuit opens
+// and requests fail-fast with 503 for CB_RECOVERY_MS, then enter half-open
+// (one probe allowed through). Resets fully on any successful response.
+
+const CB_FAILURE_THRESHOLD = 5;
+// Short recovery window: the proxy hold-queue (waitForRecovery) absorbs the
+// restart delay, so the CB only needs to be long enough for one probe attempt.
+// 1.5 s keeps the half-open cycle tight so held requests drain quickly once
+// Python is back — they no longer race against a 15 s timer.
+const CB_RECOVERY_MS = 1_500;
+
+let _cbFailures = 0;
+let _cbOpenSince: number | null = null;
+
+function _cbIsOpen(): boolean {
+  if (_cbOpenSince === null) return false;
+  if (Date.now() - _cbOpenSince >= CB_RECOVERY_MS) {
+    // half-open: reset so the next request probes the upstream
+    _cbOpenSince = null;
+    _cbFailures = 0;
+    return false;
+  }
+  return true;
+}
+
+function _cbRecordSuccess(): void {
+  _cbFailures = 0;
+  _cbOpenSince = null;
+}
+
+function _cbRecordFailure(): void {
+  _cbFailures++;
+  if (_cbFailures >= CB_FAILURE_THRESHOLD && _cbOpenSince === null) {
+    _cbOpenSince = Date.now();
+    console.warn(
+      `[CircuitBreaker] Opened after ${_cbFailures} consecutive failures — half-open probe in ${CB_RECOVERY_MS}ms`,
+    );
+  }
+}
+
+/** Returns the circuit breaker state string for the metrics endpoint. */
+function _cbState(): "closed" | "open" | "half-open" {
+  if (_cbOpenSince === null) return "closed";
+  if (Date.now() - _cbOpenSince >= CB_RECOVERY_MS) return "half-open";
+  return "open";
+}
+
+// ─── Per-route rate limiters ─────────────────────────────────────────────────
+// Tighter limits for expensive or security-sensitive routes.
+// The global 300 req/min limiter in app.ts still applies on top.
+
+/** 10 req/min — generation endpoints (expensive AI inference). */
+const _generationLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+
+  message: { error: "Generation rate limit exceeded. Max 10 requests/minute." },
+});
+
+/** 5 req/min — audio generation (most expensive). */
+const _audioLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+
+  message: { error: "Audio rate limit exceeded. Max 5 requests/minute." },
+});
+
+/** 120 req/min — read/status endpoints (keep loose for polling). */
+const _readLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 120,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+
+  message: { error: "Status rate limit exceeded. Max 120 requests/minute." },
+});
+
+// Recovery holds have a deadline and belong to the connected client.
+const REQUEST_HOLD_MS = 90_000;
+async function waitForRecovery(signal: AbortSignal): Promise<void> {
+  await waitForProxyRecovery(() => !_cbIsOpen() && !isPythonRestarting(), signal, REQUEST_HOLD_MS);
+}
+
+// ─── TTL Cache for hot read-only endpoints ─────────────────────────────────
+
+interface CacheEntry {
+  data: unknown;
+  status: number;
+  expiry: number;
+}
+
+const _cache = new Map<string, CacheEntry>();
+
+const CACHE_TTL_MS: Record<string, number> = {
+  "/dashboard/stats": 5_000,
+  "/health": 8_000,
+  "/model/status": 8_000,
+  "/gpu/status": 6_000,
+  "/gpu/hyper/status": 6_000,
+  "/gpu/silicon/status": 6_000,
+  "/gpu/capabilities": 15_000,
+  "/storage/status": 10_000,
+  "/watchdog/status": 10_000,
+  "/training/continuous/status": 4_000,
+  "/training/puller/status": 8_000,
+  "/training/puller/sources": 30_000,
+};
+
+function getCached(path: string): CacheEntry | null {
+  const entry = _cache.get(path);
+  if (entry && entry.expiry > Date.now()) return entry;
+  _cache.delete(path);
+  return null;
+}
+
+function setCached(path: string, status: number, data: unknown): void {
+  const ttl = CACHE_TTL_MS[path];
+  if (ttl) _cache.set(path, { data, status, expiry: Date.now() + ttl });
+}
+
+// ─── Awareness Enrichment ───────────────────────────────────────────────────
+// Fetches live industry context and merges it into req.body.awareness before
+// proxying to the Python AI server. Always additive — never blocks generation.
+// A 3 s race guard prevents cold-cache RSS fetches from delaying responses.
+
+// ─── Body normalisation ─────────────────────────────────────────────────────
+// Renames mis-cased or aliased fields and injects missing required defaults
+// before forwarding to the Python AI server.  The Python schemas use strict
+// FastAPI validation (422 on any missing required field), so we fix things
+// here rather than in every caller / dashboard page.
+
+function _resolveUserId(body: Record<string, unknown>): string {
+  return (
+    (body["user_id"] as string | undefined)?.trim() ||
+    (body["userId"] as string | undefined)?.trim() ||
+    (body["artistProfileId"] as string | undefined)?.trim() ||
+    "default_user"
+  );
+}
+
+function normalizeBody(
+  req: Request,
+  renames: Array<[from: string, to: string]>,
+  defaults: Array<[key: string, value: unknown]>,
+): void {
+  const body = req.body as Record<string, unknown>;
+  for (const [from, to] of renames) {
+    if (body[from] !== undefined && (body[to] === undefined || body[to] === null || body[to] === "")) {
+      body[to] = body[from];
+    }
+    // always remove the aliased key so Python never sees both
+    if (from !== to) delete body[from];
+  }
+  for (const [key, value] of defaults) {
+    if (body[key] === undefined || body[key] === null || body[key] === "") {
+      body[key] = value;
+    }
+  }
+}
+
+// ─── Safe JSON parsing (handles non-JSON upstream error bodies) ─────────────
+
+async function parseBodyText(body: {
+  text(): Promise<string>;
+}): Promise<unknown> {
+  const text = await body.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: "Upstream returned non-JSON", detail: text.slice(0, 300) };
+  }
+}
+
+// ─── Shared error handler for proxy network failures ─────────────────────────
+
+function handleProxyNetworkError(
+  err: unknown,
+  res: Response,
+  path: string,
+): void {
+  if (res.destroyed) return;
+  if (res.headersSent) { res.destroy(); return; }
+  const elapsed = Date.now();
+  console.error(`[Proxy] Network error proxying to ${path}:`, err);
+  const e = err as any;
+  if (e.name === "AbortError" || e.name === "TimeoutError" ||
+      e.code === "ABORT_ERR" || e.code === "UND_ERR_HEADERS_TIMEOUT" ||
+      e.code === "UND_ERR_BODY_TIMEOUT") {
+    _cbRecordFailure();
+    res.status(504).json({
+      error: "Upstream aborted",
+      detail: "AI training server connection was aborted.",
+    });
+  } else if (
+    (e as NodeJS.ErrnoException).code === "ECONNREFUSED" ||
+    e.cause?.code === "ECONNREFUSED"
+  ) {
+    _cbRecordFailure();
+    res.status(503).json({
+      error: "AI model server unavailable",
+      detail:
+        "The Python AI training server is not running or still initializing.",
+    });
+  } else if (
+    e.cause?.code === "UND_ERR_SOCKET" ||
+    e.cause?.message?.includes("other side closed") ||
+    e.code === "UND_ERR_SOCKET"
+  ) {
+    _cbRecordFailure();
+    res.status(503).json({
+      error: "AI model server closed connection",
+      detail:
+        "The connection closed before a result was confirmed. Check the operation or job status before submitting again.",
+    });
+  } else {
+    res.status(500).json({ error: "Proxy error", detail: String(err) });
+  }
+  void elapsed;
+}
+
+// Only safe reads may retry a dropped connection. A mutation may already have
+// committed before its response was lost; automatic replay would duplicate it.
+function _isTransientConnErr(e: unknown): boolean {
+  const err = e as any;
+  return (
+    err.code === "ECONNREFUSED" ||
+    err.cause?.code === "ECONNREFUSED" ||
+    err.cause?.code === "UND_ERR_SOCKET" ||
+    err.code === "UND_ERR_SOCKET" ||
+    Boolean(err.cause?.message?.includes("other side closed"))
+  );
+}
+
+async function _upstreamRequest(
+  url: string,
+  options: Parameters<typeof undiciRequest>[1],
+): ReturnType<typeof undiciRequest> {
+  let attempt = 0;
+  for (;;) {
+    try {
+      return await undiciRequest(url, options);
+    } catch (err) {
+      if (_isTransientConnErr(err) && attempt < 1 &&
+          ["GET", "HEAD"].includes(String(options?.method ?? "GET").toUpperCase())) {
+        attempt++;
+        _cbRecordFailure(); // open CB if threshold reached
+        console.log(
+          `[Proxy] Connection error (attempt ${attempt}) — waiting for recovery then retrying ${url}`,
+        );
+        await waitForRecovery(options?.signal as AbortSignal);
+        // loop: try again — Python may still be settling even after the flag clears
+      } else {
+        throw err; // non-transient — propagate to handleProxyNetworkError
+      }
+    }
+  }
+}
+
+// ─── Core proxy function ────────────────────────────────────────────────────
+
+async function proxyRequest(
+  req: Request,
+  res: Response,
+  path: string,
+): Promise<void> {
+  const authHeaders = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!authHeaders) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+  // Credential validation happens in Python. A path-only cache cannot safely
+  // return a prior authorized response to an unvalidated credential.
+  const isGet = req.method === "GET" || req.method === "HEAD";
+  const awarenessOnly = path === "/api/awareness/unified/status" ||
+    path === "/api/awareness/unified/context";
+  const accountAnalytics = ["/api/analytics/capability", "/api/analytics/predict", "/api/analytics/insights"].includes(path);
+  const generationDeadline = plannedGenerationDeadlineMs(path, req.body);
+  const diagnosticOnly = ["/health", "/api/health", "/ready", "/api/ready"].includes(path);
+  const directDeadline = awarenessOnly || diagnosticOnly ? 4_000 : accountAnalytics ? 10_000 : generationDeadline;
+  const startTime = Date.now();
+  // Track per-route and total request counts
+  recordRequest(req.path ?? path);
+
+
+  const lifetime = proxyLifetime(req, res, directDeadline ?? REQUEST_HOLD_MS);
+  try {
+    if (!directDeadline && (_cbIsOpen() || isPythonRestarting())) {
+      await waitForRecovery(lifetime.signal);
+    }
+    const url = `${MODEL_API_BASE}${path}`;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...authHeaders,
+    };
+    // Awareness/planning do not require weights. Every generation request,
+    // including missing/stale receipts, reaches Python's authoritative checks rather
+    // than hang behind a model-recovery flag. This never bypasses Python auth,
+    // snapshot validation or generation quality gates.
+    const send = directDeadline ? undiciRequest : _upstreamRequest;
+    const upstreamRes = await send(url, {
+      method: req.method as any,
+      dispatcher: _keepAlivePool,
+      headers,
+      body: !isGet && req.body ? JSON.stringify(accountAnalytics ? req.body : modelOwnedBody(req.body, authHeaders)) : undefined,
+      headersTimeout: directDeadline ?? 0,
+      bodyTimeout: directDeadline ?? 0,
+      signal: lifetime.signal,
+    });
+
+    const data = await parseBodyText(upstreamRes.body);
+
+    // Any HTTP response proves connectivity. Core dependency/awareness failures
+    // retain their 503 response but must not trip the transport breaker.
+    _cbRecordSuccess();
+
+
+    recordLatency(Date.now() - startTime);
+    res.setHeader("X-Cache", "MISS");
+    res.status(upstreamRes.statusCode).json(data);
+  } catch (err) {
+    recordLatency(Date.now() - startTime);
+    console.error(
+      `[Proxy] Error proxying to ${path} (${Date.now() - startTime}ms):`,
+      err,
+    );
+    if (!res.destroyed) handleProxyNetworkError(err, res, path);
+  } finally {
+    lifetime.dispose();
+  }
+}
+
+async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
+  const contentType = String(req.headers["content-type"] || "").split(";", 1)[0].toLowerCase();
+  if (!contentType.startsWith("audio/")) {
+    res.status(415).json({ error: "Content-Type must be a supported audio type" });
+    return;
+  }
+  const declared = Number(req.headers["content-length"] || 0);
+  if (Number.isFinite(declared) && declared > 100 * 1024 * 1024) {
+    res.status(413).json({ error: "Audio upload exceeds size limit" });
+    return;
+  }
+  const auth = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  const userId = auth?.["X-MaxCore-User-Id"];
+  if (!userId || Array.isArray(userId)) {
+    res.status(401).json({ error: "Authenticated MaxCore user identity is required" });
+    return;
+  }
+  const headers: Record<string, string> = {
+    "Content-Type": contentType,
+    "X-MaxCore-User-Id": userId,
+  };
+  if (!auth) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+  Object.assign(headers, auth);
+  const lifetime = proxyLifetime(req, res, 120_000);
+  try {
+    // Raw request streams are not replayable; never run this upload through the
+    // transient retry loop (which could otherwise create a truncated duplicate).
+    const upstream = await undiciRequest(`${MODEL_API_BASE}/api/audio/upload`, {
+      method: "POST",
+      dispatcher: _keepAlivePool,
+      headers,
+      body: req,
+      headersTimeout: 30_000,
+      bodyTimeout: 120_000,
+      signal: lifetime.signal,
+    });
+    const data = await parseBodyText(upstream.body);
+    res.status(upstream.statusCode).json(data);
+  } catch (error) {
+    handleProxyNetworkError(error, res, "/api/audio/upload");
+  } finally {
+    lifetime.dispose();
+  }
+}
+
+function analysisHeaders(req: Request, contentType: string): Record<string, string> | null {
+  const auth = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  const owner = auth?.["X-MaxCore-User-Id"];
+  if (
+    !owner ||
+    Array.isArray(owner) ||
+    !owner.trim() ||
+    owner.length > 256 ||
+    [...owner].some((character) => character.charCodeAt(0) < 32)
+  ) {
+    return null;
+  }
+  if (!auth || !auth.Authorization) return null;
+  return {
+    "Content-Type": contentType,
+    ...auth,
+    "X-MaxCore-User-Id": owner.trim(),
+  };
+}
+
+async function proxyAnalysisJson(
+  req: Request,
+  res: Response,
+  endpoint: "image" | "video" | "text" | "website",
+): Promise<void> {
+  const headers = analysisHeaders(req, "application/json");
+  if (!headers) {
+    res.status(401).json({ error: "Generation auth and authenticated MaxCore user identity are required" });
+    return;
+  }
+  const lifetime = proxyLifetime(req, res, 120_000);
+  try {
+    const upstream = await undiciRequest(`${MODEL_API_BASE}/api/analysis/${endpoint}`, {
+      method: "POST",
+      dispatcher: _keepAlivePool,
+      headers,
+      body: JSON.stringify(modelOwnedBody(req.body ?? {}, headers)),
+      headersTimeout: 30_000,
+      bodyTimeout: 120_000,
+      signal: lifetime.signal,
+    });
+    const data = await parseBodyText(upstream.body);
+    res.status(upstream.statusCode).json(data);
+  } catch (error) {
+    handleProxyNetworkError(error, res, `/api/analysis/${endpoint}`);
+  } finally {
+    lifetime.dispose();
+  }
+}
+
+async function proxyAnalysisUpload(req: Request, res: Response): Promise<void> {
+  const contentType = String(req.headers["content-type"] || "").split(";", 1)[0].toLowerCase();
+  const headers = analysisHeaders(req, contentType);
+  if (!headers) {
+    res.status(401).json({ error: "Generation auth and authenticated MaxCore user identity are required" });
+    return;
+  }
+  const kind = req.query.kind;
+  if (kind !== "image" && kind !== "video") {
+    res.status(400).json({ error: "kind must be image or video" });
+    return;
+  }
+  const supportedTypes = kind === "image"
+    ? new Set(["image/jpeg", "image/png", "image/webp"])
+    : new Set(["video/mp4", "video/webm", "video/quicktime"]);
+  if (!supportedTypes.has(contentType)) {
+    res.status(415).json({ error: "Upload Content-Type is unsupported" });
+    return;
+  }
+  const limit = kind === "image" ? 16 * 1024 * 1024 : 100 * 1024 * 1024;
+  if (req.headers["content-length"] !== undefined) {
+    const declared = Number(req.headers["content-length"]);
+    if (!Number.isSafeInteger(declared) || declared < 0) {
+      res.status(400).json({ error: "Invalid Content-Length" });
+      return;
+    }
+    if (declared > limit) {
+      res.status(413).json({ error: "Analysis upload exceeds size limit" });
+      return;
+    }
+  }
+  const lifetime = proxyLifetime(req, res, 120_000);
+  try {
+    // The incoming stream cannot be replayed: bypass _upstreamRequest retries.
+    const upstream = await undiciRequest(
+      `${MODEL_API_BASE}/api/analysis/upload?kind=${kind}`,
+      {
+        method: "POST",
+        dispatcher: _keepAlivePool,
+        headers,
+        body: req,
+        headersTimeout: 30_000,
+        bodyTimeout: 120_000,
+        signal: lifetime.signal,
+      },
+    );
+    const data = await parseBodyText(upstream.body);
+    res.status(upstream.statusCode).json(data);
+  } catch (error) {
+    handleProxyNetworkError(error, res, "/api/analysis/upload");
+  } finally {
+    lifetime.dispose();
+  }
+}
+
+// ─── Binary proxy ─────────────────────────────────────────────────────────────
+// Used for endpoints that return non-JSON (e.g. image/jpeg frame previews).
+// Streams the raw upstream body through with the correct Content-Type header.
+// Falls back to JSON error forwarding on non-200 responses.
+
+async function proxyBinary(
+  req: Request,
+  res: Response,
+  path: string,
+): Promise<void> {
+  const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!headers) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+  const lifetime = proxyLifetime(req, res, 90_000);
+  try {
+    if (_cbIsOpen() || isPythonRestarting()) await waitForRecovery(lifetime.signal);
+    const url = `${MODEL_API_BASE}${path}`;
+    const upstreamRes = await _upstreamRequest(url, {
+      method: req.method as any,
+      dispatcher: _keepAlivePool,
+      headers,
+      headersTimeout: 0,
+      bodyTimeout: 0,
+      signal: lifetime.signal,
+    });
+
+    if (upstreamRes.statusCode >= 500) {
+      _cbRecordFailure();
+    } else {
+      _cbRecordSuccess();
+    }
+
+    if (upstreamRes.statusCode !== 200) {
+      // Non-200: try to forward as JSON, fall back to plain text
+      const text = await upstreamRes.body.text();
+      try {
+        res.status(upstreamRes.statusCode).json(JSON.parse(text));
+      } catch {
+        res.status(upstreamRes.statusCode).send(text);
+      }
+      return;
+    }
+
+    const contentType =
+      (upstreamRes.headers["content-type"] as string | undefined) ??
+      "application/octet-stream";
+    res.setHeader("Content-Type", contentType);
+    res.status(200);
+    const buf = Buffer.from(await upstreamRes.body.arrayBuffer());
+    res.send(buf);
+  } catch (err) {
+    if (!res.destroyed) handleProxyNetworkError(err, res, path);
+  } finally {
+    lifetime.dispose();
+  }
+}
+
+// ─── Streamed binary proxy (large files) ────────────────────────────────────
+// Used for rendered video downloads, which can be tens of MB and must not be
+// fully buffered into memory. It has a ten-minute client-bound deadline rather
+// than the preview path's ninety seconds. Pipes the upstream body straight
+// through to the response and preserves Content-Type/Content-Length/
+// Content-Disposition so download filename semantics survive the proxy hop.
+
+async function proxyBinaryStream(
+  req: Request,
+  res: Response,
+  path: string,
+): Promise<void> {
+  const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!headers) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+  const lifetime = proxyLifetime(req, res, 600_000);
+  try {
+    if (_cbIsOpen() || isPythonRestarting()) await waitForRecovery(lifetime.signal);
+    const url = `${MODEL_API_BASE}${path}`;
+    const upstreamRes = await _upstreamRequest(url, {
+      method: req.method as any,
+      dispatcher: _keepAlivePool,
+      headers,
+      headersTimeout: 0,
+      bodyTimeout: 0,
+      signal: lifetime.signal,
+    });
+
+    if (upstreamRes.statusCode >= 500) {
+      _cbRecordFailure();
+    } else {
+      _cbRecordSuccess();
+    }
+
+    if (upstreamRes.statusCode !== 200) {
+      const text = await upstreamRes.body.text();
+      try {
+        res.status(upstreamRes.statusCode).json(JSON.parse(text));
+      } catch {
+        res.status(upstreamRes.statusCode).send(text);
+      }
+      return;
+    }
+
+    const contentType =
+      (upstreamRes.headers["content-type"] as string | undefined) ??
+      "application/octet-stream";
+    res.setHeader("Content-Type", contentType);
+    const contentLength = upstreamRes.headers["content-length"];
+    if (contentLength) res.setHeader("Content-Length", contentLength as string);
+    const disposition = upstreamRes.headers["content-disposition"];
+    if (disposition)
+      res.setHeader("Content-Disposition", disposition as string);
+    res.status(200);
+
+    for await (const chunk of upstreamRes.body) {
+      if (!res.write(chunk)) {
+        await once(res, "drain", { signal: lifetime.signal });
+      }
+    }
+    res.end();
+  } catch (err) {
+    if (!res.destroyed) handleProxyNetworkError(err, res, path);
+  } finally {
+    lifetime.dispose();
+  }
+}
+
+// ─── Routes ─────────────────────────────────────────────────────────────────
+
+// Internal native-analysis proxy. These explicit routes intentionally precede
+// all parameterized model routes and require both server generation auth and
+// the identity asserted by the trusted MaxCore gateway.
+router.post("/analysis/upload", _generationLimiter, proxyAnalysisUpload);
+for (const endpoint of ["image", "video", "text", "website"] as const) {
+  router.post(`/analysis/${endpoint}`, _generationLimiter, async (req, res) => {
+    await proxyAnalysisJson(req, res, endpoint);
+  });
+}
+
+router.get("/health", async (req, res) => {
+  await proxyRequest(req, res, "/health");
+});
+
+// Detailed model + Digital GPU health (Python /api/health)
+router.get("/api/health", async (req, res) => {
+  await proxyRequest(req, res, "/api/health");
+});
+
+router.get("/api-keys", async (req, res) => {
+  await proxyRequest(req, res, "/api-keys");
+});
+
+router.post("/api-keys", async (req, res) => {
+  await proxyRequest(req, res, "/api-keys");
+});
+
+router.delete("/api-keys/:keyId", async (req, res) => {
+  await proxyRequest(req, res, `/api-keys/${req.params.keyId}`);
+});
+
+router.post("/api-keys/:keyId/rotate", async (req, res) => {
+  await proxyRequest(req, res, `/api-keys/${req.params.keyId}/rotate`);
+});
+
+router.get("/model/status", async (req, res) => {
+  await proxyRequest(req, res, "/model/status");
+});
+
+router.get("/gpu/status", async (req, res) => {
+  await proxyRequest(req, res, "/gpu/status");
+});
+
+router.get("/gpu/hyper/status", async (req, res) => {
+  await proxyRequest(req, res, "/gpu/hyper/status");
+});
+
+router.get("/gpu/silicon/status", async (req, res) => {
+  await proxyRequest(req, res, "/gpu/silicon/status");
+});
+
+router.get("/gpu/capabilities", async (req, res) => {
+  await proxyRequest(req, res, "/gpu/capabilities");
+});
+
+router.get("/training/status", async (req, res) => {
+  await proxyRequest(req, res, "/training/status");
+});
+
+// Management must remain reachable while waiting for the first reviewed model.
+// Python validates the caller's admin credential; never insert a server key.
+router.get("/training/live/status", async (req, res) => {
+  const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!headers) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+  try {
+    const upstream = await undiciRequest(`${MODEL_API_BASE}/api/training/live/status`, {
+      method: "GET", dispatcher: _keepAlivePool, headers,
+      signal: AbortSignal.timeout(5_000), headersTimeout: 5_000, bodyTimeout: 5_000,
+    });
+    res.status(upstream.statusCode).json(await parseBodyText(upstream.body));
+  } catch {
+    res.status(503).json({ error: "Local live-learning service unavailable" });
+  }
+});
+
+router.post("/training/start", async (req, res) => {
+  await proxyRequest(req, res, "/training/start");
+});
+
+router.get("/training/logs", async (req, res) => {
+  await proxyRequest(
+    req,
+    res,
+    `/training/logs${req.query.limit ? `?limit=${req.query.limit}` : ""}`,
+  );
+});
+
+router.post("/training/stop", async (req, res) => {
+  await proxyRequest(req, res, "/training/stop");
+});
+
+router.get("/training/datasets", async (req, res) => {
+  await proxyRequest(req, res, "/training/datasets");
+});
+
+router.post("/training/schedule", async (req, res) => {
+  await proxyRequest(req, res, "/training/schedule");
+});
+
+// ─── Continuous Training ───────────────────────────────────────────────────
+
+router.get("/training/continuous/status", async (req, res) => {
+  await proxyRequest(req, res, "/training/continuous/status");
+});
+
+router.post("/training/continuous/start", async (req, res) => {
+  await proxyRequest(req, res, "/training/continuous/start");
+});
+
+router.post("/training/continuous/stop", async (req, res) => {
+  await proxyRequest(req, res, "/training/continuous/stop");
+});
+
+router.get("/training/continuous/history", async (req, res) => {
+  await proxyRequest(req, res, "/training/continuous/history");
+});
+
+// ─── Data Puller ───────────────────────────────────────────────────────────
+
+router.get("/training/puller/status", async (req, res) => {
+  await proxyRequest(req, res, "/training/puller/status");
+});
+
+router.get("/training/puller/sources", async (req, res) => {
+  await proxyRequest(req, res, "/training/puller/sources");
+});
+
+router.post("/training/puller/pull", async (req, res) => {
+  await proxyRequest(req, res, "/training/puller/pull");
+});
+
+router.post("/training/puller/start", async (req, res) => {
+  await proxyRequest(
+    req,
+    res,
+    `/training/puller/start${req.query.interval_minutes ? `?interval_minutes=${req.query.interval_minutes}` : ""}`,
+  );
+});
+
+router.post("/training/puller/stop", async (req, res) => {
+  await proxyRequest(req, res, "/training/puller/stop");
+});
+
+router.get("/platform/video/generate", async (req, res) => {
+  await proxyRequest(req, res, "/platform/video/generate");
+});
+
+router.post("/platform/video/generate", async (req, res) => {
+  // Python: PlatformVideoRequest { user_id, topic, ... }
+  // Dashboard sends: { idea, ...} with no user_id
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [["idea", "topic"]],  // rename idea → topic
+    [
+      ["user_id", _resolveUserId(b)],
+      ["topic",   (b["topic"] ?? b["idea"] ?? "") as string],
+    ],
+  );
+  await proxyRequest(req, res, "/platform/video/generate");
+});
+
+router.post("/content/generate", async (req, res) => {
+  await proxyRequest(req, res, "/content/generate");
+});
+
+// ─── URL Parser Inspector ───────────────────────────────────────────────────
+
+router.get("/url-parser/inspect", async (req, res) => {
+  const url = req.query.url as string | undefined;
+  if (!url) {
+    res.status(422).json({ error: "url query parameter is required" });
+    return;
+  }
+  await proxyRequest(req, res, `/api/url-parser/inspect?url=${encodeURIComponent(url)}`);
+});
+
+router.get("/url-parser/content", async (req, res) => {
+  const url = req.query.url as string | undefined;
+  if (!url) {
+    res.status(422).json({ error: "url query parameter is required" });
+    return;
+  }
+  const platform = (req.query.platform as string | undefined) ?? "";
+  await proxyRequest(
+    req,
+    res,
+    `/api/url-parser/content?url=${encodeURIComponent(url)}&platform=${encodeURIComponent(platform)}`,
+  );
+});
+
+router.get("/boostsheets", async (req, res) => {
+  await proxyRequest(req, res, "/boostsheets");
+});
+
+router.get("/dashboard/stats", async (req, res) => {
+  await proxyRequest(req, res, "/dashboard/stats");
+});
+
+router.get("/storage/status", async (req, res) => {
+  await proxyRequest(req, res, "/storage/status");
+});
+
+router.post("/storage/feedback", async (req, res) => {
+  await proxyRequest(req, res, "/storage/feedback");
+});
+
+router.get("/storage/curriculum/:userId", async (req, res) => {
+  await proxyRequest(req, res, `/storage/curriculum/${req.params.userId}`);
+});
+
+router.get("/storage/datasets", async (req, res) => {
+  await proxyRequest(req, res, "/storage/datasets");
+});
+
+router.post("/storage/datasets/register", async (req, res) => {
+  await proxyRequest(req, res, "/storage/datasets/register");
+});
+
+router.get("/storage/datasets/audio/status", async (req, res) => {
+  await proxyRequest(req, res, "/storage/datasets/audio/status");
+});
+
+router.post("/storage/datasets/audio/seed", async (req, res) => {
+  await proxyRequest(req, res, "/storage/datasets/audio/seed");
+});
+
+router.get("/storage/checkpoints", async (req, res) => {
+  await proxyRequest(req, res, "/storage/checkpoints");
+});
+
+router.post("/storage/checkpoint/save", async (req, res) => {
+  await proxyRequest(req, res, "/storage/checkpoint/save");
+});
+
+router.get("/storage/checkpoint/:modelId", async (req, res) => {
+  await proxyRequest(req, res, `/storage/checkpoint/${req.params.modelId}`);
+});
+
+router.get("/storage/session", async (req, res) => {
+  await proxyRequest(req, res, "/storage/session");
+});
+
+router.get("/storage/pipeline/status", async (req, res) => {
+  await proxyRequest(req, res, "/storage/pipeline/status");
+});
+
+router.get("/storage/artist/:profileId", async (req, res) => {
+  await proxyRequest(
+    req,
+    res,
+    `/storage/artist/${encodeURIComponent(req.params.profileId)}`,
+  );
+});
+
+router.post("/storage/artist/:profileId", async (req, res) => {
+  await proxyRequest(
+    req,
+    res,
+    `/storage/artist/${encodeURIComponent(req.params.profileId)}`,
+  );
+});
+
+router.post("/storage/artist/:profileId/releases", async (req, res) => {
+  await proxyRequest(
+    req,
+    res,
+    `/storage/artist/${encodeURIComponent(req.params.profileId)}/releases`,
+  );
+});
+
+router.post("/training/start-from-storage", async (req, res) => {
+  await proxyRequest(req, res, "/training/start-from-storage");
+});
+
+// ─── Platform API Routes — Main Music Platform Integration ───────────────────
+
+router.post("/platform/social/generate", async (req, res) => {
+  // Python: PlatformSocialRequest { user_id, topic, platform, ... }
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [["userId", "user_id"]],
+    [
+      ["user_id", _resolveUserId(b)],
+      ["topic",   (b["topic"] ?? b["idea"] ?? b["content"] ?? "") as string],
+    ],
+  );
+  await proxyRequest(req, res, "/platform/social/generate");
+});
+
+router.post("/platform/social/autopilot", async (req, res) => {
+  // Python: PlatformAutopilotRequest { user_id, ... }
+  // Dashboard sends userId (camelCase)
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [["userId", "user_id"]],
+    [["user_id", _resolveUserId(b)]],
+  );
+  await proxyRequest(req, res, "/platform/social/autopilot");
+});
+
+router.post("/platform/daw/generate", async (req, res) => {
+  // Python: PlatformDAWRequest { user_id, mode, topic, ... }
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [["userId", "user_id"]],
+    [
+      ["user_id", _resolveUserId(b)],
+      ["mode",    "lyrics"],
+    ],
+  );
+  await proxyRequest(req, res, "/platform/daw/generate");
+});
+
+router.post("/platform/distribution/plan", async (req, res) => {
+  // Python: PlatformDistributionRequest { user_id, track_title, ... }
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [
+      ["userId",     "user_id"],
+      ["title",      "track_title"],
+      ["track",      "track_title"],
+      ["trackTitle", "track_title"],
+      ["song",       "track_title"],
+    ],
+    [
+      ["user_id",     _resolveUserId(b)],
+      ["track_title", (b["track_title"] ?? b["trackTitle"] ?? b["title"] ?? b["track"] ?? b["song"] ?? "Untitled") as string],
+    ],
+  );
+  await proxyRequest(req, res, "/platform/distribution/plan");
+});
+
+router.get("/platform/model/info", async (req, res) => {
+  await proxyRequest(req, res, "/platform/model/info");
+});
+
+router.post("/platform/model/reload", async (req, res) => {
+  await proxyRequest(req, res, "/platform/model/reload");
+});
+
+// ─── AI Ad System & Autopilot ────────────────────────────────────────────────
+
+router.post("/platform/ads/record", async (req, res) => {
+  // Python: AdRecordRequest { user_id, platform, ad_type, ... }
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [["userId", "user_id"]],
+    [
+      ["user_id",  _resolveUserId(b)],
+      ["platform", "meta"],
+      ["ad_type",  "video"],
+    ],
+  );
+  await proxyRequest(req, res, "/platform/ads/record");
+});
+
+router.post("/platform/ads/generate", async (req, res) => {
+  // Python: AdGenerateRequest { user_id, product, platform, goal, ... }
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [
+      ["userId",     "user_id"],
+      ["name",       "product"],
+      ["artistName", "product"],
+      ["artist",     "product"],
+    ],
+    [
+      ["user_id",  _resolveUserId(b)],
+      ["product",  (b["product"] ?? b["name"] ?? b["artistName"] ?? b["artist"] ?? "Artist") as string],
+      ["platform", "meta"],
+      ["goal",     "streams"],
+    ],
+  );
+  await proxyRequest(req, res, "/platform/ads/generate");
+});
+
+router.post("/platform/ads/autopilot", async (req, res) => {
+  // Python: AdAutopilotRequest { user_id, ... }
+  // Dashboard sends userId (camelCase)
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [["userId", "user_id"]],
+    [["user_id", _resolveUserId(b)]],
+  );
+  await proxyRequest(req, res, "/platform/ads/autopilot");
+});
+
+router.post("/platform/ads/audience", async (req, res) => {
+  // Python: AdAudienceRequest { user_id, product, platform, goal, ... }
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [
+      ["userId",     "user_id"],
+      ["name",       "product"],
+      ["artistName", "product"],
+      ["artist",     "product"],
+    ],
+    [
+      ["user_id",  _resolveUserId(b)],
+      ["product",  (b["product"] ?? b["name"] ?? b["artistName"] ?? b["artist"] ?? "Artist") as string],
+      ["platform", "meta"],
+      ["goal",     "streams"],
+    ],
+  );
+  await proxyRequest(req, res, "/platform/ads/audience");
+});
+
+router.get("/platform/ads/performance/:userId", async (req, res) => {
+  const query = req.query.platform ? `?platform=${req.query.platform}` : "";
+  await proxyRequest(
+    req,
+    res,
+    `/platform/ads/performance/${req.params.userId}${query}`,
+  );
+});
+
+router.post("/platform/ads/optimize", async (req, res) => {
+  await proxyRequest(req, res, "/platform/ads/optimize");
+});
+
+// ─── Safety, Audio Analysis & Scoring ───────────────────────────────────────
+
+router.post("/safety/screen", async (req, res) => {
+  await proxyRequest(req, res, "/api/safety/screen");
+});
+
+router.post("/infer/viral-score", async (req, res) => {
+  await proxyRequest(req, res, "/api/infer/viral-score");
+});
+
+// Beat/structure analysis for beat-synced video generation — distinct from
+// the general "/analyze/audio" sentiment-style endpoint above.
+router.post("/audio/upload", proxyAudioUpload);
+router.post("/audio/analyze", async (req, res) => {
+  await proxyRequest(req, res, "/api/audio/analyze");
+});
+
+// Mastering/mixing decisions from measured PCM features (analyzeForMastering
+// output) — the Node DSP extracts+executes, MaxCore decides. See
+// server/services/maxcoreMasteringService.ts for the caller.
+router.post("/audio/mastering-recommendation", async (req, res) => {
+  await proxyRequest(req, res, "/api/audio/mastering-recommendation");
+});
+
+// Per-track corrective EQ/compression decision ahead of mixdown (role +
+// analyzeForMastering output for that one track). See
+// server/services/maxcoreMixingService.ts for the caller.
+router.post("/audio/mixing-recommendation", async (req, res) => {
+  await proxyRequest(req, res, "/api/audio/mixing-recommendation");
+});
+
+// ─── RTA / Concurrency / Awareness / Digital GPU stats ──────────────────────
+
+router.get("/rta/status", async (req, res) => {
+  await proxyRequest(req, res, "/api/rta/status");
+});
+
+router.get("/concurrency/stats", async (req, res) => {
+  await proxyRequest(req, res, "/api/concurrency/stats");
+});
+
+router.get("/awareness/quality/status", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/quality/status");
+});
+
+// ─── Content Awareness Status ─────────────────────────────────────────────────
+// Returns live signal counts + source breakdown so the dashboard can show
+// how many Tavily / Exa / RSS signals are currently enriching generation.
+
+router.get("/awareness/status", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/status");
+});
+router.get("/awareness/unified/status", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/status");
+});
+router.post("/awareness/unified/context", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/context");
+});
+
+// Bounded, model-free statistics contract; never held behind weight recovery.
+// No owner identifiers are injected into the private numeric request body.
+router.get("/analytics/capability", async (req, res) => {
+  await proxyRequest(req, res, "/api/analytics/capability");
+});
+router.post("/analytics/predict", async (req, res) => {
+  await proxyRequest(req, res, "/api/analytics/predict");
+});
+router.post("/analytics/insights", async (req, res) => {
+  await proxyRequest(req, res, "/api/analytics/insights");
+});
+
+// Pocket accelerator — Digital GPU GEMM dedup cache stats
+router.get("/maxcore/pocket-accelerator/stats", async (req, res) => {
+  await proxyRequest(req, res, "/api/maxcore/pocket-accelerator/stats");
+});
+
+// L1 generation output cache stats — sub-ms hit path sitting in front of pdim
+router.get("/gpu/gen-cache/stats", async (req, res) => {
+  await proxyRequest(req, res, "/api/gpu/gen-cache/stats");
+});
+
+// Infinite replica namespace pool — parallel pocket namespaces sharing one orchestrator
+router.get("/gpu/replica-pool/stats", async (req, res) => {
+  await proxyRequest(req, res, "/api/gpu/replica-pool/stats");
+});
+router.post("/gpu/replica-pool/grow", async (req, res) => {
+  await proxyRequest(req, res, "/api/gpu/replica-pool/grow");
+});
+
+// Compressed prefix KV cache — eliminates prefill cost for repeated prompt prefixes
+router.get("/gpu/prefix-kv/stats", async (req, res) => {
+  await proxyRequest(req, res, "/api/gpu/prefix-kv/stats");
+});
+
+// Per-array SHA-256 digest cache — eliminates re-hashing weight bytes every forward pass
+router.get("/gpu/digest-cache/stats", async (req, res) => {
+  await proxyRequest(req, res, "/api/gpu/digest-cache/stats");
+});
+
+// ─── Production warm-up endpoints ───────────────────────────────────────────
+
+// Trigger a Digital GPU inference warm pass (transformer → flash-attn → GEMM)
+router.post("/warm", async (req, res) => {
+  await proxyRequest(req, res, "/api/warm");
+});
+
+// Non-destructive: last warm-pass result without triggering a new one
+router.get("/warm/status", async (req, res) => {
+  await proxyRequest(req, res, "/api/warm/status");
+});
+
+// ─── System readiness ────────────────────────────────────────────────────────
+// Native Node.js endpoint — aggregates Python health + keepalive + deep-warm
+// state into a single operational view. It is NOT a learned-quality certification.
+
+router.get("/system/readiness", async (_req, res) => {
+  const PYTHON_PORT = process.env.MODEL_API_PORT || "9878";
+  const PYTHON_BASE = `http://localhost:${PYTHON_PORT}`;
+  const ADMIN_KEY_HDR = process.env.ADMIN_KEY ?? "";
+
+  // Read keepalive snapshot (written by primary, safe from any worker)
+  let keepalive: Record<string, unknown> = {};
+  try {
+    keepalive = JSON.parse(fs.readFileSync("/tmp/maxcore-keepalive.json", "utf8")) as Record<string, unknown>;
+  } catch {
+    keepalive = { running: false, message: "first cycle pending" };
+  }
+
+  // Probe health, generation readiness and deep-warm status independently.
+  let pythonHealth: Record<string, unknown> = {};
+  let pythonWarmStatus: Record<string, unknown> = {};
+  let pythonReachable = false;
+  let pythonReady = false;
+
+  const makeHeaders = (): Record<string, string> => {
+    const h: Record<string, string> = {};
+    if (ADMIN_KEY_HDR) h["X-Admin-Key"] = ADMIN_KEY_HDR;
+    return h;
+  };
+
+  try {
+    const { Agent: UA, request: ur } = await import("undici") as typeof import("undici");
+    const pool = new UA({ connections: 2 });
+    const probe = new AbortController();
+    const timer = setTimeout(() => probe.abort(), 5_000);
+    try {
+      // Consume each response *inside* its promise: waiting for every header
+      // before draining bodies deadlocks a two-connection pool with 3 probes.
+      const read = async (path: string): Promise<{ status: number; data: Record<string, unknown> }> => {
+        const reply = await ur(`${PYTHON_BASE}${path}`, {
+          method: "GET", dispatcher: pool, headers: makeHeaders(),
+          signal: probe.signal, headersTimeout: 5_000, bodyTimeout: 5_000,
+        });
+        if (reply.statusCode !== 200) {
+          await reply.body.dump();
+          return { status: reply.statusCode, data: {} };
+        }
+        return { status: 200, data: JSON.parse(await reply.body.text()) as Record<string, unknown> };
+      };
+      const [healthRes, warmRes, readyRes] = await Promise.allSettled([
+        read("/health"), read("/api/warm/status"), read("/ready"),
+      ]);
+      if (healthRes.status === "fulfilled" && healthRes.value.status === 200) {
+        pythonHealth = healthRes.value.data;
+        pythonReachable = true;
+      }
+      if (warmRes.status === "fulfilled" && warmRes.value.status === 200) {
+        pythonWarmStatus = warmRes.value.data;
+      }
+      if (readyRes.status === "fulfilled") {
+        pythonReady = readyRes.value.status === 200 && readyRes.value.data["ready"] === true;
+      }
+    } finally {
+      clearTimeout(timer);
+      await pool.destroy();
+    }
+  } catch {
+    pythonHealth = { reachable: false };
+  }
+
+  const modelLoaded       = pythonHealth["model_loaded"] === true;
+  const warmStartState    = (pythonHealth["warm_start"] as Record<string, unknown> | undefined)?.["state"] ?? "unknown";
+  // Keepalive and warm-up state are diagnostics; /ready is the authoritative
+  // serving requirement. Optional/disabled warm passes must not mark it down.
+  const keepaliveEnabled  = process.env.MAXCORE_KEEPALIVE === "1";
+  const keepaliveOk       = !keepaliveEnabled ||
+    (keepalive["summary"] as Record<string, number> | undefined)?.["fail"] === 0 &&
+    typeof keepalive["cycleCount"] === "number" && keepalive["cycleCount"] > 0;
+  const kaDeepWarm        = keepalive["deepWarm"] as Record<string, unknown> | undefined;
+
+  const pyDeepWarmState   = (pythonWarmStatus["deep_warm"] as Record<string, unknown> | undefined)?.["state"] ?? "pending";
+  // A partial pass is reported honestly without overriding Python's /ready.
+  const deepWarmDone = pyDeepWarmState === "warm";
+
+  const ready = isOperationallyReady({
+    pythonReachable, pythonReady, pythonRestarting: isPythonRestarting(),
+    circuitBreaker: _cbState(),
+  });
+
+  res.status(ready ? 200 : 503).json({
+    ready,
+    node: { workers: "up", python_restarting: isPythonRestarting(), circuit_breaker: _cbState(), keepalive_enabled: keepaliveEnabled, keepalive_running: keepalive["running"] ?? false },
+    python: {
+      reachable: pythonReachable,
+      generation_ready: pythonReady,
+      model_loaded: modelLoaded,
+      model_blocked: pythonHealth["model_blocked"] ?? null,
+      serving_release: pythonHealth["serving_release"] ?? null,
+      uptime_seconds: pythonHealth["uptime_seconds"] ?? null,
+      warm_start_state: warmStartState,
+      deep_warm_state: pyDeepWarmState,
+    },
+    keepalive: {
+      cycle_count:       keepalive["cycleCount"] ?? 0,
+      last_cycle_at:     keepalive["lastCycleAt"] ?? null,
+      summary:           keepalive["summary"] ?? {},
+      all_endpoints_ok:  keepaliveOk,
+    },
+    deep_warm: {
+      done:          deepWarmDone,
+      python_state:  pyDeepWarmState,
+      last_warm_at:  kaDeepWarm?.["lastDeepWarmAt"] ?? (pythonWarmStatus["deep_warm"] as Record<string, unknown> | undefined)?.["last_warm_at"] ?? null,
+      next_warm_at:  kaDeepWarm?.["nextDeepWarmAt"] ?? null,
+    },
+  });
+});
+
+// ─── Stay-awake / Keepalive status ──────────────────────────────────────────
+// Native Node.js endpoint — NOT proxied to Python.  Returns the last keepalive
+// cycle result written by the primary cluster process so MaxBooster clients
+// can verify all Digital GPU + platform endpoints are being kept warm.
+
+// Manual activation trigger: fires a full warm pass (all residency
+// endpoints + deep-warm inference) immediately. The same pass runs
+// automatically on boot, on heartbeat recovery after an outage, and on
+// wake-from-sleep — this endpoint just lets a client force it on demand.
+let _lastManualActivateAt = 0;
+router.post("/activate", async (req, res) => {
+  // If an admin key is configured, require it — activation is an expensive
+  // trigger (full residency sweep + deep-warm inference pass).
+  const adminKey = process.env.ADMIN_KEY ?? "";
+  if (adminKey && req.get("X-Admin-Key") !== adminKey) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  // Per-process throttle on top of the cross-process lock-file coalesce in
+  // runActivation — prevents warm-pass amplification from repeated calls.
+  const now = Date.now();
+  if (now - _lastManualActivateAt < 10_000) {
+    res.status(429).json({ error: "activation throttled — try again in a few seconds" });
+    return;
+  }
+  _lastManualActivateAt = now;
+  const result = await runActivation("manual");
+  res.json({ ...result, keepalive: getKeepaliveStatus() });
+});
+
+router.get("/keepalive/status", (_req, res) => {
+  try {
+    const raw = fs.readFileSync("/tmp/maxcore-keepalive.json", "utf8");
+    res.json(JSON.parse(raw));
+  } catch {
+    res.status(200).json({
+      running: false,
+      message: "keepalive status not yet available — first cycle pending",
+    });
+  }
+});
+
+// ─── Watchdog ──────────────────────────────────────────────────────────────
+
+router.get("/watchdog/status", async (req, res) => {
+  await proxyRequest(req, res, "/watchdog/status");
+});
+
+router.get("/watchdog/log", async (req, res) => {
+  const limit = req.query.limit ? `?limit=${req.query.limit}` : "";
+  await proxyRequest(req, res, `/watchdog/log${limit}`);
+});
+
+router.post("/watchdog/reset", async (req, res) => {
+  await proxyRequest(req, res, "/watchdog/reset");
+});
+
+// ─── Content Generation ────────────────────────────────────────────────────
+
+router.post("/generate/content", async (req, res) => {
+  await proxyRequest(req, res, "/api/generate/content");
+});
+
+router.post("/generate/text", async (req, res) => {
+  // Python: ApiGenerateTextRequest { mode, ... } — mode defaults to "content"
+  // but FastAPI 422s if the field is explicitly absent from callers that omit it.
+  normalizeBody(req,
+    [],
+    [["mode", "content"]],
+  );
+  await proxyRequest(req, res, "/api/generate/text");
+});
+
+router.post("/content/score", async (req, res) => {
+  await proxyRequest(req, res, "/api/content/score");
+});
+
+// ─── Release Campaigns ─────────────────────────────────────────────────────
+// One song → a full multi-week rollout, then persisted per-artist as an
+// editable, schedulable calendar (save / list / edit posts / hand off to the
+// distribution layer to queue on target dates).
+
+router.post("/generate/campaign", async (req, res) => {
+  await proxyRequest(req, res, "/api/generate/campaign");
+});
+
+router.post("/campaigns", async (req, res) => {
+  await proxyRequest(req, res, "/api/campaigns");
+});
+
+router.get("/campaigns", async (req, res) => {
+  const qs = new URLSearchParams(
+    req.query as Record<string, string>,
+  ).toString();
+  await proxyRequest(req, res, `/api/campaigns${qs ? `?${qs}` : ""}`);
+});
+
+router.get("/campaigns/:id", async (req, res) => {
+  const qs = new URLSearchParams(
+    req.query as Record<string, string>,
+  ).toString();
+  await proxyRequest(
+    req,
+    res,
+    `/api/campaigns/${encodeURIComponent(req.params.id)}${qs ? `?${qs}` : ""}`,
+  );
+});
+
+router.delete("/campaigns/:id", async (req, res) => {
+  const qs = new URLSearchParams(
+    req.query as Record<string, string>,
+  ).toString();
+  await proxyRequest(
+    req,
+    res,
+    `/api/campaigns/${encodeURIComponent(req.params.id)}${qs ? `?${qs}` : ""}`,
+  );
+});
+
+router.patch("/campaigns/:id/posts/:postId", async (req, res) => {
+  await proxyRequest(
+    req,
+    res,
+    `/api/campaigns/${encodeURIComponent(req.params.id)}/posts/${encodeURIComponent(req.params.postId)}`,
+  );
+});
+
+router.post("/campaigns/:id/schedule", async (req, res) => {
+  await proxyRequest(
+    req,
+    res,
+    `/api/campaigns/${encodeURIComponent(req.params.id)}/schedule`,
+  );
+});
+
+// ─── Analysis ──────────────────────────────────────────────────────────────
+
+router.post("/analyze", async (req, res) => {
+  // Python: MaxcoreAnalyzeRequest { modality, payload, ... }
+  // Both fields have defaults but FastAPI still 422s if they're explicitly null.
+  const b = req.body as Record<string, unknown>;
+  normalizeBody(req,
+    [
+      ["text",    "payload"],
+      ["content", "payload"],
+      ["input",   "payload"],
+    ],
+    [
+      ["modality", "text"],
+      ["payload",  (b["payload"] ?? b["text"] ?? b["content"] ?? b["input"] ?? "") as string],
+    ],
+  );
+  await proxyRequest(req, res, "/api/analyze");
+});
+
+router.post("/analyze/sentiment", async (req, res) => {
+  await proxyRequest(req, res, "/api/analyze/sentiment");
+});
+
+router.post("/analyze/audio", async (req, res) => {
+  // Python: ApiAnalyzeAudioRequest { audio_url }
+  // Dashboard sends { url } instead.
+  normalizeBody(req,
+    [["url", "audio_url"]],
+    [],
+  );
+  await proxyRequest(req, res, "/api/analyze/audio");
+});
+
+// ─── Advertising & Engagement ──────────────────────────────────────────────
+
+router.post("/optimize/ad", async (req, res) => {
+  await proxyRequest(req, res, "/api/optimize/ad");
+});
+
+router.post("/predict/engagement", async (req, res) => {
+  await proxyRequest(req, res, "/api/predict/engagement");
+});
+
+// ─── Media Generation ──────────────────────────────────────────────────────
+
+router.post("/generate/image", async (req, res) => {
+  await proxyRequest(req, res, "/api/generate/image");
+});
+
+router.post("/generate/audio", async (req, res) => {
+  await proxyRequest(req, res, "/api/generate/audio");
+});
+
+router.post("/generate-video", async (req, res) => {
+  await proxyRequest(req, res, "/api/generate-video");
+});
+
+// Canonical /generate/video alias — maps to the same AI video endpoint
+router.post("/generate/video", async (req, res) => {
+  await proxyRequest(req, res, "/api/video/generate-ai");
+});
+
+router.post("/video/generate-ai", async (req, res) => {
+  await proxyRequest(req, res, "/api/video/generate-ai");
+});
+
+// Veo-parity scene extension: continue a previously generated video
+router.post("/video/extend", async (req, res) => {
+  await proxyRequest(req, res, "/api/video/extend");
+});
+
+// ─── Job Polling & Management ──────────────────────────────────────────────
+
+router.get("/video-jobs", async (req, res) => {
+  await proxyRequest(req, res, "/api/video-jobs");
+});
+
+router.get("/video-job/:jobId", async (req, res) => {
+  await proxyRequest(req, res, `/api/video-job/${req.params.jobId}`);
+});
+
+router.delete("/video-job/:jobId", async (req, res) => {
+  await proxyRequest(req, res, `/api/video-job/${req.params.jobId}`);
+});
+
+router.get("/video-job/:jobId/preview/:sceneIdx", async (req, res) => {
+  await proxyBinary(
+    req,
+    res,
+    `/api/video-job/${req.params.jobId}/preview/${req.params.sceneIdx}`,
+  );
+});
+
+// Rendered MP4 download — the Python server registers this same handler under
+// three aliased paths (download/file/video); we mirror all three so callers
+// can use whichever they already reference. Uses the streamed binary proxy
+// (not proxyBinary) since these files can be tens of MB; stream within the
+// client-bound download budget instead of fully buffering.
+router.get("/video-job/:jobId/download", async (req, res) => {
+  await proxyBinaryStream(
+    req,
+    res,
+    `/api/video-job/${encodeURIComponent(req.params.jobId)}/download`,
+  );
+});
+
+router.get("/video-job/:jobId/file", async (req, res) => {
+  await proxyBinaryStream(
+    req,
+    res,
+    `/api/video-job/${encodeURIComponent(req.params.jobId)}/file`,
+  );
+});
+
+router.get("/video-job/:jobId/video", async (req, res) => {
+  await proxyBinaryStream(
+    req,
+    res,
+    `/api/video-job/${encodeURIComponent(req.params.jobId)}/video`,
+  );
+});
+
+router.get("/audio-job/:jobId", async (req, res) => {
+  await proxyRequest(req, res, `/api/audio-job/${req.params.jobId}`);
+});
+
+// ─── Model Weight Sync ─────────────────────────────────────────────────────
+
+router.get("/models/social/state", async (req, res) => {
+  await proxyRequest(req, res, "/api/models/social/state");
+});
+
+router.get("/models/advertising/state", async (req, res) => {
+  await proxyRequest(req, res, "/api/models/advertising/state");
+});
+
+router.get("/generation/capabilities", async (req, res) => {
+  await proxyRequest(req, res, "/api/generation/capabilities");
+});
+
+router.get("/models/content/state", async (req, res) => {
+  await proxyRequest(req, res, "/api/models/content/state");
+});
+
+router.get("/models/engagement/state", async (req, res) => {
+  await proxyRequest(req, res, "/api/models/engagement/state");
+});
+
+// ─── Training Feedback ─────────────────────────────────────────────────────
+
+router.post("/train/feedback", async (req, res) => {
+  await proxyRequest(req, res, "/api/train/feedback");
+});
+
+// ─── SSE Job Progress Streaming ──────────────────────────────────────────────
+// GET /api/jobs/:jobId/progress
+// Streams server-sent events for long-running jobs by polling the Python server
+// every 300 ms. Closes on terminal status or client disconnect.
+
+router.get("/jobs/:jobId/progress", async (req, res) => {
+  const { jobId } = req.params;
+  const SSE_POLL_MS = 300;
+  const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!headers) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+
+  let closed = false;
+  let intervalId: ReturnType<typeof setInterval> | null = null;
+  let polling = false;
+  const streamAbort = new AbortController();
+
+  function sendEvent(data: Record<string, unknown>): void {
+    if (!closed) {
+      try {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+      } catch {
+        // client disconnected mid-write — ignore
+      }
+    }
+  }
+
+  function cleanup(): void {
+    if (closed) return;
+    closed = true;
+    if (intervalId !== null) clearInterval(intervalId);
+    streamAbort.abort();
+    try {
+      res.end();
+    } catch {
+      // already ended
+    }
+  }
+
+  // Incoming GET request "close" can fire as soon as its body is consumed;
+  // the outgoing response owns the lifetime of the event stream.
+  res.on("close", cleanup);
+
+  async function poll(): Promise<void> {
+    if (closed || polling) return;
+    polling = true;
+    try {
+      // Try audio-job first, then video-job
+      // Try /api/audio-job/:jobId first (covers audio), then /api/video-job/:jobId
+      let jobData: Record<string, unknown> | null = null;
+      for (const pollPath of [
+        `/api/audio-job/${encodeURIComponent(jobId)}`,
+        `/api/video-job/${encodeURIComponent(jobId)}`,
+      ]) {
+        try {
+          const upRes = await undiciRequest(`${MODEL_API_BASE}${pollPath}`, {
+            method: "GET",
+            dispatcher: _keepAlivePool,
+            headers,
+            signal: AbortSignal.any([streamAbort.signal, AbortSignal.timeout(5_000)]),
+            headersTimeout: 5_000,
+            bodyTimeout: 5_000,
+          });
+          if (upRes.statusCode === 200) {
+            const text = await upRes.body.text();
+            try {
+              jobData = JSON.parse(text) as Record<string, unknown>;
+            } catch {
+              sendEvent({ status: "error", error: "Invalid upstream job response" });
+              cleanup();
+              return;
+            }
+            break;
+          } else {
+            await upRes.body.dump();
+            if (upRes.statusCode === 401 || upRes.statusCode === 403) {
+              sendEvent({ status: "error", error: "Upstream job authorization denied" });
+              cleanup();
+              return;
+            }
+            if (upRes.statusCode !== 404) {
+              sendEvent({ status: "error", error: `Upstream job status ${upRes.statusCode}` });
+              cleanup();
+              return;
+            }
+          }
+        } catch (error) {
+          if (closed) return;
+          // Transport failure cannot establish a 404; do not claim the job
+          // doesn't exist just because the poll never reached its server.
+          sendEvent({ status: "pending", stage: "polling_error", detail: String(error).slice(0, 200) });
+          return;
+        }
+      }
+
+      if (!jobData) {
+        sendEvent({ status: "error", error: "Job not found" });
+        cleanup();
+        return;
+      }
+
+      const status = jobData["status"] as string | undefined;
+      const progress =
+        typeof jobData["progress"] === "number" ? jobData["progress"] :
+        status === "done" ? 100 : 0;
+
+      sendEvent({
+        progress,
+        status: status ?? "pending",
+        stage: (jobData["stage"] as string | undefined) ?? status ?? "pending",
+        ...(jobData["url"] ? { url: jobData["url"] } : {}),
+        ...(jobData["error"] ? { error: jobData["error"] } : {}),
+      });
+
+      if (status === "done" || status === "complete" || status === "error" || status === "cancelled") {
+        cleanup();
+      }
+    } catch (err) {
+      // Non-fatal poll error — keep trying unless closed
+      sendEvent({ progress: 0, status: "pending", stage: "polling_error", detail: String(err).slice(0, 200) });
+    } finally {
+      polling = false;
+    }
+  }
+
+  // Start polling
+  intervalId = setInterval(() => { void poll(); }, SSE_POLL_MS);
+  void poll();
+});
+
+// ─── Job Cancel ──────────────────────────────────────────────────────────────
+// POST /api/jobs/:jobId/cancel → proxies to Python DELETE /api/jobs/:jobId
+
+router.post("/jobs/:jobId/cancel", async (req, res) => {
+  const { jobId } = req.params;
+  try {
+    const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+    if (!headers) {
+      res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+      return;
+    }
+    // Try audio-job delete first, then video-job
+    let responded = false;
+    for (const delPath of [
+      `/api/audio-job/${encodeURIComponent(jobId)}`,
+      `/api/video-job/${encodeURIComponent(jobId)}`,
+    ]) {
+      try {
+        const upRes = await undiciRequest(`${MODEL_API_BASE}${delPath}`, {
+          method: "DELETE",
+          dispatcher: _keepAlivePool,
+          headers,
+          signal: AbortSignal.timeout(5_000),
+          headersTimeout: 5_000,
+          bodyTimeout: 5_000,
+        });
+        const text = await upRes.body.text();
+        if (upRes.statusCode === 404) continue;
+        let data: unknown;
+        try { data = JSON.parse(text); } catch { data = { detail: text.slice(0, 300) }; }
+        res.status(upRes.statusCode).json(data);
+        responded = true;
+        break;
+      } catch (err) {
+        handleProxyNetworkError(err, res, delPath);
+        return;
+      }
+    }
+    if (!responded) {
+      res.status(404).json({ error: "Job not found" });
+    }
+  } catch (err) {
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Cancel failed", detail: String(err) });
+    }
+  }
+});
+
+// ─── Stem & MIDI Download Proxy ───────────────────────────────────────────────
+// GET /api/audio/:jobId/stems → proxies to Python GET /api/audio/:jobId/stems
+// GET /api/audio/:jobId/midi  → proxies to Python GET /api/audio/:jobId/midi
+
+router.get("/audio/:jobId/stems", _audioLimiter, async (req, res) => {
+  await proxyRequest(req, res, `/api/audio/${req.params.jobId}/stems`);
+});
+
+router.get("/audio/:jobId/midi", _audioLimiter, async (req, res) => {
+  await proxyBinaryStream(req, res, `/api/audio/${req.params.jobId}/midi`);
+});
+
+// GET /api/files/stems/:jobId/:filename → proxies the individual stem WAV
+// download that Python serves at the same path (stem URLs in audio-job
+// results point here; without this route the dashboard 404s on download).
+router.get("/files/stems/:jobId/:filename", _audioLimiter, async (req, res) => {
+  await proxyBinaryStream(
+    req,
+    res,
+    `/api/files/stems/${encodeURIComponent(String(req.params.jobId))}/${encodeURIComponent(String(req.params.filename))}`,
+  );
+});
+
+// ─── Observability metrics ───────────────────────────────────────────────────
+// GET /api/metrics — no auth required for internal scraping
+
+router.get("/metrics", async (_req, res) => {
+  try {
+    const pythonRestarting = isPythonRestarting();
+    const cbStatus = _cbState();
+    const pythonStatus: "up" | "down" | "restarting" =
+      pythonRestarting ? "restarting" :
+      cbStatus === "open" ? "down" : "up";
+
+    res.json({
+      uptime_s: process.uptime(),
+      requests_total: getRequestsTotal(),
+      requests_by_route: getRequestsByRoute(),
+      python_status: pythonStatus,
+      circuit_breaker: cbStatus,
+      p95_latency_ms: getP95LatencyMs(),
+    });
+  } catch (err) {
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Metrics unavailable", detail: String(err) });
+    }
+  }
+});
+
+// ─── Apply rate limiters to generation routes ────────────────────────────────
+// Note: these use router.use() with path prefixes so they match all methods.
+// They are placed at the end so they don't interfere with route registration order
+// above. express-rate-limit applies per-IP within the route's own window.
+
+// /api/system/* and /api/health* — loose limit for polling
+router.use("/system/", _readLimiter);
+router.use("/health", _readLimiter);
+router.use("/api/health", _readLimiter);
+
+// /api/generate/audio and /api/audio/* — tightest limit
+router.use("/generate/audio", _audioLimiter);
+router.use("/audio/", _audioLimiter);
+
+// /api/generate/*, /api/video/*, /api/campaign/* — 10 req/min
+router.use("/generate/", _generationLimiter);
+router.use("/video/", _generationLimiter);
+router.use("/campaign/", _generationLimiter);
+router.use("/generate-video", _generationLimiter);
+
+export default router;

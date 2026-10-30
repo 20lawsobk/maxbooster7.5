@@ -1,0 +1,11 @@
+- [Object Storage chunk backend](object-storage-backend.md) — @replit/object-storage downloadAsBytes returns Result<[Buffer]> (unwrap [0]); backend-type filters break post-migration; flip-first reconcile = no data loss.
+- [Dataset download throughput](dataset-download-throughput.md) — bottleneck is external latency/rate-limits not local config; concurrency sweet spot ~12 (higher throttles); target byte volume (300GB/100TB) doesn't exist upstream.
+- [EC shard id collision](ec-shard-id-collision.md) — erasure shards must suffix shard index in chunkId; pure-hash ids collide when parity == data shard (low k).
+- [Express 5 route wildcards](express5-route-wildcards.md) — Express 5 wildcard/route syntax changes.
+- [Fabric bucket resolve race](fabric-bucket-resolve-race.md) — bucket resolution race in the fabric.
+- [Fabric chunk refcount concurrency](fabric-chunk-refcount-concurrency.md) — chunk refcount concurrency hazards.
+- [Fabric node capacity](fabric-node-capacity.md) — node capacity accounting notes.
+- [PDIM bulk store RAM](pdim-bulk-store-ram.md) — bulk store keeps data in RAM; memory considerations.
+- [PocketDimension durability](pocketdimension-durability.md) — durability/snapshot behavior notes.
+- [Event-loop stall serialization](event-loop-stall-serialization.md) — big JSON/RS work must yield via setImmediate; all mutation paths must flag snapshotTorn or boot replay double-applies.
+- [AutoPush restart-from-zero after crisis](autopush-restart-root-cause.md) — health monitor restart() resets progress key to "0"; ZCARD must always be the authoritative ground truth on boot.

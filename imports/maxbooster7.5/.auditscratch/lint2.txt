@@ -1,0 +1,1409 @@
+
+> max-booster@3.0.0 lint
+> eslint . --quiet
+
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/AI enhancements/AudioWorkletEngine.ts
+  150:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/AI enhancements/audio-processor.js
+    1:33  error  'AudioWorkletProcessor' is not defined  no-undef
+   42:28  error  'parameters' is defined but never used  no-unused-vars
+   97:39  error  'sampleRate' is not defined             no-undef
+  114:1   error  'registerProcessor' is not defined      no-undef
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/AI enhancements/creativeModelService.ts
+   446:54  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   449:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   485:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1201:46  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1385:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1394:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/AI enhancements/socialMedia.ts
+   154:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   217:61  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   265:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   394:69  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   447:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   448:69  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   663:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   727:51  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1106:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1231:43  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1260:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1372:11  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1482:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1512:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1548:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1549:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1633:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1634:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1679:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1835:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2018:11  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2095:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2265:11  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2466:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2630:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2636:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2834:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2959:11  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3137:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3377:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3586:11  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3642:70  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3727:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3770:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3803:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3846:70  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3999:9   error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  5070:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  5106:40  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/awareness layer/industryMonitorService.ts
+  164:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  192:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  251:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  306:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  320:55  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  329:55  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/awareness layer/musicIndustryContextFilter.ts
+  397:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  574:16  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/built-in plugins dsp/index.ts
+  126:13  error  Parsing error: '=' expected
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/built-in plugins dsp/mb-3d-panner.ts
+  3:8  error  Parsing error: ',' expected
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/built-in plugins dsp/mb-bass-808.ts
+  3:12  error  Parsing error: ',' expected
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/built-in plugins dsp/mb-guitar-12string.ts
+  3:14  error  Parsing error: ',' expected
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/cf-subdomain-worker.js
+   50:19  error  'Response' is not defined        no-undef
+   61:24  error  'env' is defined but never used  no-unused-vars
+   62:21  error  'URL' is not defined             no-undef
+   67:18  error  'Response' is not defined        no-undef
+   78:25  error  'Headers' is not defined         no-undef
+  102:31  error  'Request' is not defined         no-undef
+  111:30  error  'fetch' is not defined           no-undef
+  118:18  error  'Response' is not defined        no-undef
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/advertising/CreativeAutomation.tsx
+  207:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/dashboard/PersonalizedDashboard.tsx
+  260:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/distribution/AutoArtistSync.tsx
+  691:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/marketplace/WaveformAudioPlayer.tsx
+  206:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/offline/ConflictResolver.tsx
+  131:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/offline/PendingChanges.tsx
+  133:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/onboarding/OnboardingChecklist.tsx
+  195:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/search/FilterPresetsManager.tsx
+  201:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/shortcuts/ShortcutCustomizer.tsx
+  139:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/social/UnifiedCalendar.tsx
+  369:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/social/UnifiedInbox.tsx
+  191:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  227:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  232:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/studio/EnhancedZoomControls.tsx
+  98:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/studio/FlowStateAudioWarp.tsx
+  304:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/studio/FlowStateSampleBrowser.tsx
+  433:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/studio/FlowStateTakeComping.tsx
+  400:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/studio/FlowStateVersionBranches.tsx
+  286:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/studio/ScoreEditor.tsx
+  167:1  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/studio/SessionStateBus.tsx
+  436:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/components/studio/TrackManagementOutcomes.tsx
+  336:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  341:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/use-toast.ts
+   76:36  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  169:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useAudioContext.ts
+  241:12  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong  @typescript-eslint/no-non-null-asserted-optional-chain
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useAudioPlayer.ts
+  159:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useBatchProgress.ts
+  195:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useDAWAudioPlayback.ts
+   44:16  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+   66:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  111:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useDashboardPersonalization.ts
+  186:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useDynamicLayout.ts
+  136:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useFlowStateAdapter.ts
+  511:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  521:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useFluidLayout.ts
+  78:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useFullscreenFileUpload.ts
+  34:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useKeyboardShortcut.ts
+  79:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useKeyboardShortcuts.ts
+  38:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useOfflineQueue.ts
+  84:49  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/usePWAInstall.ts
+  49:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useProjectSync.ts
+  610:45  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useSmartScheduling.ts
+  99:16  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/hooks/useStudioController.ts
+  235:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  780:42  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  839:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/accessibility.ts
+  124:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/daw/AudioWorkletEngine.ts
+  150:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/daw/DAWCore.ts
+  280:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  284:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  354:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/daw/MIDIEngine.ts
+  398:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  411:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  534:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/daw/NonDestructiveAudio.ts
+  389:24  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  423:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  473:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  488:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/daw/NonDestructiveRenderer.ts
+  221:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/daw/PeakCacheEngine.ts
+  285:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/daw/PluginStateManager.ts
+  315:22  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong  @typescript-eslint/no-non-null-asserted-optional-chain
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/daw/RoutingEngine.ts
+  293:23  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  325:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  340:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/offline/OfflineQueue.ts
+  401:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/offline/SyncManager.ts
+  263:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  275:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/prefetch.ts
+  37:21  error  'isAuthenticated' is assigned to itself  no-self-assign
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/responsive.ts
+  135:18  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/studioStore.ts
+  1100:17  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1110:17  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1173:20  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1235:19  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1294:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1327:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1349:19  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1416:19  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1550:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1567:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1608:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1707:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1742:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1838:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1898:16  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1914:16  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1965:16  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1983:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2018:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2079:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2115:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/video/BrowserCapabilities.ts
+  104:57  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/video/DigitalGPUInferenceBridge.ts
+  537:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong  @typescript-eslint/no-non-null-asserted-optional-chain
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/video/LyricEngine.ts
+  495:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/video/RenderOrchestrator.ts
+  173:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  178:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/video/SceneGraph.ts
+  734:39  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  797:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  812:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  822:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  823:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  841:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  853:39  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  854:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  898:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  903:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/video/TemplateCompiler.ts
+  323:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  364:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  668:17  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  708:17  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/video/VideoExporter.ts
+  379:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  384:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  385:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/video/maxcoreVideoRenderer.ts
+   236:1   error  Expected an assignment or function call and instead saw an expression                                       @typescript-eslint/no-unused-expressions
+  1373:18  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong  @typescript-eslint/no-non-null-asserted-optional-chain
+  1451:15  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong  @typescript-eslint/no-non-null-asserted-optional-chain
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/lib/video/templates/TemplateManager.ts
+  430:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  912:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  955:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/pages/Advertisement.tsx
+  325:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  328:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  346:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/pages/Analytics.tsx
+  1802:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/pages/Marketplace.tsx
+  2049:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/pages/Settings.tsx
+  403:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  750:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  783:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/pages/SocialMedia.tsx
+  503:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/pages/analytics/GlobalRankingDashboard.tsx
+  403:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/client/src/stores/studioStore.ts
+   540:20  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   618:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   631:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   632:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   719:42  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   726:36  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   831:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   857:45  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   934:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   956:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1016:42  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1087:40  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1140:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1197:36  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1340:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/digital gpu/client/src/lib/video/DigitalGPUInferenceBridge.ts
+  341:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  348:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  349:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  350:19  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  351:19  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  354:23  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  419:23  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  456:24  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  479:26  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  536:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/digital gpu/server/services/diffusionVideoService.ts
+  392:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/digital gpu/server/services/maxcoreDiffusionSceneService.ts
+  285:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/doh-bridge/bridge.js
+   30:15  error  'require' is not defined                  no-undef
+   31:13  error  'require' is not defined                  no-undef
+   32:14  error  'require' is not defined                  no-undef
+   33:15  error  'require' is not defined                  no-undef
+   34:17  error  'require' is not defined                  no-undef
+   37:17  error  'process' is not defined                  no-undef
+   38:19  error  'process' is not defined                  no-undef
+   39:30  error  'process' is not defined                  no-undef
+   40:29  error  'process' is not defined                  no-undef
+   41:30  error  'process' is not defined                  no-undef
+   42:30  error  'process' is not defined                  no-undef
+   43:31  error  'process' is not defined                  no-undef
+   88:9   error  'setTimeout' is not defined               no-undef
+  102:18  error  'Buffer' is not defined                   no-undef
+  111:7   error  'setTimeout' is not defined               no-undef
+  128:16  error  'Buffer' is not defined                   no-undef
+  151:17  error  'setTimeout' is not defined               no-undef
+  167:7   error  'clearTimeout' is not defined             no-undef
+  173:6   error  'err' is defined but never used           no-unused-vars
+  176:7   error  'clearTimeout' is not defined             no-undef
+  185:3   error  'console' is not defined                  no-undef
+  188:5   error  'setTimeout' is not defined               no-undef
+  194:3   error  'console' is not defined                  no-undef
+  200:16  error  'Buffer' is not defined                   no-undef
+  201:16  error  'Buffer' is not defined                   no-undef
+  206:16  error  'Buffer' is not defined                   no-undef
+  210:16  error  'Buffer' is not defined                   no-undef
+  212:16  error  'Buffer' is not defined                   no-undef
+  223:27  error  'Buffer' is not defined                   no-undef
+  225:22  error  'Buffer' is not defined                   no-undef
+  230:8   error  'err' is defined but never used           no-unused-vars
+  233:20  error  'Buffer' is not defined                   no-undef
+  235:22  error  'Buffer' is not defined                   no-undef
+  251:3   error  'console' is not defined                  no-undef
+  255:3   error  'console' is not defined                  no-undef
+  287:3   error  'console' is not defined                  no-undef
+  291:1   error  'setInterval' is not defined              no-undef
+  294:3   error  'console' is not defined                  no-undef
+  302:3   error  'console' is not defined                  no-undef
+  307:15  error  'key' is assigned a value but never used  no-unused-vars
+  308:5   error  'clearTimeout' is not defined             no-undef
+  311:3   error  'process' is not defined                  no-undef
+  313:1   error  'process' is not defined                  no-undef
+  314:1   error  'process' is not defined                  no-undef
+  315:1   error  'process' is not defined                  no-undef
+  316:3   error  'console' is not defined                  no-undef
+  319:1   error  'process' is not defined                  no-undef
+  320:3   error  'console' is not defined                  no-undef
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/ecosystem.config.js
+  20:1  error  'module' is not defined  no-undef
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/electron/main.js
+   10:5   error  'require' is not defined     no-undef
+   11:14  error  'require' is not defined     no-undef
+   12:18  error  'require' is not defined     no-undef
+   13:14  error  'require' is not defined     no-undef
+   14:12  error  'require' is not defined     no-undef
+   17:30  error  'process' is not defined     no-undef
+   30:7   error  'process' is not defined     no-undef
+   36:7   error  'process' is not defined     no-undef
+   41:15  error  'process' is not defined     no-undef
+   42:15  error  '__dirname' is not defined   no-undef
+   43:15  error  '__dirname' is not defined   no-undef
+   54:5   error  'console' is not defined     no-undef
+   61:8   error  'process' is not defined     no-undef
+   75:35  error  'process' is not defined     no-undef
+   76:35  error  'process' is not defined     no-undef
+   78:5   error  'console' is not defined     no-undef
+  105:30  error  'setTimeout' is not defined  no-undef
+  112:15  error  '__dirname' is not defined   no-undef
+  114:7   error  'process' is not defined     no-undef
+  135:21  error  '__dirname' is not defined   no-undef
+  137:26  error  '__dirname' is not defined   no-undef
+  174:17  error  'process' is not defined     no-undef
+  243:9   error  'process' is not defined     no-undef
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/electron/preload.js
+   3:27  error  'require' is not defined  no-undef
+   6:13  error  'process' is not defined  no-undef
+   8:13  error  'process' is not defined  no-undef
+   9:15  error  'process' is not defined  no-undef
+  10:11  error  'process' is not defined  no-undef
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/external/maxcore/artifacts/api-server/src/python-server.ts
+  106:50  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  107:50  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/external/maxcore/artifacts/api-server/src/services/industryMonitorService.ts
+  166:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  194:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  253:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  308:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  324:55  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  333:55  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/external/maxcore/artifacts/api-server/src/services/musicIndustryContextFilter.ts
+  397:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  578:16  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/audit-system.ts
+  123:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  125:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  131:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  133:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  139:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  141:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  147:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  149:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  155:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  157:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  163:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  164:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/automation-system.ts
+  642:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  690:39  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  782:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  809:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/autonomous-autopilot.ts
+  1162:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/autonomous-updates.ts
+  1457:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/cluster.ts
+  111:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/index.ts
+    53:11  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   964:11  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1004:60  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/lib/cachedHealthCheck.ts
+  48:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/lib/luaExecutor.ts
+  169:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  169:32  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/middleware/cloudflare.ts
+  43:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/middleware/rateLimiter.ts
+  307:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  338:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  375:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  413:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  439:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  475:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  512:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  543:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  574:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  605:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  636:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/middleware/requestQueue.ts
+  112:25  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong  @typescript-eslint/no-non-null-asserted-optional-chain
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/pocket-dimension/fabric/PocketStorageService.ts
+  231:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  240:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/pocket-dimension/fabric/compression/CompressionProfileRouter.ts
+  108:52  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  157:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  195:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/pocket-dimension/fabric/compression/SemanticArchiver.ts
+  69:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/pocket-dimension/fabric/control/Rebalancer.ts
+  100:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/pocket-dimension/fabric/index.ts
+  158:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/pocket-dimension/index.ts
+  427:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/realtime/presenceManager.ts
+  150:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  273:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  334:14  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  433:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/reliability-system.ts
+  232:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/reliability/memory-manager.ts
+  324:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes.ts
+  293:7  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/admin.ts
+   42:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  102:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  148:48  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  712:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/admin/index.ts
+  130:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  181:48  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  462:19  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  644:64  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  682:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  689:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  696:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  751:39  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/advertising.ts
+  504:48  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/advertisingAutopilot.ts
+  74:67  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/analytics-internal.ts
+  1033:53  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/api/certifiedAnalytics.ts
+  695:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/api/v1/analytics.ts
+  137:58  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/artistProfiles.ts
+   58:60  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  523:55  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/audio-processing.ts
+   57:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   78:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  220:7   error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  296:9   error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/audit.ts
+  33:59  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/autoUpdates.ts
+  211:52  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/autonomousSocial.ts
+  38:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  66:10  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/autopilot-learning.ts
+  14:61  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  80:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/autopilot.ts
+  71:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/batch.ts
+  775:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/billing.ts
+  1450:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2286:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2288:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/bootstrap.ts
+  43:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/careerCoach.ts
+  190:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  250:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  407:17  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  730:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/collaboration.ts
+   91:14  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   99:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  107:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/customWorkflows.ts
+  344:7  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  380:9  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/developerApi.ts
+   46:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  211:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  270:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/distribution.ts
+   522:40  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   585:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  4271:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  4313:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  4612:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/dns.ts
+  1021:48  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/dnsManager.ts
+   40:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  180:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/executiveDashboard.ts
+  23:57  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/export.ts
+  1238:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/fanHub.ts
+  252:46  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/growth.ts
+  130:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  157:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  182:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  206:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  296:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  400:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  458:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  485:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  551:43  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  631:43  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  733:52  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  795:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  836:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/helpDesk.ts
+   68:36  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  104:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  130:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/hns.ts
+   51:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   80:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  140:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  192:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  221:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/labelSubmissions.ts
+  191:52  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  247:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/logs.ts
+  50:39  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/marketplace.ts
+  1484:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2115:45  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2172:65  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2201:7   error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/merch.ts
+  253:40  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/monitoring.ts
+  112:46  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/musicWorkflowAutomations.ts
+  150:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/offline.ts
+   78:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  199:42  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/organic.ts
+  186:52  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  259:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  387:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/payouts.ts
+  34:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/playlistPitching.ts
+  273:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/pressKit.ts
+  195:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/publishing.ts
+   72:42  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  100:48  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/radioPitches.ts
+  174:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/retention.ts
+  61:48  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/revenueForecast.ts
+  113:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/security.ts
+   38:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  235:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  331:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/socialMedia.ts
+   159:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   253:61  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   759:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1883:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2143:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2535:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2713:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2911:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3434:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  5346:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/storage.ts
+  205:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/studioComping.ts
+  379:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/studioGeneration.ts
+  322:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  328:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  334:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/support.ts
+  100:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/sync.ts
+  319:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/undo.ts
+  461:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  470:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/routes/vstBridge.ts
+   69:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  117:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  256:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  299:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/safety/auditLogger.ts
+  203:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/safety/refundHandler.ts
+  378:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  382:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/scalability-system.ts
+  16:1  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/self-evolution-engine.ts
+  1446:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2534:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/achievementService.ts
+  387:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/acmeClient.ts
+  142:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/advancedAnalyticsService.ts
+  1423:54  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/advertisingAIService.ts
+  983:15  error  Potential division by zero: totalBudget should be guarded. Use totalBudget || 1 or add a check  no-division-by-zero/no-division-by-zero
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/advertisingDispatchService.ts
+  271:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  373:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/advertisingNormalizationService.ts
+   26:53  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  333:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/aiAnalyticsService.ts
+  991:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/aiContentService.ts
+  799:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/aiInsightsEngine.ts
+  1436:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1531:39  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/aiMusicService.ts
+   779:15  error  Expected an assignment or function call and instead saw an expression                                         @typescript-eslint/no-unused-expressions
+  2562:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/aiService.ts
+  517:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  525:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  530:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/aiTranslationService.ts
+  355:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/analyticsAlertService.ts
+  179:49  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/artistProgressService.ts
+  198:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/audioSeparatorService.ts
+  182:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/audioService.ts
+  326:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  739:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  739:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  840:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  840:56  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  951:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/autonomousJobScheduler.ts
+  111:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/autopilotCoordinatorService.ts
+   90:45  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  111:14  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  125:14  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/autopilotLearningService.ts
+  302:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  348:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  486:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  531:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  581:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  773:63  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/autopilotPublisher.ts
+  440:49  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/baseModelTrainer.ts
+   995:56  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1065:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1107:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1149:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1191:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1232:43  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/beatSyncService.ts
+  527:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  577:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  577:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/bridgeInsightsService.ts
+  319:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  339:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  372:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  389:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  403:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  440:15  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/catalogMigrationService.ts
+   283:19  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   388:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   536:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   743:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   744:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1048:46  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/collaborationService.ts
+  326:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  354:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  356:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/compingService.ts
+  592:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  604:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/complianceService.ts
+  475:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  526:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  558:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  624:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/contentAnalysisService.ts
+  792:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/contentPipeline/maxBoosterContentStrategy.ts
+  354:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/contentPipeline/schedulingMetadataBuilder.ts
+  100:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  101:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  163:42  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  249:20  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/contentQualityPipeline.ts
+  392:63  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/contentVariantGenerator.ts
+  307:20  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/contractTemplateService.ts
+   418:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1314:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1369:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1548:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/creativeModelService.ts
+   436:53  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   439:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   475:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1196:46  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1380:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1389:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/crossPlatformSyncService.ts
+  123:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  124:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  128:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  170:10  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  185:10  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  296:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  366:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  367:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  414:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  481:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  482:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  506:36  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/diffusionVideoService.ts
+  392:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/distributionDataTransferService.ts
+  2809:48  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/distributionService.ts
+  924:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dmcaService.ts
+  536:49  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dnsPropagationCheck.ts
+  239:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dnssec.ts
+  160:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/domainLifecycleJob.ts
+   56:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   70:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   92:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  131:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  146:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  165:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  189:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/domainPolicyEngine.ts
+  311:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dsp/instruments/fmSynthEngines.ts
+  448:7  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  554:7  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  666:7  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  978:7  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dsp/instruments/padsEngines.ts
+   212:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   343:7   error  Expected an assignment or function call and instead saw an expression                                         @typescript-eslint/no-unused-expressions
+  1135:7   error  Expected an assignment or function call and instead saw an expression                                         @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dsp/instruments/samplerEngines.ts
+  1316:7  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dsp/instruments/stringsEngines.ts
+  172:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  884:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dsp/instruments/wavetableSynthEngines.ts
+  598:7  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  719:7  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dspAnalyticsService.ts
+  733:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dspPolicyChecker.ts
+  804:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  805:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  811:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  812:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  875:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/dynamicTrendsService.ts
+  402:16  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  904:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/featureEventBuffer.ts
+  194:40  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/hyperLearningEngine.ts
+   494:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+   548:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+   614:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+   660:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+   740:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+   786:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+   841:19  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+   902:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+   976:17  error  Optional chain expressions can return undefined by design - using a non-null assertion is unsafe and wrong    @typescript-eslint/no-non-null-asserted-optional-chain
+  1785:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2313:36  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2511:31  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/industryMonitorService.ts
+  165:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  193:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  252:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  307:47  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  321:55  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  330:55  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/invoiceService.ts
+  582:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/jwtAuthService.ts
+  114:56  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  228:59  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/labelCopyLinter.ts
+  642:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  648:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  876:19  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  877:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/maxcoreDiffusionSceneService.ts
+  285:24  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/melodyPatternService.ts
+  434:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  435:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  446:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  453:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  916:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/microtonalService.ts
+  468:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  567:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/midiGeneratorService.ts
+  356:14  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  361:14  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  362:14  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/mlModelRegistry.ts
+  218:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  792:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/multimodalGenerationService.ts
+   252:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  3250:11  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/musicIndustryContextFilter.ts
+  398:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  575:16  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/notificationDispatcher.ts
+   92:60  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  139:60  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  216:60  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/offlineModeService.ts
+  173:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  610:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  614:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/organicCompoundingService.ts
+  299:36  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/permanentFixRegistry.ts
+  218:17  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/personalizationService.ts
+  792:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/platformAutoFixer.ts
+   863:24  error  This branch can never execute. Its condition is a duplicate or covered by previous conditions in the if-else-if chain  no-dupe-else-if
+   888:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError           no-unsafe-optional-chaining
+  2078:16  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError           no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/plugins/fullCatalog.ts
+  20:6  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  25:6  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/plugins/pluginEnrichment.ts
+   150:1   error  Expected an assignment or function call and instead saw an expression                                         @typescript-eslint/no-unused-expressions
+  1925:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/pocket-dimension/fabric/compression/CompressionProfileRouter.ts
+  108:52  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  157:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  195:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/pocket-dimension/fabric/compression/SemanticArchiver.ts
+  69:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/pocket-dimension/fabric/control/Rebalancer.ts
+  100:12  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/pocket-dimension/fabric/index.ts
+  159:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/pocket-dimension/fabric/storage/ReplitChunkStore.ts
+  48:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  54:40  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  63:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  70:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/pocket-dimension/index.ts
+  441:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/queueService.ts
+  199:56  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  209:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/recoupmentService.ts
+  268:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/recursiveResolver.ts
+   93:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  115:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/registrar/MaxBoosterRegistrarProvider.ts
+  356:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  417:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/registrar/index.ts
+  70:14  error  'provider' is assigned to itself  no-self-assign
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/releaseScheduler.ts
+  271:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  277:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/revenueForecastService.ts
+  171:55  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/royaltiesCSVImportService.ts
+  71:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/selfHealingSecurityEngine.ts
+  162:9  error  Script URL is a form of eval  no-script-url
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/smartDefaultsEngine.ts
+  417:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  418:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/smartDefaultsService.ts
+  693:41  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/socialAmplificationService.ts
+  1429:20  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1430:21  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1447:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/socialOAuthService.ts
+  131:46  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  704:11  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/socialQueueService.ts
+  145:43  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  315:58  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/socialSyncService.ts
+  424:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/statusPageService.ts
+  209:29  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/storefrontDnsService.ts
+  736:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/stripeService.ts
+  238:9  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/studioService.ts
+   476:61  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1014:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/unifiedAIController.ts
+   371:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   594:50  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  1057:36  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/unifiedContentOrchestrator.ts
+  308:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  342:22  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  488:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  570:10  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/userPocketDimensionService.ts
+  38:38  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/userPreferencesService.ts
+  433:18  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  456:18  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/vstPluginBridge.ts
+  208:35  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  209:34  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  215:28  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/services/workspaceService.ts
+  914:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/simulations/adBoosterSimulation.ts
+  207:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  251:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/simulations/autonomousUpgradeSimulation.ts
+  473:3  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/simulations/runLifecycleSimulation.ts
+  292:30  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  308:27  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  334:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/social.ts
+  444:17  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/storage.ts
+   555:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   800:53  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   884:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+   955:43  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  2312:13  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/subatomic/index.ts
+  143:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/testing-system.ts
+  144:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  153:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  162:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  171:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  180:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  189:44  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/tests/load-testing/loadTestFramework.ts
+  443:37  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/tests/load-testing/runLoadTests.ts
+  181:26  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  192:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/tests/load-testing/simpleLoadTest.ts
+  365:33  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/server/ultra-quality-engine.ts
+  261:23  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  287:25  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+  936:32  error  Unsafe usage of optional chaining. If it short-circuits with 'undefined' the evaluation will throw TypeError  no-unsafe-optional-chaining
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/shared/ml/models/AdOptimizationEngine.ts
+  1073:7  error  Potential division by zero: totalBudget should be guarded. Use totalBudget || 1 or add a check  no-division-by-zero/no-division-by-zero
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/shared/ml/models/BrandVoiceAnalyzer.ts
+  317:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/shared/ml/models/SocialAutopilotEngine.ts
+   894:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  1048:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/shared/ml/models/SocialMediaAutopilotAI.ts
+  495:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  763:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  764:5  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/stubs/tar/index.js
+  3:1  error  'module' is not defined  no-undef
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/tests/unit/input-validation.test.ts
+  100:38  error  Script URL is a form of eval  no-script-url
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/tests/unit/safe-url-fetch.test.ts
+  74:38  error  Script URL is a form of eval  no-script-url
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/tests/unit/security-middleware.test.ts
+  85:42  error  `eval` can be harmful  no-eval
+  94:42  error  `eval` can be harmful  no-eval
+
+/home/runner/work/maxbooster7.5/maxbooster7.5/vps-dns-proxy/dns-proxy-node.js
+   21:15  error  'require' is not defined       no-undef
+   22:13  error  'require' is not defined       no-undef
+   23:15  error  'require' is not defined       no-undef
+   24:14  error  'require' is not defined       no-undef
+   25:13  error  'require' is not defined       no-undef
+   29:17  error  'process' is not defined       no-undef
+   30:19  error  'process' is not defined       no-undef
+   31:27  error  'process' is not defined       no-undef
+   32:29  error  'process' is not defined       no-undef
+   59:22  error  'setTimeout' is not defined    no-undef
+   83:9   error  'clearTimeout' is not defined  no-undef
+   87:17  error  'Buffer' is not defined        no-undef
+   90:9   error  'clearTimeout' is not defined  no-undef
+   96:7   error  'clearTimeout' is not defined  no-undef
+  111:38  error  'Buffer' is not defined        no-undef
+  112:14  error  'Buffer' is not defined        no-undef
+  128:16  error  'process' is not defined       no-undef
+  131:5   error  'process' is not defined       no-undef
+  140:3   error  'process' is not defined       no-undef
+  141:3   error  'process' is not defined       no-undef
+  148:13  error  'Buffer' is not defined        no-undef
+  151:11  error  'Buffer' is not defined        no-undef
+  163:26  error  'Buffer' is not defined        no-undef
+  166:26  error  'Buffer' is not defined        no-undef
+  169:11  error  'process' is not defined       no-undef
+  172:28  error  'Buffer' is not defined        no-undef
+  174:26  error  'Buffer' is not defined        no-undef
+  184:7   error  'process' is not defined       no-undef
+  190:3   error  'process' is not defined       no-undef
+  191:3   error  'process' is not defined       no-undef
+  197:3   error  'process' is not defined       no-undef
+  199:19  error  'process' is not defined       no-undef
+  200:3   error  'setTimeout' is not defined    no-undef
+  200:20  error  'process' is not defined       no-undef
+  202:1   error  'process' is not defined       no-undef
+  203:1   error  'process' is not defined       no-undef
+  208:3   error  'process' is not defined       no-undef
+  212:3   error  'process' is not defined       no-undef
+  215:1   error  'process' is not defined       no-undef
+  216:1   error  'process' is not defined       no-undef
+  217:1   error  'process' is not defined       no-undef
+  220:1   error  'process' is not defined       no-undef
+
+✖ 824 problems (824 errors, 0 warnings)
+

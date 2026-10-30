@@ -1,0 +1,1060 @@
+// @ts-nocheck
+import { useEffect, useRef, useState } from "react";
+import { z } from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
+import { ChevronLeft, ChevronRight, CheckCircle, Save, Send, Music, FileAudio, FileText, Globe, Calendar, Eye, Sparkles } from "lucide-react";
+
+import { MetadataForm } from "./MetadataForm";
+import { TrackUploader } from "./TrackUploader";
+import { ArtworkUploader } from "./ArtworkUploader";
+import { LyricsEditor } from "./LyricsEditor";
+import { TerritorySelector } from "./TerritorySelector";
+import { DSPSelector } from "./DSPSelector";
+import { ReleaseDateScheduler } from "./ReleaseDateScheduler";
+import { RoyaltySplitManager } from "./RoyaltySplitManager";
+
+// Step configuration
+const STEPS = [
+  {
+    id: 1,
+    title: "Metadata",
+    icon: Music,
+    description: "Basic release information",
+  },
+  {
+    id: 2,
+    title: "Tracks & Artwork",
+    icon: FileAudio,
+    description: "Upload audio and cover art",
+  },
+  {
+    id: 3,
+    title: "Lyrics",
+    icon: FileText,
+    description: "Add lyrics and credits",
+  },
+  {
+    id: 4,
+    title: "Territory & DSPs",
+    icon: Globe,
+    description: "Distribution settings",
+  },
+  {
+    id: 5,
+    title: "Schedule & Splits",
+    icon: Calendar,
+    description: "Release date and royalties",
+  },
+  { id: 6, title: "Review & Submit", icon: Eye, description: "Final review" },
+];
+
+// Validation schemas for each step
+const metadataSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  artistName: z.string().min(1, "Artist name is required"),
+  releaseType: z.enum(["single", "EP", "album"]),
+  primaryGenre: z.string().min(1, "Primary genre is required"),
+  secondaryGenre: z.string().optional(),
+  language: z.string().min(1, "Language is required"),
+  labelName: z.string().optional(),
+  copyrightYear: z
+    .number()
+    .int()
+    .min(1900)
+    .max(new Date().getFullYear() + 1),
+  copyrightOwner: z.string().min(1, "Copyright owner is required"),
+  publishingRights: z.string().optional(),
+  isExplicit: z.boolean(),
+  moodTags: z.array(z.string()).optional(),
+  artworkAiUsage: z.enum(["none", "ai-generated"]).or(z.literal("")),
+  audioAiUsage: z.enum(["none", "ai-assisted"]).or(z.literal("")),
+  compositionAiUsage: z.enum(["none", "ai-assisted"]).or(z.literal("")),
+  composerName: z.string(),
+  upc: z.string().regex(/^(?:\d{12,13})?$/, "UPC/EAN must contain 12 or 13 digits"),
+  acceptTerms: z.boolean(),
+  confirmRights: z.boolean(),
+  confirmYoutubeRights: z.boolean(),
+});
+
+const tracksSchema = z.object({
+  audioFiles: z.array(z.any()).min(1, "At least one track is required"),
+  artwork: z.any().nullable(),
+});
+
+interface ReleaseWizardProps {
+  releaseId?: string;
+  onComplete?: () => void;
+  onCancel?: () => void;
+}
+
+export function ReleaseWizard({
+  releaseId,
+  onComplete,
+  onCancel,
+}: ReleaseWizardProps) {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [metadataErrors, setMetadataErrors] = useState<Record<string, string>>(
+    {},
+  );
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Form state for all steps
+  const [metadataData, setMetadataData] = useState({
+    title: "",
+    artistName: "",
+    releaseType: "single" as "single" | "EP" | "album",
+    primaryGenre: "",
+    secondaryGenre: "",
+    language: "English",
+    labelName: "",
+    copyrightYear: new Date().getFullYear(),
+    copyrightOwner: "",
+    publishingRights: "",
+    isExplicit: false,
+    moodTags: [] as string[],
+    artworkAiUsage: "" as "" | "none" | "ai-generated",
+    audioAiUsage: "" as "" | "none" | "ai-assisted",
+    compositionAiUsage: "" as "" | "none" | "ai-assisted",
+    composerName: "",
+    upc: "",
+    acceptTerms: false,
+    confirmRights: false,
+    confirmYoutubeRights: false,
+  });
+
+  const [audioFiles, setAudioFiles] = useState<any[]>([]);
+  const [artwork, setArtwork] = useState<File | null>(null);
+  const [artworkPreview, setArtworkPreview] = useState<string | null>(null);
+  const [lyrics, setLyrics] = useState<Record<string, string>>({});
+  const [selectedTerritories, setSelectedTerritories] = useState<string[]>([]);
+  const [territoryMode, setTerritoryMode] = useState<
+    "worldwide" | "include" | "exclude"
+  >("worldwide");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [releaseDate, setReleaseDate] = useState<Date | null>(null);
+  const [royaltySplits, setRoyaltySplits] = useState<any[]>([]);
+  const [draftReleaseId, setDraftReleaseId] = useState<string | undefined>(
+    releaseId,
+  );
+  const [createPreSave, setCreatePreSave] = useState(true);
+  const [preSaveSlug, setPreSaveSlug] = useState("");
+  const [existingTracks, setExistingTracks] = useState<any[]>([]);
+  const [existingArtwork, setExistingArtwork] = useState("");
+  const [loadingRelease, setLoadingRelease] = useState(Boolean(releaseId));
+  const [loadError, setLoadError] = useState("");
+  const uploadedTracks = useRef(new Map<string, any>());
+  const uploadedArtwork = useRef<File | null>(null);
+  const releaseIdRef = useRef(releaseId);
+
+  useEffect(() => {
+    if (!releaseId) return;
+    let cancelled = false;
+    setLoadingRelease(true);
+    apiRequest("GET", `/api/distribution/releases/${encodeURIComponent(releaseId)}`)
+      .then(response => response.json())
+      .then(release => {
+        if (cancelled) return;
+        const saved = release.metadata || {};
+        if (!["draft", "rejected"].includes(String(saved.status || release.status || "draft"))) {
+          throw new Error("This release is already submitted. Use its delivery status to reconcile it; do not resubmit.");
+        }
+        setMetadataData(current => ({
+          ...current,
+          ...Object.fromEntries(Object.keys(current).filter(key => saved[key] !== undefined).map(key => [key, saved[key]])),
+          title: release.title,
+        }));
+        setDraftReleaseId(release.id);
+        releaseIdRef.current = release.id;
+        setExistingTracks((release.tracks || []).sort((a, b) => a.trackNumber - b.trackNumber).map(track => ({
+          ...track,
+          explicit: track.metadata?.explicit ?? track.explicit ?? false,
+          lyrics: track.metadata?.lyrics ?? track.lyrics ?? "",
+        })));
+        setExistingArtwork(release.artworkUrl || "");
+        setArtworkPreview(release.artworkUrl || null);
+        setSelectedPlatforms(saved.selectedPlatforms || []);
+        setSelectedTerritories(saved.territories || []);
+        setTerritoryMode(saved.territoryMode || "worldwide");
+        setReleaseDate(release.releaseDate ? new Date(release.releaseDate) : null);
+        setRoyaltySplits((release.royaltySplits || []).map(split => ({
+          ...split, percentage: Number(split.percentage),
+        })));
+        setLoadError("");
+      })
+      .catch(error => { if (!cancelled) setLoadError(error.message || "Failed to load release"); })
+      .finally(() => { if (!cancelled) setLoadingRelease(false); });
+    return () => { cancelled = true; };
+  }, [releaseId]);
+
+  const releasePayload = () => ({
+    ...Object.fromEntries(Object.entries(metadataData).filter(([key, value]) =>
+      !["artworkAiUsage", "audioAiUsage", "compositionAiUsage"].includes(key) || value !== "",
+    )),
+    releaseDate: releaseDate ? releaseDate.toISOString() : undefined,
+    territoryMode,
+    territories: selectedTerritories,
+    selectedPlatforms,
+    royaltySplits,
+  });
+
+  // Checkpoint each acknowledged upload before continuing: retries PATCH it, never re-POST it.
+  const persistMedia = async (id: string) => {
+    for (const track of existingTracks) {
+      await apiRequest("PATCH", `/api/distribution/releases/${encodeURIComponent(id)}/tracks/${encodeURIComponent(track.id)}`, {
+        title: track.title,
+        trackNumber: track.trackNumber,
+        isrc: track.isrc || "",
+        explicit: track.explicit,
+        lyrics: track.lyrics || "",
+        lyricsLanguage: track.lyricsLanguage || track.metadata?.lyricsLanguage,
+      });
+    }
+    for (const [index, audioFile] of audioFiles.entries()) {
+      const metadata = {
+        title: audioFile.name || audioFile.file.name.replace(/\.[^/.]+$/, ""),
+        trackNumber: Math.max(0, ...existingTracks.map(track => track.trackNumber)) + index + 1,
+        isrc: audioFile.isrc || "",
+        explicit: audioFile.explicit ?? metadataData.isExplicit,
+        lyrics: lyrics[audioFile.id] || "",
+        lyricsLanguage: audioFile.lyricsLanguage,
+      };
+      const saved = uploadedTracks.current.get(audioFile.id);
+      if (saved) {
+        await apiRequest("PATCH", `/api/distribution/releases/${encodeURIComponent(id)}/tracks/${encodeURIComponent(saved.id)}`, metadata);
+        continue;
+      }
+      const trackFormData = new FormData();
+      trackFormData.append("audio", audioFile.file);
+      trackFormData.append("metadata", JSON.stringify({ ...metadata, clientUploadId: audioFile.id }));
+      const response = await apiRequest("POST", `/api/distribution/releases/${encodeURIComponent(id)}/tracks`, trackFormData);
+      const uploaded = await response.json();
+      uploadedTracks.current.set(audioFile.id, uploaded);
+      // Also applies current edits when POST recovered a response-lost upload by clientUploadId.
+      await apiRequest("PATCH", `/api/distribution/releases/${encodeURIComponent(id)}/tracks/${encodeURIComponent(uploaded.id)}`, metadata);
+    }
+    if (artwork && uploadedArtwork.current !== artwork) {
+      const artworkFormData = new FormData();
+      artworkFormData.append("artwork", artwork);
+      const response = await apiRequest("POST", `/api/distribution/releases/${encodeURIComponent(id)}/artwork`, artworkFormData);
+      const saved = await response.json();
+      uploadedArtwork.current = artwork;
+      setExistingArtwork(saved.artworkUrl);
+    }
+  };
+
+  const persistDraft = async () => {
+    const id = releaseIdRef.current;
+    const response = await apiRequest(
+      id ? "PATCH" : "POST",
+      id ? `/api/distribution/releases/${encodeURIComponent(id)}` : "/api/distribution/releases",
+      releasePayload(),
+    );
+    const release = await response.json();
+    if (!release.id) throw new Error("Release save returned no identifier");
+    releaseIdRef.current = release.id;
+    setDraftReleaseId(release.id);
+    await persistMedia(release.id);
+    return release;
+  };
+
+  // Save as draft mutation
+  const saveDraftMutation = useMutation({
+    mutationFn: persistDraft,
+    onSuccess: (release) => {
+      if (release.id) setDraftReleaseId(release.id);
+      toast({
+        title: "Draft saved",
+        description: "Your release metadata and royalty splits have been saved.",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/releases"],
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save draft. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Submit for distribution mutation
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      if (audioFiles.length + existingTracks.length === 0) {
+        throw new Error("Please upload at least one track");
+      }
+      if (
+        audioFiles.some(
+          (audioFile) =>
+            !String(audioFile.file?.name || "").toLowerCase().endsWith(".flac"),
+        )
+      ) {
+        throw new Error(
+          "Too Lost accepts FLAC audio only. Replace every non-FLAC track before submitting.",
+        );
+      }
+
+      const releaseData = await persistDraft();
+
+      // Step 4: Submit through the server's distribution endpoint.
+      // Keep provider naming out of this client message because provider
+      // dispatch is owned by the server endpoint, not this component.
+      // The server endpoint validates UPC/ISRC/platform selection and creates dispatch records.
+      // Official UPC/ISRC values must be supplied by the rights holder, never fabricated here.
+      let submissionStatus: "submitted" | "saved-as-draft" = "saved-as-draft";
+      let submissionError: string | undefined;
+      if (releaseData.id) {
+        try {
+          const submissionResponse = await apiRequest(
+            "POST",
+            `/api/distribution/releases/${releaseData.id}/submit`,
+            {},
+          );
+          const submissionResult = await submissionResponse.json();
+          if (!submissionResult.success) {
+            throw new Error(
+              "The distributor did not accept this release for any selected platform. Review the per-platform delivery status.",
+            );
+          }
+          submissionStatus = "submitted";
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          submissionError = message;
+          logger.warn(
+            "Distribution submit deferred (release saved as draft):",
+            err,
+          );
+        }
+      }
+      (releaseData as Record<string, unknown>).submissionStatus =
+        submissionStatus;
+      (releaseData as Record<string, unknown>).submissionError =
+        submissionError;
+
+      // Create HyperFollow campaign if enabled
+      if (submissionStatus === "submitted" && createPreSave && releaseData.id) {
+        const slug =
+          preSaveSlug ||
+          metadataData.title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .substring(0, 50);
+
+        const hyperFollowData = new FormData();
+        if (artwork) {
+          hyperFollowData.append("headerImage", artwork);
+        }
+
+        hyperFollowData.append(
+          "data",
+          JSON.stringify({
+            title: metadataData.title,
+            artistName: metadataData.artistName,
+            slug,
+            releaseId: releaseData.id,
+            collectEmails: true,
+            platforms: selectedPlatforms.map((platformId) => ({
+              id: platformId,
+              name:
+                platformId.charAt(0).toUpperCase() +
+                platformId.slice(1).replace("-", " "),
+              enabled: true,
+              url: "",
+            })),
+            socialLinks: [],
+            theme: {
+              primaryColor: "#8B5CF6",
+              backgroundColor: "#0F0F0F",
+              textColor: "#FFFFFF",
+              buttonStyle: "rounded" as const,
+            },
+          }),
+        );
+
+        try {
+          await apiRequest(
+            "POST",
+            "/api/distribution/hyperfollow",
+            hyperFollowData,
+          );
+          releaseData.preSaveCreated = true;
+        } catch (error: unknown) {
+          logger.error("Failed to create HyperFollow campaign:", error);
+          toast({ title: "Pre-save campaign not created", description: "Your distribution submission was saved, but campaign creation failed. Retry from HyperFollow.", variant: "destructive" });
+        }
+      }
+
+      return releaseData;
+    },
+    onSuccess: (releaseData: Record<string, unknown>) => {
+      const status = releaseData?.submissionStatus as string | undefined;
+      const submissionError = releaseData?.submissionError as
+        | string
+        | undefined;
+      if (status === "submitted") {
+        toast({
+          title: "Release submitted!",
+          description: releaseData.preSaveCreated
+            ? "Your release is queued for distribution and the pre-save campaign was created."
+            : "Your release is queued for distribution to the selected platforms.",
+        });
+      } else {
+        toast({
+          title: "Release saved; submission not confirmed",
+          description: submissionError
+            ? `Saved, but distribution submission failed: ${submissionError}. Open the release to resolve and resubmit.`
+            : "Saved successfully. Open the release to submit for distribution.",
+          variant: "destructive",
+        });
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/releases"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/distribution/hyperfollow"],
+      });
+      if (status === "submitted") onComplete?.();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Submission failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1: {
+        const result = metadataSchema.safeParse(metadataData);
+        if (!result.success) {
+          const fieldErrors: Record<string, string> = {};
+          result.error.issues.forEach((e) => {
+            const field = e.path[0] as string;
+            if (field) fieldErrors[field] = e.message;
+          });
+          setMetadataErrors(fieldErrors);
+          const firstMessage =
+            result.error.issues[0]?.message ||
+            "Please fill in all required fields.";
+          toast({
+            title: "Missing required fields",
+            description: firstMessage,
+            variant: "destructive",
+          });
+          return false;
+        }
+        setMetadataErrors({});
+        return true;
+      }
+      case 2: {
+        const result = tracksSchema.safeParse({ audioFiles: [...existingTracks, ...audioFiles], artwork });
+        if (!result.success) {
+          const firstMessage =
+            result.error.issues[0]?.message ||
+            "Please upload at least one track.";
+          toast({
+            title: "Validation error",
+            description: firstMessage,
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+      }
+      case 3:
+        return true;
+      case 4:
+        if (selectedPlatforms.length === 0) {
+          toast({
+            title: "Validation error",
+            description: "Please select at least one distribution platform.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+      case 5:
+        if (!releaseDate) {
+          toast({
+            title: "Validation error",
+            description: "Please select a release date.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+      case 6: {
+        if (!/^\d{12,13}$/.test(metadataData.upc) ||
+          [...existingTracks, ...audioFiles].some(track => !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(track.isrc || ""))) {
+          toast({ title: "Assigned identifiers required", description: "Enter your real UPC/EAN and each track's assigned ISRC. Drafts can be saved without them.", variant: "destructive" });
+          return false;
+        }
+        if (!artwork && !existingArtwork) {
+          toast({ title: "Artwork required", description: "Upload cover artwork before submitting.", variant: "destructive" });
+          return false;
+        }
+        const missing = [
+          metadataData.artworkAiUsage,
+          metadataData.audioAiUsage,
+          metadataData.compositionAiUsage,
+        ].some((value) => !value);
+        if (missing) {
+          toast({
+            title: "AI declarations required",
+            description:
+              "Complete the artwork, recording, and composition declarations before submitting to Too Lost.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (
+          [
+            metadataData.artworkAiUsage,
+            metadataData.audioAiUsage,
+            metadataData.compositionAiUsage,
+          ].some((value) => value !== "none")
+        ) {
+          toast({
+            title: "AI documentation required",
+            description:
+              "Too Lost requires AI documentation for AI-assisted content. This wizard cannot collect those provider files yet, so submission is blocked without changing your declaration.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (!metadataData.composerName.trim()) {
+          toast({
+            title: "Composer required",
+            description:
+              "Enter the truthful composer name required for each track's Too Lost writer credit.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (!metadataData.acceptTerms || !metadataData.confirmRights) {
+          toast({
+            title: "Confirmations required",
+            description:
+              "Accept Too Lost's terms and confirm that you hold the rights before submitting.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (
+          selectedPlatforms.some((platform) =>
+            platform.toLowerCase().includes("youtube"),
+          ) &&
+          !metadataData.confirmYoutubeRights
+        ) {
+          toast({
+            title: "YouTube rights confirmation required",
+            description:
+              "Confirm YouTube rights for this release or remove YouTube from the selected stores.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+      }
+      default:
+        return true;
+    }
+  };
+
+  const handleNext = () => {
+    // Incomplete drafts can be reviewed in any step. Completeness is required only on submit.
+    setCompletedSteps([...completedSteps, currentStep]);
+    setCurrentStep(currentStep + 1);
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSaveDraft = () => {
+    saveDraftMutation.mutate();
+  };
+
+  const handleSubmit = () => {
+    if ([1, 2, 4, 5, 6].every(validateStep)) {
+      submitMutation.mutate();
+    }
+  };
+
+  const progress = (currentStep / (STEPS.length || 1)) * 100;
+  const lyricsTracks = [
+    ...existingTracks,
+    ...audioFiles.map((track, index) => ({
+      ...track,
+      title: track.name || track.file.name.replace(/\.[^/.]+$/, ""),
+      trackNumber: Math.max(0, ...existingTracks.map(track => track.trackNumber)) + index + 1,
+      lyrics: lyrics[track.id] || "",
+      explicit: track.explicit ?? metadataData.isExplicit,
+    })),
+  ];
+
+  if (loadingRelease) return <p role="status">Loading saved release…</p>;
+  if (loadError) return <div role="alert"><p>Cannot edit release: {loadError}</p><Button onClick={onCancel}>Back to releases</Button></div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Progress Header */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">{draftReleaseId ? "Complete Release Draft" : "Create New Release"}</h2>
+            <p className="text-muted-foreground">
+              Step {currentStep} of {STEPS.length}:{" "}
+              {STEPS[currentStep - 1].title}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={handleSaveDraft}
+            disabled={saveDraftMutation.isPending || submitMutation.isPending}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Draft
+          </Button>
+        </div>
+
+        <Progress value={progress} className="h-2" />
+
+        {/* Step Indicators */}
+        <div className="flex items-center justify-between">
+          {STEPS.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = currentStep === step.id;
+            const isCompleted = completedSteps.includes(step.id);
+
+            return (
+              <div key={step.id} className="flex flex-col items-center flex-1">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : isCompleted
+                        ? "bg-green-500 text-white"
+                        : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {isCompleted ? (
+                    <CheckCircle className="h-5 w-5" />
+                  ) : (
+                    <Icon className="h-5 w-5" />
+                  )}
+                </div>
+                <span
+                  className={`text-xs text-center hidden md:block ${isActive ? "font-medium" : ""}`}
+                >
+                  {step.title}
+                </span>
+                {index < STEPS.length - 1 && (
+                  <div className="hidden md:block absolute w-full h-0.5 bg-muted top-5 left-1/2 -z-10" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Step Content */}
+      <Card>
+        <CardContent className="p-6">
+          <fieldset disabled={saveDraftMutation.isPending || submitMutation.isPending} className="min-w-0">
+          {currentStep === 1 && (
+            <MetadataForm
+              data={metadataData}
+              onChange={(updates) => {
+                setMetadataData({ ...metadataData, ...updates });
+                setMetadataErrors({});
+              }}
+              errors={metadataErrors}
+            />
+          )}
+
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              {existingArtwork && <p className="text-sm">Saved artwork is retained unless you upload a replacement.</p>}
+              {existingTracks.map((track, index) => (
+                <div key={track.id} className="space-y-2 rounded border p-3">
+                  <Label htmlFor={`saved-title-${track.id}`}>Saved track {track.trackNumber}: title</Label>
+                  <Input id={`saved-title-${track.id}`} value={track.title} onChange={event => setExistingTracks(tracks => tracks.map((item, i) => i === index ? { ...item, title: event.target.value } : item))} />
+                  <p className="text-sm text-muted-foreground">Existing audio is retained.</p>
+                  <Label htmlFor={`saved-isrc-${track.id}`}>Assigned ISRC</Label>
+                  <Input id={`saved-isrc-${track.id}`} value={track.isrc || ""} maxLength={12} onChange={event => setExistingTracks(tracks => tracks.map((item, i) => i === index ? { ...item, isrc: event.target.value.toUpperCase() } : item))} />
+                  <Label htmlFor={`saved-explicit-${track.id}`}>Explicit lyrics</Label>
+                  <Switch id={`saved-explicit-${track.id}`} checked={track.explicit} onCheckedChange={explicit => setExistingTracks(tracks => tracks.map((item, i) => i === index ? { ...item, explicit } : item))} />
+                </div>
+              ))}
+              <TrackUploader files={audioFiles} onChange={(files) => {
+                const removedSaved = audioFiles.some(file => uploadedTracks.current.has(file.id) && !files.some(next => next.id === file.id));
+                if (removedSaved) {
+                  toast({ title: "Track already saved", description: "Reload this draft before changing saved audio. Saved tracks are retained to prevent accidental media loss.", variant: "destructive" });
+                  return;
+                }
+                setAudioFiles(files);
+              }} />
+              {audioFiles.map((track, index) => (
+                <div key={track.id} className="space-y-2">
+                  <Label htmlFor={`isrc-${track.id}`}>Assigned ISRC — {track.file.name}</Label>
+                  <Input id={`isrc-${track.id}`} value={track.isrc || ""} maxLength={12} onChange={event => setAudioFiles(files => files.map((item, i) => i === index ? { ...item, isrc: event.target.value.toUpperCase() } : item))} />
+                  <Label htmlFor={`explicit-${track.id}`}>Explicit lyrics</Label>
+                  <Switch id={`explicit-${track.id}`} checked={track.explicit ?? metadataData.isExplicit} onCheckedChange={explicit => setAudioFiles(files => files.map((item, i) => i === index ? { ...item, explicit } : item))} />
+                </div>
+              ))}
+              <ArtworkUploader artwork={artwork} previewUrl={artworkPreview} onChange={(file, preview) => {
+                setArtwork(file);
+                setArtworkPreview(preview || existingArtwork || null);
+              }} />
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <LyricsEditor
+              tracks={lyricsTracks}
+              lyricsData={lyricsTracks.map(track => ({
+                trackNumber: track.trackNumber,
+                trackTitle: track.title,
+                lyrics: track.lyrics || "",
+                language: track.lyricsLanguage || metadataData.language,
+                hasExplicitContent: track.explicit,
+              }))}
+              onChange={next => {
+                const byId = new Map(next.map(entry => [lyricsTracks.find(track => track.trackNumber === entry.trackNumber)?.id, entry]));
+                setLyrics(current => ({ ...current, ...Object.fromEntries([...byId].filter(([id]) => id).map(([id, entry]) => [id, entry.lyrics])) }));
+                const update = track => {
+                  const entry = byId.get(track.id);
+                  return entry ? { ...track, lyrics: entry.lyrics, lyricsLanguage: entry.language, explicit: entry.hasExplicitContent } : track;
+                };
+                setExistingTracks(tracks => tracks.map(update));
+                setAudioFiles(tracks => tracks.map(update));
+              }}
+            />
+          )}
+
+          {currentStep === 4 && (
+            <div className="space-y-6">
+              <TerritorySelector
+                mode={territoryMode}
+                selectedTerritories={selectedTerritories}
+                onModeChange={setTerritoryMode}
+                onChange={setSelectedTerritories}
+              />
+              <DSPSelector
+                selectedPlatforms={selectedPlatforms}
+                onChange={setSelectedPlatforms}
+              />
+            </div>
+          )}
+
+          {currentStep === 5 && (
+            <div className="space-y-6">
+              <ReleaseDateScheduler
+                selectedDate={releaseDate}
+                onChange={setReleaseDate}
+              />
+
+              {/* HyperFollow Pre-Save Campaign */}
+              <Card className="border-primary/20">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <Label
+                          htmlFor="create-presave"
+                          className="text-base font-semibold"
+                        >
+                          Create Pre-Save Campaign
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Build hype with a shareable landing page before
+                          release
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="create-presave"
+                      checked={createPreSave}
+                      onCheckedChange={setCreatePreSave}
+                    />
+                  </div>
+
+                  {createPreSave && (
+                    <div className="space-y-3 pl-13">
+                      <div className="space-y-2">
+                        <Label htmlFor="presave-slug">Campaign URL Slug</Label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            maxbooster.com/pre-save/
+                          </span>
+                          <Input
+                            id="presave-slug"
+                            placeholder={metadataData.title
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}
+                            value={preSaveSlug}
+                            onChange={(e) => setPreSaveSlug(e.target.value)}
+                            className="flex-1"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Leave empty to auto-generate from release title
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <p className="text-sm text-blue-500">
+                          <strong>What's included:</strong> Customizable landing
+                          page with platform pre-save buttons, email capture,
+                          social sharing, and real-time analytics tracking.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <RoyaltySplitManager
+                splits={royaltySplits}
+                onChange={setRoyaltySplits}
+              />
+            </div>
+          )}
+
+          {currentStep === 6 && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold">Review Your Release</h3>
+
+              <div className="grid gap-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Metadata</h4>
+                  <dl className="grid grid-cols-2 gap-2 text-sm">
+                    <dt className="text-muted-foreground">Title:</dt>
+                    <dd>{metadataData.title}</dd>
+                    <dt className="text-muted-foreground">Artist:</dt>
+                    <dd>{metadataData.artistName}</dd>
+                    <dt className="text-muted-foreground">Type:</dt>
+                    <dd className="capitalize">{metadataData.releaseType}</dd>
+                    <dt className="text-muted-foreground">Genre:</dt>
+                    <dd>{metadataData.primaryGenre}</dd>
+                  </dl>
+                </div>
+
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Tracks</h4>
+                  <p className="text-sm">
+                    {existingTracks.length + audioFiles.length} track(s) saved or selected
+                  </p>
+                </div>
+
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Distribution</h4>
+                  <p className="text-sm">
+                    {selectedPlatforms.length} platform(s) selected
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {territoryMode === "worldwide"
+                      ? "Worldwide distribution"
+                      : `${selectedTerritories.length} territories`}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Release Date</h4>
+                  <p className="text-sm">
+                    {releaseDate ? releaseDate.toLocaleDateString() : "Not set"}
+                  </p>
+                </div>
+
+                <div className="space-y-4 rounded-lg border p-4">
+                  <div>
+                    <Label htmlFor="release-upc">Existing distributor-assigned UPC/EAN</Label>
+                    <Input id="release-upc" inputMode="numeric" maxLength={13}
+                      value={metadataData.upc}
+                      onChange={event => setMetadataData({ ...metadataData, upc: event.target.value })} />
+                    <p className="text-sm text-muted-foreground">
+                      Enter your assigned identifier, not a locally generated provisional code.
+                      You may leave this blank while saving a draft.
+                    </p>
+                    <h4 className="font-medium mt-4">Required Too Lost AI declarations</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Select the truthful answer for this release. These declarations
+                      are sent to Too Lost and are never inferred.
+                    </p>
+                  </div>
+                  {[
+                    ["artworkAiUsage", "Cover artwork"],
+                    ["audioAiUsage", "Audio recordings"],
+                    ["compositionAiUsage", "Musical compositions"],
+                  ].map(([field, label]) => (
+                    <div key={field} className="grid gap-2 sm:grid-cols-2 sm:items-center">
+                      <Label htmlFor={field}>{label}</Label>
+                      <select
+                        id={field}
+                        className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        value={metadataData[field]}
+                        onChange={(event) =>
+                          setMetadataData({
+                            ...metadataData,
+                            [field]: event.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select a declaration</option>
+                        <option value="none">No AI involvement</option>
+                        <option
+                          value={
+                            field === "artworkAiUsage"
+                              ? "ai-generated"
+                              : "ai-assisted"
+                          }
+                        >
+                          {field === "artworkAiUsage"
+                            ? "Artwork is AI-generated"
+                            : "AI-assisted"}
+                        </option>
+                      </select>
+                    </div>
+                  ))}
+                  <div className="grid gap-2 sm:grid-cols-2 sm:items-center">
+                    <Label htmlFor="composerName">Composer name</Label>
+                    <Input
+                      id="composerName"
+                      value={metadataData.composerName}
+                      onChange={(event) =>
+                        setMetadataData({
+                          ...metadataData,
+                          composerName: event.target.value,
+                        })
+                      }
+                      placeholder="Legal or credited composer name"
+                    />
+                  </div>
+                  {[
+                    [
+                      "acceptTerms",
+                      "I accept Too Lost's submission terms",
+                    ],
+                    [
+                      "confirmRights",
+                      "I confirm I hold the rights to distribute this release",
+                    ],
+                    ...(selectedPlatforms.some((platform) =>
+                      platform.toLowerCase().includes("youtube"),
+                    )
+                      ? [[
+                          "confirmYoutubeRights",
+                          "I confirm I hold the required YouTube rights",
+                        ]]
+                      : []),
+                  ].map(([field, label]) => (
+                    <div key={field} className="flex items-center justify-between gap-4">
+                      <Label htmlFor={field}>{label}</Label>
+                      <Switch
+                        id={field}
+                        checked={Boolean(metadataData[field])}
+                        onCheckedChange={(checked) =>
+                          setMetadataData({
+                            ...metadataData,
+                            [field]: checked,
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {createPreSave && (
+                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <h4 className="font-medium">Pre-Save Campaign</h4>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          Campaign URL:
+                        </span>
+                        <code className="bg-background px-2 py-1 rounded text-xs">
+                          maxbooster.com/pre-save/
+                          {preSaveSlug ||
+                            metadataData.title
+                              .toLowerCase()
+                              .replace(/[^a-z0-9\s-]/g, "")
+                              .replace(/\s+/g, "-")
+                              .substring(0, 50)}
+                        </code>
+                      </div>
+                      <p className="text-muted-foreground">
+                        Your pre-save landing page will be created automatically
+                        with your release artwork and platform links.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <p className="text-sm">
+                  <strong>Important:</strong> Once submitted, your release will
+                  be processed and sent to the selected platforms. This process
+                  typically takes 2-5 business days. Make sure all information
+                  is correct before submitting.
+                </p>
+              </div>
+            </div>
+          )}
+          </fieldset>
+        </CardContent>
+      </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-between">
+        <Button
+          variant="outline"
+          onClick={currentStep === 1 ? onCancel : handleBack}
+          disabled={submitMutation.isPending || saveDraftMutation.isPending}
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          {currentStep === 1 ? "Cancel" : "Back"}
+        </Button>
+
+        {currentStep < 6 ? (
+          <Button onClick={handleNext} disabled={submitMutation.isPending || saveDraftMutation.isPending}>
+            Next
+            <ChevronRight className="h-4 w-4 ml-2" />
+          </Button>
+        ) : (
+          <Button onClick={handleSubmit} disabled={submitMutation.isPending || saveDraftMutation.isPending}>
+            <Send className="h-4 w-4 mr-2" />
+            {submitMutation.isPending
+              ? "Submitting..."
+              : "Submit for Distribution"}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}

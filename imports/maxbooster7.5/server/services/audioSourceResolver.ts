@@ -1,0 +1,109 @@
+// @ts-nocheck
+/**
+ * Shared resolver that turns any of the audioUrl forms used across the studio
+ * subsystem (render, warp, transient detection) into a local file on disk so
+ * ffmpeg-based processing can operate on it uniformly.
+ *
+ * Recognized forms:
+ *   - `/api/storage/file/<encoded key>` — the app's own storage-serving route
+ *   - `/uploads/...`, `/samples/...`, `/attached_assets/...` — local static paths
+ *   - `http://` / `https://` — remote URL, fetched
+ *   - anything else — treated as a bare storage key (legacy clips that stored
+ *     the raw key instead of a URL)
+ *
+ * Every branch either returns a real local path or throws a descriptive
+ * error — callers must treat a failure as a real failure, not a clip to
+ * silently skip, except where a caller has an intentional, documented
+ * lenient-skip policy (e.g. mixdown skipping one unresolvable clip among many).
+ */
+import path from "path";
+import fsPromises from "fs/promises";
+import os from "os";
+import { randomUUID } from "crypto";
+import { storageService } from "./storageService.js";
+import { logger } from "../logger.js";
+import { safeFetchBuffer } from "./safeUrlFetch.js";
+import { authorizeAudioSource, authorizedLocalAudioPath } from "./audioSourceAuthorization.js";
+export interface ResolvedAudioSource {
+  /** Absolute local path to the audio bytes. */
+  localPath: string;
+  /** Call after use. No-ops for paths that are already permanently on local disk. */
+  cleanup: () => Promise<void>;
+}
+
+const NOOP_CLEANUP = async () => {};
+
+async function writeToTemp(buf: Buffer, hint: string): Promise<string> {
+  const ext = path.extname(hint.split("?")[0]) || ".wav";
+  const tmp = path.join(os.tmpdir(), `audio_src_${randomUUID()}${ext}`);
+  await fsPromises.writeFile(tmp, buf);
+  return tmp;
+}
+
+export async function resolveAudioUrlToLocalFile(
+  audioUrl: string,
+  userId: string,
+): Promise<ResolvedAudioSource> {
+  await authorizeAudioSource(audioUrl, userId);
+  if (/^https?:\/\//.test(audioUrl)) {
+    const url = new URL(audioUrl);
+    if (url.pathname.startsWith("/api/storage/file/") ||
+        /^\/(uploads|samples|attached_assets)\//.test(url.pathname)) audioUrl = url.pathname;
+  }
+  if (!audioUrl) {
+    throw new Error("resolveAudioUrlToLocalFile: empty audioUrl");
+  }
+
+  // The app's own storage-serving route: /api/storage/file/<encoded key>
+  const storageRouteMatch = audioUrl.match(/^\/api\/storage\/file\/(.+)$/);
+  if (storageRouteMatch) {
+    const key = decodeURIComponent(storageRouteMatch[1]);
+    const buf = await storageService.downloadFile(key);
+    const localPath = await writeToTemp(buf, key);
+    return {
+      localPath,
+      cleanup: () => fsPromises.unlink(localPath).catch(() => {}),
+    };
+  }
+
+  // Local static paths served directly by the app
+  if (
+    audioUrl.startsWith("/uploads/") ||
+    audioUrl.startsWith("/samples/") ||
+    audioUrl.startsWith("/attached_assets/")
+  ) {
+    return { localPath: await authorizedLocalAudioPath(audioUrl, userId), cleanup: NOOP_CLEANUP };
+  }
+
+  // Remote URL
+  if (audioUrl.startsWith("http://") || audioUrl.startsWith("https://")) {
+    const resp = await safeFetchBuffer(audioUrl, { maxBytes: 64 * 1024 * 1024, timeoutMs: 30_000 });
+    if (resp.status < 200 || resp.status >= 300) {
+      throw new Error(
+        `resolveAudioUrlToLocalFile: fetch failed (${resp.status}) for ${audioUrl}`,
+      );
+    }
+    const buf = resp.body;
+    const localPath = await writeToTemp(buf, audioUrl);
+    return {
+      localPath,
+      cleanup: () => fsPromises.unlink(localPath).catch(() => {}),
+    };
+  }
+
+  // Fallback: bare storage key (legacy rows that stored the key directly)
+  try {
+    const buf = await storageService.downloadFile(audioUrl);
+    const localPath = await writeToTemp(buf, audioUrl);
+    return {
+      localPath,
+      cleanup: () => fsPromises.unlink(localPath).catch(() => {}),
+    };
+  } catch (err) {
+    logger.warn(
+      { err, audioUrl },
+      "[audioSourceResolver] failed to resolve audio source",
+    );
+    throw new Error(`resolveAudioUrlToLocalFile: could not resolve "${audioUrl}"`);
+  }
+}

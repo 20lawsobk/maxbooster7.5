@@ -1,0 +1,409 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  assertPublishingCleanupExpectation,
+  assertPublishingPayloadClean,
+  cleanPublishingPayload,
+  isDisposablePublishingCopy,
+  measurePublishingPayload,
+  PROTECTED_PUBLISHING_PATHS,
+} from "../../script/lib/publishingPayload.js";
+import { RECOVERY_HELPER_PATH } from "../../script/lib/deploymentPackRecovery.mjs";
+import * as recovery from "../../script/lib/deploymentPackRecovery.mjs";
+import { computeRemainingAppMembers } from "../../script/lib/dockerignoreScan.js";
+
+// Every deletion in this suite is confined to mkdtemp fixtures, never the app.
+const fixtures: string[] = [];
+// Keep real native deletion; inject only the independent cache-writer behavior
+// at the cleanup boundary rather than intercepting an obsolete fs.rmSync call.
+function afterRemoval(callback: (target: string) => void) {
+  const remove = recovery.removeBuildPaths;
+  vi.spyOn(recovery, "removeBuildPaths").mockImplementation((targets: string[]) => {
+    remove(targets);
+    targets.forEach(callback);
+  });
+}
+const publishing = (root: string) => ({
+  DEPLOY_PACK: "1", PUBLISH_PAYLOAD_CLEANUP: "1", PUBLISH_BUILD_ROOT: root,
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  for (const fixture of fixtures.splice(0)) fs.rmSync(fixture, { recursive: true, force: true });
+});
+
+function fixture() {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), "publishing-payload-test-"));
+  fixtures.push(base);
+  const root = path.join(base, "publishing-copy");
+  fs.mkdirSync(root);
+  function write(relative: string, content = `fixture ${relative}\n`) {
+    const absolute = path.join(root, relative);
+    fs.mkdirSync(path.dirname(absolute), { recursive: true });
+    fs.writeFileSync(absolute, content);
+    return absolute;
+  }
+  return { base, root, write };
+}
+
+describe("disposable publishing payload cleanup", () => {
+  for (const cacheInitiallyPresent of [true, false]) {
+    it(`removes invalidating inputs before the platform cache (initial cache: ${cacheInitiallyPresent})`, () => {
+      const { root, write } = fixture();
+      write(".replit", "fixture config");
+      write(".config/settings", "fixture settings");
+      write("start.sh", "bootstrap bytes");
+      if (cacheInitiallyPresent) write(".cache/replit/old", "old cache");
+      const removals: string[] = [];
+      afterRemoval(target => {
+        const relative = path.relative(root, String(target));
+        removals.push(relative);
+        // Simulate an independent configuration-cache producer, not a cache
+        // write caused by removing the cache itself.
+        if (relative === ".replit" || relative === ".config") {
+          write(".cache/replit/env/fixture", "regenerated platform cache");
+        }
+      });
+      const policy = ".cache\n.config/\n.replit\n";
+      const result = cleanPublishingPayload({
+        root, env: publishing(root), dockerignore: policy, requiredPaths: ["start.sh"],
+      });
+      expect(removals).toEqual([".config", ".replit", ".cache"]);
+      expect(result.removedPaths).toEqual(removals);
+      expect(result.measurement.byTopDir.has(".cache")).toBe(false);
+      expect(fs.existsSync(path.join(root, ".cache"))).toBe(false);
+      expect(fs.readFileSync(path.join(root, "start.sh"), "utf8")).toBe("bootstrap bytes");
+      assertPublishingPayloadClean(root, policy);
+    });
+  }
+
+  it("does not delete a non-excluded cache created by input removal", () => {
+    const { root, write } = fixture();
+    write(".replit", "fixture config");
+    afterRemoval(target => {
+      if (String(target) === path.join(root, ".replit")) write(".cache/keep", "retained bytes");
+    });
+    const result = cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: ".replit\n", requiredPaths: [],
+    });
+    expect(result.removedPaths).toEqual([".replit"]);
+    expect(result.measurement.byTopDir.has(".cache")).toBe(true);
+    expect(fs.readFileSync(path.join(root, ".cache/keep"), "utf8")).toBe("retained bytes");
+  });
+
+  it("final read-only assertion rejects a late cache writer without deleting evidence", () => {
+    const { root, write } = fixture();
+    write("start.sh", "bootstrap");
+    const policy = ".cache/\n";
+    cleanPublishingPayload({ root, env: publishing(root), dockerignore: policy, requiredPaths: ["start.sh"] });
+    assertPublishingPayloadClean(root, policy);
+    write(".cache/late-writer", "evidence");
+    expect(() => assertPublishingPayloadClean(root, policy)).toThrow(/appeared after finalization: .cache/);
+    expect(fs.readFileSync(path.join(root, ".cache/late-writer"), "utf8")).toBe("evidence");
+    expect(fs.readFileSync(path.join(root, "start.sh"), "utf8")).toBe("bootstrap");
+  });
+  it("reports a cache recreated during cleanup without reading its contents or bypassing the failure", () => {
+    const { root, write } = fixture();
+    write(".cache/old-build-cache");
+    afterRemoval(target => {
+      if (String(target) === path.join(root, ".cache")) {
+        write(".cache/replit/private-cache", "sensitive fixture content must not be logged");
+      }
+    });
+    let error: Error | undefined;
+    try {
+      cleanPublishingPayload({
+        root, env: publishing(root), dockerignore: ".cache/\n", requiredPaths: [],
+      });
+    } catch (cause) {
+      error = cause as Error;
+    }
+    expect(error?.message).toContain("Excluded publishing entries survived cleanup: .cache");
+    expect(error?.message).toContain("was scheduled for removal");
+    expect(error?.message).toContain('"replit"/');
+    expect(error?.message).not.toContain("sensitive fixture content");
+    expect(error?.message).not.toContain("private-cache");
+    expect(fs.existsSync(path.join(root, ".cache/replit/private-cache"))).toBe(true);
+  });
+
+  it("does not inspect a surviving excluded symlink target", () => {
+    const { base, root, write } = fixture();
+    write(".cache/original");
+    const external = path.join(base, "external");
+    fs.mkdirSync(external);
+    fs.writeFileSync(path.join(external, "private-name"), "external bytes");
+    afterRemoval(target => {
+      if (String(target) === path.join(root, ".cache")) fs.symlinkSync(external, target);
+    });
+    expect(() => cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: ".cache\n", requiredPaths: [],
+    })).toThrow(/symlink; was scheduled for removal; target not inspected/);
+    expect(fs.readFileSync(path.join(external, "private-name"), "utf8")).toBe("external bytes");
+  });
+
+  for (const env of [
+    {}, { DEPLOY_PACK: "1" }, { REPLIT_DEPLOYMENT: "1" },
+    { DEPLOY_PACK: "0", REPLIT_DEPLOYMENT: "1" },
+    { DEPLOY_PACK: "1", REPLIT_DEPLOYMENT: "0" },
+    { DEPLOY_PACK: "1", REPLIT_DEPLOYMENT_ID: "   " },
+    { DEPLOY_PACK: "1", PUBLISH_PAYLOAD_CLEANUP: "1" },
+  ]) {
+    it(`refuses any deletion without both authorization conditions (${JSON.stringify(env)})`, () => {
+      const { root, write } = fixture();
+      const archived = write(".local/preserved-simulation/evidence", "preserved bytes");
+      expect(isDisposablePublishingCopy(env)).toBe(false);
+      expect(() => cleanPublishingPayload({
+        root, env, dockerignore: ".local/\n", requiredPaths: [],
+      })).toThrow(/requires DEPLOY_PACK=1 AND/);
+      expect(fs.readFileSync(archived, "utf8")).toBe("preserved bytes");
+    });
+  }
+
+  it("fails the explicit publishing expectation before local builds, but permits simulations without it", () => {
+    expect(() => assertPublishingCleanupExpectation({
+      DEPLOY_PACK: "1", PUBLISH_PAYLOAD_CLEANUP: "1",
+    })).toThrow(/no recovery\/build mutations/);
+    expect(() => assertPublishingCleanupExpectation({
+      REPLIT_DEPLOYMENT: "1", PUBLISH_PAYLOAD_CLEANUP: "1",
+    })).toThrow(/requires DEPLOY_PACK/);
+    expect(() => assertPublishingCleanupExpectation({ DEPLOY_PACK: "1" })).not.toThrow();
+    expect(() => assertPublishingCleanupExpectation({
+      ...publishing(process.cwd()),
+    })).not.toThrow();
+    expect(isDisposablePublishingCopy({ DEPLOY_PACK: "1", REPLIT_DEPLOYMENT_ID: "fixture-id" })).toBe(false);
+  });
+
+  it("physically removes ignored roots and dangling links without touching their targets or outside state", () => {
+    const { base, root, write } = fixture();
+    const outside = path.join(base, "preserved-source-and-recovery");
+    fs.mkdirSync(outside);
+    fs.writeFileSync(path.join(outside, "journal.json"), "outside recovery evidence");
+    write(".local/archived-simulation/output", "only the disposable copy");
+    write(".config/pulse/repl-runtime", "ignored runtime state");
+    write(".git/objects/fixture", "fixture git object");
+    write("untracked-output.bin", "real untracked output");
+    fs.symlinkSync(outside, path.join(root, "excluded-source-link"));
+    fs.symlinkSync(path.join(outside, "missing"), path.join(root, "excluded-dangling-link"));
+    const result = cleanPublishingPayload({
+      root, env: publishing(root),
+      dockerignore: ".local/\n.config/\n.git\nexcluded-*\n", requiredPaths: [],
+    });
+    expect(result.removedPaths).toEqual([
+      ".config", ".git", ".local", "excluded-dangling-link", "excluded-source-link",
+    ]);
+    expect(fs.readdirSync(root)).toEqual(["untracked-output.bin"]);
+    expect(fs.readFileSync(path.join(outside, "journal.json"), "utf8")).toBe("outside recovery evidence");
+    expect(fs.existsSync(path.join(outside, "missing"))).toBe(false);
+  });
+
+  it("preserves every bootstrap, recovery helper, capsule, manifest and dependency-control byte", () => {
+    const { root, write } = fixture();
+    const original = new Map<string, Buffer>();
+    for (const relative of PROTECTED_PUBLISHING_PATHS) {
+      // .node_bin is a directory, not a regular file.
+      if (relative === ".node_bin") continue;
+      write(relative);
+      original.set(relative, fs.readFileSync(path.join(root, relative)));
+    }
+    write(".node_bin/node", "bootstrap executable fixture");
+    write(".config/ignored");
+    write("scripts/ignored-development-helper");
+    const required = ["start.sh", ".node_bin/node", RECOVERY_HELPER_PATH, "app_remainder.pdim", "app_remainder.manifest.json"];
+    cleanPublishingPayload({
+      root, env: publishing(root),
+      dockerignore: ".config/\nscripts/*\n!scripts/boot-stub-server.mjs\n!scripts/port-contract.sh\n!scripts/check-port-contract.ts\n",
+      requiredPaths: required,
+    });
+    for (const [relative, bytes] of original) {
+      expect(fs.readFileSync(path.join(root, relative)), relative).toEqual(bytes);
+    }
+    expect(fs.readFileSync(path.join(root, ".node_bin/node"), "utf8")).toBe("bootstrap executable fixture");
+  });
+
+  it("the real publishing policy removes archived audio links while retaining the complete bootstrap set", () => {
+    const { root, write } = fixture();
+    for (const relative of PROTECTED_PUBLISHING_PATHS) {
+      if (relative !== ".node_bin") write(relative);
+    }
+    write(".node_bin/node");
+    write(".local/production-simulation/runs/archive/app/.config/pulse/evidence");
+    fs.symlinkSync("/tmp/nonexistent-pulse-fixture",
+      path.join(root, ".local/production-simulation/runs/archive/app/.config/pulse/repl-runtime"));
+    write(".config/pulse/evidence");
+    const required = PROTECTED_PUBLISHING_PATHS.filter(p => p !== ".node_bin").concat(".node_bin/node");
+    const result = cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: fs.readFileSync(".dockerignore", "utf8"),
+      requiredPaths: required,
+    });
+    expect(result.removedPaths).toContain(".local");
+    expect(result.removedPaths).toContain(".config");
+    for (const file of required) expect(fs.existsSync(path.join(root, file)), file).toBe(true);
+  });
+
+  it("cleans the excluded root workspace venv without following its external Python wrapper", () => {
+    const { base, root, write } = fixture();
+    const external = path.join(base, "external-wrapper");
+    fs.mkdirSync(path.join(external, "bin"), { recursive: true });
+    const interpreter = path.join(external, "bin", "python-wrapped");
+    fs.writeFileSync(interpreter, "external interpreter bytes");
+    fs.symlinkSync("python-wrapped", path.join(external, "bin", ".python-wrapped"));
+
+    write("venv/bin/python", "workspace-only interpreter");
+    const wrapper = path.join(root, "venv/bin/.python-wrapped");
+    const outsideLink = path.join(external, "bin/.python-wrapped");
+    fs.symlinkSync(path.relative(path.dirname(wrapper), outsideLink), wrapper);
+    write("venv/pyvenv.cfg");
+    write("external/pdim/venv/lib/site-packages/nested-dependency.py");
+
+    for (const relative of [
+      "start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
+      "scripts/boot-stub-server.mjs", "scripts/port-contract.sh",
+      "scripts/check-port-contract.ts", RECOVERY_HELPER_PATH,
+      "python_runtime.pdim", "python_runtime.manifest.json",
+      "node_modules.pdim", "node_modules.manifest.json",
+      "external_maxcore.pdim", "external_maxcore.manifest.json",
+      "external_pdim.pdim", "external_pdim.manifest.json",
+      "app_remainder.pdim", "app_remainder.manifest.json",
+    ]) write(relative);
+
+    const targetBytes = fs.readFileSync(interpreter);
+    const outsideLinkValue = fs.readlinkSync(outsideLink);
+    const policy = fs.readFileSync(".dockerignore", "utf8");
+    write(".dockerignore", policy);
+    const beforeMembers = computeRemainingAppMembers(root);
+    expect(beforeMembers.some((member) => member === "venv" || member.startsWith("venv/"))).toBe(false);
+    for (const protectedFile of ["python_runtime.pdim", "python_runtime.manifest.json", "start.sh"]) {
+      expect(beforeMembers).not.toContain(protectedFile);
+      expect(fs.existsSync(path.join(root, protectedFile))).toBe(true);
+    }
+    const measuredBefore = measurePublishingPayload(root, policy);
+    expect(measuredBefore.byTopDir.has("venv")).toBe(false);
+
+    const required = [
+      "start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
+      "scripts/boot-stub-server.mjs", "scripts/port-contract.sh",
+      "scripts/check-port-contract.ts", RECOVERY_HELPER_PATH,
+      "python_runtime.pdim", "python_runtime.manifest.json",
+      "node_modules.pdim", "node_modules.manifest.json",
+      "external_maxcore.pdim", "external_maxcore.manifest.json",
+      "external_pdim.pdim", "external_pdim.manifest.json",
+      "app_remainder.pdim", "app_remainder.manifest.json",
+    ];
+    const result = cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: policy, requiredPaths: required,
+    });
+    expect(result.removedPaths).toContain("venv");
+    expect(fs.existsSync(path.join(root, "venv"))).toBe(false);
+    for (const file of required) expect(fs.existsSync(path.join(root, file)), file).toBe(true);
+    expect(fs.existsSync(path.join(root, "external/pdim/venv/lib/site-packages/nested-dependency.py"))).toBe(true);
+    expect(fs.readFileSync(interpreter)).toEqual(targetBytes);
+    expect(fs.readlinkSync(outsideLink)).toBe(outsideLinkValue);
+    expect(result.measurement.byTopDir.has("venv")).toBe(false);
+    expect(result.measurement.entries).toBe(measuredBefore.entries);
+  });
+
+  for (const kind of ["broken", "external", "excluded", "cycle"]) {
+    it(`real venv policy still rejects a surviving ${kind} link before cleanup`, () => {
+      const { base, root, write } = fixture();
+      const environment = write("venv/pyvenv.cfg", "preserve until validation succeeds");
+      const outside = path.join(base, "outside-python");
+      fs.writeFileSync(outside, "untouched external interpreter");
+      const target = kind === "broken" ? "missing" : kind === "external"
+        ? outside : kind === "excluded" ? "venv/pyvenv.cfg" : "surviving-link";
+      fs.symlinkSync(target, path.join(root, "surviving-link"));
+      const policy = fs.readFileSync(".dockerignore", "utf8");
+      expect(() => measurePublishingPayload(root, policy)).toThrow(/publishing payload symlink/i);
+      expect(() => cleanPublishingPayload({
+        root, env: publishing(root), dockerignore: policy, requiredPaths: [],
+      })).toThrow(/publishing payload symlink/i);
+      expect(fs.readFileSync(environment, "utf8")).toBe("preserve until validation succeeds");
+      expect(fs.readFileSync(outside, "utf8")).toBe("untouched external interpreter");
+    });
+  }
+
+  for (const conflictingPattern of ["start.sh", "script/", "*.pdim", "*.manifest.json", "pyproject.toml", ".node_bin/"]) {
+    it(`fails before any deletion when policy excludes a protected runtime path (${conflictingPattern})`, () => {
+      const { root, write } = fixture();
+      write("start.sh");
+      write(RECOVERY_HELPER_PATH);
+      write("app_remainder.pdim");
+      write("app_remainder.manifest.json");
+      write("pyproject.toml");
+      write(".node_bin/node");
+      const archived = write(".local/archived/evidence");
+      expect(() => cleanPublishingPayload({
+        root, env: publishing(root), dockerignore: `.local/\n${conflictingPattern}\n`, requiredPaths: [],
+      })).toThrow(/conflicts with protected/);
+      expect(fs.existsSync(archived)).toBe(true);
+    });
+  }
+
+  it("requires the bootstrap paths before deleting excluded data", () => {
+    const { root, write } = fixture();
+    const archived = write(".local/evidence");
+    expect(() => cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: ".local/\n", requiredPaths: ["start.sh"],
+    })).toThrow(/Required publishing runtime path is missing/);
+    expect(fs.existsSync(archived)).toBe(true);
+  });
+
+  for (const kind of ["broken", "external", "excluded", "cycle"]) {
+    it(`fails closed before deletion on a surviving ${kind} symlink`, () => {
+      const { base, root, write } = fixture();
+      const archived = write(".local/evidence");
+      const outside = path.join(base, "outside");
+      fs.writeFileSync(outside, "untouched outside bytes");
+      const target = kind === "broken" ? "missing" : kind === "external"
+        ? outside : kind === "excluded" ? ".local/evidence" : "surviving-link";
+      fs.symlinkSync(target, path.join(root, "surviving-link"));
+      expect(() => cleanPublishingPayload({
+        root, env: publishing(root), dockerignore: ".local/\n", requiredPaths: [],
+      })).toThrow(/publishing payload symlink/i);
+      expect(fs.existsSync(archived)).toBe(true);
+      expect(fs.readFileSync(outside, "utf8")).toBe("untouched outside bytes");
+    });
+  }
+
+  it("measures all real nonignored entries including untracked output, counting safe links only once", () => {
+    const { root, write } = fixture();
+    write("untracked.bin", "untracked payload bytes");
+    write("dist/output.mjs", "built output bytes");
+    write(".local/ignored", "not uploaded bytes");
+    fs.symlinkSync("untracked.bin", path.join(root, "safe-link"));
+    const expected = ["", "untracked.bin", "dist", "dist/output.mjs", "safe-link"]
+      .reduce((sum, relative) => sum + fs.lstatSync(path.join(root, relative)).size, 0);
+    const measurement = measurePublishingPayload(root, ".local/\n");
+    expect(measurement.totalBytes).toBe(expected);
+    expect(measurement.entries).toBe(4);
+    expect(measurement.byTopDir.get("dist")).toBe(
+      fs.lstatSync(path.join(root, "dist")).size + Buffer.byteLength("built output bytes"),
+    );
+    expect(fs.existsSync(path.join(root, ".local/ignored"))).toBe(true);
+  });
+
+  it("refuses an in-tree undo journal but allows an empty legacy parent directory", () => {
+    const { root, write } = fixture();
+    write(".deployment-pack-state/transaction/journal.json", "fixture undo journal");
+    write(".local/evidence");
+    const options = {
+      root, env: publishing(root), dockerignore: ".deployment-pack-state/\n.local/\n", requiredPaths: [],
+    };
+    expect(() => cleanPublishingPayload(options)).toThrow(/recovery state must be outside/);
+    expect(fs.existsSync(path.join(root, ".local/evidence"))).toBe(true);
+    fs.rmSync(path.join(root, ".deployment-pack-state/transaction"), { recursive: true });
+    cleanPublishingPayload(options);
+    expect(fs.readdirSync(root)).toEqual([]);
+  });
+
+  it("rejects a symlinked root without changing the real tree", () => {
+    const { base, root, write } = fixture();
+    const evidence = write(".local/evidence");
+    const linkedRoot = path.join(base, "linked-root");
+    fs.symlinkSync(root, linkedRoot);
+    expect(() => cleanPublishingPayload({
+      root: linkedRoot, env: publishing(linkedRoot), dockerignore: ".local/\n", requiredPaths: [],
+    })).toThrow(/root must be a real directory/);
+    expect(fs.existsSync(evidence)).toBe(true);
+  });
+});

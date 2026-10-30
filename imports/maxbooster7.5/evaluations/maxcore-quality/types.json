@@ -1,0 +1,36 @@
+{
+  "version":1,
+  "seed":23103,
+  "awareness":"Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+  "criteria":{
+    "text":"Readable, relevant to supplied release or production brief, follows the requested form and invents no claims. Record model versus awareness/template source separately.",
+    "image":"Real decodable image at requested aspect ratio; recognizable requested harbor/lantern subject and mellow mood. Plain gradient/typography alone is not subject fidelity. Pathtraced mode requires observed path-tracer execution, not merely request acceptance.",
+    "audio":"Real decodable requested-format audio of about four seconds, non-silent and unclipped, matching the mellow instrumental brief. File validity is not musical-quality or checkpoint-inference proof.",
+    "video":"Completed decodable video with more than one frame, requested short duration and recognizable lantern/harbor subject. A queued job or script/spec is not a rendered video.",
+    "campaign":"Coherent two-week Instagram rollout for the supplied fictional release; actual usable copy, no invented outcomes. Not publishing or scheduling.",
+    "spec":"Nonempty appropriate concept/script for the requested slot; asset:// identifiers are specifications, never proof of rendered media."
+  },
+  "cases":[
+    {"id":"text-api","handler":"api_generate_text","request_class":"ApiGenerateTextRequest","kind":"text","body":{"mode":"content","platform":"instagram","topic":"Invite listeners to the mellow instrumental Paper Lantern Harbor","tone":"authentic"}},
+    {"id":"text-slots","handler":"maxcore_generate_text","request_class":"MaxcoreTextRequest","kind":"text","body":{"mode":"content","inputs":{"normalized":{"semantic":{"topic":"Paper Lantern Harbor","intent":"engagement"}}},"step":{"params":{"slots":[{"id":"caption","platform":"instagram","purpose":"release caption"}]}}}},
+    {"id":"content-generic","handler":"generate_content","request_class":"ContentRequest","kind":"text","body":{"topic":"Paper Lantern Harbor mellow instrumental release","platform":"instagram"}},
+    {"id":"content-api","handler":"api_generate_content","request_class":"ApiGenerateContentRequest","kind":"text","body":{"platform":"instagram","topic":"Paper Lantern Harbor mellow instrumental release","tone":"authentic","include_hashtags":false,"max_chars":180}},
+    {"id":"social-variants","handler":"platform_social_generate","request_class":"PlatformSocialRequest","kind":"text","body":{"user_id":"quality-eval-fictional","topic":"Paper Lantern Harbor mellow instrumental release","platform":"instagram","num_variants":2}},
+    {"id":"daw-lyrics","handler":"platform_daw_generate","request_class":"PlatformDAWRequest","kind":"text","body":{"user_id":"quality-eval-fictional","mode":"lyrics","genre":"hip-hop","mood":"calm","context":"Four short lines about lanterns reflected in a harbor"}},
+    {"id":"daw-hook","handler":"platform_daw_generate","request_class":"PlatformDAWRequest","kind":"text","body":{"user_id":"quality-eval-fictional","mode":"hook","genre":"hip-hop","mood":"calm","context":"Two memorable lines about lanterns reflected in a harbor"}},
+    {"id":"daw-beat-description","handler":"platform_daw_generate","request_class":"PlatformDAWRequest","kind":"text","body":{"user_id":"quality-eval-fictional","mode":"beat_description","genre":"hip-hop","mood":"calm","bpm":92,"key":"C minor"}},
+    {"id":"daw-track-concept","handler":"platform_daw_generate","request_class":"PlatformDAWRequest","kind":"text","body":{"user_id":"quality-eval-fictional","mode":"track_concept","genre":"hip-hop","mood":"calm","context":"Instrumental night harbor concept"}},
+    {"id":"ads-all-subtypes","handler":"ads_generate","request_class":"AdGenerateRequest","kind":"text","body":{"user_id":"quality-eval-fictional","product":"Paper Lantern Harbor mellow instrumental","artist_name":"Fictional Harbor Artist","platform":"meta","num_creatives":4,"target_subtypes":["text","image","audio","video"],"replicate_peak":false}},
+    {"id":"campaign","handler":"api_generate_campaign","request_class":"ApiGenerateCampaignRequest","kind":"campaign","body":{"title":"Paper Lantern Harbor","artist_name":"Fictional Harbor Artist","platforms":["instagram"],"weeks":2,"generate_images":false,"generate_teasers":false}},
+    {"id":"image-spec","handler":"maxcore_generate_image","request_class":"MaxcoreMediaRequest","kind":"spec","body":{"inputs":{"normalized":{"semantic":{"topic":"Paper lanterns reflected in a quiet harbor"}}},"step":{"params":{"slots":[{"id":"cover","platform":"instagram","purpose":"cover artwork"}]}}}},
+    {"id":"audio-spec","handler":"maxcore_generate_audio","request_class":"MaxcoreMediaRequest","kind":"spec","body":{"inputs":{"normalized":{"semantic":{"topic":"Paper Lantern Harbor release"}}},"step":{"params":{"slots":[{"id":"voiceover","platform":"tiktok","purpose":"release voiceover"}]}}}},
+    {"id":"video-spec","handler":"maxcore_generate_video","request_class":"MaxcoreMediaRequest","kind":"spec","body":{"inputs":{"normalized":{"semantic":{"topic":"Paper Lantern Harbor release"}}},"step":{"params":{"slots":[{"id":"teaser","platform":"tiktok","purpose":"release teaser"}]}}}},
+    {"id":"video-package","handler":"platform_video_generate","request_class":"PlatformVideoRequest","kind":"spec","body":{"user_id":"quality-eval-fictional","topic":"Paper Lantern Harbor mellow instrumental release","platform":"tiktok"}},
+    {"id":"image-poster","handler":"api_generate_image","request_class":"ApiGenerateImageRequest","kind":"image","body":{"prompt":"Paper lanterns reflected in a quiet harbor at dusk","aspect_ratio":"1:1","render_text":true}},
+    {"id":"image-pathtraced","handler":"api_generate_image","request_class":"ApiGenerateImageRequest","kind":"image","body":{"prompt":"Paper lanterns reflected in a quiet harbor at dusk","aspect_ratio":"1:1","render_text":false,"render_engine":"pathtraced"}},
+    {"id":"audio-mp3","handler":"api_generate_audio","request_class":"ApiGenerateAudioRequest","kind":"audio","body":{"prompt":"Mellow piano instrumental with soft drums","genre":"hip-hop","mood":"calm","duration":4,"format":"mp3","stems":false,"arrange":false,"seed":23103}},
+    {"id":"audio-wav","handler":"api_generate_audio","request_class":"ApiGenerateAudioRequest","kind":"audio","body":{"prompt":"Mellow piano instrumental with soft drums","genre":"hip-hop","mood":"calm","duration":4,"format":"wav","stems":false,"arrange":false,"seed":23103}},
+    {"id":"video-render","handler":"api_generate_video","request_class":"ApiGenerateVideoRequest","kind":"video","body":{"idea":"Paper lanterns reflected in a quiet harbor at dusk","platform":"tiktok","duration":4,"quality":"draft","seed":23103,"generate_audio":false,"voiceover":false}},
+    {"id":"video-studio","handler":"api_video_generate_ai","request_class":null,"kind":"video","body":{"idea":"Paper lanterns reflected in a quiet harbor at dusk","platform":"tiktok","duration":4,"tone":"calm"}}
+  ]
+}

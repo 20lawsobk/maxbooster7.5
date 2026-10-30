@@ -1,0 +1,163 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "zfhfPirZsCK4sboc2AIRO"
+uri = "file://daw-plugin-comparison.md"
+type = "text"
+title = "Max Booster DAW Plugins — Professional Comparison"
+logical_id = "d21051ff-381f-4c5a-95eb-5cd445d24464"
+
+[[outputs]]
+id = "CcpE9fHfNNsKReLY2pADX"
+uri = "file://patents/pdf/01_training_time_compression_system.pdf"
+type = "pdf"
+title = "Patent BLM-001 — Training Time Compression System"
+logical_id = "e48d789c-68ed-442d-8680-361305795a6b"
+
+[[outputs]]
+id = "tQj6KDw_9BkPXpGr0YDiw"
+uri = "file://patents/pdf/02_music_scenario_engine.pdf"
+type = "pdf"
+title = "Patent BLM-002 — Music Industry Scenario Engine"
+logical_id = "d692aa56-fbaf-4323-ab6e-3e99d0c5c2aa"
+
+[[outputs]]
+id = "2zc9liFPTu9hgOyfaPSUz"
+uri = "file://patents/pdf/03_ucb1_bandit_caffeine_mode.pdf"
+type = "pdf"
+title = "Patent BLM-003 — UCB1 Bandit & Caffeine Mode"
+logical_id = "0b428868-bc99-447a-bb9b-87fabd45a737"
+
+[[outputs]]
+id = "4SjVCZIz6x3x8-yM9M-FV"
+uri = "file://patents/pdf/04_veo_calibrated_quality_gate.pdf"
+type = "pdf"
+title = "Patent BLM-004 — Veo-Calibrated Quality Gate"
+logical_id = "89b448ba-4d1a-457f-8882-6aff7c7b6083"
+
+[[outputs]]
+id = "_3F6hM4yyqTbrXHOr2u0E"
+uri = "file://patents/pdf/05_four_tier_memory_system.pdf"
+type = "pdf"
+title = "Patent BLM-005 — Four-Tier Memory Replay System"
+logical_id = "a221f665-8df1-46e1-9753-ce2b81c29149"
+
+[[outputs]]
+id = "e2s3HN6DZT2FckLiSiOFn"
+uri = "file://patents/pdf/06_hyperlearning_engine.pdf"
+type = "pdf"
+title = "Patent BLM-006 — HyperLearning Engine (72×)"
+logical_id = "889d7be8-b58e-492f-a9f7-07fbd4b5dee2"
+
+[[outputs]]
+id = "VLLh5EMV-WgVaeWPO2YxI"
+uri = "file://patents/pdf/07_maxcore_score_calibrator.pdf"
+type = "pdf"
+title = "Patent BLM-007 — MaxCore Score Calibrator"
+logical_id = "fc933250-01f3-41b4-a354-6530fe54d3b2"
+
+[[outputs]]
+id = "UMsK4nmnO5ZVs3mQzrtCC"
+uri = "file://public/generated-content/audio/beat_1784973558829_690bf5d3dbb9d57b.wav"
+type = "audio"
+title = "Chill Indie Type Beat (G Major) 95.7 BPM — MaxCore"
+logical_id = "e534efe5-ed02-4b1c-baca-2a753602f4a9"
+
+[[outputs]]
+id = "VoXcCj-cWeS2v_cpGc2VK"
+uri = "file://reports/max-booster-competitive-benchmark.pdf"
+type = "pdf"
+title = "Max Booster Competitive Benchmark (updated)"
+description = "Re-verified the 4 contested pages (Studio, Beat Marketplace, Distribution, Social Media) against fresh codebase + competitor evidence and sharpened the report accordingly."
+logical_id = "ec6af829-d721-46c2-a9cb-735e90f77543"
+content_hash = "sha256:2ed9866e90a55d0d0f3cc79ef4c415bc8ac5402e698256198f877f6f247a791f"
+size = 267680
+mtime_ms = 1788562437820
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/ec6af829-d721-46c2-a9cb-735e90f77543/9d11381e-fdf5-4c83-8eaf-6f9e107071b9"
+storage_version_token = "1788562550512295"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "HmqdlxLuEbo9D7vOeAbgi"
+uri = "file://research/notes.md"
+type = "text"
+title = "Research Notes: Organic Social Platform Algorithms"
+description = "Research plan and running findings log, updated as research progresses."
+logical_id = "73c3acb8-0401-4ec1-a8da-4dcf8abaaab4"
+content_hash = "sha256:ec52e2f3ebb849b26bc5e4d2ec45cf244f7adbd63166169b5b652b93d8f2f54c"
+size = 2818
+mtime_ms = 1789127595189
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/73c3acb8-0401-4ec1-a8da-4dcf8abaaab4/fcd1211f-5887-4a70-89b5-3ebfba0aef9e"
+storage_version_token = "1789127625779591"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "SE1CxHJuHex8s0oxOQuRf"
+uri = "file://research/organic-social-algorithms-2026.md"
+type = "text"
+title = "Organic Social Platform Algorithm Signals (2025-2026)"
+description = "Cited research on how Instagram, TikTok, YouTube, Facebook, Threads, X, LinkedIn, and Google Business Profile rank organic content — now wired into Max Booster's content-generation awareness layer."
+logical_id = "6aadab37-bb66-4a93-a37f-d9dc82a9c673"
+content_hash = "sha256:684f5c74978c3e01d24c7b2bd36bb17164c4cdfe2a1be5f267db1b06fd779099"
+size = 28753
+mtime_ms = 1789128464946
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/6aadab37-bb66-4a93-a37f-d9dc82a9c673/544e22e6-656b-47ee-8700-afdb2e03a803"
+storage_version_token = "1789128483769945"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "9I8Su6TBhNlPwUblLYnLx"
+uri = "file://reports/max-booster-production-readiness-audit-2026-09-19.html"
+type = "html"
+title = "Max Booster — Full Production-Readiness Audit"
+description = "80 scoped findings across 12 areas, followed by 320 repair alternatives with 1,600 numbered steps. Includes source citations, priorities, acceptance criteria, scanner inventories, and audit limits."
+logical_id = "581dfd5e-15ec-439c-b1ef-82c14cae26ff"
+content_hash = "sha256:7175da45a1cccb9b595a40f216b9a7f39306056eac8507e71724090e0a9c185d"
+size = 584476
+mtime_ms = 1789808162776
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/581dfd5e-15ec-439c-b1ef-82c14cae26ff/de92addf-9316-4a2b-8eeb-da1d8ab9dfa6"
+storage_version_token = "1789808212718795"
+content_type = "text/html"
+
+[[outputs]]
+id = "MnSWaYe2OPzEOOJRGzHmo"
+uri = "file://reports/payment-processing-verification.html"
+type = "html"
+title = "Payment processing verification"
+description = "Actual test-mode evidence, passing layers, three reproducible failures, fixes, Stripe setup blockers, cleanup limitations and stopped-workflow status."
+logical_id = "d8dedd57-6647-4980-9477-102b9a40e4d7"
+content_hash = "sha256:e8587863b74b35582bc5e224d7abf73b940ceed6673499183cfe0d1b8e22700e"
+size = 15241
+mtime_ms = 1790859113696
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/d8dedd57-6647-4980-9477-102b9a40e4d7/3954b2a3-147a-42ee-af4a-fa4f3b0af375"
+storage_version_token = "1790859114867417"
+content_type = "text/html"
+
+[[outputs]]
+id = "ovCgDVTX4L-EXrDU5pfCZ"
+uri = "file://.local/audits/2026-10-03-health/REPORT.html"
+type = "html"
+title = "Max Booster Project Health Scan — 2026-10-03"
+description = "Read-only assessment with prioritized findings, evidence, scope, task reconciliation and explicit verification gaps. Structured evidence is under .local/audits/2026-10-03-health/."
+logical_id = "daa39112-1f88-486e-9779-a1455177a92a"
+content_hash = "sha256:1333d3135deb1423825b9571d39897988afab4e469b85a56cbec84a5226becaf"
+size = 46477
+mtime_ms = 1791036625177
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/daa39112-1f88-486e-9779-a1455177a92a/0e32eb41-a13c-4c20-a5f1-af4da68c50a8"
+storage_version_token = "1791036652697243"
+content_type = "text/html"
+
+[[outputs]]
+id = "C6FisHxeXJt8hLyEjGx0O"
+uri = "file://reports/endpoint-audit/initial-http-findings.html"
+type = "html"
+title = "Endpoint-only audit — current preview findings"
+description = "Updated after the preview recovered: public health/readiness status, anonymous and invalid-bearer checks, observed information-exposure findings, production status, and remaining audit gaps."
+logical_id = "58fcc82a-c80c-4c6f-8b07-c5b0bcc6b154"
+content_hash = "sha256:207674d1a019bc556426a09c8eb2e5bb6df5bec01af5c63338079e53c2c3eddc"
+size = 9859
+mtime_ms = 1791311249663
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/58fcc82a-c80c-4c6f-8b07-c5b0bcc6b154/80f52b00-f490-481d-9dc0-bb898d3a8367"
+storage_version_token = "1791311299271883"
+content_type = "text/html"

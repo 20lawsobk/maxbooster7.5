@@ -1,0 +1,64 @@
+{
+  "checks": {
+    "env-config": {
+      "config": {
+        "excludeVars": [
+          "CLUSTER_WORKER_ID",
+          "NODE_OPTIONS",
+          "PATH",
+          "npm_package_version",
+          "READINESS_EGRESS_GUARD",
+          "READINESS_ISOLATED_PG"
+        ]
+      },
+      "required": true,
+      "weight": 3
+    },
+    "health-endpoint": {
+      "required": true,
+      "weight": 3
+    },
+    "large-files": {
+      "config": {
+        "maxBytes": 15728640
+      },
+      "required": true,
+      "weight": 4
+    },
+    "port-contract": {
+      "weight": 2
+    },
+    "production-build": {
+      "required": true,
+      "weight": 5
+    },
+    "secrets-scan": {
+      "required": true,
+      "weight": 4
+    },
+    "todo-scan": {
+      "weight": 2
+    },
+    "typecheck": {
+      "required": true,
+      "weight": 2
+    },
+    "unit-tests": {
+      "required": true,
+      "weight": 3
+    }
+  },
+  "description": "For media pipelines and creator platforms (streaming, generation, distribution). Build integrity and asset discipline matter most — bloated images and broken builds sink releases.",
+  "displayName": "Media / Creator Platform",
+  "name": "media",
+  "notes": [
+    "large-files budget is 15 MB here (tighter than the 25 MB default): media repos accumulate assets fast.",
+    "Add media-pipeline (transcode/render) and CDN-invalidation checks for launch readiness.",
+    "env-config excludes only OS/Node metadata, the launcher-assigned cluster worker ID, and the two guarded isolated-readiness test switches."
+  ],
+  "thresholds": {
+    "conditionalGo": 68,
+    "go": 86
+  },
+  "version": "1.0.0"
+}

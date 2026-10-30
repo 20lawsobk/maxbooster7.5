@@ -1,0 +1,68 @@
+import { defineConfig } from "vitest/config";
+import path from "path";
+
+export default defineConfig({
+  test: {
+    // Unit tests only — no running server required.
+    // Integration tests (tests/*.integration.test.ts) run separately via `npm run test:integration`.
+    include: [
+      "server/**/__tests__/**/*.test.ts",
+      "server/**/__tests__/**/*.spec.ts",
+      "tests/unit/**/*.test.ts",
+    ],
+    exclude: [
+      "node_modules/**",
+      "client/**",
+      "dist/**",
+      "tests/critical-paths.test.ts",
+      "tests/paid-user-e2e.test.ts",
+      // Example and simulation suites run with vitest.additional.config.ts.
+      "tests/unit/example.test.ts",
+      // Database-writing suite: run explicitly with vitest.beat-loop.config.ts.
+      "tests/unit/beat-sale-money-loop.test.ts",
+      "server/simulations/__tests__/verifyKPIs.test.ts",
+    ],
+    environment: "node",
+    globals: true,
+    setupFiles: ["tests/setup.ts"],
+    testTimeout: 15000,
+    hookTimeout: 15000,
+    pool: "forks",
+    // These suites include process-spawning PDIM simulations whose waits are
+    // wall-clock sensitive; on small CI containers the default worker-per-CPU
+    // parallelism starves them into intermittent timeouts. Cap the workers
+    // and let vitest retry a failed file once in a fresh process so a
+    // starved simulation gets one clean shot instead of failing the run.
+    maxWorkers: 2,
+    retry: 1,
+    // Vitest 4 exposes fork execution arguments directly on the test config.
+    execArgv: ["--max-old-space-size=4096"],
+    reporters: ["verbose"],
+    coverage: {
+      provider: "v8",
+      include: [
+        // V8 instruments JavaScript/TypeScript. These directories also contain
+        // Python services and operator Markdown, which Rollup cannot parse.
+        "server/services/**/*.{ts,tsx,js,mjs,cjs}",
+        "server/middleware/**/*.{ts,tsx,js,mjs,cjs}",
+        "server/safety/**/*.{ts,tsx,js,mjs,cjs}",
+        "server/lib/**/*.{ts,tsx,js,mjs,cjs}",
+      ],
+      exclude: ["server/services/diffusion/**", "**/__tests__/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.*"],
+      reporter: ["text", "lcov"],
+      thresholds: {
+        statements: 100,
+        functions: 100,
+        lines: 100,
+        branches: 100,
+      },
+    },
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "client/src"),
+      "@shared": path.resolve(__dirname, "shared"),
+      "@plugins": path.resolve(__dirname, "built-in plugins dsp"),
+    },
+  },
+});

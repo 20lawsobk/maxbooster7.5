@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dns-api
+  namespace: dns-os
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dns-api
+  template:
+    metadata:
+      labels:
+        app: dns-api
+    spec:
+      containers:
+        - name: dns-api
+          image: ghcr.io/maxbooster/dns-api:latest
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: dns-os-db
+                  key: url
+            - name: PORT
+              value: "8080"
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-api
+  namespace: dns-os
+spec:
+  selector:
+    app: dns-api
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dns-api
+  namespace: dns-os
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: dns-api.maxboostermusic.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dns-api
+                port:
+                  number: 80

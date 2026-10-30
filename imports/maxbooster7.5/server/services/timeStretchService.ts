@@ -1,0 +1,772 @@
+// @ts-nocheck
+import { randomUUID } from "crypto";
+import path from "path";
+import fs from "fs";
+import fsPromises from "fs/promises";
+import os from "os";
+import type { TransientDetectionResult } from "./queueService.js";
+import { logger } from "../logger.js";
+import type FfmpegType from "fluent-ffmpeg";
+
+// Runtime type: fluent-ffmpeg's default export is a callable constructor with
+// static methods (setFfmpegPath, ffprobe, …). We hold it as the library type so
+// TypeScript knows its API without widening to Record<string,unknown>.
+let ffmpeg: typeof FfmpegType | null = null;
+let ffmpegAvailable = false;
+
+async function initializeFfmpeg() {
+  if (ffmpegAvailable) return true;
+  try {
+    const fluentFfmpeg = await import("fluent-ffmpeg");
+    ffmpeg = fluentFfmpeg?.default;
+    try {
+      const ffmpegStatic = await import("ffmpeg-static");
+      if (ffmpegStatic?.default) {
+        ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
+      }
+    } catch {
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
+    }
+    ffmpegAvailable = true;
+    return true;
+  } catch (error) {
+    logger.warn(
+      { err: error },
+      "FFmpeg not available - time stretch features will be limited:",
+    );
+    return false;
+  }
+}
+
+export interface WarpAlgorithm {
+  name: "rubberband" | "phase_vocoder" | "wsola";
+  preserveFormants: boolean;
+  quality: "fast" | "normal" | "high";
+}
+
+export interface WarpMarkerData {
+  id: string;
+  sourceTime: number;
+  targetTime: number;
+  transientStrength?: number;
+}
+
+export interface WarpParameters {
+  markers: WarpMarkerData[];
+  pitchShift?: number;
+  preserveFormants?: boolean;
+  algorithm?: WarpAlgorithm["name"];
+  quality?: WarpAlgorithm["quality"];
+}
+
+export interface TransientData {
+  time: number;
+  strength: number;
+  suggestedBeat?: number;
+}
+
+export interface TempoMapping {
+  sourceBpm: number;
+  targetBpm: number;
+  beatGrid: number[];
+  barPositions: number[];
+}
+
+interface AudioMetadata {
+  duration: number;
+  sampleRate: number;
+  channels: number;
+  format: string;
+}
+
+/**
+ * Warp markers are persisted in beat/sample space (the only units the DB
+ * schema supports) but the ffmpeg-based processing in this service works in
+ * seconds. These helpers are the ONE place that conversion happens, so every
+ * route that touches warp markers stays consistent.
+ *
+ *   sourceTime (s) = samplePosition / sampleRate — where in the SOURCE audio
+ *   targetTime (s) = beatPosition * (60 / bpm)   — where it lands on the beat grid
+ */
+export interface WarpMarkerRow {
+  id: string;
+  beatPosition: number;
+  samplePosition: number;
+}
+
+export function dbMarkersToWarpMarkerData(
+  rows: WarpMarkerRow[],
+  bpm: number,
+  sampleRate: number,
+): WarpMarkerData[] {
+  const safeBpm = bpm > 0 ? bpm : 120;
+  const safeSampleRate = sampleRate > 0 ? sampleRate : 44100;
+  return rows.map((r) => ({
+    id: r.id,
+    sourceTime: r.samplePosition / safeSampleRate,
+    targetTime: r.beatPosition * (60 / safeBpm),
+  }));
+}
+
+export function warpMarkerDataToDbFields(
+  marker: Pick<WarpMarkerData, "sourceTime" | "targetTime">,
+  bpm: number,
+  sampleRate: number,
+): { beatPosition: number; samplePosition: number } {
+  const safeBpm = bpm > 0 ? bpm : 120;
+  const safeSampleRate = sampleRate > 0 ? sampleRate : 44100;
+  return {
+    samplePosition: marker.sourceTime * safeSampleRate,
+    beatPosition: marker.targetTime / (60 / safeBpm),
+  };
+}
+
+export class TimeStretchService {
+  private tempDir: string;
+
+  constructor() {
+    this.tempDir = path?.join(os?.tmpdir(), "max-booster-warp");
+    this.ensureTempDir();
+  }
+
+  private async ensureTempDir(): Promise<void> {
+    try {
+      await fsPromises?.mkdir(this.tempDir, { recursive: true });
+    } catch (error) {
+      logger.warn(
+        { err: error },
+        "Failed to create temp directory for warp processing",
+      );
+    }
+  }
+
+  async getAudioMetadata(filePath: string): Promise<AudioMetadata> {
+    const hasFFmpeg = await initializeFfmpeg();
+    if (!hasFFmpeg || !ffmpeg) {
+      throw new Error(
+        "FFmpeg is not available. Time stretch features are disabled in this deployment.",
+      );
+    }
+    return new Promise((resolve, reject) => {
+      ffmpeg?.ffprobe(filePath, (err: any, metadata: any) => {
+        if (err) {
+          reject(new Error(`Failed to probe audio file: ${err?.message}`));
+          return;
+        }
+        const audioStream = metadata?.streams.find(
+          (s: any) => s?.codec_type === "audio",
+        );
+        if (!audioStream) {
+          reject(new Error("No audio stream found in file"));
+          return;
+        }
+        resolve({
+          duration: parseFloat(metadata?.format.duration || "0"),
+          sampleRate: audioStream.sample_rate
+            ? parseInt(audioStream?.sample_rate)
+            : 44100,
+          channels: audioStream.channels || 2,
+          format: audioStream.codec_name || "unknown",
+        });
+      });
+    });
+  }
+
+  async timeStretch(
+    inputPath: string,
+    outputPath: string,
+    stretchRatio: number,
+    options: {
+      pitchShift?: number;
+      preserveFormants?: boolean;
+      algorithm?: WarpAlgorithm["name"];
+      quality?: WarpAlgorithm["quality"];
+    } = {},
+  ): Promise<void> {
+    const hasFFmpeg = await initializeFfmpeg();
+    if (!hasFFmpeg || !ffmpeg) {
+      throw new Error(
+        "FFmpeg is not available. Time stretch features are disabled in this deployment.",
+      );
+    }
+    const ffmpegFn = ffmpeg;
+    const {
+      pitchShift = 0,
+      preserveFormants = true,
+      algorithm = "phase_vocoder",
+    } = options;
+
+    return new Promise((resolve, reject) => {
+      let command = ffmpegFn(inputPath);
+      const filters: string[] = [];
+
+      if (algorithm === "rubberband") {
+        const pitchFactor = Math.pow(2, pitchShift / 12);
+        let rubberBandFilter = `rubberband=tempo=${stretchRatio}:pitch=${pitchFactor}`;
+        if (preserveFormants) {
+          rubberBandFilter += ":formant=preserved";
+        }
+        filters?.push(rubberBandFilter);
+      } else if (algorithm === "wsola") {
+        const tempoValue = 1 / stretchRatio;
+        filters.push(`atempo=${Math.min(Math.max(tempoValue, 0.5), 2.0)}`);
+        if (pitchShift !== 0) {
+          const pitchFactor = Math.pow(2, pitchShift / 12);
+          filters.push(`asetrate=44100*${pitchFactor}`);
+          filters.push(`aresample=44100`);
+        }
+      } else {
+        const speed = 1 / stretchRatio;
+        if (speed >= 0.5 && speed <= 2.0) {
+          filters.push(`atempo=${speed}`);
+        } else if (speed < 0.5) {
+          let remaining = speed;
+          while (remaining < 0.5) {
+            filters.push("atempo=0.5");
+            remaining *= 2;
+          }
+          if (remaining !== 1.0) {
+            filters.push(`atempo=${remaining}`);
+          }
+        } else {
+          let remaining = speed;
+          while (remaining > 2.0) {
+            filters.push("atempo=2.0");
+            remaining /= 2;
+          }
+          if (remaining !== 1.0) {
+            filters.push(`atempo=${remaining}`);
+          }
+        }
+
+        if (pitchShift !== 0) {
+          const pitchFactor = Math.pow(2, pitchShift / 12);
+          filters.push(`asetrate=44100*${pitchFactor}`);
+          filters.push(`aresample=44100`);
+          if (preserveFormants) {
+            filters.push("aecho=0.8:0.88:60:0.4");
+          }
+        }
+      }
+
+      if (filters?.length > 0) {
+        command = command?.audioFilters(filters);
+      }
+
+      command
+        .outputOptions(["-y", "-acodec", "pcm_s24le"])
+        .output(outputPath)
+        .on("end", () => resolve())
+        .on("error", (err: any) =>
+          reject(new Error(`Time stretch failed: ${err?.message}`)),
+        )
+        .run();
+    });
+  }
+
+  async processWarpMarkers(
+    inputPath: string,
+    outputPath: string,
+    markers: WarpMarkerData[],
+    options: {
+      pitchShift?: number;
+      preserveFormants?: boolean;
+      algorithm?: WarpAlgorithm["name"];
+      quality?: WarpAlgorithm["quality"];
+    } = {},
+  ): Promise<void> {
+    if (markers?.length === 0) {
+      await fsPromises?.copyFile(inputPath, outputPath);
+      return;
+    }
+
+    const sortedMarkers = [...markers].sort(
+      (a, b) => a?.sourceTime - b?.sourceTime,
+    );
+    const metadata = await this.getAudioMetadata(inputPath);
+    const segments: string[] = [];
+    const tempFiles: string[] = [];
+
+    try {
+      let lastSourceTime = 0;
+      let lastTargetTime = 0;
+
+      for (let i = 0; i < sortedMarkers?.length; i++) {
+        const marker = sortedMarkers[i];
+        const segmentId = randomUUID();
+        const segmentInput = path?.join(
+          this.tempDir,
+          `segment_${segmentId}_in.wav`,
+        );
+        const segmentOutput = path?.join(
+          this.tempDir,
+          `segment_${segmentId}_out.wav`,
+        );
+
+        tempFiles?.push(segmentInput, segmentOutput);
+
+        const segmentDuration = marker?.sourceTime - lastSourceTime;
+        const targetDuration = marker?.targetTime - lastTargetTime;
+
+        if (segmentDuration > 0.001) {
+          await this.extractAudioSegment(
+            inputPath,
+            segmentInput,
+            lastSourceTime,
+            segmentDuration,
+          );
+
+          const stretchRatio = targetDuration / segmentDuration;
+          if (
+            Math.abs(stretchRatio - 1.0) > 0.001 ||
+            (options?.pitchShift && options?.pitchShift !== 0)
+          ) {
+            await this.timeStretch(
+              segmentInput,
+              segmentOutput,
+              stretchRatio,
+              options,
+            );
+          } else {
+            await fsPromises?.copyFile(segmentInput, segmentOutput);
+          }
+
+          segments?.push(segmentOutput);
+        }
+
+        lastSourceTime = marker?.sourceTime;
+        lastTargetTime = marker?.targetTime;
+      }
+
+      const finalSourceTime =
+        sortedMarkers[sortedMarkers?.length - 1].sourceTime;
+      const remainingDuration = metadata?.duration - finalSourceTime;
+
+      if (remainingDuration > 0.001) {
+        const finalId = randomUUID();
+        const finalInput = path?.join(this.tempDir, `segment_${finalId}_in.wav`);
+        const finalOutput = path?.join(
+          this.tempDir,
+          `segment_${finalId}_out.wav`,
+        );
+        tempFiles?.push(finalInput, finalOutput);
+
+        await this.extractAudioSegment(
+          inputPath,
+          finalInput,
+          finalSourceTime,
+          remainingDuration,
+        );
+
+        if (options?.pitchShift && options?.pitchShift !== 0) {
+          await this.timeStretch(finalInput, finalOutput, 1.0, options);
+        } else {
+          await fsPromises?.copyFile(finalInput, finalOutput);
+        }
+
+        segments?.push(finalOutput);
+      }
+
+      if (segments?.length > 0) {
+        await this.concatenateSegments(segments, outputPath);
+      }
+    } finally {
+      for (const tempFile of tempFiles) {
+        try {
+          if (fs?.existsSync(tempFile)) {
+            await fsPromises?.unlink(tempFile);
+          }
+        } catch {}
+      }
+    }
+  }
+
+  private async extractAudioSegment(
+    inputPath: string,
+    outputPath: string,
+    startTime: number,
+    duration: number,
+  ): Promise<void> {
+    const hasFFmpeg = await initializeFfmpeg();
+    if (!hasFFmpeg || !ffmpeg) {
+      throw new Error(
+        "FFmpeg is not available. Audio segment extraction is disabled in this deployment.",
+      );
+    }
+    const ffmpegFn = ffmpeg;
+    return new Promise((resolve, reject) => {
+      ffmpegFn(inputPath)
+        .setStartTime(startTime)
+        .setDuration(duration)
+        .outputOptions(["-y", "-acodec", "pcm_s24le"])
+        .output(outputPath)
+        .on("end", () => resolve())
+        .on("error", (err: any) =>
+          reject(new Error(`Extract segment failed: ${err?.message}`)),
+        )
+        .run();
+    });
+  }
+
+  private async concatenateSegments(
+    segments: string[],
+    outputPath: string,
+  ): Promise<void> {
+    if (segments?.length === 0) {
+      throw new Error("No segments to concatenate");
+    }
+
+    if (segments?.length === 1) {
+      await fsPromises?.copyFile(segments[0], outputPath);
+      return;
+    }
+
+    const hasFFmpeg = await initializeFfmpeg();
+    if (!hasFFmpeg || !ffmpeg) {
+      throw new Error(
+        "FFmpeg is not available. Audio concatenation is disabled in this deployment.",
+      );
+    }
+    const ffmpegFn = ffmpeg;
+
+    const listFile = path?.join(this.tempDir, `concat_${randomUUID()}.txt`);
+    const listContent = segments?.map((s) => `file '${s}'`).join("\n");
+    await fsPromises?.writeFile(listFile, listContent);
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        ffmpegFn()
+          .input(listFile)
+          .inputOptions(["-f", "concat", "-safe", "0"])
+          .outputOptions(["-y", "-acodec", "pcm_s24le"])
+          .output(outputPath)
+          .on("end", () => resolve())
+          .on("error", (err: any) =>
+            reject(new Error(`Concatenation failed: ${err?.message}`)),
+          )
+          .run();
+      });
+    } finally {
+      try {
+        await fsPromises?.unlink(listFile);
+      } catch {}
+    }
+  }
+
+  async detectTransients(
+    inputPath: string,
+    options: {
+      sensitivity?: number;
+      minTransientGap?: number;
+      detectBeats?: boolean;
+    } = {},
+  ): Promise<TransientDetectionResult> {
+    const {
+      sensitivity = 0.5,
+      minTransientGap = 0.05,
+      detectBeats = true,
+    } = options;
+    const metadata = await this.getAudioMetadata(inputPath);
+    const transients: TransientData[] = [];
+
+    const peakData = await this.extractPeakEnvelope(inputPath);
+    const threshold = this.calculateAdaptiveThreshold(peakData, sensitivity);
+
+    let lastTransientTime = -minTransientGap;
+
+    for (let i = 1; i < peakData?.length - 1; i++) {
+      const time = (i / peakData?.length) * metadata?.duration;
+
+      if (time - lastTransientTime < minTransientGap) {
+        continue;
+      }
+
+      const isPeak =
+        peakData[i] > peakData[i - 1] &&
+        peakData[i] > peakData[i + 1] &&
+        peakData[i] > threshold;
+
+      if (isPeak) {
+        const strength = Math.min(peakData[i] / threshold, 1.0);
+        transients?.push({
+          time,
+          strength,
+          suggestedBeat: undefined,
+        });
+        lastTransientTime = time;
+      }
+    }
+
+    let detectedBpm: number | undefined;
+
+    if (detectBeats && transients?.length >= 4) {
+      const intervals: number[] = [];
+      for (let i = 1; i < Math.min(transients?.length, 50); i++) {
+        intervals?.push(transients[i].time - transients[i - 1].time);
+      }
+
+      const avgInterval =
+        intervals?.reduce((a, b) => a + b, 0) / intervals?.length;
+      if (avgInterval > 0) {
+        const rawBpm = 60 / avgInterval;
+        const bpmCandidates = [rawBpm, rawBpm / 2, rawBpm * 2];
+        detectedBpm = bpmCandidates?.find((b) => b >= 60 && b <= 200) || rawBpm;
+      }
+
+      if (detectedBpm) {
+        const beatInterval = 60 / detectedBpm;
+        for (const transient of transients) {
+          const beatPosition = transient?.time / beatInterval;
+          const nearestBeat = Math.round(beatPosition);
+          if (Math.abs(beatPosition - nearestBeat) < 0.2) {
+            transient.suggestedBeat = nearestBeat;
+          }
+        }
+      }
+    }
+
+    return {
+      transients,
+      detectedBpm,
+      duration: metadata.duration,
+    };
+  }
+
+  /**
+   * Short-time RMS energy envelope, used by detectTransients for onset
+   * peak-picking. Decodes to raw mono PCM (ffmpeg is used purely as a codec
+   * here, same as every other method in this file) and computes the
+   * envelope ourselves — deliberately NOT the ffmpeg `showwavespic` image
+   * trick this used to use, which renders a 1px-tall waveform picture and
+   * reads its pixel brightness as "amplitude". That collapses to near-binary
+   * lit/unlit values and reflects raw waveform oscillation rather than a
+   * smoothed envelope, so a single sustained tone gets read back as dozens
+   * of spurious up/down "peaks" instead of one plateau — verified against a
+   * real 8-click test track, which it mis-detected as 59 transients.
+   * Windowed RMS (rectify + average energy per ~10ms hop) is the standard
+   * fix: it tracks loudness over time instead of instantaneous waveform
+   * value, so a steady or decaying sound reads as a smooth rise/fall with
+   * exactly one local maximum.
+   */
+  private async extractPeakEnvelope(inputPath: string): Promise<number[]> {
+    const hasFFmpeg = await initializeFfmpeg();
+    if (!hasFFmpeg || !ffmpeg) {
+      logger.warn("FFmpeg not available - using synthetic peak data");
+      return this.generateSyntheticPeaks(inputPath);
+    }
+    const ffmpegFn = ffmpeg;
+    const analysisSampleRate = 11025;
+    const outputFile = path?.join(this.tempDir, `pcm_${randomUUID()}.f32le`);
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        ffmpegFn(inputPath)
+          .audioFilters(["aformat=channel_layouts=mono"])
+          .outputOptions([
+            "-f",
+            "f32le",
+            "-ac",
+            "1",
+            "-ar",
+            String(analysisSampleRate),
+            "-y",
+          ])
+          .output(outputFile)
+          .on("end", () => resolve())
+          .on("error", (err: Error) => reject(err))
+          .run();
+      });
+
+      if (!fs?.existsSync(outputFile)) {
+        return this.generateSyntheticPeaks(inputPath);
+      }
+
+      const raw = await fsPromises?.readFile(outputFile);
+      await fsPromises?.unlink(outputFile).catch(() => {});
+
+      const bytesPerSample = 4;
+      const sampleCount = Math.floor(raw.length / bytesPerSample);
+      if (sampleCount === 0) {
+        return this.generateSyntheticPeaks(inputPath);
+      }
+
+      const windowSize = Math.max(
+        1,
+        Math.round(analysisSampleRate * 0.01), // 10ms hop
+      );
+      const numWindows = Math.ceil(sampleCount / windowSize);
+      const envelope: number[] = new Array(numWindows).fill(0);
+
+      for (let w = 0; w < numWindows; w++) {
+        const start = w * windowSize;
+        const end = Math.min(start + windowSize, sampleCount);
+        let sumSquares = 0;
+        for (let i = start; i < end; i++) {
+          const sample = raw.readFloatLE(i * bytesPerSample);
+          sumSquares += sample * sample;
+        }
+        envelope[w] = end > start ? Math.sqrt(sumSquares / (end - start)) : 0;
+      }
+
+      const peak = Math.max(...envelope, 1e-9);
+      const normalized = envelope.map((v) => v / peak);
+      return normalized?.length > 0
+        ? normalized
+        : this.generateSyntheticPeaks(inputPath);
+    } catch (err) {
+      logger.warn(
+        { err },
+        "Peak envelope extraction failed - using synthetic peak data",
+      );
+      try {
+        if (fs?.existsSync(outputFile)) {
+          await fsPromises?.unlink(outputFile);
+        }
+      } catch {}
+      return this.generateSyntheticPeaks(inputPath);
+    }
+  }
+
+  private async generateSyntheticPeaks(inputPath: string): Promise<number[]> {
+    const metadata = await this.getAudioMetadata(inputPath);
+    const numPoints = Math.ceil(metadata?.duration * 100);
+    const peaks: number[] = [];
+
+    for (let i = 0; i < numPoints; i++) {
+      const t = i / numPoints;
+      peaks?.push(0.3 + 0.4 * Math.random() + 0.3 * Math.sin(t * Math.PI * 10));
+    }
+
+    return peaks;
+  }
+
+  private calculateAdaptiveThreshold(
+    peakData: number[],
+    sensitivity: number,
+  ): number {
+    const sorted = [...peakData].sort((a, b) => b - a);
+    const percentile = Math.floor(sorted?.length * (1 - sensitivity * 0.3));
+    return sorted[Math.min(percentile, sorted?.length - 1)] * 0.8;
+  }
+
+  async generateWarpPreview(
+    inputPath: string,
+    outputPath: string,
+    markers: WarpMarkerData[],
+    startTime: number,
+    endTime: number,
+    options: {
+      pitchShift?: number;
+      preserveFormants?: boolean;
+      algorithm?: WarpAlgorithm["name"];
+      quality?: WarpAlgorithm["quality"];
+    } = {},
+  ): Promise<void> {
+    const relevantMarkers = markers?.filter(
+      (m) => m?.sourceTime >= startTime && m?.sourceTime <= endTime,
+    );
+
+    const segmentInput = path?.join(
+      this.tempDir,
+      `preview_${randomUUID()}_in.wav`,
+    );
+    const segmentDuration = endTime - startTime;
+
+    try {
+      await this.extractAudioSegment(
+        inputPath,
+        segmentInput,
+        startTime,
+        segmentDuration,
+      );
+
+      const adjustedMarkers = relevantMarkers?.map((m) => ({
+        ...m,
+        sourceTime: m.sourceTime - startTime,
+        targetTime: m.targetTime - startTime,
+      }));
+
+      if (adjustedMarkers?.length > 0) {
+        await this.processWarpMarkers(
+          segmentInput,
+          outputPath,
+          adjustedMarkers,
+          options,
+        );
+      } else {
+        await fsPromises?.copyFile(segmentInput, outputPath);
+      }
+    } finally {
+      try {
+        if (fs?.existsSync(segmentInput)) {
+          await fsPromises?.unlink(segmentInput);
+        }
+      } catch {}
+    }
+  }
+
+  calculateTempoMapping(
+    sourceBpm: number,
+    targetBpm: number,
+    duration: number,
+  ): TempoMapping {
+    const sourceBeatInterval = 60 / sourceBpm;
+    const targetBeatInterval = 60 / targetBpm;
+    const numBeats = Math.floor(duration / sourceBeatInterval);
+
+    const beatGrid: number[] = [];
+    const barPositions: number[] = [];
+
+    for (let i = 0; i <= numBeats; i++) {
+      beatGrid?.push(i * targetBeatInterval);
+      if (i % 4 === 0) {
+        barPositions?.push(i * targetBeatInterval);
+      }
+    }
+
+    return {
+      sourceBpm,
+      targetBpm,
+      beatGrid,
+      barPositions,
+    };
+  }
+
+  /**
+   * Pure function: maps detected transients onto a target beat grid and
+   * returns the resulting warp markers. Produces marker DATA ONLY — no audio
+   * is rendered here. Callers persist the markers; the user separately
+   * previews/commits the actual audio render, exactly like manually-placed
+   * markers do. (The audio-rendering side effect this used to have was dead
+   * code — nothing ever read its output.)
+   */
+  quantizeToGrid(
+    transients: TransientData[],
+    beatGrid: number[],
+    strength: number = 1.0,
+  ): WarpMarkerData[] {
+    const markers: WarpMarkerData[] = [];
+
+    for (const transient of transients) {
+      if (transient?.suggestedBeat !== undefined) {
+        const nearestBeatIndex = transient?.suggestedBeat;
+        if (nearestBeatIndex >= 0 && nearestBeatIndex < beatGrid?.length) {
+          const targetTime = beatGrid[nearestBeatIndex];
+          const adjustedTarget =
+            transient?.time + (targetTime - transient?.time) * strength;
+
+          markers?.push({
+            id: randomUUID(),
+            sourceTime: transient.time,
+            targetTime: adjustedTarget,
+            transientStrength: transient.strength,
+          });
+        }
+      }
+    }
+
+    return markers;
+  }
+}
+
+export const timeStretchService = new TimeStretchService();

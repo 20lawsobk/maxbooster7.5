@@ -1,0 +1,678 @@
+import cluster from "cluster";
+import "./lib/pdimEnvFix.js";
+import os from "os";
+import path from "path";
+import http from "http";
+import fs from "fs";
+import zlib from "zlib";
+import { fileURLToPath } from "url";
+import { createRequire } from "module";
+import { spawnSync, spawn } from "child_process";
+import { computeWorkerSizing } from "./computeSizing";
+import { runtimePorts } from "./config/ports.js";
+import {
+  checkMaxcoreLocalReady,
+  getMaxcoreLocalStatus,
+  startMaxcoreLocal,
+  stopMaxcoreLocal,
+} from "./services/maxcoreLocalSupervisor.js";
+import {
+  isLocalPdimServerOwnedByThisProcess,
+  startLocalPdimServer,
+} from "./lib/localPdimServer.js";
+import {
+  handlePdimRecoveryAuthorityRequest,
+  initializePdimRecoveryAuthority,
+} from "./services/backup/pdimRecoveryBackupService.js";
+
+// ── Boosterstate sidecar startup ──────────────────────────────────────────────
+// Previously handled by start?.sh. Moved here so the run command can be a plain
+// `node dist/cluster?.cjs` — which Replit's pid1 resolves without needing npm or
+// any PATH manipulation.
+(function startBoosterstate() {
+  // Ensure production env vars are set regardless of how the process was launched.
+  // Use computed keys so esbuild's "define" substitution doesn't turn the assignments
+  // into a no-op literal assignment (e.g. "production" = ...).
+  const env = process.env as Record<string, string | undefined>;
+  env["NODE_ENV"] = env["NODE_ENV"] || "production";
+  env["UV_THREADPOOL_SIZE"] = env["UV_THREADPOOL_SIZE"] || "8";
+  env["TF_NUM_INTEROP_THREADS"] = env["TF_NUM_INTEROP_THREADS"] || "2";
+  env["TF_NUM_INTRAOP_THREADS"] = env["TF_NUM_INTRAOP_THREADS"] || "2";
+
+  // Check portable release binary first (build artifact placed by build.sh),
+  // then fall back to the dev-workspace debug binary.
+  const binCandidates = [
+    path.join(process.cwd(), "bin", "boosterstate"),
+    path.join(
+      process.cwd(),
+      "boosterstate",
+      "target",
+      "release",
+      "boosterstate",
+    ),
+  ];
+  const bin = binCandidates.find((p) => fs.existsSync(p)) ?? "";
+  if (!bin) {
+    console.log(
+      "[Cluster] boosterstate binary not found — skipping sidecar startup",
+    );
+    return;
+  }
+  const already =
+    spawnSync("pgrep", ["-x", "boosterstate"], { stdio: "ignore" }).status ===
+    0;
+  if (already) {
+    console.log("[Cluster] boosterstate already running");
+    return;
+  }
+
+  // Probe whether the binary can actually execute BEFORE daemon-spawning.
+  // When the ELF interpreter path embedded in the binary doesn't exist on the
+  // current host (common in Replit deployment VMs that use a different NixOS
+  // configuration than the workspace), spawn() fails with ENOENT — but only
+  // asynchronously, AFTER the synchronous Atomics?.wait(2000) has already
+  // blocked startup for 2 seconds.  spawnSync returns ENOENT immediately
+  // (no timeout reached) when the interpreter is missing, so we can detect
+  // this case cheaply and skip both the daemon spawn and the 2-second wait.
+  const probe = spawnSync(bin, ["--version"], {
+    timeout: 300, // killed after 300 ms if binary starts (server mode)
+    stdio: "ignore",
+    killSignal: "SIGKILL",
+  });
+  const isEnoent =
+    probe?.error && (probe?.error as NodeJS.ErrnoException).code === "ENOENT";
+  if (isEnoent) {
+    console.warn(
+      "[Cluster] boosterstate binary cannot execute on this host " +
+        "(ELF interpreter not found — binary was built for a different NixOS/glibc). " +
+        "Continuing without sidecar.",
+    );
+    return;
+  }
+
+  // Clients reach BoosterState through the main application's authenticated
+  // proxy. The binary always owns its distinct loopback port.
+  const sidecarEnv = {
+    ...process.env,
+    BOOSTERSTATE_PORT: String(runtimePorts.boosterState),
+  };
+  const proc = spawn(bin, [], {
+    detached: true,
+    stdio: "ignore",
+    env: sidecarEnv,
+  });
+  // MUST attach an 'error' listener before .unref() — without it, any spawn failure
+  // throws an uncaught exception that crashes the entire cluster primary process.
+  proc.on("error", (err) => {
+    console.warn(
+      `[Cluster] boosterstate sidecar error after start (${err.message}) — server will run without it`,
+    );
+  });
+  proc.unref();
+  console.log("[Cluster] boosterstate sidecar started — waiting 2 s for init");
+  // Synchronous 2-second wait so workers don't race against boosterstate init.
+  Atomics?.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
+})();
+
+// ── Startup-time asset pre-compression ────────────────────────────────────────
+// script/build.ts (the current production build) never emits .br/.gz files —
+// precompressed variants are generated here, at VM startup, so the deploy
+// image never has to carry precompressed binaries and static serving still
+// gets fast brotli/gzip responses.
+//
+// IMPORTANT: this MUST run asynchronously and MUST be kicked off only after
+// the primary has bound the health-check port. It used to run synchronously
+// as a top-level IIFE, executed during module load BEFORE the primary ever
+// called `.listen()`. Compressing hundreds of built assets with sync
+// readFileSync/brotliCompressSync/writeFileSync blocked the event loop for
+// 20-30+ seconds on every deploy — and start.sh had ALREADY killed the
+// boot-stub liveness server and released port 5000 before launching this
+// process, so during that whole window nothing was listening on the port at
+// all. Any request (or the platform's own health check) arriving in that gap
+// got connection-refused instead of a slow-but-successful response. Async
+// zlib + fs.promises here means the primary's listen() fires first and the
+// compression work interleaves with request handling on the event loop
+// instead of pre-empting it.
+async function compressAssetsAtStartup(): Promise<void> {
+  const COMPRESSIBLE = /\.(js|css|svg|html|json|txt|xml|webmanifest)$/;
+  const assetsDir = path?.join(process.cwd(), "dist", "public", "assets");
+  if (!fs?.existsSync(assetsDir)) return;
+
+  const fsp = fs.promises;
+  const brotliCompress = (buf: Buffer) =>
+    new Promise<Buffer>((resolve, reject) => {
+      zlib.brotliCompress(
+        buf,
+        { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 6 } },
+        (err, res) => (err ? reject(err) : resolve(res)),
+      );
+    });
+  const gzipCompress = (buf: Buffer) =>
+    new Promise<Buffer>((resolve, reject) => {
+      zlib.gzip(buf, { level: 9 }, (err, res) => (err ? reject(err) : resolve(res)));
+    });
+
+  async function listFiles(dir: string): Promise<string[]> {
+    const out: string[] = [];
+    for (const entry of (await fsp.readdir(dir, { withFileTypes: true })) ?? []) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        out.push(...(await listFiles(full)));
+        continue;
+      }
+      if (!COMPRESSIBLE.test(entry.name)) continue;
+      if (entry.name.endsWith(".br") || entry.name.endsWith(".gz")) continue;
+      out.push(full);
+    }
+    return out;
+  }
+
+  async function compressOne(full: string): Promise<number> {
+    let count = 0;
+    try {
+      const [hasBr, hasGz] = await Promise.all([
+        fsp.access(full + ".br").then(() => true).catch(() => false),
+        fsp.access(full + ".gz").then(() => true).catch(() => false),
+      ]);
+      if (hasBr && hasGz) return 0;
+      const src = await fsp.readFile(full);
+      if (!hasBr) {
+        await fsp.writeFile(full + ".br", await brotliCompress(src));
+        count++;
+      }
+      if (!hasGz) {
+        await fsp.writeFile(full + ".gz", await gzipCompress(src));
+        count++;
+      }
+    } catch {
+      /* intentional: gzip backup is best-effort; main data file already written */
+    }
+    return count;
+  }
+
+  try {
+    const files = await listFiles(assetsDir);
+    // Small bounded concurrency so this never competes hard with request
+    // handling — it's a background nice-to-have, not startup-critical.
+    const CONCURRENCY = 4;
+    let compressed = 0;
+    let cursor = 0;
+    async function worker() {
+      while (cursor < files.length) {
+        const file = files[cursor++];
+        compressed += await compressOne(file);
+      }
+    }
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+    if (compressed > 0)
+      console.log(
+        `[Cluster] Asset pre-compression complete — ${compressed} file(s) written`,
+      );
+  } catch (err) {
+    console.warn(
+      "[Cluster] Asset pre-compression skipped:",
+      (err as Error).message,
+    );
+  }
+}
+
+// CJS-safe: import.meta.url is undefined when bundled to CJS by esbuild.
+// Fall back to process.argv[1] (the entry file path) for __dirname resolution.
+const __metaUrl = (import.meta as unknown as Record<string, unknown>)?.url as
+  | string
+  | undefined;
+const __filename = __metaUrl
+  ? fileURLToPath(__metaUrl)
+  : path?.resolve(process.argv[1] ?? "");
+const __dirname = path?.dirname(__filename);
+createRequire(__metaUrl ?? "file://" + __filename);
+
+// Clustering requires either:
+//   1. REPLIT_DEPLOYMENT is set (actual Autoscale deployment), OR
+//   2. ENABLE_CLUSTER=true explicitly set by the operator
+// NODE_ENV=production alone does NOT trigger clustering — in the Replit IDE the build
+// runs with NODE_ENV=production but there is only one process and no health-check grace period.
+const ENABLE_CLUSTER =
+  !!process.env.REPLIT_DEPLOYMENT || process.env.ENABLE_CLUSTER === "true";
+
+const DISABLE_CLUSTER = process.env.DISABLE_CLUSTER === "true";
+
+if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
+  // Single-process mode: IDE dev environment, DISABLE_CLUSTER=true, or non-deployment run.
+  // Use dynamic import — index?.mjs is ESM and cannot be loaded with require().
+  const appEntry = path?.join(__dirname, "index.mjs");
+  import(appEntry).catch((err: unknown) => {
+    console.error("[Cluster] Failed to load server entry:", err);
+    process.exit(1);
+  });
+  // Safe to kick off in the background here too — index.mjs binds its own
+  // listener synchronously at import time, so the port is already live.
+  void compressAssetsAtStartup();
+} else {
+  const totalMemGB = os?.totalmem() / 1024 ** 3;
+
+  // ── Worker auto-sizing — why this matters at scale ───────────────────────
+  //
+  // Max Booster is designed for Replit Autoscale: as concurrent users grow,
+  // Replit spins up additional replica VMs.  Throughput therefore scales in
+  // two dimensions:
+  //
+  //   Horizontal (replicas):  Replit adds/removes VMs based on traffic.
+  //   Vertical   (workers):   Each VM runs N workers, one per CPU core.
+  //
+  // Every worker is a full independent Node?.js process sharing the same port
+  // via SO_REUSEPORT.  The OS kernel distributes incoming connections across
+  // all listening workers — no proxy, no round-robin at the app layer.
+  // Sessions and queues live in PDIM (shared across all workers and all
+  // replicas), so any worker can serve any user without affinity.
+  //
+  // WHY NOT SET CLUSTER_WORKERS MANUALLY:
+  //   Setting a hard number locks the replica to that count regardless of
+  //   the VM it lands on.  If Autoscale places a replica on an 8-vCPU VM
+  //   and CLUSTER_WORKERS=2, 6 cores sit idle — the replica delivers ~33%
+  //   of its purchased throughput.  At 100M-user scale that idle capacity
+  //   is expensive and directly increases the number of additional replicas
+  //   Replit must spin up to compensate, raising cost proportionally.
+  //
+  // WHY NOT USE ALL CORES:
+  //   One core is reserved for the primary process and the OS scheduler.
+  //   The primary owns the health-check socket from t=0 so Replit's load
+  //   balancer never sees a gap, manages rolling restarts, and propagates
+  //   SIGTERM to all workers on scale-down.  Starving it causes health-check
+  //   timeouts and false-positive replica evictions under load.
+  //
+  // MEMORY GUARD:
+  //   computeSizing reserves coordinator, Python, sidecar and OS budgets
+  //   before allocating worker pools. V8 uses only part of a worker's RSS
+  //   allocation; native allocations still require load/soak measurement.
+  //   Compiler/typechecker heap settings are not worker RSS requirements.
+  //   A 4-effective-CPU / 8-GiB deployment keeps one worker per Node role.
+  //
+  // PDIM AWARENESS:
+  //   PDIM_CLUSTER_WORKERS is passed to every forked worker at fork time.
+  //   The AIMD rate limiter inside each worker uses this count to divide its
+  //   per-worker ZPOPMIN poll budget proportionally, so total PDIM throughput
+  //   stays constant regardless of how many workers are running.  Adding more
+  //   workers does not increase PDIM load — it is automatically redistributed.
+  //
+  // OVERRIDE (use only to intentionally constrain for testing/debugging):
+  //   Set CLUSTER_WORKERS=N to pin to exactly N workers.
+  //   Remove the env var entirely to restore full auto-sizing.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const isDeployment = !!process.env.REPLIT_DEPLOYMENT;
+
+  // Runtime RSS minima and all heap ceilings come from the shared role
+  // allocation. Build/typechecker heap needs are not runtime worker minima.
+
+  // Sizing derivation lives in server/computeSizing.ts — the single shared
+  // source of truth also consumed by maxcoreLocalSupervisor.ts (its own Node
+  // cluster) and (via env vars) MaxCore's Python HyperGPU engine, so every
+  // process on this host reasons about CPU/RAM capacity the same way.
+  //
+  // cpuLimit: role concurrency within the shared effective CPU quota.
+  // memLimit: never fork more workers than the role's RSS pool can admit.
+  // The real worker count is the lesser of the two — whichever resource
+  // is exhausted first on the current VM is the binding constraint.
+  //
+  // CLUSTER_WORKERS is intentionally left unset in production so auto-sizing
+  // fills every available CPU core and RAM slot on whatever VM Autoscale
+  // provisions.  Only set it when deliberately constraining for debugging.
+  const sizing = computeWorkerSizing({
+    envOverrideVar: "CLUSTER_WORKERS",
+  });
+  const { cpuLimit, memLimit } = sizing;
+
+  if (sizing.source === "override") {
+    console.warn(
+      `[Cluster] ⚠️  CLUSTER_WORKERS override active — pinned to ${sizing.workerCount} worker(s). ` +
+        `Auto-sizing would have chosen ${Math.min(cpuLimit, memLimit ?? cpuLimit)}. ` +
+        `Remove CLUSTER_WORKERS to restore full VM utilisation.`,
+    );
+  }
+
+  const workerCount = sizing.workerCount;
+
+  // V8 heap cap applied to each forked worker (MiB).
+  // Workers do NOT inherit the primary's --max-old-space-size CLI flag —
+  // it must be passed explicitly via execArgv (done below).
+  //
+  // CRITICAL: this must be clamped to what the VM actually has, not a flat
+  // per-tier constant. A hardcoded "deployed = 4096 MB" assumes every
+  // deployment lands on a large VM. On a small VM (e.g. 2 GB total RAM) a
+  // 4096 MB V8 heap ceiling lets the worker's heap grow to more than 2x
+  // physical memory before V8 even starts feeling heap pressure — the OS
+  // then thrashes (swap or reclaim) under real memory pressure, which can
+  // stall the entire event loop (including logging) for tens of minutes
+  // while the process looks "alive" but serves nothing. Deriving the cap
+  // from `sizing.freeMemGB` keeps the ceiling honest for whatever box this
+  // process actually landed on.
+  const workerHeapMB = sizing.workerHeapMB;
+
+  const workerScript = path?.join(__dirname, "index.mjs");
+
+  // Pass heap size to every worker — workers do NOT inherit the primary's CLI flag.
+  // execArgv is propagated to each forked child process by Node.js cluster module.
+  cluster.setupPrimary({
+    exec: workerScript,
+    execArgv: [`--max-old-space-size=${workerHeapMB}`],
+  });
+
+  // The cluster primary is the sole owner of the local MaxCore process tree.
+  // Workers query this authority over cluster IPC; they never spawn or trust a
+  // process merely because it happens to answer on the shared loopback port.
+  void startMaxcoreLocal().catch((err) => {
+    console.error("[Cluster] MaxCore authority failed to start:", err);
+  });
+
+  console.log(
+    `[Cluster] Primary ${process.pid} — forking ${workerCount} workers ` +
+      `(effective CPUs: ${sizing.numCPUs}, host RAM: ${totalMemGB.toFixed(1)} GB, app pool: ${sizing.freeMemGB.toFixed(1)} GB, ` +
+      `${sizing.workerMemoryMB} MiB RSS allocation/worker, heap/worker: ${workerHeapMB} MB, ` +
+      `cpu-limit: ${cpuLimit}, mem-limit: ${memLimit})` +
+      (isDeployment ? ` [Deployed VM — ${sizing.numCPUs} vCPU]` : ""),
+  );
+
+  // ── Option 1: Primary-owned health check server ───────────────────────────
+  // The primary process (this file) binds port 5000 immediately using
+  // SO_REUSEPORT *before* any worker is forked.  Workers also bind 5000 with
+  // reusePort: true (see index.ts early-listen).  The OS kernel load-balances
+  // connections across all listening sockets, so:
+  //   • Replit's health check hits /health on the PRIMARY → 200 in <1 ms,
+  //     guaranteed from the very first millisecond of process start.
+  //   • Once workers come online they share port 5000 and handle real traffic.
+  //   • If ALL workers crash and restart the primary's socket keeps the port
+  //     alive so the health check never sees a connection-refused.
+  const primaryPort = runtimePorts.app;
+  // Health paths answered by the primary itself.
+  // MUST include every path Replit's deployment health checker may use — if the
+  // primary returns 503 on any health path, the deployment times out even after
+  // workers come up (OS SO_REUSEPORT load-balances between primary + workers so
+  // the primary always handles a fraction of incoming requests).
+  const HEALTH_PATHS = new Set(["/", "/health", "/api/health", "/api/ping"]);
+  const primaryHealthServer = http?.createServer((req, res) => {
+    const url = (req.url ?? "").split("?")[0]; // strip query string
+    if (HEALTH_PATHS?.has(url)) {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          status: "ok",
+          pid: process.pid,
+          role: "primary",
+          ts: Date.now(),
+        }),
+      );
+    } else {
+      // Non-health requests that land on the primary during worker startup:
+      // return 503 + Retry-After so the client retries once a worker is ready.
+      res.writeHead(503, {
+        "Content-Type": "application/json",
+        "Retry-After": "2",
+      });
+      res.end(
+        JSON.stringify({
+          status: "starting",
+          message: "Workers initializing — retry in 2s",
+        }),
+      );
+    }
+  });
+  primaryHealthServer?.listen(
+    { port: primaryPort, host: "0.0.0.0", reusePort: true },
+    () => {
+      console.log(
+        `[Cluster] Primary health server on :${primaryPort} (pid=${process.pid}) — workers starting`,
+      );
+      // Only start the (CPU-bound but now async) asset compression once the
+      // port is actually bound, so it never delays — or races — the moment
+      // the platform's health check can get a response.
+      void compressAssetsAtStartup();
+    },
+  );
+
+  // This primary is the single owner of both the local PDIM listener and the
+  // retained-recovery coordinator. The health socket is asked to bind first so
+  // loading a large persisted PDIM file cannot create a connection-refused
+  // deployment window. Workers are not forked until ownership is established.
+  await startLocalPdimServer();
+  if (!isLocalPdimServerOwnedByThisProcess()) {
+    throw new Error(
+      "Cluster primary could not establish owned local PDIM authority",
+    );
+  }
+  initializePdimRecoveryAuthority();
+
+  // Stagger worker startup by 800 ms per worker.
+  // Without a stagger all N workers immediately race to connect to PDIM
+  // (session-store ping, distributed-cache connect, BullMQ bzpopmin) which
+  // saturates PDIM's rate-limit and triggers cascading 429s before any
+  // worker has finished initialising.
+  //
+  // PDIM_CLUSTER_WORKERS is passed to every forked worker so the AIMD
+  // rate-limiter and ZPOPMIN gap scale their per-worker budgets correctly.
+  // At 90M-user scale each worker must only consume 1/N of PDIM's
+  // throughput quota — PDIM's own 429 responses are the global ceiling.
+  // Track each worker's env so we can preserve CLUSTER_WORKER_ID on respawn.
+  // Without this, crash-respawned workers have no ID and all start background jobs.
+  const workerEnvMap = new Map<number, Record<string, string>>();
+  const intentionalWorkerExits = new Set<number>();
+  let clusterShuttingDown = false;
+
+  for (let i = 0; i < workerCount; i++) {
+    setTimeout(() => {
+      const env: Record<string, string> = {
+        PDIM_CLUSTER_WORKERS: String(workerCount),
+        CLUSTER_WORKER_ID: String(i),
+      };
+      const w = cluster?.fork(env);
+      workerEnvMap?.set(w?.id, env);
+    }, i * 300);
+  }
+
+  // Crash-loop protection: track restart times to detect and back off runaway crashes.
+  const workerRestartTimes: number[] = [];
+  const MAX_RESTARTS_PER_MINUTE = 10;
+  const BACKOFF_DELAY_MS = 30_000;
+
+  cluster?.on("exit", (worker, code, signal) => {
+    const reason = signal ? `signal=${signal}` : `code=${code}`;
+    console.error(
+      `[Cluster] Worker ${worker?.process?.pid} exited (${reason}) — restarting`,
+    );
+
+    // Retrieve (and remove) the env so the replacement inherits the same CLUSTER_WORKER_ID.
+    const savedEnv = workerEnvMap?.get(worker?.id);
+    workerEnvMap?.delete(worker?.id);
+    if (clusterShuttingDown) return;
+    if (intentionalWorkerExits.delete(worker.id)) {
+      console.log(
+        `[Cluster] Worker ${worker.process.pid} retired after replacement came online`,
+      );
+      return;
+    }
+
+    const spawnReplacement = () => {
+      const w = cluster?.fork(savedEnv);
+      if (savedEnv) workerEnvMap?.set(w?.id, savedEnv);
+    };
+
+    const now = Date.now();
+    // Evict timestamps outside the 60-second window
+    while (
+      workerRestartTimes?.length > 0 &&
+      workerRestartTimes[0] < now - 60_000
+    ) {
+      workerRestartTimes?.shift();
+    }
+
+    if (workerRestartTimes?.length >= MAX_RESTARTS_PER_MINUTE) {
+      console.error(
+        `[Cluster] Crash-loop detected: ${workerRestartTimes?.length} restarts in last 60s — ` +
+          `backing off ${BACKOFF_DELAY_MS / 1000}s before next fork`,
+      );
+      setTimeout(spawnReplacement, BACKOFF_DELAY_MS);
+    } else {
+      workerRestartTimes?.push(now);
+      setTimeout(spawnReplacement, 500);
+    }
+  });
+
+  let workersOnline = 0;
+  let primaryPortReleased = false;
+  cluster?.on("online", (worker) => {
+    console.log(`[Cluster] Worker ${worker?.process?.pid} online`);
+    workersOnline++;
+    if (workersOnline >= workerCount && !primaryPortReleased) {
+      primaryPortReleased = true;
+      // All workers are listening — retire the primary's reusePort socket so it
+      // stops competing with workers for connections.  Without this, ~1/N of all
+      // requests (including API calls from the SPA) land on the primary and get
+      // 503 forever, breaking the app for users even after a clean boot.
+      primaryHealthServer?.close(() => {
+        console.log(
+          "[Cluster] Primary port released — all traffic now served by workers",
+        );
+      });
+    }
+  });
+
+  // Graceful shutdown for the cluster primary.
+  // Autoscale sends SIGTERM to the process group when scaling down a replica.
+  // The primary must propagate the signal to all workers and wait for them to drain
+  // before exiting. Hard-exits after 25 s (autoscale sends SIGKILL at ~30 s).
+  function primaryShutdown(signal: string): void {
+    if (clusterShuttingDown) return;
+    clusterShuttingDown = true;
+    console.log(
+      `[Cluster] Primary received ${signal} — draining ${Object.keys(cluster?.workers ?? {}).length} worker(s)`,
+    );
+    // Stop the primary-owned MaxCore process group exactly once. Worker
+    // shutdown handlers only invalidate their IPC view and cannot kill it.
+    stopMaxcoreLocal();
+
+    const hardExit = setTimeout(() => {
+      console.error("[Cluster] Primary hard timeout — forcing exit");
+      process.exit(0);
+    }, 25_000);
+    hardExit?.unref();
+
+    // Forward SIGTERM to all workers so they trigger their own graceful shutdown.
+    const workers = Object.values(cluster?.workers ?? {}).filter(
+      Boolean,
+    ) as import("cluster").Worker[];
+    workers?.forEach((w) => {
+      try {
+        w?.process?.kill("SIGTERM");
+      } catch {
+        /* worker may already be gone */
+      }
+    });
+
+    // Exit once all workers have exited.
+    let remaining = workers?.length;
+    if (remaining === 0) {
+      clearTimeout(hardExit);
+      process.exit(0);
+      return;
+    }
+
+    cluster?.on("exit", () => {
+      remaining--;
+      if (remaining <= 0) {
+        console.log("[Cluster] All workers exited — primary shutting down");
+        clearTimeout(hardExit);
+        process.exit(0);
+      }
+    });
+  }
+
+  process.on("SIGTERM", () => primaryShutdown("SIGTERM"));
+  process.on("SIGINT", () => primaryShutdown("SIGINT"));
+
+  // Rolling restart triggered by SilentDeploymentService after self-evolution files land.
+  // Cycles workers one at a time: old exits → new forks and comes online → repeat.
+  // Zero downtime: at least one worker is always serving traffic.
+  let rollingRestartInProgress = false;
+
+  cluster?.on("message", (_worker, message: unknown) => {
+    if (!message || typeof message !== "object") return;
+    const msg = message as Record<string, unknown>;
+    if (msg.type === "PDIM_RECOVERY_REQUEST") {
+      void handlePdimRecoveryAuthorityRequest(message).then((response) => {
+        if (response && _worker.isConnected()) _worker.send(response);
+      });
+      return;
+    }
+    if (msg?.type === "MAXCORE_STATUS_REQUEST") {
+      const requestId =
+        typeof msg.requestId === "number" ? msg.requestId : undefined;
+      void checkMaxcoreLocalReady()
+        .catch(() => false)
+        .then((ready) => {
+          const status = getMaxcoreLocalStatus();
+          if (!_worker.isConnected()) return;
+          _worker.send({
+            type: "MAXCORE_AUTHORITY_STATUS",
+            requestId,
+            ready: ready && status.ready,
+            status,
+          });
+        });
+      return;
+    }
+    if (msg?.type !== "SILENT_RELOAD") return;
+    if (rollingRestartInProgress) {
+      console.log(
+        "[Cluster] Rolling restart already in progress — ignoring duplicate SILENT_RELOAD",
+      );
+      return;
+    }
+
+    const reason = msg?.reason ?? "unknown";
+    console.log(
+      `[Cluster] SILENT_RELOAD received (reason=${reason}) — beginning rolling restart`,
+    );
+    rollingRestartInProgress = true;
+
+    const workerList = Object.values(cluster?.workers ?? {}).filter(
+      Boolean,
+    ) as import("cluster").Worker[];
+    let index = 0;
+
+    const restartNext = () => {
+      if (index >= workerList?.length) {
+        console.log(
+          "[Cluster] Rolling restart complete — all workers running new code",
+        );
+        rollingRestartInProgress = false;
+        return;
+      }
+
+      const target = workerList[index++];
+      if (!target || target?.isDead()) {
+        restartNext();
+        return;
+      }
+
+      // Fork the replacement first so traffic is never fully dropped
+      const replacementEnv = workerEnvMap.get(target.id);
+      const replacement = cluster?.fork(replacementEnv);
+      if (replacementEnv) workerEnvMap.set(replacement.id, replacementEnv);
+      replacement?.once("listening", () => {
+        console.log(
+          `[Cluster] Replacement worker ${replacement?.process?.pid} ready — retiring old worker ${target?.process?.pid}`,
+        );
+        intentionalWorkerExits.add(target.id);
+        target?.disconnect();
+        // Give old worker 10s to finish in-flight requests then force-kill
+        const forceKill = setTimeout(() => target?.kill(), 10_000);
+        target?.once("exit", () => {
+          clearTimeout(forceKill);
+          restartNext();
+        });
+      });
+    };
+
+    restartNext();
+  });
+}

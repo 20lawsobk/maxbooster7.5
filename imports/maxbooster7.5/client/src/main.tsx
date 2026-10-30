@@ -1,0 +1,101 @@
+import React from "react";
+import ReactDOM from "react-dom/client";
+import * as Sentry from "@sentry/react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OfflineProvider } from "@/components/offline/OfflineProvider";
+import { AccountPersistenceBoundary } from "@/components/offline/AccountPersistenceBoundary";
+import { WorkerUpdatePrompt } from "@/components/offline/WorkerUpdatePrompt";
+import App from "./App";
+import "./index.css";
+import "./i18n/config";
+import { reportWebVitals } from "./lib/reportWebVitals";
+
+// Initialize Sentry client-side error tracking.
+// VITE_SENTRY_DSN must be set to the same value as the server-side SENTRY_DSN secret.
+const sentryDsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: import.meta.env.MODE ?? "development",
+    tracesSampleRate: import.meta.env.PROD ? 0.1 : 0,
+    replaysSessionSampleRate: 0,
+    replaysOnErrorSampleRate: import.meta.env.PROD ? 0.5 : 0,
+    beforeSend(event) {
+      // Drop ResizeObserver noise
+      if (
+        event.exception?.values?.some((v) =>
+          v.value?.includes("ResizeObserver loop"),
+        )
+      )
+        return null;
+      return event;
+    },
+  });
+}
+
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error("Failed to find the root element");
+}
+
+const root = ReactDOM.createRoot(rootElement);
+
+// Report Core Web Vitals (CLS / INP / LCP / FCP / TTFB) to /api/metrics/web-vitals.
+// Uses sendBeacon when available so reports survive page unload.
+reportWebVitals();
+
+// Register the service worker for offline support and background sync.
+// Run only in browsers that support it; errors are non-fatal.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js", { scope: "/" })
+      .then((registration) => {
+        const announce = () => {
+          if (registration.waiting && navigator.serviceWorker.controller) {
+            window.dispatchEvent(new CustomEvent("sw-update-available", { detail: registration.waiting }));
+          }
+        };
+        announce();
+        registration.addEventListener("updatefound", () => {
+          registration.installing?.addEventListener("statechange", announce);
+        });
+        // Trigger an update check whenever the page gains focus.
+        registration.update().catch(() => {});
+      })
+      .catch((err) => {
+        // SW registration failure is non-fatal — the app still works online.
+        console.warn("[SW] Registration failed:", err);
+      });
+  });
+}
+
+root.render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <WorkerUpdatePrompt />
+        {/* OfflineProvider wraps the ENTIRE platform — auth, query cache,
+            tooltips, and all of App — so every layer can read isOnline /
+            isOffline / pending-sync state via useOffline(). */}
+        <OfflineProvider showToasts={true} autoSync={true}>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <AccountPersistenceBoundary>
+                <TooltipProvider>
+                  <App />
+                </TooltipProvider>
+              </AccountPersistenceBoundary>
+            </AuthProvider>
+          </QueryClientProvider>
+        </OfflineProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
+  </React.StrictMode>,
+);

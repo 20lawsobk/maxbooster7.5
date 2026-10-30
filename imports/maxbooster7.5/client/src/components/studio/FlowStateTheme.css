@@ -1,0 +1,943 @@
+/* FlowState DAW Theme - The Ultimate Music Production Interface */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CORE DESIGN TOKENS - Inspired by Professional Hardware & Sci-Fi Aesthetics
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Deep Space Background System */
+  --flow-bg-void: #050508;
+  --flow-bg-deep: #0a0b10;
+  --flow-bg-space: #0f1015;
+  --flow-bg-nebula: #14151c;
+  --flow-bg-surface: #1a1b24;
+  --flow-bg-elevated: #22232e;
+  --flow-bg-floating: #2a2b38;
+
+  /* Gradient Backgrounds */
+  --flow-gradient-void: radial-gradient(
+    ellipse at 50% 0%,
+    #0f1015 0%,
+    #050508 100%
+  );
+  --flow-gradient-nebula:
+    radial-gradient(
+      ellipse at 30% 20%,
+      rgba(99, 102, 241, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 70% 80%,
+      rgba(139, 92, 246, 0.05) 0%,
+      transparent 50%
+    ),
+    var(--flow-bg-deep);
+  --flow-gradient-panel: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 100%
+  );
+  --flow-gradient-toolbar: linear-gradient(180deg, #1a1b24 0%, #14151c 100%);
+
+  /* Accent Colors - Neon Spectrum */
+  --flow-accent-primary: #6366f1;
+  --flow-accent-secondary: #8b5cf6;
+  --flow-accent-tertiary: #a855f7;
+  --flow-accent-cyan: #22d3ee;
+  --flow-accent-emerald: #10b981;
+  --flow-accent-amber: #f59e0b;
+  --flow-accent-rose: #f43f5e;
+  --flow-accent-blue: #3b82f6;
+
+  /* Text Hierarchy */
+  --flow-text-primary: #f8fafc;
+  --flow-text-secondary: #cbd5e1;
+  --flow-text-muted: #64748b;
+  --flow-text-subtle: #475569;
+  --flow-text-accent: var(--flow-accent-cyan);
+
+  /* Borders & Dividers */
+  --flow-border-subtle: rgba(255, 255, 255, 0.06);
+  --flow-border-default: rgba(255, 255, 255, 0.1);
+  --flow-border-strong: rgba(255, 255, 255, 0.15);
+  --flow-border-accent: rgba(99, 102, 241, 0.5);
+
+  /* Glass Morphism */
+  --flow-glass-bg: rgba(20, 21, 28, 0.85);
+  --flow-glass-border: rgba(255, 255, 255, 0.08);
+  --flow-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --flow-glass-blur: blur(20px);
+
+  /* Shadows & Depth */
+  --flow-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --flow-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --flow-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --flow-shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.6);
+  --flow-shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+  --flow-shadow-glow-cyan: 0 0 20px rgba(34, 211, 238, 0.3);
+  --flow-shadow-glow-record: 0 0 24px rgba(239, 68, 68, 0.5);
+
+  /* Animation Timings */
+  --flow-transition-fast: 100ms ease-out;
+  --flow-transition-normal: 200ms ease-out;
+  --flow-transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --flow-transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Track Colors - Vibrant & Distinct */
+  --flow-track-1: #f43f5e;
+  --flow-track-2: #f97316;
+  --flow-track-3: #eab308;
+  --flow-track-4: #22c55e;
+  --flow-track-5: #14b8a6;
+  --flow-track-6: #06b6d4;
+  --flow-track-7: #3b82f6;
+  --flow-track-8: #6366f1;
+  --flow-track-9: #8b5cf6;
+  --flow-track-10: #d946ef;
+
+  /* Frequency Visualization Colors */
+  --flow-freq-sub: #6366f1;
+  --flow-freq-bass: #8b5cf6;
+  --flow-freq-low-mid: #22d3ee;
+  --flow-freq-mid: #10b981;
+  --flow-freq-high-mid: #eab308;
+  --flow-freq-high: #f97316;
+  --flow-freq-air: #f43f5e;
+
+  /* Meter Colors */
+  --flow-meter-green: #22c55e;
+  --flow-meter-yellow: #eab308;
+  --flow-meter-orange: #f97316;
+  --flow-meter-red: #ef4444;
+  --flow-meter-bg: #1e1e2a;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLOWSTATE STUDIO CONTAINER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flowstate-studio {
+  background: var(--flow-gradient-nebula);
+  min-height: 100vh;
+  color: var(--flow-text-primary);
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLASS PANELS - Floating Modular System
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-panel {
+  background: var(--flow-glass-bg);
+  backdrop-filter: var(--flow-glass-blur);
+  -webkit-backdrop-filter: var(--flow-glass-blur);
+  border: 1px solid var(--flow-glass-border);
+  border-radius: 12px;
+  box-shadow: var(--flow-glass-shadow);
+  transition: all var(--flow-transition-smooth);
+}
+
+.flow-panel:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: var(--flow-shadow-lg);
+}
+
+.flow-panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--flow-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  user-select: none;
+}
+
+.flow-panel-header:active {
+  cursor: grabbing;
+}
+
+.flow-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--flow-text-secondary);
+}
+
+.flow-panel-content {
+  padding: 16px;
+}
+
+/* Floating Panel Animation */
+.flow-panel-floating {
+  position: absolute;
+  z-index: 100;
+  min-width: 280px;
+  animation: panelFloat 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes panelFloat {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRANSPORT BAR - Professional Control Surface
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-transport {
+  background: linear-gradient(
+    180deg,
+    var(--flow-bg-elevated) 0%,
+    var(--flow-bg-surface) 100%
+  );
+  border-bottom: 1px solid var(--flow-border-subtle);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 64px;
+}
+
+.flow-transport-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.flow-transport-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--flow-border-subtle);
+  background: var(--flow-bg-floating);
+  color: var(--flow-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--flow-transition-fast);
+}
+
+.flow-transport-btn:hover {
+  background: var(--flow-bg-elevated);
+  color: var(--flow-text-primary);
+  border-color: var(--flow-border-default);
+}
+
+.flow-transport-btn.active {
+  background: var(--flow-accent-primary);
+  border-color: var(--flow-accent-primary);
+  color: white;
+  box-shadow: var(--flow-shadow-glow);
+}
+
+.flow-transport-btn.record {
+  background: var(--flow-accent-rose);
+  border-color: var(--flow-accent-rose);
+  animation: recordPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes recordPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(244, 63, 94, 0);
+  }
+}
+
+/* Time Display */
+.flow-time-display {
+  background: var(--flow-bg-void);
+  border: 1px solid var(--flow-border-subtle);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--flow-accent-cyan);
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  letter-spacing: 1px;
+}
+
+/* BPM Display */
+.flow-bpm-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--flow-bg-floating);
+  border: 1px solid var(--flow-border-subtle);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.flow-bpm-value {
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--flow-accent-emerald);
+}
+
+.flow-bpm-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--flow-text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTEXT-AWARE TOOLBAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-smart-toolbar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--flow-glass-bg);
+  backdrop-filter: var(--flow-glass-blur);
+  border: 1px solid var(--flow-glass-border);
+  border-radius: 16px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--flow-shadow-xl);
+  z-index: 1000;
+  animation: toolbarSlideUp 0.3s var(--flow-transition-bounce);
+}
+
+@keyframes toolbarSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.flow-smart-toolbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all var(--flow-transition-fast);
+  color: var(--flow-text-muted);
+}
+
+.flow-smart-toolbar-item:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--flow-text-primary);
+}
+
+.flow-smart-toolbar-item.suggested {
+  background: rgba(34, 211, 238, 0.1);
+  color: var(--flow-accent-cyan);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
+
+.flow-smart-toolbar-label {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRACK LIST - Modern Design
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-track {
+  display: flex;
+  align-items: stretch;
+  background: var(--flow-bg-surface);
+  border-bottom: 1px solid var(--flow-border-subtle);
+  transition: all var(--flow-transition-fast);
+}
+
+.flow-track:hover {
+  background: var(--flow-bg-elevated);
+}
+
+.flow-track.selected {
+  background: rgba(99, 102, 241, 0.1);
+  border-left: 3px solid var(--flow-accent-primary);
+}
+
+.flow-track-color-bar {
+  width: 4px;
+  min-height: 64px;
+}
+
+.flow-track-header {
+  width: 200px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--flow-border-subtle);
+}
+
+.flow-track-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--flow-text-primary);
+}
+
+.flow-track-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.flow-track-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--flow-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--flow-transition-fast);
+}
+
+.flow-track-btn:hover {
+  background: var(--flow-bg-floating);
+  color: var(--flow-text-primary);
+}
+
+.flow-track-btn.mute.active {
+  background: var(--flow-accent-amber);
+  color: black;
+}
+
+.flow-track-btn.solo.active {
+  background: var(--flow-accent-cyan);
+  color: black;
+}
+
+.flow-track-btn.record.active {
+  background: var(--flow-accent-rose);
+  color: white;
+  animation: recordPulse 1.5s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WAVEFORM VISUALIZATION
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-waveform {
+  flex: 1;
+  height: 64px;
+  position: relative;
+  overflow: hidden;
+}
+
+.flow-waveform-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.flow-waveform-clip {
+  position: absolute;
+  height: 100%;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.flow-waveform-clip:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.flow-waveform-clip.selected {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: var(--flow-accent-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLAYHEAD & TIMELINE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--flow-accent-cyan);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.flow-playhead::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -6px;
+  width: 14px;
+  height: 14px;
+  background: var(--flow-accent-cyan);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+
+.flow-timeline-ruler {
+  height: 28px;
+  background: var(--flow-bg-nebula);
+  border-bottom: 1px solid var(--flow-border-subtle);
+  display: flex;
+  align-items: flex-end;
+}
+
+.flow-timeline-marker {
+  font-size: 10px;
+  color: var(--flow-text-muted);
+  padding-bottom: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI ASSISTANT SIDEBAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-ai-sidebar {
+  width: 320px;
+  background: linear-gradient(
+    180deg,
+    var(--flow-bg-surface) 0%,
+    var(--flow-bg-nebula) 100%
+  );
+  border-left: 1px solid var(--flow-border-subtle);
+  display: flex;
+  flex-direction: column;
+}
+
+.flow-ai-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--flow-border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flow-ai-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    var(--flow-accent-primary),
+    var(--flow-accent-secondary)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+}
+
+.flow-ai-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--flow-text-primary);
+}
+
+.flow-ai-status {
+  font-size: 11px;
+  color: var(--flow-accent-emerald);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.flow-ai-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--flow-accent-emerald);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* AI Suggestions */
+.flow-ai-suggestions {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flow-ai-suggestion {
+  background: var(--flow-bg-floating);
+  border: 1px solid var(--flow-border-subtle);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--flow-transition-fast);
+}
+
+.flow-ai-suggestion:hover {
+  background: var(--flow-bg-elevated);
+  border-color: var(--flow-accent-primary);
+  transform: translateX(4px);
+}
+
+.flow-ai-suggestion-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--flow-text-primary);
+  margin-bottom: 4px;
+}
+
+.flow-ai-suggestion-desc {
+  font-size: 12px;
+  color: var(--flow-text-muted);
+  line-height: 1.5;
+}
+
+.flow-ai-suggestion-action {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--flow-accent-primary);
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3D SPATIAL VISUALIZER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-spatial-viz {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: radial-gradient(
+    ellipse at center,
+    var(--flow-bg-nebula) 0%,
+    var(--flow-bg-void) 100%
+  );
+  border-radius: 12px;
+  overflow: hidden;
+  perspective: 1000px;
+}
+
+.flow-spatial-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  transform: rotateX(60deg) translateY(-50%);
+  transform-origin: center;
+}
+
+.flow-spatial-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+  animation: orbFloat 3s ease-in-out infinite;
+}
+
+@keyframes orbFloat {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.1);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MIXER CHANNEL STRIP
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-channel {
+  display: flex;
+  flex-direction: column;
+  width: 80px;
+  background: linear-gradient(
+    180deg,
+    var(--flow-bg-elevated) 0%,
+    var(--flow-bg-surface) 100%
+  );
+  border-right: 1px solid var(--flow-border-subtle);
+  padding: 8px;
+  gap: 8px;
+}
+
+.flow-channel-name {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--flow-text-secondary);
+  padding: 4px;
+  border-radius: 4px;
+  background: var(--flow-bg-floating);
+}
+
+.flow-fader-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.flow-fader {
+  width: 8px;
+  height: 160px;
+  background: var(--flow-bg-void);
+  border-radius: 4px;
+  position: relative;
+  cursor: pointer;
+}
+
+.flow-fader-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(
+    180deg,
+    var(--flow-accent-primary),
+    var(--flow-accent-secondary)
+  );
+  border-radius: 4px;
+  transition: height 50ms linear;
+}
+
+.flow-fader-handle {
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  height: 24px;
+  background: linear-gradient(180deg, #4a4a5a 0%, #3a3a4a 100%);
+  border: 1px solid #5a5a6a;
+  border-radius: 4px;
+  cursor: grab;
+  box-shadow: var(--flow-shadow-md);
+}
+
+.flow-fader-handle:active {
+  cursor: grabbing;
+}
+
+/* Meter */
+.flow-meter {
+  width: 12px;
+  height: 160px;
+  background: var(--flow-meter-bg);
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.flow-meter-segment {
+  flex: 1;
+  margin: 1px;
+  border-radius: 1px;
+  transition: opacity 50ms linear;
+}
+
+.flow-meter-segment.active {
+  opacity: 1;
+}
+
+.flow-meter-segment.inactive {
+  opacity: 0.15;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BUTTONS & CONTROLS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--flow-border-subtle);
+  background: var(--flow-bg-floating);
+  color: var(--flow-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--flow-transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flow-btn:hover {
+  background: var(--flow-bg-elevated);
+  color: var(--flow-text-primary);
+  border-color: var(--flow-border-default);
+}
+
+.flow-btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--flow-accent-primary),
+    var(--flow-accent-secondary)
+  );
+  border-color: transparent;
+  color: white;
+}
+
+.flow-btn-primary:hover {
+  box-shadow: var(--flow-shadow-glow);
+  transform: translateY(-1px);
+}
+
+.flow-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.flow-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KNOBS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-knob {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  cursor: pointer;
+}
+
+.flow-knob-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--flow-bg-void);
+  border: 2px solid var(--flow-border-subtle);
+}
+
+.flow-knob-fill {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 225deg,
+    var(--flow-accent-primary) var(--knob-value, 0deg),
+    transparent var(--knob-value, 0deg)
+  );
+  mask: radial-gradient(circle, transparent 40%, black 41%);
+  -webkit-mask: radial-gradient(circle, transparent 40%, black 41%);
+}
+
+.flow-knob-indicator {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--flow-bg-floating),
+    var(--flow-bg-elevated)
+  );
+  border: 1px solid var(--flow-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-knob-indicator::after {
+  content: "";
+  width: 2px;
+  height: 10px;
+  background: var(--flow-text-primary);
+  border-radius: 1px;
+  transform-origin: bottom center;
+  transform: translateY(-4px) rotate(var(--knob-rotation, 0deg));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLLBARS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.flowstate-studio ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.flowstate-studio ::-webkit-scrollbar-track {
+  background: var(--flow-bg-void);
+  border-radius: 4px;
+}
+
+.flowstate-studio ::-webkit-scrollbar-thumb {
+  background: var(--flow-bg-floating);
+  border-radius: 4px;
+}
+
+.flowstate-studio ::-webkit-scrollbar-thumb:hover {
+  background: var(--flow-bg-elevated);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1280px) {
+  .flow-ai-sidebar {
+    width: 280px;
+  }
+
+  .flow-track-header {
+    width: 160px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .flow-ai-sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    transform: translateX(100%);
+    transition: transform var(--flow-transition-smooth);
+    z-index: 200;
+  }
+
+  .flow-ai-sidebar.open {
+    transform: translateX(0);
+  }
+}

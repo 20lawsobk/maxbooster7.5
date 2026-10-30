@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "sourcePath": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+  "sourceGitBlob": "6c42ee77db0ed344e62b4cf86ad1353c79e818a0",
+  "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt",
+  "bytes": 109368185,
+  "sha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+  "capability": "numerical-inference",
+  "qualityClaim": "not-evaluated"
+}

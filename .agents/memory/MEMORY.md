@@ -1,0 +1,1 @@
+- [Repository import constraints](repository-import.md) — upstream LFS quota blocks two model assets; nested Git reference lacks a configured URL.

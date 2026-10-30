@@ -1,0 +1,10 @@
+{
+  "name": "max-booster-electron",
+  "version": "3.0.0",
+  "description": "Max Booster desktop shell (Electron main process)",
+  "main": "main.js",
+  "private": true,
+  "author": "B-Lawz Music <blawzmusic@gmail.com>",
+  "license": "UNLICENSED",
+  "dependencies": {}
+}

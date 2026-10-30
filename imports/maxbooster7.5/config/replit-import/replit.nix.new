@@ -1,0 +1,35 @@
+{ pkgs }: {
+  # Use package attributes only: custom derivations complicate Replit's
+  # import-time dependency parser. Node's normal command is `node`.
+  deps = [
+    pkgs.python311
+    pkgs.nodejs_22
+    pkgs.nix
+    pkgs.postgresql_17
+    pkgs.curl
+    pkgs.git
+    pkgs.xz
+    pkgs.zstd
+    pkgs.libarchive
+    pkgs.psmisc
+    pkgs.redis
+    pkgs.nano
+    pkgs.dejavu_fonts
+    pkgs.ffmpeg
+    pkgs.cmake
+    pkgs.gcc
+    pkgs.pkg-config
+    pkgs.binutils
+    pkgs.alsa-lib
+    pkgs.freetype
+    pkgs.fontconfig
+    pkgs.libGL
+    pkgs.xorg.libX11
+    pkgs.xorg.libXcursor
+    pkgs.xorg.libXext
+    pkgs.xorg.libXinerama
+    pkgs.xorg.libXrandr
+    pkgs.xorg.libXrender
+    pkgs.espeak-ng
+  ];
+}

@@ -1,0 +1,302 @@
+import { Router } from "express";
+import { db } from "../db";
+import {
+  projectBudgets,
+  budgetLineItems,
+  insertProjectBudgetSchema,
+  insertBudgetLineItemSchema,
+  projects,
+} from "@shared/schema";
+import { and, eq, desc } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { parsePaginationParams } from "../middleware/pagination.js";
+
+const router = Router();
+
+async function getOwnedProjectName(projectId: string, userId: string) {
+  const [project] = await db
+    .select({ title: projects.title })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+    .limit(1);
+  return project?.title;
+}
+
+router.get("/", requireAuth, async (req, res) => {
+  try {
+    const { limit, offset } = parsePaginationParams(req);
+    const budgets = await db
+      .select()
+      .from(projectBudgets)
+      .where(eq(projectBudgets.userId, req.user!.id))
+      .orderBy(desc(projectBudgets.createdAt))
+      .limit(limit)
+      .offset(offset);
+    res.json(budgets);
+  } catch (error) {
+    logger.warn({ err: error }, "[ProjectBudgets] Failed to list:");
+    res.status(500).json({ error: "Failed to fetch project budgets" });
+  }
+});
+
+router.get("/:id", requireAuth, async (req, res) => {
+  try {
+    const [budget] = await db
+      .select()
+      .from(projectBudgets)
+      .where(
+        and(
+          eq(projectBudgets.id, (req.params.id as string)),
+          eq(projectBudgets.userId, req.user!.id),
+        ),
+      )
+      .limit(1);
+    if (!budget)
+      return res.status(404).json({ error: "Project budget not found" });
+    res.json(budget);
+  } catch (error) {
+    logger.warn({ err: error }, "[ProjectBudgets] Failed to fetch budget:");
+    res.status(500).json({ error: "Failed to fetch project budget" });
+  }
+});
+
+router.get("/:id/items", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params as Record<string, string>;
+
+    const budget = await db
+      .select()
+      .from(projectBudgets)
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
+      .limit(1);
+
+    if (budget?.length === 0) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+
+    const { limit, offset } = parsePaginationParams(req);
+    const items = await db
+      .select()
+      .from(budgetLineItems)
+      .where(eq(budgetLineItems.budgetId, id))
+      .orderBy(desc(budgetLineItems.createdAt))
+      .limit(limit)
+      .offset(offset);
+    res.json(items);
+  } catch (error) {
+    logger.warn({ err: error }, "[ProjectBudgets] Failed to fetch line items:");
+    res.status(500).json({ error: "Failed to fetch budget line items" });
+  }
+});
+
+router.post("/", requireAuth, async (req, res) => {
+  try {
+    const projectId =
+      typeof req.body.projectId === "string" && req.body.projectId.trim()
+        ? req.body.projectId
+        : undefined;
+    const projectName = projectId
+      ? await getOwnedProjectName(projectId, req.user!.id)
+      : undefined;
+    if (projectId && !projectName) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    const data = insertProjectBudgetSchema?.parse({
+      ...req.body,
+      userId: req.user!.id,
+      ...(projectId ? { projectId, projectName } : {}),
+    });
+    const [item] = await db.insert(projectBudgets).values(data).returning();
+    res.status(201).json(item);
+  } catch (error) {
+    logger.warn({ err: error }, "[ProjectBudgets] Failed to create:");
+    if ((error as any)?.name === "ZodError") {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: (error as any).flatten() });
+    }
+    res.status(500).json({ error: "Failed to create project budget" });
+  }
+});
+
+router.put("/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params as Record<string, string>;
+
+    const existing = await db
+      .select()
+      .from(projectBudgets)
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
+      .limit(1);
+
+    if (existing?.length === 0) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+
+    const projectId =
+      typeof req.body.projectId === "string" && req.body.projectId.trim()
+        ? req.body.projectId
+        : undefined;
+    const projectName = projectId
+      ? await getOwnedProjectName(projectId, userId)
+      : undefined;
+    if (projectId && !projectName) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    const data = insertProjectBudgetSchema
+      .partial()
+      .omit({ userId: true })
+      .parse({
+        ...req.body,
+        ...(projectId ? { projectId, projectName } : {}),
+      });
+    const [item] = await db
+      .update(projectBudgets)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
+      .returning();
+    res.json(item);
+  } catch (error) {
+    logger.warn({ err: error }, "[ProjectBudgets] Failed to update:");
+    if ((error as any)?.name === "ZodError") {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: (error as any).flatten() });
+    }
+    res.status(500).json({ error: "Failed to update project budget" });
+  }
+});
+
+router.delete("/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params as Record<string, string>;
+
+    const existing = await db
+      .select()
+      .from(projectBudgets)
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
+      .limit(1);
+
+    if (existing?.length === 0) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+
+    await db.delete(budgetLineItems).where(eq(budgetLineItems.budgetId, id));
+    await db
+      .delete(projectBudgets)
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)));
+    res.json({ success: true });
+  } catch (error) {
+    logger.warn({ err: error }, "[ProjectBudgets] Failed to delete:");
+    res.status(500).json({ error: "Failed to delete project budget" });
+  }
+});
+
+router.post("/:id/items", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params as Record<string, string>;
+
+    const budget = await db
+      .select()
+      .from(projectBudgets)
+      .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
+      .limit(1);
+
+    if (budget?.length === 0) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+
+    const data = insertBudgetLineItemSchema?.parse({
+      ...req.body,
+      budgetId: id,
+      userId,
+    });
+    const [item] = await db.insert(budgetLineItems).values(data).returning();
+    res.status(201).json(item);
+  } catch (error) {
+    logger.warn({ err: error }, "[ProjectBudgets] Failed to create line item:");
+    if ((error as any)?.name === "ZodError") {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: (error as any).flatten() });
+    }
+    res.status(500).json({ error: "Failed to create budget line item" });
+  }
+});
+
+router.put("/items/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params as Record<string, string>;
+
+    const existing = await db
+      .select()
+      .from(budgetLineItems)
+      .where(
+        and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)),
+      )
+      .limit(1);
+
+    if (existing?.length === 0) {
+      return res.status(404).json({ error: "Line item not found" });
+    }
+
+    const data = insertBudgetLineItemSchema
+      .partial()
+      .omit({ userId: true, budgetId: true })
+      .parse(req.body);
+    const [item] = await db
+      .update(budgetLineItems)
+      .set(data)
+      .where(
+        and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)),
+      )
+      .returning();
+    res.json(item);
+  } catch (error) {
+    logger.warn({ err: error }, "[ProjectBudgets] Failed to update line item:");
+    if ((error as any)?.name === "ZodError") {
+      return res
+        .status(400)
+        .json({ error: "Validation error", details: (error as any).flatten() });
+    }
+    res.status(500).json({ error: "Failed to update budget line item" });
+  }
+});
+
+router.delete("/items/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params as Record<string, string>;
+
+    const existing = await db
+      .select()
+      .from(budgetLineItems)
+      .where(
+        and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)),
+      )
+      .limit(1);
+
+    if (existing?.length === 0) {
+      return res.status(404).json({ error: "Line item not found" });
+    }
+
+    await db
+      .delete(budgetLineItems)
+      .where(
+        and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)),
+      );
+    res.json({ success: true });
+  } catch (error) {
+    logger.warn({ err: error }, "[ProjectBudgets] Failed to delete line item:");
+    res.status(500).json({ error: "Failed to delete budget line item" });
+  }
+});
+
+export default router;

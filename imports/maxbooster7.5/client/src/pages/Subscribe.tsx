@@ -1,0 +1,720 @@
+// @ts-nocheck
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useParams, useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  useStripe,
+  Elements,
+  PaymentElement,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { loadStripe, StripeError } from "@stripe/stripe-js";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/ui/Logo";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  normalizeSubscriptionSetupError,
+  parseSubscriptionSetupPayload,
+  readSubscriptionSetupPayload,
+} from "@/lib/subscriptionCheckout";
+import {
+  Check,
+  ArrowLeft,
+  Shield,
+  CreditCard,
+  AlertTriangle,
+  RefreshCw,
+  ServerCrash,
+  Loader2,
+} from "lucide-react";
+import { Link } from "wouter";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const stripePromise = STRIPE_PUBLIC_KEY ? loadStripe(STRIPE_PUBLIC_KEY) : null;
+
+interface BillingError {
+  message: string;
+  code?: string;
+  retryable?: boolean;
+  suggestedAction?: string;
+}
+
+const getPaymentErrorMessage = (
+  error: StripeError | BillingError,
+): { message: string; canRetry: boolean } => {
+  const errorCode =
+    (error as Record<string, unknown>).code || (error as StripeError).type;
+
+  switch (errorCode) {
+    case "card_declined":
+    case "PAYMENT_DECLINED":
+      return {
+        message:
+          "Your card was declined. Please try a different payment method.",
+        canRetry: true,
+      };
+    case "incorrect_cvc":
+    case "CARD_VALIDATION_ERROR":
+      return {
+        message:
+          "Your card information is incorrect. Please check and try again.",
+        canRetry: true,
+      };
+    case "expired_card":
+    case "CARD_EXPIRED":
+      return {
+        message:
+          "Your card has expired. Please use a different payment method.",
+        canRetry: true,
+      };
+    case "insufficient_funds":
+    case "INSUFFICIENT_FUNDS":
+      return {
+        message: "Insufficient funds. Please try a different payment method.",
+        canRetry: true,
+      };
+    case "authentication_required":
+    case "REQUIRES_3D_SECURE":
+      return {
+        message:
+          "Additional authentication is required. Please complete the verification.",
+        canRetry: true,
+      };
+    case "processing_error":
+      return {
+        message:
+          "An error occurred while processing your payment. Please try again.",
+        canRetry: true,
+      };
+    case "STRIPE_NOT_CONFIGURED":
+      return {
+        message:
+          "Payment service is temporarily unavailable. Please try again later.",
+        canRetry: false,
+      };
+    case "RATE_LIMITED":
+      return {
+        message: "Too many requests. Please wait a moment and try again.",
+        canRetry: true,
+      };
+    default:
+      return {
+        message: error.message || "An unexpected error occurred.",
+        canRetry: (error as BillingError).retryable ?? true,
+      };
+  }
+};
+
+const plans = {
+  monthly: {
+    id: "monthly",
+    name: "Monthly Plan",
+    price: 49,
+    period: "month",
+    description: "Perfect for getting started",
+    features: [
+      "All AI Tools & Studio Access",
+      "Up to 5 Active Projects",
+      "Basic Analytics Dashboard",
+      "Social Media Management",
+      "Email Support",
+      "Cloud Storage (10GB)",
+      "Basic Distribution",
+    ],
+  },
+  yearly: {
+    id: "yearly",
+    name: "Yearly Plan",
+    price: 468,
+    period: "year",
+    description: "Best value for serious artists",
+    features: [
+      "Everything in Monthly",
+      "Unlimited Active Projects",
+      "Advanced Analytics & Insights",
+      "Priority Social Media Tools",
+      "Advanced Distribution Network",
+      "Priority Email & Chat Support",
+      "Cloud Storage (100GB)",
+      "Advanced AI Mastering",
+      "Royalty Analytics",
+      "Custom Branding",
+    ],
+  },
+  lifetime: {
+    id: "lifetime",
+    name: "Lifetime Plan",
+    price: 699,
+    period: "once",
+    description: "Complete access forever",
+    features: [
+      "Everything in Yearly",
+      "Lifetime Access - No Recurring Fees",
+      "Unlimited Everything",
+      "White-label Options",
+      "API Access",
+      "Premium Support (Phone & Video)",
+      "Unlimited Cloud Storage",
+      "Early Access to New Features",
+      "Personal Account Manager",
+      "Custom Integrations",
+    ],
+  },
+};
+
+const SubscribeForm = ({
+  plan,
+}: {
+  plan: Record<string, unknown>;
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<{
+    message: string;
+    canRetry: boolean;
+  } | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const processing = useRef(false);
+  const [elementReady, setElementReady] = useState(false);
+  const [elementFailed, setElementFailed] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (processing.current) return;
+    setPaymentError(null);
+
+    if (!stripe || !elements || !elementReady || elementFailed) {
+      setPaymentError({
+        message: "Payment system is not ready. Please wait a moment.",
+        canRetry: true,
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    processing.current = true;
+
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/dashboard?payment=return`,
+        },
+        redirect: "if_required",
+      });
+
+      if (error) {
+        const errorInfo = getPaymentErrorMessage(error);
+        setPaymentError(errorInfo);
+        setRetryCount((prev) => prev + 1);
+
+        toast({
+          title: "Payment Failed",
+          description: errorInfo.message,
+          variant: "destructive",
+        });
+      } else if (paymentIntent?.status === "succeeded") {
+        toast({
+          title: "Payment Successful!",
+          description: "Stripe confirmed payment. Account access updates after server confirmation.",
+        });
+        navigate("/dashboard?payment=success");
+      } else if (paymentIntent?.status === "processing") {
+        toast({
+          title: "Payment Processing",
+          description:
+            "Your payment is being processed. You will be notified once complete.",
+        });
+        navigate("/dashboard?payment=processing");
+      } else if (paymentIntent?.status === "requires_action") {
+        setPaymentError({ message: "Additional verification is required. Complete verification before retrying.", canRetry: true });
+        toast({
+          title: "Additional Verification Required",
+          description: "Please complete the verification in the popup window.",
+        });
+      } else {
+        setPaymentError({ message: "Payment was not confirmed. Check your payment details or contact support before starting another purchase.", canRetry: true });
+      }
+    } catch (err) {
+      const errorInfo = getPaymentErrorMessage(err);
+      setPaymentError(errorInfo);
+      toast({
+        title: "Payment Error",
+        description: errorInfo.message,
+        variant: "destructive",
+      });
+    } finally {
+      processing.current = false;
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setPaymentError(null);
+    // Retry confirmation against these same Elements/intent; never create
+    // another subscription just because a card was declined.
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6" aria-busy={isProcessing}>
+      {paymentError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Payment Failed</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>{paymentError.message}</p>
+            {paymentError.canRetry && retryCount < 3 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+                disabled={isProcessing}
+                className="mt-2"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Try Again
+              </Button>
+            )}
+            {retryCount >= 3 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Multiple payment attempts failed. Please try a different payment
+                method or{" "}
+                <Link href="/help" className="underline">
+                  contact support
+                </Link>
+                .
+              </p>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <PaymentElement
+          onReady={() => setElementReady(true)}
+          onLoadError={() => {
+            setElementFailed(true);
+            setPaymentError({ message: "The secure payment form could not load. Please try again later or contact support.", canRetry: false });
+          }}
+          options={{
+            layout: "tabs",
+            paymentMethodOrder: ["card", "apple_pay", "google_pay"],
+          }}
+        />
+      </div>
+
+      <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+        <Shield className="h-4 w-4" />
+        <span>Your payment information is secure and encrypted</span>
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full py-3 text-lg gradient-bg"
+        disabled={!stripe || !elements || !elementReady || elementFailed || isProcessing}
+        data-testid="button-submit-payment"
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Processing Payment...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-5 w-5 mr-2" />
+            {plan.period === "once"
+              ? `Pay $${plan.price} Once`
+              : `Subscribe for $${plan.price}/${plan.period}`}
+          </>
+        )}
+      </Button>
+
+      <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+        By subscribing, you agree to our <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.
+        {plan.period !== "once" && " You can cancel anytime."}
+      </p>
+    </form>
+  );
+};
+
+const StripeUnavailableFallback = () => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <Card className="max-w-md">
+      <CardContent className="p-8 text-center">
+        <ServerCrash className="h-16 w-16 text-orange-500 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          Payment Service Unavailable
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          The secure payment service is unavailable. Please try again later or contact support. No payment has been confirmed by this page.
+        </p>
+        <div className="space-y-3">
+          <Button onClick={() => window.location.reload()} className="w-full">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+          <Link href="/pricing">
+            <Button variant="outline" className="w-full">
+              Back to Pricing
+            </Button>
+          </Link>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-500 mt-6">
+          If this issue persists, please contact support at
+          <a href="/help" className="underline">our help center</a>.
+        </p>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+export default function Subscribe() {
+  const { tier } = useParams();
+  const { user, isLoading: authLoading } = useAuth();
+  const [clientSecret, setClientSecret] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [setupError, setSetupError] = useState<BillingError | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const checkoutIntents = useRef(new Map<string, { key: string; request?: Promise<any> }>());
+  const activeCheckout = useRef<string | null>(null);
+  const [setupScope, setSetupScope] = useState("");
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+
+  const plan = Object.prototype.hasOwnProperty.call(plans, tier)
+    ? plans[tier as keyof typeof plans] : undefined;
+  const scope = user?.id && plan ? `${user.id}:${plan.id}` : "";
+
+  const createSubscription = useCallback(async () => {
+    if (!plan || !user?.id || !stripePromise || activeCheckout.current !== scope) return;
+
+    setSetupScope(scope);
+    setIsLoading(true);
+    setClientSecret("");
+    setSetupError(null);
+
+    try {
+      let intent = checkoutIntents.current.get(scope);
+      if (!intent) {
+        intent = { key: crypto.randomUUID() };
+        checkoutIntents.current.set(scope, intent);
+      }
+      if (!intent.request) {
+        intent.request = (async () => {
+          const response = await apiRequest("POST", "/api/create-subscription", {
+            planName: plan.id,
+          }, { headers: { "Idempotency-Key": intent.key } });
+          const data = await readSubscriptionSetupPayload(response);
+          const parsed = parseSubscriptionSetupPayload(data);
+          if (!parsed.ok) throw Object.assign(new Error(parsed.error.message), parsed.error);
+          return parsed;
+        })();
+        // Keep the same key on failure; a lost response must not cause a new charge.
+        intent.request.catch(() => { intent.request = undefined; });
+      }
+      const parsed = await intent.request;
+      if (activeCheckout.current !== scope) return;
+      setClientSecret(parsed.clientSecret);
+    } catch (error) {
+      if (activeCheckout.current !== scope) return;
+      const errorData = normalizeSubscriptionSetupError(error);
+      setSetupError(errorData);
+
+      toast({
+        title: "Setup Failed",
+        description: errorData.message,
+        variant: "destructive",
+      });
+    } finally {
+      if (activeCheckout.current === scope) setIsLoading(false);
+    }
+  }, [plan, user?.id, scope, toast]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user?.id) {
+      navigate(`/login?redirect=${encodeURIComponent(`/subscribe/${tier}`)}`);
+      return;
+    }
+
+    if (!plan) {
+      navigate("/pricing");
+      return;
+    }
+
+    activeCheckout.current = scope;
+    if (stripePromise) void createSubscription();
+    return () => { activeCheckout.current = null; };
+  }, [user?.id, authLoading, plan, scope, tier, navigate, createSubscription]);
+
+  const handleRetry = useCallback(() => {
+    setRetryCount((prev) => prev + 1);
+    createSubscription();
+  }, [createSubscription]);
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!stripePromise) {
+    return <StripeUnavailableFallback />;
+  }
+
+  if (!plan) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <Card className="max-w-md mx-4">
+          <CardContent className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Plan Not Found
+            </h1>
+            <p className="text-gray-600 mb-6">
+              The subscription plan you're looking for doesn't exist.
+            </p>
+            <Link href="/pricing">
+              <Button>View Available Plans</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading || setupScope !== scope) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <Card className="max-w-md mx-4">
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Setting up your subscription...
+            </h2>
+            <p className="text-gray-600">
+              Please wait while we prepare your payment.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (setupError) {
+    if (
+      setupError.code === "STRIPE_NOT_CONFIGURED" ||
+      setupError.code === "SERVICE_UNAVAILABLE"
+    ) {
+      return <StripeUnavailableFallback />;
+    }
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="max-w-md">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Setup Error
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {setupError.message}
+            </p>
+            <div className="space-y-3">
+              {setupError.retryable && retryCount < 3 && (
+                <Button onClick={handleRetry} className="w-full">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
+              )}
+              <Link href="/pricing">
+                <Button variant="outline" className="w-full">
+                  Back to Pricing
+                </Button>
+              </Link>
+            </div>
+            {retryCount >= 3 && (
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
+                Multiple attempts failed. Please try again later or contact
+                support.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!clientSecret) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="max-w-md">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="h-16 w-16 text-orange-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Setup Error
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              We couldn't set up your subscription. Please try again.
+            </p>
+            <div className="space-y-3">
+              <Button onClick={handleRetry} className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+              <Link href="/pricing">
+                <Button variant="outline" className="w-full">
+                  Back to Pricing
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/pricing">
+              <Button variant="ghost" className="flex items-center space-x-2">
+                <ArrowLeft className="h-4 w-4" />
+                <Logo size="sm" />
+              </Button>
+            </Link>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                Signed in as{" "}
+                <span className="font-medium">{user.username}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-4xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Plan Details */}
+          <div>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-primary/10 text-primary">
+                    Subscribe
+                  </Badge>
+                  {plan.id === "yearly" && (
+                    <Badge className="bg-green-100 text-green-800">
+                      Most Popular
+                    </Badge>
+                  )}
+                </div>
+                <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-4xl font-bold text-gray-900">
+                    ${plan.price}
+                  </span>
+                  <span className="text-gray-500">/{plan.period}</span>
+                  {(plan as Record<string, unknown>).originalPrice && (
+                    <span className="text-sm text-gray-500 line-through ml-2">
+                      ${(plan as Record<string, unknown>).originalPrice}/
+                      {plan.period}
+                    </span>
+                  )}
+                </div>
+                {plan.id === "yearly" && (
+                  <p className="text-green-600 font-medium">
+                    $39/month equivalent, billed $468 annually. Save $120/year.
+                  </p>
+                )}
+                <p className="text-gray-600">{plan.description}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">
+                    What's included:
+                  </h4>
+                  <ul className="space-y-2">
+                    {plan.features.map((feature: string, index: number) => (
+                      <li key={index} className="flex items-start space-x-3">
+                        <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {plan.period !== "once" && (
+                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">
+                      Billing Information
+                    </h4>
+                    <p className="text-sm text-blue-700">
+                      {plan.id === "yearly"
+                        ? `You'll be charged $${plan.price} today, then $${plan.price} every year.`
+                        : `You'll be charged $${plan.price} today, then $${plan.price} every month.`}
+                    </p>
+                    <p className="text-xs text-blue-600 mt-2">
+                      You can cancel your subscription at any time from your
+                      account settings.
+                    </p>
+                  </div>
+                )}
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg text-blue-900">
+                  <Shield className="inline h-4 w-4 mr-2" />
+                  90-Day Money-Back Guarantee
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment Form */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Complete Your Subscription</CardTitle>
+                <p className="text-gray-600">
+                  Enter your payment details to start your Max Booster journey.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Elements key={`${scope}:${clientSecret}`} stripe={stripePromise} options={{ clientSecret }}>
+                  <SubscribeForm plan={plan} />
+                </Elements>
+              </CardContent>
+            </Card>
+
+            {/* Security Notice */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <Shield className="h-5 w-5 text-gray-400 mt-0.5" />
+                <div className="text-sm text-gray-600">
+                  <h4 className="font-medium text-gray-900 mb-1">
+                    Secure Payment
+                  </h4>
+                  <p>
+                    Your payment is processed securely by Stripe. We never store
+                    your credit card information. All transactions are encrypted
+                    and protected.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

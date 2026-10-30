@@ -1,0 +1,69 @@
+import type { PluginDefinition } from "../server/services/pluginHostService";
+
+const MbMixTapeMachinePlugin: PluginDefinition = {
+  id: "mb-mix-tape-machine",
+  slug: "mb-mix-tape-machine",
+  name: "MB Tape Machine",
+  category: "effect",
+  type: "mixing" as any,
+  version: "1.0.0",
+  description: "Vintage tape machine emulation with wow and flutter",
+  author: "Max Booster",
+  grade: "A",
+  parameters: [
+    {
+      id: "speed",
+      name: "Tape Speed",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "wow",
+      name: "Wow",
+      type: "float",
+      defaultValue: 0.15,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "flutter",
+      name: "Flutter",
+      type: "float",
+      defaultValue: 0.1,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "saturation",
+      name: "Saturation",
+      type: "float",
+      defaultValue: 0.4,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "output",
+      name: "Output",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: {
+    speed: 0.5,
+    wow: 0.15,
+    flutter: 0.1,
+    saturation: 0.4,
+    output: 0.8,
+  },
+};
+
+export default MbMixTapeMachinePlugin;
