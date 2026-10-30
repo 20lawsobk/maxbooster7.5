@@ -1,0 +1,32 @@
+kind = "web"
+previewPath = "/"
+title = "Max Booster"
+description = "The imported Max Booster application with its original interface and live-awareness services."
+version = "1.0.0"
+id = "artifacts/maxbooster"
+router = "path"
+
+[[services]]
+name = "web"
+paths = ["/", "/api", "/ws", "/socket.io"]
+localPort = 5000
+
+[services.development]
+run = "pnpm --filter @workspace/maxbooster run dev"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/maxbooster", "run", "build"]
+
+[services.production.run]
+args = ["pnpm", "--filter", "@workspace/maxbooster", "run", "serve"]
+
+[services.production.health.startup]
+path = "/api/health"
+
+[services.env]
+PORT = "5000"
+BASE_PATH = "/"
+MAXCORE_SERVING_RELEASE = "live-awareness"
+MAXCORE_LOCAL = "1"
+PDIM_FORCE_REMOTE = "0"
+STRIPE_ALLOW_CATALOG_PROVISIONING = "0"

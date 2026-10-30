@@ -1,6 +1,19 @@
-# [Project name]
+# Max Booster
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+The active application is imported unchanged under `imports/maxbooster7.5`.
+`artifacts/maxbooster` is a runtime wrapper, not a replacement frontend.
+See `artifacts/maxbooster/README.md` for setup and verification boundaries.
+The remaining sections below describe the original workspace template, not the imported application's architecture.
+
+## Active application
+
+- Managed workflow: `artifacts/maxbooster: web`, serving the original app on port 5000.
+- Install imported Node dependencies: `pnpm --filter @workspace/maxbooster run setup`.
+- Python dependencies: root `pyproject.toml` and `uv.lock`.
+- Preview: `/`; awareness readiness: `/api/health/awareness/ready`.
+- Live awareness uses configured current sources and does not require already-trained data or legacy LFS assets.
+- Do not redesign, replace authentication, or migrate the original architecture just to fit the template.
+- Development schema setup and checks are documented in `imports/IMPORT_STATUS.md`; production was not changed.
 
 ## Run & Operate
 
