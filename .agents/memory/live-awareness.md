@@ -28,3 +28,9 @@ The user identifies Google Veo as the competitive target: "the final boss that y
 **Why:** The user clarified the intended level of ambition after basic capability improvements had already been discussed.
 
 **How to apply:** Treat outperforming Veo as a target for MaxCore's own capabilities, not an achieved result. Operational health and passing tests are foundations; competitive claims require comparative evidence from actual generated output.
+
+The user wants work considered many capability levels ahead, including what it takes to pass each level until the envisioned capability is achieved, rather than focusing only on the immediate next improvement.
+
+**Why:** The user corrected an incremental-fix framing that did not explain the complete path to the competitive target.
+
+**How to apply:** Work backward from that target, identify dependencies and measurable exit criteria across the full capability roadmap, and use it to prioritize implementation. A local repair is not completion of a capability level.
