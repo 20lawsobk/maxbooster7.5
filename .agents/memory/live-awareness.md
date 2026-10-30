@@ -22,3 +22,9 @@ The user clarifies: "You don't have to replace it to enhance it to a new level."
 **Why:** The user wants enhancement of the existing MaxCore design, not a choice between replacing it and leaving its capabilities unchanged.
 
 **How to apply:** Improve the existing live-data learning and generation system, measuring actual output quality. Preserving the architecture does not mean freezing its implementation or capacity.
+
+The user identifies Google Veo as the competitive target: "the final boss that you have to beat."
+
+**Why:** The user clarified the intended level of ambition after basic capability improvements had already been discussed.
+
+**How to apply:** Treat outperforming Veo as a target for MaxCore's own capabilities, not an achieved result. Operational health and passing tests are foundations; competitive claims require comparative evidence from actual generated output.
