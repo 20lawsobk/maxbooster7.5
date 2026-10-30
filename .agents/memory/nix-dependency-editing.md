@@ -20,3 +20,9 @@ The same loader error also persisted with an empty system-dependency list while 
 **Why:** Removing only the Nix package did not help; removing all system packages likewise failed before the workflow command ran. The original dependency set was restored and verified.
 
 **How to apply:** Do not repeat system-package removal as a proposed fix without new evidence. Replit's documented next recovery step is “Restart compute” through the command palette; an application workflow restart is not a compute restart. Neither stale environment state nor module evaluation has yet been ruled out.
+
+The reported `«nix-internal»/derivation-internal.nix` path is a virtual source label, not a missing repository file.
+
+**Why:** A deliberately incomplete derivation evaluated with installed Nix 2.34.8 produced a normal missing-builder diagnostic referencing that exact internal source label and displaying its embedded source. Nix 2.28.4 reported the equivalent location as `<nix/derivation-internal.nix>`. This isolates a version-dependent internal source naming difference independently of the app.
+
+**How to apply:** Do not generate a dummy file at that path or claim copying one repairs Nix. The managed loader's attempt to stat a virtual source requires loader compatibility investigation; switching the separate user-local CLI does not establish which Nix the managed loader uses.
