@@ -125,26 +125,27 @@ def render_cinematic_open(
             try:
                 # Propagate rolling reference (only override if scene doesn't
                 # already have an explicit reference set)
-                if _current_ref is not None and getattr(scene, "reference_b64", None) is None:
+                if _current_ref is not None and not getattr(scene, "reference_b64", None):
                     scene.reference_b64 = _current_ref
                 sid = f"{uuid.uuid4().hex[:6]}_{i}"
                 with RENDER_GATE.slot(timeout=30):
                     path = render_scene(scene, width, height, sid)
                 if path:
                     results_map[i] = path
-                    # Extract last frame for next scene
-                    try:
-                        _last_frame = _extract_last_frame_b64(path)
-                        if _last_frame:
-                            _current_ref = _last_frame
-                    except Exception:
-                        pass
+                    # Explicit references remain authoritative. Otherwise the
+                    # next scene must receive this scene's actual terminal frame.
+                    if i + 1 < len(scenes) and not getattr(scenes[i + 1], "reference_b64", None):
+                        _current_ref = _extract_last_frame_b64(path)
+                        if not _current_ref:
+                            raise RuntimeError("Missing terminal frame for next scene")
                 else:
                     print(f"[VideoRender][ERROR] Scene {i} returned no path", file=sys.stderr)
                     render_errors.append(f"Scene {i} failed")
+                    break
             except Exception as exc:
                 print(f"[VideoRender][ERROR] Scene {i} raised exception: {exc}", file=sys.stderr)
-                render_errors.append(f"Scene {i} failed")
+                render_errors.append(f"Scene {i} failed: {exc}")
+                break
     else:
         # Parallel path: no reference frames → max throughput
         def _render_one(idx_scene):

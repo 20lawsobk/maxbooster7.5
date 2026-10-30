@@ -582,30 +582,33 @@ def cleanup_temp(paths: List[str]):
         _safe_remove(p)
 
 
-def _extract_last_frame_b64(clip_path: str) -> Optional[str]:
-    """Extract the last frame of a video clip as a base64-encoded PNG.
-
-    Runs ffmpeg with sseof=-0.1 to grab the final frame and pipe it to stdout.
-    Never raises — returns None on any error.
-    """
+def _extract_last_frame_b64(clip_path: str) -> str:
+    """Decode the video tail and retain its final frame, not a nearby frame."""
+    import tempfile
+    import math
     try:
-        cmd = [
-            "ffmpeg", "-y",
-            "-sseof", "-0.1", "-i", clip_path,
-            "-vframes", "1",
-            "-f", "image2pipe", "-vcodec", "png", "pipe:1",
-        ]
-        proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        png_data, _ = proc.communicate(timeout=10)
-        if proc.returncode != 0 or not png_data:
-            return None
-        return base64.b64encode(png_data).decode("ascii")
-    except Exception:
-        return None
+        duration = _get_clip_duration(clip_path)
+        if not math.isfinite(duration) or duration <= 0:
+            raise ValueError("Missing video-stream duration")
+        with tempfile.TemporaryDirectory(prefix="maxcore-last-frame-") as directory:
+            output = os.path.join(directory, "last.png")
+            # image2 overwrites the same file for every decoded frame. This
+            # retains the exact final frame without buffering a reversed clip,
+            # including at low/VFR rates and when audio outlasts the video.
+            subprocess.run([
+                "ffmpeg", "-y", "-v", "error",
+                "-ss", str(max(0.0, duration - 1.0)), "-i", clip_path,
+                "-map", "0:v:0", "-an", "-vsync", "0",
+                "-update", "1", output,
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                timeout=10, check=True)
+            with open(output, "rb") as frame:
+                png_data = frame.read()
+            if not png_data:
+                raise ValueError("Empty terminal frame")
+            return base64.b64encode(png_data).decode("ascii")
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        raise RuntimeError("Cannot extract the final video frame for continuity") from exc
 
 
 # ── Scene compositing ─────────────────────────────────────────────────────────

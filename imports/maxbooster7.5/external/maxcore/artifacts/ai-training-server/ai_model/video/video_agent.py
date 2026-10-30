@@ -435,17 +435,13 @@ class VideoAgent:
         ratio = production.aspect_ratio or PLATFORM_RATIOS.get(production.platform, "9:16")
         width, height = ASPECT_RATIOS.get(ratio, (1080, 1920))
 
-        # ── Reference frame: seed from init_frame_b64 if provided ──────────
-        if req.init_frame_b64:
-            self._reference_frame = req.init_frame_b64
-
         scene_configs = self.build_open_scenes(req, production, width, height)
 
-        # ── Apply rolling SDEdit reference to scenes 2..N ─────────────────
-        if self._reference_frame and scene_configs:
-            for i, sc in enumerate(scene_configs):
-                if i > 0 and getattr(sc, "reference_b64", None) is None:
-                    sc.reference_b64 = self._reference_frame
+        # Seed only the first scene. The renderer propagates actual end frames;
+        # pre-filling later scenes would disable rolling continuity. References
+        # are request-local, never inherited from a previous render.
+        if req.init_frame_b64 and scene_configs and not scene_configs[0].reference_b64:
+            scene_configs[0].reference_b64 = req.init_frame_b64
 
         dna = ai_scene_builder.build_dna(req.idea, production.genre_detected, production.tone_used)
         transition = "fadeblack" if dna.darkness > 0.70 else "dissolve" if dna.energy < 0.50 else "fade"
