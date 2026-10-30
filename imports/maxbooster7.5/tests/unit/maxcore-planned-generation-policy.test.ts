@@ -123,6 +123,52 @@ describe("planned route inventory is exact and complete", () => {
   });
 });
 
+describe("model status remains observable during recovery", () => {
+  for (const domain of ["social", "advertising", "content", "engagement"]) {
+    const target = `/api/models/${domain}/state`;
+    it(`${domain} has an actual GET registration`, () => {
+      expect(forwards.find(row => row.target === target)?.registration).toMatch(/^router\.get/);
+    });
+    for (const outage of ["restart", "breaker"] as const) {
+      it(`${domain} bypasses only the recovery wait during ${outage}`, async () => {
+        const f = fixture({ restarting: outage === "restart", breaker: outage === "breaker" });
+        const req = f.request(), res = f.response();
+        req.method = "GET";
+        await f.invoke(req, res, target);
+        expect(f.recovery).not.toHaveBeenCalled();
+        expect(f.send).toHaveBeenCalledOnce();
+        expect(f.send.mock.calls[0][1]).toMatchObject({
+          headersTimeout: 4000, bodyTimeout: 4000, body: undefined,
+          headers: { Authorization: "Bearer owned-private-channel" },
+        });
+        expect(res.statusCode).toBe(503);
+        expect(res.payload).toEqual({ detail: "Owned actual-capability503", snapshot_id: "public-snapshot" });
+      });
+    }
+  }
+  it("does not exempt mutations or prefix lookalikes", async () => {
+    for (const [method, path] of [
+      ["POST", "/api/models/social/state"],
+      ["GET", "/api/models/social/state/reset"],
+      ["GET", "/api/models/unknown/state"],
+    ]) {
+      const f = fixture({ restarting: true });
+      const req = f.request(); req.method = method;
+      await f.invoke(req, f.response(), path);
+      expect(f.recovery).toHaveBeenCalledOnce();
+      expect(f.send).not.toHaveBeenCalled();
+    }
+  });
+  it("still rejects missing credentials before dispatch", async () => {
+    const f = fixture({ restarting: true }), req = f.request(false), res = f.response();
+    req.method = "GET";
+    await f.invoke(req, res, "/api/models/social/state");
+    expect(res.statusCode).toBe(401);
+    expect(f.send).not.toHaveBeenCalled();
+    expect(f.recovery).not.toHaveBeenCalled();
+  });
+});
+
 describe("actual proxy respects authoritative Python generation during recovery", () => {
   for (const target of uniqueTargets) {
     for (const outage of ["restart", "breaker"] as const) {

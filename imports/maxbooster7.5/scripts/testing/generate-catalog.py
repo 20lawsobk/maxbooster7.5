@@ -2,7 +2,7 @@
 """Inventory first-party tests without importing or executing application code.
 
 The catalog is a source index, not an execution result or a coverage percentage.
-Only Git-tracked files and new first-party testing runners are considered. Case
+Git-tracked and non-ignored working-tree sources are considered. Case
 names are extracted statically; parameterized/generated cases expand at runtime.
 """
 from __future__ import annotations
@@ -62,7 +62,7 @@ def git(*args: str) -> str:
 def input_paths() -> list[str]:
     tracked = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode().split("\0")
     paths = {p for p in tracked if p and (ROOT / p).is_file()}
-    new = subprocess.check_output(["git", "ls-files", "--others", "--exclude-standard", "-z", "--", "tests", "server", "script", "scripts/testing"], cwd=ROOT).decode().split("\0")
+    new = subprocess.check_output(["git", "ls-files", "--others", "--exclude-standard", "-z"], cwd=ROOT).decode().split("\0")
     paths.update(p for p in new if p and (ROOT / p).is_file())
     paths.update(str(p.relative_to(ROOT)) for p in ROOT.glob("vitest*.config.ts") if p.is_file())
     # Other agents may be adding reusable runners during the same verification.
@@ -394,23 +394,27 @@ def render(data: dict) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Fail if source paths/hashes/classifications changed; do not modify outputs")
+    parser.add_argument("--inventory", type=Path, default=INVENTORY, help="Machine inventory destination for this verification run")
+    parser.add_argument("--catalog", type=Path, default=CATALOG, help="Human-readable source catalog destination")
     args = parser.parse_args()
+    inventory = args.inventory
+    catalog = args.catalog
     data = collect()
     if args.check:
-        if not INVENTORY.is_file():
+        if not inventory.is_file():
             print("Test inventory is missing; run the catalog generator", file=sys.stderr)
             return 1
-        previous = json.loads(INVENTORY.read_text())
+        previous = json.loads(inventory.read_text())
         keys = ("workingTreeInputDigest", "counts", "entries", "generatedSnapshots", "supportFiles")
         if any(previous.get(key) != data.get(key) for key in keys):
             print("Test source inventory changed; regenerate the catalog", file=sys.stderr)
             return 1
         print("Test source inventory is current")
         return 0
-    INVENTORY.parent.mkdir(parents=True, exist_ok=True)
-    CATALOG.parent.mkdir(parents=True, exist_ok=True)
-    INVENTORY.write_text(json.dumps(data, indent=2) + "\n")
-    CATALOG.write_text(render(data))
+    inventory.parent.mkdir(parents=True, exist_ok=True)
+    catalog.parent.mkdir(parents=True, exist_ok=True)
+    inventory.write_text(json.dumps(data, indent=2) + "\n")
+    catalog.write_text(render(data))
     print(json.dumps(data["counts"], sort_keys=True))
     return 0
 

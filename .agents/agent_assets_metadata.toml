@@ -28,3 +28,31 @@ mtime_ms = 1793361954078
 storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/6bbad2bf-a816-4b15-a492-2732723e5571/2bd90860-36b9-402d-a157-494ad294df78"
 storage_version_token = "1793361961372500"
 content_type = "text/html"
+
+[[outputs]]
+id = "mlcXF1YcjAgcCnXH-F5YD"
+uri = "file://generated-artifacts/readiness-closure-20261030/current-findings.html"
+type = "html"
+title = "Current readiness findings and verified fixes"
+description = "Runtime fixes, test evidence, the confirmed training-rights blocker, and remaining readiness work."
+logical_id = "bcc4f3d0-d384-494f-803b-b179fd611c3d"
+content_hash = "sha256:91a51d5f2a205ddaf3cc41b166e56836b71ec6852dc7a10e16f7ec484c0b5b3b"
+size = 5658
+mtime_ms = 1793374722074
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/bcc4f3d0-d384-494f-803b-b179fd611c3d/5dbfca7e-031d-473e-94f9-c7bd93cbf752"
+storage_version_token = "1793374839453746"
+content_type = "text/html"
+
+[[outputs]]
+id = "36uwQO46AfIpUrEmRMyoC"
+uri = "file://generated-artifacts/readiness-closure-20261030/readiness-catalog.html"
+type = "html"
+title = "Searchable catalog of 3,410 recorded readiness gaps"
+description = "Every historical remediation entry with source, observation, required work, reproduction command, and closure evidence. Not a production-readiness certificate."
+logical_id = "1bf87cb0-7c1e-48b4-a301-d55c8b5930b1"
+content_hash = "sha256:bd0a7df7dbf950152a1086e2b43dc5cd1fc7925cd6fff58c1b1a3b54a91d8540"
+size = 5944390
+mtime_ms = 1793373847418
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/1bf87cb0-7c1e-48b4-a301-d55c8b5930b1/bc41aff0-00ad-4868-9400-a19e4964be94"
+storage_version_token = "1793374840156702"
+content_type = "text/html"

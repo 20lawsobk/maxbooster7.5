@@ -35,6 +35,23 @@ def load_source(name, source):
 
 
 class CatalogSnapshotOwnership(unittest.TestCase):
+    def test_custom_output_paths_are_written_and_checked_without_touching_defaults(self):
+        self.put("tests/current.test.mjs", NODE_TEST)
+        inventory = self.root / "custom/run/test-inventory.json"
+        catalog = self.root / "custom/run/catalog.md"
+        args = ["generate-catalog.py", "--inventory", str(inventory), "--catalog", str(catalog)]
+        with patch.object(sys, "argv", args), redirect_stdout(io.StringIO()):
+            self.assertEqual(self.catalog.main(), 0)
+        self.assertTrue(inventory.is_file())
+        self.assertTrue(catalog.is_file())
+        self.assertFalse(self.catalog.INVENTORY.exists())
+        self.assertFalse(self.catalog.CATALOG.exists())
+        with patch.object(sys, "argv", [*args, "--check"]), redirect_stdout(io.StringIO()):
+            self.assertEqual(self.catalog.main(), 0)
+        self.put("tests/another.test.mjs", NODE_TEST)
+        with patch.object(sys, "argv", [*args, "--check"]), redirect_stderr(io.StringIO()):
+            self.assertEqual(self.catalog.main(), 1)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="maxbooster-catalog-")
         self.addCleanup(self.temp.cleanup)

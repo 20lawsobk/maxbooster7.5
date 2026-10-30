@@ -14,3 +14,9 @@ Do not weaken the publishing image budget to accommodate a fully provisioned dev
 **Why:** Native compiler, browser, and other test tooling can make the developer's shared Nix store much larger than a deployable image. A refusal there does not measure the eventual published image, but it also does not establish successful publishing.
 
 **How to apply:** Record the developer-host refusal honestly and require a measured, budget-compliant publishing environment before claiming release-installation acceptance.
+
+Cold-start verification must inspect background-worker initialization as well as HTTP health.
+
+**Why:** In this application, the listener and landing page stayed healthy while a separate storage/watchdog initialization thread had crashed. Successful health probes alone did not establish that those services were operating.
+
+**How to apply:** Confirm worker-initialization milestones and inspect startup exceptions before treating a restart as operationally verified. Keep model-generation admission separate from infrastructure health.

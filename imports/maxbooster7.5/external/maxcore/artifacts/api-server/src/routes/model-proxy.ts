@@ -325,7 +325,11 @@ async function proxyRequest(
   const accountAnalytics = ["/api/analytics/capability", "/api/analytics/predict", "/api/analytics/insights"].includes(path);
   const generationDeadline = plannedGenerationDeadlineMs(path, req.body);
   const diagnosticOnly = ["/health", "/api/health", "/ready", "/api/ready"].includes(path);
-  const directDeadline = awarenessOnly || diagnosticOnly ? 4_000 : accountAnalytics ? 10_000 : generationDeadline;
+  // Model status must remain observable while the model is unavailable.
+  // Waiting for model recovery here prevents the caller from learning why it
+  // is unavailable. Keep the exemption exact, read-only, bounded and authenticated.
+  const modelStateOnly = isGet && /^\/api\/models\/(social|advertising|content|engagement)\/state$/.test(path);
+  const directDeadline = awarenessOnly || diagnosticOnly || modelStateOnly ? 4_000 : accountAnalytics ? 10_000 : generationDeadline;
   const startTime = Date.now();
   // Track per-route and total request counts
   recordRequest(req.path ?? path);

@@ -276,7 +276,10 @@ def main():
     before_inputs = source_inputs()
     write_json(output / 'orchestration/source-inputs.json', before_inputs)
     report['sourceInputsSha256'] = before_inputs['sha256']
-    catalog = run_command([args.python, 'scripts/testing/generate-catalog.py'], output / 'orchestration/catalog.txt', 120)
+    catalog = run_command([args.python, 'scripts/testing/generate-catalog.py',
+                           '--inventory', str(output / 'test-inventory.json'),
+                           '--catalog', str(output / 'catalog.md')],
+                          output / 'orchestration/catalog.txt', 120)
     report['catalog'] = catalog
     # Test subprocesses get tool paths only. Never inherit application keys/URLs.
     for group, name, command, timeout in jobs:

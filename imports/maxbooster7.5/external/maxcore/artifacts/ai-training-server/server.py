@@ -1133,7 +1133,8 @@ def _init_legacy_ai_model():
         except Exception as be:
             raise RuntimeError("Scoped checkpoint execution could not be installed") from be
 
-        _model_config = {"dim": dim, "layers": n_layers, "heads": n_heads, "max_len": max_len}
+        _model_config = {"dim": dim, "layers": n_layers, "heads": n_heads,
+                         "max_len": max_len, "vocab_size": len(_tokenizer.vocab)}
         _training_state["weights_exist"] = weights_path.exists()
 
         print(f"[AI Model] Ready. dim={dim}, layers={n_layers}, vocab={len(_tokenizer.vocab)}")
@@ -2320,7 +2321,8 @@ def _init_storage():
     # saved reference lets us avoid double-wrapping on repeated reinstalls.
     _original_generate_ref = [None]
     if _creative_model is not None:
-        _original_generate_ref[0] = getattr(_creative_model, "_orig_generate", None)
+        from ai_model.generation.batching import original_generate
+        _original_generate_ref[0] = original_generate(_creative_model)
 
     def _reinstall_coalescer():
         global _gen_coalescer
@@ -8156,18 +8158,27 @@ def _trim_to_chars(text: str, limit: int) -> str:
 
 
 def _api_model_state(domain: str) -> dict:
-    from datetime import datetime as _dt
+    # Reporting must not invent training provenance or inspect a delegated
+    # model that may legitimately be unavailable during startup.
+    with _training_lock:
+        sessions = _training_state.get("sessions_done", 0)
+        loss = _training_state.get("loss")
+    with _model_lock:
+        ready = _model_ready
+        config = dict(_model_config)
+        release = dict(_serving_release_status)
     return {
         "domain":        domain,
         "version":       "1.0.0",
-        "trained_at":    _dt.utcnow().isoformat() + "Z",
-        "session_count": _training_state.get("steps_done", 0),
-        "loss":          _training_state.get("last_loss"),
+        "trained_at":    release.get("trained_at") if ready else None,
+        "checkpoint_sha256": release.get("checkpoint_sha256") if ready else None,
+        "session_count": sessions,
+        "loss":          loss,
         "weights": {
-            "embed_dim":  512,
-            "n_layers":   8,
-            "vocab_size": 172,
-            "ready":      _model_ready,
+            "embed_dim":  config.get("dim") if ready else None,
+            "n_layers":   config.get("layers") if ready else None,
+            "vocab_size": config.get("vocab_size") if ready else None,
+            "ready":      ready,
         },
     }
 

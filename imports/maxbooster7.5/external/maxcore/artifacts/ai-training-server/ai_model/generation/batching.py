@@ -48,6 +48,15 @@ def execute_rows(model, rows):
     return outputs
 
 
+def original_generate(model):
+    """Read instance-owned batching metadata without invoking model delegation.
+
+    install() writes this attribute on the wrapper itself. Looking it up through
+    __getattr__ can request an unavailable live model during infrastructure boot.
+    """
+    return vars(model).get("_orig_generate")
+
+
 def install(model, gpu_pool=None):
     from ai_model.dynamic_batching import GenerateCoalescer, is_enabled
     from ai_model.adaptive_concurrency import INFERENCE_GATE
