@@ -53,6 +53,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+/generated-artifacts/
 
 # Imported generated evidence and large binary outputs stay on disk, not in checkpoints.
 /imports/maxbooster7.5/reports/

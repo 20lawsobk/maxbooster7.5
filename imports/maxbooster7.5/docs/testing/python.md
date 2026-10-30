@@ -44,9 +44,9 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `5eb416a04021f66c9bfc8af93997ec9fe8a55e31`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 117, "skipped": 1, "timeout": 0}.
-- JUnit cases: 1583; failures: 0; errors: 0; skipped: 12.
+- Source baseline: `f65b43a32ffb4b257e4beb4ec9e1a68dba135c1c`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 118, "skipped": 2, "timeout": 0}.
+- JUnit cases: 1637; failures: 0; errors: 0; skipped: 25.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
@@ -216,13 +216,13 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 26}.
 
 Real Lua/Redis atomicity tests in an isolated temporary Unix-socket Redis.
 
-Status: **passed**.
+Status: **skipped**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 6, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2017,6 +2017,26 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 </details>
 
+### `external/maxcore/artifacts/ai-training-server/tests/test_generation_capability_version.py`
+
+Actual capability ASGI output matches the immutable plan version.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_capability_version.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `GenerationCapabilityVersion.test_advertised_version_matches_actual_plans_for_all_supported_modalities`: advertised version matches actual plans for all supported modalities
+- `GenerationCapabilityVersion.test_static_metadata_preserves_unverified_runtime_quality_and_detached_renderers`: static metadata preserves unverified runtime quality and detached renderers
+
+</details>
+
 ### `external/maxcore/artifacts/ai-training-server/tests/test_generation_durable_delivery.py`
 
 Real WAV commit validation; synthetic awareness and renderer fixtures, no quality claim.
@@ -2934,7 +2954,7 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 7, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3286,6 +3306,37 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 22}.
 - `CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected`: selection changing or dynamic config rejected
 - `CommerceSubjectSelectorTests.test_validated_subject_drives_actual_spawn_and_owned_cleanup`: validated subject drives actual spawn and owned cleanup
 - `CommerceSubjectSelectorTests.test_runner_forwards_recorded_subject_and_strips_application_credentials`: runner forwards recorded subject and strips application credentials
+
+</details>
+
+### `tests/testing/test_coverage_command_binding.py`
+
+Real subprocesses exercise producer-time byte/nonce/count binding.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_coverage_command_binding.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 46}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `CoverageCommandBindingTests.test_real_child_binds_exact_fresh_junit_and_public_outcome_bytes`: real child binds exact fresh junit and public outcome bytes
+- `CoverageCommandBindingTests.test_bound_hash_rejects_subsequent_one_vs_2771_replacement`: bound hash rejects subsequent one vs 2771 replacement
+- `CoverageCommandBindingTests.test_each_invocation_has_fresh_nonce_and_rewritten_identical_xml_is_bound`: each invocation has fresh nonce and rewritten identical xml is bound
+- `CoverageCommandBindingTests.test_reused_run_id_cannot_overwrite_previous_actual_outcome`: reused run id cannot overwrite previous actual outcome
+- `CoverageCommandBindingTests.test_threshold_exit_is_retained_without_becoming_an_assertion_failure`: threshold exit is retained without becoming an assertion failure
+- `CoverageCommandBindingTests.test_unhandled_error_with_passing_junit_is_bound_but_never_eligible`: unhandled error with passing junit is bound but never eligible
+- `CoverageCommandBindingTests.test_unhandled_with_zero_exit_still_fails_guard_without_coercing_exit`: unhandled with zero exit still fails guard without coercing exit
+- `CoverageCommandBindingTests.test_real_assertion_failure_is_retained_without_eligibility`: real assertion failure is retained without eligibility
+- `CoverageCommandBindingTests.test_skips_and_interruption_are_never_eligible`: skips and interruption are never eligible
+- `CoverageCommandBindingTests.test_real_child_rejections`: real child rejections
+- `CoverageCommandBindingTests.test_unchanged_previous_junit_and_outcome_rejected`: unchanged previous junit and outcome rejected
+- `CoverageCommandBindingTests.test_symlink_artifact_and_parent_are_rejected_before_child`: symlink artifact and parent are rejected before child
+- `CoverageCommandBindingTests.test_command_must_select_outcome_reporter_exactly_once`: command must select outcome reporter exactly once
 
 </details>
 

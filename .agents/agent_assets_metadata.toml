@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "zwC5i4WUH9KgBYWryVwGh"
+uri = "file://generated-artifacts/test-run-20261030/test-report.html"
+type = "html"
+title = "Max Booster — Full Test Run Report"
+description = "Group-by-group results, failures, blockers, coverage, sandbox cleanup status, and retained evidence locations."
+logical_id = "d7fcf5ed-dd2b-4fae-a356-7a4cf7a8b33e"
+content_hash = "sha256:36f56a045e6461b6f76f541dcb76e6e213e5adc06cb8600b8166ece716a90a0b"
+size = 7782
+mtime_ms = 1793345842927
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/d7fcf5ed-dd2b-4fae-a356-7a4cf7a8b33e/8d16d760-b3bd-4255-b689-82a3e6bcaaeb"
+storage_version_token = "1793345856764379"
+content_type = "text/html"

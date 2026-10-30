@@ -1,6 +1,6 @@
 # Platform-wide master verification results
 
-Generated: `2026-10-29T23:24:25.754346+00:00`. Checkout baseline: `5eb416a04021f66c9bfc8af93997ec9fe8a55e31`.
+Generated: `2026-10-30T07:36:46.282307+00:00`. Checkout baseline: `f65b43a32ffb4b257e4beb4ec9e1a68dba135c1c`.
 
 **The master gate remains open.** Passing groups and unresolved checks are reported separately. No production-readiness or complete-feature claim follows from a passing subset.
 
@@ -16,24 +16,25 @@ Use [the setup guide](README.md) for dependencies and toolchain selectors, [the 
 
 | Group | Result | Measured scope |
 | --- | --- | --- |
-| `root-unit` | **passed** | passed: 2728 |
+| `root-unit` | **failed** | passed: 2841, failed: 3, skipped: 6 |
 | `root-additional` | **passed** | passed: 18 |
 | `coverage-contracts` | **passed** | passed: 43 |
-| `node` | **passed** | 125 files; 0 failed files; TAP {"tests": 742, "pass": 740, "fail": 0, "skipped": 2, "cancelled": 0} |
-| `python` | **passed** | tests: 1583, failures: 0, errors: 0, skipped: 12 |
+| `node` | **failed** | 126 files; 8 failed files; TAP {"tests": 740, "pass": 729, "fail": 9, "skipped": 2, "cancelled": 0} |
+| `python` | **passed** | tests: 1637, failures: 0, errors: 0, skipped: 25 |
 | `commerce` | **passed** | passed: 136, skipped: 1 |
-| `subsystems` | **passed** | rust-boosterstate: passed; go-dns: passed; pdim-erasure: passed; maxcore-js-security: passed; rust-cleanup-concurrency: passed; pdim-http-load: passed |
-| `browser` | **passed** | tests: 5, pass: 5, fail: 0, skipped: 0 |
+| `subsystems` | **failed** | rust-boosterstate: passed; go-dns: failed; pdim-erasure: passed; maxcore-js-security: passed; rust-cleanup-concurrency: failed; pdim-http-load: passed |
+| `browser` | **passed** |  |
 | `page80` | **passed** | PASS_WITH_UNTESTED_CATEGORIES; 0 final acceptance failures; individual browser observations remain in the raw evidence |
 | `http` | **passed** | passed: 499, skipped: 9 |
 | `bounded-http-load` | **passed** | One source application and disposable database; 10/20 workers for 20/10 seconds, not global capacity or soak proof |
-| `checks` | **passed** | build: exit 0; types: exit 0; lint: exit 0; audit: exit 0 |
+| `checks` | **failed** | build: exit 1; types: exit 0; lint: exit 0; audit: exit 0 |
 | `dependency-audit-recheck` | **passed** | {"vulnerabilities": {"info": 0, "low": 0, "moderate": 0, "high": 0, "critical": 0, "total": 0}, "dependencies": {"prod": 1028, "dev": 315, "optional": 140, "peer": 0, "peerOptional": 0, "total": 1475}} |
+| `stripe-test-api` | **failed** | PASS: 28, BLOCKED: 4, SKIP: 1 |
 | `operations` | **passed** | scripts/testing/platform-register.py: exit 0; external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py: exit 0; evaluations/maxcore-quality/verify_types.py: exit 0; evaluations/maxcore-quality/verify_evidence.py: exit 0; scripts/maxcore-isolated-recovery-acceptance.py: exit 0; tests/payment-processing/run.mjs: exit 0 |
-| `coverage` | **failed** | lines: 13.12%; statements: 13.02%; functions: 8.68%; branches: 8.78% |
-| `master-commands` | **failed** | build: exit 0; ci: exit 0; additional: exit 0; coverage: exit 1; desktop-transport-setup: exit 0; node: exit 0; python: exit 0; commerce: exit 0; subsystems: exit 0; browser: exit 0; http: exit 0; pages: exit 0; bounded-http-load: exit 0; operations: exit 0; types: exit 0; lint: exit 0; audit: exit 0 |
+| `coverage` | **failed** | lines: 13.11%; statements: 13.02%; functions: 8.74%; branches: 8.77% |
+| `master-commands` | **failed** | build: exit 1; ci: exit 1; additional: exit 0; coverage: exit 1; desktop-transport-setup: exit 0; node: exit 1; python: exit 0; commerce: exit 0; subsystems: exit 1; browser: exit 0; http: exit 0; pages: exit 0; bounded-http-load: exit 0; operations: exit 0; types: exit 0; lint: exit 0; audit: exit 0; stripe-test-api: exit 1 |
 | `source-integrity` | **passed** | Git-visible code/configuration inputs remained unchanged throughout execution |
-| `evidence-gates` | **failed** | platform: exit 1; remediation: exit 1; completion-plan: exit 0 |
+| `evidence-gates` | **failed** | platform: exit 1; remediation: exit 1; completion-plan: exit 1 |
 
 Group counts overlap. CI repeats some Node contracts; instrumented unit tests repeat the same assertions under coverage; HTTP also runs cross-pod cache tests. Node TAP can count parents while JUnit counts leaf cases. Python suite counters include unittest subtests. No inflated grand total is claimed.
 
@@ -41,6 +42,9 @@ Group counts overlap. CI repeats some Node contracts; instrumented unit tests re
 
 | Source suite | Failed recorded cases |
 | --- | --- |
+| `tests/unit/content-generation-gap-contract.test.ts` | 1 |
+| `tests/unit/prepared-release.test.ts` | 1 |
+| `tests/unit/production-auth-rate-limit.test.ts` | 1 |
 
 The full case list and exact assertion messages are in [case-results.json](../../reports/test-verification/case-results.json). Assertion failures may identify an implementation defect, obsolete fixture or unmet dependency; the remediation guide distinguishes confirmed observations from likely diagnoses.
 
@@ -48,15 +52,15 @@ The strict master retains missing-source targets, browser-policy restrictions, u
 
 ## Platform coverage and required work
 
-Source catalog: `{"byGroup": {"commerce": 21, "integration-browser": 26, "manual-destructive-provider": 37, "python": 130, "root-node": 125, "root-unit": 297, "runner-support": 82, "subsystems": 5}, "canonicalTestFiles": 641, "nonExecutableSupportFiles": 11, "retainedSnapshotFiles": 78, "supportSourceFiles": 82}`.
+Source catalog: `{}`.
 
-File evidence status: `{"blocked_or_skipped": 16, "executed": 596, "not_run": 29, "support": 82}`.
+File evidence status: `{}`.
 
-Platform register: `{"actualCoverageFiles": 2653, "backendRegistrations": 2909, "frontendApiContracts": 932, "invalidEvidenceLinks": 0, "requiredChecks": 33549, "routedPageDeclarations": 80, "scannedTypeScriptJavaScriptFiles": 3408, "uiInteractionDeclarations": 8374, "unknownMappings": 170, "unverifiedChecks": 33540}`.
+Platform register: `{"actualCoverageFiles": 2656, "backendRegistrations": 2908, "frontendApiContracts": 932, "invalidEvidenceLinks": 9, "requiredChecks": 33543, "routedPageDeclarations": 80, "scannedTypeScriptJavaScriptFiles": 2885, "uiInteractionDeclarations": 8374, "unknownMappings": 170, "unverifiedChecks": 33543}`.
 
 Required behavior checks are a test plan, not a count of proven product bugs or necessarily a count of missing test files. Existing tests can satisfy checks when their exact automated evidence is linked. Static candidate matches and line execution alone do not establish authorization, persistence, recovery or full UI behavior. No human approval/signature is required.
 
-Repair task categories: `{"assertion_failure": 1, "blocked_check": 20, "command_failure": 1, "coverage_gap": 2494, "feature_acceptance_gap": 833, "mapping_gap": 20, "missing_execution": 29, "skipped_case": 23}`.
+Repair task categories: `{"assertion_failure": 12, "blocked_check": 26, "command_failure": 8, "coverage_gap": 2496, "feature_acceptance_gap": 832, "mapping_gap": 20, "missing_evidence": 3, "provider_cleanup": 6, "skipped_case": 44}`.
 
 The readable checklist is bounded for review; its JSON retains every task, location, reproduction command and required proof.
 
