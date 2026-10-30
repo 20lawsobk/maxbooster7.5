@@ -10,3 +10,9 @@ The user further states: "the whole maxcore server uses only the live awareness 
 **Why:** The user corrected an explanation that conflated awareness readiness with trained-model generation readiness.
 
 **How to apply:** Configure and verify the existing live-awareness endpoints against their configured live sources. Do not require a pretrained checkpoint, separate offline dataset, or Git LFS asset to declare awareness ready. Evaluate model-generation requirements independently, without changing the awareness behavior or replacing live signals with mocks. Identify automatic-learning failures as failures of that separate path, not as missing public-feed configuration.
+
+The user says the public-source learning setup was already configured.
+
+**Why:** The user corrected proposals to introduce a new learning policy before tracing the existing configuration.
+
+**How to apply:** Locate the existing policy and follow its configuration through collection, admission, training, and serving. Do not treat a blocked stage as proof that the entire learning setup is absent or ask the user to configure it again without that investigation.
