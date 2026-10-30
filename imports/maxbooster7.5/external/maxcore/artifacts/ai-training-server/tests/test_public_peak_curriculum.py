@@ -188,7 +188,7 @@ class PublicPeakCurriculumTests(unittest.TestCase):
     def test_current_curriculum_teaches_source_spans_without_inventing_cta(self):
         text = "A new music release is here. The artist describes the recording process."
         rows, evidence = training_texts([{"text": text}])
-        self.assertEqual(evidence["policy"], "plain-plus-source-stages-v2")
+        self.assertEqual(evidence["policy"], "plain-plus-source-stages-v3")
         self.assertEqual(evidence["derived_stage_records"], 1)
         self.assertEqual(rows[0], text)
         self.assertEqual(re.sub(r"<STAGE_(?:HOOK|BODY|CTA)>", "", rows[1]), text)
@@ -205,6 +205,47 @@ class PublicPeakCurriculumTests(unittest.TestCase):
         ])
         self.assertEqual(len(rows), 3)
         self.assertEqual(evidence["derived_stage_records"], 0)
+
+    def test_cta_before_social_footer_preserves_source_and_historical_policy(self):
+        for text in (
+            "A new concert tonight! Our ensemble performs original songs. Listen now! https://example.test/music #Music",
+            "A new concert tonight\nOur ensemble performs original songs\nListen now\nhttps://example.test/music #Music",
+            "A new concert tonight\r\n\r\nOur ensemble performs original songs\r\nJoin us\r\n#Music",
+        ):
+            with self.subTest(text=text):
+                rows, report = training_texts([{"text": text}])
+                self.assertEqual(report["derived_stage_records"], 1)
+                self.assertEqual(report["cta_stage_records"], 1)
+                self.assertEqual(report["hook_body_only_records"], 0)
+                self.assertIn("<STAGE_CTA>", rows[1])
+                self.assertEqual(re.sub(r"<STAGE_(?:HOOK|BODY|CTA)>", "", rows[1]), text)
+                old, evidence = training_texts([{"text": text}], policy="plain-plus-source-stages-v2")
+                self.assertEqual(evidence["policy"], "plain-plus-source-stages-v2")
+                self.assertTrue(all("<STAGE_CTA>" not in row for row in old))
+
+    def test_new_policy_does_not_relabel_non_footer_prose_as_cta(self):
+        for text in (
+            "Concert tonight! Original songs await. Listen now! The review describes the venue.",
+            "Concert tonight\nOriginal songs await\nThe crowd enjoyed the performance\n#Music",
+            "One line\n\n",
+            "\n\nOne line\n\n",
+        ):
+            rows, _ = training_texts([{"text": text}])
+            self.assertTrue(all("<STAGE_CTA>" not in row for row in rows))
+
+    def test_legacy_curricula_reproduce_exact_text_and_metadata(self):
+        text = "An original concert opens tonight. The ensemble rehearsed a new score."
+        staged = "<STAGE_HOOK>An original concert opens tonight. <STAGE_BODY>The ensemble rehearsed a new score."
+        for version, expected in ((1, [text]), (2, [text, staged])):
+            policy = f"plain-plus-source-stages-v{version}"
+            rows, report = training_texts([{"text": text}], policy=policy)
+            self.assertEqual(rows, expected)
+            self.assertEqual(report, {
+                "policy": policy, "plain_records": 1,
+                "derived_stage_records": version - 1,
+                "texts_sha256": hashlib.sha256(json.dumps(expected, ensure_ascii=True,
+                    separators=(",", ":")).encode()).hexdigest(),
+            })
 
     def test_bootstrap_replays_fresh_content_with_durable_budget_then_changed_only(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -9,6 +9,7 @@ heavy generate() call always runs at the pipeline's native RESOLUTION.
 """
 
 import time
+from pathlib import Path
 
 import pytest
 
@@ -16,14 +17,19 @@ from ai_model.video.diffusion import maxcore_diffusion as md
 
 
 def _pipeline_available() -> bool:
-    try:
-        return md._get_pipeline() is not None
-    except Exception:
+    if not md._TORCH_OK:
         return False
+    root = Path(md.CHECKPOINT_DIR)
+    if not any((root / name).exists() for name in
+               ("diffusion.pt", "vae.pt", "dit.pt", "conditioner.pt")):
+        return False
+    # An absent model is missing test infrastructure. A present but broken
+    # checkpoint is a test failure, never a reason to skip the suite.
+    return md._get_pipeline() is not None
 
 
 pytestmark = pytest.mark.skipif(
-    not _pipeline_available(), reason="diffusion pipeline unavailable (torch)"
+    not _pipeline_available(), reason="real diffusion requires available, compatible checkpoints; not a quality pass"
 )
 
 

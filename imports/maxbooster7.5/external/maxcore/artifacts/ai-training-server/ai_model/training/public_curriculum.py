@@ -51,15 +51,17 @@ def validate_peak_record(record):
         raise ValueError("Peak curriculum requires complete public posts with measured engagement")
 
 
-def training_texts(records, *, policy="plain-plus-source-stages-v2"):
+def training_texts(records, *, policy="plain-plus-source-stages-v3"):
     """Keep plain posts; optionally label only observable source sentence stages.
 
     This is structural supervision, not inferred goal/tone/platform performance.
     V2 also teaches observed hook/body spans when no explicit CTA is present.
-    No missing words or CTA are supplied. V1 remains reproducible for historical
+    V3 recognizes line-separated stages and explicit CTAs before link/tag footers.
+    No missing words or CTA are supplied. V1/V2 remain reproducible for historical
     checkpoint verification; changing the default must not rewrite that history.
     """
-    if policy not in {"plain-plus-source-stages-v1", "plain-plus-source-stages-v2"}:
+    if policy not in {"plain-plus-source-stages-v1", "plain-plus-source-stages-v2",
+                      "plain-plus-source-stages-v3"}:
         raise ValueError("Unknown source-stage curriculum policy")
     texts = [record["text"] for record in records]
     staged = []
@@ -68,17 +70,38 @@ def training_texts(records, *, policy="plain-plus-source-stages-v2"):
     for text in texts:
         # Boundaries are offsets into the unchanged source, including whitespace.
         starts = [match.end() for match in re.finditer(r"[.!?](?:[\"'”’])?\s+", text)]
+        if policy == "plain-plus-source-stages-v3":
+            starts = sorted(set(starts + [
+                match.end() for match in re.finditer(r"\r?\n[ \t]*", text)
+            ]))
+            # Blank lines and trailing whitespace are not meaningful stages.
+            starts = [offset for offset in starts
+                      if text[:offset].strip() and text[offset:].strip()
+                      and not text[offset].isspace()]
         if not starts or "<STAGE_" in text:
             continue
         first, last = starts[0], starts[-1]
+        if policy == "plain-plus-source-stages-v3":
+            for offset in reversed(starts):
+                if offset <= first or not cta.match(text[offset:].lstrip()):
+                    continue
+                following = [boundary for boundary in starts if boundary > offset]
+                footer = text[following[0]:].split() if following else []
+                if all(re.fullmatch(r"https?://\S+|#\w+[.,!?]?", token)
+                       for token in footer):
+                    last = offset
+                    break
         if first < last and cta.match(text[last:].lstrip()):
             staged.append("<STAGE_HOOK>" + text[:first] + "<STAGE_BODY>" +
                           text[first:last] + "<STAGE_CTA>" + text[last:])
-        elif policy == "plain-plus-source-stages-v2" and text[first:].strip():
+        elif policy in {"plain-plus-source-stages-v2", "plain-plus-source-stages-v3"} and text[first:].strip():
             staged.append("<STAGE_HOOK>" + text[:first] + "<STAGE_BODY>" + text[first:])
     combined = texts + staged
     metadata = {"policy": policy, "plain_records": len(texts),
                 "derived_stage_records": len(staged),
                 "texts_sha256": hashlib.sha256(json.dumps(combined, ensure_ascii=True,
                     separators=(",", ":")).encode()).hexdigest()}
+    if policy == "plain-plus-source-stages-v3":
+        metadata["cta_stage_records"] = sum("<STAGE_CTA>" in row for row in staged)
+        metadata["hook_body_only_records"] = len(staged) - metadata["cta_stage_records"]
     return combined, metadata

@@ -12,17 +12,15 @@ Public API:
   MaxCoreDiffusionPipeline.generate(...)  → List[np.ndarray]  (HWC uint8 frames)
   get_diffusion_frame(...)                → np.ndarray | None  (single frame for compositing)
 
-The pipeline is additive — if ANY component fails the caller receives None and
-the existing procedural renderer takes over.  It can never break production.
-
-Singleton pattern: _pipeline is lazily initialised on first use and reused
-across requests.  Weights are randomly initialised until the training flywheel
-populates checkpoints in uploads/diffusion/.
+Inference requires a complete compatible parameter set. Loading a checkpoint
+is a structural check, not evidence of training provenance or output quality.
+Training initialization must be explicitly requested and cannot serve frames.
 """
 from __future__ import annotations
 
 import os
 import threading
+import tempfile
 import numpy as np
 from typing import Any, Dict, List, Optional
 
@@ -31,6 +29,7 @@ from .music_vae import MusicVAE, LATENT_C, LATENT_H, LATENT_W
 from .awareness_conditioner import AwarenessConditioner
 from .temporal_dit import TemporalDiT
 from .sdedit_prior import SDEditPrior
+from ...training.storage import diffusion_root
 
 try:
     import torch as _torch  # noqa: F401  — availability probe; real import done per-method
@@ -42,63 +41,112 @@ RESOLUTION: int = 256
 N_FRAMES: int = 8
 N_DDIM_STEPS: int = 20
 NOISE_FRACTION: float = 0.40
-CHECKPOINT_DIR: str = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-    "uploads", "diffusion",
-)
+CHECKPOINT_DIR: str = str(diffusion_root(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))))
 
 _pipeline: Optional["MaxCoreDiffusionPipeline"] = None
 _pipeline_lock = threading.Lock()
+_pipeline_source_signature = None
+
+
+def _checkpoint_signature():
+    bundle = os.path.join(CHECKPOINT_DIR, "diffusion.pt")
+    paths = [bundle] if os.path.isfile(bundle) else [
+        os.path.join(CHECKPOINT_DIR, name + ".pt") for name in ("vae", "dit", "conditioner")]
+    signature = []
+    for path in paths:
+        try:
+            stat = os.stat(path)
+        except FileNotFoundError as exc:
+            raise RuntimeError("Diffusion checkpoints missing: " + os.path.basename(path)) from exc
+        signature.append((path, stat.st_ino, stat.st_mtime_ns, stat.st_size))
+    return tuple(signature)
 
 
 class MaxCoreDiffusionPipeline:
     """Awareness-conditioned music-domain latent video diffusion pipeline."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, for_training: bool = False) -> None:
+        if type(for_training) is not bool:
+            raise ValueError("for_training must be a boolean")
+        self._model_lock = threading.RLock()
+        self._checkpoint_loaded = False
+        if not for_training and not os.path.isfile(os.path.join(CHECKPOINT_DIR, "diffusion.pt")):
+            missing = [name for name in ("vae", "dit", "conditioner")
+                       if not os.path.isfile(os.path.join(CHECKPOINT_DIR, name + ".pt"))]
+            if missing:
+                raise RuntimeError("Diffusion checkpoints missing: " + ", ".join(missing))
         self.scheduler_ddpm = DDPMScheduler(T=1000)
         self.scheduler = DDIMScheduler(self.scheduler_ddpm, num_steps=N_DDIM_STEPS)
-        self.vae = MusicVAE(LATENT_C)
-        self.conditioner = AwarenessConditioner()
-        self.dit = TemporalDiT()
+        if for_training:
+            self.vae = MusicVAE(LATENT_C)
+            self.conditioner = AwarenessConditioner()
+            self.dit = TemporalDiT()
         self.prior = SDEditPrior(self.scheduler, NOISE_FRACTION)
-        self._try_load_checkpoints()
+        if not for_training:
+            self._try_load_checkpoints()
 
     def _try_load_checkpoints(self) -> None:
-        """Non-fatal checkpoint loading — if absent, keeps random init."""
+        """Load into separate modules; publish only after the entire set passes."""
         if not _TORCH_OK:
-            return
+            raise RuntimeError("Diffusion tensor runtime unavailable")
         import torch
-        import torch.nn as nn
-        modules: List[tuple] = [
-            ("vae", self.vae), ("dit", self.dit), ("conditioner", self.conditioner)
-        ]
-        for name, module in modules:
-            mod: nn.Module = module
-            path = os.path.join(CHECKPOINT_DIR, f"{name}.pt")
-            if os.path.exists(path):
-                try:
-                    state = torch.load(path, map_location="cpu")
-                    mod.load_state_dict(state, strict=False)
-                except Exception:
-                    pass
+        bundle_path = os.path.join(CHECKPOINT_DIR, "diffusion.pt")
+        if os.path.isfile(bundle_path):
+            bundle = torch.load(bundle_path, map_location="cpu", weights_only=True)
+            if not isinstance(bundle, dict) or bundle.get("schema") != 1:
+                raise ValueError("Unsupported diffusion checkpoint schema")
+            states = bundle.get("components")
+        else:
+            states = {name: torch.load(os.path.join(CHECKPOINT_DIR, name + ".pt"),
+                                      map_location="cpu", weights_only=True)
+                      for name in ("vae", "dit", "conditioner")}
+        if not isinstance(states, dict) or set(states) != {"vae", "dit", "conditioner"}:
+            raise ValueError("Incomplete diffusion checkpoint components")
+        modules = {"vae": MusicVAE(LATENT_C), "dit": TemporalDiT(),
+                   "conditioner": AwarenessConditioner()}
+        for name, module in modules.items():
+            state = states[name]
+            if not isinstance(state, dict) or not state:
+                raise ValueError(f"Invalid diffusion state: {name}")
+            for value in state.values():
+                if not isinstance(value, torch.Tensor) or not torch.isfinite(value).all():
+                    raise ValueError(f"Nonfinite or invalid diffusion tensor: {name}")
+            module.load_state_dict(state, strict=True)
+            module.eval()
+        with self._model_lock:
+            self.vae, self.dit, self.conditioner = (
+                modules["vae"], modules["dit"], modules["conditioner"])
+            self._checkpoint_loaded = True
 
     def save_checkpoints(self) -> None:
-        """Persist current weights for future restarts."""
+        """Atomically publish one complete parameter bundle, not three partial files."""
         if not _TORCH_OK:
-            return
+            raise RuntimeError("Diffusion tensor runtime unavailable")
         import torch
-        import torch.nn as nn
-        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
-        modules: List[tuple] = [
-            ("vae", self.vae), ("dit", self.dit), ("conditioner", self.conditioner)
-        ]
-        for name, module in modules:
-            mod: nn.Module = module
-            path = os.path.join(CHECKPOINT_DIR, f"{name}.pt")
+        os.makedirs(CHECKPOINT_DIR, mode=0o700, exist_ok=True)
+        with self._model_lock:
+            states = {name: {key: value.detach().cpu().clone()
+                             for key, value in getattr(self, name).state_dict().items()}
+                      for name in ("vae", "dit", "conditioner")}
+        for name, state in states.items():
+            if any(not torch.isfinite(value).all() for value in state.values()):
+                raise ValueError(f"Cannot save nonfinite diffusion parameters: {name}")
+        fd, temporary = tempfile.mkstemp(prefix=".diffusion-", dir=CHECKPOINT_DIR)
+        try:
+            with os.fdopen(fd, "wb") as output:
+                torch.save({"schema": 1, "components": states}, output)
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(temporary, os.path.join(CHECKPOINT_DIR, "diffusion.pt"))
+            directory_fd = os.open(CHECKPOINT_DIR, os.O_RDONLY | os.O_DIRECTORY)
             try:
-                torch.save(mod.state_dict(), path)
-            except Exception:
-                pass
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
 
     def _dna_from_context(self, context: Dict[str, Any]) -> List[float]:
         """Extract Visual DNA floats from the scene context dict."""
@@ -124,14 +172,12 @@ class MaxCoreDiffusionPipeline:
         Generate n_frames of awareness-conditioned video frames.
 
         Returns List[np.ndarray] — each frame is HWC uint8 RGB.
-        Falls back to empty list on any error.
+        Raises on unavailable checkpoints or inference failure.
         """
-        if not _TORCH_OK:
-            return []
-        try:
+        with self._model_lock:
+            if not _TORCH_OK or not self._checkpoint_loaded:
+                raise RuntimeError("Diffusion inference requires loaded checkpoints")
             return self._generate_inner(idea, platform, tone, awareness, context or {}, n_frames, resolution)
-        except Exception:
-            return []
 
     def _generate_inner(
         self,
@@ -146,7 +192,11 @@ class MaxCoreDiffusionPipeline:
         dna_params = self._dna_from_context(context)
         brand = context.get("brand", "maxbooster")
 
-        cond = self.conditioner.encode(awareness, dna_params, batch_size=1)
+        # The live landscape is context, not a replacement for the request.
+        # Preserve the existing conditioner layout while including all declared
+        # request inputs. Its vocabulary limits still require separate evaluation.
+        conditioning_text = "\n".join(part for part in (idea, platform, tone, awareness) if part)
+        cond = self.conditioner.encode(conditioning_text, dna_params, batch_size=1)
 
         x_t, t_start = self.prior.get_prior_frames(
             n_frames=n_frames,
@@ -187,19 +237,23 @@ class MaxCoreDiffusionPipeline:
         return frames
 
 
-def _get_pipeline() -> Optional[MaxCoreDiffusionPipeline]:
-    global _pipeline
+def _get_pipeline() -> MaxCoreDiffusionPipeline:
+    global _pipeline, _pipeline_source_signature
     if not _TORCH_OK:
-        return None  # torch unavailable — skip guard in test will trigger correctly
-    if _pipeline is not None:
-        return _pipeline
+        raise RuntimeError("Diffusion tensor runtime unavailable")
     with _pipeline_lock:
-        if _pipeline is None:
-            try:
-                _pipeline = MaxCoreDiffusionPipeline()
-            except Exception:
-                return None
-    return _pipeline
+        for _ in range(3):
+            signature = _checkpoint_signature()
+            if _pipeline is not None and signature == _pipeline_source_signature:
+                return _pipeline
+            candidate = MaxCoreDiffusionPipeline()
+            if _checkpoint_signature() != signature:
+                continue
+            # Existing requests retain their own immutable model instance.
+            # Failed loading never updates either cache field or serves stale state.
+            _pipeline, _pipeline_source_signature = candidate, signature
+            return _pipeline
+    raise RuntimeError("Diffusion checkpoints changed repeatedly during loading")
 
 
 def get_diffusion_frame(
@@ -210,16 +264,14 @@ def get_diffusion_frame(
     width: int = RESOLUTION,
     height: int = RESOLUTION,
     context: Optional[Dict[str, Any]] = None,
-) -> Optional[np.ndarray]:
+) -> np.ndarray:
     """
     Generate a single compositing-ready frame for the cinematic engine.
 
-    Returns None on any failure so callers fall back to procedural backgrounds.
+    Missing checkpoints and rendering failures are explicit errors.
     This function is the public integration point used by scenes.py.
     """
     pipeline = _get_pipeline()
-    if pipeline is None:
-        return None
     # Denoise at the pipeline's native resolution: the latent grid is fixed
     # (LATENT_H x LATENT_W), so requesting a larger decode resolution only
     # multiplies DDIM/VAE pixel work (~10x slower at 1920) without adding any
@@ -235,11 +287,11 @@ def get_diffusion_frame(
         resolution=RESOLUTION,
     )
     if not frames:
-        return None
+        raise RuntimeError("Diffusion produced no frames")
     frame = frames[0]
     try:
         from PIL import Image
         img = Image.fromarray(frame).resize((width, height), Image.BILINEAR)
         return np.array(img)
-    except Exception:
-        return frame
+    except (ValueError, TypeError, OSError) as exc:
+        raise RuntimeError("Diffusion frame resize failed") from exc

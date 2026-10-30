@@ -148,12 +148,18 @@ def media_learning_preflight(modality, manifest=None, corpus_root=None):
                          "ai_model/video/diffusion/temporal_dit.py",
                          "ai_model/video/diffusion/awareness_conditioner.py",
                          "ai_model/video/diffusion/maxcore_diffusion.py"])
+        from .storage import diffusion_root
+        checkpoint_root = diffusion_root(SERVER_ROOT)
+        bundle_present = (checkpoint_root / "diffusion.pt").is_file()
         checkpoints = [
-            {"component": name, "present": (SERVER_ROOT / "uploads" / "diffusion" / f"{name}.pt").is_file(),
+            {"component": name,
+             "present": bundle_present or (checkpoint_root / f"{name}.pt").is_file(),
+             "storage_format": "atomic_bundle" if bundle_present else "legacy_component",
+             "structure_verified": False,
              "training_provenance_verified": False}
             for name in ("vae", "dit", "conditioner")
         ]
-        if not all(c["present"] for c in checkpoints):
+        if not all(c["present"] for c in checkpoints) and not bundle_present:
             blockers.append("Required video component checkpoint files are missing; random initialization is not learned media.")
         blockers.append("Video checkpoint provenance, strict architecture compatibility and quality gate are not verified.")
     corpus = None
