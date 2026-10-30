@@ -203,6 +203,68 @@ describe("File Management (Storage Round-Trip)", () => {
     expect(res.status).not.toBe(200);
   });
 
+  it("5c. isolates real unprefixed hybrid bytes across both mounted download routes", async () => {
+    const ownerCookies = authCookies;
+    const ownerCsrf = csrfToken;
+    let key = "";
+    try {
+      // This must be an actual hybrid upload, not the legacy users/<id> path.
+      // Backend unavailability is a failed prerequisite, never a privacy PASS.
+      const form = new FormData();
+      form.append("file", new Blob([uploadPayload], { type: "audio/wav" }), "tenant-isolation.wav");
+      const upload = await apiJson("POST", "/api/hybrid-storage/upload", form);
+      expect(upload.status).toBe(200);
+      const result = upload.json as Record<string, unknown>;
+      expect(typeof result.key).toBe("string");
+      key = result.key as string;
+      expect(key).toBeTruthy();
+      expect(key.startsWith("users/")).toBe(false);
+
+      const encodedKey = encodeURIComponent(key);
+      const primaryPath = `/api/storage/file/${encodedKey}`;
+      // The actual mounted secondary route is /api/hybrid-storage/file/:fileKey.
+      const hybridPath = `/api/hybrid-storage/file/${encodedKey}`;
+
+      for (const route of [primaryPath, hybridPath]) {
+        const owned = await api("GET", route);
+        expect(owned.status).toBe(200);
+        expect(Buffer.from(await owned.arrayBuffer())).toEqual(uploadPayload);
+        expect(owned.headers.get("cache-control")).toMatch(/no-store/i);
+      }
+
+      authCookies = "";
+      csrfToken = "";
+      for (const route of [primaryPath, hybridPath]) {
+        expect((await api("GET", route)).status).toBe(401);
+      }
+
+      const outsider = {
+        email: `hybridoutsider_${Date.now()}@maxbooster-test.invalid`,
+        password: "SecurePass123!@#",
+        firstName: "Other",
+        lastName: "Account",
+      };
+      await apiJson("POST", "/api/auth/register", outsider);
+      const signIn = await apiJson("POST", "/api/auth/login", {
+        email: outsider.email, password: outsider.password,
+      });
+      expect(signIn.status).toBe(200);
+      expect(authCookies).toBeTruthy();
+      for (const route of [primaryPath, hybridPath]) {
+        const denied = await api("GET", route);
+        expect(denied.status).toBe(403);
+      }
+    } finally {
+      authCookies = ownerCookies;
+      csrfToken = ownerCsrf;
+      if (key) {
+        // Clean up the isolated test object's metadata and immutable bytes.
+        const cleanup = await api("DELETE", `/api/hybrid-storage/file/${encodeURIComponent(key)}`);
+        expect(cleanup.status).toBe(200);
+      }
+    }
+  });
+
   it("6. deletes the uploaded file and returns success", async () => {
     if (!uploadedFileKey) {
       console.warn("[FileTest] No uploaded key — skipping delete test");
