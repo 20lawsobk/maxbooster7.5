@@ -22,7 +22,7 @@ function loadRoute(name) {
     },
   };
   const code = stripTypeScriptTypes(routeSource.slice(start, end));
-  runInNewContext(code, { router, requireAuth() {} }, { timeout: 1000 });
+  runInNewContext(code, { router, requireAuth() {}, logger: { info() {}, warn() {} }, randomUUID: () => "generated-id" }, { timeout: 1000 });
   assert.equal(typeof handler, "function");
   return handler;
 }
