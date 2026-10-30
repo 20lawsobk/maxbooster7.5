@@ -17,4 +17,8 @@ GitHub's LFS server rejected downloads with: "This repository exceeded its LFS b
 
 The repository also records a Gitlink at `maxbooster7.5` pointing to commit `2c9b739a89bb2334142ded99da14fe57878208b1`. There is no `.gitmodules` file specifying where that content can be downloaded. The Gitlink's contents are therefore not imported.
 
+## LFS scope clarification
+
+Source inspection confirms that the default `live-awareness` release preparation does not require the legacy LFS checkpoint. `script/prepare-release.ts` calls `modelReleaseRequirements`, which only requires that checkpoint for explicit `MAXCORE_SERVING_RELEASE=legacy`. PDIM capsule packaging excludes the legacy checkpoint and private training/registry state. The LFS download failure is therefore not a default release-packaging blocker; it does not by itself establish whether live model generation is ready. Qualified private model state must be available separately.
+
 Large generated reports, scratch data, hardware build outputs, and sample audio remain present locally. Root ignore rules exclude these from new checkpoints and deployments to avoid adding large generated assets to this project's history.
