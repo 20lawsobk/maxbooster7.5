@@ -1,6 +1,7 @@
 import os from "os";
 import { once } from "node:events";
 import { proxyLifetime, waitForProxyRecovery } from "../config/proxy-lifecycle.js";
+import { plannedGenerationDeadlineMs } from "../config/planned-generation-policy.js";
 import fs from "fs";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Agent, request as undiciRequest } from "undici";
@@ -321,16 +322,10 @@ async function proxyRequest(
   const isGet = req.method === "GET" || req.method === "HEAD";
   const awarenessOnly = path === "/api/awareness/unified/status" ||
     path === "/api/awareness/unified/context";
-  const plannerOnly = path === "/api/generate/text" && req.body?.mode === "planner";
   const accountAnalytics = ["/api/analytics/capability", "/api/analytics/predict", "/api/analytics/insights"].includes(path);
-  const mediaGeneration = ["/api/generate/image", "/api/generate/audio",
-    "/api/generate-video", "/api/video/generate-ai", "/platform/video/generate",
-    "/api/video/extend", "/platform/daw/generate"].includes(path);
-  const generationRequest = mediaGeneration || ["/api/generate/content", "/api/generate/text",
-    "/api/platform/social/generate", "/api/platform/ads/generate", "/api/generate/campaign"].includes(path);
+  const generationDeadline = plannedGenerationDeadlineMs(path, req.body);
   const diagnosticOnly = ["/health", "/api/health", "/ready", "/api/ready"].includes(path);
-  const directDeadline = awarenessOnly || diagnosticOnly ? 4_000 : accountAnalytics ? 10_000 : plannerOnly ? 30_000 :
-    generationRequest ? (mediaGeneration ? 600_000 : 60_000) : undefined;
+  const directDeadline = awarenessOnly || diagnosticOnly ? 4_000 : accountAnalytics ? 10_000 : generationDeadline;
   const startTime = Date.now();
   // Track per-route and total request counts
   recordRequest(req.path ?? path);

@@ -4593,10 +4593,11 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
 @app.get("/api/generation/capabilities")
 async def generation_capabilities():
     from ai_model.capabilities import capabilities
+    from ai_model.generation.plan import GENERATION_PLAN_VERSION
     return {"renderers": capabilities(), "quality": "not_evaluated",
             "serving_release": _serving_release_status,
             "runtime": "not_probed", "digital_gpu_exclusive": "not_verified",
-            "plan_version": "generation-plan-v2"}
+            "plan_version": GENERATION_PLAN_VERSION}
 
 
 @app.post("/content/generate")

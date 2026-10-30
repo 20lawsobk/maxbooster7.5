@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { withMediaJobDeadline } from "../../lib/mediaJobTransport";
+import { useStudioGenerationScope, type StudioGenerationLease } from "./useStudioGenerationScope";
 import { logger } from "@/lib/logger";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
@@ -111,6 +113,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     };
   };
   const { toast } = useToast();
+  const beginGeneration = useStudioGenerationScope(projectId, () => useStudioStore.getState().project.id);
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const { forceSave, loadProjectData } = useProjectSync(projectId);
@@ -1407,6 +1410,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     }
 
     const s = useStudioStore.getState();
+    if (!projectId || s.project.id !== projectId) {
+      throw new DOMException("Open the originating project before adding generated media", "AbortError");
+    }
     if (result.audioFilePath) {
       const audioTrackId = s.addTrack("audio", `${result.name} Audio`);
       s.addAudioClip(audioTrackId, {
@@ -1445,7 +1451,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       });
     }
     return { audioAdded: Boolean(result.audioFilePath), midiAdded: notes.length > 0 };
-  }, []);
+  }, [projectId]);
 
   const generateStudioTextTrack = useCallback(
     async (options: {
@@ -1458,19 +1464,24 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       scale?: string;
       genre?: string;
     }) => {
+      let lease: StudioGenerationLease | undefined;
       try {
+        lease = beginGeneration();
         if (!projectId) throw new Error("Open a project before generating audio.");
-        const res = await apiRequest("POST", "/api/studio/generation/text", {
-          ...options,
-          text: options.text,
-          projectId,
-          bars: 8,
-          tempo: options.tempo || transport.tempo,
-          key: options.key || musicalKey,
-          scale: options.scale || musicalScale,
-        });
-        const submitted = await res.json();
-        const generated = await resolveStudioGenerationResponse(submitted);
+        const submitted = await withMediaJobDeadline(async requestSignal => {
+          const res = await apiRequest("POST", "/api/studio/generation/text", {
+            ...options,
+            text: options.text,
+            projectId,
+            bars: 8,
+            tempo: options.tempo || transport.tempo,
+            key: options.key || musicalKey,
+            scale: options.scale || musicalScale,
+          }, { signal: requestSignal, maxRetries: 0 });
+          return await res.json() as Record<string, unknown>;
+        }, { signal: lease.signal, timeoutMs: 45_000, timeoutMessage: "Audio generation submission timed out" });
+        const generated = await resolveStudioGenerationResponse(submitted, { signal: lease.signal });
+        lease.assertCurrent();
         const added = addGeneratedStudioResult({
           name: options.label,
           audioFilePath: generated.audioFilePath,
@@ -1486,14 +1497,18 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
               : "Generated audio was added to the timeline.",
         });
       } catch (error) {
+        if (!lease?.isCurrent()) return;
         toast({
           title: "Generation Failed",
           description: (error as Error).message,
           variant: "destructive",
         });
+      } finally {
+        lease?.release();
       }
     },
     [
+      beginGeneration,
       projectId,
       transport.tempo,
       musicalKey,

@@ -19,6 +19,7 @@ vi.mock("react", async importOriginal => {
     useMemo: (callback: () => unknown) => callback(),
     useRef: (current: unknown) => ({ current }),
     useEffect: () => {},
+    useLayoutEffect: () => {},
   };
 });
 vi.mock("@/lib/queryClient", () => ({ apiRequest: state.api, getCsrfTokenFromCookie: () => "fixture-csrf" }));

@@ -1,3 +1,5 @@
+import { waitForMediaJobPoll, withMediaJobDeadline } from "../../lib/mediaJobTransport";
+
 export interface GeneratedMidiNote {
   pitch: number;
   velocity: number;
@@ -148,6 +150,8 @@ export async function pollStudioAudioJob(
     signal?: AbortSignal;
     intervalMs?: number;
     maxAttempts?: number;
+    requestTimeoutMs?: number;
+    maxElapsedMs?: number;
     fetchImpl?: typeof fetch;
     sleep?: (milliseconds: number, signal?: AbortSignal) => Promise<void>;
   } = {},
@@ -156,57 +160,47 @@ export async function pollStudioAudioJob(
   const fetchImpl = options.fetchImpl || fetch;
   const intervalMs = options.intervalMs ?? 2_000;
   const maxAttempts = options.maxAttempts ?? 150;
-  const sleep =
-    options.sleep ||
-    ((milliseconds, signal) =>
-      new Promise<void>((resolve, reject) => {
-        if (signal?.aborted) {
-          reject(new DOMException("Generation polling was cancelled", "AbortError"));
-          return;
-        }
-        const timer = setTimeout(resolve, milliseconds);
-        signal?.addEventListener(
-          "abort",
-          () => {
-            clearTimeout(timer);
-            reject(new DOMException("Generation polling was cancelled", "AbortError"));
-          },
-          { once: true },
-        );
-      }));
+  const sleep = options.sleep || waitForMediaJobPoll;
+  const requestTimeoutMs = options.requestTimeoutMs ?? 15_000;
+  const maxElapsedMs = options.maxElapsedMs ?? Math.max(requestTimeoutMs, maxAttempts * intervalMs);
+  return withMediaJobDeadline(async pollSignal => {
 
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    options.signal?.throwIfAborted?.();
-    const response = await fetchImpl(`/api/audio-job/${encodeURIComponent(jobId)}`, {
-      credentials: "include",
-      signal: options.signal,
-    });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      throw new Error(payload?.error || `Audio generation status failed (${response.status})`);
-    }
-    if (!payload || typeof payload.status !== "string") {
-      throw new Error("Audio generation status response was invalid");
-    }
-
-    const status = payload.status.toLowerCase();
-    if (["error", "failed", "cancelled"].includes(status)) {
-      throw new Error(payload.error || payload.message || "Audio generation failed");
-    }
-    if (["done", "complete", "completed", "succeeded", "success"].includes(status)) {
-      const audioUrl = payload.audio_url || payload.audioUrl || payload.url;
-      if (typeof audioUrl !== "string" || !audioUrl.trim()) {
-        throw new Error("Audio generation completed without an audio URL");
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      pollSignal.throwIfAborted();
+      const { response, payload } = await withMediaJobDeadline(async requestSignal => {
+        const response = await fetchImpl(`/api/audio-job/${encodeURIComponent(jobId)}`, {
+          credentials: "include", signal: requestSignal,
+        });
+        const payload = await response.json().catch(() => null);
+        return { response, payload };
+      }, { signal: pollSignal, timeoutMs: requestTimeoutMs, timeoutMessage: "Audio status request timed out" });
+      if (!response.ok) {
+        throw new Error(payload?.error || `Audio generation status failed (${response.status})`);
       }
-      return { audioUrl, status, payload };
-    }
-    if (!["queued", "pending", "processing", "running"].includes(status)) {
-      throw new Error(`Unknown audio generation job status: ${status}`);
-    }
-    if (attempt + 1 < maxAttempts) await sleep(intervalMs, options.signal);
-  }
+      if (!payload || typeof payload.status !== "string") {
+        throw new Error("Audio generation status response was invalid");
+      }
 
-  throw new Error("Audio generation timed out before a result was available");
+      const status = payload.status.toLowerCase();
+      if (["error", "failed", "cancelled"].includes(status)) {
+        throw new Error(payload.error || payload.message || "Audio generation failed");
+      }
+      if (["done", "complete", "completed", "succeeded", "success"].includes(status)) {
+        const audioUrl = payload.audio_url || payload.audioUrl || payload.url;
+        if (typeof audioUrl !== "string" || !audioUrl.trim()) {
+          throw new Error("Audio generation completed without an audio URL");
+        }
+        return { audioUrl, status, payload };
+      }
+      if (!["queued", "pending", "processing", "running"].includes(status)) {
+        throw new Error(`Unknown audio generation job status: ${status}`);
+      }
+      if (attempt + 1 < maxAttempts) await sleep(intervalMs, pollSignal);
+    }
+
+    throw new Error("Audio generation timed out before a result was available");
+  }, { signal: options.signal, timeoutMs: maxElapsedMs,
+    timeoutMessage: "Audio generation timed out before a result was available" });
 }
 
 export async function fetchStudioMidiNotes(
@@ -214,14 +208,16 @@ export async function fetchStudioMidiNotes(
   options: { signal?: AbortSignal; fetchImpl?: typeof fetch } = {},
 ): Promise<GeneratedMidiNote[]> {
   if (!JOB_ID_PATTERN.test(jobId)) throw new Error("Invalid audio generation job id");
-  const response = await (options.fetchImpl || fetch)(
-    `/api/audio/${encodeURIComponent(jobId)}/midi`,
-    { credentials: "include", signal: options.signal },
-  );
-  if (!response.ok) {
-    throw new Error(`Generated MIDI download failed (${response.status})`);
-  }
-  return parseStandardMidi(await response.arrayBuffer());
+  return withMediaJobDeadline(async requestSignal => {
+    const response = await (options.fetchImpl || fetch)(
+      `/api/audio/${encodeURIComponent(jobId)}/midi`,
+      { credentials: "include", signal: requestSignal },
+    );
+    if (!response.ok) {
+      throw new Error(`Generated MIDI download failed (${response.status})`);
+    }
+    return parseStandardMidi(await response.arrayBuffer());
+  }, { signal: options.signal, timeoutMs: 15_000, timeoutMessage: "Generated MIDI download timed out" });
 }
 
 export function normalizeGeneratedMidiNotes(input: unknown): GeneratedMidiNote[] {
@@ -260,6 +256,7 @@ export async function resolveStudioGenerationResponse(
   response: Record<string, unknown>,
   options: { signal?: AbortSignal } = {},
 ): Promise<ResolvedStudioGeneration> {
+  options.signal?.throwIfAborted();
   if (response.success === false) {
     throw new Error(
       typeof response.message === "string"
@@ -291,6 +288,9 @@ export async function resolveStudioGenerationResponse(
     try {
       generatedNotes = await fetchStudioMidiNotes(jobId, { signal: options.signal });
     } catch (error) {
+      // An optional download timeout can preserve audio; cancellation cannot
+      // authorize publishing a result into a closed or different project.
+      options.signal?.throwIfAborted();
       midiError =
         error instanceof Error ? error.message : "Generated MIDI could not be read";
     }
@@ -299,5 +299,6 @@ export async function resolveStudioGenerationResponse(
   if (!audioFilePath && !generatedNotes.length) {
     throw new Error("Generation completed without a playable audio or MIDI result");
   }
+  options.signal?.throwIfAborted();
   return { audioFilePath, jobId, duration, generatedNotes, midiError };
 }

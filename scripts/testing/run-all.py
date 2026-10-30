@@ -2,13 +2,221 @@
 """Rerun every isolated test group, retaining failures and blocked coverage."""
 import argparse
 import datetime
+import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 import sys
+import time
+import uuid
+import xml.etree.ElementTree as ElementTree
 from common import ROOT, coverage_parse_exclusions, run_command, source_inputs, source_revision, write_json
+
+def _artifact_signature(path):
+    """Observe an old artifact without following symlink ancestors."""
+    path = Path(path).absolute()
+    for member in (*reversed(path.parents), path):
+        if member.is_symlink():
+            raise ValueError('Coverage artifact has a symlink ancestor')
+    try:
+        value = path.stat()
+    except FileNotFoundError:
+        return None
+    if not stat.S_ISREG(value.st_mode):
+        raise ValueError('Coverage artifact is not a regular file')
+    return (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
+
+
+def _fresh_artifact(path, before, started_ns, finished_ns, maximum_bytes=32 * 1024 * 1024):
+    """Bind stable bytes created by this child window, retaining an exact SHA."""
+    observed = _artifact_signature(path)
+    if observed is None or observed == before:
+        raise ValueError('Coverage artifact is absent or unchanged from before the command')
+    if not started_ns <= observed[3] <= finished_ns:
+        raise ValueError('Coverage artifact mtime is outside the parent command window')
+    if observed[2] > maximum_bytes:
+        raise ValueError('Coverage artifact exceeds the bounded input size')
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
+    with os.fdopen(descriptor, 'rb') as stream:
+        initial = os.fstat(stream.fileno())
+        data = stream.read(maximum_bytes + 1)
+        final = os.fstat(stream.fileno())
+    identity = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
+    if len(data) > maximum_bytes or identity(initial) != identity(final) or identity(final) != observed or _artifact_signature(path) != observed:
+        raise ValueError('Coverage artifact changed while its bytes were captured')
+    return data, {'path': str(Path(path).absolute()), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data),
+                  'mtimeNs': str(observed[3]), 'fresh': True}
+
+
+def _junit_counts(data):
+    """Check Vitest's root, every suite and every leaf instead of trusting totals."""
+    if b'<!DOCTYPE' in data.upper() or b'<!ENTITY' in data.upper():
+        raise ValueError('Coverage JUnit must not contain declarations or entities')
+    root = ElementTree.fromstring(data)
+    if root.tag != 'testsuites' or not list(root) or any(suite.tag != 'testsuite' for suite in root):
+        raise ValueError('Coverage JUnit must contain Vitest test suites')
+
+    def counter(element, key, optional=False):
+        raw = element.attrib.get(key, '0' if optional else '')
+        if not re.fullmatch(r'(?:0|[1-9][0-9]*)', raw):
+            raise ValueError('Coverage JUnit has an invalid integer counter')
+        return int(raw)
+
+    totals = {'total': 0, 'passed': 0, 'failed': 0, 'errors': 0, 'skipped': 0}
+    for suite in root:
+        counts = dict.fromkeys(totals, 0)
+        cases = list(suite)
+        if any(case.tag not in {'testcase', 'properties', 'system-out', 'system-err'} for case in cases):
+            raise ValueError('Coverage JUnit has unsupported nested suite elements')
+        for case in (case for case in cases if case.tag == 'testcase'):
+            counts['total'] += 1
+            outcomes = [child.tag for child in case if child.tag in {'failure', 'error', 'skipped'}]
+            if len(outcomes) > 1:
+                raise ValueError('Coverage JUnit has ambiguous leaf outcomes')
+            counts[{'failure': 'failed', 'error': 'errors', 'skipped': 'skipped'}.get(outcomes[0] if outcomes else '', 'passed')] += 1
+        for key, attribute in [('total', 'tests'), ('failed', 'failures'), ('errors', 'errors'), ('skipped', 'skipped')]:
+            if counter(suite, attribute, optional=attribute == 'skipped') != counts[key]:
+                raise ValueError('Coverage JUnit suite counters disagree with leaf outcomes')
+        for key in totals:
+            totals[key] += counts[key]
+    for key, attribute in [('total', 'tests'), ('failed', 'failures'), ('errors', 'errors'), ('skipped', 'skipped')]:
+        # Vitest 4.1.12 omits the root skipped attribute; every suite and leaf
+        # still supplies and verifies the exact count. Validate it if supplied.
+        if attribute == 'skipped' and attribute not in root.attrib:
+            continue
+        if counter(root, attribute, optional=attribute == 'skipped') != totals[key]:
+            raise ValueError('Coverage JUnit root counters disagree with leaf outcomes')
+    if totals['total'] == 0:
+        raise ValueError('Coverage JUnit contains no actual test cases')
+    return totals
+
+
+def _coverage_outcome(data, run_id, reporter_sha256, counts, parent_started_ns, parent_finished_ns):
+    outcome = json.loads(data)
+    if not isinstance(outcome, dict):
+        raise ValueError('Coverage outcome must be an object')
+    if type(outcome.get('schemaVersion')) is not int or outcome.get('schemaVersion') != 1 or outcome.get('kind') != 'actual-public-Vitest-onTestRunEnd' or outcome.get('runId') != run_id:
+        raise ValueError('Coverage outcome does not belong to the parent command nonce')
+    if outcome.get('repositoryRoot') != str(ROOT) or outcome.get('reporterSha256') != reporter_sha256:
+        raise ValueError('Coverage outcome source/reporter identity changed')
+    if not isinstance(outcome.get('reason'), str) or outcome.get('reason') not in {'passed', 'failed', 'interrupted'}:
+        raise ValueError('Coverage outcome lacks the public test-run-end reason')
+
+    def integer(value):
+        return type(value) is int and value >= 0
+
+    for field in ['unhandledErrorCount', 'moduleErrorCount', 'testCaseErrorCount', 'testModuleCount']:
+        if not integer(outcome.get(field)):
+            raise ValueError('Coverage outcome has an invalid error/module count')
+    if outcome['testModuleCount'] < 1:
+        raise ValueError('Coverage outcome contains no actual test modules')
+    actual = outcome.get('testCaseCounts')
+    if not isinstance(actual, dict) or set(actual) != {'total', 'passed', 'failed', 'skipped', 'pending'} or not all(integer(value) for value in actual.values()) or sum(actual[key] for key in actual if key != 'total') != actual['total']:
+        raise ValueError('Coverage outcome test counters are inconsistent')
+    if (actual['total'], actual['passed'], actual['failed'], actual['skipped'] + actual['pending']) != (counts['total'], counts['passed'], counts['failed'] + counts['errors'], counts['skipped']):
+        raise ValueError('Coverage public outcome and JUnit test counts disagree')
+    states = outcome.get('moduleStates')
+    if not isinstance(states, dict) or set(states) != {'passed', 'failed', 'skipped', 'pending', 'queued'} or not all(integer(value) for value in states.values()) or sum(states.values()) != outcome['testModuleCount']:
+        raise ValueError('Coverage module states are inconsistent')
+    runtime = outcome.get('runtime')
+    if not isinstance(runtime, dict) or set(runtime) != {'node', 'v8'} or not all(isinstance(value, str) and value for value in runtime.values()):
+        raise ValueError('Coverage outcome lacks the actual runtime identity')
+
+    def module_names(value):
+        if not isinstance(value, list) or any(not isinstance(name, str) or not name or name.startswith('/') or '\\' in name or any(part in {'', '.', '..'} for part in name.split('/')) for name in value) or len(value) != len(set(value)):
+            raise ValueError('Coverage outcome has invalid/duplicate module identities')
+        return set(value)
+
+    selected = module_names(outcome.get('selectedModules'))
+    modules = outcome.get('modules')
+    if not isinstance(modules, list) or len(modules) != outcome['testModuleCount']:
+        raise ValueError('Coverage outcome module details are incomplete')
+    completed = module_names([module.get('file') if isinstance(module, dict) else None for module in modules])
+    derived_counts = dict.fromkeys(actual, 0)
+    derived_states = dict.fromkeys(states, 0)
+    derived_errors = 0
+    for module in modules:
+        if set(module) != {'file', 'state', 'testCaseCounts', 'errorCount'} or not isinstance(module['state'], str) or module['state'] not in states or not integer(module['errorCount']):
+            raise ValueError('Coverage outcome has invalid module detail fields')
+        module_counts = module['testCaseCounts']
+        if not isinstance(module_counts, dict) or set(module_counts) != set(actual) or not all(integer(value) for value in module_counts.values()) or sum(module_counts[key] for key in module_counts if key != 'total') != module_counts['total']:
+            raise ValueError('Coverage module test counts are inconsistent')
+        for key in actual:
+            derived_counts[key] += module_counts[key]
+        derived_states[module['state']] += 1
+        derived_errors += module['errorCount']
+    if derived_counts != actual or derived_states != states or derived_errors != outcome['moduleErrorCount']:
+        raise ValueError('Coverage module details disagree with aggregate counts')
+    if module_names(outcome.get('missingModules')) != selected - completed or module_names(outcome.get('unexpectedModules')) != completed - selected:
+        raise ValueError('Coverage selected/completed module identities do not reconcile')
+    try:
+        initialized = datetime.datetime.fromisoformat(outcome['initializedAt'].replace('Z', '+00:00'))
+        started = datetime.datetime.fromisoformat(outcome['startedAt'].replace('Z', '+00:00'))
+        finished = datetime.datetime.fromisoformat(outcome['finishedAt'].replace('Z', '+00:00'))
+        if initialized.tzinfo is None or started.tzinfo is None or finished.tzinfo is None:
+            raise ValueError('Coverage outcome timestamps lack timezone')
+        epoch = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
+
+        def exact_ns(value):
+            delta = value - epoch
+            return ((delta.days * 86400 + delta.seconds) * 1_000_000 + delta.microseconds) * 1000
+
+        init_ns, start_ns, finish_ns = map(exact_ns, (initialized, started, finished))
+    except (KeyError, TypeError, AttributeError, OverflowError) as error:
+        raise ValueError('Coverage outcome has invalid timestamps') from error
+    if not parent_started_ns <= init_ns <= start_ns <= finish_ns <= parent_finished_ns:
+        raise ValueError('Coverage public outcome is outside the parent command window')
+    ready = not outcome['missingModules'] and not outcome['unexpectedModules'] and outcome['reason'] == 'passed' and actual['passed'] == actual['total'] and outcome['unhandledErrorCount'] == 0 and outcome['moduleErrorCount'] == 0 and outcome['testCaseErrorCount'] == 0 and states['passed'] == outcome['testModuleCount']
+    return outcome, ready
+
+
+def run_coverage_command(command, logfile, timeout, output, extra_env=None, reporter_path=None):
+    """Parent-owned command receipt binds fresh JUnit and public lifecycle bytes."""
+    output = Path(output).absolute()
+    reporter = Path(reporter_path or ROOT / 'scripts/testing/coverage-outcome-reporter.mjs').absolute()
+    reporter_argument = '--reporter=' + str(reporter)
+    if command.count(reporter_argument) != 1:
+        raise ValueError('Coverage command must select exactly one public outcome reporter')
+    reporter_signature = _artifact_signature(reporter)
+    if reporter_signature is None:
+        raise ValueError('Coverage outcome reporter source is absent')
+    reporter_sha256 = hashlib.sha256(reporter.read_bytes()).hexdigest()
+    run_id = str(uuid.uuid4())
+    junit = output / 'root/coverage-unit.junit.xml'
+    outcome = output / 'coverage/command-outcomes' / (run_id + '.json')
+    before = {'junit': _artifact_signature(junit), 'outcome': _artifact_signature(outcome)}
+    if before['outcome'] is not None:
+        raise ValueError('Coverage command nonce outcome path already exists')
+    env = dict(extra_env or {})
+    env.update(MAXBOOSTER_TEST_COVERAGE_DIR=str(output / 'coverage'),
+               MAXBOOSTER_TEST_COVERAGE_OUTCOME=str(outcome), MAXBOOSTER_TEST_COVERAGE_RUN_ID=run_id)
+    started_ns = time.time_ns()
+    result = run_command(command, logfile, timeout, extra_env=env)
+    finished_ns = time.time_ns()
+    proof = {'schemaVersion': 1, 'kind': 'parent-bound-coverage-command-artifacts', 'runId': run_id,
+             'parentWindow': {'startedAtNs': str(started_ns), 'finishedAtNs': str(finished_ns)},
+             'reporter': {'path': str(reporter), 'sha256': reporter_sha256}, 'status': 'invalid', 'validForAdmission': False}
+    result['coverageEvidence'] = proof
+    try:
+        junit_bytes, proof['junit'] = _fresh_artifact(junit, before['junit'], started_ns, finished_ns)
+        counts = _junit_counts(junit_bytes)
+        proof['junit']['counts'] = counts
+        outcome_bytes, proof['outcome'] = _fresh_artifact(outcome, before['outcome'], started_ns, finished_ns)
+        observed, ready = _coverage_outcome(outcome_bytes, run_id, reporter_sha256, counts, started_ns, finished_ns)
+        if _artifact_signature(reporter) != reporter_signature or hashlib.sha256(reporter.read_bytes()).hexdigest() != reporter_sha256:
+            raise ValueError('Coverage outcome reporter changed during command')
+        proof['outcome']['data'] = observed
+        proof['status'] = 'bound'
+        proof['validForAdmission'] = ready and not result['timedOut'] and result['exitCode'] in (0, 1)
+        if not proof['validForAdmission']:
+            result['status'] = 'failed'
+    except (OSError, ValueError, ElementTree.ParseError) as error:
+        proof['error'] = str(error)
+        result['status'] = 'failed'
+    return result
 
 
 def main():
@@ -33,7 +241,7 @@ def main():
         ('checks', 'build', ['npm', 'run', 'build'], 900),
         ('root', 'ci', ['npm', 'run', 'test:ci'], 1200),
         ('root', 'additional', ['node', 'node_modules/vitest/vitest.mjs', 'run', '--config', 'vitest.additional.config.ts', '--reporter=verbose', '--reporter=junit', '--outputFile=' + str(output / 'root/additional.junit.xml')], 180),
-        ('coverage', 'coverage', ['node', 'node_modules/vitest/vitest.mjs', 'run', '--config', 'vitest.platform.config.ts', '--reporter=junit', '--outputFile=' + str(output / 'root/coverage-unit.junit.xml')], 1200),
+        ('coverage', 'coverage', ['node', 'node_modules/vitest/vitest.mjs', 'run', '--config', 'vitest.platform.config.ts', '--reporter=junit', '--reporter=' + str(ROOT / 'scripts/testing/coverage-outcome-reporter.mjs'), '--outputFile=' + str(output / 'root/coverage-unit.junit.xml')], 1200),
         ('node', 'desktop-transport-setup', ['node', 'scripts/patch-electron-builder-transport.mjs'], 60),
         ('node', 'node', [args.python, 'scripts/testing/run-node-suites.py', '--output', str(output / 'node')], 2400),
         ('python', 'python', [args.python, 'scripts/testing/run-python-suites.py', '--python', args.python, '--coverage', '--output', str(output / 'python'), '--docs', str(output / 'python/suites.md')], 2400),
@@ -88,7 +296,9 @@ def main():
                 if os.environ.get(key): env[key] = os.environ[key]
             if not env.get('NODE_EXTRA_CA_CERTS') and Path('/etc/ssl/certs/ca-certificates.crt').is_file():
                 env['NODE_EXTRA_CA_CERTS'] = '/etc/ssl/certs/ca-certificates.crt'
-        result = run_command(command, output / 'orchestration' / (name + '.txt'), timeout, extra_env=env)
+        execute = run_coverage_command if group == 'coverage' else run_command
+        options = {'output': output} if group == 'coverage' else {}
+        result = execute(command, output / 'orchestration' / (name + '.txt'), timeout, extra_env=env, **options)
         result.update(group=group, id=name)
         if group == 'coverage':
             result['coverageParseExclusions'] = coverage_parse_exclusions((ROOT / result['log']).read_text())
@@ -141,7 +351,7 @@ def main():
         report['postprocessing'].append(result)
         write_json(output / 'orchestration/results.json', report)
         print(f"{result['status']}: {name} (exit {result['exitCode']})", flush=True)
-    failed = not report['sourceInputsUnchanged'] or catalog['exitCode'] != 0 or any(row['exitCode'] != 0 or row.get('coverageParseExclusions') for row in report['runs'] + report['postprocessing'])
+    failed = not report['sourceInputsUnchanged'] or catalog['exitCode'] != 0 or any(row['exitCode'] != 0 or row.get('coverageParseExclusions') or row.get('coverageEvidence', {}).get('status') == 'invalid' or ('coverageEvidence' in row and not row['coverageEvidence']['validForAdmission']) for row in report['runs'] + report['postprocessing'])
     report['status'] = 'failed' if failed else 'executed_groups_passed'
     report['allTestsPassed'] = False if failed else None  # Excluded coverage is never inferred to pass.
     report['finishedAt'] = datetime.datetime.now(datetime.timezone.utc).isoformat()

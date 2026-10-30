@@ -1,4 +1,7 @@
 // @ts-nocheck
+import { useStudioStore } from "@/stores/studioStore";
+import { withMediaJobDeadline } from "../../lib/mediaJobTransport";
+import { useStudioGenerationScope, type StudioGenerationLease } from "./useStudioGenerationScope";
 import {
   useState,
   useCallback,
@@ -197,6 +200,7 @@ export function UltimateDAW({
     store;
 
   const { toast } = useToast();
+  const beginGeneration = useStudioGenerationScope(projectId, () => useStudioStore.getState().project.id);
   const { forceSave,  loadProjectData } =
     useProjectSync(projectId);
   const [mode, setMode] = useState<FlowStateMode>("create");
@@ -328,6 +332,9 @@ export function UltimateDAW({
         throw new Error("Generation returned no playable audio or MIDI notes.");
       }
 
+      if (!projectId || useStudioStore.getState().project.id !== projectId) {
+        throw new DOMException("Open the originating project before adding generated media", "AbortError");
+      }
       if (result.audioFilePath) {
         const audioTrackId = store.addTrack("audio", `${result.name} Audio`);
         store.addAudioClip(audioTrackId, {
@@ -370,7 +377,7 @@ export function UltimateDAW({
         midiAdded: notes.length > 0,
       };
     },
-    [store],
+    [projectId, store],
   );
 
   const generateStudioTextTrack = useCallback(
@@ -384,24 +391,29 @@ export function UltimateDAW({
       scale?: string;
       genre?: string;
     }) => {
+      let lease: StudioGenerationLease | undefined;
       try {
+        lease = beginGeneration();
         if (!projectId) {
           throw new Error("Open a project before generating audio.");
         }
         const tempo = options.tempo || transport.tempo;
-        const res = await apiRequest("POST", "/api/studio/generation/text", {
-          text: options.text,
-          instrumentType: options.instrumentType,
-          instrumentCategory: options.instrumentCategory,
-          projectId,
-          bars: 8,
-          tempo,
-          key: options.key || musicalKey,
-          scale: options.scale || scale,
-          genre: options.genre,
-        });
-        const submitted = (await res.json()) as Record<string, unknown>;
-        const generated = await resolveStudioGenerationResponse(submitted);
+        const submitted = await withMediaJobDeadline(async requestSignal => {
+          const res = await apiRequest("POST", "/api/studio/generation/text", {
+            text: options.text,
+            instrumentType: options.instrumentType,
+            instrumentCategory: options.instrumentCategory,
+            projectId,
+            bars: 8,
+            tempo,
+            key: options.key || musicalKey,
+            scale: options.scale || scale,
+            genre: options.genre,
+          }, { signal: requestSignal, maxRetries: 0 });
+          return await res.json() as Record<string, unknown>;
+        }, { signal: lease.signal, timeoutMs: 45_000, timeoutMessage: "Audio generation submission timed out" });
+        const generated = await resolveStudioGenerationResponse(submitted, { signal: lease.signal });
+        lease.assertCurrent();
         const added = addGeneratedStudioResult({
           name: options.label,
           audioFilePath: generated.audioFilePath,
@@ -419,14 +431,18 @@ export function UltimateDAW({
                 : "Generated audio was added to the timeline.",
         });
       } catch (error) {
+        if (!lease?.isCurrent()) return;
         toast({
           title: "Generation Failed",
           description: (error as Error).message,
           variant: "destructive",
         });
+      } finally {
+        lease?.release();
       }
     },
     [
+      beginGeneration,
       addGeneratedStudioResult,
       musicalKey,
       projectId,

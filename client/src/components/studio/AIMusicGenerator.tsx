@@ -1,5 +1,8 @@
 // @ts-nocheck
-import { useState, useCallback } from "react";
+import { useStudioStore } from "@/stores/studioStore";
+import { withMediaJobDeadline } from "../../lib/mediaJobTransport";
+import { useStudioGenerationScope, type StudioGenerationLease } from "./useStudioGenerationScope";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Music,
@@ -233,6 +236,7 @@ export function AIMusicGenerator({
   initialTempo,
 }: AIMusicGeneratorProps) {
   const { toast } = useToast();
+  const beginGeneration = useStudioGenerationScope(projectId, () => useStudioStore.getState().project.id);
   const [prompt, setPrompt] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("hip_hop");
   const [selectedInstrumentCategory, setSelectedInstrumentCategory] =
@@ -257,9 +261,16 @@ export function AIMusicGenerator({
     null,
   );
 
+  useEffect(() => {
+    setIsGenerating(false);
+    setGeneratedTrack(null);
+  }, [projectId]);
+
   const handleGenerate = useCallback(async () => {
-    setIsGenerating(true);
+    let lease: StudioGenerationLease | undefined;
     try {
+      lease = beginGeneration();
+      setIsGenerating(true);
       const instrumentList = INSTRUMENTS[selectedInstrumentCategory] || [];
       const instrument = instrumentList.find(
         (i) => i.id === selectedInstrument,
@@ -268,20 +279,23 @@ export function AIMusicGenerator({
       const instrumentName =
         instrument?.name || selectedInstrument.replace(/_/g, " ");
 
-      const res = await apiRequest("POST", "/api/studio/generation/text", {
-        text: prompt || `${selectedGenre} ${instrumentName}`,
-        projectId,
-        bars,
-        instrumentType: selectedInstrument,
-        instrumentCategory: instrumentCategory,
-        genre: selectedGenre,
-        tempo,
-        key,
-        scale: scale.toLowerCase(),
-        complexity,
-      });
-      const submitted = (await res.json()) as Record<string, unknown>;
-      const generated = await resolveStudioGenerationResponse(submitted);
+      const submitted = await withMediaJobDeadline(async requestSignal => {
+        const res = await apiRequest("POST", "/api/studio/generation/text", {
+          text: prompt || `${selectedGenre} ${instrumentName}`,
+          projectId,
+          bars,
+          instrumentType: selectedInstrument,
+          instrumentCategory: instrumentCategory,
+          genre: selectedGenre,
+          tempo,
+          key,
+          scale: scale.toLowerCase(),
+          complexity,
+        }, { signal: requestSignal, maxRetries: 0 });
+        return await res.json() as Record<string, unknown>;
+      }, { signal: lease.signal, timeoutMs: 45_000, timeoutMessage: "Audio generation submission timed out" });
+      const generated = await resolveStudioGenerationResponse(submitted, { signal: lease.signal });
+      lease.assertCurrent();
       const response: GeneratedTrack = {
         ...submitted,
         audioFilePath: generated.audioFilePath,
@@ -303,15 +317,18 @@ export function AIMusicGenerator({
           : `Created ${bars} bars of ${selectedGenre} ${instrumentName} at ${tempo} BPM`,
       });
     } catch (error) {
+      if (!lease?.isCurrent()) return;
       toast({
         title: "Generation Failed",
         description: (error as Error).message || "Failed to generate music",
         variant: "destructive",
       });
     } finally {
-      setIsGenerating(false);
+      if (lease?.isCurrent()) setIsGenerating(false);
+      lease?.release();
     }
   }, [
+    beginGeneration,
     prompt,
     selectedGenre,
     selectedInstrumentCategory,

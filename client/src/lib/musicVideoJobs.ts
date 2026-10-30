@@ -81,6 +81,6 @@ export function pollMusicVideoJobUntilDone(
     maxAttempts: 300,
     ...options,
     isCancelled: () => !!options.signal?.aborted || !!options.isCancelled?.(),
-    fetchStatus: id => fetchMusicVideoJobStatus(id, options),
+    fetchStatus: (id, signal) => fetchMusicVideoJobStatus(id, { ...options, signal: signal ?? options.signal }),
   });
 }

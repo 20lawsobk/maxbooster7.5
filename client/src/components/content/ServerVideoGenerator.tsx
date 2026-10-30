@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Download, Sparkles, Clock, Layout, Film, Zap, Layers, Mic, Image, FileText, Upload, CheckCircle, ChevronDown, ChevronUp, Camera, Music, BarChart2 } from "lucide-react";
 import {
   pollVideoJobUntilDone,
+  readVideoJobStatus,
   TerminalJobError,
 } from "@/lib/videoJobPolling";
 import {
@@ -403,21 +404,27 @@ export function ServerVideoGenerator({
   // background on mobile).  If a job is still active, immediately check its status
   // so the result surfaces without waiting for the next 2s poll tick.
   useEffect(() => {
+    const probes = new Set<AbortController>();
     const onVisible = () => {
       const jobId = activeJobIdRef.current;
       if (!jobId || document.visibilityState !== "visible") return;
-      const statusRequest = activeJobKindRef.current === "music-video"
-        ? fetchMusicVideoJobStatus(jobId)
-        : fetch(`/api/social/video-job/${encodeURIComponent(jobId)}`, {
-            credentials: "include", signal: AbortSignal.timeout(15_000),
-          });
-      statusRequest
-        .then((r) => {
-          if (!r.ok) throw new Error(`Video status unavailable (${r.status})`);
-          return r.json() as Promise<VideoJobData>;
-        })
-        .then((data) => {
-          if (activeJobIdRef.current !== jobId) return;
+      const probe = new AbortController();
+      probes.add(probe);
+      const generationSignal = abortControllerRef.current?.signal;
+      const signal = generationSignal
+        ? AbortSignal.any([generationSignal, probe.signal]) : probe.signal;
+      readVideoJobStatus<VideoJobData>(jobId, {
+        signal,
+        fetchStatus: (id, requestSignal) => activeJobKindRef.current === "music-video"
+          ? fetchMusicVideoJobStatus(id, { signal: requestSignal })
+          : fetch(`/api/social/video-job/${encodeURIComponent(id)}`, {
+              credentials: "include", signal: requestSignal,
+            }),
+      })
+        .then(({ response, data }) => {
+          if (!response.ok) throw new Error(`Video status unavailable (${response.status})`);
+          if (activeJobIdRef.current !== jobId || userCancelledRef.current ||
+              signal.aborted) return;
           const url = data.url || data.video_url;
           if ((data.status === "done" || data.status === "completed") && url) {
             activeJobIdRef.current = null;
@@ -429,14 +436,16 @@ export function ServerVideoGenerator({
         })
         .catch(() => {
           /* silent — the running poll loop will handle it */
-        });
+        })
+        .finally(() => probes.delete(probe));
     };
     document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-    // INTENTIONAL: mount-only effect — the handler only needs to access refs (stable) and
-    // activeJobIdRef/applyVideoResult are always current via ref indirection. Adding them
-    // as deps would re-register the visibilitychange listener on every render.
-     
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      for (const probe of probes) probe.abort();
+      probes.clear();
+    };
+    // Mount-only: active job identity and cancellation are read from refs.
   }, []);
 
   // Clean up image preview URL on unmount
@@ -495,8 +504,9 @@ export function ServerVideoGenerator({
     // caching + margin for network jitter.
     try {
       return await pollVideoJobUntilDone<VideoJobData>(jobId, {
-        fetchStatus: (id) =>
-          fetch(`/api/social/video-job/${id}`, { credentials: "include" }),
+        fetchStatus: (id, signal) =>
+          fetch(`/api/social/video-job/${encodeURIComponent(id)}`, { credentials: "include", signal }),
+        signal: abortControllerRef.current?.signal,
         isCancelled: () => userCancelledRef.current,
         onProgress: (elapsedSeconds) =>
           setGeneratingStage(`Rendering… (${elapsedSeconds}s)`),
@@ -581,11 +591,17 @@ export function ServerVideoGenerator({
           data?.message || data?.error || "Video generation failed",
         );
 
+      // The submission deadline ends after its full response body; polling has
+      // its own wall-clock and per-request bounds and shares user cancellation.
+      clearTimeout(timeoutId);
       const submittedJobId = data.job_id;
       if (data.job_id && ["processing", "queued", "running", "committing", "coalesced"].includes(data.status || "")) {
         setGeneratingStage("Rendering frames…");
         data = await pollJobUntilDone(data.job_id);
       }
+      // A fulfilled request can race cancellation or component cleanup.
+      controller.signal.throwIfAborted();
+      if (userCancelledRef.current) throw new DOMException("Cancelled", "AbortError");
       // After polling, `data.url` is guaranteed when success is true.
       if (data.success && data.url) {
         // MaxCore returns a real H.264 MP4 (moov-first / faststart).
@@ -973,6 +989,8 @@ export function ServerVideoGenerator({
           setGeneratingStage(`Rendering beat-synced video… (${elapsed}s)`);
         },
       });
+      controller.signal.throwIfAborted();
+      if (userCancelledRef.current) throw new DOMException("Cancelled", "AbortError");
       const r = jobData.result ?? {};
       applyVideoResult({
         ...r,

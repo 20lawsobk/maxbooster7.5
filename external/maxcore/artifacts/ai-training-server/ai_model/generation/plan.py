@@ -7,6 +7,8 @@ from hashlib import sha256
 import json
 from typing import Any, Literal
 
+GENERATION_PLAN_VERSION = "generation-plan-v3"
+
 Modality = Literal["text", "content", "image", "audio", "video", "campaign"]
 active_plan: ContextVar["GenerationPlan | None"] = ContextVar("generation_plan", default=None)
 
@@ -58,7 +60,7 @@ class GenerationPlan:
             seed = int(sha256(canonical([data, snapshot_data, checkpoint]).encode()).hexdigest()[:8], 16)
         if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32:
             raise ValueError("seed must be an integer in [0, 2**32)")
-        return cls("generation-plan-v3", modality, topic, canonical(data),
+        return cls(GENERATION_PLAN_VERSION, modality, topic, canonical(data),
                    canonical(data.get("facts")), canonical({
                        k: data.get(k) for k in ("artist_context", "artist", "artistProfileId",
                                                "brand_voice", "beat_context", "context")}),
