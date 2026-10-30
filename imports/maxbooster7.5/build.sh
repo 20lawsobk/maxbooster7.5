@@ -272,7 +272,8 @@ for module in (numpy, PIL, fastapi, uvicorn, pydantic):
     assert pathlib.Path(module.__file__).resolve().is_relative_to(root), module.__name__
 PY
 then
-  echo "   Verified existing isolated Python ${_PYVER}; preserving prepared runtime"
+  "${_PYRUNTIME}/bin/python3" -I -B script/lib/installPortablePythonDependencies.py "${_PYRUNTIME}"
+  echo "   Verified existing isolated Python ${_PYVER} and declared runtime dependencies"
   return
 fi
 
@@ -285,12 +286,7 @@ if curl -sL --max-time 120 "${_PYURL}" \
     _PY_VER_STR=$("${_PYRUNTIME}/bin/python3" --version 2>&1)
     echo "   Portable Python installed: ${_PY_VER_STR}"
     echo "   Installing numpy, pillow, fastapi, uvicorn, pydantic ..."
-    "${_PYRUNTIME}/bin/pip3" install --no-cache-dir \
-      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" \
-      --quiet 2>&1 || \
-      "${_PYRUNTIME}/bin/python3" -m pip install --no-cache-dir \
-      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" \
-      --quiet 2>&1 || true
+    "${_PYRUNTIME}/bin/python3" -I -B script/lib/installPortablePythonDependencies.py "${_PYRUNTIME}"
     if "${_PYRUNTIME}/bin/python3" -c "import numpy, PIL, fastapi, uvicorn, pydantic" 2>/dev/null; then
       echo "   ✅ Python runtime ready: ${_PY_VER_STR} → ./${_PYRUNTIME}/"
       _PYENV_OK=1

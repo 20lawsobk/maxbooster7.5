@@ -56,10 +56,22 @@ for manager in npm pnpm; do
   preferred=$(readlink -f "$(command -v "$manager" || true)" 2>/dev/null || true)
   candidates=("$preferred" "${candidates[@]}")
   # One bounded metadata probe, not a fresh Node process per Nix candidate.
-  found=$(timeout --kill-after=5s 15 "$tools/node" - "$expected" "$preferred" "${candidates[@]}" <<'NODE'
+  found=$(timeout --kill-after=5s 15 "$tools/node" - "$expected" "$preferred" "$manager" "${candidates[@]}" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
-const [expected, preferred, ...candidates] = process.argv.slice(2);
+const [expected, preferred, manager, ...candidates] = process.argv.slice(2);
+// pnpm's .bin launchers are shell shims, not CLI symlinks. Resolve the
+// installed package without executing shim text, then apply the same pinned
+// version and durable-copy verification used for every other candidate.
+try {
+  const manifest = require.resolve(`${manager}/package.json`, {
+    paths: [process.cwd(), path.dirname(preferred)],
+  });
+  candidates.unshift(path.join(path.dirname(manifest), "bin",
+    manager === "npm" ? "npm-cli.js" : "pnpm.cjs"));
+} catch (error) {
+  if (error.code !== "MODULE_NOT_FOUND") throw error;
+}
 const matches = [];
 for (let file of candidates) {
   if (!file) continue;

@@ -51,7 +51,7 @@ describe("Dashboard MaxCore content optimization", () => {
 describe("UltimateDAW asynchronous text generation", () => {
   it("waits for the generated job and inserts returned audio or MIDI into the timeline", () => {
     expect(dawPage).toContain('"/api/studio/generation/text"');
-    expect(dawPage).toContain("resolveStudioGenerationResponse(submitted)");
+    expect(dawPage).toContain("resolveStudioGenerationResponse(submitted, { signal: lease.signal })");
     expect(dawPage).toContain("store.addAudioClip(audioTrackId");
     expect(dawPage).toContain("store.addMidiClip(midiTrackId");
     expect(dawPage).toContain("generated.generatedNotes");

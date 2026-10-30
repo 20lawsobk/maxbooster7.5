@@ -1,3 +1,4 @@
 - [Repository import constraints](repository-import.md) — upstream LFS quota blocks two model assets; nested Git reference lacks a configured URL.
 - [Live-awareness scope](live-awareness.md) — live social-landscape endpoints do not require already-trained data; keep awareness and generation readiness separate.
 - [Database selection](database-selection.md) — user chose the existing Neon database for development; do not substitute the template database.
+- [Verification boundaries](verification-boundaries.md) — serialize deployment fixtures; keep developer-host size separate from verified publishing readiness.

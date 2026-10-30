@@ -14,6 +14,15 @@ function qualityFor(size) {
   return 9;
 }
 
+// zlib can return pooled Buffers whose backing ArrayBuffer is marked
+// untransferable. Copy the exact result into independently owned storage;
+// transferring a slab can also disclose bytes outside the result's view.
+function sendResult(id, buffer) {
+  const result = new Uint8Array(buffer.length);
+  result.set(buffer);
+  parentPort.postMessage({ id, result }, [result.buffer]);
+}
+
 parentPort.on("message", (msg) => {
   const { id, type, data } = msg;
   try {
@@ -26,13 +35,13 @@ parentPort.on("message", (msg) => {
           [zlib.constants.BROTLI_PARAM_SIZE_HINT]: buf.length,
         },
       });
-      parentPort.postMessage({ id, result: compressed }, [compressed.buffer]);
+      sendResult(id, compressed);
       return;
     }
     if (type === "decompress") {
       const buf = Buffer.from(data);
       const decompressed = zlib.brotliDecompressSync(buf);
-      parentPort.postMessage({ id, result: decompressed }, [decompressed.buffer]);
+      sendResult(id, decompressed);
       return;
     }
     parentPort.postMessage({ id, error: `Unknown message type: ${type}` });

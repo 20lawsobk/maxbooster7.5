@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "setup": "cd ../../imports/maxbooster7.5 && npm ci --ignore-scripts --no-audit --no-fund && npm run postinstall && pnpm --dir external/maxcore install --frozen-lockfile",
+    "setup": "cd ../../imports/maxbooster7.5 && npm ci --ignore-scripts --no-audit --no-fund && npm run postinstall && npm --prefix dns-os ci --ignore-scripts --no-audit --no-fund && pnpm --dir external/maxcore install --frozen-lockfile --ignore-scripts && pnpm --dir external/pdim install --frozen-lockfile --ignore-scripts",
     "dev": "cd ../../imports/maxbooster7.5 && npm run dev",
     "build": "pnpm run setup && cd ../../imports/maxbooster7.5 && npm run build",
     "serve": "cd ../../imports/maxbooster7.5 && npm run start",

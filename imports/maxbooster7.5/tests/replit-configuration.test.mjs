@@ -14,7 +14,10 @@ test('Replit configuration parses as TOML and preserves the production entrypoin
   assert.deepEqual(config.deployment.build, ['bash', 'build.sh']);
   assert.deepEqual(config.deployment.run, ['bash', 'start.sh']);
   assert.equal(config.deployment.ignorePorts, false);
-  assert.deepEqual(config.ports, [{ localPort: 5000, externalPort: 80 }]);
+  assert.deepEqual(config.ports.filter(port => port.externalPort !== undefined), [{ localPort: 5000, externalPort: 80 }]);
+  for (const port of config.ports.filter(port => port.externalPort === undefined)) {
+    assert.equal(port.exposeLocalhost, false, `Internal port ${port.localPort} must remain private`);
+  }
   assert.equal(config.env.MAXCORE_SERVING_RELEASE, 'live-awareness');
   assert.equal(config.env.DATABASE_URL, undefined);
   assert.equal(config.env.NEON_DATABASE_URL, undefined);

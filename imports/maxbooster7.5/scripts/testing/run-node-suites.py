@@ -21,7 +21,9 @@ PARENT_OWNED_SUPPORT = {"scripts/testing/coverage-node-vite-entry.mjs"}
 
 
 def discover():
-    paths = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
+    paths = sorted(set(subprocess.check_output(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+        cwd=ROOT, text=True).splitlines()))
     result = []
     for file in paths:
         if not file.startswith(("tests/", "script/", "scripts/", "server/", "evaluations/")):

@@ -74,7 +74,9 @@ def _junit_counts(data):
         for case in (case for case in cases if case.tag == 'testcase'):
             counts['total'] += 1
             outcomes = [child.tag for child in case if child.tag in {'failure', 'error', 'skipped'}]
-            if len(outcomes) > 1:
+            # Vitest may emit several assertion failures for one test case.
+            # Count that case once, while rejecting contradictory outcomes.
+            if len(set(outcomes)) > 1 or (outcomes.count('skipped') > 1):
                 raise ValueError('Coverage JUnit has ambiguous leaf outcomes')
             counts[{'failure': 'failed', 'error': 'errors', 'skipped': 'skipped'}.get(outcomes[0] if outcomes else '', 'passed')] += 1
         for key, attribute in [('total', 'tests'), ('failed', 'failures'), ('errors', 'errors'), ('skipped', 'skipped')]:
@@ -247,7 +249,7 @@ def main():
         ('python', 'python', [args.python, 'scripts/testing/run-python-suites.py', '--python', args.python, '--coverage', '--output', str(output / 'python'), '--docs', str(output / 'python/suites.md')], 2400),
         ('commerce', 'commerce', [args.python, 'scripts/testing/run-commerce.py', '--output', str(output / 'commerce')], 900),
         ('subsystems', 'subsystems', subsystems, 1200),
-        ('browser', 'browser', ['node', '--test', '--test-concurrency=1', *browser], 300),
+        ('browser', 'browser', ['node', '--test', '--test-concurrency=1', '--test-reporter=tap', *browser], 300),
         ('http', 'http', ['node', 'scripts/testing/integration-browser.mjs'], 2400),
         ('pages', 'pages', ['node', 'scripts/testing/page80-acceptance.mjs'], 900),
         ('load', 'bounded-http-load', ['node', 'scripts/testing/page80-acceptance.mjs', '--http-load'], 900),

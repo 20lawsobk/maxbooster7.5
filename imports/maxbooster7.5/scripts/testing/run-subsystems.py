@@ -87,7 +87,10 @@ def main():
                 env[key] = os.environ[key]
         rust_env = {**env, 'CARGO_HOME': str((args.cargo_home or cache/'cargo').resolve()),
                     'CARGO_TARGET_DIR': str(cache/'target'), 'CARGO_BUILD_JOBS': '2'}
-        go_env = {**env, 'GOTOOLCHAIN': 'local', 'GOMAXPROCS': '2',
+        # Honor the repository's go.mod toolchain requirement. Online runs may
+        # obtain the official Go toolchain through Go's verified downloader;
+        # offline runs must fail explicitly if the local toolchain is too old.
+        go_env = {**env, 'GOTOOLCHAIN': 'local' if args.offline else 'auto', 'GOMAXPROCS': '2',
                   'GOPATH': str((args.go_path or cache/'go').resolve()),
                   'GOCACHE': str((args.go_cache or cache/'go-cache').resolve())}
         if args.offline:
@@ -108,7 +111,7 @@ def main():
             concurrency_env = {**env, 'RUN_RUST_TOOLCHAIN_TESTS': '1'}
             if args.rust_toolchain:
                 concurrency_env['BOOSTERSTATE_PORTABLE_RUST_DIR'] = str(args.rust_toolchain.resolve())
-            definitions.append(('rust-cleanup-concurrency', ['node', '--test', 'tests/deployment-rust-phase.test.mjs'],
+            definitions.append(('rust-cleanup-concurrency', ['node', '--test', '--test-reporter=tap', 'tests/deployment-rust-phase.test.mjs'],
                                 ROOT, concurrency_env, 270, ['tests/deployment-rust-phase.test.mjs']))
         if args.include_pdim_smoke:
             definitions.append(('pdim-http-load', ['node', 'scripts/testing/run-pdim-smoke.mjs', str(output)],

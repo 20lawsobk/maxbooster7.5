@@ -114,7 +114,9 @@ print(json.dumps({'unmappedDynamicFiles': details,
 
 
 def discover():
-    tracked = subprocess.check_output(['git', 'ls-files', '*.py'], cwd=ROOT, text=True).splitlines()
+    tracked = sorted(set(subprocess.check_output(
+        ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', '*.py'],
+        cwd=ROOT, text=True).splitlines()))
     suites, duplicates = [], []
     for name in tracked:
         path = Path(name)

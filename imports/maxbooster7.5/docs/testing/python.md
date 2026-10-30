@@ -44,9 +44,9 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `f65b43a32ffb4b257e4beb4ec9e1a68dba135c1c`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 118, "skipped": 2, "timeout": 0}.
-- JUnit cases: 1637; failures: 0; errors: 0; skipped: 25.
+- Source baseline: `ff1b661c4d6e8e5f474b589ceb34f76ca9ad081d`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 119, "skipped": 1, "timeout": 0}.
+- JUnit cases: 1637; failures: 0; errors: 0; skipped: 19.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
@@ -216,13 +216,13 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 26}.
 
 Real Lua/Redis atomicity tests in an isolated temporary Unix-socket Redis.
 
-Status: **skipped**.
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 6, "tests": 6}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>

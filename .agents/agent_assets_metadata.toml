@@ -14,3 +14,17 @@ mtime_ms = 1793345842927
 storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/d7fcf5ed-dd2b-4fae-a356-7a4cf7a8b33e/8d16d760-b3bd-4255-b689-82a3e6bcaaeb"
 storage_version_token = "1793345856764379"
 content_type = "text/html"
+
+[[outputs]]
+id = "MDeHpzvzlFAi6jakRBGrn"
+uri = "file://generated-artifacts/remediation-20261030/remediation-report.html"
+type = "html"
+title = "Remediation and verification report"
+description = "Verified root-cause fixes, final test results, preserved failures, and remaining coverage, release, and Stripe gaps."
+logical_id = "6bbad2bf-a816-4b15-a492-2732723e5571"
+content_hash = "sha256:6279eabb602daa99d9115a9ac5e434d30a949d5bded5cf7d98a7c7013af13ec2"
+size = 7842
+mtime_ms = 1793361954078
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/6bbad2bf-a816-4b15-a492-2732723e5571/2bd90860-36b9-402d-a157-494ad294df78"
+storage_version_token = "1793361961372500"
+content_type = "text/html"

@@ -100,7 +100,7 @@ async function main() {
       execSync(`${JSON.stringify(pyBin)} --version`, { stdio: "inherit" });
       console.log("   Installing Python deps (numpy, pillow, scipy, fastapi, uvicorn, pydantic)...");
       execSync(
-        `${JSON.stringify(pyBin)} -I -m pip install --no-cache-dir --quiet numpy pillow "scipy>=1.11.0" "fastapi>=0.100.0" "uvicorn[standard]>=0.23.0" "pydantic>=2.0.0" "urllib3>=2.8.0,<3" "fsspec>=2026.6.0"`,
+        `${JSON.stringify(pyBin)} -I -B script/lib/installPortablePythonDependencies.py ${JSON.stringify(pyDir)}`,
         { cwd: root, stdio: "inherit", shell: "/bin/bash" },
       );
       execSync(
