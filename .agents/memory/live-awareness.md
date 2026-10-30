@@ -16,3 +16,9 @@ The user says the public-source learning setup was already configured, and empha
 **Why:** The user corrected proposals to introduce a new learning policy before tracing the existing configuration.
 
 **How to apply:** Locate the existing policy and follow its configuration through collection, admission, training, and serving. Do not treat a blocked stage as proof that the entire learning setup is absent or ask the user to configure it again without that investigation. Do not infer a design limitation from a failing newly trained candidate; first compare the intended configuration, imported implementation, actual selected model, and retained learning state.
+
+The user clarifies: "You don't have to replace it to enhance it to a new level."
+
+**Why:** The user wants enhancement of the existing MaxCore design, not a choice between replacing it and leaving its capabilities unchanged.
+
+**How to apply:** Improve the existing live-data learning and generation system, measuring actual output quality. Preserving the architecture does not mean freezing its implementation or capacity.
