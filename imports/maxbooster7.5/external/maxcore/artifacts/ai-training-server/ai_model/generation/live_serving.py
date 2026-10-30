@@ -193,9 +193,13 @@ class LiveLearningLoop:
             if adapter is not None and not self._stop.is_set():
                 if status["checkpoint_sha256"] != self.model.status().get("checkpoint_sha256"):
                     self.model.install(adapter, status)
-                self._status = {**self._status, "serving": "active", "release_error": None}
+                self._status = {**self._status, "serving": "active", "release_error": None,
+                                "unavailable_reason": None}
             else:
-                self._status = {**self._status, "serving": "active" if self.model.available else "waiting_for_candidate"}
+                self._status = {**self._status, "serving": "active" if self.model.available else "waiting_for_candidate",
+                                "release_error": None,
+                                "unavailable_reason": (None if self.model.available else
+                                                       self.model.status().get("unavailable_reason"))}
         except Exception as exc:
             # A rejected update must not replace a previously loaded good model.
             self._status = {**self._status, "serving": "active" if self.model.available else "blocked_release",
@@ -275,7 +279,7 @@ class LiveLearningLoop:
                 self._save_state(state)  # Persist cooldown before starting a worker.
                 if self._stop.is_set():
                     return self.status()
-                self._status = {**self._status, "training": "running"}
+                self._status = {**self._status, "training": "running", "training_error": None}
                 options = {"context_tokens": self.context_tokens, "peak_content": self.peak_content}
                 if self.peak_content:
                     options.update(model_config=self.model_config, worker_timeout=self.worker_timeout)

@@ -20,3 +20,9 @@ Cold-start verification must inspect background-worker initialization as well as
 **Why:** In this application, the listener and landing page stayed healthy while a separate storage/watchdog initialization thread had crashed. Successful health probes alone did not establish that those services were operating.
 
 **How to apply:** Confirm worker-initialization milestones and inspect startup exceptions before treating a restart as operationally verified. Keep model-generation admission separate from infrastructure health.
+
+Do not diagnose a current learning refusal from one health snapshot while a training run may be in flight.
+
+**Why:** A historical observation error remained visible while the real learner progressed through training. The durable run result established progress that the earlier health snapshot had not yet reflected.
+
+**How to apply:** Correlate public status with the latest bounded run receipt before asking for new prerequisites or changing admission policy. Distinguish successful training and artifact eligibility from successful serving-capability evaluation.

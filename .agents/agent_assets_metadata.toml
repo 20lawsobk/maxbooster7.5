@@ -56,3 +56,17 @@ mtime_ms = 1793373847418
 storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/1bf87cb0-7c1e-48b4-a301-d55c8b5930b1/bc41aff0-00ad-4868-9400-a19e4964be94"
 storage_version_token = "1793374840156702"
 content_type = "text/html"
+
+[[outputs]]
+id = "bv-lkm74-0hSL2VNGH24e"
+uri = "file://generated-artifacts/live-admission-fix/report.html"
+type = "html"
+title = "Live-learning repair and verification"
+description = "Implemented admission reconciliation, 115 passing checks, real training evidence, and the remaining serving-capability failure."
+logical_id = "59560db2-dd91-4ffd-a461-f330f9daa573"
+content_hash = "sha256:f4f0f41b18cfd9c2970946baec773f4c2f5e739b044686d197facccdce9af749"
+size = 3001
+mtime_ms = 1793396753463
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/59560db2-dd91-4ffd-a461-f330f9daa573/0030b532-6714-4d42-a7da-7b92ab2d5a20"
+storage_version_token = "1793397032070394"
+content_type = "text/html"

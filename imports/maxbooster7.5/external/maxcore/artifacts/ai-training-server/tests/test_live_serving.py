@@ -52,6 +52,16 @@ class LiveServingTests(unittest.TestCase):
             self.model.generate("prompt")
         self.assertNotIn('"text"', (Path(self.temp.name) / "live-learning.json").read_text())
 
+    def test_recovered_training_and_selection_clear_previous_error_labels(self):
+        loop = self.loop()
+        loop._status.update(training_error="Blocked", release_error="AwarenessUnavailable")
+        result = loop.tick()
+        self.assertEqual(result["training"], "candidate_trained_unreviewed")
+        self.assertEqual(result["serving"], "waiting_for_candidate")
+        self.assertIsNone(result["training_error"])
+        self.assertIsNone(result["release_error"])
+        self.assertFalse(self.model.available)
+
     def test_selected_release_activates_even_while_training_is_on_cooldown(self):
         loop = self.loop()
         loop.tick()

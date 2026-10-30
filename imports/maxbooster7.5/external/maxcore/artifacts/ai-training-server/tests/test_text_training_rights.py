@@ -96,6 +96,61 @@ class TextTrainingRightsTests(unittest.TestCase):
             with self.assertRaises(live_learning.Blocked):
                 live_learning.require_peak_training_rights(records)
 
+    def test_trusted_live_admission_retains_unknown_license_and_provenance(self):
+        records = copy.deepcopy(self.records)
+        with patch.dict(os.environ, {key: "" for key in self.environment}):
+            live_learning.require_peak_training_rights(records, allow_public_live=True)
+        for before, after in zip(self.records, records):
+            admission = after.pop("learning_admission")
+            self.assertEqual(before, after)
+            self.assertFalse(admission["license_asserted"])
+            self.assertEqual(admission["record_id"], before["live_provenance"]["record_id"])
+            self.assertNotIn("training_rights", after)
+
+    def test_trusted_live_admission_rejects_corruption_private_and_spoofed_receipts(self):
+        for key, value in (("text", "Changed text"), ("private", True),
+                           ("private", "unknown"), ("purpose", "inference"),
+                           ("training_rights", {}), ("learning_admission", {})):
+            records = copy.deepcopy(self.records)
+            records[-1][key] = value
+            with self.subTest(field=key), patch.dict(os.environ, {key: "" for key in self.environment}):
+                with self.assertRaises(live_learning.Blocked):
+                    live_learning.require_peak_training_rights(records, allow_public_live=True)
+                self.assertNotIn("learning_admission", records[0])
+
+    def test_trusted_live_admission_does_not_ignore_explicit_broken_grant_policy(self):
+        for values in ({"MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST": str(self.path),
+                        "MAXCORE_TEXT_TRAINING_RIGHTS_SHA256": ""},
+                       {**self.environment, "MAXCORE_TEXT_TRAINING_RIGHTS_SHA256": "0" * 64}):
+            with patch.dict(os.environ, values):
+                with self.assertRaises(live_learning.Blocked):
+                    live_learning.require_peak_training_rights(self.records, allow_public_live=True)
+
+    def test_trusted_live_admission_requires_one_nonempty_observation_set(self):
+        mixed = copy.deepcopy(self.records)
+        mixed[-1]["live_provenance"]["observation_set_id"] = "0" * 64
+        with patch.dict(os.environ, {key: "" for key in self.environment}):
+            for records in ([], mixed):
+                with self.assertRaises(live_learning.Blocked):
+                    live_learning.require_peak_training_rights(records, allow_public_live=True)
+        self.assertTrue(all("learning_admission" not in row for row in mixed))
+
+    def test_live_execute_reaches_worker_with_audited_public_corpus(self):
+        with patch.dict(os.environ, {**{key: "" for key in self.environment},
+                                     "MAXCORE_MODEL_STATE_DIR": str(self.root)}), \
+             patch.object(live_learning, "JOBS", self.root / "live_learning_runs"), \
+             patch.object(live_learning.subprocess, "run", return_value=Mock(returncode=1)) as worker:
+            result = live_learning.execute(self.engine, 1, context_tokens=128)
+        worker.assert_called_once()
+        self.assertEqual(result["status"], "failed_training")
+        corpus = self.root / "live_learning_runs" / result["run_id"] / "corpus.json"
+        self.assertEqual(hashlib.sha256(corpus.read_bytes()).hexdigest(), result["corpus_sha256"])
+        for row in json.loads(corpus.read_text())["records"]:
+            self.assertEqual(row["license"], "NOASSERTION")
+            self.assertFalse(row["learning_admission"]["license_asserted"])
+            self.assertNotIn("training_rights", row)
+        self.assertFalse((self.root / "candidate_registry/selected.json").exists())
+
     def test_manifest_and_evidence_mutations_fail_closed(self):
         for target in (self.path, self.root / "grant.txt"):
             original = target.read_bytes()
