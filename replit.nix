@@ -2,6 +2,7 @@
   # Root system dependencies also serve the imported MaxCore and PDIM code.
   # Language runtimes are supplied by the modules in .replit.
   deps = [
+    pkgs.python311
     pkgs.nodejs_22
     # npm is bundled with nodejs_22; provide the conventional nodejs alias too.
     (pkgs.writeShellScriptBin "nodejs" ''exec ${pkgs.nodejs_22}/bin/node "$@"'')

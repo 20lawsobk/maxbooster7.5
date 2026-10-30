@@ -15,12 +15,50 @@ ignorePorts = false
 [env]
 NODE_ENV = "development"
 PORT = "5000"
+LOCAL_PDIM_PORT = "5556"
+VIDEO_DIFFUSION_PORT = "8008"
+MAXCORE_LOCAL_PORT = "8090"
+BOOSTERSTATE_SIDECAR_PORT = "9877"
+MODEL_API_PORT = "9878"
+MODEL_API_HEALTH_PORT = "9879"
+PYTHON_AI_PORT = "9880"
 MAXCORE_LOCAL = "1"
 PDIM_FORCE_REMOTE = "0"
 MAXCORE_SERVING_RELEASE = "live-awareness"
 STRIPE_ALLOW_CATALOG_PROVISIONING = "0"
 
-# Child services stay on loopback and must not receive public mappings.
+# Only the app listener is public; internal service ports stay private.
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5556
+exposeLocalhost = false
+
+[[ports]]
+localPort = 8008
+exposeLocalhost = false
+
+[[ports]]
+localPort = 8090
+exposeLocalhost = false
+
+[[ports]]
+localPort = 9877
+exposeLocalhost = false
+
+[[ports]]
+localPort = 9878
+exposeLocalhost = false
+
+[[ports]]
+localPort = 9879
+exposeLocalhost = false
+
+[[ports]]
+localPort = 9880
+exposeLocalhost = false
+
+[nix]
+channel = "stable-25_05"
