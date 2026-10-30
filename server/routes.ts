@@ -1599,6 +1599,7 @@ export async function registerRoutes(
 
       // Never serve a file whose tracking row is marked deleted — the soft
       // delete keeps the storage object only for the restore window.
+      let trackedFile: { userId: string; deletedAt: Date | null } | undefined;
       {
         const { userStorageFiles } = await import("../shared/schema.js");
         const { eq, sql: dsql } = await import("drizzle-orm");
@@ -1608,6 +1609,7 @@ export async function registerRoutes(
           .where(eq(userStorageFiles.fileKey, key))
           .orderBy(dsql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
           .limit(1);
+        trackedFile = row;
         if (key.startsWith("studio-renders/") && stemAccess !== true && (!row || row.userId !== req.user.id)) {
           return res.status(403).json({ message: "Access denied" });
         }
@@ -1643,6 +1645,14 @@ export async function registerRoutes(
       }
 
       if (!fileBuffer) {
+        // Missing hybrid metadata must not turn this endpoint into an
+        // authenticated arbitrary-key direct object-storage proxy.
+        const { mayReadDirectStorageObject } = await import(
+          "./services/directStorageReadPolicy.js"
+        );
+        if (!mayReadDirectStorageObject(req.user.id, key, trackedFile, stemAccess)) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         try {
           fileBuffer = await storageService.downloadFile(key);
           storageTier = "replit-direct";
@@ -1684,7 +1694,9 @@ export async function registerRoutes(
       // "private" (not "public") — this endpoint now requires auth and gates
       // users/* keys by owner, so a shared/CDN cache must never store a
       // response that was only authorized for one specific requester.
-      res.setHeader("Cache-Control", stemAccess === true ? "private, no-store" : "private, max-age=31536000, immutable");
+      // Authenticated bytes may be revoked or soft-deleted. Never permit a
+      // browser or intermediary to reuse a private response after logout.
+      res.setHeader("Cache-Control", "private, no-store");
       res.setHeader("X-Storage-Tier", storageTier);
 
       return res.send(fileBuffer);
