@@ -33,14 +33,14 @@ content_type = "text/html"
 id = "mlcXF1YcjAgcCnXH-F5YD"
 uri = "file://generated-artifacts/readiness-closure-20261030/current-findings.html"
 type = "html"
-title = "Current readiness findings and verified fixes"
-description = "Runtime fixes, test evidence, the confirmed training-rights blocker, and remaining readiness work."
+title = "Corrected readiness findings"
+description = "Separates live-awareness ingestion from automatic model learning; includes the 71 passing boundary checks and remaining generation verification requirements."
 logical_id = "bcc4f3d0-d384-494f-803b-b179fd611c3d"
-content_hash = "sha256:91a51d5f2a205ddaf3cc41b166e56836b71ec6852dc7a10e16f7ec484c0b5b3b"
-size = 5658
-mtime_ms = 1793374722074
-storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/bcc4f3d0-d384-494f-803b-b179fd611c3d/5dbfca7e-031d-473e-94f9-c7bd93cbf752"
-storage_version_token = "1793374839453746"
+content_hash = "sha256:df5cd858d3dde4fcf9e4c6cc2b908d046d5968152a3c0256cb9a0c0503e2c49a"
+size = 6006
+mtime_ms = 1793395475299
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:a28d7898-bbab-4e83-93d1-b2a6ecd20030/bcc4f3d0-d384-494f-803b-b179fd611c3d/6684ae17-b40b-452f-9902-f21da4d79a4c"
+storage_version_token = "1793395481845751"
 content_type = "text/html"
 
 [[outputs]]
