@@ -1,1 +1,2 @@
 - [Nix dependency editing](nix-dependency-editing.md) — verify custom dependency expressions actually change; the package remover can report success without removing them.
+- [User-local Nix constraints](user-local-nix.md) — custom stores avoid platform permissions but do not repair Replit's environment loader.
