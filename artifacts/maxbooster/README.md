@@ -22,7 +22,10 @@ command was run from the imported directory, followed by the original SQL migrat
 
 These are operator-run development setup steps, not startup-time migrations.
 Review existing data and migration history before applying them to any other database.
-No production database was migrated.
+That describes the initial isolated development setup. Subsequently, the user
+chose the existing Neon database and authorized migrations 0096–0099. These were
+applied with the app stopped after the user confirmed verified backup restoration
+and that no other running app uses the database. See `imports/IMPORT_STATUS.md`.
 
 ## Live awareness
 
@@ -34,5 +37,7 @@ Do not make awareness depend on a trained model or legacy LFS checkpoint.
 
 ## Boundaries
 
-The original app runs, but missing payment/email credentials still affect their respective features.
+The original app now runs against the existing Neon database. Server-side Stripe
+authentication and catalog lookup succeeded after loading the supplied secrets.
+Checkout and email delivery have not been tested.
 The production build and all application journeys have not been verified.

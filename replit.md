@@ -13,7 +13,7 @@ The remaining sections below describe the original workspace template, not the i
 - Preview: `/`; awareness readiness: `/api/health/awareness/ready`.
 - Live awareness uses configured current sources and does not require already-trained data or legacy LFS assets.
 - Do not redesign, replace authentication, or migrate the original architecture just to fit the template.
-- Development schema setup and checks are documented in `imports/IMPORT_STATUS.md`; production was not changed.
+- The user selected the existing Neon database and authorized its required migrations. Setup and verification are documented in `imports/IMPORT_STATUS.md`.
 
 ## Run & Operate
 
