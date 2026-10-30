@@ -51,12 +51,16 @@ def validate_peak_record(record):
         raise ValueError("Peak curriculum requires complete public posts with measured engagement")
 
 
-def training_texts(records):
+def training_texts(records, *, policy="plain-plus-source-stages-v2"):
     """Keep plain posts; optionally label only observable source sentence stages.
 
     This is structural supervision, not inferred goal/tone/platform performance.
-    An explicit final call to action is mandatory; no missing words are supplied.
+    V2 also teaches observed hook/body spans when no explicit CTA is present.
+    No missing words or CTA are supplied. V1 remains reproducible for historical
+    checkpoint verification; changing the default must not rewrite that history.
     """
+    if policy not in {"plain-plus-source-stages-v1", "plain-plus-source-stages-v2"}:
+        raise ValueError("Unknown source-stage curriculum policy")
     texts = [record["text"] for record in records]
     staged = []
     cta = re.compile(r"^(?:listen|watch|read|join|follow|subscribe|stream|share|visit|"
@@ -64,15 +68,16 @@ def training_texts(records):
     for text in texts:
         # Boundaries are offsets into the unchanged source, including whitespace.
         starts = [match.end() for match in re.finditer(r"[.!?](?:[\"'”’])?\s+", text)]
-        if len(starts) < 2 or "<STAGE_" in text:
+        if not starts or "<STAGE_" in text:
             continue
         first, last = starts[0], starts[-1]
-        if first >= last or not cta.match(text[last:].lstrip()):
-            continue
-        staged.append("<STAGE_HOOK>" + text[:first] + "<STAGE_BODY>" +
-                      text[first:last] + "<STAGE_CTA>" + text[last:])
+        if first < last and cta.match(text[last:].lstrip()):
+            staged.append("<STAGE_HOOK>" + text[:first] + "<STAGE_BODY>" +
+                          text[first:last] + "<STAGE_CTA>" + text[last:])
+        elif policy == "plain-plus-source-stages-v2" and text[first:].strip():
+            staged.append("<STAGE_HOOK>" + text[:first] + "<STAGE_BODY>" + text[first:])
     combined = texts + staged
-    metadata = {"policy": "plain-plus-source-stages-v1", "plain_records": len(texts),
+    metadata = {"policy": policy, "plain_records": len(texts),
                 "derived_stage_records": len(staged),
                 "texts_sha256": hashlib.sha256(json.dumps(combined, ensure_ascii=True,
                     separators=(",", ":")).encode()).hexdigest()}

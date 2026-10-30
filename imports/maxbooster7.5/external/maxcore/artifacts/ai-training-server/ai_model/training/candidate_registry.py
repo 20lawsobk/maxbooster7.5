@@ -138,8 +138,11 @@ def verify_bundle(run):
         raise ValueError("Checkpoint curriculum binding mismatch")
     texts = [row["text"] for row in manifest["records"]]
     if curriculum is not None:
+        if not isinstance(curriculum, dict):
+            raise ValueError("Invalid source-derived curriculum metadata")
         from .public_curriculum import training_texts
-        texts, expected_curriculum = training_texts(manifest["records"])
+        texts, expected_curriculum = training_texts(
+            manifest["records"], policy=curriculum.get("policy"))
         if (report.get("learning_stream") is None or curriculum != expected_curriculum):
             raise ValueError("Source-derived curriculum does not match public source text")
     if data.get("coverage") != coverage:

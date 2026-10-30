@@ -2,3 +2,4 @@
 - [Live-awareness scope](live-awareness.md) — live social-landscape endpoints do not require already-trained data; keep awareness and generation readiness separate.
 - [Database selection](database-selection.md) — user chose the existing Neon database for development; do not substitute the template database.
 - [Verification boundaries](verification-boundaries.md) — serialize deployment fixtures; keep developer-host size separate from verified publishing readiness.
+- [Learning-state durability](learning-state-durability.md) — retain development checkpoints inside the ignored workspace; historical curricula must remain reproducible.

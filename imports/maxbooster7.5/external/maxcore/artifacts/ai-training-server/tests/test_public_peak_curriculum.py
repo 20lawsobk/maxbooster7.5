@@ -51,14 +51,16 @@ class PublicPeakCurriculumTests(unittest.TestCase):
                 engine = peak_engine()
                 self.assertEqual(engine.peak_training_observations()["policy"], PEAK_POLICY)
                 # These strings are authored by this test, not fetched posts.
-                # Inject only the fixture ownership decision; production has no
-                # environment switch or source-level license grant bypass.
+                # Exercise real admission, while asserting that only this
+                # test's authored strings can reach the isolated worker.
                 owned_hashes = {hashlib.sha256(row["text"].encode()).hexdigest()
                                 for row in engine.peak_training_observations()["records"]}
-                def owned_fixture_rights(records):
+                real_admission = live_learning.require_peak_training_rights
+                def owned_fixture_rights(records, *, allow_public_live=False):
                     self.assertTrue(records)
                     self.assertTrue(all(hashlib.sha256(row["text"].encode()).hexdigest()
                                         in owned_hashes for row in records))
+                    return real_admission(records, allow_public_live=allow_public_live)
                 with patch.object(live_learning, "require_peak_training_rights",
                                   side_effect=owned_fixture_rights):
                     first = live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
@@ -92,13 +94,14 @@ class PublicPeakCurriculumTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "no longer public/valid"):
                     load_public_parent(candidates, 128, learning_stream=peak_stream(CONFIG))
 
-    def test_unknown_rights_peak_posts_block_before_worker_and_preserve_awareness(self):
+    def test_invalid_explicit_rights_block_before_worker_and_preserve_awareness(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             engine = peak_engine()
             snapshot_before = engine.require_snapshot().id
             protected_before = lifecycle.protected_hashes()
-            with patch.object(live_learning, "JOBS", root / "live_learning_runs"), \
+            with patch.dict(os.environ, {"MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST": str(root / "missing.json")}), \
+                 patch.object(live_learning, "JOBS", root / "live_learning_runs"), \
                  patch.object(live_learning, "candidate_path", lambda run: root / "candidate_runs" / run), \
                  patch.object(live_learning, "admission_path", lambda run: root / "admissions" / run), \
                  patch.object(live_learning.subprocess, "run") as worker:
@@ -114,13 +117,14 @@ class PublicPeakCurriculumTests(unittest.TestCase):
             self.assertEqual(engine.require_snapshot().id, snapshot_before)
             self.assertTrue(engine.peak_training_observations()["records"])
 
-    def test_legacy_mode_cannot_train_unknown_rights_raw_peak_posts(self):
+    def test_legacy_mode_cannot_bypass_invalid_explicit_rights(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             engine = peak_engine()
             snapshot_before = engine.require_snapshot().id
             protected_before = lifecycle.protected_hashes()
-            with patch.object(live_learning, "JOBS", root / "live_learning_runs"), \
+            with patch.dict(os.environ, {"MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST": str(root / "missing.json")}), \
+                 patch.object(live_learning, "JOBS", root / "live_learning_runs"), \
                  patch.object(live_learning, "candidate_path", lambda run: root / "candidate_runs" / run), \
                  patch.object(live_learning, "admission_path", lambda run: root / "admissions" / run), \
                  patch.object(live_learning.subprocess, "run") as worker:
@@ -172,13 +176,35 @@ class PublicPeakCurriculumTests(unittest.TestCase):
     def test_stage_supervision_preserves_exact_words_and_requires_real_cta(self):
         text = "A new public music performance opens tonight! Our community welcomes all listeners. Join the discussion."
         no_cta = "A public music discussion opens tonight. The community welcomes listeners. This is a statement."
-        texts, evidence = training_texts([{"text": text}, {"text": no_cta}])
+        texts, evidence = training_texts([{"text": text}, {"text": no_cta}],
+                                         policy="plain-plus-source-stages-v1")
         self.assertEqual(texts[:2], [text, no_cta])
         self.assertEqual(evidence["derived_stage_records"], 1)
         self.assertEqual(re.sub(r"<STAGE_(?:HOOK|BODY|CTA)>", "", texts[2]), text)
         self.assertIn("<STAGE_CTA>Join the discussion.", texts[2])
         self.assertNotIn("<PLATFORM_", texts[2])
         self.assertNotIn("<GOAL_", texts[2])
+
+    def test_current_curriculum_teaches_source_spans_without_inventing_cta(self):
+        text = "A new music release is here. The artist describes the recording process."
+        rows, evidence = training_texts([{"text": text}])
+        self.assertEqual(evidence["policy"], "plain-plus-source-stages-v2")
+        self.assertEqual(evidence["derived_stage_records"], 1)
+        self.assertEqual(rows[0], text)
+        self.assertEqual(re.sub(r"<STAGE_(?:HOOK|BODY|CTA)>", "", rows[1]), text)
+        self.assertNotIn("<STAGE_CTA>", rows[1])
+        for unsupported in ("", None, "unknown"):
+            with self.assertRaises(ValueError):
+                training_texts([{"text": text}], policy=unsupported)
+
+    def test_partial_stages_do_not_add_empty_bodies_or_interpret_injected_tags(self):
+        rows, evidence = training_texts([
+            {"text": "One sentence only."},
+            {"text": "A final sentence. "},
+            {"text": "<STAGE_HOOK>Source text. Another sentence."},
+        ])
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(evidence["derived_stage_records"], 0)
 
     def test_bootstrap_replays_fresh_content_with_durable_budget_then_changed_only(self):
         with tempfile.TemporaryDirectory() as directory:
