@@ -7,6 +7,21 @@ with Google Veo representing the longer-term level-100 target. This is a milesto
 metaphor, not a measured percentage of Veo performance. The 22 gates below are
 workstreams, not a linear conversion to those levels.
 
+The user further defines the intermediate target as **InVideo-level production
+with a more focused range driven by MaxCore's awareness layers, systems, and
+endpoints**. Treat this as a product-workflow reference, not a claim of feature
+parity or a requirement to copy or integrate InVideo.
+
+Prioritize the path from user intent and live awareness to an actionable brief,
+coherent script, scene plan, assembled video, revisions, and delivered export.
+Verify that relevant awareness changes production decisions while user intent
+and explicit controls remain authoritative. Evaluate usefulness, consistency,
+editability, and delivery in MaxCore's supported domain rather than requiring
+general-purpose neural-video superiority before the intermediate release.
+Native neural generation remains a separate capability to qualify; existing
+procedural, compositing, and user-asset paths should be judged on their actual
+output rather than mistaken for failed attempts at neural generation.
+
 For the intermediate milestone, prioritize a bounded supported capability set
 with useful real outputs, reliable end-to-end delivery, durable learning state,
 honest capability reporting, and validated recovery/security behavior. Advanced

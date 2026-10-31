@@ -40,3 +40,9 @@ The user narrows the temporary target: "Google veo is a level 100 final boss I'd
 **Why:** The user accepts an intermediate production milestone before achieving the full competitive target.
 
 **How to apply:** Prioritize a bounded, genuinely production-ready MaxCore capability set before Veo superiority. Treat level 75 as the user's milestone metaphor, not a measured percentage of Veo performance or permission to waive reliability and output-quality verification. The longer-term competitive target remains.
+
+The user refines that intermediate target: "Think of a invideo level but with more focused range due to the awareness layers and awareness systems and awareness endpoints".
+
+**Why:** The user defines the near-term ambition through a specialized video-production workflow rather than general-purpose Veo-level generation.
+
+**How to apply:** Use an InVideo-style workflow as a product reference, with MaxCore's existing awareness architecture determining its focused range. Prioritize useful end-to-end video creation and verify that live awareness changes relevant production decisions. This is a target, not a claim of parity or authorization to replace MaxCore with InVideo.
