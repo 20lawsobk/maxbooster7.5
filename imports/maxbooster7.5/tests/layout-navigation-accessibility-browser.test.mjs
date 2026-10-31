@@ -10,7 +10,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import WebSocket from 'ws';
-import { trackBrowserProcesses } from './helpers-browser-processes.mjs';
+import { trackBrowserProcesses, findChromium } from './helpers-browser-processes.mjs';
 
 function waitForDebugger(browser) {
   return new Promise((resolve, reject) => {
@@ -51,7 +51,7 @@ test('Browser startup reports a missing executable without waiting for the deadl
 
 test('Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus', { timeout: 45000 }, async t => {
   const root = process.cwd();
-  const chromium = [process.env.CHROMIUM_PATH, '/usr/bin/chromium', '/usr/bin/chromium-browser'].find(p => p && fs.existsSync(p));
+  const chromium = findChromium();
   assert.ok(chromium, 'Actual Chromium is required; missing runtime is not a skip');
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'layout-a11y-'));
   const assets = path.join(root, 'dist/public/assets');

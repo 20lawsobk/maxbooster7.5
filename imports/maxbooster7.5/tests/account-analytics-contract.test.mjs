@@ -27,8 +27,10 @@ test("private owner aggregates reach actual MaxCore statistics without model or 
   let cluster, python;
   t.after(async () => {
     try {
-      if (python && python.exitCode === null) {
-        const closed = once(python, "close"); python.kill("SIGTERM"); await closed;
+      if (python?.pid && python.exitCode === null && python.signalCode === null) {
+        const closed = once(python, "close");
+        const force = setTimeout(() => python.kill("SIGKILL"), 1500);
+        try { python.kill("SIGTERM"); await closed; } finally { clearTimeout(force); }
       }
     } finally { try { await cluster?.stop(); } finally { await rm(temp, { recursive: true, force: true }); } }
   });
@@ -41,14 +43,16 @@ test("private owner aggregates reach actual MaxCore statistics without model or 
       ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}) }, stdio: ["ignore", "pipe", "pipe"],
   });
   let diagnostics = "";
+  let startupError = false;
   python.stdout.on("data", data => { diagnostics += data; }); python.stderr.on("data", data => { diagnostics += data; });
-  python.on("error", error => { diagnostics += error.message; });
+  python.on("error", error => { startupError = true; diagnostics += error.message; });
   const headers = { Authorization: "Bearer owned-analytics-contract", "Content-Type": "application/json" };
   let ready = false;
-  for (let attempt = 0; attempt < 100; attempt++) {
+  const startupDeadline = performance.now() + 20_000;
+  while (performance.now() < startupDeadline) {
     try { if ((await fetch(`${origin}/api/analytics/capability`, { headers, signal: AbortSignal.timeout(200) })).ok) { ready = true; break; } } catch {}
-    if (python.exitCode !== null) break;
-    await new Promise(resolve => setTimeout(resolve, 40));
+    if (startupError || python.exitCode !== null || python.signalCode !== null) break;
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
   assert.ok(ready, `Owned canonical analytics router must start: ${diagnostics.slice(-2000)}`);
   cluster = await startDisposablePostgres();

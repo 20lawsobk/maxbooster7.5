@@ -44,9 +44,9 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `ff1b661c4d6e8e5f474b589ceb34f76ca9ad081d`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 119, "skipped": 1, "timeout": 0}.
-- JUnit cases: 1637; failures: 0; errors: 0; skipped: 19.
+- Source baseline: `18d0db20c67a3ec1c7d4336f894730080938504e`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 130, "skipped": 2, "timeout": 0}.
+- JUnit cases: 1794; failures: 0; errors: 0; skipped: 17.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
@@ -178,11 +178,12 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 26}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 31}.
 
 <details>
 <summary>What each case checks</summary>
 
+- `AwarenessTests.test_topic_selection_is_shared_across_modalities_and_preserves_evidence`: topic selection is shared across modalities and preserves evidence
 - `AwarenessTests.test_source_observation_writes_are_fenced_by_ingest_ownership`: source observation writes are fenced by ingest ownership
 - `AwarenessTests.test_partial_source_observations_survive_incomplete_snapshot`: partial source observations survive incomplete snapshot
 - `AwarenessTests.test_invalid_snapshot_reports_safe_failure_category`: invalid snapshot reports safe failure category
@@ -1380,13 +1381,15 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_controls.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `test_real_procedural_clip_decodes`: real procedural clip decodes
 - `test_unsupported_video_fails`: unsupported video fails
+- `test_real_storyboard_preserves_total_frames`: real storyboard preserves total frames
+- `test_invalid_storyboard_rejected`: invalid storyboard rejected
 
 </details>
 
@@ -1410,6 +1413,52 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 - `DurationContractTest.test_one_frame_short_video_is_not_reported_as_four_seconds`: one frame short video is not reported as four seconds
 - `DurationContractTest.test_xfade_filter_has_frame_budget_and_audio_trim`: xfade filter has frame budget and audio trim
 - `DurationContractTest.test_real_ffmpeg_video_stream_and_container_are_four_seconds`: Cheap 32px inputs expose final-packet / stream-duration errors.
+
+</details>
+
+### `external/maxcore/artifacts/ai-training-server/ai_model/video/test_frame_continuity.py`
+
+Actual encoded-frame checks plus isolated continuity orchestration tests.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_frame_continuity.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `FrameContinuityTests.test_direct_agent_seeds_first_scene_without_leaking_between_requests`: direct agent seeds first scene without leaking between requests
+- `FrameContinuityTests.test_exact_terminal_frame_at_low_and_high_frame_rates`: exact terminal frame at low and high frame rates
+- `FrameContinuityTests.test_missing_video_is_an_explicit_failure`: missing video is an explicit failure
+- `FrameContinuityTests.test_rolling_references_reach_each_scene_and_preserve_explicit_ones`: rolling references reach each scene and preserve explicit ones
+- `FrameContinuityTests.test_extraction_failure_stops_chain_and_cleans_partial_output`: extraction failure stops chain and cleans partial output
+
+</details>
+
+### `external/maxcore/artifacts/ai-training-server/ai_model/video/test_production.py`
+
+test production
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_production.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_invalid_production_rejected`: invalid production rejected
+- `test_metadata_omits_source_bytes_without_mutating_input`: metadata omits source bytes without mutating input
+- `test_real_composition_with_image_logo_music_and_exact_timing`: real composition with image logo music and exact timing
+- `test_requested_narration_never_silently_dropped`: requested narration never silently dropped
+- `test_real_narration_composition`: real narration composition
 
 </details>
 
@@ -1568,6 +1617,28 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 5, "tests": 30}.
 - `TestNormalizeGenresMalformed.test_scalar_string_not_iterated_charwise`: scalar string not iterated charwise
 - `TestNormalizeGenresMalformed.test_scalar_int`: scalar int
 - `TestNormalizeGenresMalformed.test_none`: none
+
+</details>
+
+### `external/maxcore/artifacts/ai-training-server/tests/test_audio_finishing.py`
+
+test audio finishing
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_finishing.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_real_ducking_follows_speech_and_recovers_between_phrases`: real ducking follows speech and recovers between phrases
+- `test_two_pass_master_is_measured_and_preserves_source_and_duration`: two pass master is measured and preserves source and duration
+- `test_silence_cannot_receive_a_finishing_certificate`: silence cannot receive a finishing certificate
+- `test_standalone_synthesis_preserves_requested_pcm_contract_when_mastered`: standalone synthesis preserves requested pcm contract when mastered
 
 </details>
 
@@ -1750,6 +1821,26 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 </details>
 
+### `external/maxcore/artifacts/ai-training-server/tests/test_batching_bootstrap_metadata.py`
+
+Batching metadata must not turn infrastructure startup into inference.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_batching_bootstrap_metadata.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `BatchingBootstrapMetadata.test_unavailable_model_metadata_does_not_require_a_release`: unavailable model metadata does not require a release
+- `BatchingBootstrapMetadata.test_saved_instance_callable_is_preserved_without_delegating`: saved instance callable is preserved without delegating
+
+</details>
+
 ### `external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py`
 
 Beat-marketplace conditioning — regression guards.
@@ -1801,6 +1892,29 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 </details>
 
+### `external/maxcore/artifacts/ai-training-server/tests/test_candidate_utf8.py`
+
+Encoding constraints are not language-quality claims or output repairs.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_candidate_utf8.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `Utf8GenerationTests.test_allowed_bytes_match_independent_python_decoder`: allowed bytes match independent python decoder
+- `Utf8GenerationTests.test_budget_cannot_start_an_incomplete_character`: budget cannot start an incomplete character
+- `Utf8GenerationTests.test_unicode_boundaries_roundtrip_without_replacement`: unicode boundaries roundtrip without replacement
+- `Utf8GenerationTests.test_backend_masks_before_argmax_and_nucleus_selection`: backend masks before argmax and nucleus selection
+- `Utf8GenerationTests.test_real_legacy_and_incremental_generation_return_strict_utf8`: real legacy and incremental generation return strict utf8
+
+</details>
+
 ### `external/maxcore/artifacts/ai-training-server/tests/test_checkpoint_release.py`
 
 test checkpoint release
@@ -1824,6 +1938,33 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 - `CheckpointReleaseTests.test_manifest_must_bind_to_its_git_pointer`: manifest must bind to its git pointer
 - `CheckpointReleaseTests.test_missing_bytes_block_before_model_or_gpu_allocation`: missing bytes block before model or gpu allocation
 - `CheckpointReleaseTests.test_verified_archive_loads_complete_tensor_state_for_numerical_execution`: verified archive loads complete tensor state for numerical execution
+
+</details>
+
+### `external/maxcore/artifacts/ai-training-server/tests/test_content_breakpoints.py`
+
+Failure-boundary tests: invalid requests must stop before expensive work.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_content_breakpoints.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 53}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_text_limits_include_ellipsis_and_unbroken_tokens`: text limits include ellipsis and unbroken tokens
+- `test_final_caption_respects_short_limit_even_with_long_hook`: final caption respects short limit even with long hook
+- `test_extreme_integer_is_a_validation_error_not_overflow`: extreme integer is a validation error not overflow
+- `test_image_rejects_malformed_controls_before_rendering`: image rejects malformed controls before rendering
+- `test_audio_rejects_malformed_or_overbudget_requests_before_synthesis`: audio rejects malformed or overbudget requests before synthesis
+- `test_video_rejects_malformed_or_overbudget_requests_before_encoding`: video rejects malformed or overbudget requests before encoding
+- `test_oversized_source_image_rejected_without_allocating_full_pixels`: oversized source image rejected without allocating full pixels
+- `test_nonfinite_synth_output_never_written`: nonfinite synth output never written
+- `test_valid_wav_header_does_not_hide_silence_or_dc_output`: valid wav header does not hide silence or dc output
 
 </details>
 
@@ -1925,13 +2066,14 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_media_http.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 16}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `DedicatedMediaHTTP.test_real_image_audio_video_artifacts_without_language_checkpoint`: real image audio video artifacts without language checkpoint
 - `DedicatedMediaHTTP.test_raw_video_alias_runs_the_same_explicit_procedural_contract`: raw video alias runs the same explicit procedural contract
+- `DedicatedMediaHTTP.test_production_composition_uses_owner_scoped_durable_delivery`: production composition uses owner scoped durable delivery
 - `DedicatedMediaHTTP.test_normal_learned_media_and_text_still_require_a_capable_candidate`: normal learned media and text still require a capable candidate
 - `DedicatedMediaHTTP.test_missing_or_stale_awareness_never_dispatches_a_renderer`: missing or stale awareness never dispatches a renderer
 - `DedicatedMediaHTTP.test_semantic_controls_and_unrelated_routes_cannot_select_procedural_success`: semantic controls and unrelated routes cannot select procedural success
@@ -1941,17 +2083,48 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 </details>
 
+### `external/maxcore/artifacts/ai-training-server/tests/test_diffusion_checkpoints.py`
+
+Checkpoint lifecycle tests, not evidence of learned visual quality.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_diffusion_checkpoints.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `DiffusionCheckpointTests.test_diffusion_honors_model_state_configuration`: diffusion honors model state configuration
+- `DiffusionCheckpointTests.test_absent_checkpoints_block_inference_without_allocating_models`: absent checkpoints block inference without allocating models
+- `DiffusionCheckpointTests.test_training_initialization_cannot_generate`: training initialization cannot generate
+- `DiffusionCheckpointTests.test_serving_refreshes_published_weights_without_mutating_old_requests`: serving refreshes published weights without mutating old requests
+- `DiffusionCheckpointTests.test_continuously_changing_checkpoints_never_publish_a_mixed_snapshot`: continuously changing checkpoints never publish a mixed snapshot
+- `DiffusionCheckpointTests.test_readiness_distinguishes_bundle_presence_from_training_evidence`: readiness distinguishes bundle presence from training evidence
+- `DiffusionCheckpointTests.test_atomic_bundle_roundtrip_preserves_all_components_and_eval_mode`: atomic bundle roundtrip preserves all components and eval mode
+- `DiffusionCheckpointTests.test_invalid_reload_does_not_replace_any_live_component`: invalid reload does not replace any live component
+- `DiffusionCheckpointTests.test_failed_save_keeps_previous_bundle_and_removes_temporary_files`: failed save keeps previous bundle and removes temporary files
+- `DiffusionCheckpointTests.test_nonfinite_parameters_and_unknown_schema_are_rejected`: nonfinite parameters and unknown schema are rejected
+- `DiffusionCheckpointTests.test_legacy_set_requires_all_parameters`: legacy set requires all parameters
+- `DiffusionCheckpointTests.test_serving_errors_are_not_converted_to_empty_frames`: serving errors are not converted to empty frames
+- `DiffusionCheckpointTests.test_request_inputs_reach_conditioner_alongside_live_context`: request inputs reach conditioner alongside live context
+
+</details>
+
 ### `external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py`
 
 Regression guard: get_diffusion_frame must denoise at native resolution.
 
-Status: **passed**.
+Status: **skipped**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 5, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2307,12 +2480,13 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 16}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 17}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `LiveServingTests.test_fresh_observations_train_but_cannot_promote_themselves`: fresh observations train but cannot promote themselves
+- `LiveServingTests.test_recovered_training_and_selection_clear_previous_error_labels`: recovered training and selection clear previous error labels
 - `LiveServingTests.test_selected_release_activates_even_while_training_is_on_cooldown`: selected release activates even while training is on cooldown
 - `LiveServingTests.test_restart_and_timestamp_only_refresh_do_not_retrain_same_content`: restart and timestamp only refresh do not retrain same content
 - `LiveServingTests.test_restart_reports_retained_candidate_while_cooling_down`: restart reports retained candidate while cooling down
@@ -2348,6 +2522,27 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 - `LiveServingIntegrationTests.test_observations_train_certify_review_select_and_generate`: observations train certify review select and generate
 - `LiveServingIntegrationTests.test_public_observations_train_but_unusable_generation_is_not_selected`: public observations train but unusable generation is not selected
+
+</details>
+
+### `external/maxcore/artifacts/ai-training-server/tests/test_live_tempo_controls.py`
+
+test live tempo controls
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_tempo_controls.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_explicit_live_tempo_uses_measurement_not_renderer_default`: explicit live tempo uses measurement not renderer default
+- `test_missing_or_invalid_measurements_fail_explicitly`: missing or invalid measurements fail explicitly
+- `test_explicit_bpm_is_preserved_and_conflicts_are_rejected`: explicit bpm is preserved and conflicts are rejected
 
 </details>
 
@@ -2438,6 +2633,27 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 24}.
 - `MediaLearningTests.test_routes_supported_modalities_return_full_blocked_report`: routes supported modalities return full blocked report
 - `MediaLearningTests.test_post_validates_only_operator_configured_corpus`: post validates only operator configured corpus
 - `MediaLearningTests.test_post_without_root_is_explicitly_blocked`: post without root is explicitly blocked
+
+</details>
+
+### `external/maxcore/artifacts/ai-training-server/tests/test_model_state_provenance.py`
+
+Execute the real state-reporting function without starting live services.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_model_state_provenance.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `ModelStateProvenance.test_all_domains_report_unavailable_without_fabricated_provenance`: all domains report unavailable without fabricated provenance
+- `ModelStateProvenance.test_ready_model_reports_only_recorded_architecture_and_provenance`: ready model reports only recorded architecture and provenance
+- `ModelStateProvenance.test_ready_release_without_metadata_does_not_invent_missing_values`: ready release without metadata does not invent missing values
 
 </details>
 
@@ -2613,17 +2829,22 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 19}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `PublicPeakCurriculumTests.test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor`: real isolated v2 updates resume weights optimizer and cursor
-- `PublicPeakCurriculumTests.test_unknown_rights_peak_posts_block_before_worker_and_preserve_awareness`: unknown rights peak posts block before worker and preserve awareness
-- `PublicPeakCurriculumTests.test_legacy_mode_cannot_train_unknown_rights_raw_peak_posts`: legacy mode cannot train unknown rights raw peak posts
+- `PublicPeakCurriculumTests.test_invalid_explicit_rights_block_before_worker_and_preserve_awareness`: invalid explicit rights block before worker and preserve awareness
+- `PublicPeakCurriculumTests.test_legacy_mode_cannot_bypass_invalid_explicit_rights`: legacy mode cannot bypass invalid explicit rights
 - `PublicPeakCurriculumTests.test_peak_training_rights_never_infer_license_from_public_metadata`: peak training rights never infer license from public metadata
 - `PublicPeakCurriculumTests.test_explicit_owned_licensed_manifest_still_trains_real_weights`: explicit owned licensed manifest still trains real weights
 - `PublicPeakCurriculumTests.test_stage_supervision_preserves_exact_words_and_requires_real_cta`: stage supervision preserves exact words and requires real cta
+- `PublicPeakCurriculumTests.test_current_curriculum_teaches_source_spans_without_inventing_cta`: current curriculum teaches source spans without inventing cta
+- `PublicPeakCurriculumTests.test_partial_stages_do_not_add_empty_bodies_or_interpret_injected_tags`: partial stages do not add empty bodies or interpret injected tags
+- `PublicPeakCurriculumTests.test_cta_before_social_footer_preserves_source_and_historical_policy`: cta before social footer preserves source and historical policy
+- `PublicPeakCurriculumTests.test_new_policy_does_not_relabel_non_footer_prose_as_cta`: new policy does not relabel non footer prose as cta
+- `PublicPeakCurriculumTests.test_legacy_curricula_reproduce_exact_text_and_metadata`: legacy curricula reproduce exact text and metadata
 - `PublicPeakCurriculumTests.test_bootstrap_replays_fresh_content_with_durable_budget_then_changed_only`: bootstrap replays fresh content with durable budget then changed only
 - `PublicPeakCurriculumTests.test_missing_peak_content_never_falls_back_to_context`: missing peak content never falls back to context
 - `PublicPeakCurriculumTests.test_refresh_reuses_validated_peak_adapter_without_reloading_probes`: refresh reuses validated peak adapter without reloading probes
@@ -2788,7 +3009,7 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 37}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 48}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2796,6 +3017,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 37}.
 - `TextTrainingRightsTests.test_exact_operator_grants_attach_bound_receipts_without_relabeling_awareness`: exact operator grants attach bound receipts without relabeling awareness
 - `TextTrainingRightsTests.test_missing_either_operator_configuration_value_cannot_grant_permission`: missing either operator configuration value cannot grant permission
 - `TextTrainingRightsTests.test_receipts_supplied_as_record_metadata_are_not_operator_configuration`: receipts supplied as record metadata are not operator configuration
+- `TextTrainingRightsTests.test_trusted_live_admission_retains_unknown_license_and_provenance`: trusted live admission retains unknown license and provenance
+- `TextTrainingRightsTests.test_trusted_live_admission_rejects_corruption_private_and_spoofed_receipts`: trusted live admission rejects corruption private and spoofed receipts
+- `TextTrainingRightsTests.test_trusted_live_admission_does_not_ignore_explicit_broken_grant_policy`: trusted live admission does not ignore explicit broken grant policy
+- `TextTrainingRightsTests.test_trusted_live_admission_requires_one_nonempty_observation_set`: trusted live admission requires one nonempty observation set
+- `TextTrainingRightsTests.test_live_execute_reaches_worker_with_audited_public_corpus`: live execute reaches worker with audited public corpus
 - `TextTrainingRightsTests.test_manifest_and_evidence_mutations_fail_closed`: manifest and evidence mutations fail closed
 - `TextTrainingRightsTests.test_source_domain_citation_and_complete_text_must_match`: source domain citation and complete text must match
 - `TextTrainingRightsTests.test_permission_license_purpose_and_dated_evidence_are_required`: permission license purpose and dated evidence are required
@@ -2954,7 +3180,7 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 7, "tests": 13}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3265,11 +3491,12 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_catalog_snapshot_ownership.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
 
+- `CatalogSnapshotOwnership.test_custom_output_paths_are_written_and_checked_without_touching_defaults`: custom output paths are written and checked without touching defaults
 - `CatalogSnapshotOwnership.test_current_suite_is_canonical_and_report_copy_is_hashed_only`: current suite is canonical and report copy is hashed only
 - `CatalogSnapshotOwnership.test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression`: report ownership covers plain and snapshot paths without filename suppression
 - `CatalogSnapshotOwnership.test_existing_current_classifications_and_assertions_are_preserved`: existing current classifications and assertions are preserved
@@ -3362,6 +3589,27 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 - `MountResolutionConsumer.test_missing_full_path_remains_unresolved`: missing full path remains unresolved
 - `MountResolutionConsumer.test_existing_unique_source_route_identity_is_unchanged`: existing unique source route identity is unchanged
 - `MountResolutionConsumer.test_same_source_url_in_distinct_processes_has_distinct_actual_consumer_ids`: same source url in distinct processes has distinct actual consumer ids
+
+</details>
+
+### `tests/testing/test_junit_multiple_failures.py`
+
+JUnit evidence must retain failed cases with multiple assertion details.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_junit_multiple_failures.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `JunitMultipleFailures.test_multiple_failures_remain_one_failed_case`: multiple failures remain one failed case
+- `JunitMultipleFailures.test_conflicting_outcomes_are_rejected`: conflicting outcomes are rejected
+- `JunitMultipleFailures.test_failure_cannot_be_hidden_by_success_counters`: failure cannot be hidden by success counters
 
 </details>
 
@@ -3574,6 +3822,28 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 </details>
 
+### `tests/testing/test_readiness_catalog.py`
+
+test readiness catalog
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_readiness_catalog.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `ReadinessCatalog.test_preserves_items_and_input_digest_without_claiming_readiness`: preserves items and input digest without claiming readiness
+- `ReadinessCatalog.test_empty_inventory_cannot_imply_success`: empty inventory cannot imply success
+- `ReadinessCatalog.test_duplicate_ids_cannot_hide_missing_items`: duplicate ids cannot hide missing items
+- `ReadinessCatalog.test_missing_closure_contract_is_rejected`: missing closure contract is rejected
+
+</details>
+
 ### `tests/testing/test_remediation.py`
 
 Pure-data contracts for the master verification's repair guide.
@@ -3656,6 +3926,27 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 - `test_python_scopes_qualify_only_ambiguous_explicit_classes`: python scopes qualify only ambiguous explicit classes
 - `test_python_missing_class_scope_stays_ambiguous`: python missing class scope stays ambiguous
 - `test_python_missing_names_or_blank_classes_never_acquire_a_usable_identity`: python missing names or blank classes never acquire a usable identity
+
+</details>
+
+### `tests/testing/test_untracked_suite_discovery.py`
+
+Exercise suite discovery against real Git indexes and working trees.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_untracked_suite_discovery.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `SuiteDiscovery.test_node_includes_untracked_and_respects_ignored_files`: node includes untracked and respects ignored files
+- `SuiteDiscovery.test_python_includes_untracked_and_respects_ignored_files`: python includes untracked and respects ignored files
+- `SuiteDiscovery.test_catalog_includes_new_nested_first_party_tests`: catalog includes new nested first party tests
 
 </details>
 

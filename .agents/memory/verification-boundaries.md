@@ -15,6 +15,12 @@ Do not weaken the publishing image budget to accommodate a fully provisioned dev
 
 **How to apply:** Record the developer-host refusal honestly and require a measured, budget-compliant publishing environment before claiming release-installation acceptance.
 
+Distinguish compressed-release verification from developer-host installation fixtures.
+
+**Why:** The user corrected treating a host-size refusal as evidence against the existing PDIM capsule publishing approach. An oversized developer Nix store does not establish that the compressed release is oversized or that compression failed.
+
+**How to apply:** Trace packing and boot restoration before diagnosing image size. Attribute a fixture failure to its measured inputs; certify the real shipped payload and deployment layers separately without bypassing the production gate.
+
 Cold-start verification must inspect background-worker initialization as well as HTTP health.
 
 **Why:** In this application, the listener and landing page stayed healthy while a separate storage/watchdog initialization thread had crashed. Successful health probes alone did not establish that those services were operating.
@@ -56,3 +62,15 @@ Measure audio delivery thresholds after final encoding, and make test analysis c
 **Why:** A mastered intermediate does not prove a lossy video's final true peak. Reading interleaved stereo as mono also changes apparent frequencies and can falsely pass a narration-versus-music test.
 
 **How to apply:** Recheck delivered encodings and decode channel layout before spectral assertions. Treat loudness acceptance as a technical measurement, not evidence of natural speech or perceptual quality.
+
+Distinguish isolated-test prerequisites from application configuration.
+
+**Why:** Isolated runners intentionally remove live credentials, and toolchain-installed Chromium can exist outside `/usr/bin`. A test's missing prerequisite does not prove an absent application secret or an uninstalled browser.
+
+**How to apply:** Inspect the test's discovery and isolation boundary before asking for credentials or installing another runtime. Preserve real missing-prerequisite failures and never count them as passed.
+
+Portable compiler verification can fail before compilation on this developer host.
+
+**Why:** The pinned official Rust toolchain's compiler driver failed to load with `cannot allocate memory in static TLS block`; the alternative Nix build also encountered an unwritable cache. Neither result establishes an application compilation defect.
+
+**How to apply:** Diagnose the loader/build environment separately. Preserve archive verification and the pinned compiler version; do not downgrade them or call a skipped compilation successful.

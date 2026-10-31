@@ -1,7 +1,7 @@
 // Real React DOM transitions in isolated Chromium. API/query fixtures provide
 // pending/data states; this verifies component lifecycle, not payment delivery.
 import { test } from "node:test";
-import { trackBrowserProcesses } from "./helpers-browser-processes.mjs";
+import { trackBrowserProcesses, findChromium } from "./helpers-browser-processes.mjs";
 import assert from "node:assert/strict";
 import { build } from "esbuild";
 import fs from "node:fs";
@@ -13,8 +13,7 @@ import WebSocket from "ws";
 
 test("Storefront keeps hook order across pending, missing and loaded public/owner states", { timeout: 30000 }, async () => {
   const root = process.cwd();
-  const chromium = [process.env.CHROMIUM_PATH, "/usr/bin/chromium", "/usr/bin/chromium-browser"]
-    .find(candidate => candidate && fs.existsSync(candidate));
+  const chromium = findChromium();
   assert.ok(chromium, "Chromium is required for the actual lifecycle regression");
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "storefront-hooks-"));
   const uiNames = ["Card", "CardContent", "CardDescription", "CardHeader", "CardTitle", "Button", "Badge", "Separator"];

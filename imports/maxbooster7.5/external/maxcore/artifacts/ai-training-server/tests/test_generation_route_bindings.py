@@ -68,7 +68,8 @@ class RouteBindings(unittest.IsolatedAsyncioTestCase):
         with patch("ai_model.quality_awareness.self_sufficiency",
                    return_value={"retired": True}) as corpus_gate:
             result = await generate({"topic": "public trends"})
-        self.assertEqual(observed, [conditioning(self.snap, "general", "text")])
+        self.assertEqual(observed, [conditioning(self.snap, "general", "text", topic="public trends")])
+        self.assertNotEqual(observed[0], conditioning(self.snap, "general", "text"))
         self.assertTrue(observed[0])
         self.assertEqual(result["snapshot_id"], self.snap.id)
         corpus_gate.assert_not_called()

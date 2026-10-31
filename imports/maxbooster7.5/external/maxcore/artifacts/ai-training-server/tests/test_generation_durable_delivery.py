@@ -70,19 +70,14 @@ class DeliveryTests(unittest.TestCase):
             journal = Path(directory) / "pending.json"
             def persist(job, record):
                 journal.write_text(json.dumps(record))
-            def rendered(path, *, job_id, bpm=None):
-                with wave.open(str(path), "wb") as wav:
-                    wav.setnchannels(1)
-                    wav.setsampwidth(2)
-                    wav.setframerate(8000)
-                    wav.writeframes(b"\x01\x00" * 800)
             def unavailable(payload):
                 raise OSError("offline transport")
-            with patch("ai_model.audio.controls.render_audio", new=rendered):
-                with self.assertRaises(OSError):
-                    render("audio", {}, directory, owner_id="owner", job_id="pending",
-                           persist_job=persist, read_job=lambda job: json.loads(journal.read_text()),
-                           committer=partial(commit_artifact, transport=unavailable, attempts=1))
+            with self.assertRaises(OSError):
+                render("audio", {"duration_sec": .1, "sample_rate": 8000,
+                                "instrument": "piano", "arrangement": "loop"},
+                       directory, owner_id="owner", job_id="pending",
+                       persist_job=persist, read_job=lambda job: json.loads(journal.read_text()),
+                       committer=partial(commit_artifact, transport=unavailable, attempts=1))
             record = json.loads(journal.read_text())
             self.assertEqual(record["status"], "committing")
             self.assertTrue(Path(record["scratch_path"]).exists())

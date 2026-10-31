@@ -66,8 +66,9 @@ def test_actual_audio_artifact_depends_on_executed_kernel(tmp_path, monkeypatch)
     monkeypatch.setitem(gpu.backend.kernels, "pcm16",
                         lambda x: np.zeros(len(x), dtype=np.int16))
     muted = tmp_path / "muted.wav"
-    render_audio(muted, job_id="facade-test", duration_sec=.25, sample_rate=8000,
-                 instrument="piano", arrangement="loop")
+    with pytest.raises(ValueError, match="no varying audio signal"):
+        render_audio(muted, job_id="facade-test", duration_sec=.25, sample_rate=8000,
+                     instrument="piano", arrangement="loop")
     with wave.open(str(muted)) as wav:
         assert not any(wav.readframes(wav.getnframes()))
 
