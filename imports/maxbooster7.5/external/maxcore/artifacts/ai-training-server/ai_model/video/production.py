@@ -134,6 +134,11 @@ def render_production(production, *, duration_sec, width, height, fps, color1, c
                                check=True, capture_output=True, timeout=90)
             require_audio_stream(mixed, minimum_duration=duration)
             audio = mixed
+        if audio:
+            from ai_model.audio.finishing import finish_audio
+            mastered = str(root / "mastered.wav")
+            finish_audio(audio, mastered)
+            audio = mastered
         scenes = []
         for index, (source, frames) in enumerate(zip(production["scenes"], frame_counts)):
             size = max(12, min(width // 18, height // 16))
@@ -159,7 +164,10 @@ def render_production(production, *, duration_sec, width, height, fps, color1, c
         try:
             validate_video(result.file_path, width, height, sum(frame_counts), fps)
             if audio:
+                from ai_model.audio.finishing import verify_finished_audio
                 require_audio_stream(result.file_path, minimum_duration=duration - 1 / fps)
+                result.audio_finishing = verify_finished_audio(result.file_path)
+                result.audio_finishing["adaptive_ducking"] = "music" in production and "narration" in production
                 subprocess.run(["ffmpeg", "-v", "error", "-xerror", "-i", result.file_path,
                                 "-map", "0:a:0", "-f", "null", "-"],
                                check=True, capture_output=True, timeout=120)

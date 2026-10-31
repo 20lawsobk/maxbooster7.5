@@ -32,6 +32,7 @@ def _read_wav(path):
         sr = wf.getframerate()
         n = wf.getnframes()
         data = np.frombuffer(wf.readframes(n), dtype=np.int16).astype(np.float64)
+        data = data.reshape(-1, wf.getnchannels()).mean(axis=1)
     return sr, data
 
 

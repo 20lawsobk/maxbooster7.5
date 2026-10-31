@@ -29,7 +29,7 @@ class SnapshotContractTests(unittest.TestCase):
             plan = GenerationPlan.from_request({"topic": "music"}, "text")
         self.assertIsNone(plan.snapshot_hash)
         self.assertNotIn("snapshot", plan.to_dict())
-        self.assertEqual(plan.to_dict()["version"], "generation-plan-v4")
+        self.assertEqual(plan.to_dict()["version"], "generation-plan-v5")
 
     def test_invalid_and_empty_snapshots_rejected(self):
         for payload in ({}, {"id": "x"}, {"id": "x", "expires_at": 0}):

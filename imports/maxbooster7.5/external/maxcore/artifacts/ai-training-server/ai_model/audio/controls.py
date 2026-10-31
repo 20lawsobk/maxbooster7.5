@@ -1,6 +1,8 @@
 """Strict dedicated audio entrypoint using the existing synthesis and WAV codec."""
 from pathlib import Path
 import wave
+import tempfile
+import os
 import numpy as np
 
 from ai_model.capabilities import finite_number, reject_semantic_controls, bounded_text, choice, capabilities, MAX_AUDIO_SAMPLE_FRAMES
@@ -9,7 +11,7 @@ from .digital_gpu_synth import render_full_track, write_wav, _NOTE_SEMI, _genre_
 
 def render_audio(path, *, job_id, duration_sec=30, bpm=120, key="C minor",
                  genre="", mood="", sample_rate=44100, instrument="ensemble",
-                 arrangement="structured", subject=None, reference=None, style=None):
+                 arrangement="structured", mastering="none", subject=None, reference=None, style=None):
     reject_semantic_controls(subject=subject, reference=reference, style=style)
     bounded_text(key, "key", 32)
     bounded_text(genre, "genre", 100)
@@ -17,7 +19,10 @@ def render_audio(path, *, job_id, duration_sec=30, bpm=120, key="C minor",
     supported = capabilities("audio")
     choice(instrument, "instrument", supported["instruments"])
     choice(arrangement, "arrangement", supported["arrangements"])
+    choice(mastering, "mastering", ("none", "streaming"))
     duration_sec = finite_number(duration_sec, "duration_sec", .05, 300)
+    if mastering == "streaming" and duration_sec < 1:
+        raise ValueError("Measured mastering requires at least one second of audio")
     bpm = finite_number(bpm, "bpm", 60, 200)
     rate = finite_number(sample_rate, "sample_rate", 8000, 96000)
     if not rate.is_integer():
@@ -39,7 +44,18 @@ def render_audio(path, *, job_id, duration_sec=30, bpm=120, key="C minor",
     if not np.isfinite(samples).all():
         raise ValueError("Synthesizer returned non-finite audio samples")
     write_wav(path, samples, sample_rate)
-    return validate_audio(path, duration_sec=duration_sec, sample_rate=sample_rate)
+    finishing = None
+    if mastering == "streaming":
+        from .finishing import finish_audio
+        with tempfile.TemporaryDirectory(prefix="master-", dir=path.parent) as temp:
+            mastered = Path(temp) / "master.wav"
+            finishing = finish_audio(path, mastered, sample_rate=sample_rate, bit_depth=16)
+            validate_audio(mastered, duration_sec=duration_sec, sample_rate=sample_rate)
+            os.replace(mastered, path)
+    result = validate_audio(path, duration_sec=duration_sec, sample_rate=sample_rate)
+    if finishing is not None:
+        result["audio_finishing"] = finishing
+    return result
 
 
 def validate_audio(path, *, duration_sec, sample_rate):

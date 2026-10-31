@@ -54,6 +54,7 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
         record["snapshot_id"] = plan.snapshot_hash
     persist_job(job_id, record)
     stage = "rendering"
+    finishing = None
     try:
         if modality == "audio":
             from ai_model.audio.controls import render_audio as renderer
@@ -90,9 +91,11 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
             persist_job(job_id, record)
             # The synthesizer derives its local random stream from job_id.
             # Delivery identity stays private/random, sampling identity does not.
-            renderer(artifact_path, job_id=f"seed:{plan.seed}", **controls)
+            audio_result = renderer(artifact_path, job_id=f"seed:{plan.seed}", **controls)
+            finishing = audio_result.get("audio_finishing")
         else:
             result = renderer(**controls)
+            finishing = getattr(result, "audio_finishing", None)
             if modality == "image":
                 from ai_model.image.image_engine import _UPLOADS_DIR
                 source = Path(_UPLOADS_DIR) / result.filename
@@ -112,6 +115,8 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
         delivery_metadata = {"capability": capabilities(modality),
                              "effective_controls": without_inline_media(controls),
                              "generation_plan": generation_plan}
+        if finishing is not None:
+            delivery_metadata["audio_finishing"] = finishing
         if plan.snapshot_hash is not None:
             delivery_metadata["snapshot_id"] = plan.snapshot_hash
         committing = {**record, "status": "committing",
@@ -134,6 +139,7 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
         "url": receipt["url"], "job_id": job_id, "receipt": receipt,
         "success": True, "status": "completed", "delivery_status": "durable",
         "capability": capabilities(modality),
+        "audio_finishing": finishing,
         "validation": {"status": "artifact_validated", "artifact_validated": True,
                        "checks": ["decoded_artifact_matches_controls"],
                        "quality": "not_evaluated"},

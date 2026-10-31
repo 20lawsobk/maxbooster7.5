@@ -209,12 +209,15 @@ class DedicatedMediaHTTP(unittest.IsolatedAsyncioTestCase):
         image = base64.b64encode(buffer.getvalue()).decode()
         status, result = await post_json(self.app, "/api/generate-video", {
             "idea": "An authored release",
-            "dedicated_controls": {"width": 128, "height": 96, "duration_sec": 1,
+            "dedicated_controls": {"width": 128, "height": 96, "duration_sec": 3,
                 "production": {"version": 1, "transition": "fade", "color_grade": "none",
-                    "scenes": [{"text": "My release", "duration_sec": 1, "image_b64": image}]}}})
+                    "music": {"bpm": 120, "key": "C minor", "instrument": "piano", "arrangement": "loop"},
+                    "scenes": [{"text": "My release", "duration_sec": 3, "image_b64": image}]}}})
         self.assertEqual(status, 200, result)
         self.assertEqual(result["receipt"]["owner_id"], "owner-a")
         self.assertEqual(result["delivery_status"], "durable")
+        self.assertTrue(result["audio_finishing"]["verified"])
+        self.assertIn('"audio_finishing"', json.dumps(self.commits[-1]))
         self.assertNotIn(image, json.dumps(result))
         self.assertNotIn(image, json.dumps(self.read(result["job_id"])))
         self.assertNotIn(image, json.dumps(self.commits[-1]))

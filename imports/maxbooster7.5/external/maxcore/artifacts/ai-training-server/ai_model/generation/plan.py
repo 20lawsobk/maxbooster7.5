@@ -7,7 +7,7 @@ from hashlib import sha256
 import json
 from typing import Any, Literal
 
-GENERATION_PLAN_VERSION = "generation-plan-v4"
+GENERATION_PLAN_VERSION = "generation-plan-v5"
 
 Modality = Literal["text", "content", "image", "audio", "video", "campaign"]
 active_plan: ContextVar["GenerationPlan | None"] = ContextVar("generation_plan", default=None)

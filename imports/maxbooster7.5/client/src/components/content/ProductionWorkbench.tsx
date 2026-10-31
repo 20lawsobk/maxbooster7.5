@@ -348,6 +348,11 @@ export function ProductionWorkbench({ platform = "instagram", onGenerated }: Pro
       {stale && <p role="status" className="rounded bg-amber-500/15 px-2 py-1 text-sm text-amber-700 dark:text-amber-300" data-testid="status-stale">Out of date: the project changed after this render. Render again to match your edits.</p>}
       {error && <p className="text-xs text-muted-foreground">Showing the last successful render.</p>}
       <video controls playsInline src={output.media.url} className="max-h-96 w-full rounded bg-black/80" />
+      {output.media.audioFinishing && <p className="text-sm text-muted-foreground">
+        Measured soundtrack: {output.media.audioFinishing.integratedLufs.toFixed(1)} LUFS
+        {" · "}{output.media.audioFinishing.truePeakDbtp.toFixed(1)} dBTP.
+        {output.media.audioFinishing.adaptiveDucking && " Music is reduced during narration and recovers between phrases."}
+      </p>}
       <p className="text-sm text-muted-foreground">{output.media.width} x {output.media.height}{output.media.durationSec ? ` · ${output.media.durationSec.toFixed(2)}s` : ""}{output.timeline ? ` · ${output.timeline.length} scenes confirmed by receipt` : ""}</p>
       <div className="flex flex-wrap gap-3 text-sm">
         <a href={output.media.url} download="production.mp4" className="inline-flex items-center gap-1 font-medium underline" data-testid="link-download-video"><Download className="h-4 w-4" />Download video</a>

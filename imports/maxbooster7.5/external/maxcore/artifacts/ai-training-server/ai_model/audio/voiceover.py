@@ -191,11 +191,13 @@ def mix_voiceover_over_music(
             ["ffmpeg", "-y",
              "-i", str(vo_path), "-i", str(music_path),
              "-filter_complex",
-             (f"[0:a]aresample={int(sample_rate)},apad[a0];"
-              f"[1:a]aresample={int(sample_rate)},volume={music_gain}[a1];"
-              f"[a0][a1]amix=inputs=2:duration=longest:normalize=0[aout]"),
+             (f"[0:a]aresample={int(sample_rate)},aformat=channel_layouts=stereo,apad,asplit=2[voice][detector];"
+              f"[1:a]aresample={int(sample_rate)},apad,volume={music_gain}[music];"
+              "[music][detector]sidechaincompress=threshold=0.02:ratio=8:"
+              "attack=15:release=350:makeup=1:detection=rms[ducked];"
+              "[voice][ducked]amix=inputs=2:duration=longest:normalize=0[aout]"),
              "-map", "[aout]", "-t", f"{dur:.3f}",
-             "-ar", str(int(sample_rate)), "-ac", "1",
+             "-ar", str(int(sample_rate)), "-ac", "2",
              str(out_path)],
             timeout=90,
         )

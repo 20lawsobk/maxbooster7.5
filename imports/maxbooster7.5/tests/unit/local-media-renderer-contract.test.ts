@@ -31,6 +31,19 @@ function receipt(kind: "image" | "audio" | "video") {
 }
 
 describe("explicit media renderer UI contracts", () => {
+  it("requests measured mastering explicitly and rejects invalid finishing claims", () => {
+    expect(buildLocalMediaRequest("audio", { ...options, normalizeLoudness: true }).body.dedicated_controls)
+      .toHaveProperty("mastering", "streaming");
+    const delivered = { ...receipt("audio"), audio_finishing: {
+      verified: true, integrated_lufs: -16.2, true_peak_dbtp: -2.1,
+    } };
+    expect(readLocalMediaResult("audio", delivered).audioFinishing).toEqual({
+      integratedLufs: -16.2, truePeakDbtp: -2.1, adaptiveDucking: false,
+    });
+    expect(() => readLocalMediaResult("audio", { ...delivered, audio_finishing: {
+      ...delivered.audio_finishing, true_peak_dbtp: 0.5,
+    } })).toThrow();
+  });
   it("requests measured tempo without overriding it with a hidden BPM default", () => {
     const request = buildLocalMediaRequest("audio", { ...options, useAwarenessTempo: true });
     expect(request.body.dedicated_controls).toHaveProperty("use_awareness_tempo", true);

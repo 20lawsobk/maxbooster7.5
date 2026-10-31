@@ -50,3 +50,9 @@ Keep authored scene composition independent from automatic rolling-frame continu
 **Why:** Reusing a preceding scene's terminal frame can carry its photo and burned-in text into the next authored scene, changing the user's specified composition.
 
 **How to apply:** Disable inherited frames for exact authored projects while retaining intentional continuity for generative workflows. Verify scene boundaries as well as total frame counts.
+
+Measure audio delivery thresholds after final encoding, and make test analysis channel-aware.
+
+**Why:** A mastered intermediate does not prove a lossy video's final true peak. Reading interleaved stereo as mono also changes apparent frequencies and can falsely pass a narration-versus-music test.
+
+**How to apply:** Recheck delivered encodings and decode channel layout before spectral assertions. Treat loudness acceptance as a technical measurement, not evidence of natural speech or perceptual quality.

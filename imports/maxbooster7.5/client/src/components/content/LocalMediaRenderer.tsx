@@ -13,11 +13,13 @@ export interface LocalMediaResult {
   bpm?: number;
   key?: string;
   instrument?: string;
+  audioFinishing?: { integratedLufs: number; truePeakDbtp: number; adaptiveDucking: boolean };
   controls: Record<string, unknown>;
   capability: Record<string, unknown>;
 }
 
 interface RendererOptions {
+  normalizeLoudness?: boolean;
   useAwarenessTempo?: boolean;
   storyboard?: string;
   headline: string;
@@ -97,7 +99,8 @@ export function buildLocalMediaRequest(kind: LocalMediaKind, options: RendererOp
       platform: options.platform, prompt: "Instrumental synthesis", duration: options.durationSec,
       dedicated_controls: { duration_sec: options.durationSec,
         ...(options.useAwarenessTempo ? { use_awareness_tempo: true } : { bpm: options.bpm }),
-        key: options.key, instrument: options.instrument, arrangement: options.arrangement, sample_rate: 44100 },
+        key: options.key, instrument: options.instrument, arrangement: options.arrangement, sample_rate: 44100,
+        ...(options.normalizeLoudness ? { mastering: "streaming" } : {}) },
     } };
   }
   if (!["solid", "gradient"].includes(options.background) ||
@@ -129,6 +132,19 @@ export function readLocalMediaResult(kind: LocalMediaKind, value: unknown): Loca
     throw new Error("The renderer did not deliver a validated media file. Retry when generation is available.");
   }
   const controls = record(value.receipt.effective_controls) ? value.receipt.effective_controls : {};
+  const finishing = value.audio_finishing ?? value.receipt.audio_finishing;
+  let audioFinishing: LocalMediaResult["audioFinishing"];
+  if (finishing != null) {
+    if (!record(finishing) || finishing.verified !== true ||
+        typeof finishing.integrated_lufs !== "number" || !Number.isFinite(finishing.integrated_lufs) ||
+        Math.abs(finishing.integrated_lufs + 16) > 1 ||
+        typeof finishing.true_peak_dbtp !== "number" || !Number.isFinite(finishing.true_peak_dbtp) ||
+        finishing.true_peak_dbtp > -1) {
+      throw new Error("The soundtrack has no valid measured finishing result");
+    }
+    audioFinishing = { integratedLufs: finishing.integrated_lufs, truePeakDbtp: finishing.true_peak_dbtp,
+      adaptiveDucking: finishing.adaptive_ducking === true };
+  }
   const duration = value.receipt.duration;
   const width = value.receipt.width;
   const height = value.receipt.height;
@@ -143,7 +159,7 @@ export function readLocalMediaResult(kind: LocalMediaKind, value: unknown): Loca
     throw new Error("The rendered dimensions do not match the applied controls");
   }
   if (kind !== "image" && !positive(duration)) throw new Error("The rendered file has no verified duration");
-  return { kind, url: value.url, controls, capability: value.capability,
+  return { kind, url: value.url, controls, capability: value.capability, audioFinishing,
     ...(positive(width) ? { width } : {}), ...(positive(height) ? { height } : {}),
     ...(positive(duration) ? { durationSec: duration } : {}),
     ...(positive(controls.bpm) ? { bpm: controls.bpm } : {}),
@@ -162,6 +178,7 @@ export function LocalMediaRenderer({ kind, initialHeadline = "", initialBpm = 12
   const [durationSec, setDurationSec] = useState(kind === "audio" ? 8 : 4);
   const [bpm, setBpm] = useState(initialBpm);
   const [useAwarenessTempo, setUseAwarenessTempo] = useState(false);
+  const [normalizeLoudness, setNormalizeLoudness] = useState(true);
   const [key, setKey] = useState("C minor");
   const [instrument, setInstrument] = useState("piano");
   const [arrangement, setArrangement] = useState("loop");
@@ -187,7 +204,7 @@ export function LocalMediaRenderer({ kind, initialHeadline = "", initialBpm = 12
     setBusy(true); setError(null); setResult(null);
     try {
       const request = buildLocalMediaRequest(kind, { headline, platform, aspect, colorScheme,
-        durationSec, bpm, key, instrument, arrangement, background, color1, color2, storyboard, useAwarenessTempo });
+        durationSec, bpm, key, instrument, arrangement, background, color1, color2, storyboard, useAwarenessTempo, normalizeLoudness });
       const response = await apiRequest("POST", request.endpoint, request.body, {
         signal: controller.signal, maxRetries: 0,
       });
@@ -224,6 +241,8 @@ export function LocalMediaRenderer({ kind, initialHeadline = "", initialBpm = 12
         <input id={`${id}-duration`} className={field} type="number" min={1} max={kind === "audio" ? 60 : 20}
           value={Number.isFinite(durationSec) ? durationSec : ""} onChange={event => setDurationSec(event.target.valueAsNumber)} /></div>}
       {kind === "audio" && <>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={normalizeLoudness}
+          onChange={event => setNormalizeLoudness(event.target.checked)} />Normalize to −16 LUFS with measured peak protection</label>
         <div className="space-y-1"><label htmlFor={`${id}-instrument`}>Instrument</label>
           <select id={`${id}-instrument`} className={field} value={instrument} onChange={event => setInstrument(event.target.value)}>
             {INSTRUMENTS.map(item => <option key={item} value={item}>{item}</option>)}
@@ -265,6 +284,10 @@ export function LocalMediaRenderer({ kind, initialHeadline = "", initialBpm = 12
       {busy ? "Creating…" : error ? "Retry" : title.action}
     </Button>
     {result && <div className="space-y-2" aria-label="Created media">
+      {result.audioFinishing && <p className="text-sm text-muted-foreground">
+        Measured audio: {result.audioFinishing.integratedLufs.toFixed(1)} LUFS
+        {" · "}{result.audioFinishing.truePeakDbtp.toFixed(1)} dBTP
+      </p>}
       {kind === "image" ? <img src={result.url} alt={String(result.controls.headline || "Created poster")} className="max-h-80 w-full object-contain" />
         : kind === "audio" ? <audio controls src={result.url} className="w-full" />
           : <video controls src={result.url} className="max-h-80 w-full" playsInline />}

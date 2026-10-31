@@ -31,7 +31,7 @@ Only public behavior was consulted, not implementation/source code.
 | Native image generation | Poster and still composition exist. Arbitrary subject generation, consistent identity and creative range require qualified native checkpoints and evaluated outputs. |
 | Moving footage | Still-scene composition works; uploaded clip trimming, source-audio choices, video-asset placement and moving subject generation are not implemented by this workspace. |
 | Narration quality | Local synthetic speech works. Natural voice quality, broader languages, phonetic control and reliable pronunciation remain unqualified. No voice-cloning claim. |
-| Audio finishing | Instrumentals and narration mixing exist; adaptive ducking, validated loudness/true-peak targets, and measured perceptual quality remain. |
+| Audio finishing | Speech-driven ducking, two-pass -16 LUFS finishing, and a measured -1 dBTP delivery ceiling are implemented. Production video is remeasured after encoding; standalone instrumentals expose measured mastering. Perceptual quality, wider fixtures, and platform-specific targets remain unqualified. |
 | Captions | Exported cues represent authored scene text, not speech-aligned transcription. Word alignment, caption styles and transcription need implementation and validation. |
 | Project persistence | Portable JSON projects are functional. Account-scoped cloud projects, revision history, autosave/recovery and collaboration remain. |
 | Cross-modal campaign workflow | The video workspace does not yet orchestrate autonomous coordinated text/image/audio/video campaigns or targeted regeneration across them. |
