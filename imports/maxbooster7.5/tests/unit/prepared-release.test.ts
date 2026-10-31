@@ -5,7 +5,6 @@ import path from "node:path";
 import { inventory, sourceIncluded, buildEnvironmentDigest } from "../../script/lib/releaseInventory";
 import { DEPLOYMENT_BOOTSTRAP_FILES } from "../../script/lib/deploymentControlFiles";
 import { treeIdentity } from "../../script/lib/preparedCapsules";
-import { spawnSync } from "node:child_process";
 import { verifyPreparedRelease, installPreparedRelease } from "../../script/publish-release";
 
 const fixtures: string[] = [];
@@ -40,23 +39,41 @@ it("accepts an unchanged prepared artifact set without invoking a build", async 
   await expect(verifyPreparedRelease(root)).resolves.toHaveProperty("payloadRoot");
 });
 it("installs only the verified payload into an explicitly disposable fixture", async () => {
-  const { root, manifest, write } = await fixture();
-  const publisher = fs.readFileSync("script/publish-release.ts", "utf8")
-    .replace(/from "(\.\/[^"]+)"/g, (_match, relative) =>
-      `from ${JSON.stringify(path.resolve("script", relative.replace(/\.js$/, ".ts")))}`);
-  write("script/publish-release.ts", publisher);
-  fs.symlinkSync(path.resolve("node_modules"), path.join(root, "node_modules"), "dir");
-  manifest.source = await inventory(root, sourceIncluded);
-  write(".prepared-release/release.json", JSON.stringify(manifest));
-  const command = [process.execPath, "--import", "tsx", "script/publish-release.ts", "--publish-disposable-copy", root];
-  const env = { ...process.env };
-  for (const key of ["DEPLOY_PACK", "PUBLISH_BUILD_ROOT", "PUBLISH_PAYLOAD_CLEANUP"]) delete env[key];
-  const result = spawnSync(command[0], command.slice(1), { cwd: root, env, encoding: "utf8", timeout: 60000 });
-  expect(result.status, result.stderr + result.stdout).toBe(0);
-  expect(result.stdout).toContain("no application build or package installation ran");
+  const { root, manifest } = await fixture();
+  const authorization = {
+    DEPLOY_PACK: "1",
+    PUBLISH_PAYLOAD_CLEANUP: "1",
+    PUBLISH_BUILD_ROOT: root,
+  };
+  // Keep the production image-budget checks, but supply a deterministic fully
+  // covered Nix measurement so this installer test does not depend on the
+  // developer host's unrelated compiler and browser packages.
+  await installPreparedRelease(root, authorization, () => ({
+    roots: ["/nix/store/fixture-runtime"],
+    coveredRoots: ["/nix/store/fixture-runtime"],
+    totalBytes: 1024,
+  }));
   expect(fs.existsSync(path.join(root, "server/input.ts"))).toBe(false);
   expect(await inventory(root)).toEqual(manifest.payload);
 }, 60000);
+
+it("refuses oversized and incompletely measured Nix stores before fixture mutation", async () => {
+  for (const nix of [
+    { roots: ["/nix/store/unmeasured"], coveredRoots: [], totalBytes: 0 },
+    { roots: ["/nix/store/oversized"], coveredRoots: ["/nix/store/oversized"], totalBytes: 8 * 1024 ** 3 },
+  ]) {
+    const { root } = await fixture();
+    const authorization = {
+      DEPLOY_PACK: "1",
+      PUBLISH_PAYLOAD_CLEANUP: "1",
+      PUBLISH_BUILD_ROOT: root,
+    };
+    const before = await inventory(root);
+    await expect(installPreparedRelease(root, authorization, () => nix))
+      .rejects.toThrow(/exceeds image budget or has unmeasured Nix roots/);
+    expect(await inventory(root)).toEqual(before);
+  }
+});
 for (const change of ["edit", "add", "remove", "lock", "port mapping"]) {
   it(`rejects ${change} of release inputs`, async () => {
     const { root, write } = await fixture();

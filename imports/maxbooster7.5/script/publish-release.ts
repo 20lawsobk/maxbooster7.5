@@ -40,7 +40,11 @@ export async function verifyPreparedRelease(root: string) {
   return { manifest, payloadRoot };
 }
 
-export async function installPreparedRelease(root: string, env: NodeJS.ProcessEnv) {
+export async function installPreparedRelease(
+  root: string,
+  env: NodeJS.ProcessEnv,
+  measureNix = getNixClosureSize,
+) {
   root = path.resolve(root);
   if (!isPublishingEnvironment(env, root) || fs.realpathSync(root) !== root) {
     throw new Error("Prepared release installation requires explicit disposable publishing-root authorization");
@@ -50,7 +54,7 @@ export async function installPreparedRelease(root: string, env: NodeJS.ProcessEn
   assertPublishingPayloadClean(payloadRoot, policy);
   // The builder's Nix layer may differ from the preparation machine's layer.
   // Measure it afresh before any input deletion; never reuse a saved estimate.
-  const nix = getNixClosureSize();
+  const nix = measureNix();
   const payload = measurePublishingPayload(payloadRoot, policy);
   if (nix.roots.some(p => !nix.coveredRoots.includes(p)) ||
       nix.totalBytes + payload.totalBytes > 7.5 * 1024 ** 3) {

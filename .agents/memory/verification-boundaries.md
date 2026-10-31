@@ -15,6 +15,18 @@ Do not weaken the publishing image budget to accommodate a fully provisioned dev
 
 **How to apply:** Record the developer-host refusal honestly and require a measured, budget-compliant publishing environment before claiming release-installation acceptance.
 
+Keep release-installation tests independent of the host's Nix closure measurement.
+
+**Why:** The real image budget must remain enforced in production, but a developer host's shared compiler and browser store is not a stable fixture for testing payload installation.
+
+**How to apply:** Inject a measured Nix profile only at the installer test boundary; retain real measurement as the production default and test oversized or uncovered-root refusal before mutation.
+
+Do not invoke full-database backup actions from generic automation contract tests.
+
+**Why:** A real backup action can read the configured database and insert a pending catalog record before a remote upload fails, leaving test-created state behind.
+
+**How to apply:** Keep it out of broad empty-parameter action sweeps; exercise its failure path with database configuration removed and test success only against disposable database and storage fixtures.
+
 Distinguish compressed-release verification from developer-host installation fixtures.
 
 **Why:** The user corrected treating a host-size refusal as evidence against the existing PDIM capsule publishing approach. An oversized developer Nix store does not establish that the compressed release is oversized or that compression failed.
