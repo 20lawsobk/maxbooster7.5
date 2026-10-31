@@ -34,3 +34,9 @@ The user wants work considered many capability levels ahead, including what it t
 **Why:** The user corrected an incremental-fix framing that did not explain the complete path to the competitive target.
 
 **How to apply:** Work backward from that target, identify dependencies and measurable exit criteria across the full capability roadmap, and use it to prioritize implementation. A local repair is not completion of a capability level.
+
+The user narrows the temporary target: "Google veo is a level 100 final boss I'd be okay with pausing at level 75 and calling it a temporary production grade readiness".
+
+**Why:** The user accepts an intermediate production milestone before achieving the full competitive target.
+
+**How to apply:** Prioritize a bounded, genuinely production-ready MaxCore capability set before Veo superiority. Treat level 75 as the user's milestone metaphor, not a measured percentage of Veo performance or permission to waive reliability and output-quality verification. The longer-term competitive target remains.

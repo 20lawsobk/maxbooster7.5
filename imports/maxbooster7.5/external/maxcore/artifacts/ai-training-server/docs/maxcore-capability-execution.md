@@ -2,6 +2,19 @@
 
 ## Target and evidence standard
 
+The immediate target is the user's **level-75 temporary production milestone**,
+with Google Veo representing the longer-term level-100 target. This is a milestone
+metaphor, not a measured percentage of Veo performance. The 22 gates below are
+workstreams, not a linear conversion to those levels.
+
+For the intermediate milestone, prioritize a bounded supported capability set
+with useful real outputs, reliable end-to-end delivery, durable learning state,
+honest capability reporting, and validated recovery/security behavior. Advanced
+capabilities may remain outside the supported release scope, with their limits
+disclosed; unavailable capabilities must not be advertised as working.
+Competitive superiority is not a release prerequisite for this milestone.
+Passing tests alone does not establish output quality or production readiness.
+
 Enhance MaxCore's own engine until a controlled comparison demonstrates an
 advantage over a specified Google Veo version. Do not substitute Veo for native
 generation, claim wins from feature counts, or equate passing infrastructure
