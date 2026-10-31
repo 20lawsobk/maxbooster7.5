@@ -1,7 +1,11 @@
 """Executable renderer capabilities, not claims about trained model quality."""
 from copy import deepcopy
 import math
+import unicodedata
 
+MAX_AUDIO_SAMPLE_FRAMES = 44100 * 120
+MAX_VIDEO_PIXEL_FRAMES = 1920 * 1080 * 30 * 60
+MAX_SOURCE_IMAGE_PIXELS = 4096 * 4096
 
 CAPABILITIES = {
     "audio": {
@@ -32,6 +36,7 @@ CAPABILITIES = {
         },
         "instruments": ["ensemble", "piano", "synth", "bass", "drums"],
         "arrangements": ["structured", "loop"],
+        "max_sample_frames": MAX_AUDIO_SAMPLE_FRAMES,
         "duration_seconds": [0.05, 300],
         "limitations": ["Piano is additive synthesis, not a sampled acoustic piano.",
                         "No vocals, reference imitation, or arbitrary instruments."],
@@ -49,6 +54,8 @@ CAPABILITIES = {
             "all_math_on_facade": False,
         },
         "modes": ["poster", "supplied_background"],
+        "max_headline_characters": 280,
+        "max_source_pixels": MAX_SOURCE_IMAGE_PIXELS,
         "dimensions": [32, 4096],
         "limitations": ["Prompt is layout copy, not subject generation.",
                         "Small exports are full-layout thumbnails; tiny typography may not be legible.",
@@ -66,12 +73,16 @@ CAPABILITIES = {
             "host_support": ["PIL raster packing", "FFmpeg native encode/decode/mux"],
             "all_math_on_facade": False,
         },
-        "continuity": ["single_scene"],
+        "continuity": ["single_scene", "storyboard"],
+        "storyboard_scenes": [2, 8],
+        "storyboard_max_duration_seconds": 60,
+        "max_headline_characters": 280,
+        "max_pixel_frames": MAX_VIDEO_PIXEL_FRAMES,
         "backgrounds": ["solid", "gradient"],
         "duration_seconds": [0.05, 300],
         "dimensions": [32, 1920],
         "limitations": ["Animated promotional layout, not trained text-to-video.",
-                        "Single-scene continuity only; no character/reference identity.",
+                        "Single-scene or text storyboard sequencing; no character/reference identity.",
                         "No arbitrary subject, style or camera generation."],
     },
 }
@@ -87,11 +98,25 @@ def finite_number(value, name, low, high):
         raise ValueError(f"{name} must be a number")
     try:
         number = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         raise ValueError(f"{name} must be a number") from None
     if not math.isfinite(number) or not low <= number <= high:
         raise ValueError(f"{name} must be between {low} and {high}")
     return number
+
+
+def bounded_text(value, name, maximum):
+    if not isinstance(value, str) or len(value) > maximum:
+        raise ValueError(f"{name} must be text of at most {maximum} characters")
+    if any(unicodedata.category(char) in {"Cc", "Cs"} and char not in "\n\r\t" for char in value):
+        raise ValueError(f"{name} contains unsupported control characters")
+    return value
+
+
+def choice(value, name, supported):
+    if not isinstance(value, str) or value not in supported:
+        raise ValueError(f"Unsupported {name}")
+    return value
 
 
 def dimensions(width, height, maximum=4096, even=False):

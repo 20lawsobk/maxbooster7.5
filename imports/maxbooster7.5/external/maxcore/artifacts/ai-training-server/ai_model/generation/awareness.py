@@ -30,7 +30,9 @@ def require_context(platform="general", modality="text"):
     if snapshot is None:
         return ""
     from ai_model.awareness import conditioning
-    return conditioning(snapshot, platform, modality)
+    from .plan import active_plan
+    plan = active_plan.get()
+    return conditioning(snapshot, platform, modality, topic=plan.topic if plan else "")
 
 
 def ensure_context_once(awareness, platform="general", modality="text"):

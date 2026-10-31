@@ -54,9 +54,15 @@ def control_awareness(controls: SocialGenerationControls) -> str:
 
 def _clip_words(value: str, limit: int) -> str:
     value = " ".join((value or "").split())
+    if limit <= 0:
+        return ""
     if len(value) <= limit:
         return value
-    clipped = value[: limit + 1].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    # Reserve space for the ellipsis even when there is no word boundary.
+    clipped = value[:limit - 1]
+    if " " in clipped:
+        clipped = clipped.rsplit(" ", 1)[0]
+    clipped = clipped.rstrip(" ,;:-")
     return clipped + "…"
 
 

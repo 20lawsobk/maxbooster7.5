@@ -31,6 +31,22 @@ function receipt(kind: "image" | "audio" | "video") {
 }
 
 describe("explicit media renderer UI contracts", () => {
+  it("requests measured tempo without overriding it with a hidden BPM default", () => {
+    const request = buildLocalMediaRequest("audio", { ...options, useAwarenessTempo: true });
+    expect(request.body.dedicated_controls).toHaveProperty("use_awareness_tempo", true);
+    expect(request.body.dedicated_controls).not.toHaveProperty("bpm");
+  });
+  it("sends editable scene text and retains the existing durable result contract", () => {
+    const request = buildLocalMediaRequest("video", {
+      ...options, headline: "", storyboard: "New release\nOriginal music\nListen now",
+    });
+    expect(request.body.dedicated_controls).toMatchObject({
+      continuity: "storyboard", headline: "",
+      scene_headlines: ["New release", "Original music", "Listen now"],
+    });
+    expect(() => buildLocalMediaRequest("video", { ...options, storyboard: "Only one" })).toThrow();
+    expect(() => buildLocalMediaRequest("video", { ...options, storyboard: Array(9).fill("Scene").join("\n") })).toThrow();
+  });
   it.each(["image", "audio", "video"] as const)("builds only supported %s controls without caller ownership", kind => {
     const request = buildLocalMediaRequest(kind, options);
     expect(request.endpoint).toBe({ image: "/api/generate/image", audio: "/api/generate/audio", video: "/api/generate-video" }[kind]);

@@ -40,6 +40,18 @@ No complete capability level is certified by the work below.
 
 ## Capability gates
 
+The requested intermediate workflow covers **text, image, audio, and video**.
+Current additions include topic-aware observation ordering shared across those
+modalities, editable 2–8-scene promotional video rendering, and an explicit
+measured-live-tempo option for instrumental synthesis. Topic matching is lexical,
+not a claim of semantic understanding or measured performance uplift.
+
+These additions do not complete the requested production target. Learned text
+quality remains unqualified; poster composition is not arbitrary subject-image
+generation; instrumental synthesis is not vocal generation; text storyboards
+are not arbitrary cinematic scenes. Durable delivery infrastructure and passing
+renderer tests do not waive those remaining capability and quality requirements.
+
 | Level | Gate | Current evidence / remaining requirement |
 |---|---|---|
 | 1 | Intended configuration reaches execution | Partial: local live-awareness route traced; diffusion request-input omission repaired. Full route/control audit remains. |

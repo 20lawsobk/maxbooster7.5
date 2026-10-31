@@ -46,3 +46,9 @@ The user refines that intermediate target: "Think of a invideo level but with mo
 **Why:** The user defines the near-term ambition through a specialized video-production workflow rather than general-purpose Veo-level generation.
 
 **How to apply:** Use an InVideo-style workflow as a product reference, with MaxCore's existing awareness architecture determining its focused range. Prioritize useful end-to-end video creation and verify that live awareness changes relevant production decisions. This is a target, not a claim of parity or authorization to replace MaxCore with InVideo.
+
+The user extends the requested production workflow to "video generation as well as image,text, and audio".
+
+**Why:** The requested product scope is multimodal, not video-only.
+
+**How to apply:** Track end-to-end creation, awareness use, controls, output quality, and delivery independently for all four modalities. Improvements to one modality do not complete the others.

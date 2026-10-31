@@ -26,3 +26,15 @@ Do not diagnose a current learning refusal from one health snapshot while a trai
 **Why:** A historical observation error remained visible while the real learner progressed through training. The durable run result established progress that the earlier health snapshot had not yet reflected.
 
 **How to apply:** Correlate public status with the latest bounded run receipt before asking for new prerequisites or changing admission policy. Distinguish successful training and artifact eligibility from successful serving-capability evaluation.
+
+Version the generation contract when changing how a captured request and snapshot condition generation.
+
+**Why:** Cache identity includes the generation plan. The same request and snapshot must not reuse results interpreted under older conditioning semantics.
+
+**How to apply:** Change the prospective plan version with conditioning changes while leaving historical delivery receipts intact.
+
+Bound aggregate media work before rendering, not only individual request fields.
+
+**Why:** Individually valid duration, resolution, frame-rate and sample-rate limits can combine into excessive allocation or encoding work.
+
+**How to apply:** Enforce combined pixel-frame, sample-frame and source-pixel budgets at renderer entrypoints. Reject oversized work explicitly rather than silently reducing output quality; do not mistake these ceilings for load-test results.

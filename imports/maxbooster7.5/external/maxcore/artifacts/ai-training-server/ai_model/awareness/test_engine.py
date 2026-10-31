@@ -45,6 +45,38 @@ def resign(doc):
 
 
 class AwarenessTests(unittest.TestCase):
+    def test_topic_selection_is_shared_across_modalities_and_preserves_evidence(self):
+        from ai_model.generation.plan import GenerationPlan, active_plan
+        from ai_model.generation.awareness import require_context
+        import json
+        doc = self.snapshot.to_dict()
+        template = doc["domains"]["music"][0]
+        doc["domains"]["music"] = [
+            {**template, "id": str(index), "text": f"Fixture unrelated {index}"}
+            for index in range(7)
+        ] + [{**template, "id": "relevant", "text": "Jazz concert musicians"}]
+        for row in doc["domains"]["music"]:
+            row["id"] = hashlib.sha256(canonical(
+                [row["source"], row["citation"], row["text"]]).encode()).hexdigest()
+        relevant_id = doc["domains"]["music"][-1]["id"]
+        snap = Snapshot.parse(resign(doc))
+        for modality in ("text", "image", "audio", "video"):
+            with self.subTest(modality=modality), bind(snap):
+                plan = GenerationPlan.from_request({"prompt": "Jazz concert"}, modality)
+                token = active_plan.set(plan)
+                try:
+                    output = json.loads(require_context("instagram", modality).split("\n", 1)[1])
+                finally:
+                    active_plan.reset(token)
+                selected = output["observations"]["music"]
+                self.assertEqual(selected[0]["id"], relevant_id)
+                self.assertTrue(selected[0]["topic_match"])
+                self.assertEqual(selected[0]["citation"], template["citation"])
+                self.assertEqual(selected[0]["score"], template["score"])
+                self.assertEqual(output["snapshot_id"], snap.id)
+                self.assertEqual(len(selected), 6)
+        self.assertEqual(snap.to_dict(), doc | {"id": snap.id})
+
     def test_source_observation_writes_are_fenced_by_ingest_ownership(self):
         from .lease import PUBLISH_SOURCE_OBSERVATIONS
 

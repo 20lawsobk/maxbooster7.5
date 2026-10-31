@@ -8,9 +8,16 @@ from uuid import uuid4
 def conditioned_controls(modality, controls):
     """Only measured, compatible absent controls get snapshot defaults."""
     result = dict(controls)
+    measured_tempo = result.pop("use_awareness_tempo", False)
+    if type(measured_tempo) is not bool:
+        raise ValueError("use_awareness_tempo must be a boolean")
+    if measured_tempo and (modality != "audio" or "bpm" in result):
+        raise ValueError("Live tempo requires audio with no explicit BPM")
     from .awareness import sampling_snapshot
     snapshot = sampling_snapshot()
     if snapshot is None:
+        if measured_tempo:
+            raise ValueError("Measured live tempo unavailable")
         return result
     if modality == "audio" and "bpm" not in result:
         features = snapshot.to_dict().get("secondary", {}).get("music_features", {})
@@ -21,6 +28,8 @@ def conditioned_controls(modality, controls):
                 and isinstance(bpm, (float, int)) and not isinstance(bpm, bool)
                 and 60 <= bpm <= 200):
             result["bpm"] = bpm
+    if measured_tempo and "bpm" not in result:
+        raise ValueError("Measured live tempo unavailable for the requested genre")
     # Chart prose cannot establish image text, key, mood, duration or geometry.
     return result
 

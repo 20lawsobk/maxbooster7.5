@@ -1,7 +1,7 @@
 """Explicit poster/compositor API; never pass a subject prompt off as artwork."""
 from PIL import Image
 import numpy as np
-from ai_model.capabilities import dimensions, reject_semantic_controls
+from ai_model.capabilities import dimensions, reject_semantic_controls, bounded_text, choice, MAX_SOURCE_IMAGE_PIXELS
 from . import image_engine as engine
 
 
@@ -9,6 +9,12 @@ def render_image(*, headline="", width=1080, height=1080, mode="poster",
                  color_scheme="dark_neon", background=None, seed=None,
                  img_format="png", subject=None, reference=None, style=None):
     reject_semantic_controls(subject=subject, reference=reference, style=style)
+    bounded_text(headline, "headline", 280)
+    choice(mode, "mode", ("poster", "supplied_background"))
+    choice(color_scheme, "color_scheme", engine.COLOR_SCHEMES)
+    choice(img_format, "img_format", ("png", "jpg", "jpeg", "webp"))
+    if seed is not None and (type(seed) is not int or not 0 <= seed < 2**32):
+        raise ValueError("seed must be an integer in [0, 2**32)")
     width, height = dimensions(width, height)
     if mode not in ("poster", "supplied_background"):
         raise ValueError("Only poster and supplied_background image modes are supported")
@@ -19,6 +25,8 @@ def render_image(*, headline="", width=1080, height=1080, mode="poster",
                 or background.ndim != 3 or background.shape[2] != 3
                 or min(background.shape[:2]) < 1):
             raise ValueError("background must be a nonempty HxWx3 uint8 RGB array")
+        if background.shape[0] * background.shape[1] > MAX_SOURCE_IMAGE_PIXELS:
+            raise ValueError("Supplied background exceeds the source pixel budget")
     if color_scheme not in engine.COLOR_SCHEMES:
         raise ValueError(f"Unsupported color_scheme: {color_scheme}")
     if img_format not in ("png", "jpg", "jpeg", "webp"):

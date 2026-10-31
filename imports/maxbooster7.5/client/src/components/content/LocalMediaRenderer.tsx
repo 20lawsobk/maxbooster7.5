@@ -18,6 +18,8 @@ export interface LocalMediaResult {
 }
 
 interface RendererOptions {
+  useAwarenessTempo?: boolean;
+  storyboard?: string;
   headline: string;
   platform: string;
   aspect: string;
@@ -52,7 +54,7 @@ const ASPECTS: Record<string, [number, number]> = {
 const PRESENTATION = {
   image: { title: "Poster layout", description: "Place your exact headline on a designed background. This option creates typography and layout, not illustrated subjects.", action: "Create poster" },
   audio: { title: "Instrumental synthesis", description: "Create a piano, synth, bass, drum or ensemble instrumental. This option does not create vocals or imitate recordings.", action: "Create instrumental" },
-  video: { title: "Promotional clip", description: "Animate your headline over a solid or gradient background in one scene. This option does not create people, locations or cinematic scenes.", action: "Create clip" },
+  video: { title: "Promotional clip", description: "Create a headline clip or a 2–8 scene text storyboard over a solid or gradient background. This option does not create people, locations or cinematic scenes.", action: "Create clip" },
 };
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -68,7 +70,12 @@ export function buildLocalMediaRequest(kind: LocalMediaKind, options: RendererOp
   if (!Object.hasOwn(ASPECTS, options.aspect)) throw new Error("Choose a supported aspect ratio");
   const [width, height] = ASPECTS[options.aspect];
   const headline = options.headline.trim();
-  if (kind !== "audio" && (!headline || headline.length > 280)) {
+  const scenes = kind === "video" && options.storyboard?.trim()
+    ? options.storyboard.split(/\r?\n/).map(line => line.trim()).filter(Boolean) : [];
+  if (scenes.length && (scenes.length < 2 || scenes.length > 8 || scenes.some(line => line.length > 280))) {
+    throw new Error("Enter 2–8 scene headlines, each no longer than 280 characters");
+  }
+  if (kind !== "audio" && !scenes.length && (!headline || headline.length > 280)) {
     throw new Error("Enter a headline of 1–280 characters");
   }
   if (kind === "image") {
@@ -83,12 +90,13 @@ export function buildLocalMediaRequest(kind: LocalMediaKind, options: RendererOp
     throw new Error(kind === "audio" ? "Choose an instrumental duration from 1–60 seconds" : "Choose a clip duration from 1–20 seconds");
   }
   if (kind === "audio") {
-    if (!positive(options.bpm) || options.bpm < 60 || options.bpm > 200) throw new Error("Choose a tempo from 60–200 BPM");
+    if (!options.useAwarenessTempo && (!positive(options.bpm) || options.bpm < 60 || options.bpm > 200)) throw new Error("Choose a tempo from 60–200 BPM");
     if (!KEYS.includes(options.key) || !INSTRUMENTS.includes(options.instrument) ||
         !["loop", "structured"].includes(options.arrangement)) throw new Error("Choose supported instrumental controls");
     return { endpoint: "/api/generate/audio", body: {
       platform: options.platform, prompt: "Instrumental synthesis", duration: options.durationSec,
-      dedicated_controls: { duration_sec: options.durationSec, bpm: options.bpm,
+      dedicated_controls: { duration_sec: options.durationSec,
+        ...(options.useAwarenessTempo ? { use_awareness_tempo: true } : { bpm: options.bpm }),
         key: options.key, instrument: options.instrument, arrangement: options.arrangement, sample_rate: 44100 },
     } };
   }
@@ -97,10 +105,11 @@ export function buildLocalMediaRequest(kind: LocalMediaKind, options: RendererOp
     throw new Error("Choose a supported clip background and colors");
   }
   return { endpoint: "/api/generate-video", body: {
-    idea: headline, platform: options.platform,
+    idea: scenes.length ? scenes.join("\n") : headline, platform: options.platform,
     dedicated_controls: { duration_sec: options.durationSec, width, height, fps: 24,
-      headline, background: options.background, color1: options.color1.replace("#", "0x"),
-      color2: options.color2.replace("#", "0x"), continuity: "single_scene" },
+      headline: scenes.length ? "" : headline, background: options.background, color1: options.color1.replace("#", "0x"),
+      color2: options.color2.replace("#", "0x"), continuity: scenes.length ? "storyboard" : "single_scene",
+      ...(scenes.length ? { scene_headlines: scenes } : {}) },
   } };
 }
 
@@ -147,10 +156,12 @@ export function LocalMediaRenderer({ kind, initialHeadline = "", initialBpm = 12
   platform = "instagram", onGenerated, className = "" }: LocalMediaRendererProps) {
   const id = useId();
   const [headline, setHeadline] = useState(initialHeadline);
+  const [storyboard, setStoryboard] = useState("");
   const [aspect, setAspect] = useState("square");
   const [colorScheme, setColorScheme] = useState("dark_neon");
   const [durationSec, setDurationSec] = useState(kind === "audio" ? 8 : 4);
   const [bpm, setBpm] = useState(initialBpm);
+  const [useAwarenessTempo, setUseAwarenessTempo] = useState(false);
   const [key, setKey] = useState("C minor");
   const [instrument, setInstrument] = useState("piano");
   const [arrangement, setArrangement] = useState("loop");
@@ -176,7 +187,7 @@ export function LocalMediaRenderer({ kind, initialHeadline = "", initialBpm = 12
     setBusy(true); setError(null); setResult(null);
     try {
       const request = buildLocalMediaRequest(kind, { headline, platform, aspect, colorScheme,
-        durationSec, bpm, key, instrument, arrangement, background, color1, color2 });
+        durationSec, bpm, key, instrument, arrangement, background, color1, color2, storyboard, useAwarenessTempo });
       const response = await apiRequest("POST", request.endpoint, request.body, {
         signal: controller.signal, maxRetries: 0,
       });
@@ -217,8 +228,12 @@ export function LocalMediaRenderer({ kind, initialHeadline = "", initialBpm = 12
           <select id={`${id}-instrument`} className={field} value={instrument} onChange={event => setInstrument(event.target.value)}>
             {INSTRUMENTS.map(item => <option key={item} value={item}>{item}</option>)}
           </select></div>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={useAwarenessTempo}
+          onChange={event => setUseAwarenessTempo(event.target.checked)} />Use measured live tempo</label>
+        {useAwarenessTempo && <p className="text-sm text-muted-foreground">Uses the current measured music tempo. Creation stops if that measurement is unavailable.</p>}
         <div className="space-y-1"><label htmlFor={`${id}-tempo`}>Tempo (BPM)</label>
           <input id={`${id}-tempo`} className={field} type="number" min={60} max={200} value={Number.isFinite(bpm) ? bpm : ""}
+            disabled={useAwarenessTempo}
             onChange={event => setBpm(event.target.valueAsNumber)} /></div>
         <div className="space-y-1"><label htmlFor={`${id}-key`}>Key</label>
           <select id={`${id}-key`} className={field} value={key} onChange={event => setKey(event.target.value)}>
@@ -230,6 +245,13 @@ export function LocalMediaRenderer({ kind, initialHeadline = "", initialBpm = 12
           </select></div>
       </>}
       {kind === "video" && <>
+        <div className="space-y-1"><label htmlFor={`${id}-storyboard`}>Storyboard scenes (optional)</label>
+          <textarea id={`${id}-storyboard`} className={field} rows={4} maxLength={2247}
+            value={storyboard} onChange={event => setStoryboard(event.target.value)}
+            aria-describedby={`${id}-storyboard-help`} />
+          <p id={`${id}-storyboard-help`} className="text-sm text-muted-foreground">
+            Enter 2–8 scene headlines, one per line. These replace the single headline and share the total duration.
+          </p></div>
         <div className="space-y-1"><label htmlFor={`${id}-background`}>Background</label>
           <select id={`${id}-background`} className={field} value={background} onChange={event => setBackground(event.target.value)}>
             <option value="gradient">Gradient</option><option value="solid">Solid</option>
@@ -247,6 +269,7 @@ export function LocalMediaRenderer({ kind, initialHeadline = "", initialBpm = 12
         : kind === "audio" ? <audio controls src={result.url} className="w-full" />
           : <video controls src={result.url} className="max-h-80 w-full" playsInline />}
       <p className="text-sm text-muted-foreground">{result.width && result.height ? `${result.width} × ${result.height}` : "Instrumental audio"}
+        {result.bpm ? ` · ${result.bpm} BPM` : ""}
         {result.durationSec ? ` · ${result.durationSec.toFixed(1)} seconds` : ""}</p>
       <a className="inline-block text-sm font-medium underline" href={result.url}
         download={`created-${kind}.${kind === "image" ? "png" : kind === "audio" ? "wav" : "mp4"}`}>Download {kind}</a>
