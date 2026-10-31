@@ -58,6 +58,8 @@ def render_cinematic_open(
     transition_dur: float = 0.5,
     label: str = "",
     genre: str = "",
+    preserve_scene_timing: bool = False,
+    rolling_reference: bool = True,
 ) -> CinematicResult:
     """
     Render a list of pre-built SceneConfig objects with no template involvement.
@@ -86,6 +88,11 @@ def render_cinematic_open(
         overlap = max(1 / fps, min(float(transition_dur), 1.0, dur / (2 * len(scenes))))
         # Allocate integral frames: each overlap is consumed once by xfade.
         overlap_frames = max(1, round(overlap * fps))
+        if preserve_scene_timing:
+            requested_frames = [round(scene.duration * fps) for scene in scenes]
+            if any(count < 2 for count in requested_frames) or sum(requested_frames) != frame_count:
+                return CinematicResult(success=False, error="Scene timing must match the output frame count")
+            overlap_frames = min(overlap_frames, min(requested_frames) // 2)
         available = frame_count + overlap_frames * (len(scenes) - 1)
         weights = [max(0.0, s.duration) for s in scenes]
         if not sum(weights):
@@ -95,6 +102,9 @@ def render_cinematic_open(
             return CinematicResult(success=False, error="Video duration too short for transitions")
         frames = [overlap_frames + 1 + int(extra * w / sum(weights)) for w in weights]
         frames[-1] += available - sum(frames)
+        if preserve_scene_timing:
+            frames = [count + (overlap_frames if index < len(scenes) - 1 else 0)
+                      for index, count in enumerate(requested_frames)]
         for scene, count in zip(scenes, frames):
             scene.duration = count / fps
         transition_dur = overlap_frames / fps
@@ -125,7 +135,7 @@ def render_cinematic_open(
             try:
                 # Propagate rolling reference (only override if scene doesn't
                 # already have an explicit reference set)
-                if _current_ref is not None and not getattr(scene, "reference_b64", None):
+                if rolling_reference and _current_ref is not None and not getattr(scene, "reference_b64", None):
                     scene.reference_b64 = _current_ref
                 sid = f"{uuid.uuid4().hex[:6]}_{i}"
                 with RENDER_GATE.slot(timeout=30):
@@ -134,7 +144,7 @@ def render_cinematic_open(
                     results_map[i] = path
                     # Explicit references remain authoritative. Otherwise the
                     # next scene must receive this scene's actual terminal frame.
-                    if i + 1 < len(scenes) and not getattr(scenes[i + 1], "reference_b64", None):
+                    if rolling_reference and i + 1 < len(scenes) and not getattr(scenes[i + 1], "reference_b64", None):
                         _current_ref = _extract_last_frame_b64(path)
                         if not _current_ref:
                             raise RuntimeError("Missing terminal frame for next scene")

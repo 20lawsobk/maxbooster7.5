@@ -118,6 +118,7 @@ def synthesize_voiceover(
     sample_rate: int = VO_SAMPLE_RATE,
     wpm: int = _WPM_DEFAULT,
     voice: str = _VOICE_DEFAULT,
+    exact_text: bool = False,
 ) -> bool:
     """Render ``text`` as spoken narration into ``out_path`` (mono WAV at
     ``sample_rate``). Returns True on success, False on any failure (raises
@@ -128,7 +129,7 @@ def synthesize_voiceover(
     """
     voice = normalize_voice(voice)
     wpm = normalize_wpm(wpm)
-    spoken = clean_vo_text(text)
+    spoken = text.strip() if exact_text else clean_vo_text(text)
     if not spoken or not ESPEAK_BIN:
         if not ESPEAK_BIN:
             _logger.warning("[voiceover] espeak-ng binary not found — narration skipped")
@@ -140,7 +141,7 @@ def synthesize_voiceover(
         os.close(fd)
         rc = _run_espeak(
             # -a 175: louder narration so the voice clearly leads the mix
-            ["-v", voice, "-s", str(int(wpm)), "-a", "175", "-w", raw_wav, spoken],
+            ["-v", voice, "-s", str(int(wpm)), "-a", "175", "-w", raw_wav, "--", spoken],
             timeout=120.0,
         )
         if rc != 0 or not os.path.getsize(raw_wav):

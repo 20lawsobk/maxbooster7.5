@@ -34,6 +34,7 @@ import {
   pollMusicVideoJobUntilDone,
 } from "@/lib/musicVideoJobs";
 import { LocalMediaRenderer } from "@/components/content/LocalMediaRenderer";
+import { ProductionWorkbench } from "@/components/content/ProductionWorkbench";
 
 interface ServerVideoGeneratorProps {
   platform: string;
@@ -63,7 +64,7 @@ interface ServerVideoGeneratorProps {
   autoStart?: boolean;
 }
 
-type InputMode = "text" | "audio" | "image" | "studio" | "promo";
+type InputMode = "text" | "audio" | "image" | "studio" | "promo" | "production";
 
 /**
  * Shape of a video-generation job record returned by `/api/social/generate-video`
@@ -1034,6 +1035,7 @@ export function ServerVideoGenerator({
       { id: "image", label: "Image", icon: <Image className="h-3.5 w-3.5" /> },
       { id: "studio", label: "MV Studio", icon: <Music className="h-3.5 w-3.5" /> },
       { id: "promo", label: "Promotional clip", icon: <Film className="h-3.5 w-3.5" /> },
+      { id: "production", label: "Production workspace", icon: <Layers className="h-3.5 w-3.5" /> },
     ];
 
   // In autoStart mode show only the progress/result view — no form
@@ -1237,6 +1239,18 @@ export function ServerVideoGenerator({
                     height: result.height,
                     duration: result.durationSec,
                     source: "promotional_clip_renderer",
+                  })} />
+              )}
+
+              {inputMode === "production" && (
+                <ProductionWorkbench platform={platform}
+                  onGenerated={result => applyVideoResult({
+                    success: true,
+                    url: result.url,
+                    width: result.width,
+                    height: result.height,
+                    duration: result.durationSec,
+                    source: "production_workspace",
                   })} />
               )}
 
@@ -1782,6 +1796,7 @@ export function ServerVideoGenerator({
                 />
               </div>
 
+              {inputMode !== "production" && (<>
               {/* Voiceover + photorealistic are auto-decided from context (not manual
                   toggles) — this readout shows what will be applied and why. */}
               {inputMode !== "studio" && (
@@ -1864,6 +1879,7 @@ export function ServerVideoGenerator({
                   </>
                 )}
               </Button>
+              </>)}
 
               {/* Progress bar — manual mode */}
               {isGenerating &&

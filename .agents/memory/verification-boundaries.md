@@ -38,3 +38,15 @@ Bound aggregate media work before rendering, not only individual request fields.
 **Why:** Individually valid duration, resolution, frame-rate and sample-rate limits can combine into excessive allocation or encoding work.
 
 **How to apply:** Enforce combined pixel-frame, sample-frame and source-pixel budgets at renderer entrypoints. Reject oversized work explicitly rather than silently reducing output quality; do not mistake these ceilings for load-test results.
+
+Verify media request limits across both proxy layers, not only the Python renderer.
+
+**Why:** Valid scene-image inputs exceeded the ordinary JSON limits in both the public app and its private MaxCore proxy, despite passing native rendering tests.
+
+**How to apply:** Keep larger parsers limited to the relevant routes, preserve authentication boundaries, and test transport admission separately from decoded-media validation.
+
+Keep authored scene composition independent from automatic rolling-frame continuity.
+
+**Why:** Reusing a preceding scene's terminal frame can carry its photo and burned-in text into the next authored scene, changing the user's specified composition.
+
+**How to apply:** Disable inherited frames for exact authored projects while retaining intentional continuity for generative workflows. Verify scene boundaries as well as total frame counts.

@@ -3,6 +3,7 @@ import inspect
 import shutil
 from pathlib import Path
 from uuid import uuid4
+from .metadata import without_inline_media
 
 
 def conditioned_controls(modality, controls):
@@ -45,7 +46,7 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
     if not owner_id:
         raise ValueError("An authenticated private owner is required")
     job_id = job_id or uuid4().hex
-    generation_plan = plan.to_dict()
+    generation_plan = without_inline_media(plan.to_dict())
     record = {"job_id": job_id, "owner_id": owner_id, "owner_ids": [owner_id],
               "type": modality, "dedicated": True, "status": "running",
               "generation_plan": generation_plan}
@@ -77,7 +78,7 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
                     if name not in internal | {"subject", "reference", "style"}
                     and parameter.default is not inspect.Parameter.empty}
         controls = {**defaults, **controls}
-        record["effective_controls"] = dict(controls)
+        record["effective_controls"] = without_inline_media(controls)
         root = Path(uploads_path).resolve()
         # Allocate an exclusively owned artifact; never delete engine cache files.
         artifact_path = root / ("dedicated_" + uuid4().hex + (".wav" if modality == "audio" else ".artifact"))
@@ -109,7 +110,7 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
         from ai_model.capabilities import capabilities
         import mimetypes
         delivery_metadata = {"capability": capabilities(modality),
-                             "effective_controls": dict(controls),
+                             "effective_controls": without_inline_media(controls),
                              "generation_plan": generation_plan}
         if plan.snapshot_hash is not None:
             delivery_metadata["snapshot_id"] = plan.snapshot_hash

@@ -94,6 +94,7 @@ class TextElement:
     shadow_offset: int = 3
     max_chars: int = 28
     animation: str = "fade"
+    text_file: Optional[str] = None
 
 
 @dataclass
@@ -132,6 +133,9 @@ class SceneConfig:
 
 def _build_text_filter(te: TextElement, scene_dur: float) -> List[str]:
     wrapped = _esc(_wrap(te.text, te.max_chars))
+    # Internal text files preserve apostrophes and percent signs without
+    # interpreting authored copy as FFmpeg filter expressions.
+    text_arg = f"textfile='{te.text_file}':expansion=none" if te.text_file else f"text='{wrapped}'"
     end = te.end if te.end > 0 else scene_dur
     enable = f"between(t\\,{te.start:.2f}\\,{end:.2f})"
 
@@ -154,7 +158,7 @@ def _build_text_filter(te: TextElement, scene_dur: float) -> List[str]:
         sx = f"({te.x})+{te.shadow_offset}" if not te.x.replace("-", "").isdigit() else str(int(te.x) + te.shadow_offset)
         sy = f"({te.y})+{te.shadow_offset}" if not te.y.replace("-", "").isdigit() else str(int(te.y) + te.shadow_offset)
         parts.append(
-            f"drawtext={font_arg}text='{wrapped}':fontcolor={te.shadow_color}@0.5"
+            f"drawtext={font_arg}{text_arg}:fontcolor={te.shadow_color}@0.5"
             f":fontsize={te.size}:x={sx}:y={sy}"
             f":enable='{enable}':alpha='{alpha_expr}'"
         )
@@ -162,7 +166,7 @@ def _build_text_filter(te: TextElement, scene_dur: float) -> List[str]:
     if te.animation == "slide_up":
         y_anim = f"if(lt(t\\,{fade_start + fs:.2f})\\,({te.y})+50*(1-(t-{fade_start:.2f})/{fs:.2f})\\,{te.y})"
         parts.append(
-            f"drawtext={font_arg}text='{wrapped}':fontcolor={te.color}"
+            f"drawtext={font_arg}{text_arg}:fontcolor={te.color}"
             f":fontsize={te.size}:x={te.x}:y={y_anim}"
             f":enable='{enable}':alpha='{alpha_expr}'"
         )
@@ -173,13 +177,13 @@ def _build_text_filter(te: TextElement, scene_dur: float) -> List[str]:
             f"{te.size})"
         )
         parts.append(
-            f"drawtext={font_arg}text='{wrapped}':fontcolor={te.color}"
+            f"drawtext={font_arg}{text_arg}:fontcolor={te.color}"
             f":fontsize={size_anim}:x={te.x}:y={te.y}"
             f":enable='{enable}':alpha='{alpha_expr}'"
         )
     else:
         parts.append(
-            f"drawtext={font_arg}text='{wrapped}':fontcolor={te.color}"
+            f"drawtext={font_arg}{text_arg}:fontcolor={te.color}"
             f":fontsize={te.size}:x={te.x}:y={te.y}"
             f":enable='{enable}':alpha='{alpha_expr}'"
         )

@@ -201,6 +201,25 @@ class DedicatedMediaHTTP(unittest.IsolatedAsyncioTestCase):
         self.model.pin.assert_not_called()
         self.assert_clean_context()
 
+    async def test_production_composition_uses_owner_scoped_durable_delivery(self):
+        import io
+        from PIL import Image
+        buffer = io.BytesIO()
+        Image.new("RGB", (32, 32), "blue").save(buffer, format="PNG")
+        image = base64.b64encode(buffer.getvalue()).decode()
+        status, result = await post_json(self.app, "/api/generate-video", {
+            "idea": "An authored release",
+            "dedicated_controls": {"width": 128, "height": 96, "duration_sec": 1,
+                "production": {"version": 1, "transition": "fade", "color_grade": "none",
+                    "scenes": [{"text": "My release", "duration_sec": 1, "image_b64": image}]}}})
+        self.assertEqual(status, 200, result)
+        self.assertEqual(result["receipt"]["owner_id"], "owner-a")
+        self.assertEqual(result["delivery_status"], "durable")
+        self.assertNotIn(image, json.dumps(result))
+        self.assertNotIn(image, json.dumps(self.read(result["job_id"])))
+        self.assertNotIn(image, json.dumps(self.commits[-1]))
+        self.assert_clean_context()
+
     async def test_normal_learned_media_and_text_still_require_a_capable_candidate(self):
         cases = [
             ("/api/generate/image", {"prompt": "A photographic artist"}),

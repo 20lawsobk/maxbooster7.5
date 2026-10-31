@@ -258,14 +258,17 @@ app.get("/.well-known/security.txt", (_req, res) => {
 // Dedicated peer-authenticated artifact ingress must authenticate BEFORE its
 // larger parser. Browser sessions/public generation keys cannot authorize it.
 app.use((await import("./routes/maxcoreProxy.js")).generatedArtifactRouter);
-app.use(
-  express?.json({
+const defaultJsonParser = express.json({
     limit: "1mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
-  }),
-);
+  });
+app.use((req, res, next) => {
+  // These routes authenticate the session before their bounded media parser.
+  if (req.method === "POST" && ["/api/generate-video", "/api/video/generate-ai"].includes(req.path)) return next();
+  return defaultJsonParser(req, res, next);
+});
 // URL-encoded forms (contact pages, simple forms) — keep the same 1 MB cap.
 app.use(express?.urlencoded({ extended: true, limit: "1mb" }));
 

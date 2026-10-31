@@ -520,7 +520,11 @@ const POST_PATHS = [
 
 for (const p of POST_PATHS) {
   const isAdminPath = ADMIN_PATH_SUFFIXES.some((suffix) => p === `/api${suffix}`);
-  router.post(p, isAdminPath ? requireAdmin : requireAuthOnly, proxyToMaxCore);
+  if (p === "/api/generate-video" || p === "/api/video/generate-ai") {
+    router.post(p, requireAuthOnly, json({ limit: "12mb" }), proxyToMaxCore);
+  } else {
+    router.post(p, isAdminPath ? requireAdmin : requireAuthOnly, proxyToMaxCore);
+  }
 }
 // Keep these registrations explicit: besides making the proxied contract easy to
 // inspect, this lets route tooling enumerate the protected GET/DELETE endpoints.

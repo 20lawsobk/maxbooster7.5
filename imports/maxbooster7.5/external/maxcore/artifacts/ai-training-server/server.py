@@ -4565,7 +4565,8 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                     except (ValueError, AwarenessUnavailable) as exc:
                         raise HTTPException(status_code=503, detail=str(exc)) from exc
                     result = dict(result)
-                    result["generation_plan"] = plan.to_dict()
+                    from ai_model.generation.metadata import without_inline_media
+                    result["generation_plan"] = without_inline_media(plan.to_dict()) if controls is not None else plan.to_dict()
                     if plan.snapshot_hash is not None:
                         result["snapshot_id"] = plan.snapshot_hash
                     else:

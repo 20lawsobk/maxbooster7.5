@@ -10,7 +10,7 @@ from .scenes import SceneConfig, TextElement
 def render_video(*, duration_sec=4, width=640, height=360, fps=24,
                  headline="", background="gradient", color1="0x1a1a2e",
                  color2="0x16213e", continuity="single_scene", audio_path=None,
-                 scene_headlines=None,
+                 scene_headlines=None, production=None, seed=0,
                  subject=None, reference=None, style=None):
     reject_semantic_controls(subject=subject, reference=reference, style=style)
     bounded_text(headline, "headline", 280)
@@ -24,6 +24,17 @@ def render_video(*, duration_sec=4, width=640, height=360, fps=24,
         raise ValueError("fps must be 8, 16, 24 or 30")
     if width * height * round(duration_sec * fps) > MAX_VIDEO_PIXEL_FRAMES:
         raise ValueError("Video exceeds the pixel-frame budget; reduce duration, dimensions or FPS")
+    if production is not None:
+        if headline or scene_headlines is not None or continuity != "single_scene" or audio_path is not None:
+            raise ValueError("Production owns its scenes and audio; do not combine legacy scene/audio controls")
+        import re
+        if not all(re.fullmatch(r"0x[0-9a-fA-F]{6}", c) for c in (color1, color2)):
+            raise ValueError("Colors must use 0xRRGGBB")
+        if type(seed) is not int or seed < 0:
+            raise ValueError("seed must be a nonnegative integer")
+        from .production import render_production
+        return render_production(production, duration_sec=duration_sec, width=width,
+                                 height=height, fps=fps, color1=color1, color2=color2, seed=seed)
     if background not in ("solid", "gradient"):
         raise ValueError("Only solid and gradient procedural backgrounds are supported")
     if continuity not in ("single_scene", "storyboard"):

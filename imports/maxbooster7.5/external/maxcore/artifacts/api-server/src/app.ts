@@ -6,6 +6,7 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import { Agent, request as undiciRequest } from "undici";
 import router from "./routes";
+import { modelAuthHeaders } from "./config/model-auth.js";
 import { isPythonRestarting } from "./server-state.js";
 
 const app: Express = express();
@@ -23,6 +24,16 @@ const limiter = rateLimit({
 app.use(cors());
 app.use(compression());
 app.use(limiter);
+// Production still-image payloads are bounded at both proxy layers. Keep the
+// ordinary JSON ceiling unchanged, and require the existing service envelope
+// before accepting the larger private-proxy payload (Python verifies its key).
+app.post(["/api/generate-video", "/api/video/generate-ai"], (req, res, next) => {
+  if (!modelAuthHeaders(req.headers, req.socket.remoteAddress)) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+  next();
+}, express.json({ limit: "12mb" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
