@@ -1,0 +1,8 @@
+{
+  "exitCode": 1,
+  "phase": "copy preflight before build",
+  "error": "AssertionError: actual source hash differs from the older dist build-complete input",
+  "rootCause": "Four source inputs legitimately changed since the prior build; the harness incorrectly required old contract inputs before allowing validateBuild/rebuild",
+  "correction": "Copy actual current source bytes, retain stale paths in preflight receipt, let ordinary validateBuild fail, then run ordinary build in the owned copy",
+  "productionCodeChangedForHarness": false
+}

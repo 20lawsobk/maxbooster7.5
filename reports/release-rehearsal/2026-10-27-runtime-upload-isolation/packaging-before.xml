@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="11" failures="2" errors="0" time="0.548683049">
+    <testsuite name="tests/unit/capsule-pack-restore-roundtrip.test.ts" timestamp="2026-10-28T02:16:41.013Z" hostname="af966a6fd55d" tests="7" failures="1" errors="0" skipped="0" time="0.486990273">
+        <testcase classname="tests/unit/capsule-pack-restore-roundtrip.test.ts" name="Capsule pack/restore round trip (real zstd + real tar) &gt; packs a real directory with zstd and restores it byte-identical" time="0.102480961">
+            <system-out>
+==&gt; Packing tests/.tmp-capsule-rt-100663-1793153800260/src/ → tests/.tmp-capsule-rt-100663-1793153800260/fixture.pdim (zstd-19, -T0, Extract &amp; Boot)...
+
+[capsule] tests/.tmp-capsule-rt-100663-1793153800260/fixture.pdim: compression finished; committing checksum and manifest
+[capsule] tests/.tmp-capsule-rt-100663-1793153800260/fixture.pdim: manifest committed; source cleanup starting
+   ✅ tests/.tmp-capsule-rt-100663-1793153800260/src/ packed (0MB); source removed
+
+[pdim-restore] Extracting tests/.tmp-capsule-rt-100663-1793153800260/fixture.pdim (zstd-19) → /workspace/maxbooster7.5/.pdim-scratch-tests_.tmp-capsule-rt-100663-1793153800260_src-100663/ (staging for tests/.tmp-capsule-rt-100663-1793153800260/src/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for tests/.tmp-capsule-rt-100663-1793153800260/fixture.pdim
+
+[pdim-restore] ✅ tests/.tmp-capsule-rt-100663-1793153800260/src/ restored from tests/.tmp-capsule-rt-100663-1793153800260/fixture.pdim
+
+[pdim-restore] tests/.tmp-capsule-rt-100663-1793153800260/src/ already restored — skipping
+
+            </system-out>
+        </testcase>
+        <testcase classname="tests/unit/capsule-pack-restore-roundtrip.test.ts" name="Capsule pack/restore round trip (real zstd + real tar) &gt; fails closed on a corrupted capsule instead of silently restoring bad content" time="0.074048381">
+            <system-out>
+==&gt; Packing tests/.tmp-capsule-rt-100663-1793153800260/src-tamper/ → tests/.tmp-capsule-rt-100663-1793153800260/tamper.pdim (zstd-19, -T0, Extract &amp; Boot)...
+
+[capsule] tests/.tmp-capsule-rt-100663-1793153800260/tamper.pdim: compression finished; committing checksum and manifest
+[capsule] tests/.tmp-capsule-rt-100663-1793153800260/tamper.pdim: manifest committed; source cleanup starting
+   ✅ tests/.tmp-capsule-rt-100663-1793153800260/src-tamper/ packed (0MB); source removed
+
+            </system-out>
+            <system-err>
+[pdim-restore] Checksum mismatch for tests/.tmp-capsule-rt-100663-1793153800260/tamper.pdim
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/unit/capsule-pack-restore-roundtrip.test.ts" name="Capsule pack/restore round trip (real zstd + real tar) &gt; packs a scattered file list (app remainder) and restores it byte-identical, leaving untouched siblings alone" time="0.113915156">
+            <system-out>
+==&gt; Packing 4 remaining app files → tests/.tmp-capsule-rt-100663-1793153800260/remainder.pdim (zstd-19, -T0, Extract &amp; Boot)...
+
+   ✅ 4 files packed (0MB); sources removed
+
+            </system-out>
+            <system-err>
+[pdim-restore] Remainder restore failed: Existing remainder content differs; refusing overwrite
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/unit/capsule-pack-restore-roundtrip.test.ts" name="Capsule pack/restore round trip (real zstd + real tar) &gt; omits configured secrets and generated MaxCore data while retaining the serving model and source corpora" time="0.110400985">
+            <system-out>
+==&gt; Packing tests/.tmp-capsule-rt-100663-1793153800260/external/maxcore/ → tests/.tmp-capsule-rt-100663-1793153800260/external_maxcore.pdim (zstd-19, -T1, Extract &amp; Boot)...
+
+[capsule] tests/.tmp-capsule-rt-100663-1793153800260/external_maxcore.pdim: compression finished; committing checksum and manifest
+[capsule] tests/.tmp-capsule-rt-100663-1793153800260/external_maxcore.pdim: manifest committed; source cleanup starting
+   ✅ tests/.tmp-capsule-rt-100663-1793153800260/external/maxcore/ packed (0MB); source removed
+
+[pdim-restore] Extracting tests/.tmp-capsule-rt-100663-1793153800260/external_maxcore.pdim (zstd-19) → /workspace/maxbooster7.5/.pdim-scratch-tests_.tmp-capsule-rt-100663-1793153800260_external_maxcore-100663/ (staging for tests/.tmp-capsule-rt-100663-1793153800260/external/maxcore/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for tests/.tmp-capsule-rt-100663-1793153800260/external_maxcore.pdim
+
+[pdim-restore] ✅ tests/.tmp-capsule-rt-100663-1793153800260/external/maxcore/ restored from tests/.tmp-capsule-rt-100663-1793153800260/external_maxcore.pdim
+
+            </system-out>
+            <failure message="promise resolved &quot;undefined&quot; instead of rejecting" type="AssertionError">
+AssertionError: promise resolved &quot;undefined&quot; instead of rejecting
+
+- Expected:
+Error {
+  &quot;message&quot;: &quot;rejected promise&quot;,
+}
+
++ Received:
+undefined
+
+ ❯ tests/unit/capsule-pack-restore-roundtrip.test.ts:515:58
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/capsule-pack-restore-roundtrip.test.ts" name="Capsule pack/restore round trip (real zstd + real tar) &gt; applies the PDIM capsule credential and cache exclusions" time="0.076874315">
+            <system-out>
+==&gt; Packing tests/.tmp-capsule-rt-100663-1793153800260/external/pdim/ → tests/.tmp-capsule-rt-100663-1793153800260/external_pdim.pdim (zstd-19, -T1, Extract &amp; Boot)...
+
+[capsule] tests/.tmp-capsule-rt-100663-1793153800260/external_pdim.pdim: compression finished; committing checksum and manifest
+[capsule] tests/.tmp-capsule-rt-100663-1793153800260/external_pdim.pdim: manifest committed; source cleanup starting
+   ✅ tests/.tmp-capsule-rt-100663-1793153800260/external/pdim/ packed (0MB); source removed
+
+[pdim-restore] Extracting tests/.tmp-capsule-rt-100663-1793153800260/external_pdim.pdim (zstd-19) → /workspace/maxbooster7.5/.pdim-scratch-tests_.tmp-capsule-rt-100663-1793153800260_external_pdim-100663/ (staging for tests/.tmp-capsule-rt-100663-1793153800260/external/pdim/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for tests/.tmp-capsule-rt-100663-1793153800260/external_pdim.pdim
+
+[pdim-restore] ✅ tests/.tmp-capsule-rt-100663-1793153800260/external/pdim/ restored from tests/.tmp-capsule-rt-100663-1793153800260/external_pdim.pdim
+
+            </system-out>
+        </testcase>
+        <testcase classname="tests/unit/capsule-pack-restore-roundtrip.test.ts" name="Capsule pack/restore round trip (real zstd + real tar) &gt; rejects capsule exclusions that could escape the packed directory" time="0.000559004">
+        </testcase>
+        <testcase classname="tests/unit/capsule-pack-restore-roundtrip.test.ts" name="Capsule pack/restore round trip (real zstd + real tar) &gt; selects the correct GNU-tar extraction flag for every real capsule codec id" time="0.000487085">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/production-simulation-copy.test.ts" timestamp="2026-10-28T02:16:41.018Z" hostname="af966a6fd55d" tests="4" failures="1" errors="0" skipped="0" time="0.061692776">
+        <testcase classname="tests/unit/production-simulation-copy.test.ts" name="production simulation filtered copy &gt; filters sensitive/generated paths before copying and retains runtime source" time="0.035257821">
+        </testcase>
+        <testcase classname="tests/unit/production-simulation-copy.test.ts" name="production simulation filtered copy &gt; ignores changing restore/test scratch in release identity while binding runtime changes" time="0.00665496">
+        </testcase>
+        <testcase classname="tests/unit/production-simulation-copy.test.ts" name="production simulation filtered copy &gt; omits MaxCore runtime uploads from copies and release identity without dropping source assets" time="0.01499347">
+            <failure message="expected true to be false // Object.is equality" type="AssertionError">
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ tests/unit/production-simulation-copy.test.ts:241:69
+            </failure>
+        </testcase>
+        <testcase classname="tests/unit/production-simulation-copy.test.ts" name="production deployment candidate preflight &gt; refuses a candidate-only selection whose run artifacts are excluded" time="0.003073637">
+        </testcase>
+    </testsuite>
+</testsuites>

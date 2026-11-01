@@ -1,0 +1,1181 @@
+{
+  "schemaVersion": 1,
+  "scope": "One existing Node suite; separate UNMERGED profile, not global coverage",
+  "command": [
+    "/workspace/.cloud-tools/node_modules/node/bin/node",
+    "--import",
+    "/workspace/maxbooster7.5/scripts/testing/coverage-node-bootstrap.mjs",
+    "--import",
+    "tsx",
+    "--test",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "tests/fabric-replica-generation.test.mjs"
+  ],
+  "sourceRevision": "bca5f4e1f632db835dc90b1e57d85f919ed6e0aa",
+  "test": "tests/fabric-replica-generation.test.mjs",
+  "testSha256": "72b5abd3b5c24594ad0d3137c8fa3d59575b4cc4470668f5a873d32ffec6b289",
+  "exitCode": 0,
+  "signal": null,
+  "timedOut": false,
+  "bufferExceeded": false,
+  "cleanup": {
+    "processGroup": 201178,
+    "signals": [],
+    "complete": true,
+    "remainingLivePids": []
+  },
+  "status": "collected_unmerged",
+  "profiles": [
+    {
+      "producerId": "201184-0",
+      "manifestSha256": "7077f746580d5e57800fc592cf9006852ed5b1dd8eef3ea20abf67efdeebbe0f",
+      "runtime": {
+        "node": "22.23.3",
+        "v8": "12.4.254.21-node.57"
+      }
+    }
+  ],
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false,
+  "sourceInputs": {
+    "beforeSha256": "990fde30b009ca5814e6c62744ddce2347c52d79e9a5cc81b92ab7d344d11be0",
+    "afterSha256": "990fde30b009ca5814e6c62744ddce2347c52d79e9a5cc81b92ab7d344d11be0",
+    "unchanged": true
+  },
+  "generatedNodePolicies": [
+    {
+      "scriptId": "226",
+      "schemaVersion": 1,
+      "policy": "esbuild-keep-names-proven-prefix-v1",
+      "executedCodeSha256": "9cf78d0202a2ea81f74d5fe061a57b188c267bcaab661a0e025052f5f1f50cfa",
+      "originalParser": {
+        "package": "typescript",
+        "version": "5.9.3"
+      },
+      "ignoredGeneratedNodes": [
+        {
+          "type": "VariableDeclarator",
+          "start": 4,
+          "end": 35,
+          "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+          "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+        },
+        {
+          "type": "VariableDeclarator",
+          "start": 40,
+          "end": 113,
+          "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+          "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+        }
+      ],
+      "compatibleMapClaim": false,
+      "sourceMapSha256": "3ebee7de7c5d0c5bfb5f7f8e909ec26bfa9a65469fc15b2b8b287071f998ca8d",
+      "originalSources": [
+        {
+          "source": "/workspace/maxbooster7.5/server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+          "sha256": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76"
+        }
+      ]
+    },
+    {
+      "scriptId": "228",
+      "schemaVersion": 1,
+      "policy": "esbuild-keep-names-proven-prefix-v1",
+      "executedCodeSha256": "48d452aab80d3a81bdad34836c07ab47fa0c7ac35ce3f9d455ecd9a21e66f809",
+      "originalParser": {
+        "package": "typescript",
+        "version": "5.9.3"
+      },
+      "ignoredGeneratedNodes": [
+        {
+          "type": "VariableDeclarator",
+          "start": 4,
+          "end": 35,
+          "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+          "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+        },
+        {
+          "type": "VariableDeclarator",
+          "start": 40,
+          "end": 113,
+          "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+          "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 737,
+          "end": 773,
+          "sha256": "1465fdd0e9f7b5b5beec62cc96a0100d92dd92ef3f4af203d10d44119fabfed2",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+            "line": 42,
+            "column": 9,
+            "name": "msgpackCodec"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1209,
+          "end": 1249,
+          "sha256": "2d026a0dde491398611a473bb36d087e4e39add7c82aae669e7f9bc18ac9e7f5",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+            "line": 71,
+            "column": 9,
+            "name": "acquireLuaSlot"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1314,
+          "end": 1354,
+          "sha256": "b4c9ff0db894d3d99e1f20da23b868a91e1427265769287ad14028b89f861af8",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+            "line": 76,
+            "column": 9,
+            "name": "releaseLuaSlot"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1406,
+          "end": 1452,
+          "sha256": "455d14debebf0aa54b314caeca47c63746c95748238e5d0566896648834b9060",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+            "line": 79,
+            "column": 16,
+            "name": "getLuaConcurrency"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1613,
+          "end": 1647,
+          "sha256": "d1ea7edaec092499d0db80af7591f06acab60597b0767b02da38819329fb72b9",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+            "line": 83,
+            "column": 9,
+            "name": "globToRegex"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3709,
+          "end": 3753,
+          "sha256": "cfcb72f05c4567b0d485cc6ede7250810b9bf752e3550cdee42f8008e4caf1a3",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+            "line": 91,
+            "column": 9,
+            "name": "redisGlobMatches"
+          }
+        }
+      ],
+      "compatibleMapClaim": false,
+      "sourceMapSha256": "9ce4f93aff897bee1ef1b924d1f040f7a1ae1b0f4ba69ab4fb4f09d9102f9c9a",
+      "originalSources": [
+        {
+          "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+          "sha256": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770"
+        }
+      ]
+    },
+    {
+      "scriptId": "229",
+      "schemaVersion": 1,
+      "policy": "esbuild-keep-names-proven-prefix-v1",
+      "executedCodeSha256": "01f50a97946181a2fe0d781b082dac06e44141c0ad023cbd73b76a4581713982",
+      "originalParser": {
+        "package": "typescript",
+        "version": "5.9.3"
+      },
+      "ignoredGeneratedNodes": [
+        {
+          "type": "VariableDeclarator",
+          "start": 4,
+          "end": 35,
+          "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+          "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+        },
+        {
+          "type": "VariableDeclarator",
+          "start": 40,
+          "end": 113,
+          "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+          "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1467,
+          "end": 1509,
+          "sha256": "ed216e8e2495299abe319e50726f73c2bbb8dda38edafdf875ad045c770b7263",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 148,
+            "column": 16,
+            "name": "setPdimGapFloor"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1562,
+          "end": 1604,
+          "sha256": "703be45ddecc66681a2cff4cffff3e96d8605ec2332ca6fcb41e6af340f13c87",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 159,
+            "column": 16,
+            "name": "getPdimGapFloor"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 2203,
+          "end": 2249,
+          "sha256": "81d558b74515972faded1ccf07356b5d9a2c47af64832672c0fe01c0c2061564",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 272,
+            "column": 9,
+            "name": "_pdimAdaptSuccess"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 2421,
+          "end": 2459,
+          "sha256": "2f691176869a62adb59a850a7b643e7a5be173fbfe9749733be5b2a2121c91be",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 285,
+            "column": 9,
+            "name": "_pdimAdapt429"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 2557,
+          "end": 2603,
+          "sha256": "99bf7fb985238ed7a2dad3bc1f8a445a3b369fe251661b40145034690e9eaf5d",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 304,
+            "column": 9,
+            "name": "_pdimAdaptTimeout"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3033,
+          "end": 3085,
+          "sha256": "22af209b9c24db96d80a5f4764de4fe41c0383168ed6d2c5d8e10efd8e7e898b",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 371,
+            "column": 16,
+            "name": "getPdimAdaptiveGapMs"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3137,
+          "end": 3183,
+          "sha256": "4c85b200f67e0a2d28e668502be05b856d3ac0b84674ec4828cbd8cc95daddb6",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 374,
+            "column": 16,
+            "name": "getPdimQueueDepth"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3243,
+          "end": 3301,
+          "sha256": "d2b9e89a6677125f8345bbfa6eba54f44e7c8961ce1916e8a0b35108f93d4456",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 377,
+            "column": 16,
+            "name": "getPdimDirectQueueDepth"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3361,
+          "end": 3419,
+          "sha256": "3d4a90879a75b65d9d7ea1e80da20b8371b34c19602b09216a0839f8a6896b7a",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 380,
+            "column": 16,
+            "name": "getPdimScriptQueueDepth"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3522,
+          "end": 3570,
+          "sha256": "e6399fb860cf54d6d8fd8563a04b742f36afcf051336a785e1875b247e18ed3b",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 385,
+            "column": 16,
+            "name": "setPdimAdaptiveGap"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 5034,
+          "end": 5070,
+          "sha256": "97e3ec3e1a1d1e21fff0b37a7325e2aa27a6522bfe919d708620f78e8d062d32",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 389,
+            "column": 9,
+            "name": "_enqueueExec"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 5138,
+          "end": 5190,
+          "sha256": "92ec749fde9a8c1678698e77ee27b8aa47aa6bbfe37a940ffece5cb7be04a17f",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 473,
+            "column": 9,
+            "name": "_enqueueBlockingExec"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 5754,
+          "end": 5802,
+          "sha256": "aa33bb3e11713dd2d41f14fd3d2fdf6fde39db7ea63cfb88e8c98159150d4477",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 501,
+            "column": 9,
+            "name": "_enqueueScriptExec"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 6680,
+          "end": 6718,
+          "sha256": "2b6228960e7339eadcab06d5d8c16dcae7fba65ad2a0a7e8c3c40f85e015a456",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 557,
+            "column": 9,
+            "name": "_logExecError"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 7519,
+          "end": 7563,
+          "sha256": "a0af2c79dae1da6c1933f71e9f5ec4836c21b2de1945f7aa50d22e0f2dc48321",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 593,
+            "column": 9,
+            "name": "_logNetworkError"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 7797,
+          "end": 7823,
+          "sha256": "d0db92bbc5bb9e4139f3958dec26c0ddb182313abe4dee04ed8d599f6dc2892c",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 642,
+            "column": 9,
+            "name": "_l1Read"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 8023,
+          "end": 8051,
+          "sha256": "74fc04053157472fd1d8f1e0613f5df57f6939dda4b2ec7f583fcf0151e73a12",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 655,
+            "column": 9,
+            "name": "_l1Write"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 8112,
+          "end": 8140,
+          "sha256": "32675c58b4c4bd8ded61b22b7046385f243fb2111707a5ac79ee9f0e2fb5f9de",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 664,
+            "column": 9,
+            "name": "_l1Evict"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 8766,
+          "end": 8816,
+          "sha256": "0bef20cf1f11a9ec7ff1d1357a69825b34d4b8cb727382492215c3d943098d21",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 686,
+            "column": 9,
+            "name": "_normalizeLuaResult"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 38106,
+          "end": 38144,
+          "sha256": "5906ecb857f022b5522b5b93c239cb3b2235150cdc5caf3127e2103afea35c48",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 2309,
+            "column": 16,
+            "name": "getPdimClient"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 38394,
+          "end": 38438,
+          "sha256": "d0c19635cd8fcc27e265e1509f98685db3a1a669f371ed30134f0de818e88f06",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 2319,
+            "column": 16,
+            "name": "isPdimConfigured"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 38568,
+          "end": 38616,
+          "sha256": "20eaadd6d650b4e65c8bf0200f95e8356f169e01141d7f332bef87a364797c24",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 2330,
+            "column": 9,
+            "name": "isLocalPdimExecUrl"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 40129,
+          "end": 40183,
+          "sha256": "5eafbadfbe1387d28471554470da9b96c812909fab39e75f7c321b21475f4797",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 2362,
+            "column": 16,
+            "name": "startPdimDirectProber"
+          }
+        }
+      ],
+      "compatibleMapClaim": false,
+      "sourceMapSha256": "a01684c0057c84b1b38489e10d253944ed66e267ba3e4ac0e985865dd2919685",
+      "originalSources": [
+        {
+          "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+          "sha256": "eef5afab18d6b5697efd49b0eb6c840f27d0b10759b65b8a11542a558d8fb1a9"
+        }
+      ]
+    },
+    {
+      "scriptId": "230",
+      "schemaVersion": 1,
+      "policy": "esbuild-keep-names-proven-prefix-v1",
+      "executedCodeSha256": "e02e165c5051aed078cf43fbd723817625c723b2660eaa611cef9a7b165e1ecb",
+      "originalParser": {
+        "package": "typescript",
+        "version": "5.9.3"
+      },
+      "ignoredGeneratedNodes": [
+        {
+          "type": "VariableDeclarator",
+          "start": 4,
+          "end": 35,
+          "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+          "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+        },
+        {
+          "type": "VariableDeclarator",
+          "start": 40,
+          "end": 113,
+          "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+          "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1954,
+          "end": 1996,
+          "sha256": "0def17c495264e6f3a7e9b60dc599344258e50dfe36b2527f2b22732418efe37",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/logger.ts",
+            "line": 51,
+            "column": 16,
+            "name": "createAppLogger"
+          }
+        }
+      ],
+      "compatibleMapClaim": false,
+      "sourceMapSha256": "f99a0fcf3f1e70090f21307a0595e55e3cd012c631c4d8fa9fc3430c35a523ef",
+      "originalSources": [
+        {
+          "source": "/workspace/maxbooster7.5/server/logger.ts",
+          "sha256": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5"
+        }
+      ]
+    },
+    {
+      "scriptId": "232",
+      "schemaVersion": 1,
+      "policy": "esbuild-keep-names-proven-prefix-v1",
+      "executedCodeSha256": "0b50e98f09e7e108406e620158db69b5dafe2431d6b2d1953bcd991bef58e7f6",
+      "originalParser": {
+        "package": "typescript",
+        "version": "5.9.3"
+      },
+      "ignoredGeneratedNodes": [
+        {
+          "type": "VariableDeclarator",
+          "start": 4,
+          "end": 35,
+          "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+          "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+        },
+        {
+          "type": "VariableDeclarator",
+          "start": 40,
+          "end": 113,
+          "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+          "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 493,
+          "end": 539,
+          "sha256": "f0bd7d168494a1b70500b70f4e62bb90301b59fe3c29e43b4f04b2a78c1fddc8",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+            "line": 34,
+            "column": 9,
+            "name": "resolveWorkerFile"
+          }
+        }
+      ],
+      "compatibleMapClaim": false,
+      "sourceMapSha256": "e00ff784eded4be3b0c78e2f71239290178cc27e42e3774da19e2e036f6e9f2c",
+      "originalSources": [
+        {
+          "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+          "sha256": "c545aafe8452eea8124923cee34c2e1ffde8c578299b9268793096c736eb6e3f"
+        }
+      ]
+    },
+    {
+      "scriptId": "233",
+      "schemaVersion": 1,
+      "policy": "esbuild-keep-names-proven-prefix-v1",
+      "executedCodeSha256": "075b0b5c95394506d98c213ce21b192243175db88bd4d32198c5d348e1c43ca8",
+      "originalParser": {
+        "package": "typescript",
+        "version": "5.9.3"
+      },
+      "ignoredGeneratedNodes": [
+        {
+          "type": "VariableDeclarator",
+          "start": 4,
+          "end": 35,
+          "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+          "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+        },
+        {
+          "type": "VariableDeclarator",
+          "start": 40,
+          "end": 113,
+          "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+          "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 793,
+          "end": 821,
+          "sha256": "6eb9e4170d6bcc5cbc8c2ad98349d1aa47792ea59ce09562388ecb1a8b94aa0a",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+            "line": 27,
+            "column": 9,
+            "name": "readPort"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1149,
+          "end": 1195,
+          "sha256": "06f43aef8d9a8885a145caa2503698a1a2e7f86e4d074b39970c1d8094a6ddda",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+            "line": 47,
+            "column": 9,
+            "name": "assertUniquePorts"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1844,
+          "end": 1878,
+          "sha256": "b51a8e3c67732a2349022adcdb5ca02f1f64cf60da87b2a9ea968c3ff3a252b0",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+            "line": 85,
+            "column": 16,
+            "name": "loopbackUrl"
+          }
+        }
+      ],
+      "compatibleMapClaim": false,
+      "sourceMapSha256": "bfcf58e56e80e00c267f694979e1635aec3be58b20efe88057845a6ff2badd24",
+      "originalSources": [
+        {
+          "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+          "sha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d"
+        }
+      ]
+    },
+    {
+      "scriptId": "234",
+      "schemaVersion": 1,
+      "policy": "esbuild-keep-names-proven-prefix-v1",
+      "executedCodeSha256": "679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e",
+      "originalParser": {
+        "package": "typescript",
+        "version": "5.9.3"
+      },
+      "ignoredGeneratedNodes": [
+        {
+          "type": "VariableDeclarator",
+          "start": 4,
+          "end": 35,
+          "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+          "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+        },
+        {
+          "type": "VariableDeclarator",
+          "start": 40,
+          "end": 113,
+          "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+          "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 435,
+          "end": 485,
+          "sha256": "c96e00376bc38a51e4135b21a7cf3686d7c0cd238b238f87ef235c1d8cf0a588",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 53,
+            "column": 16,
+            "name": "setLuaScriptTimeout"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 534,
+          "end": 584,
+          "sha256": "e30372e20bf2316ccdaa6feed2cf9c19c3bc050be2dfdb961a52afa91b6bc0ab",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 56,
+            "column": 16,
+            "name": "getLuaScriptTimeout"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 872,
+          "end": 920,
+          "sha256": "96b043b764c678bbb402f20167226f85ba873a0d5ae67d81f79711ac304c8cda",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 85,
+            "column": 9,
+            "name": "_luaComputeBackoff"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1527,
+          "end": 1575,
+          "sha256": "efb10a18511a32ce4dcc5b6b9f3026bf472fb377599bd84ba3c0fd8c74605fe5",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 111,
+            "column": 15,
+            "name": "_acquireWorkerSlot"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 1742,
+          "end": 1790,
+          "sha256": "c55744b6d4aec2858cfb4c1c37e4015f472dc9e047fa17ed362fbf3cb3a67903",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 143,
+            "column": 9,
+            "name": "_releaseWorkerSlot"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 2027,
+          "end": 2089,
+          "sha256": "9c683b4fc404453b1e7a9038b2ce28465e6a86beb6e527aa2bfa4461660bf70b",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 164,
+            "column": 16,
+            "name": "resetLuaExecutorSemaphore"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 2202,
+          "end": 2252,
+          "sha256": "7234ef3212a779ef0e2059f10924ba624d5ca15b7f72a6404f93452648305539",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 179,
+            "column": 16,
+            "name": "getLuaExecutorStats"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 2351,
+          "end": 2407,
+          "sha256": "9340aa3c56b4b51cbc4bf913846603b470ba9f30eb03571319ed7326a26ee234",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 200,
+            "column": 16,
+            "name": "setLuaRegistrationMode"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 2468,
+          "end": 2522,
+          "sha256": "41c5d343676d6cb9d240ccce629cf31571d16d43aac637e4d8100854570b441c",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 203,
+            "column": 16,
+            "name": "isLuaRegistrationMode"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 14001,
+          "end": 14041,
+          "sha256": "1e176517e0bfdba65af865da417d8d58811212cd5aa6c512b2a2a74e8d54ab3a",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 348,
+            "column": 22,
+            "name": "execLuaViaPdim"
+          }
+        }
+      ],
+      "compatibleMapClaim": false,
+      "sourceMapSha256": "76b537860892fa08d8c8c94846d2fc20f740057bef0ec83ae701ac625c304d92",
+      "originalSources": [
+        {
+          "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+          "sha256": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00"
+        }
+      ]
+    },
+    {
+      "scriptId": "235",
+      "schemaVersion": 1,
+      "policy": "esbuild-keep-names-proven-prefix-v1",
+      "executedCodeSha256": "211edc83d396ecd800d67f31ac03b7c0a6547422f952303b5cba8143b19f8f75",
+      "originalParser": {
+        "package": "typescript",
+        "version": "5.9.3"
+      },
+      "ignoredGeneratedNodes": [
+        {
+          "type": "VariableDeclarator",
+          "start": 4,
+          "end": 35,
+          "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+          "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+        },
+        {
+          "type": "VariableDeclarator",
+          "start": 40,
+          "end": 113,
+          "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+          "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 745,
+          "end": 785,
+          "sha256": "a652cd657b4d6ccd7317978cbcbb527aee2be8d509ac92097cd952a3733bfa9a",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 94,
+            "column": 9,
+            "name": "_inGracePeriod"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 928,
+          "end": 962,
+          "sha256": "e01da10dd13067071b2adab3eda47161b44536009879a104d5b6d3bcbf4a870f",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 103,
+            "column": 9,
+            "name": "_inSlowLane"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 2742,
+          "end": 2784,
+          "sha256": "52389a80dbb4a6c8e5b85ba430c5c8bb3027c6dbd8215fab498b3cc5a48c8d32",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 110,
+            "column": 16,
+            "name": "cbRecordFailure"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3190,
+          "end": 3232,
+          "sha256": "8f3762f8e271f982e7aa03619c0e6a13e454595e2f309d0d3b8f0587d802b861",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 191,
+            "column": 16,
+            "name": "cbRecordSuccess"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3616,
+          "end": 3656,
+          "sha256": "b47e89346c6bc6afde7e2917c3252c920d9aee3cb20564bbe5d3eeafb186644f",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 215,
+            "column": 16,
+            "name": "cbAllowRequest"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3783,
+          "end": 3811,
+          "sha256": "16d17bd4359c1d871609ff0bdec06dc6eb4d611b196683489d99bec7803758a9",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 242,
+            "column": 16,
+            "name": "cbIsOpen"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 3940,
+          "end": 3986,
+          "sha256": "532928c8576ec2ab5e2e10fceeeda59d9db125c52d71b230864b87abf2fb8c73",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 258,
+            "column": 16,
+            "name": "cbIsPdimUnhealthy"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 4021,
+          "end": 4053,
+          "sha256": "38cdc21b3f208056f0ff63a021ff3ff76a8968edb4b3bb19143dd35d77c77316",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 266,
+            "column": 16,
+            "name": "cbGetState"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 4140,
+          "end": 4184,
+          "sha256": "611564c59eae5253b913a0e9fc9e7f3a903096f3efe63c19d988d0e162c2e40d",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 271,
+            "column": 16,
+            "name": "cbGetOpenUntilMs"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 4527,
+          "end": 4563,
+          "sha256": "fc3f441be52fe22fcfcd36bd062338ec2e673fa67406e1a4153ae6c26d5febdc",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 290,
+            "column": 16,
+            "name": "cbForceClose"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 4613,
+          "end": 4657,
+          "sha256": "748a2b857455e7b962a4e0ef8f0a2de6573f22688a89bb97052279ce2b434b20",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "line": 308,
+            "column": 16,
+            "name": "cbHalfOpenFailed"
+          }
+        }
+      ],
+      "compatibleMapClaim": false,
+      "sourceMapSha256": "355b383f4e4256995c20bcad97c939236369db7794beef7171a218e4e3843e92",
+      "originalSources": [
+        {
+          "source": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+          "sha256": "beb5d21a1bf9d41affb5edcff3a1cfdc5dd8102c5eef27fbb41d7aaa0e0b65f4"
+        }
+      ]
+    },
+    {
+      "scriptId": "236",
+      "schemaVersion": 1,
+      "policy": "esbuild-keep-names-proven-prefix-v1",
+      "executedCodeSha256": "eb2e9c18e466e7458e305916d0350644d5a75845f32889ef6b2f05812224496e",
+      "originalParser": {
+        "package": "typescript",
+        "version": "5.9.3"
+      },
+      "ignoredGeneratedNodes": [
+        {
+          "type": "VariableDeclarator",
+          "start": 4,
+          "end": 35,
+          "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+          "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+        },
+        {
+          "type": "VariableDeclarator",
+          "start": 40,
+          "end": 113,
+          "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+          "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 899,
+          "end": 941,
+          "sha256": "d8ae698e5a69702b1f5c1de55c3622989415264b053abb672a9eb50fe9a1c711",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/logSanitizer.ts",
+            "line": 9,
+            "column": 16,
+            "name": "sanitizeLogText"
+          }
+        },
+        {
+          "type": "ExpressionStatement",
+          "start": 2320,
+          "end": 2364,
+          "sha256": "044ea4ff18465b6fe95d9443fa3cd8cc749f0387506ece767da13a9c755d095d",
+          "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+          "originalDeclaration": {
+            "source": "/workspace/maxbooster7.5/server/logSanitizer.ts",
+            "line": 24,
+            "column": 16,
+            "name": "sanitizeLogValue"
+          }
+        }
+      ],
+      "compatibleMapClaim": false,
+      "sourceMapSha256": "5e106cb7d9d0c4bf00be963b20a8497cb1f9f1e63ff61e264a5838358506a4b0",
+      "originalSources": [
+        {
+          "source": "/workspace/maxbooster7.5/server/logSanitizer.ts",
+          "sha256": "f012622e80390701551ab38f7eda478daf9f7ee4a692e63a71ebaa856a145fb5"
+        }
+      ]
+    }
+  ],
+  "comparison": {
+    "baselineSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+    "files": [
+      {
+        "file": "/workspace/maxbooster7.5/server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/logger.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "compatible": false,
+        "mismatches": [
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+        "compatible": false,
+        "mismatches": [
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/logSanitizer.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    ]
+  },
+  "converter": {
+    "package": "ast-v8-to-istanbul",
+    "version": "1.0.7"
+  }
+}

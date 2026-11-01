@@ -1,0 +1,972 @@
+[start.sh] node [a] bundled: /tmp/readiness-packed-CfIYuU/cold/.node_bin/node
+[start.sh] node: /tmp/readiness-packed-CfIYuU/cold/.node_bin/node (v22.23.3)
+[Ports] public=32921; internal: pdim=45035, diffusion=44245, maxcore=33001, boosterstate=43509, model=37937/43825, legacy-python=46189
+[PortContract] ✅ all internal service ports are distinct
+[PortContract]    app=32921, localPdim=45035, diffusionGateway=44245, maxcoreApi=33001, boosterState=43509, maxcoreModelApi=37937, maxcoreModelHealth=43825, legacyPythonAi=46189
+[PortContract] ✅ .replit public mapping exposes only the app listener (localPort 32921 → externalPort 80)
+[PortContract] ✅ .replit [[ports]] table has 1 entries with no duplicate local/external ports; 0 private
+[PortContract] port contract OK
+[start.sh] boot-stub liveness server started (pid 261924) on port 32921
+[executive] start budget=360s (local safety budget, not a documented platform timeout)
+[boot-stub] listening on 0.0.0.0:32921 (liveness placeholder while node_modules restores)
+[executive] starting restore-app; cpu=1, reserved=256 MiB
+[executive] starting restore-node; cpu=1, reserved=256 MiB
+[executive] elapsed=0s running=restore-app,restore-node waiting=restore-python,restore-maxcore,restore-pdim,application available=23428MiB ioSlots=2 budgetRemaining=360s
+[pdim-restore] Extracting node_modules.pdim (zstd-19) → /tmp/readiness-packed-CfIYuU/cold/.pdim-scratch-node_modules-261947/ (staging for node_modules/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for node_modules.pdim
+[executive] completed restore-app in 0.6s
+[executive] starting restore-python; cpu=1, reserved=256 MiB
+[pdim-restore] Extracting python_runtime.pdim (zstd-19) → /tmp/readiness-packed-CfIYuU/cold/.pdim-scratch-python_runtime-261973/ (staging for python_runtime/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for python_runtime.pdim
+[pdim-restore] ✅ node_modules/ restored from node_modules.pdim
+[executive] completed restore-node in 6.3s
+[executive] starting restore-maxcore; cpu=1, reserved=256 MiB
+[pdim-restore] Extracting external_maxcore.pdim (zstd-19) → /tmp/readiness-packed-CfIYuU/cold/.pdim-scratch-external_maxcore-262007/ (staging for external/maxcore/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for external_maxcore.pdim
+[pdim-restore] ✅ python_runtime/ restored from python_runtime.pdim
+[pdim-restore] ✅ external/maxcore/ restored from external_maxcore.pdim
+[executive] completed restore-python in 7.4s
+[executive] completed restore-maxcore in 1.7s
+[executive] starting restore-pdim; cpu=1, reserved=256 MiB
+[pdim-restore] Extracting external_pdim.pdim (zstd-19) → /tmp/readiness-packed-CfIYuU/cold/.pdim-scratch-external_pdim-262049/ (staging for external/pdim/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for external_pdim.pdim
+[pdim-restore] ✅ external/pdim/ restored from external_pdim.pdim
+[executive] completed restore-pdim in 1.1s
+[start.sh] Python venv activated (Python 3.12.13): /tmp/readiness-packed-CfIYuU/cold/python_runtime/
+[executive] starting application; cpu=1, reserved=512 MiB
+[start.sh] boosterstate started (pid 262103) on internal port 43509 via ./bin/boosterstate
+[start.sh] Legacy Python AI sidecar disabled; AI requests must use MaxCore Digital GPU
+BoosterState: running without auth (set BOOSTERSTATE_SECRET to enable)
+BoosterState listening on 127.0.0.1:43509
+[start.sh] MaxCore Diffusion Gateway started (pid 262124) on port 44245
+[start.sh] boot-stub liveness server stopped, port 32921 released
+[start.sh] starting node dist/cluster.mjs
+[Cluster] boosterstate already running
+[executive] elapsed=16s running=application waiting=none available=18535MiB ioSlots=2 budgetRemaining=344s
+{"level":30,"time":1793209894874,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Observability] Sentry active — errors will be captured and reported"}
+
+============================
+Hi, looks like you are running TensorFlow.js in Node.js. To speed things up dramatically, install our node backend, visit https://github.com/tensorflow/tfjs-node for more details. 
+============================
+{"level":40,"time":1793209894984,"pid":262087,"hostname":"af966a6fd55d","msg":"[db] DATABASE_REPLICA_URLS not set — all queries routed to primary in production"}
+{"level":30,"time":1793209894985,"pid":262087,"hostname":"af966a6fd55d","msg":"📊 Monitoring system initialized"}
+{"level":30,"time":1793209894986,"pid":262087,"hostname":"af966a6fd55d","msg":"🛡️  Self-Healing Security Engine initializing..."}
+{"level":30,"time":1793209894988,"pid":262087,"hostname":"af966a6fd55d","msg":"[PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms"}
+{"level":30,"time":1793209894988,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis] PDIM active — routing Redis operations through PDIM"}
+{"level":30,"time":1793209895022,"pid":262087,"hostname":"af966a6fd55d","msg":"[LocalPDIM] Local PDIM exec server started on port 45035 (local fsynced AOF and snapshots)"}
+{"level":30,"time":1793209895024,"pid":262087,"hostname":"af966a6fd55d","msg":"🔍 Running startup probes..."}
+{"level":30,"time":1793209895030,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895030,"pid":262087,"hostname":"af966a6fd55d","msg":"🛡️ LOADING MANDATORY SECURITY MIDDLEWARE"}
+{"level":30,"time":1793209895030,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895030,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Request ID middleware"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Request logging middleware"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Helmet security headers (deferred to securityMiddleware — avoids CSP downgrade)"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ CORS middleware (production allowlist enforced)"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Prototype pollution protection"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Rate limiting middleware (max: 1000/15min, backend: Redis, skip: disabled)"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Strict rate limiting for auth endpoints (skip: disabled)"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Self-Healing Security Engine (10x healing speed)"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"────────────────────────────────────────────────────────"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"   Loaded: 8 | Failed: 0"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✅ All mandatory middleware loaded successfully"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895031,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Mandatory safety middleware applied"}
+{"level":40,"time":1793209895036,"pid":262087,"hostname":"af966a6fd55d","msg":"[ScaleConfig] DATABASE_REPLICA_URLS is not set. All database reads hit the primary instance. Create a Neon read replica and set DATABASE_REPLICA_URLS=<connection_string> to activate dbRead routing and double effective DB throughput."}
+{"level":40,"time":1793209895036,"pid":262087,"hostname":"af966a6fd55d","msg":"[ScaleConfig] WEBHOOK_SECRET is not set. Webhook signature verification is disabled — set WEBHOOK_SECRET to enable it."}
+{"level":40,"time":1793209895036,"pid":262087,"hostname":"af966a6fd55d","msg":"[ScaleConfig] Neither REDIS_URL nor REDIS_CLUSTER_URLS is set. Redis is required in production."}
+{"level":30,"time":1793209895036,"pid":262087,"hostname":"af966a6fd55d","msg":"[ScaleConfig] Validation complete — 2 warning(s), 1 error(s). See above for remediation steps."}
+{"level":40,"time":1793209895039,"pid":262087,"hostname":"af966a6fd55d","msg":"⚠️  Stripe setup skipped - invalid API key"}
+{"level":30,"time":1793209895040,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreAI] Configured — local subsystem: http://[REDACTED]:33001 | MaxCore is the only AI source"}
+{"level":30,"time":1793209895040,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: stripe"}
+{"level":30,"time":1793209895040,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: sendgrid"}
+{"level":30,"time":1793209895040,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: socialApi"}
+{"level":30,"time":1793209895040,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: twitter"}
+{"level":30,"time":1793209895040,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: facebook"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: instagram"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: linkedin"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: tiktok"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: tiktok_sandbox"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: youtube"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: threads"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: googlebusiness"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: aiService"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: labelGrid"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: dsp"}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 External service circuit breakers initialized"}
+{"level":40,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"⚠️  Resend API key not configured. Email features will be disabled."}
+{"level":30,"time":1793209895041,"pid":262087,"hostname":"af966a6fd55d","msg":"📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend"}
+{"level":40,"time":1793209895042,"pid":262087,"hostname":"af966a6fd55d","msg":"VAPID keys not configured - Web Push disabled"}
+{"level":30,"time":1793209895046,"pid":262087,"hostname":"af966a6fd55d","msg":"[DataTransfer] Distribution data transfer service initialized"}
+{"level":30,"time":1793209895046,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-spotify"}
+{"level":30,"time":1793209895046,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-apple_music"}
+{"level":30,"time":1793209895046,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-youtube_music"}
+{"level":30,"time":1793209895046,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-deezer"}
+{"level":30,"time":1793209895046,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-soundcloud"}
+{"level":30,"time":1793209895046,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-tidal"}
+{"level":30,"time":1793209895046,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-bandcamp"}
+{"level":30,"time":1793209895046,"pid":262087,"hostname":"af966a6fd55d","msg":"🔌 Circuit breaker initialized: streaming-audiomack"}
+{"level":30,"time":1793209895050,"pid":262087,"hostname":"af966a6fd55d","msg":"Sharp module loaded for image processing"}
+{"level":30,"time":1793209895050,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)"}
+{"level":30,"time":1793209895051,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209895052,"pid":262087,"hostname":"af966a6fd55d","msg":"📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)"}
+{"level":30,"time":1793209895054,"pid":262087,"hostname":"af966a6fd55d","msg":"[SystemIntelligence] Reasoning engine initialized — watching all error and security signals"}
+{"level":30,"time":1793209895056,"pid":262087,"hostname":"af966a6fd55d","msg":"[ChainFixer] Chain error auto-fixer active — monitoring 28 error patterns (adaptive cooldowns, daily un-suppress)"}
+{"level":30,"time":1793209895060,"pid":262087,"hostname":"af966a6fd55d","msg":"[ChainFixer] No autofix directive found — running without a charter"}
+{"level":30,"time":1793209895060,"pid":262087,"hostname":"af966a6fd55d","msg":"[PlatformAutoFixer] Started — probing all subsystems (adaptive: 30s/10s/5s by health)"}
+{"level":30,"time":1793209895062,"pid":262087,"hostname":"af966a6fd55d","msg":"[Directive] Executor active — running the autofix directive phases every 15 min (first cycle now)"}
+{"level":30,"time":1793209895062,"pid":262087,"hostname":"af966a6fd55d","msg":"🔬 Starting post-deploy self-test..."}
+{"level":30,"time":1793209895071,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:35 PM [express] serving on port 32921 (early listen — full init in progress)"}
+{"level":30,"time":1793209895082,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895082,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+(node:262087) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{"level":30,"time":1793209895112,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ PDIM probe ready (87ms)"}
+{"level":30,"time":1793209895115,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Database probe ready (attempt 1, 91ms)"}
+{"level":30,"time":1793209895115,"pid":262087,"hostname":"af966a6fd55d","msg":"   └─ Loaded 0 blocked IPs from database"}
+{"level":30,"time":1793209895116,"pid":262087,"hostname":"af966a6fd55d","msg":"🛡️  Self-Healing Security Engine ACTIVE"}
+{"level":30,"time":1793209895116,"pid":262087,"hostname":"af966a6fd55d","msg":"   └─ SLO Targets: MTTD<50ms, MTTR<250ms, Recovery<500ms"}
+{"level":30,"time":1793209895116,"pid":262087,"hostname":"af966a6fd55d","msg":"   └─ Healing Speed: 10x faster than attacks"}
+{"level":30,"time":1793209895116,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] Starting MaxCore api-server (port 33001, model port 37937)…"}
+{"level":30,"time":1793209895130,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Session store initialized (PDIM)"}
+{"level":30,"time":1793209895130,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Origin validation enabled (SameSite=Lax + Origin header check)"}
+{"level":30,"time":1793209895130,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ CSRF protection enabled (double-submit cookie, with safe exemptions)"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"🛡️ INITIALIZING PRODUCTION SAFETY SYSTEMS"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"🔐 ENVIRONMENT VALIDATION"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ DATABASE_URL"}
+{"level":40,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ NEON_DATABASE_URL - not set (optional)"}
+{"level":40,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ NEON_PRIMARY_URL - not set (optional)"}
+{"level":40,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ DATABASE_REPLICA_URLS - not set (optional)"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ SESSION_SECRET"}
+{"level":40,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TOKEN_ENCRYPTION_KEY - not set (optional)"}
+{"level":40,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ BOOSTERSTATE_SECRET - not set (optional)"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ NODE_ENV"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ PORT"}
+{"level":30,"time":1793209895131,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ BOOSTERSTATE_SIDECAR_PORT"}
+{"level":30,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ APP_URL"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ DOMAIN - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ BASE_DOMAIN - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ BASE_URL - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ SITE_URL - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ CORS_ORIGIN - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ MAX_CONCURRENT_REQUESTS - not set (optional)"}
+{"level":30,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ NODE_OPTIONS"}
+{"level":30,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ UV_THREADPOOL_SIZE"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ ENABLE_SELF_EVOLUTION - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ STOREFRONT_URL_FORMAT - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ ADMIN_EMAIL - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ ADMIN_USERNAME - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ ADMIN_PASSWORD - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✗ STRIPE_SECRET_KEY - MISSING (required)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✗ STRIPE_PUBLISHABLE_KEY - MISSING (required)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✗ STRIPE_WEBHOOK_SECRET - MISSING (required)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ VITE_STRIPE_PUBLIC_KEY - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✗ SENDGRID_API_KEY - MISSING (required)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ SENDGRID_FROM_EMAIL - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ RESEND_API_KEY - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ AI_SERVER_URL - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ AI_SERVER_KEY - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ MAXCORE_ADMIN_KEY - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ MBS_AI_TRAINING_URL - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ MBS_AI_TRAINING_KEY - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ AI_Training_Server - not set (optional)"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ PEER_TRAINING_NODE - not set (optional)"}
+{"level":30,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ STORAGE_HTTP_URL"}
+{"level":30,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ STORAGE_BEARER_TOKEN"}
+{"level":40,"time":1793209895132,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ STORAGE_PROVIDER - not set (optional)"}
+{"level":30,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ PDIM_EXEC_URL"}
+{"level":30,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ PDIM_HTTP_EXEC_URL"}
+{"level":30,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ PDIM_EXEC_TOKEN"}
+{"level":30,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ PDIM_BEARER_TOKEN"}
+{"level":30,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ POCKET_DIMENSION_KEY"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ REPLIT_BUCKET_ID - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ REDIS_URL - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ REDIS_CLUSTER_URLS - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TWITTER_API_KEY - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TWITTER_API_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TWITTER_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TWITTER_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ FACEBOOK_APP_ID - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ FACEBOOK_APP_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ INSTAGRAM_APP_ID - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ INSTAGRAM_APP_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_CLIENT_KEY - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_ENV - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_SANDBOX_CLIENT_KEY - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_SANDBOX_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_SANDBOX_REDIRECT_URI - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TIKTOK_SANDBOX_SCOPES - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ YOUTUBE_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ YOUTUBE_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GOOGLE_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GOOGLE_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GOOGLE_BUSINESS_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GOOGLE_BUSINESS_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ LINKEDIN_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ LINKEDIN_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ THREADS_APP_ID - not set (optional)"}
+{"level":40,"time":1793209895133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ THREADS_APP_SECRET - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ SPOTIFY_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ SPOTIFY_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ VAPID_PUBLIC_KEY - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ VAPID_PRIVATE_KEY - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ VAPID_SUBJECT - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ FCM_PROJECT_ID - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ FCM_CLIENT_EMAIL - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ FCM_SERVICE_ACCOUNT_KEY - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TWILIO_ACCOUNT_SID - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TWILIO_AUTH_TOKEN - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TWILIO_PHONE_NUMBER - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TWILIO_VERIFY_SERVICE_SID - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ EXA_API_KEY - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TAVILY_API_KEY - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ SENTRY_DSN - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ VITE_SENTRY_DSN - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ MAXMIND_ACCOUNT_ID - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ MAXMIND_LICENSE_KEY - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GEODB_PATH - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GEODNS_ENABLED - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ REGION_MAP - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ DNS_SERVER_IP - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ DNS_PORT - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ DNSSEC_ENABLED - not set (optional)"}
+{"level":30,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ ACME_ENABLED"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ ACME_CONTACT_EMAIL - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ ACME_DIRECTORY_URL - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GITHUB_TOKEN - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GITHUB_PAT - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GITHUB_PERSONAL_ACCESS_TOKEN - not set (optional)"}
+{"level":40,"time":1793209895134,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ GITHUB_REPO - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ LABELGRID_API_URL - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ LABELGRID_API_TOKEN - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ LABELGRID_API_TOKEN1 - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ LABELGRID_WEBHOOK_URL - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_SANDBOX_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_ENVIRONMENT - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_REDIRECT_URI - not set (optional)"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ TOOLOST_SANDBOX_REDIRECT_URL - not set (optional)"}
+{"level":30,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"────────────────────────────────────────────────────────"}
+{"level":30,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   Valid: 16 | Missing: 4 | Invalid: 0"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   ❌ Environment validation FAILED"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":""}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"   Critical errors:"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"     - MISSING: STRIPE_SECRET_KEY - Stripe secret API key"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"     - MISSING: STRIPE_PUBLISHABLE_KEY - Stripe publishable API key"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"     - MISSING: STRIPE_WEBHOOK_SECRET - Stripe webhook signing secret"}
+{"level":40,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"     - MISSING: SENDGRID_API_KEY - SendGrid API key for email delivery"}
+{"level":30,"time":1793209895135,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895141,"pid":262087,"hostname":"af966a6fd55d","msg":"[Audit] Audit logger initialized"}
+{"level":30,"time":1793209895141,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Audit logger initialized"}
+{"level":30,"time":1793209895141,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895141,"pid":262087,"hostname":"af966a6fd55d","msg":"📊 VERIFYING DATABASE INDEXES"}
+{"level":30,"time":1793209895141,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895147,"pid":262087,"hostname":"af966a6fd55d","msg":"[PDIM] First successful response after 160ms — entering 10s settling window"}
+{"level":30,"time":1793209895148,"pid":262087,"hostname":"af966a6fd55d","msg":"   Batch check: 0/52 indexes already exist"}
+{"level":30,"time":1793209895151,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_users_email on users(email)"}
+{"level":30,"time":1793209895154,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_users_subscription_tier on users(subscription_tier)"}
+{"level":30,"time":1793209895157,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_users_created_at on users(created_at)"}
+{"level":30,"time":1793209895160,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_analytics_user_id on analytics(user_id)"}
+{"level":30,"time":1793209895162,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_analytics_date on analytics(date)"}
+{"level":30,"time":1793209895164,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_analytics_user_date on analytics(user_id, date)"}
+{"level":30,"time":1793209895169,"pid":262087,"hostname":"af966a6fd55d","msg":"[Directive] Cycle 1 clean — scorecard {\"stability\":100,\"correctness\":100,\"integration_reliability\":100,\"security\":100,\"production_readiness\":100}"}
+{"level":30,"time":1793209895170,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_instant_payouts_user_id on instant_payouts(user_id)"}
+{"level":30,"time":1793209895172,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_instant_payouts_status on instant_payouts(status)"}
+{"level":30,"time":1793209895177,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_instant_payouts_created_at on instant_payouts(created_at)"}
+{"level":30,"time":1793209895179,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_releases_user_id on releases(user_id)"}
+{"level":30,"time":1793209895181,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_releases_status on releases(status)"}
+{"level":30,"time":1793209895183,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_releases_release_date on releases(release_date)"}
+{"level":30,"time":1793209895186,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_campaigns_user_id on social_campaigns(user_id)"}
+{"level":30,"time":1793209895188,"pid":262087,"hostname":"af966a6fd55d","msg":"🔬 Self-test complete: 5 passed, 0 failed, 0 skipped"}
+{"level":30,"time":1793209895188,"pid":262087,"hostname":"af966a6fd55d","msg":"   Recommendation: healthy"}
+{"level":30,"time":1793209895188,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_campaigns_scheduled_at on social_campaigns(scheduled_at)"}
+{"level":30,"time":1793209895192,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_campaigns_status on social_campaigns(status)"}
+{"level":30,"time":1793209895195,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_listings_user_id on listings(user_id)"}
+{"level":30,"time":1793209895199,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_api_keys_user_id on api_keys(user_id)"}
+{"level":30,"time":1793209895208,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_api_keys_key_hash on api_keys(key_hash)"}
+{"level":30,"time":1793209895210,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_workspace_audit_log_user_id on workspace_audit_log(user_id)"}
+{"level":30,"time":1793209895215,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_workspace_audit_log_action on workspace_audit_log(action)"}
+{"level":30,"time":1793209895218,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_workspace_audit_log_created_at on workspace_audit_log(created_at)"}
+{"level":30,"time":1793209895220,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_ip_blacklist_expires_at on ip_blacklist(expires_at)"}
+{"level":30,"time":1793209895222,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_ip_blacklist_ip on ip_blacklist(ip)"}
+{"level":30,"time":1793209895224,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_ip_blacklist_is_active on ip_blacklist(is_active)"}
+{"level":30,"time":1793209895227,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_learning_data_created_at on autopilot_learning_data(created_at)"}
+{"level":30,"time":1793209895234,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_learning_data_posting_day on autopilot_learning_data(posting_day_of_week, posting_hour)"}
+{"level":30,"time":1793209895237,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_learning_data_user_platform on autopilot_learning_data(user_id, platform)"}
+{"level":30,"time":1793209895242,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_learning_data_engagement_rate on autopilot_learning_data(engagement_rate)"}
+{"level":30,"time":1793209895249,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_accounts_user_id on social_accounts(user_id)"}
+{"level":30,"time":1793209895251,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_accounts_active_expires on social_accounts(is_active, token_expires_at)"}
+{"level":30,"time":1793209895256,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_social_accounts_platform_user on social_accounts(platform, user_id)"}
+{"level":30,"time":1793209895264,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_preferences_user_id on autopilot_preferences(user_id)"}
+{"level":30,"time":1793209895267,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_autopilot_preferences_active on autopilot_preferences(is_active)"}
+{"level":30,"time":1793209895269,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_users_stripe_customer_id on users(stripe_customer_id)"}
+{"level":30,"time":1793209895271,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_subscriptions_stripe_subscription_id on subscriptions(stripe_subscription_id)"}
+{"level":30,"time":1793209895274,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_system_logs_timestamp on system_logs(timestamp)"}
+{"level":30,"time":1793209895276,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_system_logs_level on system_logs(level)"}
+{"level":30,"time":1793209895278,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_system_logs_user_id on system_logs(user_id)"}
+{"level":30,"time":1793209895280,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_music_workflow_automations_user_id on music_workflow_automations(user_id)"}
+{"level":30,"time":1793209895282,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_music_workflow_execution_logs_template_id on music_workflow_execution_logs(template_id)"}
+{"level":30,"time":1793209895284,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_music_workflow_execution_logs_user_id on music_workflow_execution_logs(user_id)"}
+{"level":30,"time":1793209895286,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_music_workflow_execution_logs_executed_at on music_workflow_execution_logs(executed_at)"}
+{"level":30,"time":1793209895288,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_orders_seller_id on orders(seller_id)"}
+{"level":30,"time":1793209895296,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_orders_seller_id_status on orders(seller_id, status)"}
+{"level":30,"time":1793209895305,"pid":262087,"hostname":"af966a6fd55d","msg":"[2e15da8c-b095-48ea-bd5f-4fe4427f871c] GET /api/csrf-token - 404 (7ms)"}
+{"level":30,"time":1793209895306,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:35 PM [express] GET /api/csrf-token 404 in 4ms"}
+{"level":30,"time":1793209895306,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_orders_user_id on orders(user_id)"}
+{"level":30,"time":1793209895309,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_orders_status on orders(status)"}
+{"level":30,"time":1793209895312,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_storefront_follows_storefront_id on storefront_follows(storefront_id)"}
+{"level":30,"time":1793209895318,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_storefront_follows_user_id on storefront_follows(user_id)"}
+{"level":30,"time":1793209895321,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_storefront_ratings_storefront_id on storefront_ratings(storefront_id)"}
+{"level":30,"time":1793209895322,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_storefronts_user_id on storefronts(user_id)"}
+{"level":30,"time":1793209895329,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_royalty_transactions_user_id on royalty_transactions(user_id)"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created idx_royalty_transactions_release_id on royalty_transactions(release_id)"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"────────────────────────────────────────────────────────"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"   Created: 52 | Skipped: 0 | Failed: 0"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Database indexes verified"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Database indexes verified"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: topup.reversed"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: charge.refunded"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: refund.created"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: refund.updated"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: refund.failed"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: charge.dispute.created"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: charge.dispute.updated"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: charge.dispute.closed"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Refund webhook handlers registered"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Kill switch ready (global killed: false)"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"────────────────────────────────────────────────────────"}
+{"level":40,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"   ⚠ Safety systems initialized with 4 warnings"}
+{"level":30,"time":1793209895331,"pid":262087,"hostname":"af966a6fd55d","msg":"════════════════════════════════════════════════════════"}
+{"level":40,"time":1793209895332,"pid":262087,"hostname":"af966a6fd55d","msg":"⚠️ Safety systems initialized with warnings: MISSING: STRIPE_SECRET_KEY - Stripe secret API key, MISSING: STRIPE_PUBLISHABLE_KEY - Stripe publishable API key, MISSING: STRIPE_WEBHOOK_SECRET - Stripe webhook signing secret, MISSING: SENDGRID_API_KEY - SendGrid API key for email delivery"}
+{"level":30,"time":1793209895332,"pid":262087,"hostname":"af966a6fd55d","msg":"WebSocket session store configured"}
+{"level":30,"time":1793209895332,"pid":262087,"hostname":"af966a6fd55d","msg":"General notification WebSocket server initialized at /ws"}
+{"level":30,"time":1793209895332,"pid":262087,"hostname":"af966a6fd55d","msg":"Realtime collaboration server initialized"}
+{"level":30,"time":1793209895333,"pid":262087,"hostname":"af966a6fd55d","msg":"🚀 BullMQ workers initializing (Redis-backed, ack + DLQ + retry)..."}
+{"level":30,"time":1793209895333,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209895334,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209895334,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209895334,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209895335,"pid":262087,"hostname":"af966a6fd55d","msg":"📋 Active BullMQ workers (staggered startup — 5s apart after PDIM is ready):"}
+{"level":30,"time":1793209895335,"pid":262087,"hostname":"af966a6fd55d","msg":"   - Audio     (concurrency: 6)"}
+{"level":30,"time":1793209895335,"pid":262087,"hostname":"af966a6fd55d","msg":"   - CSV       (concurrency: 4)"}
+{"level":30,"time":1793209895335,"pid":262087,"hostname":"af966a6fd55d","msg":"   - Analytics (concurrency: 8)"}
+{"level":30,"time":1793209895335,"pid":262087,"hostname":"af966a6fd55d","msg":"   - Email     (concurrency: 16)"}
+{"level":30,"time":1793209895338,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Weekly insights cron job scheduled (Every Monday at 9 AM EST)"}
+{"level":30,"time":1793209895338,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895338,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895338,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895338,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895339,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895339,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895339,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895339,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895339,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895339,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209895344,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance"}
+{"level":30,"time":1793209895344,"pid":262087,"hostname":"af966a6fd55d","msg":"[StudioCollab] WebSocket server initialized on path: /ws/studio"}
+{"level":30,"time":1793209895344,"pid":262087,"hostname":"af966a6fd55d","msg":"Studio collaboration WebSocket server initialized"}
+{"level":30,"time":1793209895344,"pid":262087,"hostname":"af966a6fd55d","msg":"Presence manager ready"}
+{"level":50,"time":1793209895346,"pid":262087,"hostname":"af966a6fd55d","msg":"[a12fe0c6-1ee9-4166-a526-77487d63f97a] GET /api/ready - 503 (1ms)"}
+{"level":30,"time":1793209895347,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:35 PM [express] GET /api/ready 503 in 0ms"}
+{"level":30,"time":1793209895359,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Cluster] Primary 262183 — forking 1 workers on port 33001"}
+{"level":30,"time":1793209895364,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [WarmService] Polling /api/warm/status until deep-warm completes…"}
+[Cluster] Asset pre-compression complete — 84 file(s) written
+{"level":30,"time":1793209895586,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Cluster] Worker 262192 listening on port 33001"}
+{"level":30,"time":1793209895809,"pid":262087,"hostname":"af966a6fd55d","msg":"[44a25117-893b-4f99-a30f-03bfa7abf251] GET /api/csrf-token - 404 (2ms)"}
+{"level":30,"time":1793209895809,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:35 PM [express] GET /api/csrf-token 404 in 1ms"}
+{"level":50,"time":1793209895873,"pid":262087,"hostname":"af966a6fd55d","msg":"[70d9f1ff-d48b-4f75-8b83-523fcccbdb8c] GET /api/ready - 503 (1ms)"}
+{"level":30,"time":1793209895874,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:35 PM [express] GET /api/ready 503 in 0ms"}
+{"level":30,"time":1793209896313,"pid":262087,"hostname":"af966a6fd55d","msg":"[43e95ec1-aa2f-48a9-8922-b0cfd739318c] GET /api/csrf-token - 404 (2ms)"}
+{"level":30,"time":1793209896313,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:36 PM [express] GET /api/csrf-token 404 in 1ms"}
+{"level":30,"time":1793209896347,"pid":262087,"hostname":"af966a6fd55d","msg":"[Workers] PDIM stable after 2 probe(s) (1009ms) — starting BullMQ workers"}
+{"level":30,"time":1793209896347,"pid":262087,"hostname":"af966a6fd55d","msg":"⏳ BullMQ workers listening for jobs (staggered)..."}
+{"level":30,"time":1793209896347,"pid":262087,"hostname":"af966a6fd55d","msg":"Background workers initialized"}
+{"level":30,"time":1793209896348,"pid":262087,"hostname":"af966a6fd55d","intervalMs":60000,"batchSize":20,"msg":"[domainVerify] worker started (multi-method DoH verification)"}
+{"level":30,"time":1793209896348,"pid":262087,"hostname":"af966a6fd55d","msg":"Domain verification worker started"}
+{"level":30,"time":1793209896349,"pid":262087,"hostname":"af966a6fd55d","intervalHours":6,"msg":"[DomainLifecycle] lifecycle job scheduled"}
+{"level":30,"time":1793209896349,"pid":262087,"hostname":"af966a6fd55d","msg":"[domainVerify] Domain lifecycle job started"}
+{"level":30,"time":1793209896355,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Scalable rate limiter applied"}
+{"level":30,"time":1793209896355,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Admission control applied (max concurrent: 5000)"}
+{"level":30,"time":1793209896355,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ API response cache initialized (9 cached routes)"}
+{"level":30,"time":1793209896367,"pid":262087,"hostname":"af966a6fd55d","msg":"Accessibility routes registered"}
+{"level":40,"time":1793209896372,"pid":262087,"hostname":"af966a6fd55d","msg":"Too Lost OAuth app credentials are not configured for the production environment (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET). Distribution features are unavailable until the required Too Lost OAuth configuration is present."}
+{"level":40,"time":1793209896382,"pid":262087,"hostname":"af966a6fd55d","msg":"⚠️  LabelGrid API token not configured. Distribution features will use simulated mode."}
+{"level":40,"time":1793209896383,"pid":262087,"hostname":"af966a6fd55d","msg":"   Set LABELGRID_API_TOKEN1 (production-scoped token) in your environment to enable real distribution."}
+{"level":30,"time":1793209896392,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCore] Peer mode: http — http://localhost:8000"}
+{"level":30,"time":1793209896393,"pid":262087,"hostname":"af966a6fd55d","msg":"Sharp module loaded for DSP policy checking"}
+{"level":30,"time":1793209896397,"pid":262087,"hostname":"af966a6fd55d","msg":"🔐 Token refresh monitor started (checking every minute)"}
+{"level":30,"time":1793209896398,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209896401,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: socialMedia (direct)"}
+{"level":30,"time":1793209896401,"pid":262087,"hostname":"af966a6fd55d","msg":"[routes] socialMedia router registered directly at /api/social"}
+{"level":30,"time":1793209896420,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Timing Optimizer service initialized"}
+{"level":30,"time":1793209896420,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Content Variant Generator service initialized"}
+{"level":30,"time":1793209896421,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Algorithm Intelligence service initialized"}
+{"level":40,"time":1793209896435,"pid":262087,"hostname":"af966a6fd55d","msg":"❌ STRIPE CONFIGURATION ERROR in stripeService.ts:"}
+{"level":40,"time":1793209896435,"pid":262087,"hostname":"af966a6fd55d","msg":"   Missing or invalid Stripe secret key."}
+{"level":40,"time":1793209896435,"pid":262087,"hostname":"af966a6fd55d","msg":"   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)"}
+{"level":40,"time":1793209896435,"pid":262087,"hostname":"af966a6fd55d","msg":"   Configure a Stripe secret key or supported proxy credential binding."}
+{"level":40,"time":1793209896436,"pid":262087,"hostname":"af966a6fd55d","msg":"[Billing] STRIPE_SECRET_KEY not configured. Billing endpoints will return errors."}
+{"level":30,"time":1793209896443,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209896443,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209896443,"pid":262087,"hostname":"af966a6fd55d","msg":"📱 Social media queues initialized (boosterstate-backed)"}
+{"level":30,"time":1793209896448,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Sharp Image Service initialized - production-ready image generation available"}
+{"level":30,"time":1793209896486,"pid":262087,"hostname":"af966a6fd55d","msg":"AutopilotCoordinatorService initialized"}
+{"level":30,"time":1793209896494,"pid":262087,"hostname":"af966a6fd55d","msg":"🧬 Self-Evolution Engine initialized"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: checkout.session.expired"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: checkout.session.completed"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: customer.subscription.created"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: customer.subscription.updated"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: customer.subscription.deleted"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: invoice.paid"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: invoice.payment_failed"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: payment_intent.succeeded"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: payment_intent.payment_failed"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: account.updated"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: transfer.created"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: payout.paid"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"[Stripe Webhook] Registered handler for: payout.failed"}
+{"level":30,"time":1793209896571,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Database resilience monitoring started"}
+{"level":30,"time":1793209896572,"pid":262087,"hostname":"af966a6fd55d","msg":"🧠 Memory thresholds: Warning=768MB, Critical=1024MB (production)"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: bootstrap"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: achievements"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: onboarding"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: personalization"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: releaseCountdown"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: storefront"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: storefrontDomains"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: dns"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: dnsManager"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: domainRegistrar"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: hns"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: analytics"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: status"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: monitoring"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: dmca"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: growth"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: backup"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: retention"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: billing"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: payouts"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: invoices"}
+{"level":30,"time":1793209896607,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: kyc"}
+{"level":30,"time":1793209896608,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: socialOAuth"}
+{"level":30,"time":1793209896608,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: socialApprovals"}
+{"level":30,"time":1793209896608,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: socialBulk"}
+{"level":30,"time":1793209896615,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: socialAI"}
+{"level":30,"time":1793209896615,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: multimodal"}
+{"level":30,"time":1793209896615,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: organic"}
+{"level":30,"time":1793209896615,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: advertising"}
+{"level":30,"time":1793209896615,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: advertisingAutopilot"}
+{"level":30,"time":1793209896615,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: autopilot"}
+{"level":30,"time":1793209896615,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: dualAutopilot"}
+{"level":30,"time":1793209896615,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: autopilotCoordinator"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: autopilotLearning"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: autonomousSocial"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: autoUpdates"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: downloads"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: platformSync"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: autopilotPreferences"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: autopilotKnowledge"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: studio"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: studioComping"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: studioMarkers"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: studioPlugins"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: studioStems"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: studioWarping"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: studioGeneration"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: studioMidi"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: vstBridge"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: audioAnalysis"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: audioProcessing"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: promotionalTools"}
+{"level":30,"time":1793209896616,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: offline"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: sync"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: workspace"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: developerApi"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: content-analysis"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: collaborations"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: helpDesk"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: support"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: executiveDashboard"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: admin"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: adminMetrics"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: adminBeatMoneyLoop"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: adminAuditLog"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: adminContentSampler"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: audit"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: testing"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: webhooksAdmin"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: logs"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: v1Analytics"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: certifiedAnalytics"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: analyticsAlerts"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: resendWebhook"}
+{"level":30,"time":1793209896617,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: sendgridWebhook"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: stripeWebhook"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route function: reliability"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: emailPreferences"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: simulation"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: killSwitch"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: paymentBypass"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: dnsNodeLocalStatus"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: seo"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: selfHealingApi"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: security"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: marketplace"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: adaptivePricing"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: search"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: contracts"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: ai"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: careerCoach"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: arIntelligence"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: outreach"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: apiKeys"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: recoveryCodes"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: connectedAccounts"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: auth"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: fanHub"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: fanMemberships"}
+{"level":30,"time":1793209896619,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: pressKit"}
+{"level":30,"time":1793209896620,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: playlistPitching"}
+{"level":30,"time":1793209896620,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: shows"}
+{"level":30,"time":1793209896620,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: merch"}
+{"level":30,"time":1793209896620,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: syncLicensing"}
+{"level":30,"time":1793209896620,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: publishing"}
+{"level":30,"time":1793209896620,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: uploads"}
+{"level":30,"time":1793209896620,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: storage"}
+{"level":30,"time":1793209896620,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: hybridStorage"}
+{"level":30,"time":1793209896620,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: export"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ 24/7 Reliability endpoints configured"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"📊 Available endpoints:"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   GET /api/system/health - Comprehensive system health"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   GET /api/system/status - External monitoring status"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   GET /api/system/metrics - Prometheus metrics"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   GET /api/system/process - Process monitoring details"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   GET /api/system/memory - Memory monitoring details"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   GET /api/system/database - Database monitoring details"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   GET /api/system/database/metrics - Database query telemetry"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   GET /api/health/circuits - External service circuit breaker status"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   GET /api/health/circuits/:name - Individual circuit status"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   POST /api/health/circuits/:name/reset - Reset individual circuit"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"   POST /api/health/circuits/reset-all - Reset all circuits"}
+{"level":30,"time":1793209896622,"pid":262087,"hostname":"af966a6fd55d","msg":"OAuth callback redirect routes registered"}
+{"level":30,"time":1793209896631,"pid":262087,"hostname":"af966a6fd55d","msg":"Infrastructure scaling routes registered"}
+{"level":30,"time":1793209896632,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: unifiedContent"}
+{"level":30,"time":1793209896632,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: creativeModel"}
+{"level":30,"time":1793209896633,"pid":262087,"hostname":"af966a6fd55d","msg":"Collaboration routes registered"}
+{"level":30,"time":1793209896636,"pid":262087,"hostname":"af966a6fd55d","msg":"[MusicWorkflow] Scheduled workflow cron jobs initialized: monthly royalty reminder"}
+{"level":30,"time":1793209896636,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: musicWorkflowAutomations"}
+{"level":30,"time":1793209896637,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: fabric"}
+{"level":30,"time":1793209896638,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: labelSubmissions"}
+{"level":30,"time":1793209896638,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: radioPitches"}
+{"level":30,"time":1793209896638,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: venues"}
+{"level":30,"time":1793209896639,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: projectBudgets"}
+{"level":30,"time":1793209896639,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: sampleClearances"}
+{"level":30,"time":1793209896644,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: musicVideos"}
+{"level":30,"time":1793209896645,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: songwriting"}
+{"level":30,"time":1793209896646,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: fanCampaigns"}
+{"level":30,"time":1793209896647,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: customWorkflows"}
+{"level":30,"time":1793209896649,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxAssistantService] In-house Max AI assistant knowledge engine initialized — comprehensive edition with proactive prediction"}
+{"level":30,"time":1793209896649,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: assistant"}
+{"level":30,"time":1793209896649,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded route: maxcore-proxy"}
+{"level":30,"time":1793209896650,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209896650,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209896650,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209896651,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":40,"time":1793209896654,"pid":262087,"hostname":"af966a6fd55d","msg":"[SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect."}
+{"level":50,"time":1793209896661,"pid":262087,"hostname":"af966a6fd55d","msg":"[458203b0-1a88-43e6-b7ba-6ea9d9866d9f] GET /api/ready - 503 (7ms)"}
+{"level":30,"time":1793209896662,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:36 PM [express] GET /api/ready 503 in 0ms"}
+{"level":30,"time":1793209896662,"pid":262087,"hostname":"af966a6fd55d","msg":"Loaded 0 contracts from database"}
+{"level":30,"time":1793209896676,"pid":262087,"hostname":"af966a6fd55d","msg":"[OfflineCache] Pocket Dimension storage bubble opened (level-9 gzip, dedup)"}
+{"level":30,"time":1793209896680,"pid":262087,"hostname":"af966a6fd55d","msg":"📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)"}
+{"level":30,"time":1793209896680,"pid":262087,"hostname":"af966a6fd55d","msg":"🧬 No prior evolution state found — starting fresh"}
+{"level":30,"time":1793209896680,"pid":262087,"hostname":"af966a6fd55d","msg":"Evolution registry loaded: 0 active enhancement(s), 0 live"}
+{"level":30,"time":1793209896680,"pid":262087,"hostname":"af966a6fd55d","msg":"Silent deployment system on standby (set ENABLE_SELF_EVOLUTION=true to activate)"}
+{"level":30,"time":1793209896681,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209896681,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Auto-posting BullMQ worker started (concurrency: 5)"}
+{"level":30,"time":1793209896687,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209896687,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209896688,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Reloaded 0 pending posts"}
+{"level":30,"time":1793209896688,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Auto-posting service initialized (boosterstate-backed)"}
+{"level":30,"time":1793209896689,"pid":262087,"hostname":"af966a6fd55d","msg":"📅 Database backups scheduled (daily at 2 AM UTC)"}
+{"level":30,"time":1793209896689,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Database Backup Service initialized (Pocket Dimension storage)"}
+{"level":30,"time":1793209896689,"pid":262087,"hostname":"af966a6fd55d","msg":"   RPO Target: 24 hours"}
+{"level":30,"time":1793209896689,"pid":262087,"hostname":"af966a6fd55d","msg":"   RTO Target: 30 minutes"}
+{"level":30,"time":1793209896689,"pid":262087,"hostname":"af966a6fd55d","msg":"   Backup Schedule: Daily at 2 AM UTC"}
+{"level":30,"time":1793209896689,"pid":262087,"hostname":"af966a6fd55d","msg":"   Retention: 7 days"}
+{"level":30,"time":1793209896689,"pid":262087,"hostname":"af966a6fd55d","msg":"🔄 Starting scheduled database backup..."}
+{"level":30,"time":1793209896690,"pid":262087,"hostname":"af966a6fd55d","msg":"Fan delivery scheduler disabled; enable only after consent schema and mail configuration approval"}
+{"level":30,"time":1793209896690,"pid":262087,"hostname":"af966a6fd55d","msg":"[DnsNodeLocal] Disabled (set DNS_NODE_LOCAL=1 to run an internal-only dns-node instance for backend testing)."}
+{"level":30,"time":1793209896690,"pid":262087,"hostname":"af966a6fd55d","msg":"[Boot] Routes registered — boot stubs deactivated, real handlers active"}
+{"level":30,"time":1793209896710,"pid":262087,"hostname":"af966a6fd55d","msg":"📚 Swagger documentation available at /api-docs"}
+{"level":30,"time":1793209896710,"pid":262087,"hostname":"af966a6fd55d","msg":"📱 Mobile Push Service: No credentials configured — mobile push unavailable. Set FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_KEY (+ FCM_CLIENT_EMAIL for raw key) to activate."}
+{"level":30,"time":1793209896710,"pid":262087,"hostname":"af966a6fd55d","msg":"📱 Mobile Push Service mode: unavailable"}
+{"level":40,"time":1793209896711,"pid":262087,"hostname":"af966a6fd55d","msg":"🖥️ Desktop Push Service: VAPID keys not set — desktop push unavailable"}
+{"level":30,"time":1793209896711,"pid":262087,"hostname":"af966a6fd55d","msg":"🖥️  Desktop Push Service ready: false"}
+{"level":30,"time":1793209896711,"pid":262087,"hostname":"af966a6fd55d","msg":"[Health] Core probes registered: database, redis, routes, audit, automation, maxcore"}
+{"level":30,"time":1793209896712,"pid":262087,"hostname":"af966a6fd55d","msg":"[ReEngagement] Next run in 18 hours"}
+{"level":30,"time":1793209896712,"pid":262087,"hostname":"af966a6fd55d","msg":"[Retention] Re-engagement cron started"}
+{"level":30,"time":1793209896713,"pid":262087,"hostname":"af966a6fd55d","msg":"[acme/renewal] disabled (ACME_ENABLED!=true) — cron not started"}
+{"level":30,"time":1793209896713,"pid":262087,"hostname":"af966a6fd55d","msg":"[GeoDNS] Monthly database refresh cron scheduled (1st of month, 03:15 UTC)"}
+{"level":30,"time":1793209896714,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209896715,"pid":262087,"hostname":"af966a6fd55d","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1793209896715,"pid":262087,"hostname":"af966a6fd55d","msg":"[Retention] Dunning processor enqueued (6h interval)"}
+{"level":30,"time":1793209896715,"pid":262087,"hostname":"af966a6fd55d","msg":"[Retention] Health score batch processor enqueued (24h interval)"}
+{"level":30,"time":1793209896715,"pid":262087,"hostname":"af966a6fd55d","msg":"[Retention] Feature event buffer flush enqueued (60s interval)"}
+{"level":30,"time":1793209896715,"pid":262087,"hostname":"af966a6fd55d","msg":"[Engagement] Social engagement refresh cron started (8h interval)"}
+{"level":30,"time":1793209896717,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [SPA] Vite/static handler ready — boot fallback deactivated"}
+{"level":30,"time":1793209896717,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:36 PM [express] all middleware and routes registered — kicking off autonomous systems"}
+{"level":30,"time":1793209896718,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209896718,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209896718,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1793209896720,"pid":262087,"hostname":"af966a6fd55d","msg":""}
+{"level":30,"time":1793209896720,"pid":262087,"hostname":"af966a6fd55d","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209896720,"pid":262087,"hostname":"af966a6fd55d","msg":"🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)"}
+{"level":30,"time":1793209896720,"pid":262087,"hostname":"af966a6fd55d","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209896720,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [DistributedCache] Connected (PDIM)"}
+{"level":30,"time":1793209896720,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [DistributedCache] Connected (deferred)"}
+{"level":30,"time":1793209896720,"pid":262087,"hostname":"af966a6fd55d","msg":"[APICache] Cross-pod invalidation poller started (adaptive 200–5000 ms interval)"}
+{"level":40,"time":1793209896721,"pid":262087,"hostname":"af966a6fd55d","msg":"❌ Failed to initialize Stripe prices: Stripe is not configured (missing/invalid STRIPE_SECRET_KEY) — cannot set up products and prices"}
+{"level":40,"time":1793209896721,"pid":262087,"hostname":"af966a6fd55d","msg":"⚠️ ADMIN_EMAIL not set - skipping admin initialization"}
+{"level":30,"time":1793209896721,"pid":262087,"hostname":"af966a6fd55d","msg":"🎛️ Seeding plugin catalog..."}
+{"level":30,"time":1793209896852,"pid":262087,"hostname":"af966a6fd55d","msg":"[74300ba7-8d11-4c5f-8434-dd59556417e0] GET /api/csrf-token - 200 (36ms)"}
+{"level":30,"time":1793209896853,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:36 PM [express] GET /api/csrf-token 200 in 37ms"}
+{"level":30,"time":1793209896854,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Plugin catalog: 434 inserted, 0 updated (rev rev-enrich-v1)"}
+{"level":30,"time":1793209897030,"pid":262087,"hostname":"af966a6fd55d","hasSession":true,"hasUserId":false,"sessionPrefix":"8417e0c5","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1793209897030,"pid":262087,"hostname":"af966a6fd55d","msg":"[Auth/me] No sessionId cookie present in request"}
+{"level":30,"time":1793209897031,"pid":262087,"hostname":"af966a6fd55d","msg":"[d65fb914-6a59-4c8b-90ab-58092664a498] GET /api/auth/me - 200 (139ms)"}
+{"level":30,"time":1793209897031,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:37 PM [express] GET /api/auth/me 200 in 137ms"}
+{"level":30,"time":1793209897065,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /health (5ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}\n[Proxy] Network error proxying to /health: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209897109,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Factory genre presets: 3180 inserted, 0 refreshed (rev rev-enrich-v1)"}
+{"level":30,"time":1793209897109,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Plugin catalog seeded"}
+{"level":30,"time":1793209897111,"pid":262087,"hostname":"af966a6fd55d","msg":"📋 Seeding studio templates..."}
+{"level":30,"time":1793209897116,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Seeded 8 built-in templates"}
+{"level":30,"time":1793209897117,"pid":262087,"hostname":"af966a6fd55d","msg":"🏪 Seeding storefront templates..."}
+{"level":30,"time":1793209897128,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Seeded 17 storefront templates"}
+{"level":30,"time":1793209897129,"pid":262087,"hostname":"af966a6fd55d","msg":"Seeding achievements..."}
+{"level":30,"time":1793209897132,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/projects, cookie present: false, session exists: true"}
+{"level":30,"time":1793209897133,"pid":262087,"hostname":"af966a6fd55d","msg":"Created 16 achievement(s)"}
+{"level":30,"time":1793209897133,"pid":262087,"hostname":"af966a6fd55d","msg":"Achievement seeding complete!"}
+{"level":30,"time":1793209897133,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Achievements seeded"}
+{"level":30,"time":1793209897136,"pid":262087,"hostname":"af966a6fd55d","msg":"[8207f361-a428-4c37-b691-6149d8ce4563] GET /api/projects - 401 (103ms)"}
+{"level":30,"time":1793209897137,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:37 PM [express] GET /api/projects 401 in 102ms"}
+{"level":30,"time":1793209897141,"pid":262087,"hostname":"af966a6fd55d","msg":"Status page service created: 8ad7a57f-4776-490b-947b-07fe3eb405f0 - Web Application"}
+{"level":30,"time":1793209897143,"pid":262087,"hostname":"af966a6fd55d","msg":"Status page service created: 683b53ba-a2e7-44c2-ae80-6fc2952cd268 - API"}
+{"level":30,"time":1793209897144,"pid":262087,"hostname":"af966a6fd55d","msg":"Status page service created: 45dc1744-38bb-4877-95cd-e239c9ede3eb - Music Distribution"}
+{"level":30,"time":1793209897144,"pid":262087,"hostname":"af966a6fd55d","msg":"Status page service created: 4e27d65b-e7e9-47e4-b9cf-3f5ffcfd1a7a - Audio Processing"}
+{"level":30,"time":1793209897145,"pid":262087,"hostname":"af966a6fd55d","msg":"Status page service created: afd0ae60-f763-47ce-8427-5297a022c3ef - Payment Processing"}
+{"level":30,"time":1793209897146,"pid":262087,"hostname":"af966a6fd55d","msg":"Status page service created: 40d18a50-d5e3-4702-862f-def246f67722 - Analytics"}
+{"level":30,"time":1793209897147,"pid":262087,"hostname":"af966a6fd55d","msg":"Status page service created: 9592bf80-5565-4348-b782-bd1b024ae4a6 - Email Delivery"}
+{"level":30,"time":1793209897149,"pid":262087,"hostname":"af966a6fd55d","msg":"Status page service created: 0ae8ba0c-c7b8-4ed2-861f-67f3c19fd557 - File Storage"}
+{"level":30,"time":1793209897149,"pid":262087,"hostname":"af966a6fd55d","msg":"Default status page services initialized"}
+{"level":30,"time":1793209897149,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Status page services initialized"}
+{"level":30,"time":1793209897149,"pid":262087,"hostname":"af966a6fd55d","msg":"🎵 Initializing AI Music Intelligence Models..."}
+{"level":30,"time":1793209897153,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: stem_separator_v1"}
+{"level":30,"time":1793209897155,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for stem_separator_v1"}
+{"level":30,"time":1793209897157,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: genre_preset_engine_v1"}
+{"level":30,"time":1793209897158,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for genre_preset_engine_v1"}
+{"level":30,"time":1793209897159,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: reference_matcher_v1"}
+{"level":30,"time":1793209897161,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for reference_matcher_v1"}
+{"level":30,"time":1793209897162,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: lufs_meter_v1"}
+{"level":30,"time":1793209897164,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for lufs_meter_v1"}
+{"level":30,"time":1793209897166,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: creative_planner_v1"}
+{"level":30,"time":1793209897167,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for creative_planner_v1"}
+{"level":30,"time":1793209897168,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: beat_sync_alignment_v1"}
+{"level":30,"time":1793209897170,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for beat_sync_alignment_v1"}
+{"level":30,"time":1793209897172,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: video_creative_scorer_v1"}
+{"level":30,"time":1793209897173,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for video_creative_scorer_v1"}
+{"level":30,"time":1793209897174,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: keyframe_style_selector_v1"}
+{"level":30,"time":1793209897176,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for keyframe_style_selector_v1"}
+{"level":30,"time":1793209897176,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ AI Music Intelligence Models initialized"}
+{"level":30,"time":1793209897176,"pid":262087,"hostname":"af966a6fd55d","msg":"📊 Initializing AI Insights Engine Models..."}
+{"level":30,"time":1793209897178,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: time_series_predictor_v1"}
+{"level":30,"time":1793209897179,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for time_series_predictor_v1"}
+{"level":30,"time":1793209897181,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: cohort_analyzer_v1"}
+{"level":30,"time":1793209897183,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for cohort_analyzer_v1"}
+{"level":30,"time":1793209897185,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: churn_predictor_v1"}
+{"level":30,"time":1793209897186,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for churn_predictor_v1"}
+{"level":30,"time":1793209897188,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: revenue_forecaster_v1"}
+{"level":30,"time":1793209897189,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for revenue_forecaster_v1"}
+{"level":30,"time":1793209897191,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: anomaly_detector_v1"}
+{"level":30,"time":1793209897192,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for anomaly_detector_v1"}
+{"level":30,"time":1793209897192,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ AI Insights Engine Models initialized"}
+{"level":30,"time":1793209897193,"pid":262087,"hostname":"af966a6fd55d","msg":"🚀 Initializing AI Content Models..."}
+{"level":30,"time":1793209897194,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: content_multilingual_v1"}
+{"level":30,"time":1793209897195,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for content_multilingual_v1"}
+{"level":30,"time":1793209897197,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: brand_voice_analyzer_v1"}
+{"level":30,"time":1793209897197,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for brand_voice_analyzer_v1"}
+{"level":30,"time":1793209897198,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: trend_detector_v1"}
+{"level":30,"time":1793209897201,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for trend_detector_v1"}
+{"level":30,"time":1793209897204,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created AI Model: hashtag_optimizer_v1"}
+{"level":30,"time":1793209897205,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Created version for hashtag_optimizer_v1"}
+{"level":30,"time":1793209897205,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ AI Content Models initialized"}
+{"level":30,"time":1793209897205,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ AI models seeded"}
+{"level":30,"time":1793209897225,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ System settings seeded (20 defaults)"}
+{"level":30,"time":1793209897234,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209897240,"pid":262087,"hostname":"af966a6fd55d","msg":"🔍 Initializing comprehensive audit system..."}
+{"level":30,"time":1793209897240,"pid":262087,"hostname":"af966a6fd55d","msg":"🔍 Starting comprehensive audit..."}
+{"level":30,"time":1793209897240,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Send Email"}
+{"level":30,"time":1793209897240,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Post to Social Media"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Distribute Music"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Generate Analytics Report"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: AI Mix Track"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: AI Master Track"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Upload Beat to Marketplace"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Process Payment"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Send Notification"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Backup Data"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Create Promotional Video"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Create Social Media Video"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Create Lyric Video"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔧 Action registered: Create Audio Visualizer Video"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: Time Based"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: User Activity"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: Performance Threshold"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: Revenue Threshold"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🔍 Condition registered: Stream Threshold"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🎯 Trigger registered: Schedule"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🎯 Trigger registered: Event"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🎯 Trigger registered: Webhook"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"📂 Loading workflows from storage..."}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🚀 Automation engine started"}
+{"level":30,"time":1793209897241,"pid":262087,"hostname":"af966a6fd55d","msg":"🤖 Automation system initialized"}
+{"level":30,"time":1793209897244,"pid":262087,"hostname":"af966a6fd55d","msg":"   ✓ Alert rules seeded (12 defaults)"}
+{"level":30,"time":1793209897244,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Admin account initialized"}
+{"level":30,"time":1793209897246,"pid":262087,"hostname":"af966a6fd55d","msg":"Seeded 10 default onboarding tasks"}
+{"level":30,"time":1793209897269,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (7ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209897269,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209897273,"pid":262087,"hostname":"af966a6fd55d","msg":"[bfc4588e-a5a1-461c-8464-b8b9f43323e2] GET /api/ready - 503 (60ms)"}
+{"level":30,"time":1793209897273,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:37 PM [express] GET /api/ready 503 in 60ms"}
+{"level":30,"time":1793209897296,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Storage] Hybrid Storage initialized (Replit Object Storage + Pocket Dimension)"}
+{"level":30,"time":1793209897296,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Storage] Auto-tiering scheduler started (every 6 hours)"}
+{"level":30,"time":1793209897298,"pid":262087,"hostname":"af966a6fd55d","msg":"[PocketFabric] Registered cluster node 0: fabric-cluster-0 (us-east)"}
+{"level":30,"time":1793209897298,"pid":262087,"hostname":"af966a6fd55d","msg":"[PocketFabric] Registered cluster node 1: fabric-cluster-1 (us-west)"}
+{"level":30,"time":1793209897299,"pid":262087,"hostname":"af966a6fd55d","msg":"[PocketFabric] Registered cluster node 2: fabric-cluster-2 (eu-west)"}
+{"level":30,"time":1793209897300,"pid":262087,"hostname":"af966a6fd55d","msg":"[PocketFabric] Cluster ready — 3 Pocket Dimension node(s) active"}
+{"level":30,"time":1793209897315,"pid":262087,"hostname":"af966a6fd55d","msg":"[FabricRebalancer] Background rebalancer started"}
+{"level":30,"time":1793209897315,"pid":262087,"hostname":"af966a6fd55d","msg":"[AutoCluster] Started — min=3 max=Infinity up≥70% down≤40% ema_alpha=0.3 maxSpawn=5 spawnCooldown=10min drainCooldown=30min"}
+{"level":30,"time":1793209897315,"pid":262087,"hostname":"af966a6fd55d","msg":"[PocketFabric] Single-owner auto-cluster manager started"}
+{"level":30,"time":1793209897315,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [PocketFabric] Distributed fabric storage initialized"}
+{"level":30,"time":1793209897315,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: pocket-fabric-autocluster"}
+{"level":30,"time":1793209897316,"pid":262087,"hostname":"af966a6fd55d","msg":"[AUTONOMOUS] Starting 24/7 autonomous operations..."}
+{"level":30,"time":1793209897317,"pid":262087,"hostname":"af966a6fd55d","msg":"[AUTONOMOUS] 24/7 operations started successfully"}
+{"level":30,"time":1793209897317,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autonomous Service started on worker 0"}
+{"level":30,"time":1793209897317,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autonomous Service initialized - Running: true"}
+{"level":30,"time":1793209897317,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autonomous-service"}
+{"level":30,"time":1793209897317,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Automation System initialized"}
+{"level":30,"time":1793209897317,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: automation-system"}
+{"level":30,"time":1793209897318,"pid":262087,"hostname":"af966a6fd55d","msg":"[AutonomousScheduler] Waiting 75s for startup PDIM burst to settle before registering BullMQ repeatable jobs…"}
+{"level":30,"time":1793209897327,"pid":262087,"hostname":"af966a6fd55d","msg":"🚀 Platform Self-Updating System started"}
+{"level":30,"time":1793209897327,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Auto-Upgrade System ENABLED"}
+{"level":30,"time":1793209897327,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autonomous-updates"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"Auto-posting queue processor started"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Autopilot scheduler started (every 15 minutes)"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autonomous Autopilot loaded"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autonomous-autopilot"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autopilot Engine loaded"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autopilot-engine"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Auto-Posting Service V1 initialized"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: auto-posting-v1"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Auto-Posting Service V2 initialized"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: auto-posting-v2"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Auto Post Generator initialized"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: auto-post-generator"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ [Autonomy] Autopilot Publisher initialized"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"[KillSwitch] Registered system: autopilot-publisher"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209897328,"pid":262087,"hostname":"af966a6fd55d","msg":"🤖 AUTONOMOUS SYSTEMS READY"}
+{"level":30,"time":1793209897329,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreSync] Initialized — health probe running, authoritative state refresh scheduled every 10 min"}
+{"level":30,"time":1793209897330,"pid":262087,"hostname":"af966a6fd55d","msg":"[DB] Keepalive started — pinging primary + replica every 25s to prevent Neon cold-start latency"}
+{"level":30,"time":1793209897330,"pid":262087,"hostname":"af966a6fd55d","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1793209897331,"pid":262087,"hostname":"af966a6fd55d","msg":"[DNS] ✅ Authoritative nameserver online — max-booster.com → [REDACTED] (UDP+TCP :53)"}
+{"level":30,"time":1793209897332,"pid":262087,"hostname":"af966a6fd55d","msg":"[DNS] 📋 NS records: ns1.max-booster.com + ns2.max-booster.com → [REDACTED]"}
+{"level":30,"time":1793209897332,"pid":262087,"hostname":"af966a6fd55d","msg":"[DNS] Custom domain cache warmed — 0 active domain(s) loaded."}
+{"level":30,"time":1793209897334,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreSync] PDIM ✅ reachable — Redis-compatible layer active"}
+{"level":30,"time":1793209897341,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /health (4ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209897341,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /health: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":40,"time":1793209897341,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreSync] MaxCore inference ⚠️ unreachable — http://[REDACTED]:33001 (will retry on first inference request)"}
+{"level":30,"time":1793209897348,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /health (5ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209897349,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /health: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":40,"time":1793209897349,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreSync] Training peer ⚠️ unreachable — http://[REDACTED]:33001"}
+{"level":30,"time":1793209897363,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Audit completed. Overall score: 100/100"}
+{"level":30,"time":1793209897363,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Audit system initialized"}
+{"level":30,"time":1793209897473,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Backup stored in Pocket Dimension: backup-2026-10-28T17-51-36-724Z-371d35b9-2ded-430d-b193-0dc32c504f5b.sql (0.41 MB)"}
+{"level":30,"time":1793209897482,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Scheduled backup completed successfully"}
+{"level":30,"time":1793209897823,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209897833,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (2ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209897833,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}\n[CircuitBreaker] Opened after 5 consecutive failures — half-open probe in 1500ms"}
+{"level":50,"time":1793209897838,"pid":262087,"hostname":"af966a6fd55d","msg":"[71c0e64a-8d3e-4aa9-9b8e-8f118fc02619] GET /api/ready - 503 (35ms)"}
+{"level":30,"time":1793209897839,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:37 PM [express] GET /api/ready 503 in 35ms"}
+{"level":30,"time":1793209898388,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209898393,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (2ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209898393,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209898395,"pid":262087,"hostname":"af966a6fd55d","msg":"[6d03c759-8bb4-45ea-b060-2c3be445f1ad] GET /api/ready - 503 (27ms)"}
+{"level":30,"time":1793209898395,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:38 PM [express] GET /api/ready 503 in 27ms"}
+{"level":30,"time":1793209898950,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209898954,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (1ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209898954,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209898957,"pid":262087,"hostname":"af966a6fd55d","msg":"[93d923b2-937a-4875-b806-696addf574a0] GET /api/ready - 503 (36ms)"}
+{"level":30,"time":1793209898958,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:38 PM [express] GET /api/ready 503 in 36ms"}
+{"level":30,"time":1793209899504,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209899508,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (2ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209899508,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209899510,"pid":262087,"hostname":"af966a6fd55d","msg":"[902befbe-c280-4803-8126-2ecb6cdf2d8a] GET /api/ready - 503 (30ms)"}
+{"level":30,"time":1793209899511,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:39 PM [express] GET /api/ready 503 in 29ms"}
+{"level":30,"time":1793209900055,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209900060,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (1ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209900060,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209900062,"pid":262087,"hostname":"af966a6fd55d","msg":"[7f75ca54-d7cc-4dd5-9324-441159f453e9] GET /api/ready - 503 (29ms)"}
+{"level":30,"time":1793209900063,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:40 PM [express] GET /api/ready 503 in 30ms"}
+{"level":30,"time":1793209900607,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209900611,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (2ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209900611,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209900613,"pid":262087,"hostname":"af966a6fd55d","msg":"[d0efedb0-2bc4-424c-8541-4d410fdd251a] GET /api/ready - 503 (27ms)"}
+{"level":30,"time":1793209900613,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:40 PM [express] GET /api/ready 503 in 27ms"}
+{"level":30,"time":1793209901163,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209901166,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (2ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209901167,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209901168,"pid":262087,"hostname":"af966a6fd55d","msg":"[08352e44-ef01-400d-94e1-ac30a2229421] GET /api/ready - 503 (25ms)"}
+{"level":30,"time":1793209901169,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:41 PM [express] GET /api/ready 503 in 26ms"}
+{"level":30,"time":1793209901395,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] Starting AI training server (port 37937)..."}
+{"level":30,"time":1793209901717,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209901722,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (1ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209901723,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209901725,"pid":262087,"hostname":"af966a6fd55d","msg":"[c2c607a3-27a6-47ba-b589-37c0ee9bcec6] GET /api/ready - 503 (29ms)"}
+{"level":30,"time":1793209901725,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:41 PM [express] GET /api/ready 503 in 28ms"}
+{"level":30,"time":1793209901863,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] [Server] Director API mounted at /api/director"}
+{"level":30,"time":1793209901866,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python]"}
+{"level":30,"time":1793209901872,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] /tmp/readiness-packed-CfIYuU/cold/external/maxcore/artifacts/ai-training-server/server.py:1852: DeprecationWarning: \n        on_event is deprecated, use lifespan event handlers instead.\n\n        Read more about it in the\n        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n        \n  @app.on_event(\"startup\")"}
+{"level":30,"time":1793209901872,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] /tmp/readiness-packed-CfIYuU/cold/external/maxcore/artifacts/ai-training-server/server.py:2598: DeprecationWarning: \n        on_event is deprecated, use lifespan event handlers instead.\n\n        Read more about it in the\n        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n        \n  @app.on_event(\"shutdown\")"}
+{"level":30,"time":1793209902278,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209902284,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}\n[Proxy] Network error proxying to /health: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209902293,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (2ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}\n[Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209902296,"pid":262087,"hostname":"af966a6fd55d","msg":"[0ea52847-cdb6-4ae8-9ef5-fda3e473a945] GET /api/ready - 503 (42ms)"}
+{"level":30,"time":1793209902296,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:42 PM [express] GET /api/ready 503 in 41ms"}
+{"level":30,"time":1793209902852,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209902857,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (2ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209902857,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209902858,"pid":262087,"hostname":"af966a6fd55d","msg":"[b235e173-b732-4076-819b-02ddc6e7c788] GET /api/ready - 503 (32ms)"}
+{"level":30,"time":1793209902859,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:42 PM [express] GET /api/ready 503 in 32ms"}
+{"level":30,"time":1793209903061,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] /tmp/readiness-packed-CfIYuU/cold/external/maxcore/artifacts/ai-training-server/server.py:7549: DeprecationWarning: \n        on_event is deprecated, use lifespan event handlers instead.\n\n        Read more about it in the\n        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n        \n  @app.on_event(\"startup\")"}
+{"level":30,"time":1793209903082,"pid":262087,"hostname":"af966a6fd55d","msg":"[PermanentFixer] No permanent overrides saved yet — running with default constants"}
+{"level":30,"time":1793209903150,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] [Server] Starting MaxBooster AI Training Server on port 37937 (1 uvicorn workers, 5 CPUs detected)"}
+{"level":30,"time":1793209903302,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] [Server] Director API mounted at /api/director"}
+{"level":30,"time":1793209903408,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209903412,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Error proxying to /api/awareness/unified/status (2ms): AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":30,"time":1793209903412,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Proxy] Network error proxying to /api/awareness/unified/status: AggregateError [ECONNREFUSED]: \n    at internalConnectMultiple (node:net:1135:18)\n    at afterConnectMultiple (node:net:1716:7) {\n  code: 'ECONNREFUSED',\n  [errors]: [\n    Error: connect ECONNREFUSED ::1:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    },\n    Error: connect ECONNREFUSED [REDACTED]:37937\n        at createConnectionError (node:net:1679:14)\n        at afterConnectMultiple (node:net:1709:16) {\n      errno: -111,\n      code: 'ECONNREFUSED',\n      syscall: 'connect',\n      address: '[REDACTED]',\n      port: 37937\n    }\n  ]\n}"}
+{"level":50,"time":1793209903414,"pid":262087,"hostname":"af966a6fd55d","msg":"[7862d8de-0125-4399-ab7e-e4660996c4ce] GET /api/ready - 503 (26ms)"}
+{"level":30,"time":1793209903414,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:43 PM [express] GET /api/ready 503 in 26ms"}
+{"level":30,"time":1793209903655,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     Started server process [262288]\nINFO:     Waiting for application startup."}
+{"level":30,"time":1793209903696,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] [Server] Healthz liveness server on port 37938 (event-loop-independent)"}
+{"level":30,"time":1793209903713,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] [Server] Bootstrap administrator credential stored in private state directory"}
+{"level":30,"time":1793209903713,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python]"}
+{"level":30,"time":1793209903728,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] [Storage] Connected to MaxBooster storage server"}
+{"level":30,"time":1793209903774,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] [Storage] DataPuller auto-started (30-min pull cycle, audio auto-growth enabled)"}
+{"level":30,"time":1793209903777,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python]"}
+{"level":30,"time":1793209903785,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] [Workers] DataPuller, ContinuousTrainer, and Watchdog initialized and running"}
+{"level":30,"time":1793209903837,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     Application startup complete."}
+{"level":30,"time":1793209903838,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     Uvicorn running on http://[REDACTED]:37937 (Press CTRL+C to quit)"}
+{"level":30,"time":1793209903902,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] AI training server ready on port 37937"}
+{"level":30,"time":1793209903927,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38708 - \"GET /health HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209903969,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209903977,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209903985,"pid":262087,"hostname":"af966a6fd55d","msg":"[8d522924-8b63-4cb3-be54-2d278b0b2117] GET /api/ready - 503 (36ms)"}
+{"level":30,"time":1793209903985,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:43 PM [express] GET /api/ready 503 in 37ms"}
+{"level":30,"time":1793209904393,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38730 - \"GET /api/warm/status HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209904531,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209904536,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209904543,"pid":262087,"hostname":"af966a6fd55d","msg":"[ae0683fd-d1b0-4635-a394-545011240cb4] GET /api/ready - 503 (31ms)"}
+{"level":30,"time":1793209904544,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:44 PM [express] GET /api/ready 503 in 31ms"}
+{"level":30,"time":1793209905088,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209905093,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209905101,"pid":262087,"hostname":"af966a6fd55d","msg":"[df0fb787-ac57-4efa-87ab-ead39f8a416b] GET /api/ready - 503 (33ms)"}
+{"level":30,"time":1793209905102,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:45 PM [express] GET /api/ready 503 in 32ms"}
+{"level":30,"time":1793209905657,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209905670,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209905685,"pid":262087,"hostname":"af966a6fd55d","msg":"[6b4acb91-f243-4481-8c1f-615ff46703d1] GET /api/ready - 503 (53ms)"}
+{"level":30,"time":1793209905686,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:45 PM [express] GET /api/ready 503 in 53ms"}
+{"level":30,"time":1793209906244,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209906249,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209906253,"pid":262087,"hostname":"af966a6fd55d","msg":"[e806d1b7-1637-4fee-aeb5-a946c91b4457] GET /api/ready - 503 (37ms)"}
+{"level":30,"time":1793209906255,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:46 PM [express] GET /api/ready 503 in 38ms"}
+{"level":30,"time":1793209906808,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209906813,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209906816,"pid":262087,"hostname":"af966a6fd55d","msg":"[ebfe265c-b095-4241-91f9-6234b45e3dc0] GET /api/ready - 503 (30ms)"}
+{"level":30,"time":1793209906816,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:46 PM [express] GET /api/ready 503 in 29ms"}
+{"level":30,"time":1793209906935,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38708 - \"GET /health HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209907366,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209907372,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /health HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209907380,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209907383,"pid":262087,"hostname":"af966a6fd55d","msg":"[0c9084a3-d4c3-473f-83c9-65ee5cd7a226] GET /api/ready - 503 (36ms)"}
+{"level":30,"time":1793209907383,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:47 PM [express] GET /api/ready 503 in 36ms"}
+{"level":30,"time":1793209907396,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38730 - \"GET /api/warm/status HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209907937,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209907944,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209907948,"pid":262087,"hostname":"af966a6fd55d","msg":"[35f5e72d-39de-4e7f-9ba1-a64b4ca057f1] GET /api/ready - 503 (31ms)"}
+{"level":30,"time":1793209907948,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:47 PM [express] GET /api/ready 503 in 31ms"}
+{"level":30,"time":1793209908504,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209908509,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209908512,"pid":262087,"hostname":"af966a6fd55d","msg":"[bec8edb9-ede3-4066-9ed5-dc6a429784a9] GET /api/ready - 503 (29ms)"}
+{"level":30,"time":1793209908513,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:48 PM [express] GET /api/ready 503 in 29ms"}
+{"level":30,"time":1793209908851,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] Downloading file 'Karissa_Hobbs_-_Lets_Go_Fishin.ogg' from 'https://librosa.org/data/audio/Karissa_Hobbs_-_Lets_Go_Fishin.ogg' to '/tmp/readiness-packed-CfIYuU/home/.cache/librosa'."}
+{"level":30,"time":1793209909061,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209909070,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209909074,"pid":262087,"hostname":"af966a6fd55d","msg":"[c47a030b-949a-46f1-b3ca-ca6b7ae9fc92] GET /api/ready - 503 (38ms)"}
+{"level":30,"time":1793209909075,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:49 PM [express] GET /api/ready 503 in 37ms"}
+{"level":30,"time":1793209909617,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":50,"time":1793209909627,"pid":262087,"hostname":"af966a6fd55d","msg":"[781aa563-efb9-4af8-a8f1-976dc665e52a] GET /api/ready - 503 (31ms)"}
+{"level":30,"time":1793209909628,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:49 PM [express] GET /api/ready 503 in 30ms"}
+{"level":30,"time":1793209909628,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209909945,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38708 - \"GET /health HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209910174,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209910180,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209910184,"pid":262087,"hostname":"af966a6fd55d","msg":"[b06917ec-d803-41e7-82b1-d0904763e71c] GET /api/ready - 503 (30ms)"}
+[executive] elapsed=31s running=application waiting=none available=17882MiB ioSlots=2 budgetRemaining=329s
+{"level":30,"time":1793209910184,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:50 PM [express] GET /api/ready 503 in 29ms"}
+{"level":30,"time":1793209910404,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38730 - \"GET /api/warm/status HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209910725,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209910730,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209910733,"pid":262087,"hostname":"af966a6fd55d","msg":"[fb62788a-7a89-4faa-ab8e-8b8e98c3a082] GET /api/ready - 503 (27ms)"}
+{"level":30,"time":1793209910733,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:50 PM [express] GET /api/ready 503 in 26ms"}
+{"level":30,"time":1793209911287,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209911294,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209911298,"pid":262087,"hostname":"af966a6fd55d","msg":"[c0114a4d-767f-460a-b6cd-7a1618b0adff] GET /api/ready - 503 (32ms)"}
+{"level":30,"time":1793209911298,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:51 PM [express] GET /api/ready 503 in 32ms"}
+{"level":30,"time":1793209911845,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209911851,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209911853,"pid":262087,"hostname":"af966a6fd55d","msg":"[c7ded1aa-9b9c-404b-946a-33f1a473a3b2] GET /api/ready - 503 (30ms)"}
+{"level":30,"time":1793209911853,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:51 PM [express] GET /api/ready 503 in 30ms"}
+{"level":30,"time":1793209912144,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:51202 - \"GET /health HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209912155,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:51218 - \"GET /health HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209912156,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:51226 - \"GET /api/warm/status HTTP/1.1\" 200 OK"}
+{"level":30,"time":1793209912158,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:51218 - \"GET /ready HTTP/1.1\" 503 Service Unavailable"}
+{"level":30,"time":1793209912169,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:51202 - \"GET /ready HTTP/1.1\" 503 Service Unavailable"}
+{"level":30,"time":1793209912196,"pid":262087,"hostname":"af966a6fd55d","msg":"[Session] No userId in session for /api/ready, cookie present: false, session exists: true"}
+{"level":30,"time":1793209912208,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] [Python] INFO:     [REDACTED]:38720 - \"GET /api/awareness/unified/status HTTP/1.1\" 200 OK"}
+{"level":50,"time":1793209912210,"pid":262087,"hostname":"af966a6fd55d","msg":"[b82c6827-4f69-469e-a07a-8a0f18988993] GET /api/ready - 503 (40ms)"}
+{"level":30,"time":1793209912210,"pid":262087,"hostname":"af966a6fd55d","msg":"5:51:52 PM [express] GET /api/ready 503 in 39ms"}
+{"level":30,"time":1793209912330,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreSync] Refreshing authoritative MaxCore model states…"}
+{"level":30,"time":1793209912748,"pid":262087,"hostname":"af966a6fd55d","msg":"[Shutdown] Received SIGTERM, starting graceful shutdown..."}
+{"level":30,"time":1793209912749,"pid":262087,"hostname":"af966a6fd55d","msg":"Shutting down auto-posting service..."}
+{"level":30,"time":1793209912750,"pid":262087,"hostname":"af966a6fd55d","msg":"[Shutdown] HTTP server closed"}
+{"level":40,"time":1793209912752,"pid":262087,"hostname":"af966a6fd55d","err":{"type":"ConnectionError","message":"[PDIM] Redis client disconnected","stack":"[ACCESSOR]","name":"ConnectionError"},"msg":"Auto-post BullMQ worker error:"}
+{"level":30,"time":1793209912752,"pid":262087,"hostname":"af966a6fd55d","msg":"🛑 Database backup schedule stopped and active runs drained"}
+{"level":30,"time":1793209912753,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ Auto-posting service shut down gracefully"}
+{"level":30,"time":1793209912753,"pid":262087,"hostname":"af966a6fd55d","msg":"\n🛑 Received shutdownWorkers, shutting down workers..."}
+{"level":30,"time":1793209912755,"pid":262087,"hostname":"af966a6fd55d","msg":"✅ All BullMQ workers closed (audio, csv, analytics, email, autonomous)"}
+{"level":30,"time":1793209912755,"pid":262087,"hostname":"af966a6fd55d","msg":"[Shutdown] BullMQ workers drained"}
+{"level":30,"time":1793209912755,"pid":262087,"hostname":"af966a6fd55d","msg":"[Shutdown] Autopilot coordinator persists flushed"}
+{"level":30,"time":1793209912755,"pid":262087,"hostname":"af966a6fd55d","msg":"[MaxCoreLocal] Stopping MaxCore api-server…"}
+{"level":30,"time":1793209912756,"pid":262087,"hostname":"af966a6fd55d","msg":"[Shutdown] Local MaxCore subsystem stopped"}
+{"level":30,"time":1793209912756,"pid":262087,"hostname":"af966a6fd55d","msg":"[Shutdown] Local dns-node subsystem stopped"}
+{"level":30,"time":1793209912756,"pid":262087,"hostname":"af966a6fd55d","msg":"[DNS] Nameserver stopped."}
+{"level":30,"time":1793209912757,"pid":262087,"hostname":"af966a6fd55d","msg":"[Shutdown] PlatformAutoFixer stopped"}
+{"level":30,"time":1793209912759,"pid":262087,"hostname":"af966a6fd55d","msg":"[Shutdown] Database pool closed"}
+[executive] FAILED: Executive interrupted

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 2433,
+      "sha256": "12199a0046662d505bf702360c2d73b7740abfc5cd6f2af6197c0ea498702192"
+    },
+    {
+      "path": "class-static-proof.mjs",
+      "bytes": 1034,
+      "sha256": "8160ab976ceae99a5af6e3f5f57dc2c09338920b63ba911f6cb860527866c3f4"
+    },
+    {
+      "path": "class-static-result.json",
+      "bytes": 482,
+      "sha256": "73c6149881da2e1cce580f514db5f358f8aa4319f89624313906f5941ecbff46"
+    },
+    {
+      "path": "counterexamples.mjs",
+      "bytes": 834,
+      "sha256": "e23382355228fb652ce8e093ac5917a43c2b622220d971439efc7965cf5e1741"
+    },
+    {
+      "path": "extra-cases.mjs",
+      "bytes": 1124,
+      "sha256": "507351f0fee7d3502dc2f206c6e1c4715b5c09e9f4f48fd2173ee4fca785f3cd"
+    },
+    {
+      "path": "review-proof.mjs",
+      "bytes": 1849,
+      "sha256": "79ae48554f111670cdd8951b423f52ae78bf00b6ba20d57d29cc86c180678c99"
+    },
+    {
+      "path": "review-result.json",
+      "bytes": 2162,
+      "sha256": "0fda9bda311aeedabedcd299b8889126b186c8c852e386d6fbce6cd9cbd586f8"
+    }
+  ]
+}

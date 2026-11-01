@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "scope": "Preservation note, exact inventory, receipt, read-only verifier and isolated controls; copied cohorts bound in copied-files.json",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 4290,
+      "sha256": "aa87abddd455bb66367e1013bf7432531c981fb8cc92aae20ed0716d026c2384"
+    },
+    {
+      "path": "copied-files.json",
+      "bytes": 47576,
+      "sha256": "56a5c1766a870ababc82ecb1714da0e944faf92fe8a6eeb6cc56e1c2b30aa435"
+    },
+    {
+      "path": "receipt.json",
+      "bytes": 3717,
+      "sha256": "a1fb2155d5147ff43266a8bce33b9a31f2d183d5a4ee098b11ad4837bb28b25f"
+    },
+    {
+      "path": "verification-controls.json",
+      "bytes": 816,
+      "sha256": "25ed5adee618aad3e39d7f18334870e078203db1c7b81df555e984e710b3eba8"
+    },
+    {
+      "path": "verify-copy.py",
+      "bytes": 3299,
+      "sha256": "570c4e22a59174f0aed0fea9299182dc4efa56e4c1f1e95e3079507acf2c46c0"
+    }
+  ],
+  "productionReady": false
+}

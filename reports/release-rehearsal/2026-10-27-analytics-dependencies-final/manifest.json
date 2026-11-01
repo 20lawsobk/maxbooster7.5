@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-28T02:14:04.395211+00:00",
+  "scope": "Failed preparation evidence and exact post-failure inventory; no cold startup or production readiness",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 3074,
+      "sha256": "1abfc9afb0811ba3a3929cf7d153c26a6956016c2e679bbef98047c20cd0989c"
+    },
+    {
+      "path": "execution-driver.py",
+      "bytes": 5116,
+      "sha256": "fbc6c05175f49a04a7bba4d9d1244b2a0655d2fe8bc7fd4bbf9188830b1820d0"
+    },
+    {
+      "path": "prepare.txt",
+      "bytes": 78480,
+      "sha256": "cee5c65367c71b96f30ba58ac0619c53b211ee6b19f99b748c176c834749675e"
+    },
+    {
+      "path": "source-code-inputs-after.json",
+      "bytes": 516792,
+      "sha256": "295a19d7d59f0eaad8b5a91cfb7cbdf1b3b9be24c905a23dc6bc54de1e79a498"
+    },
+    {
+      "path": "source-code-inputs.json",
+      "bytes": 516792,
+      "sha256": "295a19d7d59f0eaad8b5a91cfb7cbdf1b3b9be24c905a23dc6bc54de1e79a498"
+    },
+    {
+      "path": "source-drift-diagnosis.json",
+      "bytes": 20739,
+      "sha256": "d5e9a9a6452e44387910e507f26fa4ea470645dcb8f57c8b35ae9255f55042d5"
+    },
+    {
+      "path": "source-inventory-after.json",
+      "bytes": 857310,
+      "sha256": "cd3ea52429a636714fd7805e3f40b2d7190d3a4fd6c52b6bff1d83ac73f2f453"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1768,
+      "sha256": "2b0e824dd62ed6d462f193ba449adf6cefc9cc281916e93ca573db832cfe7a42"
+    }
+  ],
+  "productionReady": false
+}

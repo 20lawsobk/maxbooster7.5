@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="47" failures="0" errors="0" time="1.598087598">
+    <testsuite name="tests/unit/selfHealingSecurityEngine.test.ts" timestamp="2026-10-27T09:58:24.208Z" hostname="2fc971e77ddd" tests="47" failures="0" errors="0" skipped="0" time="1.598087598">
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; exposes running lifecycle, counters, latency, and SLO status" time="0.011097278">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; keeps benign content below the false-positive boundary" time="0.002150944">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; handles partial events and exempts only browser session-maintenance paths" time="0.002460356">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; retains all indicators and SQL precedence for a mixed injection" time="0.001400463">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; bounds metrics history while retaining lifetime threat counters" time="0.195873764">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; expires a completed request-rate window before admitting a new observation" time="1.004927491">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; accumulates suspicious repeat history without losing the original XSS classification" time="0.002196994">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; immediately inspects subsequent requests from an IP with established high threat history" time="0.0036134">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; reports slow acknowledged containment as an SLO breach" time="0.001358369">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; records failed session containment when the attacker has no authenticated user" time="0.001366251">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; blocks SQLi once and deduplicates persistence and recovery" time="0.001488616">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; marks unwired control actions unsupported instead of executed" time="0.002762817">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; dispatches typed controls to real guards and records acknowledgements" time="0.001520353">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; rejects unacknowledged adapter effects instead of crediting healing" time="0.000891024">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; detects XSS but bounds response to a finite rate window" time="0.003938981">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; preserves detection, alert, recovery, and bounded response for &apos;path traversal&apos;" time="0.001092258">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; preserves detection, alert, recovery, and bounded response for &apos;command injection&apos;" time="0.000942411">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; preserves detection, alert, recovery, and bounded response for &apos;LDAP injection&apos;" time="0.000487455">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; preserves detection, alert, recovery, and bounded response for &apos;XXE injection&apos;" time="0.000605923">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; preserves detection, alert, recovery, and bounded response for &apos;NoSQL injection&apos;" time="0.00048362">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; detects brute force only after the auth threshold and expires the window" time="0.087081958">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="real self-healing engine detect/respond/recover &gt; detects request flooding only after the DDoS window threshold" time="0.009284815">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; contains an unexpectedly rejected scheduled refresh and keeps the engine running" time="0.084140496">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; contains a throwing queued-threat observer and continues draining requests" time="0.006490379">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; initializes once through concurrent start calls and exposes ready/stop state" time="0.000932266">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; retries a transient initial policy query with bounded backoff" time="0.001379771">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; recovers unknown initial policy through the scheduled resynchronization" time="0.142914358">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; filters expired, malformed and incomplete persisted block records" time="0.000851474">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; keeps the last finite policy when a refresh fails" time="0.000889061">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; does not discard active blocks when bulk durable deletion fails" time="0.001158187">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; records an undelivered inbox alert when no administrator exists" time="0.00145834">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; redacts non-Error administrator lookup failures without undoing containment" time="0.001612993">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; loads a persisted block, expires it, and supports durable unblock" time="0.001835649">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; fails closed for an unknown initial blocklist" time="0.001237817">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; enforces a detected block in memory when DB writes fail" time="0.000996463">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; does not claim unblock when durable deletion fails" time="0.000803923">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; removes a DB-backed block after another instance revokes it" time="0.000583059">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; retains a failed-write local block across a successful refresh" time="0.001058572">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; lists blocks, short-circuits blocked events, and clears durably" time="0.001417888">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="persistence, recovery, and database failure policy &gt; retains the explicit loopback safety exception" time="0.000522588">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="actual middleware address and enforcement boundaries &gt; does not trust a spoofed forwarded localhost address" time="0.000615889">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="actual middleware address and enforcement boundaries &gt; does not blanket-whitelist RFC1918 client sources" time="0.001137806">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="actual middleware address and enforcement boundaries &gt; fails closed for private clients when initial policy is unknown" time="0.000622208">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="actual middleware address and enforcement boundaries &gt; preserves only the narrow operational boot path during unknown state" time="0.002225086">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="actual middleware address and enforcement boundaries &gt; passes clean traffic, registers error monitoring, and enforces known blocks" time="0.001766855">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="actual middleware address and enforcement boundaries &gt; does not escalate browser transport headers as XSS input" time="0.000938565">
+        </testcase>
+        <testcase classname="tests/unit/selfHealingSecurityEngine.test.ts" name="actual middleware address and enforcement boundaries &gt; continues inspecting URL query input for XSS" time="0.000732204">
+        </testcase>
+    </testsuite>
+</testsuites>

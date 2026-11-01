@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy
+ok 1 - release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy
+  ---
+  duration_ms: 57.05425
+  type: 'test'
+  ...
+# Subtest: installed stale nested copy fails despite patched top-level package and lock
+ok 2 - installed stale nested copy fails despite patched top-level package and lock
+  ---
+  duration_ms: 4.549878
+  type: 'test'
+  ...
+# Subtest: unpatched node-forge is rejected even when only a nested consumer installs it
+ok 3 - unpatched node-forge is rejected even when only a nested consumer installs it
+  ---
+  duration_ms: 2.307551
+  type: 'test'
+  ...
+# Subtest: missing workspace, prerelease version and escaping installed symlink fail closed
+ok 4 - missing workspace, prerelease version and escaping installed symlink fail closed
+  ---
+  duration_ms: 2.944151
+  type: 'test'
+  ...
+# Subtest: fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x
+ok 5 - fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x
+  ---
+  duration_ms: 3.26154
+  type: 'test'
+  ...
+# Subtest: all security families reject stale nested copies and accept explicitly validated branches
+ok 6 - all security families reject stale nested copies and accept explicitly validated branches
+  ---
+  duration_ms: 132.114641
+  type: 'test'
+  ...
+# Subtest: unpatched brace walkers, merge helpers and shared HTTP cache policies cannot be reintroduced
+ok 7 - unpatched brace walkers, merge helpers and shared HTTP cache policies cannot be reintroduced
+  ---
+  duration_ms: 4.414509
+  type: 'test'
+  ...
+# Subtest: capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules
+ok 8 - capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules
+  ---
+  duration_ms: 17.082794
+  type: 'test'
+  ...
+# Subtest: restored output gate rejects absent artifacts and invalid JS without executing it
+ok 9 - restored output gate rejects absent artifacts and invalid JS without executing it
+  ---
+  duration_ms: 67.256935
+  type: 'test'
+  ...
+# Subtest: restored Node provenance admits the provisioned pin and rejects stale or malformed records
+ok 10 - restored Node provenance admits the provisioned pin and rejects stale or malformed records
+  ---
+  duration_ms: 1.030384
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 429.407088

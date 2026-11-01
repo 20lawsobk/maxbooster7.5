@@ -1,0 +1,16 @@
+......F....
+======================================================================
+FAIL: test_skips_and_interruption_are_never_eligible (__main__.CoverageCommandBindingTests.test_skips_and_interruption_are_never_eligible) (mode='skip')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/onboarding-results/c5-producer-foundation/parent/candidate/tests/testing/test_coverage_command_binding.py", line 122, in test_skips_and_interruption_are_never_eligible
+    self.assertEqual(result['coverageEvidence']['status'], 'bound')
+AssertionError: 'invalid' != 'bound'
+- invalid
++ bound
+
+
+----------------------------------------------------------------------
+Ran 11 tests in 1.109s
+
+FAILED (failures=1)

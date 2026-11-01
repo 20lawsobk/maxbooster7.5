@@ -1,0 +1,192 @@
+{
+  "productionReady": false,
+  "failureCount": 31,
+  "cases": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py",
+      "case": "test_unverified_release_keeps_all_slots_without_invented_milestones",
+      "message": "AttributeError: <module 'ai_model.generation.campaign' from '<repo>/external/maxcore/artifacts/ai-training-server/ai_model/generation/campaign.py'> has no attribute '_compose_body_cta'",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_campaign_rollout.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_ads_meta_uses_social_awareness_but_keeps_network_identity",
+      "message": "fastapi.exceptions.HTTPException: 503: Selected model unavailable",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_campaign_passes_platform_specific_awareness_to_builder",
+      "message": "fastapi.exceptions.HTTPException: 503: Selected model unavailable",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_requested_pathtrace_passes_subject_and_rejects_unsupported",
+      "message": "AssertionError: assert 503 == 422\n +  where 503 = HTTPException(status_code=503, detail='Selected model unavailable').status_code\n +    where HTTPException(status_code=503, detail='Selected model unavailable') = <ExceptionInfo HTTPException(status_code=503, detail='Selected model unavailable') tblen=5>.value",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_dataset_audio_reports_bytes_and_targets_not_invented_measurements",
+      "message": "ai_model.awareness.engine.AwarenessUnavailable: Generation cache requires an immutable request plan",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_api_content_fresh_copy_is_model_text_without_fake_scores",
+      "message": "AssertionError: assert 'model' == 'ai_model'\n  \n  - ai_model\n  ? ---\n  + model",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_alias_media_endpoints_mark_asset_identifiers_as_specs",
+      "message": "fastapi.exceptions.HTTPException: 503: Selected model unavailable",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool",
+      "message": "AssertionError: Regex pattern did not match.\n  Expected regex: 'stop before media encoding'\n  Actual message: 'Generation cache requires an immutable request plan'",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_audio_synth_receives_actual_instrument_and_prompt",
+      "message": "AssertionError: Regex pattern did not match.\n  Expected regex: 'stop before waveform rendering'\n  Actual message: 'Generation cache requires an immutable request plan'",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_audio_reference_mode_rejects_unfulfillable_piano_direction",
+      "message": "AssertionError: assert 503 == 422\n +  where 503 = HTTPException(status_code=503, detail='Selected model unavailable').status_code\n +    where HTTPException(status_code=503, detail='Selected model unavailable') = <ExceptionInfo HTTPException(status_code=503, detail='Selected model unavailable') tblen=5>.value",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_audio_handler_caller_mood_and_targets_beat_fast_priors[calm-calm]",
+      "message": "fastapi.exceptions.HTTPException: 503: Selected model unavailable",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "case": "test_audio_handler_caller_mood_and_targets_beat_fast_priors[None-mellow]",
+      "message": "fastapi.exceptions.HTTPException: 503: Selected model unavailable",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py",
+      "case": "test_model_failure_never_runs_awareness_template_substitute",
+      "message": "AssertionError: Regex pattern did not match.\n  Expected regex: 'checkpoint vocabulary'\n  Actual message: 'Direct agent generation requires an immutable GenerationPlan'",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_documented_stack_restore.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py",
+      "case": "test_render_worker_owns_gpu_until_it_returns",
+      "message": "Failed: unexpected render failure",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_documented_stack_restore.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_native_request_models_preserve_structured_and_direction_context",
+      "message": "assert '{\"contextStr...ller signal\"}' == '[HIGH] real caller signal'\n  \n  - [HIGH] real caller signal\n  + {\"contextString\": \"[HIGH] real caller signal\"}",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_social_route_delivers_structured_envelope_to_agents",
+      "message": "fastapi.exceptions.HTTPException: 503: Selected model unavailable",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_live_report_payload_conditions_real_agent_without_metadata_leak",
+      "message": "ValueError: Direct agent generation requires an immutable GenerationPlan",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_real_agent_honors_exact_opening_wording[Open with the exact phrase ORBIT GLASS 82-ORBIT GLASS 82]",
+      "message": "ValueError: Direct agent generation requires an immutable GenerationPlan",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_real_agent_honors_exact_opening_wording[Begin the hook with the exact phrase \"VELVET COMET 19\".-VELVET COMET 19]",
+      "message": "ValueError: Direct agent generation requires an immutable GenerationPlan",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_real_agent_honors_structured_must_include_list[required0]",
+      "message": "ValueError: Direct agent generation requires an immutable GenerationPlan",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_real_agent_honors_structured_must_include_list[required1]",
+      "message": "ValueError: Direct agent generation requires an immutable GenerationPlan",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_daw_agents_receive_effective_awareness",
+      "message": "fastapi.exceptions.HTTPException: 503: Selected model unavailable",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_distribution_agent_receives_effective_awareness",
+      "message": "fastapi.exceptions.HTTPException: 503: Selected model unavailable",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "case": "test_campaign_post_composer_adds_slot_platform_awareness",
+      "message": "AttributeError: module 'ai_model.generation.campaign' has no attribute '_compose_body_cta'",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py",
+      "case": "test_hashes_match_unchanged_sources",
+      "message": "FileNotFoundError: [Errno 2] No such file or directory: '<repo>/external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt'",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_original_quality_runner.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py",
+      "case": "test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor",
+      "message": "ai_model.awareness.engine.AwarenessUnavailable: Fresh public awareness required for capability generation",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_public_peak_curriculum.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+      "case": "test_text_content_mode_never_returns_template_fallback",
+      "message": "assert \"source not in {'model', 'ai_model'}\" in '@app.post(\\'/api/generate/text\\')\\n@_planned_generation(\\'text\\', deterministic_planner=True)\\nasync def api_generate...uality may be reduced\"\\n    result[\\'processing_time_ms\\'] = round((time.time() - start) * 1000, 1)\\n    return result'",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_unavailable_inference_contracts.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+      "case": "test_model_readiness_reports_terminal_initialization_failure",
+      "message": "assert 'type(e).__name__' in \"def _init_ai_model():\\n    global _serving_release_status, _model_ready, _model_init_error\\n    global _creative_mode...mode, 'active': None, 'candidate_quality': 'blocked', 'backend_exclusive': 'not_verified', 'error': _model_init_error}\"",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_unavailable_inference_contracts.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+      "case": "test_script_agent_suppression_logs_reason",
+      "message": "ValueError: Direct agent generation requires an immutable GenerationPlan",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_url_label_garble_guard.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+      "case": "test_distribution_agent_suppression_logs_reason",
+      "message": "ValueError: Direct agent generation requires an immutable GenerationPlan",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_url_label_garble_guard.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+      "case": "test_never_raises_on_bad_music_path",
+      "message": "assert (None)",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_voiceover.txt"
+    }
+  ]
+}

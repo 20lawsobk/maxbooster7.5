@@ -1,0 +1,10 @@
+
+> max-booster@3.0.0 lint
+> eslint . --quiet
+
+
+/workspace/maxbooster7.5/tests/helpers-http-fixture.ts
+  103:9  error  Unsafe usage of ThrowStatement  no-unsafe-finally
+
+✖ 1 problem (1 error, 0 warnings)
+

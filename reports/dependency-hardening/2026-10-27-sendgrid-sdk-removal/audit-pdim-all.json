@@ -1,0 +1,23 @@
+{
+  "command": [
+    "pnpm",
+    "audit",
+    "--audit-level=low",
+    "--json"
+  ],
+  "cwd": "external/pdim",
+  "startedAt": "2026-10-28T01:30:44.788022+00:00",
+  "durationSeconds": 1.105,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/audit-pdim-all.txt",
+  "logSha256": "c8e959ba0e2f755af9a2c4bd7b8412ff1a844817e76ff08de0bad15ae2736f20",
+  "vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0
+  }
+}

@@ -1,0 +1,5 @@
+# Source and evidence checkpoint
+
+The completed8a9 and5eb full masters retain591 and593 exact archive members; their launch/progress archives each retain9members. Before this checkpoint, known configured-value scanning inspected1,609Git-visible/explicitly retained files and all1,202archive members. Zero matches, symlinks or100MiBfiles were found; this does not claim unknown-secret detection. The nine listed ignored files are original logs/archives retained explicitly, never regenerated substitutes. Source working tree remained byte-identical to5eb during this checkpoint.
+
+Current5eb source has16/17ordinarycommandsPASS, coverage andstrictfeature/remediationgatesFAIL,9/33,549exactchecksaccepted,0/80Green,productionReady:false. The new public coverage outcome foundation and generation proposals are separately retained candidates; this checkpoint grants them no execution credit. No production database schema/account was changed. Main promotion remains conditional on actual production acceptance.

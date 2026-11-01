@@ -1,0 +1,4 @@
+JUNIT report written to /workspace/onboarding-results/security-history-after.xml
+ERROR: Coverage for lines (98.93%) does not meet global threshold (100%)
+ERROR: Coverage for statements (98%) does not meet global threshold (100%)
+ERROR: Coverage for branches (89.05%) does not meet global threshold (100%)

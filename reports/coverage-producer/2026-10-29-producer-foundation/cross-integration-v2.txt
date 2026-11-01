@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/workspace/onboarding-results/c5-producer-foundation/cross-integration.py", line 44, in <module>
+    member=pathlib.Path(proof[key]['path']);assert hashlib.sha256(member.read_bytes()).hexdigest()==proof[key]['sha256']
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

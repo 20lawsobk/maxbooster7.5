@@ -1,0 +1,27 @@
+{
+  "command": [
+    "pnpm",
+    "install",
+    "--frozen-lockfile",
+    "--ignore-scripts"
+  ],
+  "cwd": "external/maxcore",
+  "startedAt": "2026-10-28T01:20:26.948203+00:00",
+  "durationSeconds": 11.44,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-maxcore-dev/install-maxcore.txt",
+  "logSha256": "331af646674d081cc2426ab51b7a310a7f9a73fd3b0e9e6669724ebaf7418ccc",
+  "inputHashesBefore": {
+    "external/maxcore/pnpm-lock.yaml": "6dfd669204bf96c65263669b945eab377984a165eb588492667b892d5569249c",
+    "external/maxcore/pnpm-workspace.yaml": "cd05d6aceb793eceee44a627629bdda34b1905cde14bcc2209c3f9b3d383f50a",
+    "external/maxcore/scripts/package.json": "708443896dfa23240bf0d4662df06591113fa714071f4b55946ae0cd433e24e0"
+  },
+  "inputHashesAfter": {
+    "external/maxcore/pnpm-lock.yaml": "6dfd669204bf96c65263669b945eab377984a165eb588492667b892d5569249c",
+    "external/maxcore/pnpm-workspace.yaml": "cd05d6aceb793eceee44a627629bdda34b1905cde14bcc2209c3f9b3d383f50a",
+    "external/maxcore/scripts/package.json": "708443896dfa23240bf0d4662df06591113fa714071f4b55946ae0cd433e24e0"
+  },
+  "inputsUnchanged": true
+}

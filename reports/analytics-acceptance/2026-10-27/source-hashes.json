@@ -1,0 +1,18 @@
+{
+  "server/services/accountAnalyticsService.ts": "4800e08ee78288cf372b8053296ad6bf4b19b1d2b92dcb622a8c050c67957749",
+  "server/services/aiAnalyticsService.ts": "c8e32f11d50bd108430d5c4d02b7507a91f654d37e7dc04a753e1b8a6163e1d6",
+  "server/services/unifiedAIController.ts": "fc54a1fd7701373073650371737cca8c91ac81ab15d691276126246760e40506",
+  "server/routes/ai.ts": "619190fa9c320432950ccae117e24180f88d7c7da936c765a0191d8d24f54361",
+  "server/lib/aiCapabilityContracts.ts": "2172470f5989d37835caa49254b433d9651c44e59b19d2b67604d364e8c14d93",
+  "client/src/pages/analytics/AIDashboard.tsx": "c3dcd8a430b88caefcb9c9c4a7cef318cea375a6630e85ae3525b81cb3f80228",
+  "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts": "3e236513a52a760b899723afc2e7f2c0dd8eda9c3efb22369a338a4484d5820a",
+  "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py": "6e20ef9133b98c809f20d346f4062e86f38267cb19c53a70eec98f6a9ec4891e",
+  "external/maxcore/artifacts/ai-training-server/server.py": "9c892a5bdbc677c441a09964dd6a94c0b12b86731a3792f5367413732fce26b2",
+  "tests/testing/test_maxcore_analytics.py": "bb8f1021953f269742e1de09c658825634e21798ae713dec6c1f81fd5028953f",
+  "tests/contracts/helpers-account-analytics-server.py": "9b66d8805eea33cfdbfcfff5bfe5c9a439de91c6efba3ca6866c65987e976812",
+  "tests/account-analytics-contract.test.mjs": "930f1e6bc7ee0e520e07ed9573d9f260ae94d85a93aa5dbe78e27d2e8e4393b7",
+  "tests/account-analytics-browser.test.mjs": "4fad54e52071fb060a699c319e4b6fead467c67c96d5b21c261b7bd59e2d0dbc",
+  "tests/unit/account-analytics-proxy.test.ts": "b1eabc20585c17abd89637003976de141b411d1d23c4d772f41fbabdfa8cb249",
+  "tests/ai-analytics-integration.test.ts": "85448e877fe126fb9a195b3c542d053c674dd3cab66e77efa9ae904eacc11aa3",
+  "scripts/testing/integration-browser.mjs": "fb481f18f985d6d7e748d4f00dd067e536980ac03a495bdb2149030b9448f4b6"
+}

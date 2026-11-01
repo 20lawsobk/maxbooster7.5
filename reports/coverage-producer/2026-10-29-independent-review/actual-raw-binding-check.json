@@ -1,0 +1,27 @@
+{
+  "scope": "Independent reader diagnostic over retained historical raw bytes with explicit injected metadata; NO current production/counter admission",
+  "checks": [
+    {
+      "name": "historical actual nine-script payload satisfies explicit injected-reader schema only",
+      "status": "passed"
+    },
+    {
+      "name": "one manifest-only count change rejects against actual retained raw script",
+      "status": "passed"
+    },
+    {
+      "name": "actual raw duplicate script ID rejects",
+      "status": "passed"
+    },
+    {
+      "name": "different expected parent nonce rejects without reblessing historical data",
+      "status": "passed"
+    },
+    {
+      "name": "malformed nested V8 range rejects even inside script bounds",
+      "status": "passed"
+    }
+  ],
+  "passed": 5,
+  "productionReady": false
+}

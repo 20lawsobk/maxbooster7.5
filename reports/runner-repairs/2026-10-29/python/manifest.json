@@ -1,0 +1,79 @@
+{
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "a67cc3ef78132ab8bd592b7d46c3155443df0a3921eba22ef795526a5a0951d5",
+      "bytes": 3355
+    },
+    {
+      "path": "baseline-control.junit.xml",
+      "sha256": "47e690262f7ccef025bfb9e920c8b135fca45b4b60a0613e6292c9e9028925c2",
+      "bytes": 6595
+    },
+    {
+      "path": "baseline-control.txt",
+      "sha256": "04acdac5d1c706b60d7c9bd3f887df22d4ae572240e9914b85ca86e46de33acd",
+      "bytes": 4576
+    },
+    {
+      "path": "candidate/scripts/testing/run-python-suites.py",
+      "sha256": "bd4e36f21886d1b6c81eba300ffc66892826842e1ffbfbf392dc66f28834e480",
+      "bytes": 33286
+    },
+    {
+      "path": "candidate/tests/testing/test_python_runner_scheduling.py",
+      "sha256": "e47e24cbf4eaf92675f3f632cceec832725085dd0a295e47a3b87ce52505a8dc",
+      "bytes": 8857
+    },
+    {
+      "path": "original-failed-progress.txt",
+      "sha256": "55b421d06b6a1677a424a936fddfd7fa69a271a2bce0fb1c972c585d616423a8",
+      "bytes": 2949
+    },
+    {
+      "path": "original-failed-progress.xml",
+      "sha256": "3f9c466a493e13e659af052bcc43bf2206d7ca6a768d2b9f53395ea65c555dd1",
+      "bytes": 4780
+    },
+    {
+      "path": "original-suite.json",
+      "sha256": "667ae6bd56d6d0738b153eb5749bab628bb7fb0fc5065f1c2c2eb767ddd24e37",
+      "bytes": 3162
+    },
+    {
+      "path": "scheduling-final.junit.xml",
+      "sha256": "317dd4469fc68762198a8edb89d1bc79c68d87f5c741430a2bd739ff754a7602",
+      "bytes": 1832
+    },
+    {
+      "path": "scheduling-final.txt",
+      "sha256": "fece32ad81b8b62174fd5c20cd85b6936b636de24f2d1eb2e619d6aad934cde2",
+      "bytes": 98
+    },
+    {
+      "path": "scheduling.junit.xml",
+      "sha256": "41174144f7ec3bec491b6bdc224a55d38ea1ffb587df0f6c8bd1d3b734952ceb",
+      "bytes": 1367
+    },
+    {
+      "path": "scheduling.txt",
+      "sha256": "0c4a6db1a31e99ec994e6b6db100e81473db15b40131f6e2b89c8966ce995c64",
+      "bytes": 98
+    },
+    {
+      "path": "source-review.json",
+      "sha256": "f82af0bf7670b369362ab8df20ccaf491db13c05f0fadb8ecb9c1c0d22bf7444",
+      "bytes": 518
+    },
+    {
+      "path": "source.patch",
+      "sha256": "3a3fa0cc6c3f6598e45e4f8d95b7acbb661b3280bea7d014749602ce1867de83",
+      "bytes": 15000
+    },
+    {
+      "path": "validation.json",
+      "sha256": "7f4659178bfccf8ec2a5a6edd75c201c4c950d28e49c460ce402d4e858bdd854",
+      "bytes": 629
+    }
+  ]
+}

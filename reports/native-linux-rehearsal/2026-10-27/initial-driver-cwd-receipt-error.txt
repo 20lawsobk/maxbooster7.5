@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/reports/native-linux-rehearsal/2026-10-27/copy-build-driver.py", line 98, in <module>
+    result = execute("copied-build-validation", ["node", "--input-type=module", "-e",
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/maxbooster7.5/reports/native-linux-rehearsal/2026-10-27/copy-build-driver.py", line 92, in execute
+    result = run_command(["taskset", "-c", affinity, *command], OUT / f"{name}.txt",
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/maxbooster7.5/scripts/testing/common.py", line 111, in run_command
+    return {"command": command, "cwd": str(Path(cwd).relative_to(ROOT)) or ".",
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 682, in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+ValueError: '/tmp/maxbooster-linux-u3f69z18/project' is not in the subpath of '/workspace/maxbooster7.5'

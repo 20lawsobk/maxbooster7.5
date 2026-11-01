@@ -1,0 +1,21 @@
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Coverage outcome reporter: parent-owned run ID missing[39m
+[36m [2m❯[22m fail ../../workspace/onboarding-results/c5-producer-foundation/reporter/scripts/testing/coverage-outcome-reporter.mjs:[2m6:33[22m[39m
+    [90m  4|[39m [35mimport[39m { createHash } [35mfrom[39m [32m'node:crypto'[39m[33m;[39m
+    [90m  5|[39m [35mimport[39m { fileURLToPath } [35mfrom[39m [32m'node:url'[39m[33m;[39m
+    [90m  6|[39m const fail = message => { throw Error('Coverage outcome reporter: ' + …
+    [90m   |[39m                                 [31m^[39m
+    [90m  7|[39m [35mconst[39m hash [33m=[39m bytes [33m=>[39m [34mcreateHash[39m([32m'sha256'[39m)[33m.[39m[34mupdate[39m(bytes)[33m.[39m[34mdigest[39m([32m'hex'[39m)[33m;[39m
+    [90m  8|[39m [35mconst[39m states [33m=[39m [[32m'passed'[39m[33m,[39m [32m'failed'[39m[33m,[39m [32m'skipped'[39m[33m,[39m [32m'pending'[39m][33m;[39m
+[90m [2m❯[22m CoverageOutcomeReporter.onInit ../../workspace/onboarding-results/c5-producer-foundation/reporter/scripts/testing/coverage-outcome-reporter.mjs:[2m29:99[22m[39m
+[90m [2m❯[22m ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m14051:56[22m[39m
+[90m [2m❯[22m Vitest.report ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m14051:36[22m[39m
+[90m [2m❯[22m ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m13507:16[22m[39m
+[90m [2m❯[22m startVitest ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m14621:8[22m[39m
+[90m [2m❯[22m start ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cac.DzDtg8hz.js:[2m2340:15[22m[39m
+[90m [2m❯[22m CAC.run ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cac.DzDtg8hz.js:[2m2318:2[22m[39m
+
+
+
+

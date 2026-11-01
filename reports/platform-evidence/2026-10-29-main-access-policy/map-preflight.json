@@ -1,0 +1,192 @@
+{
+  "scope": "Identity/hash correspondence to actual subset HTTP at its own source epoch only; not current master acceptance",
+  "checks": [
+    {
+      "checkId": "api-7f174c69ff83279c/access-policy",
+      "cases": [
+        {
+          "file": "tests/health.test.ts",
+          "name": "Liveness and Readiness Endpoints > GET /api/health returns 200",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        }
+      ]
+    },
+    {
+      "checkId": "api-2153be5bc8e5692b/access-policy",
+      "cases": [
+        {
+          "file": "tests/health.test.ts",
+          "name": "Liveness and Readiness Endpoints > GET /health returns 200",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        }
+      ]
+    },
+    {
+      "checkId": "api-50167c08abd2dfe2/access-policy",
+      "cases": [
+        {
+          "file": "tests/health.test.ts",
+          "name": "Liveness and Readiness Endpoints > GET /api/ping returns ok:true",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        }
+      ]
+    },
+    {
+      "checkId": "api-059a423751b44e6c/access-policy",
+      "cases": [
+        {
+          "file": "tests/health.test.ts",
+          "name": "Liveness and Readiness Endpoints > GET /ready reflects the actual admitted dependency set",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        }
+      ]
+    },
+    {
+      "checkId": "api-ebf54287f664010e/access-policy",
+      "cases": [
+        {
+          "file": "tests/health.test.ts",
+          "name": "Liveness and Readiness Endpoints > GET /readyz uses the same truthful readiness contract",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        }
+      ]
+    },
+    {
+      "checkId": "api-ef05357bba6ab833/access-policy",
+      "cases": [
+        {
+          "file": "tests/auth-flows.test.ts",
+          "name": "Full Auth Flow > 4. GET /api/auth/me returns user when authenticated",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/auth-flows.test.ts",
+          "name": "Full Auth Flow > 10. /api/auth/me returns null or 401 after logout",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/api-guards.test.ts",
+          "name": "Unauthenticated route guards > GET /api/auth/me \u2192 200 (public, returns null)",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        }
+      ]
+    },
+    {
+      "checkId": "api-3f640ac3745d3b6a/access-policy",
+      "cases": [
+        {
+          "file": "tests/billing-lifecycle.test.ts",
+          "name": "Billing Webhook Lifecycle > 9. GET /api/billing/subscription returns complete tier shape when authenticated",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/billing-lifecycle.test.ts",
+          "name": "Billing Webhook Lifecycle > 10. GET /api/billing/subscription returns 401 when unauthenticated",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/billing-lifecycle.test.ts",
+          "name": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects suspended session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/billing-lifecycle.test.ts",
+          "name": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects banned session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/billing-lifecycle.test.ts",
+          "name": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects mfa-required session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/billing-lifecycle.test.ts",
+          "name": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects trial-expired session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/billing-lifecycle.test.ts",
+          "name": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects subscription-expired session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        }
+      ]
+    },
+    {
+      "checkId": "api-0772b8611dc21e1d/access-policy",
+      "cases": [
+        {
+          "file": "tests/file-management.test.ts",
+          "name": "File Management (Storage Round-Trip) > 9. GET /api/storage/quota returns quota info when authenticated",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/file-management.test.ts",
+          "name": "File Management (Storage Round-Trip) > 10. GET /api/storage/quota returns 401 or 403 without authentication",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/file-management.test.ts",
+          "name": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects suspended session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/file-management.test.ts",
+          "name": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects banned session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/file-management.test.ts",
+          "name": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects mfa-required session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/file-management.test.ts",
+          "name": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects trial-expired session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        },
+        {
+          "file": "tests/file-management.test.ts",
+          "name": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects subscription-expired session",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        }
+      ]
+    },
+    {
+      "checkId": "api-51e06323624f6bc1/access-policy",
+      "cases": [
+        {
+          "file": "tests/billing-lifecycle.test.ts",
+          "name": "Billing Webhook Lifecycle > 11. GET /api/billing/plans returns a non-empty plan list without auth",
+          "uniquePassedXml": true,
+          "currentTestHashMatches": true
+        }
+      ]
+    }
+  ],
+  "checksCount": 9,
+  "caseReferences": 23,
+  "preflightPassed": true,
+  "productionReady": false
+}

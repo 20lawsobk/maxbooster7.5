@@ -1,0 +1,39 @@
+{
+  "scope": "Independent read-only latest review snapshot",
+  "files": [
+    {
+      "path": "coverage-coordinate-contract.mjs",
+      "sha256": "30c0596394d7dc1d791efc1a672ff242a35e7efd61fdcfd079cc3e2e87956160",
+      "bytes": 11529
+    },
+    {
+      "path": "coverage-shared-provider.mjs",
+      "sha256": "cd66fc0cd1d6f1b1756626f2f689a0972e9858e9ad3ad4c7e5d4f8efa04a1415",
+      "bytes": 11597
+    },
+    {
+      "path": "coverage-node-vite-entry.mjs",
+      "sha256": "55408bb72578dd95da299dbcc701362dc19b5b43a785c9d308d882f0ba94f015",
+      "bytes": 7612
+    },
+    {
+      "path": "collect-node-coverage.mjs",
+      "sha256": "58bbbed4978e46909a1af16b42572f90a75384ef8d9654be41f2f7773376c63b",
+      "bytes": 10899
+    },
+    {
+      "path": "coverage-raw-sidecar-reporter.cjs",
+      "sha256": "85f30fcd211daf109b674d91c42ebf3630fae1cd11ebddad1d86048760849157",
+      "bytes": 3142
+    },
+    {
+      "path": "coverage-coordinate-contract.test.mjs",
+      "sha256": "43d3fb20bea666caed03f361616a969f408eb8dccb333659c6e9200e1fbf5a9e",
+      "bytes": 11429
+    }
+  ],
+  "auxiliary": {
+    "path": "/workspace/maxbooster7.5/scripts/testing/coverage-provenance.mjs",
+    "sha256": "383546d025265e18e12f7ae81e412413133aebbc0297f23e5e3263528d78592c"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "observedAt": "2026-10-28T18:07:48.692888+00:00",
+  "scope": "Read-only retained-report hash/size/archive persistence and exact configured-value scan; not feature or launch approval",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "manifestsChecked": 48,
+  "artifactFilesChecked": 1350,
+  "archiveMembersChecked": 1684,
+  "artifactErrors": [],
+  "otherManifestSchemasNotGenericFileLists": [
+    "reports/coverage-producer/2026-10-27-analytics-dependencies-node/59116-0/manifest.json",
+    "reports/coverage-producer/2026-10-27-final-node/40003-0/manifest.json",
+    "reports/coverage-producer/2026-10-27-first-node/39038-0/manifest.json",
+    "reports/coverage-producer/2026-10-27-node-with-originals/39246-0/manifest.json",
+    "reports/coverage-producer/2026-10-27-stable-node/40770-0/manifest.json",
+    "reports/coverage-producer/2026-10-28-a1603b13-node/125755-0/manifest.json",
+    "reports/coverage-producer/2026-10-28-keepnames-final/profile/201184-0/manifest.json",
+    "reports/maxcore-quality/original-suites/manifest.json"
+  ],
+  "retainedFilesIgnoredByGit": [
+    "reports/release-rehearsal/2026-10-28-10d19267-final/cold/packed-postgres.log",
+    "reports/release-rehearsal/2026-10-28-10d19267-final/cold/packed-setup.log",
+    "reports/release-rehearsal/2026-10-28-10d19267-final/cold/packed-startup.log",
+    "reports/release-rehearsal/2026-10-28-cb783f1f-final/cold/packed-postgres.log",
+    "reports/release-rehearsal/2026-10-28-cb783f1f-final/cold/packed-setup.log",
+    "reports/release-rehearsal/2026-10-28-cb783f1f-final/cold/packed-startup.log",
+    "reports/test-verification/history/2026-10-28-10d19267-master/master-evidence.tar.gz"
+  ],
+  "secretScan": {
+    "files": 10132,
+    "configuredValuesCompared": 8,
+    "decompressedArchiveMembers": 1684,
+    "matchingFiles": [],
+    "unreadableFiles": [],
+    "filesAtOrAbove100MiB": []
+  },
+  "productionReady": false,
+  "status": "PASS"
+}

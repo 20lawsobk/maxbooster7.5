@@ -1,0 +1,46 @@
+{
+  "reviewedAt": "2026-10-27T10:16:05.511250+00:00",
+  "scope": "Independent read-only verification of recorded portable cold payload, source provenance, scratch hygiene and cleanup; not deployed readiness",
+  "summarySha256": "1f17ca5570cfb82b307d89775a0fb52470b5f9e9c6e4a9d59288a8a2af76b802",
+  "recordedEvidenceChecks": {
+    "prepare": true,
+    "verify": true,
+    "cold": true,
+    "verify-after-cold": true,
+    "driver": true,
+    "recordedSourceDigest": true,
+    "recordedSourceMatchesPreparedManifest": true
+  },
+  "allRecordedEvidenceChecksPass": true,
+  "recordedRunExitCodes": {
+    "prepare": 0,
+    "verify": 0,
+    "cold": 0,
+    "verify-after-cold": 0
+  },
+  "preparedSourceSha256": "4716b84dd8287a1b4175e8a84f17448fdb7e2a57f4bff2c0e2fbcc1a26f8f77a",
+  "sourceInventoryEntries": 4554,
+  "currentSourceMatchesAtReview": false,
+  "changedCurrentSourcePaths": [
+    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts"
+  ],
+  "sourceScratchEntries": [],
+  "actualAppArchiveEntries": 1891,
+  "appArchiveSha256": "ce6014cfd91de9df48b033276e85947d79f104f8899dffa46bf40a868f1272a7",
+  "appArchiveMatchesManifest": true,
+  "appArchiveScratchEntries": [],
+  "runtimeRegistryPresent": true,
+  "coldStartup": "pass",
+  "readinessScope": {
+    "accepted": true,
+    "scope": "cold-startup-with-ml-unavailable",
+    "productionReady": false,
+    "unverifiedNonMl": []
+  },
+  "processCleanup": {
+    "tracked": 35,
+    "remaining": []
+  },
+  "productionReady": false,
+  "furtherRepairPending": "Published-journal target revalidation guard repair requires a later source-bound preparation after source freeze; this historical scope pass is not automatically current after source changes."
+}

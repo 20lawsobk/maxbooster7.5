@@ -1,0 +1,27 @@
+{
+  "command": [
+    "npm",
+    "install",
+    "--ignore-scripts",
+    "--no-audit",
+    "--no-fund",
+    "--prefer-offline"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:29:02.752879+00:00",
+  "durationSeconds": 2.32,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/install-root.txt",
+  "logSha256": "c448f51aba445fd08daff6567ab16ac4a2eeee244003834cf7ccfbeca1df024a",
+  "inputHashesBefore": {
+    "package.json": "02bd05b1f4c1462e72025cb3e55b590d96d2ce062ac822e36456b3a53fd22083",
+    "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad"
+  },
+  "inputHashesAfter": {
+    "package.json": "02bd05b1f4c1462e72025cb3e55b590d96d2ce062ac822e36456b3a53fd22083",
+    "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad"
+  },
+  "inputsUnchanged": true
+}

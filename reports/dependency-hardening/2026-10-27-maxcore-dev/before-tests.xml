@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="actual scripts and TypeDoc consumers resolve the compatible patched graph" time="0.003299" classname="test" failure="Expected values to be strictly equal:+ actual - expected+ '25.11.0'- '25.13.0'       ^">
+		<failure type="testCodeFailure" message="Expected values to be strictly equal:+ actual - expected+ '25.11.0'- '25.13.0'       ^">
+[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
++ actual - expected
+
++ '25.11.0'
+- '25.13.0'
+       ^
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '25.11.0'
+  - '25.13.0'
+         ^
+  
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/maxcore-dev-dependency-security.test.mjs:31:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.start (node:internal/test_runner/test:944:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '25.11.0',
+    expected: '25.13.0',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="actual BiDi Zod rejects oversized array before element traversal" time="0.012410" classname="test" failure="upper-size validation must run before untrusted item traversal1000 !== 0">
+		<failure type="testCodeFailure" message="upper-size validation must run before untrusted item traversal1000 !== 0">
+Error [ERR_TEST_FAILURE]: upper-size validation must run before untrusted item traversal
+
+1000 !== 0
+
+    at AsyncResource.runInAsyncScope (node:async_hooks:214:14) {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: upper-size validation must run before untrusted item traversal
+  
+  1000 !== 0
+  
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/maxcore-dev-dependency-security.test.mjs:61:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at node:internal/test_runner/test:981:31
+      at node:internal/process/task_queues:149:7
+      at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+      at AsyncResource.runMicrotask (node:internal/process/task_queues:146:8) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1000,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="actual BiDi Zod rejects oversized map before element traversal" time="0.000340" classname="test" failure="z.map(...).max is not a function">
+		<failure type="testCodeFailure" message="z.map(...).max is not a function">
+[Error [ERR_TEST_FAILURE]: z.map(...).max is not a function] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: z.map(...).max is not a function
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/maxcore-dev-dependency-security.test.mjs:55:49)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+}
+		</failure>
+	</testcase>
+	<testcase name="actual BiDi Zod rejects oversized set before element traversal" time="0.004828" classname="test" failure="upper-size validation must run before untrusted item traversal1000 !== 0">
+		<failure type="testCodeFailure" message="upper-size validation must run before untrusted item traversal1000 !== 0">
+[Error [ERR_TEST_FAILURE]: upper-size validation must run before untrusted item traversal
+
+1000 !== 0
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: upper-size validation must run before untrusted item traversal
+  
+  1000 !== 0
+  
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/maxcore-dev-dependency-security.test.mjs:61:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1000,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<!-- tests 4 -->
+	<!-- suites 0 -->
+	<!-- pass 0 -->
+	<!-- fail 4 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 148.481322 -->
+</testsuites>

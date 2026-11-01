@@ -1,0 +1,473 @@
+{
+  "startedAt": "2026-09-22T00:43:50.167Z",
+  "kind": "isolated-platform-beta-contract-cycle",
+  "acceptance": "BLOCKED: passing isolated contracts do not establish full-platform or production acceptance",
+  "isolation": "Sequential allowlisted commands; fresh temporary HOME; cleared environment; no secrets/DB URLs inherited; bounded process-group timeout; Node TCP guard permits only same-process loopback fixtures. Not an OS sandbox.",
+  "excluded": [
+    "app startup",
+    "shared/live databases",
+    "providers",
+    "payments",
+    "messages",
+    "models",
+    "generic test:all",
+    "fabricated-success lifecycle simulations",
+    "migration rehearsal (owned by schema worker)",
+    "full TypeScript/browser/install"
+  ],
+  "results": [
+    {
+      "id": "authority",
+      "domain": "security",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --import tsx --test --test-concurrency=1 server/services/securityAuthority.test.ts",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 381,
+      "stdout": "✔ authority rejects legacy epochs without I/O and propagates unavailable authority (1.516202ms)\n✔ generation revoke is durable, monotonic, parameterized, and distinguishes new login (0.304298ms)\n✔ webhook policy excludes internal, reserved, mapped and transition addresses (5.41467ms)\n✔ MFA cannot borrow assurance from other identity or bearer request (0.289306ms)\n✔ real TOTP challenge promotes only valid proof, rotates session, preserves revoked epoch (3.817964ms)\n✔ erasure request atomically queues with revocation and reports pending, not erased (0.98025ms)\n✔ factor promotion compares the proved active factor and bumps epoch in one statement (0.738032ms)\n✔ real TOTP proof is consumed once across concurrent consumers and entrypoints (1.684801ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 339.068294\n",
+      "stderr": "",
+      "hashes": {
+        "server/services/securityAuthority.test.ts": "85ed8ce44936f4d85cf8d5533276dec49af7705001fbc2dc4c88905a74dcfd60"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "jwt-chain",
+      "domain": "security",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 server/services/securityJwtChain.test.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 203,
+      "stdout": "✔ real signed JWT chain carries MFA, rotates refresh, and rejects revoked epochs (58.55055ms)\n✔ shared auth integration keeps atomic password epoch changes and mandatory hydration guard (3.769078ms)\n✔ webhook dispatch pins DNS, refuses mixed/internal results and never follows redirects (8.053017ms)\n✔ maintenance permits exact recovery and verified webhooks, not header spoofing or prefix lookalikes (11.095104ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 161.707951\n",
+      "stderr": "",
+      "hashes": {
+        "server/services/securityJwtChain.test.mjs": "3825a1f0c9b545fe09054ff9c1846e21ece98d0e8611e33f450337242dc7746d"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "security-consumers",
+      "domain": "security",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --import tsx --test --test-concurrency=1 server/logSanitizer.test.ts script/security-readiness.test.mjs script/security-consumers.test.cjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 1628,
+      "stdout": "✔ actual royalties CSV parser retains quoting, trimming, mapping and malformed-input semantics on v7 (97.972351ms)\n✔ actual upload middleware accepts real multipart, rejects SVG, size overflow and malformed framing (139.420663ms)\n✔ installed sharp decodes and transcodes genuine image bytes (58.076798ms)\n✔ all installed tar parents resolve real patched code; archive roundtrip and traversal rejection work (152.097576ms)\n✔ xcode UUID consumer remains compatible with patched UUID v11 (57.400726ms)\n✔ duplicate occurrences stay separate and root matches do not invent shipped provenance (1.138191ms)\n✔ empty incomplete SAST fails; completion also requires revision and coverage (0.703174ms)\n✔ actual scanner input retains all 206 occurrences and blocks false clean attestation (119.608379ms)\n✔ nested provider secrets and PII are redacted without mutating source (0.894323ms)\n✔ cycles, accessors, binary and errors remain bounded and diagnostic (2.267307ms)\n✔ production JSON emission covers interpolated messages, errors and child bindings (2.578192ms)\n✔ text masks IPv4/IPv6 and credentials, keeps useful nonpersonal diagnostics (4.837096ms)\n✔ typed event runtime boundary rejects raw personal fields and unknown provider errors (0.680904ms)\n✔ valid typed events use the real logger consumer and retain opaque correlation (0.750292ms)\nℹ tests 14\nℹ suites 0\nℹ pass 14\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1589.038481\n",
+      "stderr": "",
+      "hashes": {
+        "server/logSanitizer.test.ts": "c25ea202352e08d3ab069aada0c92810ad6e9d8342d5cc420ed43caaaa307a89",
+        "script/security-readiness.test.mjs": "244424d0681a137cd66ce2567873141400cc35b03341516071deff780c422a2b",
+        "script/security-consumers.test.cjs": "7a09f43d13461ad0e58801d4c448305a606870b22d045b3ca745b08d7a8a5080"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "commerce",
+      "domain": "commerce",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 server/services/commerce.isolated.test.mjs server/services/commerce/orchestrator.isolated.test.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 427,
+      "stdout": "✔ simulated beta: reports include new withdrawals by currency and keep legacy evidence outside totals (42.690023ms)\n✔ simulated beta: frozen checkout allocations survive later split changes; missing terms require review (14.691925ms)\n✔ simulated beta: payout UI wires exact cents, stable retry command and truthful standard timing (2.506042ms)\n✔ simulated beta: actual purchase producer -> registered webhook -> settlement replay uses one frozen order (50.838821ms)\n✔ simulated beta: payout command survives lost response/reload and fences account switches (11.718223ms)\n✔ actual StripeService rejects another buyer and invalid refund values before money or writes (15.892941ms)\n✔ actual receipt repository commits only successful handlers and releases on failure (5.581609ms)\n✔ plan policy accepts real legacy producers, rejects invented/default tiers (4.436834ms)\n✔ actual marketplace service rejects a succeeded payment belonging to a different order (14.674955ms)\n✔ actual payment verification books provider fees and only succeeded refund totals (6.115621ms)\n✔ cancellation reason is written in the same release transaction without replacing other metadata (2.787342ms)\n✔ actual engine preserves reservations through pending bank payout, completes only on paid (1.168407ms)\n✔ actual engine keeps ambiguous provider failures reserved under the same operation ID (0.673012ms)\n✔ actual engine reverses a failed bank transfer before releasing reservations (0.664259ms)\n✔ actual engine does not fund a new withdrawal after source refund hold (0.211444ms)\n✔ actual engine reconciles refund totals and retries failed recovery without imaginary cash (0.633186ms)\n✔ actual allocation contract conserves all cents and rejects invalid contracts (8.243875ms)\n✔ actual Stripe adapter recovers transfers beyond key TTL, uses account-scoped bank keys (0.765983ms)\n✔ actual repository books conserved fee/net journals and order fulfillment in one transaction (7.681074ms)\n✔ actual repository rolls back ledger booking when fulfillment persistence fails (0.704296ms)\n✔ actual engine resolves an ambiguous bank request before acting on a later refund (0.353983ms)\n✔ actual repository reopens returned bank funds, but holds overlapping refund recoveries (0.516527ms)\nℹ tests 22\nℹ suites 0\nℹ pass 22\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 386.337594\n",
+      "stderr": "",
+      "hashes": {
+        "server/services/commerce.isolated.test.mjs": "317e5d4b0992eb96f9d4e694eb1ba517b4fb37d0da24fb5dc3d2b60883fd451d",
+        "server/services/commerce/orchestrator.isolated.test.mjs": "07b8467f681ed6a08de1581d95bb35562ca2f05d17be74d03213c72f07267334"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "integrations-readiness",
+      "domain": "integrations",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node tests/integrations-readiness.cjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 436,
+      "stdout": "Integration readiness: isolated policy, scanner, email, encryption, submission, posting, SMS and LabelGrid status tests passed\n",
+      "stderr": "",
+      "hashes": {
+        "tests/integrations-readiness.cjs": "cb4656b5623a63a52cadf37a76b5a9127ffc7e70b8ff64c2d501a382cf1f9a3e"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "integration-webhooks",
+      "domain": "integrations",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node tests/integration-webhooks.cjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 403,
+      "stdout": "Provider exact-byte signatures, verified fan dispatcher, and storage decryption tests passed\n",
+      "stderr": "",
+      "hashes": {
+        "tests/integration-webhooks.cjs": "36311746d9086ad92997d8a6f94cd31a222e3bf610605815f160a79d4c61383b"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "growth-rights",
+      "domain": "growth",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config tests/growth-rights.vitest.config.ts --maxWorkers=1 --no-file-parallelism",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 1224,
+      "stdout": "\n RUN  v4.1.11 /home/runner/workspace\n\n ✓ tests/unit/growth-rights.test.ts (23 tests) 17ms\n ✓ tests/unit/growth-rights-splits.test.ts (5 tests) 11ms\n ✓ tests/unit/growth-rights-fan-ledger.test.ts (4 tests) 10ms\n\n Test Files  3 passed (3)\n      Tests  32 passed (32)\n   Start at  00:43:53\n   Duration  877ms (transform 158ms, setup 0ms, import 418ms, tests 38ms, environment 0ms)\n\n",
+      "stderr": "",
+      "hashes": {
+        "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+        "tests/growth-rights.vitest.config.ts": "4230020e983964c6c607f73b6b966bb056e053c1cef3673422c960bede394188"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "client-contracts",
+      "domain": "client",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/unit/client-offline-readiness.test.mjs tests/unit/client-account-boundary.test.mjs tests/unit/client-sync-receipts.test.mjs tests/unit/client-worker-handoff.test.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 587,
+      "stdout": "✔ all-tab account barrier waits for real cleanup acknowledgments and excludes active background locks (22.122216ms)\n✔ account persister cancels old throttled snapshots, restores rightful owner and never restores auth (9.368001ms)\n✔ studio browser persistence isolates owners and resets memory without overwriting another owner's work (4.660211ms)\n✔ worker never intercepts private GETs; legacy replay and uncoordinated upgrade stay blocked (6.253345ms)\n✔ theme boot agrees with provider default and handles unavailable localStorage (5.43484ms)\n✔ real draft and queue algorithms with an isolated in-memory IDB boundary (26.566776ms)\n✔ preference writes serialize failures and reject a queued write after account change (7.021833ms)\n✔ changed domain TS/TSX sources parse in isolation (77.39004ms)\n✔ transactional receipt repository deduplicates, binds payload/owner and rolls back uncertain commits (24.980344ms)\n✔ worker acknowledges only durable owner-bound handoffs; mixed terminal receipts are not false applied results (51.621564ms)\n✔ worker retains handoffs on malformed receipts and never acknowledges a quota failure (7.578167ms)\n✔ waiting worker activates only after every live client explicitly acknowledges (4.178823ms)\nℹ tests 12\nℹ suites 0\nℹ pass 12\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 545.54714\n",
+      "stderr": "",
+      "hashes": {
+        "tests/unit/client-offline-readiness.test.mjs": "5d68dd635676b98a77773356cc6a66a29225b8783d26370e3e6b265bce496353",
+        "tests/unit/client-account-boundary.test.mjs": "8abedef33f6a0a3dbcf645a131bc271d4403a668e01a0e07d7f43514b2061863",
+        "tests/unit/client-sync-receipts.test.mjs": "8b15f561728cd1c2e212647780a7d8ee132ef76bab54f14ad1789812da97be23",
+        "tests/unit/client-worker-handoff.test.mjs": "097f91d2ea8159eb2d8e52db19c746d13d3abd31fde0f172e232bc1c68157513"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "admin-governance",
+      "domain": "admin",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/admin-governance-isolated.cjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 791,
+      "stdout": "✔ KYC missing documents remain an actionable checklist (163.354461ms)\n✔ verified identity cannot be edited by its owner (54.298714ms)\n✔ approval requires current reviewed evidence inside a transaction (58.978718ms)\n✔ API token issuance stores only its verifier and audit metadata; owner revocation disables it (13.179072ms)\n✔ support metadata mutations are server-side JSONB expressions, not stale snapshots (0.353895ms)\n✔ existing bearer verifier accepts a matching token, then rejects revocation and expiry (38.919831ms)\n✔ moderation removal persists local effect, recipient warning and actor audit (10.252702ms)\n✔ all changed domain modules parse without loading external boundaries (74.524889ms)\n✔ KYC reviewer digest binds identity/evidence and approval stores an immutable snapshot under parent lock (36.289409ms)\n✔ runtime governance rate limit uses one atomic cluster counter across policy edits and fails closed (24.623454ms)\n✔ governance policy differentiates disabled registration from unavailable or malformed policy (5.990791ms)\n✔ support routes reject Express 5 array or empty ticket parameters before database access (21.378008ms)\nℹ tests 12\nℹ suites 0\nℹ pass 12\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 751.943193\n",
+      "stderr": "",
+      "hashes": {
+        "tests/admin-governance-isolated.cjs": "59ae464dc44d000084eb9ba96ee204e390abfa8b6294362ffec659e3b4f78904"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "resumed-webhook-topology",
+      "domain": "integrations",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/resume-integration-contracts.cjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 538,
+      "stdout": "✔ provider CSRF exceptions are exact POST-only paths, not prefixes or aliases (75.169848ms)\n✔ Twilio verifier uses real HMAC, canonical HTTPS URL and flat form values (9.519052ms)\n✔ governance requires verified Resend raw bytes and Twilio signatures before bypass (33.867813ms)\n✔ mount order and raw-body capture preserve the actual callback topology (2.521212ms)\n✔ both SMS consumers reject unsigned writes and accept authentic provider receipts (16.139519ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 499.097101\n",
+      "stderr": "",
+      "hashes": {
+        "tests/resume-integration-contracts.cjs": "ad18d7f917482e3ecc9c797556624347a081e20d24635bdfaffb44c48a61d009"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "client-auth-contracts",
+      "domain": "client",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/unit/client-auth-beta-contracts.test.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 197,
+      "stdout": "✔ beta MFA enrollment/replacement and disable use exact proof fields (21.342533ms)\n✔ beta reauthentication/replayed-code failures stay explicit, no automatic replay (0.724583ms)\n✔ beta erasure requires 202 accepted/not-erased; OAuth may omit password (2.752407ms)\n✔ beta status/cancel contracts distinguish missing, queued, unavailable and rejected (4.878107ms)\n✔ owned consumers parse and retain Settings wiring, expiry and account fences (28.829483ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 156.749949\n",
+      "stderr": "",
+      "hashes": {
+        "tests/unit/client-auth-beta-contracts.test.mjs": "6b716c351d838a43bc9e4e3c1809597feb71c5614d6463cc7041557cce13ec16"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "data-runtime",
+      "domain": "data",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node scripts/test-data-runtime.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 165,
+      "stdout": "PASS D6: set/touch/destroy await commit, propagate failures; read failure explicit; touch UPDATE-only\nPASS D6 auth integration: uncached generation validation, authority errors explicit, durable revoke waits and confirms\nPASS D7: eleven malformed records retained as failed; valid processor runs; no startup sweep\nPASS D4: checksum corruption, storage outage, sequence gap rejected; stream snapshot preserves generated ID\nPASS D4 legacy conversion: real loader accepts generation + stream pending metadata; originals retained; overwrite/tamper/unfolded-tail/unknown-type rejected\nPASS D1-D3: concurrent unique verified keys, checksum mismatch pending, catalog errors explicit, preferred target, isolated fail-stop restore\nPASS D2 shutdown: catch-up/cron tracked; dispatch fenced; upload and renewal drained; bounded timeout preserves ownership; failed run stays recoverable\n",
+      "stderr": "",
+      "hashes": {
+        "scripts/test-data-runtime.mjs": "12d1d168dc159da811bf177d14fcd2309c9322832ec9f2a0ba2245ce03ce7b1c"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "fabric-deletion",
+      "domain": "privacy",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node scripts/test-fabric-deletion.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 75,
+      "stdout": "PASS D5: durable claim; node failure retains usage/progress; retry accounts once; shared reference preserved\n",
+      "stderr": "",
+      "hashes": {
+        "scripts/test-fabric-deletion.mjs": "51ec5d217183faf9c6a821349f20df87f22410e21360b153fd059e07c64d376b"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "test_media_delivery_contract",
+      "domain": "media",
+      "command": "/home/runner/workspace/.pythonlibs/bin/python3 -B external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 615,
+      "stdout": "",
+      "stderr": "...............\n----------------------------------------------------------------------\nRan 15 tests in 0.452s\n\nOK\n",
+      "hashes": {
+        "external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py": "40256d2bf56aadcb3460dd072331ec2f0f86b3c81a044b312c2772a7ad339da0"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "test_isolated_audio",
+      "domain": "media",
+      "command": "/home/runner/workspace/.pythonlibs/bin/python3 -B external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 1837,
+      "stdout": "",
+      "stderr": "......\n----------------------------------------------------------------------\nRan 6 tests in 1.751s\n\nOK\n",
+      "hashes": {
+        "external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py": "dc743f208b3608fdc9c0cc02b5330f8bccf0263bd60924ca5d4ca6bf26ccfdfd"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "media-resources",
+      "domain": "media",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/unit/aiMediaResourceContracts.test.mjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 230,
+      "stdout": "✔ nested Node allocation includes primary/launcher and removes inherited heap override (1.761451ms)\n✔ all child BLAS/OpenMP and nested libuv pools are capped (0.33809ms)\n✔ insufficient nested-process memory fails explicitly (0.648921ms)\n✔ actual nested primary setup supplies allocated worker heap without changing lifecycle (6.570553ms)\n✔ A/B variant method contains no local transforms, fabricated scores or dead alternate result (0.798163ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 188.17545\n",
+      "stderr": "",
+      "hashes": {
+        "tests/unit/aiMediaResourceContracts.test.mjs": "181ab80809db12f2ea9d7622d611d5b9402d43adfe7d5b899b6e0dcf02a4cf49"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "autonomous-contracts",
+      "domain": "autonomous",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/autonomous.config.mjs --maxWorkers=1 --no-file-parallelism",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 2724,
+      "stdout": "\n RUN  v4.1.11 /home/runner/workspace\n\n ✓ tests/unit/evolution-registry.test.ts (17 tests) 259ms\n ✓ tests/unit/selfHealingSecurityEngine.test.ts (27 tests) 114ms\n ✓ tests/unit/self-evolution-simulation.test.ts (10 tests) 50ms\n ✓ tests/unit/security-containment.test.ts (5 tests) 14ms\n\n Test Files  4 passed (4)\n      Tests  59 passed (59)\n   Start at  00:44:00\n   Duration  2.37s (transform 558ms, setup 0ms, import 1.35s, tests 438ms, environment 0ms)\n\n",
+      "stderr": "",
+      "hashes": {
+        "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+        "<temporary-autonomous-config>": "0d8bbf0305aa5ddaa9966d6089b87773bf067e568de01c536c2c126d7a95e922",
+        "tests/unit/self-evolution-simulation.test.ts": "b2a869cc30c514b403ed0458d87eaf857594e745ad094e016241c137f40c949d",
+        "tests/unit/evolution-registry.test.ts": "f7ea7bba9dbd26b4d6205b5c9122efc3a337a7724a5e6bd6c8d79c1c4021291f",
+        "tests/unit/security-containment.test.ts": "86242fed7ac66208f33df031a7485cb9fda5d0c0655ae027abaae6b7e5d47997",
+        "tests/unit/selfHealingSecurityEngine.test.ts": "d3ee26b87d5aa1bb3e81f835d767cfac8481afd6c3eda170340aa9eac5e01d85"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "deployment-contracts",
+      "domain": "deploy",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/deployment-contracts.cjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 385,
+      "stdout": "✔ cgroup quotas bound physical CPU/RAM and override cannot bypass bounds (63.340915ms)\n✔ disjoint pools fit under capacity; invalid overrides and impossible machines reject (13.248865ms)\n✔ 4 effective CPUs / 8 GiB admit app, MaxCore and Python without overlap (6.301516ms)\n✔ role-specific minima are validated and small feasible CPU shares time-share (12.889692ms)\n✔ readiness publishes atomically, single-flights refreshes, expires and recovers (6.67965ms)\n[pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/readiness-beta-tYPoAr/deployment-contract-Y5cGYx/.pdim-scratch-fixture-7710/ (staging for fixture/) ...\n[pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim\n✔ Sentry repeated never-successful sends cross 24h; success resets silence age (10.637035ms)\n✔ Python respects the interpreter selected at the critical restore barrier (4.322543ms)\n[pdim-restore] ✅ fixture/ restored from fixture.pdim\n[pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/readiness-beta-tYPoAr/deployment-contract-Y5cGYx/.pdim-scratch-fixture-7710/ (staging for fixture/) ...\n[pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim\n[pdim-restore] ✅ fixture/ restored from fixture.pdim\n[pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/readiness-beta-tYPoAr/deployment-contract-Y5cGYx/.pdim-scratch-fixture-7710/ (staging for fixture/) ...\n[pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim\n[pdim-restore] ERROR: checksum mismatch for fixture.pdim\n  expected 0000000000000000000000000000000000000000000000000000000000000000\n  actual   9dc2818df00663c329f6d4c8b57d885cd4aae982f0c063312743976d0fee7bdd\n✔ capsule restoration reuses only the matching generation and rejects corruption (152.231675ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 340.055267\n",
+      "stderr": "",
+      "hashes": {
+        "tests/deployment-contracts.cjs": "53e5e7eb4a3d5894fdfb70a38ff79af593f0613b3c26c4cc1cfe9df7a5ea0f79"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "worker-composition",
+      "domain": "deploy",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/readiness-worker-composition.cjs",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 204,
+      "stdout": "✔ schema failure prevents startup and probes are read only (1.320357ms)\n✔ scheduler serializes work, stops future ticks, and drains active work (23.305444ms)\n✔ rejected work is reported rather than an unhandled timer rejection (3.99014ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 163.219365\n",
+      "stderr": "",
+      "hashes": {
+        "tests/readiness-worker-composition.cjs": "75576b850c37efa9cb1c44c9e352d889ab030b64ab8f0c2214508871acf6d77a"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "exports-sync",
+      "domain": "exports/sync",
+      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config tests/coverage-gaps.config.ts --maxWorkers=1 --no-file-parallelism",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 2073,
+      "stdout": "\n RUN  v4.1.11 /home/runner/workspace\n\n ✓ tests/unit/coverage-gaps.test.ts (14 tests) 417ms\n     ✓ renders real WAV bytes from an authorized PDIM clip using local FFmpeg  375ms\n\n Test Files  1 passed (1)\n      Tests  14 passed (14)\n   Start at  00:44:03\n   Duration  1.73s (transform 349ms, setup 0ms, import 1.16s, tests 417ms, environment 0ms)\n\n",
+      "stderr": "",
+      "hashes": {
+        "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+        "tests/coverage-gaps.config.ts": "fcb3eee5606a69d5884cbc4f96655227bee8bd76fe1837c3aac34ef5c8905bb5",
+        "tests/unit/coverage-gaps.test.ts": "810a0005542aa3ba0e5870191bdb0c7392ac5a62e772552f8bd96310d9f227ee"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    }
+  ],
+  "domains": [
+    {
+      "domain": "security",
+      "status": "PASS",
+      "commands": 3,
+      "planned": 3,
+      "acceptance": "BLOCKED",
+      "limitations": "No deployed cookies/proxy, browser auth, real session SQL contention, TLS egress or credential rotation acceptance."
+    },
+    {
+      "domain": "commerce",
+      "status": "PASS",
+      "commands": 1,
+      "planned": 1,
+      "acceptance": "BLOCKED",
+      "limitations": "Mocked SQL/provider contracts only; no real charge, refund, payout, settlement or cross-process durable replay."
+    },
+    {
+      "domain": "integrations",
+      "status": "PASS",
+      "commands": 3,
+      "planned": 3,
+      "acceptance": "BLOCKED",
+      "limitations": "Synthetic signatures/credentials and mocked providers; no actual webhook delivery, catalog scale or provider receipt."
+    },
+    {
+      "domain": "growth",
+      "status": "PASS",
+      "commands": 1,
+      "planned": 1,
+      "acceptance": "BLOCKED",
+      "limitations": "Mocked mail/database/payment boundaries; no delivered campaign, production split contention or legal acceptance."
+    },
+    {
+      "domain": "client",
+      "status": "PASS",
+      "commands": 2,
+      "planned": 2,
+      "acceptance": "BLOCKED",
+      "limitations": "Node/source/browser-API fixtures only; no browser, service-worker lifecycle, device or offline end-to-end acceptance."
+    },
+    {
+      "domain": "admin",
+      "status": "PASS",
+      "commands": 1,
+      "planned": 1,
+      "acceptance": "BLOCKED",
+      "limitations": "VM/mocked DB, email and Redis; no deployed admin authorization or moderation/evidence transaction acceptance."
+    },
+    {
+      "domain": "data",
+      "status": "PASS",
+      "commands": 1,
+      "planned": 1,
+      "acceptance": "BLOCKED",
+      "limitations": "Mocked catalog/storage/dump/restore; no actual remote backup restore, SQL leases or crash durability acceptance. Migration harness excluded (schema worker owns it)."
+    },
+    {
+      "domain": "media",
+      "status": "PASS",
+      "commands": 3,
+      "planned": 3,
+      "acceptance": "BLOCKED",
+      "limitations": "Tiny test-only subprocesses, mocked rendering and resource contracts; no models, production render, quality or workload acceptance."
+    },
+    {
+      "domain": "autonomous",
+      "status": "PASS",
+      "commands": 1,
+      "planned": 1,
+      "acceptance": "BLOCKED",
+      "limitations": "Mocked storage/security plus ephemeral HTTP fixture; no assembled app, restart durability, real build/autofix or operational feedback acceptance."
+    },
+    {
+      "domain": "deploy",
+      "status": "PASS",
+      "commands": 2,
+      "planned": 2,
+      "acceptance": "BLOCKED",
+      "limitations": "Resource sizing/source contracts and tiny temporary capsules only; no deployment, real capsule recovery, migration or load acceptance."
+    },
+    {
+      "domain": "privacy",
+      "status": "PASS",
+      "commands": 1,
+      "planned": 1,
+      "acceptance": "BLOCKED",
+      "limitations": "Mocked fabric deletion receipts only; erasure-request SQL boundary also covered by security authority suite. No complete user erasure, retention-policy/legal decision, remote deletion or cross-system verification."
+    },
+    {
+      "domain": "exports/sync",
+      "status": "PASS",
+      "commands": 1,
+      "planned": 1,
+      "acceptance": "BLOCKED",
+      "limitations": "Mocked database/PDIM and tiny local FFmpeg WAV fixture; no remote artifact delivery, full codecs, expiry, workload, browser sync or real concurrent sessions."
+    }
+  ],
+  "finishedAt": "2026-09-22T00:44:05.306Z"
+}

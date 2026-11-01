@@ -1,0 +1,358 @@
+{
+  "counter_deltas": {
+    "/api/gpu/digest-cache/stats": {
+      "counters": {
+        "digest_cache": {
+          "cached_arrays": 2
+        }
+      },
+      "http_status": 0
+    },
+    "/api/gpu/gen-cache/stats": {
+      "counters": {
+        "gen_cache": {
+          "capacity": 0,
+          "hit_rate": 0.0,
+          "hits": 0,
+          "size": 0,
+          "total": 0,
+          "ttl_s": 0.0
+        }
+      },
+      "http_status": 0
+    },
+    "/api/gpu/prefix-kv/stats": {
+      "counters": {
+        "prefix_kv": {
+          "cache_size": 0,
+          "evictions": 0,
+          "hit_rate": 0.0,
+          "hits": 0,
+          "max_entries": 0,
+          "misses": 0,
+          "ttl_seconds": 0.0
+        }
+      },
+      "http_status": 0
+    },
+    "/api/gpu/replica-pool/stats": {
+      "counters": {
+        "replica_pool": {
+          "hit_rate": 0.0,
+          "replica_count": 0,
+          "replicas_spawned": 0,
+          "round_robin_position": 0,
+          "seed_log_depth": 0,
+          "total_calls": 0,
+          "total_hits": 0
+        }
+      },
+      "http_status": 0
+    },
+    "/api/maxcore/pocket-accelerator/stats": {
+      "counters": {
+        "stats": {
+          "admission_overhead_seconds_total": 1.338163,
+          "budget_bytes": 0,
+          "bypass_adaptive_muted": 42,
+          "bypass_small": 1,
+          "bytes_held": 0,
+          "compute_seconds_saved": 0.0,
+          "copy_seconds_total": 0.0,
+          "entries": 0,
+          "evictions": 0,
+          "hash_seconds_total": 1.219377,
+          "hit_rate": 0.0,
+          "hit_serving_seconds": 0.0,
+          "hits": 0,
+          "lookup_seconds_total": 0.000346,
+          "misses": 18,
+          "pockets": 2,
+          "pockets_muted": 2,
+          "shards": 0,
+          "store_seconds_total": 0.11844
+        }
+      },
+      "http_status": 0
+    },
+    "/gpu/hyper/status": {
+      "counters": {
+        "lanes": 0,
+        "tensor_cores": 0,
+        "total_compute_ms": 0.0,
+        "total_ops": 0,
+        "total_tensor_core_tflops": 0.0,
+        "uptime_s": 361.8
+      },
+      "http_status": 0
+    },
+    "/gpu/status": {
+      "counters": {
+        "lanes": 0,
+        "pool_alive": 0,
+        "pool_avg_life_ms": 27244.4,
+        "pool_storage_errors": 0,
+        "pool_total_born": 19,
+        "pool_total_dead": 19,
+        "vram_bytes": 0,
+        "vram_handles": 0,
+        "vram_mb": 0.0
+      },
+      "http_status": 0
+    }
+  },
+  "exit_code": 1,
+  "hashes_after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+    "tests/test_awareness_and_quality.py": "27a40d4752068758f73152b0a5885da4fe30fc7ae41a603cd9ba1d2d1c27cf6c",
+    "tests/test_w6_90m.py": "f52db0346d5f20ef8a4ef5b20039100e521b16f453cb709c4248f01f7a7664fb"
+  },
+  "hashes_before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+    "tests/test_awareness_and_quality.py": "27a40d4752068758f73152b0a5885da4fe30fc7ae41a603cd9ba1d2d1c27cf6c",
+    "tests/test_w6_90m.py": "f52db0346d5f20ef8a4ef5b20039100e521b16f453cb709c4248f01f7a7664fb"
+  },
+  "hashes_unchanged": true,
+  "mode": "original quality only (no throughput/training)",
+  "model_port": 9878,
+  "proxy_port": 8090,
+  "snapshots": {
+    "after": {
+      "/api/gpu/digest-cache/stats": {
+        "counters": {
+          "digest_cache": {
+            "cached_arrays": 2
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/gen-cache/stats": {
+        "counters": {
+          "gen_cache": {
+            "capacity": 512,
+            "hit_rate": 0.0,
+            "hits": 0,
+            "size": 0,
+            "total": 0,
+            "ttl_s": 120.0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/prefix-kv/stats": {
+        "counters": {
+          "prefix_kv": {
+            "cache_size": 0,
+            "evictions": 0,
+            "hit_rate": 0.0,
+            "hits": 0,
+            "max_entries": 32,
+            "misses": 0,
+            "ttl_seconds": 600.0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/replica-pool/stats": {
+        "counters": {
+          "replica_pool": {
+            "hit_rate": 0.0,
+            "replica_count": 4,
+            "replicas_spawned": 4,
+            "round_robin_position": 0,
+            "seed_log_depth": 0,
+            "total_calls": 0,
+            "total_hits": 0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/maxcore/pocket-accelerator/stats": {
+        "counters": {
+          "stats": {
+            "admission_overhead_seconds_total": 1.376989,
+            "budget_bytes": 250560921,
+            "bypass_adaptive_muted": 42,
+            "bypass_small": 26,
+            "bytes_held": 90112,
+            "compute_seconds_saved": 0.0,
+            "copy_seconds_total": 0.0,
+            "enabled": true,
+            "entries": 8,
+            "evictions": 0,
+            "hash_seconds_total": 1.258003,
+            "hit_rate": 0.0,
+            "hit_serving_seconds": 0.0,
+            "hits": 0,
+            "lookup_seconds_total": 0.000424,
+            "misses": 26,
+            "pockets": 3,
+            "pockets_muted": 3,
+            "shards": 256,
+            "store_seconds_total": 0.118562
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/gpu/hyper/status": {
+        "counters": {
+          "available": true,
+          "lanes": 128,
+          "tensor_cores": 2,
+          "total_compute_ms": 44.88,
+          "total_ops": 32,
+          "total_tensor_core_tflops": 0.000411,
+          "uptime_s": 372.1
+        },
+        "http_status": 200
+      },
+      "/gpu/status": {
+        "counters": {
+          "available": true,
+          "lanes": 32,
+          "pool_alive": 0,
+          "pool_avg_life_ms": 27244.4,
+          "pool_storage_errors": 0,
+          "pool_total_born": 19,
+          "pool_total_dead": 19,
+          "vram_bytes": 0,
+          "vram_handles": 0,
+          "vram_mb": 0.0
+        },
+        "http_status": 200
+      }
+    },
+    "before": {
+      "/api/gpu/digest-cache/stats": {
+        "counters": {
+          "digest_cache": {
+            "cached_arrays": 0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/gen-cache/stats": {
+        "counters": {
+          "gen_cache": {
+            "capacity": 512,
+            "hit_rate": 0.0,
+            "hits": 0,
+            "size": 0,
+            "total": 0,
+            "ttl_s": 120.0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/prefix-kv/stats": {
+        "counters": {
+          "prefix_kv": {
+            "cache_size": 0,
+            "evictions": 0,
+            "hit_rate": 0.0,
+            "hits": 0,
+            "max_entries": 32,
+            "misses": 0,
+            "ttl_seconds": 600.0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/replica-pool/stats": {
+        "counters": {
+          "replica_pool": {
+            "hit_rate": 0.0,
+            "replica_count": 4,
+            "replicas_spawned": 4,
+            "round_robin_position": 0,
+            "seed_log_depth": 0,
+            "total_calls": 0,
+            "total_hits": 0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/maxcore/pocket-accelerator/stats": {
+        "counters": {
+          "stats": {
+            "admission_overhead_seconds_total": 0.038826,
+            "budget_bytes": 250560921,
+            "bypass_adaptive_muted": 0,
+            "bypass_small": 25,
+            "bytes_held": 90112,
+            "compute_seconds_saved": 0.0,
+            "copy_seconds_total": 0.0,
+            "enabled": true,
+            "entries": 8,
+            "evictions": 0,
+            "hash_seconds_total": 0.038626,
+            "hit_rate": 0.0,
+            "hit_serving_seconds": 0.0,
+            "hits": 0,
+            "lookup_seconds_total": 7.8e-05,
+            "misses": 8,
+            "pockets": 1,
+            "pockets_muted": 1,
+            "shards": 256,
+            "store_seconds_total": 0.000122
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/gpu/hyper/status": {
+        "counters": {
+          "available": true,
+          "lanes": 128,
+          "tensor_cores": 2,
+          "total_compute_ms": 44.88,
+          "total_ops": 32,
+          "total_tensor_core_tflops": 0.000411,
+          "uptime_s": 10.3
+        },
+        "http_status": 200
+      },
+      "/gpu/status": {
+        "counters": {
+          "available": true,
+          "lanes": 32,
+          "pool_alive": 0,
+          "pool_avg_life_ms": 0.0,
+          "pool_storage_errors": 0,
+          "pool_total_born": 0,
+          "pool_total_dead": 0,
+          "vram_bytes": 0,
+          "vram_handles": 0,
+          "vram_mb": 0.0
+        },
+        "http_status": 200
+      }
+    }
+  },
+  "suites": {
+    "awareness_original": {
+      "elapsed_seconds": 240.108,
+      "exit_code": null,
+      "log": "awareness_original.log",
+      "timed_out": true
+    },
+    "w6_original": {
+      "elapsed_seconds": 121.312,
+      "exit_code": 1,
+      "log": "w6_original.log",
+      "timed_out": false
+    }
+  },
+  "timestamp_utc": "20260925T002037.607157Z"
+}

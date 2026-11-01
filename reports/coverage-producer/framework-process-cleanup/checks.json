@@ -1,0 +1,89 @@
+[
+  {
+    "command": [
+      "/workspace/.cloud-tools/node_modules/.bin/node",
+      "node_modules/eslint/bin/eslint.js",
+      "--no-ignore",
+      "--global",
+      "process",
+      "--global",
+      "Buffer",
+      "--global",
+      "URL",
+      "--global",
+      "TextDecoder",
+      "--global",
+      "console",
+      "--global",
+      "setTimeout",
+      "--global",
+      "clearTimeout",
+      "--global",
+      "structuredClone",
+      "scripts/testing/coverage-provenance.mjs",
+      "scripts/testing/coverage-node-bootstrap.mjs",
+      "scripts/testing/collect-node-coverage.mjs",
+      "tests/testing/coverage-provenance.test.mjs"
+    ],
+    "exitCode": 0,
+    "output": "check-1.txt",
+    "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "command": [
+      "/workspace/.cloud-tools/node_modules/.bin/node",
+      "--check",
+      "scripts/testing/coverage-provenance.mjs"
+    ],
+    "exitCode": 0,
+    "output": "check-2.txt",
+    "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "command": [
+      "/workspace/.cloud-tools/node_modules/.bin/node",
+      "--check",
+      "scripts/testing/coverage-node-bootstrap.mjs"
+    ],
+    "exitCode": 0,
+    "output": "check-3.txt",
+    "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "command": [
+      "/workspace/.cloud-tools/node_modules/.bin/node",
+      "--check",
+      "scripts/testing/collect-node-coverage.mjs"
+    ],
+    "exitCode": 0,
+    "output": "check-4.txt",
+    "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "command": [
+      "/workspace/.cloud-tools/node_modules/.bin/node",
+      "--check",
+      "tests/testing/coverage-provenance.test.mjs"
+    ],
+    "exitCode": 0,
+    "output": "check-5.txt",
+    "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "--",
+      "scripts/testing/coverage-provenance.mjs",
+      "scripts/testing/coverage-node-bootstrap.mjs",
+      "scripts/testing/collect-node-coverage.mjs",
+      "tests/testing/coverage-provenance.test.mjs",
+      "docs/testing/README.md",
+      "docs/testing/node-coverage-producer.md"
+    ],
+    "exitCode": 0,
+    "output": "check-6.txt",
+    "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

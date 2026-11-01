@@ -1,0 +1,18 @@
+{
+  "command": [
+    "npm",
+    "audit",
+    "--registry=https://registry.npmjs.org",
+    "--omit=dev",
+    "--audit-level=high",
+    "--json"
+  ],
+  "exitCode": 1,
+  "result": {
+    "message": "request to https://registry.npmjs.org/-/npm/v1/security/audits/quick failed, reason: self-signed certificate in certificate chain",
+    "error": {
+      "summary": "",
+      "detail": ""
+    }
+  }
+}

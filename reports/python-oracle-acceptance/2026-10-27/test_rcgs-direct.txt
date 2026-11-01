@@ -1,0 +1,40 @@
+test_probes
+  [ok  ] empty buffer count is 0
+  [ok  ] good probe recorded
+  [ok  ] identical probe deduped within TTL
+  [ok  ] different context not deduped
+  [ok  ] zero vector rejected
+  [ok  ] nan vector rejected
+  [ok  ] empty vector rejected
+  [ok  ] recent_probes caps at n
+  [ok  ] recent_probes payload shape
+  [ok  ] recent_probes newest-first
+  [ok  ] recent_probes context preserved
+  [ok  ] recent_probes(0) is empty
+test_path_resolution
+  [ok  ] resolves real filename under uploads
+  [ok  ] resolves real path under uploads
+  [ok  ] rejects traversal (basename-only forces uploads dir)
+  [ok  ] rejects nonexistent file
+  [ok  ] ignores url-only metadata
+  [ok  ] empty metadata → None
+test_condition_background
+  [ok  ] empty index → unchanged background
+  [ok  ] probe recorded even when index empty
+  [ok  ] asset embeds
+  [ok  ] conditioned output keeps shape
+  [ok  ] conditioned output is uint8
+  [ok  ] conditioning actually modulated the frame
+  [ok  ] palette preserved (near-zero channel stays low)
+  [ok  ] malformed bg returned unchanged
+  [ok  ] structure map shape
+  [ok  ] structure map mean-centered
+test_watchdog_probe_context
+  [ok  ] _probe_vector unwraps payload
+  [ok  ] _probe_vector passes through raw
+[CoverageWatchdog][CRITICAL][coverage_gap] Coverage gate=critical (fraction_within_radius=0.00, assets=1, anchors=1). → FIX: Queued 2 weak queries as ingestion targets
+  [ok  ] weak probes enqueued
+  [ok  ] enqueued payloads carry context
+  [ok  ] brand context survives to gap queue
+
+ALL RCGS TESTS PASSED

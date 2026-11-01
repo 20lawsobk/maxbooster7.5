@@ -1,0 +1,18 @@
+{
+  "command": [
+    "gh",
+    "run",
+    "list",
+    "--repo",
+    "20lawsobk/maxbooster7.5",
+    "--branch",
+    "sophia/platform-production-hardening-2026-10-27",
+    "--limit",
+    "10",
+    "--json",
+    "databaseId,headSha,name,status,conclusion,url,createdAt"
+  ],
+  "exitCode": 0,
+  "observedAt": "2026-10-29T22:33:40.694536+00:00",
+  "scope": "Read-only workflow metadata; no dispatch, source mutation or financial change"
+}

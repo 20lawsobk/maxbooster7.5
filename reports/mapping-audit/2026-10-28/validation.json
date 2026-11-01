@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "scope": "Actual report-integrity observations; not product tests or launch approval",
+  "productionReady": false,
+  "checks": [
+    {
+      "name": "All130 original warnings retained in order",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "All exact existing mapping work IDs retained",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "All identities and indexes unique",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "All source classification entries have required execution fields",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "Every selected source and input artifact hash matches",
+      "status": "PASS",
+      "details": {
+        "checkedFiles": 35,
+        "changedOrMissing": []
+      }
+    },
+    {
+      "name": "Every bounded source citation matches actual bytes",
+      "status": "PASS",
+      "details": {
+        "checkedCitations": 485,
+        "mismatches": []
+      }
+    },
+    {
+      "name": "All19 Python exact warnings retained",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "All19 Python paths included without behavior promotion",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "All six Director conditional mounts remain conditional",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "Both confirmed topology defects retain exact current records",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "All45 already-expanded MaxCore paths preserved",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "No product behavior or page passed by this source trace",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "Next patch remains explicit seven-step unimplemented plan",
+      "status": "PASS",
+      "details": null
+    },
+    {
+      "name": "Every local documentation link resolves",
+      "status": "PASS",
+      "details": {
+        "checkedLinks": 22,
+        "broken": []
+      }
+    }
+  ],
+  "status": "PASS"
+}

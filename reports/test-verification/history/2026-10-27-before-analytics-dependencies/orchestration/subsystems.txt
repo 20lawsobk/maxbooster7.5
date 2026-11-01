@@ -1,0 +1,6 @@
+{"id": "rust-boosterstate", "status": "passed", "exitCode": 0, "seconds": 0.274}
+{"id": "go-dns", "status": "passed", "exitCode": 0, "seconds": 0.83}
+{"id": "pdim-erasure", "status": "passed", "exitCode": 0, "seconds": 0.165}
+{"id": "maxcore-js-security", "status": "passed", "exitCode": 0, "seconds": 0.064}
+{"id": "rust-cleanup-concurrency", "status": "passed", "exitCode": 0, "seconds": 36.448}
+{"id": "pdim-http-load", "status": "passed", "exitCode": 0, "seconds": 4.804}

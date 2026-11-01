@@ -1,0 +1,1009 @@
+{
+  "runId": "2026-09-17T08-43-27-758Z",
+  "workspace": "/home/runner/workspace/.local/production-simulation/runs/2026-09-17T08-43-27-758Z (disposable isolated copy; remove with --cleanup)",
+  "commands": {
+    "build": "DEPLOY_PACK=1 npm run build",
+    "start": "bash start.sh"
+  },
+  "safety": {
+    "sourceRoot": "/home/runner/workspace",
+    "sourceRootUsedAsBuildCwd": false,
+    "sourceFilesMutated": false,
+    "excluded": [
+      ".replit",
+      ".git",
+      "data",
+      "logs",
+      "attached_assets",
+      "external",
+      "*.env secrets",
+      "dns-node/keys"
+    ],
+    "networkCredentialsProvided": false,
+    "thirdPartyOrLiveDatabaseTargeted": false
+  },
+  "sourceSnapshot": {
+    "capturedAt": "2026-09-17T08:57:57.570Z",
+    "note": "All build/start stages use the immutable disposable copy captured at copy stage; source edits after that point are intentionally excluded."
+  },
+  "nodeResolution": {
+    "bundledNodePresentInCopy": false,
+    "pathNodeProbe": {
+      "exitCode": 0,
+      "output": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node\nv24.13.0\n",
+      "error": ""
+    },
+    "startScriptEvidence": []
+  },
+  "copyIntegrity": {
+    "checked": [
+      {
+        "path": "node_modules/@sentry/core/build/esm/logs/public-api.js",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 986,
+        "copyBytes": 986,
+        "sourceSha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b",
+        "copySha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b"
+      },
+      {
+        "path": "node_modules/vite/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 5158,
+        "copyBytes": 5158,
+        "sourceSha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0",
+        "copySha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0"
+      },
+      {
+        "path": "node_modules/tsx/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1601,
+        "copyBytes": 1601,
+        "sourceSha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659",
+        "copySha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659"
+      },
+      {
+        "path": "python_runtime/bin/python3.12",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 100186336,
+        "copyBytes": 100186336,
+        "sourceSha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929",
+        "copySha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929"
+      },
+      {
+        "path": "python_runtime/lib/python3.12/site-packages/pip/_vendor/certifi/cacert.pem",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 270954,
+        "copyBytes": 270954,
+        "sourceSha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9",
+        "copySha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
+      },
+      {
+        "path": "package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 14866,
+        "copyBytes": 14866,
+        "sourceSha256": "22e99cc3683b4fe8cb0c138f383b7b91d229b9ed1ff1f458314049047eeab754",
+        "copySha256": "22e99cc3683b4fe8cb0c138f383b7b91d229b9ed1ff1f458314049047eeab754"
+      },
+      {
+        "path": "script/build.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 22881,
+        "copyBytes": 22881,
+        "sourceSha256": "608f2ed1c8be3ca34eb861328a542fbf2e992ccfb59c3f914f3a693bb5e7087d",
+        "copySha256": "608f2ed1c8be3ca34eb861328a542fbf2e992ccfb59c3f914f3a693bb5e7087d"
+      }
+    ],
+    "passed": true
+  },
+  "configValidation": {
+    "checked": [
+      {
+        "path": "package.json",
+        "present": true,
+        "bytes": 14866
+      },
+      {
+        "path": "start.sh",
+        "present": true,
+        "bytes": 15071
+      },
+      {
+        "path": "script/build.ts",
+        "present": true,
+        "bytes": 22881
+      },
+      {
+        "path": "dist/pdim-restore.mjs",
+        "present": true,
+        "bytes": 30774
+      }
+    ],
+    "passed": true
+  },
+  "build": {
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 268635,
+    "artifacts": {
+      "dist/index.mjs": {
+        "present": false
+      },
+      "dist/cluster.mjs": {
+        "present": false
+      },
+      "dist/public/index.html": {
+        "present": false
+      },
+      "dist/pdim-restore.mjs": {
+        "present": true,
+        "bytes": 30774
+      },
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 152692881
+      },
+      "node_modules.manifest.json": {
+        "present": true,
+        "bytes": 135
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 6300081
+      },
+      "app_remainder.manifest.json": {
+        "present": true,
+        "bytes": 156
+      }
+    },
+    "outputTail": [
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mWorkspaces-3U7uv7lX.js                \u001b[39m\u001b[1m\u001b[2m 43.94 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mAdmin-DMEmPJjN.js                     \u001b[39m\u001b[1m\u001b[2m 56.31 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mAIImageGenerator-BoK67xrB.js          \u001b[39m\u001b[1m\u001b[2m 60.74 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mvendor-state-CWRmHwqp.js              \u001b[39m\u001b[1m\u001b[2m 66.73 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mDashboard-BuoWHyo1.js                 \u001b[39m\u001b[1m\u001b[2m 93.49 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mvendor-utils-Dt-bGSkp.js              \u001b[39m\u001b[1m\u001b[2m 97.53 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mRoyalties-Dih92hec.js                 \u001b[39m\u001b[1m\u001b[2m101.64 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mindex-GylHC1Kr.js                     \u001b[39m\u001b[1m\u001b[2m118.23 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mvendor-animation-BK0l-nQy.js          \u001b[39m\u001b[1m\u001b[2m132.16 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mSettings-D9fgcUbi.js                  \u001b[39m\u001b[1m\u001b[2m157.96 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mindex.es-FD0jy60N.js                  \u001b[39m\u001b[1m\u001b[2m158.62 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mAnalytics-B16v0Z5t.js                 \u001b[39m\u001b[1m\u001b[2m186.44 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mhtml2canvas.esm-DXEQVQnt.js           \u001b[39m\u001b[1m\u001b[2m201.04 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mSocialMedia-CDRRyYbj.js               \u001b[39m\u001b[1m\u001b[2m225.73 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mAdvertisement-eHSG_exg.js             \u001b[39m\u001b[1m\u001b[2m250.55 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mMarketplace-r1FRW_fG.js               \u001b[39m\u001b[1m\u001b[2m307.97 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mjspdf.es.min-CpQXLmGu.js              \u001b[39m\u001b[1m\u001b[2m386.25 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mDistribution-CmblN51F.js              \u001b[39m\u001b[1m\u001b[2m426.43 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mvendor-charts-CBWsnd5r.js             \u001b[39m\u001b[1m\u001b[2m440.45 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mvendor-react-BagjvGkf.js              \u001b[39m\u001b[1m\u001b[2m601.22 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[2m../dist/public/\u001b[22m\u001b[2massets/\u001b[22m\u001b[36mstudio-BaIFhqcd.js                    \u001b[39m\u001b[1m\u001b[2m645.28 kB\u001b[22m\u001b[1m\u001b[22m",
+      "\u001b[32m✓ built in 24.18s\u001b[39m",
+      "   ✅ Vite build complete → dist/public/",
+      "==> Bundling server with esbuild → dist/index.mjs...",
+      "   ✅ Server bundle → dist/index.mjs",
+      "==> Bundling cluster entry with esbuild → dist/cluster.mjs...",
+      "   ✅ Cluster bundle → dist/cluster.mjs",
+      "✅ Build complete.",
+      "Python 3.12.13",
+      "   Installing Python deps (numpy, pillow, scipy, fastapi, uvicorn, pydantic)...",
+      "ERROR: Could not find a version that satisfies the requirement numpy (from versions: none)",
+      "ERROR: No matching distribution found for numpy",
+      "   WARNING: portable Python runtime build failed (Command failed: \"/home/runner/workspace/.local/production-simulation/runs/2026-09-17T08-43-27-758Z/app/python_runtime/bin/python3\" -m pip install --no-cache-dir --quiet numpy pillow \"scipy>=1.11.0\" \"fastapi>=0.100.0\" \"uvicorn[standard]>=0.23.0\" \"pydantic>=2.0.0\") — video/audio analysis will be disabled in production",
+      "==> Packing 1 capsule(s) concurrently across 4 CPU(s) → 4 zstd thread(s) each",
+      "==> Packing node_modules/ → node_modules.pdim (zstd-19, -T4, Extract & Boot)...",
+      "   ✅ node_modules/ packed (146MB) and removed from image",
+      "==> Scanned .dockerignore-survivor payload: 1574 file(s) remaining outside the four existing capsules and the boot bootstrap set (start.sh, .node_bin, scripts/boot-stub-server.mjs, scripts/port-contract.sh, scripts/check-port-contract.ts, dist/pdim-restore.mjs, dist/.db-indexes-ok, .replit, .git, node_modules, python_runtime, external/maxcore, external/pdim, node_modules.pdim, node_modules.manifest.json, python_runtime.pdim, python_runtime.manifest.json, external_maxcore.pdim, external_maxcore.manifest.json, external_pdim.pdim, external_pdim.manifest.json)",
+      "==> Packing 1574 remaining app files → app_remainder.pdim (zstd-19, -T4, Extract & Boot)...",
+      "   ✅ 1574 files packed (6MB) and removed from image",
+      "==> Pre-flight image size check: 0.32 GiB (0.17 GiB Repl payload + 0.15 GiB deduplicated Nix closure; 7/7 Nix roots accounted for; safety budget 7.5 GiB, hard limit 8 GiB)"
+    ],
+    "recoveredAfterOuterTimeout": true,
+    "nixPreflight": {
+      "totalGiB": 0.32,
+      "payloadGiB": 0.17,
+      "nixClosureGiB": 0.15,
+      "rootsAccounted": 7,
+      "rootsDiscovered": 7,
+      "scope": "sanitized simulation PATH/environment only; not a target image closure claim"
+    }
+  },
+  "capsuleRestore": {
+    "buildCapsules": {
+      "nodeModules": {
+        "present": true,
+        "bytes": 152692881
+      },
+      "appRemainder": {
+        "present": true,
+        "bytes": 6300081
+      },
+      "pythonRuntime": {
+        "present": false
+      },
+      "nodeModulesRemovedBeforeColdBoot": true,
+      "freshSourceBuild": true,
+      "recoveredAfterOuterTimeout": true
+    },
+    "manifestValidation": [
+      {
+        "capsule": "node_modules.pdim",
+        "manifest": "node_modules.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "f61a3fd76090914897df93ee59ee077f11d4024fcc426e7a8aed779df60db313",
+        "actualSha256": "f61a3fd76090914897df93ee59ee077f11d4024fcc426e7a8aed779df60db313",
+        "bytes": 152692881
+      },
+      {
+        "capsule": "app_remainder.pdim",
+        "manifest": "app_remainder.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "4057a8c61a0bd8c7e60d6b9365e33f3321ef7e1eb4180598a3a7aa098ac331c1",
+        "actualSha256": "4057a8c61a0bd8c7e60d6b9365e33f3321ef7e1eb4180598a3a7aa098ac331c1",
+        "bytes": 6300081
+      },
+      {
+        "capsule": "python_runtime.pdim",
+        "manifest": "python_runtime.manifest.json",
+        "historical": true,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "cc2e43690c3f461727e4cbf0f216596709728913d7d72836a3680b7afd45fd77",
+        "actualSha256": "cc2e43690c3f461727e4cbf0f216596709728913d7d72836a3680b7afd45fd77",
+        "bytes": 57559001,
+        "provenance": "historical compatibility capsule; not current-source/security evidence"
+      },
+      {
+        "capsule": "external_maxcore.pdim",
+        "manifest": "external_maxcore.manifest.json",
+        "historical": true,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "3ad9f05c3c10eeb701c2387c49f6661a3169fb07139aacd94bd5c1c739e44cb2",
+        "actualSha256": "3ad9f05c3c10eeb701c2387c49f6661a3169fb07139aacd94bd5c1c739e44cb2",
+        "bytes": 581706168
+      },
+      {
+        "capsule": "external_pdim.pdim",
+        "manifest": "external_pdim.manifest.json",
+        "historical": true,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "5d2be8f36d3039de7fe0051b988fe792ddf056c0d4448a1344cd08f2dc52be16",
+        "actualSha256": "5d2be8f36d3039de7fe0051b988fe792ddf056c0d4448a1344cd08f2dc52be16",
+        "bytes": 41051568
+      }
+    ],
+    "historicalCompatibility": [
+      {
+        "historical": true,
+        "capsule": "external_maxcore.pdim",
+        "manifest": "external_maxcore.manifest.json",
+        "sourceMtime": "2026-08-29T23:32:29.566Z",
+        "bytes": 581706168,
+        "manifestSha256": "3ad9f05c3c10eeb701c2387c49f6661a3169fb07139aacd94bd5c1c739e44cb2",
+        "actualSha256": "3ad9f05c3c10eeb701c2387c49f6661a3169fb07139aacd94bd5c1c739e44cb2",
+        "hashMatchesManifest": true,
+        "note": "Historical root capsule retained only for compatibility/background restore evidence; not a current-source build artifact."
+      },
+      {
+        "historical": true,
+        "capsule": "external_pdim.pdim",
+        "manifest": "external_pdim.manifest.json",
+        "sourceMtime": "2026-08-29T23:26:27.393Z",
+        "bytes": 41051568,
+        "manifestSha256": "5d2be8f36d3039de7fe0051b988fe792ddf056c0d4448a1344cd08f2dc52be16",
+        "actualSha256": "5d2be8f36d3039de7fe0051b988fe792ddf056c0d4448a1344cd08f2dc52be16",
+        "hashMatchesManifest": true,
+        "note": "Historical root capsule retained only for compatibility/background restore evidence; not a current-source build artifact."
+      },
+      {
+        "historical": true,
+        "capsule": "python_runtime.pdim",
+        "manifest": "python_runtime.manifest.json",
+        "sourceMtime": "2026-08-29T23:26:51.429Z",
+        "bytes": 57559001,
+        "manifestSha256": "cc2e43690c3f461727e4cbf0f216596709728913d7d72836a3680b7afd45fd77",
+        "actualSha256": "cc2e43690c3f461727e4cbf0f216596709728913d7d72836a3680b7afd45fd77",
+        "hashMatchesManifest": true,
+        "note": "Historical root capsule retained only for compatibility/background restore evidence; not a current-source build artifact."
+      }
+    ],
+    "coldCriticalRestore": {
+      "exitCode": 0,
+      "nodeModulesSentinel": true,
+      "appRemainderSentinel": true,
+      "appEntryPointsPresentAfterRestore": true,
+      "outputTail": [
+        "[pdim-restore] Extracting node_modules.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-17T08-43-27-758Z/app/.pdim-scratch-node_modules-6428/ (staging for node_modules/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for node_modules.pdim",
+        "[pdim-restore] Extracting app_remainder.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-17T08-43-27-758Z/app/.pdim-scratch-__app_remainder__-6428/ (staging app remainder) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for app_remainder.pdim",
+        "[pdim-restore] ✅ app remainder restored from app_remainder.pdim (83 top-level entries)",
+        "[pdim-restore] ✅ node_modules/ restored from node_modules.pdim",
+        "[pdim-restore] Critical capsules (node_modules, app remainder) restored."
+      ]
+    },
+    "coldBackgroundRestore": {
+      "exitCode": 0,
+      "maxcoreSentinel": true,
+      "pdimSentinel": true,
+      "outputTail": [
+        "[pdim-restore] Extracting python_runtime.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-17T08-43-27-758Z/app/.pdim-scratch-python_runtime-6491/ (staging for python_runtime/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for python_runtime.pdim",
+        "[pdim-restore] Extracting external_maxcore.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-17T08-43-27-758Z/app/.pdim-scratch-external_maxcore-6491/ (staging for external/maxcore/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for external_maxcore.pdim",
+        "[pdim-restore] Extracting external_pdim.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-17T08-43-27-758Z/app/.pdim-scratch-external_pdim-6491/ (staging for external/pdim/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for external_pdim.pdim",
+        "[pdim-restore] ✅ python_runtime/ restored from python_runtime.pdim",
+        "[pdim-restore] ✅ external/pdim/ restored from external_pdim.pdim",
+        "[pdim-restore] ✅ external/maxcore/ restored from external_maxcore.pdim",
+        "[pdim-restore] Background capsules processed."
+      ],
+      "historicalInputs": true,
+      "securityReadiness": "not assessed; historical pre-security-fix capsules are compatibility-only"
+    },
+    "warmIdempotentRestore": {
+      "exitCode": 0,
+      "outputTail": [
+        "[pdim-restore] node_modules/ already restored — skipping",
+        "[pdim-restore] python_runtime/ already restored — skipping",
+        "[pdim-restore] external/maxcore/ already restored — skipping",
+        "[pdim-restore] external/pdim/ already restored — skipping",
+        "[pdim-restore] app remainder already restored — skipping",
+        "[pdim-restore] All capsules processed."
+      ],
+      "skippedExistingSentinels": true
+    }
+  },
+  "imageSize": {
+    "totalBytes": 2122312721,
+    "totalGiB": 1.977,
+    "capsules": {
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 152692881
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 6300081
+      },
+      "python_runtime.pdim": {
+        "present": true,
+        "bytes": 57559001
+      },
+      "external_maxcore.pdim": {
+        "present": true,
+        "bytes": 581706168
+      },
+      "external_pdim.pdim": {
+        "present": true,
+        "bytes": 41051568
+      }
+    },
+    "note": "Disposable simulation image footprint only; historical external capsules are labeled separately and are not current-source build output.",
+    "nixPreflight": {
+      "totalGiB": 0.32,
+      "payloadGiB": 0.17,
+      "nixClosureGiB": 0.15,
+      "rootsAccounted": 7,
+      "rootsDiscovered": 7,
+      "scope": "sanitized simulation PATH/environment only; not a target image closure claim"
+    }
+  },
+  "productionReadiness": {
+    "publishReady": false,
+    "reason": "No publish-ready claim: external MaxCore/PDIM capsules are historical compatibility inputs and are not current-source/security evidence."
+  },
+  "startup": {
+    "exitCode": 0,
+    "signal": null,
+    "liveness": {
+      "observed": true,
+      "transportOnly": true,
+      "realServer": false,
+      "jsonObserved": false,
+      "startupResponseObserved": true,
+      "samples": [
+        {
+          "atMs": 35,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 304,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 557,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 810,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 1062,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 1314,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 1567,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 1820,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 2072,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 2324,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 2575,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 2827,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3078,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3332,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3583,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3835,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 4087,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 4338,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 4589,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 4841,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 5093,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 5345,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 5596,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 5849,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 6100,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 6381,
+          "status": 404,
+          "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/"
+        },
+        {
+          "atMs": 10644,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 14895,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 19147,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 23401,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 27656,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 31907,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 36158,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 40409,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 44660,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 48911,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 53162,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 57413,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 61664,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 65915,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 70166,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 74417,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 78668,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 82919,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 87170,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 91421,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 95671,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 99922,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 104172,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 108431,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 112684,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 116938,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 121190,
+          "status": null,
+          "body": ""
+        }
+      ],
+      "earlyAppResponse": true
+    },
+    "readiness": {
+      "observed": false,
+      "fullReady": false,
+      "statusCodes": [],
+      "lastBody": null,
+      "note": "Only the early plain-text startup response was observed; JSON liveness was never reached. /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used."
+    },
+    "attempts": [
+      {
+        "attempt": 1,
+        "exitCode": 0,
+        "signal": null,
+        "liveness": {
+          "observed": true,
+          "transportOnly": true,
+          "realServer": true,
+          "jsonObserved": false,
+          "startupResponseObserved": true,
+          "samples": [
+            {
+              "atMs": 35,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 304,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 557,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 810,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1062,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1314,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1567,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 1820,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2072,
+              "status": 200,
+              "body": "starting up"
+            },
+            {
+              "atMs": 2324,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2575,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 2827,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3078,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3332,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3583,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 3835,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4087,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4338,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4589,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 4841,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5093,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5345,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5596,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 5849,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 6100,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 6381,
+              "status": 404,
+              "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/"
+            },
+            {
+              "atMs": 10644,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 14895,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 19147,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 23401,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 27656,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 31907,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 36158,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 40409,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 44660,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 48911,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 53162,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 57413,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 61664,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 65915,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 70166,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 74417,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 78668,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 82919,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 87170,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 91421,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 95671,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 99922,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 104172,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 108431,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 112684,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 116938,
+              "status": null,
+              "body": ""
+            },
+            {
+              "atMs": 121190,
+              "status": null,
+              "body": ""
+            }
+          ]
+        },
+        "readiness": {
+          "observed": false,
+          "fullReady": false,
+          "statusCodes": [],
+          "lastBody": null,
+          "note": "Only the early plain-text startup response was observed; JSON liveness was never reached. /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used."
+        },
+        "logPath": "logs/start.log"
+      }
+    ],
+    "dependencyEvidence": {
+      "database": "required startup probe failed against postgresql://127.0.0.1:9; Database connection required",
+      "redis": "ECONNREFUSED 127.0.0.1:9 with bounded retry exhaustion",
+      "maxcore": "MAXCORE_LOCAL=0; no live MaxCore endpoint provided",
+      "storage": "loopback mock endpoint only; no third-party storage target"
+    },
+    "blockedReason": "Database startup probe exhausted retries against postgresql://127.0.0.1:9 and terminated the app before initialized JSON health or /api/ready; Redis also refused 127.0.0.1:9."
+  },
+  "failures": [
+    {
+      "stage": "startup",
+      "message": "STARTUP_BLOCKED_BY_MOCK_DEPENDENCIES: early app response only; initialized JSON liveness and /api/ready were not observed before required DB probe failure (postgresql://127.0.0.1:9; Redis 127.0.0.1:9 refused)."
+    }
+  ],
+  "result": "STARTUP_BLOCKED_BY_MOCK_DEPENDENCIES",
+  "completedStages": [
+    "copy",
+    "build",
+    "size",
+    "restore",
+    "startup"
+  ],
+  "pythonCapability": {
+    "status": "not_evaluated_offline",
+    "note": "PIP_NO_INDEX=1 intentionally prevented package-index access in this offline simulation; this is not evidence that production Python dependencies fail."
+  }
+}

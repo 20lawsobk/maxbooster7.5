@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name=".: comma encoding handles JSON body, encodeValuesOnly=false" time="0.001717" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at Array.join (&lt;anonymous>)
+      at stringify (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:156:50)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.start (node:internal/test_runner/test:944:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+}
+		</failure>
+	</testcase>
+	<testcase name=".: comma encoding handles JSON body, encodeValuesOnly=true" time="0.000247" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at String (&lt;anonymous>)
+      at encode (/workspace/maxbooster7.5/node_modules/qs/lib/utils.js:229:18)
+      at /workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:153:40
+      at Object.maybeMap (/workspace/maxbooster7.5/node_modules/qs/lib/utils.js:368:37)
+      at stringify (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:152:25)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+}
+		</failure>
+	</testcase>
+	<testcase name=".: comma encoding handles prototype-preserving query, encodeValuesOnly=false" time="0.000892" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at Array.join (&lt;anonymous>)
+      at stringify (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:156:50)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+}
+		</failure>
+	</testcase>
+	<testcase name=".: comma encoding handles prototype-preserving query, encodeValuesOnly=true" time="0.000187" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at String (&lt;anonymous>)
+      at encode (/workspace/maxbooster7.5/node_modules/qs/lib/utils.js:229:18)
+      at /workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:153:40
+      at Object.maybeMap (/workspace/maxbooster7.5/node_modules/qs/lib/utils.js:368:37)
+      at stringify (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:152:25)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+}
+		</failure>
+	</testcase>
+	<testcase name=".: comma encoding handles null-prototype query, encodeValuesOnly=false" time="0.000392" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at Array.join (&lt;anonymous>)
+      at stringify (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:156:50)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+}
+		</failure>
+	</testcase>
+	<testcase name=".: comma encoding handles null-prototype query, encodeValuesOnly=true" time="0.000261" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at String (&lt;anonymous>)
+      at encode (/workspace/maxbooster7.5/node_modules/qs/lib/utils.js:229:18)
+      at /workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:153:40
+      at Object.maybeMap (/workspace/maxbooster7.5/node_modules/qs/lib/utils.js:368:37)
+      at stringify (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:152:25)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+}
+		</failure>
+	</testcase>
+	<testcase name=".: literal parameters, nested objects and ordinary array formats retain their values" time="0.001701" classname="test"/>
+	<testcase name=".: actual Express query, form and JSON consumers return serialized output and stay healthy" time="0.084422" classname="test" failure="hostile comma input must not fail the request500 !== 200">
+		<failure type="testCodeFailure" message="hostile comma input must not fail the request500 !== 200">
+[Error [ERR_TEST_FAILURE]: hostile comma input must not fail the request
+
+500 !== 200
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: hostile comma input must not fail the request
+  
+  500 !== 200
+  
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:66:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false" time="0.000753" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at Array.join (&lt;anonymous>)
+      at stringify (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:156:50)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true" time="0.000544" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at String (&lt;anonymous>)
+      at encode (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:229:18)
+      at /workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:153:40
+      at Object.maybeMap (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:368:37)
+      at stringify (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:152:25)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false" time="0.000867" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at Array.join (&lt;anonymous>)
+      at stringify (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:156:50)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true" time="0.000176" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at String (&lt;anonymous>)
+      at encode (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:229:18)
+      at /workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:153:40
+      at Object.maybeMap (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:368:37)
+      at stringify (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:152:25)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false" time="0.000338" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at Array.join (&lt;anonymous>)
+      at stringify (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:156:50)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true" time="0.000133" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at String (&lt;anonymous>)
+      at encode (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:229:18)
+      at /workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:153:40
+      at Object.maybeMap (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:368:37)
+      at stringify (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:152:25)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/maxcore/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values" time="0.001174" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy" time="0.044544" classname="test" failure="hostile comma input must not fail the request500 !== 200">
+		<failure type="testCodeFailure" message="hostile comma input must not fail the request500 !== 200">
+[Error [ERR_TEST_FAILURE]: hostile comma input must not fail the request
+
+500 !== 200
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: hostile comma input must not fail the request
+  
+  500 !== 200
+  
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:66:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false" time="0.000484" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at Array.join (&lt;anonymous>)
+      at stringify (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:156:50)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true" time="0.000353" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at String (&lt;anonymous>)
+      at encode (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:229:18)
+      at /workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:153:40
+      at Object.maybeMap (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:368:37)
+      at stringify (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:152:25)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false" time="0.000893" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at Array.join (&lt;anonymous>)
+      at stringify (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:156:50)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true" time="0.000140" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at String (&lt;anonymous>)
+      at encode (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:229:18)
+      at /workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:153:40
+      at Object.maybeMap (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:368:37)
+      at stringify (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:152:25)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false" time="0.000291" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at Array.join (&lt;anonymous>)
+      at stringify (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:156:50)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true" time="0.000189" classname="test" failure="Cannot convert object to primitive value">
+		<failure type="testCodeFailure" message="Cannot convert object to primitive value">
+[Error [ERR_TEST_FAILURE]: Cannot convert object to primitive value] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: Cannot convert object to primitive value
+      at String (&lt;anonymous>)
+      at encode (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:229:18)
+      at /workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:153:40
+      at Object.maybeMap (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js:368:37)
+      at stringify (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:152:25)
+      at module.exports [as stringify] (/workspace/maxbooster7.5/external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js:340:27)
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:23:27)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+}
+		</failure>
+	</testcase>
+	<testcase name="external/pdim/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values" time="0.000966" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy" time="0.047729" classname="test" failure="hostile comma input must not fail the request500 !== 200">
+		<failure type="testCodeFailure" message="hostile comma input must not fail the request500 !== 200">
+[Error [ERR_TEST_FAILURE]: hostile comma input must not fail the request
+
+500 !== 200
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: hostile comma input must not fail the request
+  
+  500 !== 200
+  
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/qs-security-contract.test.mjs:66:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<!-- tests 24 -->
+	<!-- suites 0 -->
+	<!-- pass 3 -->
+	<!-- fail 21 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 333.417289 -->
+</testsuites>

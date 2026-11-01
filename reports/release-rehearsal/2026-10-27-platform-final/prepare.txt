@@ -1,0 +1,1038 @@
+
+> max-booster@3.0.0 release:prepare
+> node --import tsx script/prepare-release.ts
+
+[release] Non-destructive preparation: one staging area; serial capsule verification
+[release] Checking 4.0 GiB scratch allocation (not multiple project copies)
+{
+  "ready": true,
+  "failures": [],
+  "occurrences": [
+    {
+      "package": "@babel/core",
+      "version": "7.29.7",
+      "path": "node_modules/@babel/core/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@capacitor/android",
+      "version": "8.5.3",
+      "path": "node_modules/@capacitor/android/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "tar",
+      "version": "7.5.22",
+      "path": "node_modules/@capacitor/cli/node_modules/tar/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@capacitor/ios",
+      "version": "8.5.3",
+      "path": "node_modules/@capacitor/ios/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@esbuild/linux-x64",
+      "version": "0.28.2",
+      "path": "node_modules/@esbuild/linux-x64/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "uuid",
+      "version": "11.1.1",
+      "path": "node_modules/@google-cloud/storage/node_modules/uuid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@vitest/mocker",
+      "version": "4.1.12",
+      "path": "node_modules/@vitest/mocker/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "version": "0.9.12",
+      "path": "node_modules/@xmldom/xmldom/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "tar",
+      "version": "7.5.22",
+      "path": "node_modules/app-builder-lib/node_modules/tar/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "axios",
+      "version": "1.20.0",
+      "path": "node_modules/axios/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "baseline-browser-mapping",
+      "version": "2.11.15",
+      "path": "node_modules/baseline-browser-mapping/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "body-parser",
+      "version": "2.4.0",
+      "path": "node_modules/body-parser/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "brace-expansion",
+      "version": "5.0.12",
+      "path": "node_modules/brace-expansion/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "browserslist",
+      "version": "4.28.8",
+      "path": "node_modules/browserslist/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "compression",
+      "version": "1.8.2",
+      "path": "node_modules/compression/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "csv-parse",
+      "version": "7.0.2",
+      "path": "node_modules/csv-parse/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "dompurify",
+      "version": "3.4.17",
+      "path": "node_modules/dompurify/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "electron",
+      "version": "43.8.3",
+      "path": "node_modules/electron/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "esbuild",
+      "version": "0.28.2",
+      "path": "node_modules/esbuild/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "uuid",
+      "version": "11.1.1",
+      "path": "node_modules/exceljs/node_modules/uuid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "fast-copy",
+      "version": "4.1.2",
+      "path": "node_modules/fast-copy/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "fast-uri",
+      "version": "3.1.9",
+      "path": "node_modules/fast-uri/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "follow-redirects",
+      "version": "1.16.1",
+      "path": "node_modules/follow-redirects/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "uuid",
+      "version": "11.1.1",
+      "path": "node_modules/gaxios/node_modules/uuid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "ip-address",
+      "version": "10.7.4",
+      "path": "node_modules/ip-address/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "js-yaml",
+      "version": "4.3.2",
+      "path": "node_modules/js-yaml/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "multer",
+      "version": "2.5.0",
+      "path": "node_modules/multer/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "nanoid",
+      "version": "5.1.16",
+      "path": "node_modules/nanoid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "tar",
+      "version": "7.5.22",
+      "path": "node_modules/node-gyp/node_modules/tar/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "nanoid",
+      "version": "3.3.18",
+      "path": "node_modules/postcss/node_modules/nanoid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "postcss",
+      "version": "8.5.26",
+      "path": "node_modules/postcss/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "postcss-selector-parser",
+      "version": "7.1.6",
+      "path": "node_modules/postcss-selector-parser/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "proxy-addr",
+      "version": "2.0.8",
+      "path": "node_modules/proxy-addr/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "qs",
+      "version": "6.16.0",
+      "path": "node_modules/qs/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "sharp",
+      "version": "0.35.5",
+      "path": "node_modules/sharp/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "source-map-js",
+      "version": "1.2.2",
+      "path": "node_modules/source-map-js/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "yaml",
+      "version": "1.10.3",
+      "path": "node_modules/swagger-jsdoc/node_modules/yaml/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "undici",
+      "version": "7.30.1",
+      "path": "node_modules/undici/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "uuid",
+      "version": "14.0.2",
+      "path": "node_modules/uuid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "vite",
+      "version": "7.3.7",
+      "path": "node_modules/vite/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "vitest",
+      "version": "4.1.12",
+      "path": "node_modules/vitest/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "uuid",
+      "version": "11.1.1",
+      "path": "node_modules/xcode/node_modules/uuid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@babel/core",
+      "version": "7.29.7",
+      "path": "external/maxcore/node_modules/.pnpm/@babel+core@7.29.7/node_modules/@babel/core/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "browserslist",
+      "version": "4.28.8",
+      "path": "external/maxcore/node_modules/.pnpm/browserslist@4.28.8/node_modules/browserslist/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@esbuild/linux-x64",
+      "version": "0.28.1",
+      "path": "external/maxcore/node_modules/.pnpm/@esbuild+linux-x64@0.28.1/node_modules/@esbuild/linux-x64/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "esbuild",
+      "version": "0.28.1",
+      "path": "external/maxcore/node_modules/.pnpm/esbuild@0.28.1/node_modules/esbuild/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "yaml",
+      "version": "2.9.0",
+      "path": "external/maxcore/node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "source-map-js",
+      "version": "1.2.2",
+      "path": "external/maxcore/node_modules/.pnpm/source-map-js@1.2.2/node_modules/source-map-js/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "postcss-selector-parser",
+      "version": "7.1.6",
+      "path": "external/maxcore/node_modules/.pnpm/postcss-selector-parser@7.1.6/node_modules/postcss-selector-parser/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "vite",
+      "version": "7.3.7",
+      "path": "external/maxcore/node_modules/.pnpm/vite@7.3.7_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.23.13_yaml@2.9.0/node_modules/vite/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "fast-uri",
+      "version": "3.1.9",
+      "path": "external/maxcore/node_modules/.pnpm/fast-uri@3.1.9/node_modules/fast-uri/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "baseline-browser-mapping",
+      "version": "2.11.15",
+      "path": "external/maxcore/node_modules/.pnpm/baseline-browser-mapping@2.11.15/node_modules/baseline-browser-mapping/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "body-parser",
+      "version": "2.4.0",
+      "path": "external/maxcore/node_modules/.pnpm/body-parser@2.4.0/node_modules/body-parser/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "qs",
+      "version": "6.16.0",
+      "path": "external/maxcore/node_modules/.pnpm/qs@6.16.0/node_modules/qs/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "brace-expansion",
+      "version": "2.1.7",
+      "path": "external/maxcore/node_modules/.pnpm/brace-expansion@2.1.7/node_modules/brace-expansion/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "compression",
+      "version": "1.8.2",
+      "path": "external/maxcore/node_modules/.pnpm/compression@1.8.2/node_modules/compression/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "ip-address",
+      "version": "10.7.4",
+      "path": "external/maxcore/node_modules/.pnpm/ip-address@10.7.4/node_modules/ip-address/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "proxy-addr",
+      "version": "2.0.8",
+      "path": "external/maxcore/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "js-yaml",
+      "version": "4.3.2",
+      "path": "external/maxcore/node_modules/.pnpm/js-yaml@4.3.2/node_modules/js-yaml/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "linkify-it",
+      "version": "5.0.2",
+      "path": "external/maxcore/node_modules/.pnpm/linkify-it@5.0.2/node_modules/linkify-it/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "markdown-it",
+      "version": "14.3.2",
+      "path": "external/maxcore/node_modules/.pnpm/markdown-it@14.3.2/node_modules/markdown-it/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "nanoid",
+      "version": "3.3.18",
+      "path": "external/maxcore/node_modules/.pnpm/nanoid@3.3.18/node_modules/nanoid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "undici",
+      "version": "6.29.1",
+      "path": "external/maxcore/node_modules/.pnpm/undici@6.29.1/node_modules/undici/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "orval",
+      "version": "8.33.0",
+      "path": "external/maxcore/node_modules/.pnpm/orval@8.33.0_@tanstack+react-query@5.90.21_react@19.1.0__prettier@3.8.1_typescript@5.9.3_zod@4.6.7/node_modules/orval/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "postcss",
+      "version": "8.5.26",
+      "path": "external/maxcore/node_modules/.pnpm/postcss@8.5.26/node_modules/postcss/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@babel/core",
+      "version": "7.29.7",
+      "path": "external/pdim/node_modules/.pnpm/@babel+core@7.29.7/node_modules/@babel/core/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "browserslist",
+      "version": "4.28.8",
+      "path": "external/pdim/node_modules/.pnpm/browserslist@4.28.8/node_modules/browserslist/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@esbuild/linux-x64",
+      "version": "0.28.1",
+      "path": "external/pdim/node_modules/.pnpm/@esbuild+linux-x64@0.28.1/node_modules/@esbuild/linux-x64/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "esbuild",
+      "version": "0.28.1",
+      "path": "external/pdim/node_modules/.pnpm/esbuild@0.28.1/node_modules/esbuild/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "undici",
+      "version": "7.30.1",
+      "path": "external/pdim/node_modules/.pnpm/undici@7.30.1/node_modules/undici/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "yaml",
+      "version": "2.9.1",
+      "path": "external/pdim/node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "nanoid",
+      "version": "5.1.16",
+      "path": "external/pdim/node_modules/.pnpm/nanoid@5.1.16/node_modules/nanoid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "source-map-js",
+      "version": "1.2.2",
+      "path": "external/pdim/node_modules/.pnpm/source-map-js@1.2.2/node_modules/source-map-js/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "postcss-selector-parser",
+      "version": "7.1.6",
+      "path": "external/pdim/node_modules/.pnpm/postcss-selector-parser@7.1.6/node_modules/postcss-selector-parser/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "vite",
+      "version": "7.3.7",
+      "path": "external/pdim/node_modules/.pnpm/vite@7.3.7_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.9.1/node_modules/vite/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "fast-uri",
+      "version": "3.1.9",
+      "path": "external/pdim/node_modules/.pnpm/fast-uri@3.1.9/node_modules/fast-uri/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "baseline-browser-mapping",
+      "version": "2.11.15",
+      "path": "external/pdim/node_modules/.pnpm/baseline-browser-mapping@2.11.15/node_modules/baseline-browser-mapping/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "body-parser",
+      "version": "2.4.0",
+      "path": "external/pdim/node_modules/.pnpm/body-parser@2.4.0/node_modules/body-parser/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "qs",
+      "version": "6.16.0",
+      "path": "external/pdim/node_modules/.pnpm/qs@6.16.0/node_modules/qs/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "compression",
+      "version": "1.8.2",
+      "path": "external/pdim/node_modules/.pnpm/compression@1.8.2/node_modules/compression/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "proxy-addr",
+      "version": "2.0.8",
+      "path": "external/pdim/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "uuid",
+      "version": "11.1.1",
+      "path": "external/pdim/node_modules/.pnpm/uuid@11.1.1/node_modules/uuid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "js-yaml",
+      "version": "4.3.2",
+      "path": "external/pdim/node_modules/.pnpm/js-yaml@4.3.2/node_modules/js-yaml/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "multer",
+      "version": "2.5.0",
+      "path": "external/pdim/node_modules/.pnpm/multer@2.5.0/node_modules/multer/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "nanoid",
+      "version": "3.3.18",
+      "path": "external/pdim/node_modules/.pnpm/nanoid@3.3.18/node_modules/nanoid/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "orval",
+      "version": "8.39.0",
+      "path": "external/pdim/node_modules/.pnpm/orval@8.39.0_@tanstack+react-query@5.90.21_react@19.1.0__prettier@3.8.1_typescript@5.9.3_zod@4.6.7/node_modules/orval/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "postcss",
+      "version": "8.5.26",
+      "path": "external/pdim/node_modules/.pnpm/postcss@8.5.26/node_modules/postcss/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@esbuild/linux-x64",
+      "version": "0.28.2",
+      "path": "dns-os/node_modules/@esbuild/linux-x64/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "fast-uri",
+      "version": "3.1.9",
+      "path": "dns-os/node_modules/ajv/node_modules/fast-uri/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "esbuild",
+      "version": "0.28.2",
+      "path": "dns-os/node_modules/esbuild/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "fast-uri",
+      "version": "4.2.3",
+      "path": "dns-os/node_modules/fast-uri/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "fastify",
+      "version": "5.12.7",
+      "path": "dns-os/node_modules/fastify/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "@esbuild/linux-x64",
+      "version": "0.28.2",
+      "path": "tls-proxy/node_modules/@esbuild/linux-x64/package.json",
+      "consumer": "installed-tree"
+    },
+    {
+      "package": "esbuild",
+      "version": "0.28.2",
+      "path": "tls-proxy/node_modules/esbuild/package.json",
+      "consumer": "installed-tree"
+    }
+  ],
+  "resolutions": [
+    {
+      "consumer": "",
+      "package": "follow-redirects",
+      "version": "1.16.1",
+      "path": "node_modules/follow-redirects/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "vite",
+      "version": "7.3.7",
+      "path": "node_modules/vite/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "proxy-addr",
+      "version": "2.0.8",
+      "path": "node_modules/proxy-addr/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "source-map-js",
+      "version": "1.2.2",
+      "path": "node_modules/source-map-js/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "compression",
+      "version": "1.8.2",
+      "path": "node_modules/compression/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "fast-copy",
+      "version": "4.1.2",
+      "path": "node_modules/fast-copy/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "postcss-selector-parser",
+      "version": "7.1.6",
+      "path": "node_modules/postcss-selector-parser/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "@capacitor/android",
+      "version": "8.5.3",
+      "path": "node_modules/@capacitor/android/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "@capacitor/ios",
+      "version": "8.5.3",
+      "path": "node_modules/@capacitor/ios/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "axios",
+      "version": "1.20.0",
+      "path": "node_modules/axios/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "ip-address",
+      "version": "10.7.4",
+      "path": "node_modules/ip-address/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "undici",
+      "version": "7.30.1",
+      "path": "node_modules/undici/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "electron",
+      "version": "43.8.3",
+      "path": "node_modules/electron/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "fast-uri",
+      "version": "3.1.9",
+      "path": "node_modules/fast-uri/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "js-yaml",
+      "version": "4.3.2",
+      "path": "node_modules/js-yaml/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "qs",
+      "version": "6.16.0",
+      "path": "node_modules/qs/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "multer",
+      "version": "2.5.0",
+      "path": "node_modules/multer/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "@xmldom/xmldom",
+      "version": "0.9.12",
+      "path": "node_modules/@xmldom/xmldom/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "esbuild",
+      "version": "0.28.2",
+      "path": "node_modules/esbuild/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "@esbuild/linux-x64",
+      "version": "0.28.2",
+      "path": "node_modules/@esbuild/linux-x64/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "sharp",
+      "version": "0.35.5",
+      "path": "node_modules/sharp/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "postcss",
+      "version": "8.5.26",
+      "path": "node_modules/postcss/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "browserslist",
+      "version": "4.28.8",
+      "path": "node_modules/browserslist/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "baseline-browser-mapping",
+      "version": "2.11.15",
+      "path": "node_modules/baseline-browser-mapping/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "@babel/core",
+      "version": "7.29.7",
+      "path": "node_modules/@babel/core/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "brace-expansion",
+      "version": "5.0.12",
+      "path": "node_modules/brace-expansion/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "nanoid",
+      "version": "5.1.16",
+      "path": "node_modules/nanoid/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "uuid",
+      "version": "14.0.2",
+      "path": "node_modules/uuid/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "dompurify",
+      "version": "3.4.17",
+      "path": "node_modules/dompurify/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "body-parser",
+      "version": "2.4.0",
+      "path": "node_modules/body-parser/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "vitest",
+      "version": "4.1.12",
+      "path": "node_modules/vitest/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "@vitest/mocker",
+      "version": "4.1.12",
+      "path": "node_modules/@vitest/mocker/package.json"
+    },
+    {
+      "consumer": "",
+      "package": "csv-parse",
+      "version": "7.0.2",
+      "path": "node_modules/csv-parse/package.json"
+    },
+    {
+      "consumer": "external/maxcore/artifacts/api-server",
+      "package": "compression",
+      "version": "1.8.2",
+      "path": "external/maxcore/node_modules/.pnpm/compression@1.8.2/node_modules/compression/package.json"
+    },
+    {
+      "consumer": "external/maxcore/artifacts/api-server",
+      "package": "undici",
+      "version": "6.29.1",
+      "path": "external/maxcore/node_modules/.pnpm/undici@6.29.1/node_modules/undici/package.json"
+    },
+    {
+      "consumer": "external/maxcore/artifacts/api-server",
+      "package": "esbuild",
+      "version": "0.28.1",
+      "path": "external/maxcore/node_modules/.pnpm/esbuild@0.28.1/node_modules/esbuild/package.json"
+    },
+    {
+      "consumer": "external/pdim/artifacts/api-server",
+      "package": "compression",
+      "version": "1.8.2",
+      "path": "external/pdim/node_modules/.pnpm/compression@1.8.2/node_modules/compression/package.json"
+    },
+    {
+      "consumer": "external/pdim/artifacts/api-server",
+      "package": "multer",
+      "version": "2.5.0",
+      "path": "external/pdim/node_modules/.pnpm/multer@2.5.0/node_modules/multer/package.json"
+    },
+    {
+      "consumer": "external/pdim/artifacts/api-server",
+      "package": "esbuild",
+      "version": "0.28.1",
+      "path": "external/pdim/node_modules/.pnpm/esbuild@0.28.1/node_modules/esbuild/package.json"
+    },
+    {
+      "consumer": "dns-os",
+      "package": "fastify",
+      "version": "5.12.7",
+      "path": "dns-os/node_modules/fastify/package.json"
+    },
+    {
+      "consumer": "dns-os",
+      "package": "fast-uri",
+      "version": "4.2.3",
+      "path": "dns-os/node_modules/fast-uri/package.json"
+    },
+    {
+      "consumer": "dns-os",
+      "package": "esbuild",
+      "version": "0.28.2",
+      "path": "dns-os/node_modules/esbuild/package.json"
+    },
+    {
+      "consumer": "dns-os",
+      "package": "@esbuild/linux-x64",
+      "version": "0.28.2",
+      "path": "dns-os/node_modules/@esbuild/linux-x64/package.json"
+    },
+    {
+      "consumer": "dns-os/services/dns-api",
+      "package": "fastify",
+      "version": "5.12.7",
+      "path": "dns-os/node_modules/fastify/package.json"
+    },
+    {
+      "consumer": "dns-os/services/dns-api",
+      "package": "fast-uri",
+      "version": "4.2.3",
+      "path": "dns-os/node_modules/fast-uri/package.json"
+    },
+    {
+      "consumer": "dns-os/services/dns-api",
+      "package": "esbuild",
+      "version": "0.28.2",
+      "path": "dns-os/node_modules/esbuild/package.json"
+    },
+    {
+      "consumer": "dns-os/services/dns-api",
+      "package": "@esbuild/linux-x64",
+      "version": "0.28.2",
+      "path": "dns-os/node_modules/@esbuild/linux-x64/package.json"
+    },
+    {
+      "consumer": "tls-proxy",
+      "package": "esbuild",
+      "version": "0.28.2",
+      "path": "tls-proxy/node_modules/esbuild/package.json"
+    },
+    {
+      "consumer": "tls-proxy",
+      "package": "@esbuild/linux-x64",
+      "version": "0.28.2",
+      "path": "tls-proxy/node_modules/@esbuild/linux-x64/package.json"
+    }
+  ]
+}
+vite v7.3.7 building client environment for production...
+transforming...
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/zod/v4/core/regexes.js (74:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+✓ 5058 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /workspace/maxbooster7.5/client/src/i18n/locales/en.json is dynamically imported by /workspace/maxbooster7.5/client/src/i18n/config.ts but also statically imported by /workspace/maxbooster7.5/client/src/i18n/config.ts, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) /workspace/maxbooster7.5/client/src/lib/queryClient.ts is dynamically imported by /workspace/maxbooster7.5/client/src/lib/errorService.ts but also statically imported by /workspace/maxbooster7.5/client/src/components/achievements/AchievementNotification.tsx, /workspace/maxbooster7.5/client/src/components/achievements/StreakCounter.tsx, /workspace/maxbooster7.5/client/src/components/advertising/CreativeVariantGenerator.tsx, /workspace/maxbooster7.5/client/src/components/auth/AuthProvider.tsx, /workspace/maxbooster7.5/client/src/components/auth/InactivityManager.tsx, /workspace/maxbooster7.5/client/src/components/auth/TokenRefreshHandler.tsx, /workspace/maxbooster7.5/client/src/components/automations/CustomWorkflowBuilder.tsx, /workspace/maxbooster7.5/client/src/components/autonomous/autonomous-dashboard.tsx, /workspace/maxbooster7.5/client/src/components/autopilot/AutopilotKnowledgeBase.tsx, /workspace/maxbooster7.5/client/src/components/autopilot/AutopilotPreferences.tsx, /workspace/maxbooster7.5/client/src/components/autopilot/autopilot-dashboard.tsx, /workspace/maxbooster7.5/client/src/components/collaboration/CollaboratorCard.tsx, /workspace/maxbooster7.5/client/src/components/content/AIImageGenerator.tsx, /workspace/maxbooster7.5/client/src/components/content/ContentAnalyzer.tsx, /workspace/maxbooster7.5/client/src/components/content/LocalMediaRenderer.tsx, /workspace/maxbooster7.5/client/src/components/content/ServerVideoGenerator.tsx, /workspace/maxbooster7.5/client/src/components/contracts/ContractBuilder.tsx, /workspace/maxbooster7.5/client/src/components/dashboard/AICareerCoach.tsx, /workspace/maxbooster7.5/client/src/components/dashboard/LoopHealthScore.tsx, /workspace/maxbooster7.5/client/src/components/dashboard/SmartNextActionWidget.tsx, /workspace/maxbooster7.5/client/src/components/dialogs/ChangePasswordDialog.tsx, /workspace/maxbooster7.5/client/src/components/dialogs/DeleteAccountDialog.tsx, /workspace/maxbooster7.5/client/src/components/dialogs/PaymentUpdateDialog.tsx, /workspace/maxbooster7.5/client/src/components/dialogs/TwoFactorDisableDialog.tsx, /workspace/maxbooster7.5/client/src/components/dialogs/TwoFactorSetupDialog.tsx, /workspace/maxbooster7.5/client/src/components/distribution/ArtistProfileManager.tsx, /workspace/maxbooster7.5/client/src/components/distribution/AutoArtistSync.tsx, /workspace/maxbooster7.5/client/src/components/distribution/AutomatedQC.tsx, /workspace/maxbooster7.5/client/src/components/distribution/CatalogMigration.tsx, /workspace/maxbooster7.5/client/src/components/distribution/ContentIDManager.tsx, /workspace/maxbooster7.5/client/src/components/distribution/DataTransferWizard.tsx, /workspace/maxbooster7.5/client/src/components/distribution/EarningsReconciliation.tsx, /workspace/maxbooster7.5/client/src/components/distribution/EmbedCodeGenerator.tsx, /workspace/maxbooster7.5/client/src/components/distribution/HyperFollowBuilder.tsx, /workspace/maxbooster7.5/client/src/components/distribution/ISRCManager.tsx, /workspace/maxbooster7.5/client/src/components/distribution/ReleaseWizard.tsx, /workspace/maxbooster7.5/client/src/components/distribution/SubmissionStatusTracker.tsx, /workspace/maxbooster7.5/client/src/components/distribution/TakedownManager.tsx, /workspace/maxbooster7.5/client/src/components/marketplace/BogoPromotionsManager.tsx, /workspace/maxbooster7.5/client/src/components/marketplace/ForYouFeed.tsx, /workspace/maxbooster7.5/client/src/components/marketplace/PayoutDashboard.tsx, /workspace/maxbooster7.5/client/src/components/marketplace/ProducerProfile.tsx, /workspace/maxbooster7.5/client/src/components/marketplace/StorefrontBuilder.tsx, /workspace/maxbooster7.5/client/src/components/marketplace/StorefrontDnsZoneManager.tsx, /workspace/maxbooster7.5/client/src/components/merch/MerchCheckout.tsx, /workspace/maxbooster7.5/client/src/components/notifications/NotificationCenter.tsx, /workspace/maxbooster7.5/client/src/components/notifications/NotificationPreferences.tsx, /workspace/maxbooster7.5/client/src/components/notifications/useNotifications.ts, /workspace/maxbooster7.5/client/src/components/offline/AccountPersistenceBoundary.tsx, /workspace/maxbooster7.5/client/src/components/onboarding/ContextualFeatureHint.tsx, /workspace/maxbooster7.5/client/src/components/onboarding/FirstWeekSuccessPath.tsx, /workspace/maxbooster7.5/client/src/components/onboarding/OnboardingWizard.tsx, /workspace/maxbooster7.5/client/src/components/onboarding/PowerFeatureSpotlight.tsx, /workspace/maxbooster7.5/client/src/components/retention/CancellationModal.tsx, /workspace/maxbooster7.5/client/src/components/retention/NPSSurvey.tsx, /workspace/maxbooster7.5/client/src/components/royalties/RoyaltySplitManager.tsx, /workspace/maxbooster7.5/client/src/components/settings/ApiKeyManagement.tsx, /workspace/maxbooster7.5/client/src/components/settings/ConnectedAccountsManager.tsx, /workspace/maxbooster7.5/client/src/components/settings/CrossPlatformSync.tsx, /workspace/maxbooster7.5/client/src/components/settings/LoginHistory.tsx, /workspace/maxbooster7.5/client/src/components/settings/PrivacySettings.tsx, /workspace/maxbooster7.5/client/src/components/settings/RecoveryCodes.tsx, /workspace/maxbooster7.5/client/src/components/social/UnifiedInbox.tsx, /workspace/maxbooster7.5/client/src/components/social/platform-connections.tsx, /workspace/maxbooster7.5/client/src/components/studio/AIMusicGenerator.tsx, /workspace/maxbooster7.5/client/src/components/studio/FlowStateExport.tsx, /workspace/maxbooster7.5/client/src/components/studio/FlowStateImportAudio.tsx, /workspace/maxbooster7.5/client/src/components/studio/FlowStatePluginBrowser.tsx, /workspace/maxbooster7.5/client/src/components/studio/ProjectSettingsDialog.tsx, /workspace/maxbooster7.5/client/src/components/studio/RecordingPanel.tsx, /workspace/maxbooster7.5/client/src/components/studio/SaveAsDialog.tsx, /workspace/maxbooster7.5/client/src/components/studio/StemExportDialog.tsx, /workspace/maxbooster7.5/client/src/components/studio/StudioOneDAW.tsx, /workspace/maxbooster7.5/client/src/components/studio/StudioProjectDialog.tsx, /workspace/maxbooster7.5/client/src/components/studio/StudioStartHub.tsx, /workspace/maxbooster7.5/client/src/components/studio/WarpDialog.tsx, /workspace/maxbooster7.5/client/src/components/support/AIAssistantPublic.tsx, /workspace/maxbooster7.5/client/src/contexts/ThemeContext.tsx, /workspace/maxbooster7.5/client/src/hooks/useAudioRecorder.ts, /workspace/maxbooster7.5/client/src/hooks/useOnboardingProgress.ts, /workspace/maxbooster7.5/client/src/hooks/useProjectSync.ts, /workspace/maxbooster7.5/client/src/lib/daw/AudioRenderEngine.ts, /workspace/maxbooster7.5/client/src/lib/daw/ProjectManager.ts, /workspace/maxbooster7.5/client/src/lib/imageUpload.ts, /workspace/maxbooster7.5/client/src/lib/offline/SyncManager.ts, /workspace/maxbooster7.5/client/src/lib/preferenceWrites.ts, /workspace/maxbooster7.5/client/src/lib/studioApi.ts, /workspace/maxbooster7.5/client/src/main.tsx, /workspace/maxbooster7.5/client/src/pages/ARIntelligence.tsx, /workspace/maxbooster7.5/client/src/pages/Admin.tsx, /workspace/maxbooster7.5/client/src/pages/AdminAutonomy.tsx, /workspace/maxbooster7.5/client/src/pages/AdminDashboard.tsx, /workspace/maxbooster7.5/client/src/pages/Advertisement.tsx, /workspace/maxbooster7.5/client/src/pages/Analytics.tsx, /workspace/maxbooster7.5/client/src/pages/Assistant.tsx, /workspace/maxbooster7.5/client/src/pages/CareerCoach.tsx, /workspace/maxbooster7.5/client/src/pages/Collaborations.tsx, /workspace/maxbooster7.5/client/src/pages/Contracts.tsx, /workspace/maxbooster7.5/client/src/pages/Dashboard.tsx, /workspace/maxbooster7.5/client/src/pages/DeveloperApi.tsx, /workspace/maxbooster7.5/client/src/pages/Distribution.tsx, /workspace/maxbooster7.5/client/src/pages/FanHub.tsx, /workspace/maxbooster7.5/client/src/pages/FanMemberships.tsx, /workspace/maxbooster7.5/client/src/pages/Invoices.tsx, /workspace/maxbooster7.5/client/src/pages/Landing.tsx, /workspace/maxbooster7.5/client/src/pages/Login.tsx, /workspace/maxbooster7.5/client/src/pages/Marketplace.tsx, /workspace/maxbooster7.5/client/src/pages/MerchStore.tsx, /workspace/maxbooster7.5/client/src/pages/MusicWorkflowAutomations.tsx, /workspace/maxbooster7.5/client/src/pages/NotificationDetail.tsx, /workspace/maxbooster7.5/client/src/pages/Notifications.tsx, /workspace/maxbooster7.5/client/src/pages/OutreachCRM.tsx, /workspace/maxbooster7.5/client/src/pages/PlaylistPitching.tsx, /workspace/maxbooster7.5/client/src/pages/PressKit.tsx, /workspace/maxbooster7.5/client/src/pages/ProducerProfilePage.tsx, /workspace/maxbooster7.5/client/src/pages/ProjectsPageImpl.tsx, /workspace/maxbooster7.5/client/src/pages/Publishing.tsx, /workspace/maxbooster7.5/client/src/pages/Register.tsx, /workspace/maxbooster7.5/client/src/pages/RegisterPayment.tsx, /workspace/maxbooster7.5/client/src/pages/RegisterSuccess.tsx, /workspace/maxbooster7.5/client/src/pages/ReleaseCountdown.tsx, /workspace/maxbooster7.5/client/src/pages/Royalties.tsx, /workspace/maxbooster7.5/client/src/pages/Settings.tsx, /workspace/maxbooster7.5/client/src/pages/ShowPage.tsx, /workspace/maxbooster7.5/client/src/pages/Shows.tsx, /workspace/maxbooster7.5/client/src/pages/SimplifiedDashboard.tsx, /workspace/maxbooster7.5/client/src/pages/SocialMedia.tsx, /workspace/maxbooster7.5/client/src/pages/Storefront.tsx, /workspace/maxbooster7.5/client/src/pages/Subscribe.tsx, /workspace/maxbooster7.5/client/src/pages/SupportTicket.tsx, /workspace/maxbooster7.5/client/src/pages/SyncLicensing.tsx, /workspace/maxbooster7.5/client/src/pages/Verification.tsx, /workspace/maxbooster7.5/client/src/pages/Workspaces.tsx, /workspace/maxbooster7.5/client/src/pages/admin/AuditLog.tsx, /workspace/maxbooster7.5/client/src/pages/admin/ContentSampler.tsx, /workspace/maxbooster7.5/client/src/pages/admin/KYCReview.tsx, /workspace/maxbooster7.5/client/src/pages/admin/SecurityDashboard.tsx, /workspace/maxbooster7.5/client/src/pages/admin/SupportDashboard.tsx, /workspace/maxbooster7.5/client/src/pages/admin/SupportTicketDetail.tsx, /workspace/maxbooster7.5/client/src/pages/analytics/AIDashboard.tsx, /workspace/maxbooster7.5/client/src/pages/analytics/ExportAnalytics.tsx, /workspace/maxbooster7.5/client/src/pages/analytics/NaturalLanguageQuery.tsx, dynamic import will not move module into another chunk.
+
+../.local/prepared-releases/work-PPH2cN/app/dist/public/index.html                                    16.21 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/index-fUGyrb0N.css                    519.43 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/collapsible-CvUymi4B.js                 0.11 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/passwordPolicy-DMUNRpM8.js              0.24 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/OAuthCallbackHandler-D3DE7eZr.js        0.53 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/imageUpload-CNSWLuaP.js                 0.63 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/avatar-DhZ_gPqF.js                      0.65 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/useRequireAuth-MbgwCh8X.js              0.70 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/radio-group-Dqlr6Xwl.js                 0.75 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Logo-CXhOvI4b.js                        0.77 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/agePolicy-CRHg7bf-.js                   0.83 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/DeepLinkHandler-Ba5RElGQ.js             0.87 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Studio-BXVsCH9F.js                      0.92 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Onboarding-CKK6_gJf.js                  1.10 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/table-BWByhgzI.js                       1.53 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/useAnalyticsInvalidation-8dzPAAb_.js    1.61 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/CookieConsentBanner-DCqOhtLN.js         1.82 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/HandleLink-ZwBFg1Xn.js                  1.86 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/calendar-D3OSWbUS.js                    1.88 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/skeleton-loader-DOVj8CiI.js             2.08 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/stat-card-nVSo7kG9.js                   2.12 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/dashboardDataContracts-DHQPZpaY.js      2.24 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/sheet-BsR0kJiZ.js                       2.33 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/useOnboardingProgress-HVGJVSfS.js       2.35 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SimplifiedDashboard-DQzN5aCu.js         2.52 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/UndoToast-BTJrA-dg.js                   2.65 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SupportTicket-CPmYn06X.js               2.66 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/blogPosts-C7wB18Hj.js                   2.70 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/InstallBanner-1-GCDdJm.js               3.32 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/empty-state-CQI0PBOZ.js                 3.43 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/vendor-forms-CWC7EBEG.js                3.43 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/AIDashboard-DdgUzj7X.js                 3.46 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/chart-card-DEpceUwt.js                  3.72 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/NPSSurvey-DMhEDTZN.js                   3.80 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/musicVideoJobs-DGA8uQTW.js              3.85 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/KeyboardShortcutsDialog-BPJTT_ox.js     4.83 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Subscribe-BuwDavJb.js                   4.96 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/NotificationDetail-BhC0HNAi.js          5.02 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SoloFounderStory-B2zjtLDR.js            5.38 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/About-Dn3Q-Azf.js                       5.54 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/not-found-CgTOM-GF.js                   5.64 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/web-vitals-BhOaL62-.js                  5.87 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/AIAssistantPublic-DwdEkw47.js           5.88 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/BeatCard-BiFmimXC.js                    6.08 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ShortcutCustomizer-t1IMebmd.js          6.11 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Blog-f6DGrpcg.js                        6.13 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/CommandPalette-t_6FoKqt.js              6.26 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ForgotPassword-DvnVese3.js              6.41 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Documentation-CsT1zqng.js               6.42 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/API-OCRf_nlr.js                         6.59 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/de-BlYFHT9b.js                          6.62 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Notifications-CO2090Kw.js               6.67 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/AuditLog-B790-w3F.js                    6.71 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/es-BDfvfL-L.js                          6.85 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SupportTicketDetail-ByxOqSK3.js         6.86 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/fr-CHFClsV2.js                          6.98 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/DMCA-DpNes3Vf.js                        7.07 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/PublicPressKit-D0jnmds2.js              7.52 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SecurityPage-BJa9_ZkG.js                7.68 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ja-Cmq-SUnS.js                          7.71 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SupportDashboard-Baujhk2x.js            7.84 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SimplifiedDashboard-BNsRxgOW.js         8.39 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/index-q-bSh5mo.js                       8.46 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/AppLayout-CKbaY76M.js                   8.70 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ConnectionStatusBar-B5SCN1cL.js         8.85 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Features-iZGIhAYo.js                    9.08 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/BlogPost-D3zeQc2B.js                    9.77 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Assistant-fKHTk1Uh.js                  10.06 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ARIntelligence-DifVkEir.js             10.07 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/AIAssistantPersonalized-a_UkKD2e.js    10.53 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ResetPassword-DQ3uODP1.js              10.55 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/RegisterSuccess-CAGLWXXT.js            10.99 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/RegisterPayment-_OHuii55.js            11.44 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ReleaseCountdown-g2FrBrJG.js           11.49 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Help-CsiW3iVY.js                       11.91 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SyncLicensing-DdjbvqnR.js              12.74 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Login-BrjQlhj8.js                      12.88 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Privacy-n2EYHGWg.js                    12.98 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/OutreachCRM-5gH6dhlD.js                13.00 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Collaborations-CB2uZofK.js             13.74 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/KYCReview-DWtxtKbF.js                  14.22 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Pricing-CyYndvgT.js                    14.48 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/FanMemberships-C78esF7i.js             15.38 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Publishing-CbrImeg-.js                 15.51 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/DeveloperApi-BjW5tK7i.js               15.79 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Invoices-D-8idAFD.js                   16.34 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/PressKit-D7KuYmaa.js                   16.70 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/PlaylistPitching-C0lNYD_N.js           17.80 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ProducerProfilePage-cUvdIIA-.js        17.89 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Terms-C3F-Rb5_.js                      18.09 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SecurityDashboard-CCMz8-WF.js          18.09 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Register-Cm8q5U4D.js                   18.40 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/DesktopApp-B3cL56LF.js                 19.88 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/TrainingDashboard-BTt2-iGm.js          20.09 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Landing-Opxdzzsr.js                    20.15 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Shows-BL5a4L2W.js                      21.18 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ContentSampler-X8Tv6NPh.js             22.23 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/CareerCoach-CBV9NJl-.js                22.49 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/ShowPage-DCtmZ92k.js                   25.20 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Storefront-C6Jb1IIT.js                 25.20 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/MerchStore-CPU5Jwm6.js                 27.02 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/OnboardingWizard-DvAE3ARk.js           27.87 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/vendor-ui-CJhzx3WK.js                  29.29 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/AdminAutonomy-CinXwFQV.js              29.58 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/purify.es-18JuyMri.js                  30.12 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Verification-DFq8Qt_T.js               30.42 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/jspdf.plugin.autotable-B0IxatYY.js     31.04 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/FanHub-CyByKp8r.js                     31.14 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/vendor-audio-engine-MK04eeSn.js        36.14 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/MusicWorkflowAutomations-By1K3-03.js   36.21 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Contracts-3s9OVP1J.js                  38.63 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/TopBar-TAeqrEHq.js                     42.20 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/brand-icons-KMxfPB4G.js                42.46 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Workspaces-BDg04Qfw.js                 44.08 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/AdminDashboard-DllA_HnJ.js             46.57 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Projects-CeS8IP3v.js                   49.16 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Admin-BjhDGy3t.js                      56.40 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/socialPlatformStatus-CxgaGDqR.js       56.58 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/vendor-state-DPnotUV5.js               66.74 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Dashboard-BfQyIcnS.js                  89.36 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Royalties-CUQWStYx.js                 101.24 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/vendor-utils-BK_vLh4y.js              118.74 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/vendor-animation-DbA26amU.js          132.16 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/index-D0imkha8.js                     138.50 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Settings-COof5vhI.js                  158.20 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/index.es-CbxyjwOH.js                  158.62 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Analytics-BBFbEHjh.js                 188.34 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/html2canvas.esm-DXEQVQnt.js           201.04 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/SocialMedia-ZxWOs_ez.js               243.68 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Advertisement-CfXU1QgC.js             250.09 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Marketplace-Cw3d0hKz.js               319.22 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/jspdf.es.min-DFo5jkUh.js              386.25 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/Distribution-CuLXoAIA.js              430.62 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/vendor-charts-0qLVVKil.js             440.45 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/vendor-react-c-or_TZQ.js              600.44 kB
+../.local/prepared-releases/work-PPH2cN/app/dist/public/assets/studio-DTh2CDlz.js                    742.07 kB
+✓ built in 23.89s
+[release] Reusing verified node_modules capsule
+[release] Reusing verified external_maxcore capsule
+[release] Reusing verified external_pdim capsule
+[release] Reusing verified python_runtime capsule
+==> Packing 1891 remaining app files → app_remainder.pdim (zstd-19, -T2, Extract & Boot)...
+   ✅ 1891 files packed (7MB); sources preserved
+[release] Fresh application build and verified runtime capsules prepared. Publish will not rebuild.

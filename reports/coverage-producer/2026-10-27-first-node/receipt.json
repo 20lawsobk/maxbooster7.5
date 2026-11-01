@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "scope": "One existing Node suite; separate UNMERGED profile, not global coverage",
+  "command": [
+    "/workspace/.cloud-tools/node_modules/node/bin/node",
+    "--import",
+    "/workspace/maxbooster7.5/scripts/testing/coverage-node-bootstrap.mjs",
+    "--import",
+    "tsx",
+    "--test",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "tests/fabric-replica-generation.test.mjs"
+  ],
+  "sourceRevision": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "test": "tests/fabric-replica-generation.test.mjs",
+  "testSha256": "72b5abd3b5c24594ad0d3137c8fa3d59575b4cc4470668f5a873d32ffec6b289",
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "profiles": [],
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false,
+  "error": "Existing test execution or producer failed"
+}

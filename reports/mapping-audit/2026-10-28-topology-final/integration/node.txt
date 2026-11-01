@@ -1,0 +1,238 @@
+TAP version 13
+# Subtest: Actual durable exports inherit their canonical nested /api/export mount
+ok 1 - Actual durable exports inherit their canonical nested /api/export mount
+  ---
+  duration_ms: 568.903049
+  type: 'test'
+  ...
+# Subtest: Actual Fan Hub finite template yields all four concrete public method/action paths
+ok 2 - Actual Fan Hub finite template yields all four concrete public method/action paths
+  ---
+  duration_ms: 525.680522
+  type: 'test'
+  ...
+# Subtest: Every source-proven alias of a nested child router is preserved
+ok 3 - Every source-proven alias of a nested child router is preserved
+  ---
+  duration_ms: 430.354223
+  type: 'test'
+  ...
+# Subtest: Identical shared-router paths in separate application processes remain distinct
+ok 4 - Identical shared-router paths in separate application processes remain distinct
+  ---
+  duration_ms: 425.952785
+  type: 'test'
+  ...
+# Subtest: Cycles terminate with an explicit mount diagnostic rather than unlimited invented paths
+ok 5 - Cycles terminate with an explicit mount diagnostic rather than unlimited invented paths
+  ---
+  duration_ms: 376.782862
+  type: 'test'
+  ...
+# Subtest: Unknown runtime templates and shadowed loop names never become literal high-confidence routes
+ok 6 - Unknown runtime templates and shadowed loop names never become literal high-confidence routes
+  ---
+  duration_ms: 372.777299
+  type: 'test'
+  ...
+# Subtest: Unmounted child modules are retained with explicit unresolved topology
+ok 7 - Unmounted child modules are retained with explicit unresolved topology
+  ---
+  duration_ms: 359.567185
+  type: 'test'
+  ...
+# Subtest: Unknown interpolated mount prefixes remain explicit rather than literal complete URLs
+ok 8 - Unknown interpolated mount prefixes remain explicit rather than literal complete URLs
+  ---
+  duration_ms: 368.605407
+  type: 'test'
+  ...
+# Subtest: actual Fan Hub declarations produce GET/POST consent/unsubscribe routes
+ok 9 - actual Fan Hub declarations produce GET/POST consent/unsubscribe routes
+  ---
+  duration_ms: 53.271329
+  type: 'test'
+  ...
+# Subtest: const named literal arrays and repeated template variables retain correlation
+ok 10 - const named literal arrays and repeated template variables retain correlation
+  ---
+  duration_ms: 1.45807
+  type: 'test'
+  ...
+# Subtest: independent nested finite loops expand within a fixed bound
+ok 11 - independent nested finite loops expand within a fixed bound
+  ---
+  duration_ms: 0.513615
+  type: 'test'
+  ...
+# Subtest: unsupported runtime array stays unresolved
+ok 12 - unsupported runtime array stays unresolved
+  ---
+  duration_ms: 0.352682
+  type: 'test'
+  ...
+# Subtest: unsupported let loop binding stays unresolved
+ok 13 - unsupported let loop binding stays unresolved
+  ---
+  duration_ms: 0.204309
+  type: 'test'
+  ...
+# Subtest: unsupported mutated named array stays unresolved
+ok 14 - unsupported mutated named array stays unresolved
+  ---
+  duration_ms: 0.476849
+  type: 'test'
+  ...
+# Subtest: unsupported aliased named array stays unresolved
+ok 15 - unsupported aliased named array stays unresolved
+  ---
+  duration_ms: 0.35145
+  type: 'test'
+  ...
+# Subtest: unsupported shadowed local constant stays unresolved
+ok 16 - unsupported shadowed local constant stays unresolved
+  ---
+  duration_ms: 0.458612
+  type: 'test'
+  ...
+# Subtest: unsupported shadowed parameter stays unresolved
+ok 17 - unsupported shadowed parameter stays unresolved
+  ---
+  duration_ms: 0.660536
+  type: 'test'
+  ...
+# Subtest: unsupported shadowed catch binding stays unresolved
+ok 18 - unsupported shadowed catch binding stays unresolved
+  ---
+  duration_ms: 2.196773
+  type: 'test'
+  ...
+# Subtest: unsupported deferred closure stays unresolved
+ok 19 - unsupported deferred closure stays unresolved
+  ---
+  duration_ms: 0.265511
+  type: 'test'
+  ...
+# Subtest: unsupported reassignment stays unresolved
+ok 20 - unsupported reassignment stays unresolved
+  ---
+  duration_ms: 0.23186
+  type: 'test'
+  ...
+# Subtest: unsupported runtime interpolation stays unresolved
+ok 21 - unsupported runtime interpolation stays unresolved
+  ---
+  duration_ms: 0.143446
+  type: 'test'
+  ...
+# Subtest: unsupported unknown interpolation stays unresolved
+ok 22 - unsupported unknown interpolation stays unresolved
+  ---
+  duration_ms: 0.168965
+  type: 'test'
+  ...
+# Subtest: unsupported empty finite array stays unresolved
+ok 23 - unsupported empty finite array stays unresolved
+  ---
+  duration_ms: 0.135334
+  type: 'test'
+  ...
+# Subtest: unsupported spread element stays unresolved
+ok 24 - unsupported spread element stays unresolved
+  ---
+  duration_ms: 0.252531
+  type: 'test'
+  ...
+# Subtest: large finite products stay unresolved instead of truncating paths
+ok 25 - large finite products stay unresolved instead of truncating paths
+  ---
+  duration_ms: 0.415226
+  type: 'test'
+  ...
+# Subtest: excessive path lengths stay unresolved
+ok 26 - excessive path lengths stay unresolved
+  ---
+  duration_ms: 0.290809
+  type: 'test'
+  ...
+# Subtest: unsupported lexical classic for binding stays unresolved
+ok 27 - unsupported lexical classic for binding stays unresolved
+  ---
+  duration_ms: 0.314825
+  type: 'test'
+  ...
+# Subtest: unsupported lexical for-in binding stays unresolved
+ok 28 - unsupported lexical for-in binding stays unresolved
+  ---
+  duration_ms: 0.250458
+  type: 'test'
+  ...
+# Subtest: unsupported lexical switch-case binding stays unresolved
+ok 29 - unsupported lexical switch-case binding stays unresolved
+  ---
+  duration_ms: 0.598563
+  type: 'test'
+  ...
+# Subtest: unsupported lexical enum binding stays unresolved
+ok 30 - unsupported lexical enum binding stays unresolved
+  ---
+  duration_ms: 0.389408
+  type: 'test'
+  ...
+# Subtest: unsupported lexical namespace binding stays unresolved
+ok 31 - unsupported lexical namespace binding stays unresolved
+  ---
+  duration_ms: 0.454756
+  type: 'test'
+  ...
+# Subtest: unsupported lexical named class expression stays unresolved
+ok 32 - unsupported lexical named class expression stays unresolved
+  ---
+  duration_ms: 0.486573
+  type: 'test'
+  ...
+# Subtest: unsupported lexical with scope stays unresolved
+ok 33 - unsupported lexical with scope stays unresolved
+  ---
+  duration_ms: 0.288976
+  type: 'test'
+  ...
+# Subtest: unsupported lexical destructuring write stays unresolved
+ok 34 - unsupported lexical destructuring write stays unresolved
+  ---
+  duration_ms: 0.222025
+  type: 'test'
+  ...
+# Subtest: unsupported lexical outer named array hidden by classic for stays unresolved
+ok 35 - unsupported lexical outer named array hidden by classic for stays unresolved
+  ---
+  duration_ms: 0.287243
+  type: 'test'
+  ...
+# Subtest: unsupported lexical outer named array hidden by for-of stays unresolved
+ok 36 - unsupported lexical outer named array hidden by for-of stays unresolved
+  ---
+  duration_ms: 0.173081
+  type: 'test'
+  ...
+# Subtest: unsupported lexical outer named array hidden by class name stays unresolved
+ok 37 - unsupported lexical outer named array hidden by class name stays unresolved
+  ---
+  duration_ms: 0.247644
+  type: 'test'
+  ...
+# Subtest: a switch-local finite const array resolves its actual binding
+ok 38 - a switch-local finite const array resolves its actual binding
+  ---
+  duration_ms: 0.259261
+  type: 'test'
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 38
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3936.165896

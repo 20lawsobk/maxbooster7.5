@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "candidatePatchSha256": "d2befaa7af8a46e61fa43acd12898403de5cc7e2be1a8b5497a5b657bb74c118",
+  "checks": [
+    {
+      "check": "Patch exactly equals reviewed and staged next sources",
+      "passed": true
+    },
+    {
+      "check": "git apply --check",
+      "passed": true,
+      "exitCode": 0,
+      "stderr": ""
+    },
+    {
+      "check": "Repository source unchanged scripts/testing/coverage-provenance.mjs",
+      "passed": true,
+      "sha256": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030"
+    },
+    {
+      "check": "Repository source unchanged scripts/testing/collect-node-coverage.mjs",
+      "passed": true,
+      "sha256": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3"
+    },
+    {
+      "check": "Repository source unchanged tests/testing/coverage-provenance.test.mjs",
+      "passed": true,
+      "sha256": "58492a0d5130c0acbd291699d671c3ebcb894680e6ecd285beceb3f10cc8a85f"
+    },
+    {
+      "check": "Global canonical coverage bytes match preserved full a160 master archive",
+      "passed": true,
+      "path": "/workspace/maxbooster7.5/reports/test-verification/coverage/coverage-final.json",
+      "expected": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+      "sha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434"
+    }
+  ],
+  "allPassed": true,
+  "sourceOrCounterMutations": false
+}

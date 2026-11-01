@@ -1,0 +1,33 @@
+{
+  "scope": "Read-only verifier controls in owned temporary metadata; not product tests",
+  "positive": {
+    "status": "PASS",
+    "copiedFiles": 110,
+    "copiedBytes": 1693694,
+    "referencedExecutions": 2,
+    "productionReady": false,
+    "scope": "Retained-byte verification only; no product tests or acceptance promotion"
+  },
+  "negativeControls": [
+    {
+      "control": "changed-copy-hash",
+      "exitCode": 1,
+      "rejected": true,
+      "repositoryMutations": false
+    },
+    {
+      "control": "path-traversal",
+      "exitCode": 1,
+      "rejected": true,
+      "repositoryMutations": false
+    },
+    {
+      "control": "duplicate-copy-id",
+      "exitCode": 1,
+      "rejected": true,
+      "repositoryMutations": false
+    }
+  ],
+  "localMarkdownLinksChecked": 21,
+  "missingLocalLinks": 0
+}

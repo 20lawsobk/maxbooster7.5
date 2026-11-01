@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="37" failures="1" errors="0" time="2.630061078">
+    <testsuite name="tests/feature-revenue-merch.test.ts" timestamp="2026-10-28T02:12:10.708Z" hostname="af966a6fd55d" tests="37" failures="1" errors="0" skipped="0" time="2.630061078">
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; setup: register and login test user" time="0.93721088">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns returns list" time="0.037335925">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/stats returns statistics" time="0.071429086">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; POST /api/fan-campaigns creates a campaign" time="0.051204685">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/:id retrieves campaign" time="0.053650328">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; PUT /api/fan-campaigns/:id updates campaign" time="0.114323009">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; DELETE /api/fan-campaigns/:id removes campaign" time="0.094977798">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns without auth → 401" time="0.031400315">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast returns current forecast" time="0.03314699">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/projections returns projections" time="0.038149876">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/accuracy returns forecast accuracy metrics" time="0.02663035">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/rate returns growth rate" time="0.030330853">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; POST /api/revenue-forecast/generate triggers AI forecast generation" time="0.051772165">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast without auth → 401" time="0.037651185">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets returns list" time="0.034964622">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets creates a budget" time="0.031328307">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id retrieves budget" time="0.034159177">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id/items returns budget items" time="0.037043599">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets/:id/items adds a budget item" time="0.041263038">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; PUT /api/project-budgets/:id updates budget" time="0.093700476">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/items/:id removes budget item" time="0.061791659">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/:id removes budget" time="0.063027302">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets without auth → 401" time="0.037539912">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch returns merch list" time="0.046809384">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/stats returns merch statistics" time="0.034386741">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/orders returns order list" time="0.028813954">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; POST /api/merch creates a merch item" time="0.056140846">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/:id retrieves merch item" time="0.045137002">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; PUT /api/merch/:id updates merch item" time="0.051466869">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; DELETE /api/merch/:id removes merch item" time="0.033311989">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch without auth → 401" time="0.032297844">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/templates returns contract templates" time="0.047650428">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/my-contracts returns user contracts" time="0.03028305">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/tax-rates is accessible with country param" time="0.024657675">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/stats/summary returns contract statistics" time="0.034991752">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations returns recommendations" time="0.07494172">
+            <failure message="expected [ 200, 503 ] to include 500" type="AssertionError">
+AssertionError: expected [ 200, 503 ] to include 500
+ ❯ tests/feature-revenue-merch.test.ts:360:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations without auth → 401" time="0.038863158">
+        </testcase>
+    </testsuite>
+</testsuites>

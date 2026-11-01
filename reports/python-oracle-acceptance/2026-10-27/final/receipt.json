@@ -1,0 +1,155 @@
+{
+  "scope": "Canonical custom-helper tests, exact-AST pytest oracle regressions and direct entrypoints; not production readiness",
+  "sourceFiles": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py": "7f23051b2a4c66a03e5e20ab581bc7faffbda5ce972e18d5a8224635753be087",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py": "60ef70f61dc4c3b629aa3803739f394db77bf929f9ddd53fb269b4404836362e",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py": "fe0c63324c0c7f84cdedcee00d840e0f0720394c87621650aea1d3b3a8396d06",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py": "d02d7e7d77884fc0bdf461957a96535ac0f68decb22f4322b51754d9d47c6e22",
+    "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py": "7a2511e3ddd699be46a6998c6ad2107248b64e2993300cf678edeaf49a5d975e",
+    "tests/testing/test_assertion_oracles.py": "df12b732f7fb48ef8d7a39bed771ece79d6f0aabeb4c25f7a0c47a5196ac8c8f"
+  },
+  "sourceUploadsBefore": {
+    "files": 36,
+    "bytes": 93474975,
+    "modes": [
+      384
+    ],
+    "inventorySha256": "2f8c7eb6491d636777a29d631354fb4b8521fe7298c98533947dc6afa0823b66"
+  },
+  "runs": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/run-python-suites.py",
+        "--python",
+        "/workspace/.cloud-python/bin/python",
+        "--workers",
+        "1",
+        "--file",
+        "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+        "--file",
+        "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+        "--file",
+        "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+        "--file",
+        "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+        "--file",
+        "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+        "--file",
+        "tests/testing/test_assertion_oracles.py",
+        "--output",
+        "/workspace/maxbooster7.5/reports/python-oracle-acceptance/2026-10-27/final/canonical-python"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T02:35:49.816985+00:00",
+      "durationSeconds": 31.019,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/python-oracle-acceptance/2026-10-27/final/canonical-python.txt",
+      "logSha256": "5254ae95fab8060bf5fa8fd67a6e6c0afa63abae566a1933ab66e8d2feb9be73",
+      "id": "pytest-all-five-and-oracle-regressions"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-u",
+        "-m",
+        "ai_model.retrieval.test_rcgs"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-28T02:36:20.902620+00:00",
+      "durationSeconds": 1.57,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/python-oracle-acceptance/2026-10-27/final/test_rcgs-direct.txt",
+      "logSha256": "ed3be9988e40cea4ec952a8d4c6d58db10ec616b2c0a8c8e988d955ceaed42db",
+      "id": "test_rcgs-direct",
+      "sourceUploadsAfter": {
+        "files": 36,
+        "bytes": 93474975,
+        "modes": [
+          384
+        ],
+        "inventorySha256": "2f8c7eb6491d636777a29d631354fb4b8521fe7298c98533947dc6afa0823b66"
+      },
+      "remainingOwnedRetrievalDirs": [],
+      "ownedHomeRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-u",
+        "-m",
+        "ai_model.retrieval.test_retrieval"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-28T02:36:22.541703+00:00",
+      "durationSeconds": 1.619,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/python-oracle-acceptance/2026-10-27/final/test_retrieval-direct.txt",
+      "logSha256": "6ad27db672b49d423f0a6a17a2bbd2d0be6d178f2cc84a7f4b6aa2542f2e13eb",
+      "id": "test_retrieval-direct",
+      "sourceUploadsAfter": {
+        "files": 36,
+        "bytes": 93474975,
+        "modes": [
+          384
+        ],
+        "inventorySha256": "2f8c7eb6491d636777a29d631354fb4b8521fe7298c98533947dc6afa0823b66"
+      },
+      "remainingOwnedRetrievalDirs": [],
+      "ownedHomeRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-u",
+        "-m",
+        "ai_model.rta.test_render_contracts"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-28T02:36:24.227823+00:00",
+      "durationSeconds": 4.678,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/python-oracle-acceptance/2026-10-27/final/test_render_contracts-direct.txt",
+      "logSha256": "d3a839b9573ba1052a76516006ba9b1d24085cc5de6f9d91228ebf0d9de3da56",
+      "id": "test_render_contracts-direct",
+      "sourceUploadsAfter": {
+        "files": 36,
+        "bytes": 93474975,
+        "modes": [
+          384
+        ],
+        "inventorySha256": "2f8c7eb6491d636777a29d631354fb4b8521fe7298c98533947dc6afa0823b66"
+      },
+      "remainingOwnedRetrievalDirs": [],
+      "ownedHomeRemoved": true
+    }
+  ],
+  "productionReady": false,
+  "sourceUploadsAfterPytest": {
+    "files": 36,
+    "bytes": 93474975,
+    "modes": [
+      384
+    ],
+    "inventorySha256": "2f8c7eb6491d636777a29d631354fb4b8521fe7298c98533947dc6afa0823b66"
+  },
+  "sourceUploadsAfter": {
+    "files": 36,
+    "bytes": 93474975,
+    "modes": [
+      384
+    ],
+    "inventorySha256": "2f8c7eb6491d636777a29d631354fb4b8521fe7298c98533947dc6afa0823b66"
+  },
+  "sourceUploadsUnchanged": true,
+  "sourceFilesUnchanged": true,
+  "status": "passed"
+}

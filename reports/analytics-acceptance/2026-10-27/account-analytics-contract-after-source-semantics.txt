@@ -1,0 +1,71 @@
+TAP version 13
+# Subtest: private owner aggregates reach actual MaxCore statistics without model or learning state
+    # Subtest: capability is dedicated and model-free; unauthorized direct requests fail
+    ok 1 - capability is dedicated and model-free; unauthorized direct requests fail
+      ---
+      duration_ms: 9.391945
+      type: 'test'
+      ...
+    # Subtest: calendar-day SQL and MaxCore OLS produce exact owned trend with no foreign/current-day data
+    ok 2 - calendar-day SQL and MaxCore OLS produce exact owned trend with no foreign/current-day data
+      ---
+      duration_ms: 16.974333
+      type: 'test'
+      ...
+    # Subtest: owned factual summaries preserve exact currency fractions and listener-observation caveat
+    ok 3 - owned factual summaries preserve exact currency fractions and listener-observation caveat
+      ---
+      duration_ms: 21.919311
+      type: 'test'
+      ...
+    # Subtest: multiple platforms aggregate once per UTC day without flattening missing days
+    ok 4 - multiple platforms aggregate once per UTC day without flattening missing days
+      ---
+      duration_ms: 10.896476
+      type: 'test'
+      ...
+    # Subtest: empty account does not inherit another owner's data or claim zero performance
+    ok 5 - empty account does not inherit another owner's data or claim zero performance
+      ---
+      duration_ms: 28.161947
+      type: 'test'
+      ...
+    # Subtest: lifetime post counters cannot masquerade as timestamped daily engagement history
+    ok 6 - lifetime post counters cannot masquerade as timestamped daily engagement history
+      ---
+      duration_ms: 4.76034
+      type: 'test'
+      ...
+    # Subtest: invalid input and absent identity reject before SQL or external requests
+    ok 7 - invalid input and absent identity reject before SQL or external requests
+      ---
+      duration_ms: 3.835906
+      type: 'test'
+      ...
+    # Subtest: invalid recorded numeric values fail explicitly rather than entering public learning or fabricating output
+    ok 8 - invalid recorded numeric values fail explicitly rather than entering public learning or fabricating output
+      ---
+      duration_ms: 7.410016
+      type: 'test'
+      ...
+    # Subtest: unavailable or structurally empty MaxCore output never invokes a local forecast fallback
+    ok 9 - unavailable or structurally empty MaxCore output never invokes a local forecast fallback
+      ---
+      duration_ms: 5.455659
+      type: 'test'
+      ...
+    1..9
+ok 1 - private owner aggregates reach actual MaxCore statistics without model or learning state
+  ---
+  duration_ms: 1666.942815
+  type: 'test'
+  ...
+1..1
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2247.20095

@@ -1,0 +1,167 @@
+{
+  "scope": "Current10dcanonical complete-map compatibility observation only; no counters copied/combined and no control execution",
+  "observedAt": "2026-10-28T17:56:27.609694+00:00",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "canonicalSha256": "3a4baa7bdb84c4863c60801782a09aae05a129a71d9e0bb9334a2e7baf7990f8",
+  "oldHistoricalCanonicalSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+  "files": [
+    {
+      "file": "server/config/ports.ts",
+      "maps": {
+        "statementMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "fnMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "branchMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        }
+      }
+    },
+    {
+      "file": "server/logger.ts",
+      "maps": {
+        "statementMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "fnMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "branchMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        }
+      }
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "maps": {
+        "statementMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "fnMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "branchMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        }
+      }
+    },
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "maps": {
+        "statementMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "fnMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "branchMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        }
+      }
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "maps": {
+        "statementMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "fnMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "branchMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        }
+      }
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "maps": {
+        "statementMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "fnMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "branchMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        }
+      }
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "maps": {
+        "statementMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "fnMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "branchMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        }
+      }
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "maps": {
+        "statementMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "fnMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "branchMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        }
+      }
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "maps": {
+        "statementMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "fnMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        },
+        "branchMap": {
+          "currentEqualsHistorical": true,
+          "currentEqualsMapOnlyControl": true
+        }
+      }
+    }
+  ],
+  "comparedMaps": 27,
+  "allCompleteMapsEqual": true,
+  "countersComparedOrCopied": false,
+  "mergedIntoGlobalCoverage": false,
+  "productionReady": false
+}

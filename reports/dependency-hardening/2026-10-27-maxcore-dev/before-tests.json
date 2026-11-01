@@ -1,0 +1,17 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=junit",
+    "--test-name-pattern=patched graph|oversized",
+    "tests/maxcore-dev-dependency-security.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:19:34.313422+00:00",
+  "durationSeconds": 0.216,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "reports/dependency-hardening/2026-10-27-maxcore-dev/before-tests.xml",
+  "logSha256": "9a3f0b4f3354bd1f12b70a9667331b3ef1ebe975a095d307106c925603e040a3"
+}

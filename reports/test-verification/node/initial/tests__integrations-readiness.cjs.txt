@@ -1,0 +1,4 @@
+TypeError: this.hasCurrentPublishConsent is not a function
+    at Worker.executePost (evalmachine.<anonymous>:21:30)
+    at async postingTests (/workspace/maxbooster7.5/tests/integrations-readiness.cjs:121:18)
+    at async Promise.all (index 2)

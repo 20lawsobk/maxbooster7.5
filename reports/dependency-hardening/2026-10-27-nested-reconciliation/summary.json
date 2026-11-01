@@ -1,0 +1,17 @@
+{
+  "scope": "Passingclean-installfixtureusespatchedqs; runtimepolicyunchanged; vulnerable6.16.0stillrejectedbeforepromotion",
+  "sourceBeforeSha256": "e71b14eafdbb0dfacdc70da2d0589702d265943b543d1b72d7f1b27d6e9344b4",
+  "sourceAfterSha256": "1fb23df47793c6378040706696356dbb5816b1ce55a1beb84303b03a7bd1a309",
+  "productionSourceChanged": false,
+  "canonicalCommand": [
+    "node",
+    "--import",
+    "tsx",
+    "--test",
+    "--test-concurrency=1",
+    "--test-reporter=junit",
+    "tests/nested-reconciliation.test.mjs"
+  ],
+  "exitCode": 0,
+  "productionReady": false
+}

@@ -1,0 +1,40 @@
+{
+  "recordedAt": "2026-10-28T12:58:58.496292+00:00",
+  "testedSourceRevision": "cb783f1f9b34719a214dd7f9203a31dea64c051e",
+  "branch": "sophia/platform-production-hardening-2026-10-27",
+  "productionReady": false,
+  "mainPromotion": "BLOCKED",
+  "pages": 80,
+  "greenPages": 0,
+  "businessSections": 2162,
+  "dimensionSteps": 12972,
+  "workItems": 52965,
+  "requiredChecks": 33538,
+  "unverifiedChecks": 33532,
+  "unknownMappings": 130,
+  "coldRelease": {
+    "scope": "cold-startup-with-ml-unavailable",
+    "fourCommandsExitZero": true,
+    "independentChecksPassed": 37,
+    "evidence": "reports/release-rehearsal/2026-10-28-cb783f1f-final/hygiene-audit.json"
+  },
+  "fullNodeRecheck": {
+    "files": 122,
+    "failedFiles": 0,
+    "tapPassedIncludingParents": 644,
+    "tapSkipped": 2,
+    "evidence": "reports/test-rechecks/2026-10-28-node-final/receipt.json"
+  },
+  "fullMaster": {
+    "source": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+    "status": "FAILED",
+    "preservedUnchanged": true,
+    "archive": "reports/test-verification/history/2026-10-28-a1603b13-master/master-evidence.tar.gz"
+  },
+  "evidencePersistence": "Two ignored historical raw-evidence archives explicitly admitted after full member, size and configured-value checks; generated release payloads and native executables excluded",
+  "nextCriticalWork": [
+    "Reviewed narrow generated-helper coverage policy; no incompatible map merging",
+    "Source-proven nested-router and finite-template identity repair with all page/section work retained",
+    "Fresh focused execution, registry reconciliation and source-bound readiness reassessment"
+  ]
+}

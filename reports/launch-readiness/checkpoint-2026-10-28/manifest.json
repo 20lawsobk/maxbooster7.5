@@ -1,0 +1,36 @@
+{
+  "scope": "Evidence checkpoint integrity, not launch approval",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1155,
+      "sha256": "c69e99d42affefcd393ed16214a06a952d3a3ae77b8bee6afe62d3c8e4ce25f8"
+    },
+    {
+      "path": "artifact-manifest-recheck.json",
+      "bytes": 158,
+      "sha256": "ac6dbbf5f9d5e467e8c62020106945f7386fcc9817f5cb14a359698d8c47a2b2"
+    },
+    {
+      "path": "artifact-persistence-review.json",
+      "bytes": 1854,
+      "sha256": "c53f4f5e6ffaa8c0675fe9b238f1f8fe18e59c5a88bb0dfd8cc7945e23e4724a"
+    },
+    {
+      "path": "documentation-validation.json",
+      "bytes": 35204,
+      "sha256": "6bc534b8de22f8ab3fb06d5ee633a8ca3ce542f3c8b721458b9e406ed5b4fbbc"
+    },
+    {
+      "path": "secret-size-scan.json",
+      "bytes": 421,
+      "sha256": "dbb5f82020855642601cf2b1438f3e629e5f162369c4f2652d4b73c662f10053"
+    },
+    {
+      "path": "status.json",
+      "bytes": 1631,
+      "sha256": "f7b274199569e899f4dfb7fa2ea79b5a5e4f95a2212cbb3e3080ec1d47b9e75b"
+    }
+  ],
+  "productionReady": false
+}

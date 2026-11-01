@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-28T01:48:05.616Z",
+  "scope": "Final standalone P1 retained-artifact validation; no global merge or production readiness",
+  "attempt": "reports/coverage-producer/2026-10-27-analytics-dependencies-node",
+  "receiptSha256": "b3881b6ca89de36113d8efdb71c8aa0cf7f9ccb4533a0e21e0bd7bfe36ae3f43",
+  "profiles": 1,
+  "scripts": 9,
+  "convertedFiles": 9,
+  "allCompleteMapsIncompatible": true,
+  "sourceInputsStable": true,
+  "ownedGroupCleanup": {
+    "processGroup": 59110,
+    "signals": [],
+    "complete": true,
+    "remainingLivePids": []
+  },
+  "globalCoverageModified": false,
+  "productionReady": false
+}

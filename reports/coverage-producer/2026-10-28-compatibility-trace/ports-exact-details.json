@@ -1,0 +1,1108 @@
+{
+  "source": "server/config/ports.ts",
+  "sourceSha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d",
+  "executedCodeFile": "reports/coverage-producer/2026-10-28-a1603b13-node/125755-0/075b0b5c95394506d98c213ce21b192243175db88bd4d32198c5d348e1c43ca8.js",
+  "executedCodeSha256": "075b0b5c95394506d98c213ce21b192243175db88bd4d32198c5d348e1c43ca8",
+  "mapFile": "reports/coverage-producer/2026-10-28-a1603b13-node/125755-0/075b0b5c95394506d98c213ce21b192243175db88bd4d32198c5d348e1c43ca8.js.map",
+  "mapSha256": "bfcf58e56e80e00c267f694979e1635aec3be58b20efe88057845a6ff2badd24",
+  "generatedHelperNodes": [
+    {
+      "type": "VariableDeclarator",
+      "start": 4,
+      "end": 35,
+      "text": "__defProp=Object.defineProperty",
+      "generatedLine": 1,
+      "generatedColumn": 4,
+      "mappedSegmentsInside": [],
+      "nearestLower": {
+        "source": null,
+        "line": null,
+        "column": null,
+        "name": null
+      },
+      "nearestUpper": {
+        "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "line": 9,
+        "column": 0,
+        "name": null
+      }
+    },
+    {
+      "type": "VariableDeclarator",
+      "start": 40,
+      "end": 113,
+      "text": "__name=(target,value)=>__defProp(target,\"name\",{value,configurable:true})",
+      "generatedLine": 1,
+      "generatedColumn": 40,
+      "mappedSegmentsInside": [],
+      "nearestLower": {
+        "source": null,
+        "line": null,
+        "column": null,
+        "name": null
+      },
+      "nearestUpper": {
+        "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "line": 9,
+        "column": 0,
+        "name": null
+      }
+    },
+    {
+      "type": "CallExpression",
+      "start": 793,
+      "end": 820,
+      "text": "__name(readPort,\"readPort\")",
+      "generatedLine": 1,
+      "generatedColumn": 793,
+      "mappedSegmentsInside": [
+        [
+          793,
+          0,
+          26,
+          9
+        ]
+      ],
+      "nearestLower": {
+        "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "line": 27,
+        "column": 9,
+        "name": null
+      },
+      "nearestUpper": {
+        "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "line": 27,
+        "column": 9,
+        "name": null
+      }
+    },
+    {
+      "type": "CallExpression",
+      "start": 1149,
+      "end": 1194,
+      "text": "__name(assertUniquePorts,\"assertUniquePorts\")",
+      "generatedLine": 1,
+      "generatedColumn": 1149,
+      "mappedSegmentsInside": [
+        [
+          1149,
+          0,
+          46,
+          9
+        ]
+      ],
+      "nearestLower": {
+        "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "line": 47,
+        "column": 9,
+        "name": null
+      },
+      "nearestUpper": {
+        "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "line": 47,
+        "column": 9,
+        "name": null
+      }
+    },
+    {
+      "type": "CallExpression",
+      "start": 1844,
+      "end": 1877,
+      "text": "__name(loopbackUrl,\"loopbackUrl\")",
+      "generatedLine": 1,
+      "generatedColumn": 1844,
+      "mappedSegmentsInside": [
+        [
+          1844,
+          0,
+          84,
+          16
+        ]
+      ],
+      "nearestLower": {
+        "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "line": 85,
+        "column": 16,
+        "name": null
+      },
+      "nearestUpper": {
+        "source": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "line": 85,
+        "column": 16,
+        "name": null
+      }
+    }
+  ],
+  "firstGeneratedSourceMapping": [
+    114,
+    0,
+    8,
+    0
+  ],
+  "baselineFunctions": [
+    {
+      "id": "0",
+      "value": {
+        "name": "readPort",
+        "decl": {
+          "start": {
+            "line": 27,
+            "column": 9
+          },
+          "end": {
+            "line": 27,
+            "column": 18
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 27,
+            "column": 62
+          },
+          "end": {
+            "line": 45,
+            "column": null
+          }
+        },
+        "line": 27
+      }
+    },
+    {
+      "id": "1",
+      "value": {
+        "name": "assertUniquePorts",
+        "decl": {
+          "start": {
+            "line": 47,
+            "column": 9
+          },
+          "end": {
+            "line": 47,
+            "column": 27
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 47,
+            "column": 62
+          },
+          "end": {
+            "line": 60,
+            "column": null
+          }
+        },
+        "line": 47
+      }
+    },
+    {
+      "id": "2",
+      "value": {
+        "name": "loopbackUrl",
+        "decl": {
+          "start": {
+            "line": 85,
+            "column": 16
+          },
+          "end": {
+            "line": 85,
+            "column": 28
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 85,
+            "column": 50
+          },
+          "end": {
+            "line": 87,
+            "column": null
+          }
+        },
+        "line": 85
+      }
+    }
+  ],
+  "nodeFunctions": [
+    {
+      "id": "0",
+      "value": {
+        "name": "(anonymous_0)",
+        "decl": {
+          "start": {
+            "line": 9,
+            "column": 0
+          },
+          "end": {
+            "line": 9,
+            "column": 6
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 9,
+            "column": 0
+          },
+          "end": {
+            "line": 9,
+            "column": 6
+          }
+        },
+        "line": 9
+      }
+    },
+    {
+      "id": "1",
+      "value": {
+        "name": "readPort",
+        "decl": {
+          "start": {
+            "line": 27,
+            "column": 9
+          },
+          "end": {
+            "line": 27,
+            "column": 18
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 27,
+            "column": 62
+          },
+          "end": {
+            "line": 45,
+            "column": null
+          }
+        },
+        "line": 27
+      }
+    },
+    {
+      "id": "2",
+      "value": {
+        "name": "assertUniquePorts",
+        "decl": {
+          "start": {
+            "line": 47,
+            "column": 9
+          },
+          "end": {
+            "line": 47,
+            "column": 27
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 47,
+            "column": 62
+          },
+          "end": {
+            "line": 60,
+            "column": null
+          }
+        },
+        "line": 47
+      }
+    },
+    {
+      "id": "3",
+      "value": {
+        "name": "loopbackUrl",
+        "decl": {
+          "start": {
+            "line": 85,
+            "column": 16
+          },
+          "end": {
+            "line": 85,
+            "column": 28
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 85,
+            "column": 50
+          },
+          "end": {
+            "line": 87,
+            "column": null
+          }
+        },
+        "line": 85
+      }
+    }
+  ],
+  "baselineStatements": [
+    {
+      "id": "0",
+      "value": {
+        "start": {
+          "line": 9,
+          "column": 17
+        },
+        "end": {
+          "line": 9,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "1",
+      "value": {
+        "start": {
+          "line": 10,
+          "column": 17
+        },
+        "end": {
+          "line": 10,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "2",
+      "value": {
+        "start": {
+          "line": 12,
+          "column": 28
+        },
+        "end": {
+          "line": 21,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "3",
+      "value": {
+        "start": {
+          "line": 28,
+          "column": 14
+        },
+        "end": {
+          "line": 28,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "4",
+      "value": {
+        "start": {
+          "line": 29,
+          "column": 2
+        },
+        "end": {
+          "line": 29,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "5",
+      "value": {
+        "start": {
+          "line": 29,
+          "column": 46
+        },
+        "end": {
+          "line": 29,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "6",
+      "value": {
+        "start": {
+          "line": 31,
+          "column": 2
+        },
+        "end": {
+          "line": 35,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "7",
+      "value": {
+        "start": {
+          "line": 32,
+          "column": 4
+        },
+        "end": {
+          "line": 34,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "8",
+      "value": {
+        "start": {
+          "line": 37,
+          "column": 16
+        },
+        "end": {
+          "line": 37,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "9",
+      "value": {
+        "start": {
+          "line": 38,
+          "column": 2
+        },
+        "end": {
+          "line": 42,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "10",
+      "value": {
+        "start": {
+          "line": 39,
+          "column": 4
+        },
+        "end": {
+          "line": 41,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "11",
+      "value": {
+        "start": {
+          "line": 44,
+          "column": 2
+        },
+        "end": {
+          "line": 44,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "12",
+      "value": {
+        "start": {
+          "line": 48,
+          "column": 17
+        },
+        "end": {
+          "line": 48,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "13",
+      "value": {
+        "start": {
+          "line": 49,
+          "column": 2
+        },
+        "end": {
+          "line": 58,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "14",
+      "value": {
+        "start": {
+          "line": 50,
+          "column": 21
+        },
+        "end": {
+          "line": 50,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "15",
+      "value": {
+        "start": {
+          "line": 51,
+          "column": 4
+        },
+        "end": {
+          "line": 56,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "16",
+      "value": {
+        "start": {
+          "line": 52,
+          "column": 6
+        },
+        "end": {
+          "line": 55,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "17",
+      "value": {
+        "start": {
+          "line": 57,
+          "column": 4
+        },
+        "end": {
+          "line": 57,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "18",
+      "value": {
+        "start": {
+          "line": 59,
+          "column": 2
+        },
+        "end": {
+          "line": 59,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "19",
+      "value": {
+        "start": {
+          "line": 62,
+          "column": 28
+        },
+        "end": {
+          "line": 83,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "20",
+      "value": {
+        "start": {
+          "line": 86,
+          "column": 2
+        },
+        "end": {
+          "line": 86,
+          "column": null
+        }
+      }
+    }
+  ],
+  "nodeStatements": [
+    {
+      "id": "0",
+      "value": {
+        "start": {
+          "line": 9,
+          "column": 0
+        },
+        "end": {
+          "line": 9,
+          "column": 6
+        }
+      }
+    },
+    {
+      "id": "1",
+      "value": {
+        "start": {
+          "line": 9,
+          "column": 17
+        },
+        "end": {
+          "line": 9,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "2",
+      "value": {
+        "start": {
+          "line": 10,
+          "column": 17
+        },
+        "end": {
+          "line": 10,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "3",
+      "value": {
+        "start": {
+          "line": 12,
+          "column": 28
+        },
+        "end": {
+          "line": 21,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "4",
+      "value": {
+        "start": {
+          "line": 28,
+          "column": 14
+        },
+        "end": {
+          "line": 28,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "5",
+      "value": {
+        "start": {
+          "line": 29,
+          "column": 2
+        },
+        "end": {
+          "line": 29,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "6",
+      "value": {
+        "start": {
+          "line": 29,
+          "column": 46
+        },
+        "end": {
+          "line": 29,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "7",
+      "value": {
+        "start": {
+          "line": 31,
+          "column": 2
+        },
+        "end": {
+          "line": 35,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "8",
+      "value": {
+        "start": {
+          "line": 32,
+          "column": 4
+        },
+        "end": {
+          "line": 34,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "9",
+      "value": {
+        "start": {
+          "line": 37,
+          "column": 16
+        },
+        "end": {
+          "line": 37,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "10",
+      "value": {
+        "start": {
+          "line": 38,
+          "column": 2
+        },
+        "end": {
+          "line": 42,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "11",
+      "value": {
+        "start": {
+          "line": 39,
+          "column": 4
+        },
+        "end": {
+          "line": 41,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "12",
+      "value": {
+        "start": {
+          "line": 44,
+          "column": 2
+        },
+        "end": {
+          "line": 44,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "13",
+      "value": {
+        "start": {
+          "line": 27,
+          "column": 9
+        },
+        "end": {
+          "line": 27,
+          "column": 18
+        }
+      }
+    },
+    {
+      "id": "14",
+      "value": {
+        "start": {
+          "line": 48,
+          "column": 17
+        },
+        "end": {
+          "line": 48,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "15",
+      "value": {
+        "start": {
+          "line": 49,
+          "column": 2
+        },
+        "end": {
+          "line": 58,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "16",
+      "value": {
+        "start": {
+          "line": 50,
+          "column": 21
+        },
+        "end": {
+          "line": 50,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "17",
+      "value": {
+        "start": {
+          "line": 51,
+          "column": 4
+        },
+        "end": {
+          "line": 56,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "18",
+      "value": {
+        "start": {
+          "line": 52,
+          "column": 6
+        },
+        "end": {
+          "line": 55,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "19",
+      "value": {
+        "start": {
+          "line": 57,
+          "column": 4
+        },
+        "end": {
+          "line": 57,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "20",
+      "value": {
+        "start": {
+          "line": 59,
+          "column": 2
+        },
+        "end": {
+          "line": 59,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "21",
+      "value": {
+        "start": {
+          "line": 47,
+          "column": 9
+        },
+        "end": {
+          "line": 47,
+          "column": 27
+        }
+      }
+    },
+    {
+      "id": "22",
+      "value": {
+        "start": {
+          "line": 62,
+          "column": 28
+        },
+        "end": {
+          "line": 83,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "23",
+      "value": {
+        "start": {
+          "line": 86,
+          "column": 2
+        },
+        "end": {
+          "line": 86,
+          "column": null
+        }
+      }
+    },
+    {
+      "id": "24",
+      "value": {
+        "start": {
+          "line": 85,
+          "column": 16
+        },
+        "end": {
+          "line": 85,
+          "column": 28
+        }
+      }
+    }
+  ],
+  "memoryRepresentationDifferences": [
+    {
+      "path": "branchMap.0.loc.end.column",
+      "leftKind": "null",
+      "rightKind": "Infinity",
+      "leftValue": null,
+      "rightValue": "Infinity"
+    },
+    {
+      "path": "branchMap.0.locations.0.end.column",
+      "leftKind": "null",
+      "rightKind": "Infinity",
+      "leftValue": null,
+      "rightValue": "Infinity"
+    },
+    {
+      "path": "branchMap.0.locations.1.end.column",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.0.locations.1.end.line",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.0.locations.1.start.column",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.0.locations.1.start.line",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.2.loc.end.column",
+      "leftKind": "null",
+      "rightKind": "Infinity",
+      "leftValue": null,
+      "rightValue": "Infinity"
+    },
+    {
+      "path": "branchMap.2.locations.0.end.column",
+      "leftKind": "null",
+      "rightKind": "Infinity",
+      "leftValue": null,
+      "rightValue": "Infinity"
+    },
+    {
+      "path": "branchMap.2.locations.1.end.column",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.2.locations.1.end.line",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.2.locations.1.start.column",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.2.locations.1.start.line",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.3.loc.end.column",
+      "leftKind": "null",
+      "rightKind": "Infinity",
+      "leftValue": null,
+      "rightValue": "Infinity"
+    },
+    {
+      "path": "branchMap.3.locations.0.end.column",
+      "leftKind": "null",
+      "rightKind": "Infinity",
+      "leftValue": null,
+      "rightValue": "Infinity"
+    },
+    {
+      "path": "branchMap.3.locations.1.end.column",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.3.locations.1.end.line",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.3.locations.1.start.column",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.3.locations.1.start.line",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.5.loc.end.column",
+      "leftKind": "null",
+      "rightKind": "Infinity",
+      "leftValue": null,
+      "rightValue": "Infinity"
+    },
+    {
+      "path": "branchMap.5.locations.0.end.column",
+      "leftKind": "null",
+      "rightKind": "Infinity",
+      "leftValue": null,
+      "rightValue": "Infinity"
+    },
+    {
+      "path": "branchMap.5.locations.1.end.column",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.5.locations.1.end.line",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.5.locations.1.start.column",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    },
+    {
+      "path": "branchMap.5.locations.1.start.line",
+      "leftPresent": false,
+      "rightPresent": true,
+      "leftKind": "undefined",
+      "rightKind": "undefined"
+    }
+  ],
+  "serializedBranchMapsEqual": true
+}

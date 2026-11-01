@@ -1,0 +1,3 @@
+[183356:183356:1028/120849.070518:FATAL:chrome/browser/process_singleton_posix.cc:313] Socket path too long: /tmp/maxbooster-test-9b4nq700/maxbooster-test-06fbllje/layout-a11y-wsyim6t8/org.chromium.Chromium.ZfZkci/SingletonSocket.
+[1028/120849.075517:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq: No such file or directory (2)
+[1028/120849.075615:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq: No such file or directory (2)

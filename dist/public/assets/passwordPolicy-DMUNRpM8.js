@@ -1,0 +1,1 @@
+function e(r){if(typeof r!="string"||!r)return"Password is required";if(r.length<8)return"Password must be at least 8 characters";if(new TextEncoder().encode(r).byteLength>72)return"Password must be 72 UTF-8 bytes or fewer"}export{e as g};

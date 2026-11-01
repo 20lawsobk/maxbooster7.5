@@ -1,0 +1,48 @@
+{
+  "startedAt": "2026-10-25T15:37:29.902Z",
+  "scope": "Disposable PostgreSQL and real source application; all external TCP/TLS and UDP denied",
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "requestedFiles": [],
+  "status": "failed",
+  "productionReady": false,
+  "testSourceSha256": {
+    "tests/integration/maxcore-local-supervisor.integration.test.ts": "71a7ae61a2fa9888969148959c4fa58ab53c61da696a6f98284a4a4e30694c9d",
+    "tests/health.test.ts": "53bd2924b701cb5d21adc36a85b7afd63932d232be6c6b8521b0283400ff56cb",
+    "tests/api-guards.test.ts": "5d29a4644e9df0aad529ecea2cb180458852b997232f4c75a5f9faf22df79421",
+    "tests/auth-flows.test.ts": "a8f91cef7cdb4e40d238015e389a39d7c36dddcd4727c66e4b22671b0f11e1fe",
+    "tests/security-hardening.test.ts": "63d74f05f3da42b9454c89d4062c4bb0a8affd7203e0f1dc5ada697976076d08",
+    "tests/webhook-security.test.ts": "3a7ee49bc10878f8ee9a6be9dc63d7b3eecceac81a84c4a43e30299a529bf570",
+    "tests/critical-paths.test.ts": "68e7a3659b3cd288e2cf7b9ea70ba24bbec0b6a84ce90204505a5e9ad7b332b1",
+    "tests/audit-persistence.test.ts": "47bf5e847deac86a43af68d9b014eb41141176394aee03370fa4fc4402f7edde",
+    "tests/paid-user-e2e.test.ts": "5ccf9e920dc77d871cb024aa588128bb5a72af05dc67e33a73d825e2fe5c96be",
+    "tests/ai-analytics-integration.test.ts": "dd9932419c8c625bfe9a59d0812b15839025a926ae39adbd203899b51a47e859",
+    "tests/cache-invalidation.test.ts": "9ee9d9102c7ffc09430c4866815acb87326fe4601d8cd0cf50434e643f142998",
+    "tests/unit/cache-cross-pod.test.ts": "c28df33e28a574afc6a48f1505267a3f50f743962096fb6cf22acf59e66ad246",
+    "tests/file-management.test.ts": "9853261d3a85772e6d9de8206e37ea113e694398aa1da57ab730fdb87d8e9735",
+    "tests/direct-upload.test.ts": "2dc7640269280d97f8b464c43d29570ba1b9c01c25f17a6b6b4c740da8660421",
+    "tests/billing-lifecycle.test.ts": "d404a547847e4fe8ade9ff6291fca7ac723b7b93b522d5f749cd5fa41d9d3043",
+    "tests/auth-2fa.test.ts": "1e1168cba5f3da3311345066bcb334577a89b312db95a756f50ead7da7dcc56f",
+    "tests/feature-press-pitching-ar.test.ts": "d1df1dff87592b6abb73a7e0adfdd0c67148d07d9acbdbc83dcbc24f99c9646a",
+    "tests/feature-catalog-production.test.ts": "6fcd2fc3cb45ec0d297aa07d3c4d683fe6074941ce4f4720784dd492bba55068",
+    "tests/feature-revenue-merch.test.ts": "f9ec13775d41927167a052cf13663411e9f649665251f0acfcf9b362df3dfdae",
+    "tests/feature-marketplace-distribution.test.ts": "8503ac9e6c51063d250d559b9590bf14da9bfcae13f416c568c0088a86235d8c",
+    "tests/feature-storefront-dns.test.ts": "69d81485d4521c87e7555fbd79ab30280330515e12b5b096d01f31a3a17c2a34",
+    "vitest.integration.config.ts": "b13108817eae6a92fef7f1ea9c4a34e1502582d3f1f77a366c7f074b6a2ffca5",
+    "scripts/testing/integration-browser.mjs": "429bd86fce76e9870a2a5e49bda6dbf125435681669697d22c5010902c725d71"
+  },
+  "ephemeralDatabase": "pass",
+  "applicationRoutes": "pass",
+  "workerWorkingDirectory": "temporary fixture; source root used only for module/test resolution",
+  "exitCode": 1,
+  "signal": null,
+  "testProcessCleanup": {
+    "tracked": 27,
+    "remaining": []
+  },
+  "appProcessCleanup": {
+    "tracked": 2,
+    "remaining": []
+  },
+  "postgresCleanup": "pass",
+  "finishedAt": "2026-10-25T15:41:22.218Z"
+}

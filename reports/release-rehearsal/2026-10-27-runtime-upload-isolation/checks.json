@@ -1,0 +1,51 @@
+[
+  {
+    "command": [
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "--no-ignore",
+      "--global",
+      "process",
+      "--global",
+      "console",
+      "--global",
+      "Buffer",
+      "--global",
+      "setInterval",
+      "--global",
+      "clearInterval",
+      "scripts/lib/production-simulation-copy.mjs",
+      "script/lib/capsulePack.ts",
+      "tests/unit/production-simulation-copy.test.ts",
+      "tests/unit/capsule-pack-restore-roundtrip.test.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-28T02:20:05.332241+00:00",
+    "durationSeconds": 1.379,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/release-rehearsal/2026-10-27-runtime-upload-isolation/check-1.txt",
+    "logSha256": "bbf430afc17e575c1a5f47818dc5de58d212f84262d4c962fbc90e0df14b60bf"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "--",
+      "scripts/lib/production-simulation-copy.mjs",
+      "script/lib/capsulePack.ts",
+      "tests/unit/production-simulation-copy.test.ts",
+      "tests/unit/capsule-pack-restore-roundtrip.test.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-28T02:20:06.711615+00:00",
+    "durationSeconds": 0.009,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/release-rehearsal/2026-10-27-runtime-upload-isolation/check-2.txt",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "--config",
+    "vitest.platform.config.ts",
+    "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "--reporter=junit",
+    "--outputFile=/workspace/onboarding-results/critical-coverage-vitest-final.xml",
+    "--coverage.include=server/{services/{hybridStorageService,hybridStorageRepository,hybridImmutableByteStore,socialMediaJobRepository,mediaUploadCleanup},routes/socialMediaJobHandlers}.ts",
+    "--coverage.reporter=json-summary",
+    "--coverage.reporter=json",
+    "--coverage.reportsDirectory=/workspace/onboarding-results/critical-coverage-measure"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-27T05:04:21.217391+00:00",
+  "durationSeconds": 3.883,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "/workspace/onboarding-results/critical-coverage-vitest-final.txt",
+  "logSha256": "6f2b290e1c9c774356bd71e75c7ebe27c8044cbecddaa56e142ceeafd45c58a5"
+}

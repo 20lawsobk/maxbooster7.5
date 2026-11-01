@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-28T08:54:47.352944+00:00",
+  "scope": "All retained artifacts in this versioned oracle cohort; independent review does not relabel earlier attempts as current proof.",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 4723,
+      "sha256": "7e3db47de81f73b66dc592774d1fe9ecb3a58d79f548b985597df1098a5333f8"
+    },
+    {
+      "path": "actual-canonical-receipt.json",
+      "bytes": 5848,
+      "sha256": "7db06f9adc3ad1003db3e17519588d043dcdafdd874f70f16070b1694305fd71"
+    },
+    {
+      "path": "after-three-helper-receipt.json",
+      "bytes": 1240,
+      "sha256": "e73299195f4d91900dac57650be7c74e9536b11b841abd6004dcc79d90eef51f"
+    },
+    {
+      "path": "after-three-helper.txt",
+      "bytes": 5993,
+      "sha256": "2268c60ee1fa407044b89593cdd5813a90807df695c0f542e8eef35a19be1ea1"
+    },
+    {
+      "path": "after-three-helper.xml",
+      "bytes": 5159,
+      "sha256": "0b108bab9480ed8c9ead0e5d29e148ebe7dde6963c5ede4285bf49e579d5ed1c"
+    },
+    {
+      "path": "before-helper-sources.json",
+      "bytes": 1340,
+      "sha256": "88001a418de1436ec11439564c8c365b920f198c0ec5eab51145d150ad542b9b"
+    },
+    {
+      "path": "before-three-helper-receipt.json",
+      "bytes": 1145,
+      "sha256": "5e01ef3e34f516d416a7d106824c7d992e5420dc18402cfe60a8759470485060"
+    },
+    {
+      "path": "before-three-helper.txt",
+      "bytes": 490,
+      "sha256": "9f5534c70004c02681b9363938bd57d8533d25a3515176f7a41326fe9b6e5d28"
+    },
+    {
+      "path": "before-three-helper.xml",
+      "bytes": 1742,
+      "sha256": "0061c130ed5a00c0253b7161e3fe359b4730ec00c8d20a88f3e5986aab1f965f"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_phase4.txt",
+      "bytes": 99,
+      "sha256": "23464fd26df85f33a8b7884bacbba456485f8ab18f1c44016dfd320760b89b20"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_phase4.xml",
+      "bytes": 1362,
+      "sha256": "cf97f11097ac86ca5c476961d61cb70d351fa4a2dbf1245c2e904acb26fa89e1"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_pipeline.txt",
+      "bytes": 99,
+      "sha256": "43421c76e2b69170e911e03d9a88e4864c75319439573136fbc8f13d3df9ca2c"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_pipeline.xml",
+      "bytes": 1129,
+      "sha256": "b72b2b669920f8af47b53c0d6a0d20d83b854056fd1cd654c169063ed6d53f6f"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_rcgs.txt",
+      "bytes": 98,
+      "sha256": "5890a81757c48c90804c1cbab0edd1d56000658f5b0695bd6e41a11ebf3f54f0"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_rcgs.xml",
+      "bytes": 627,
+      "sha256": "c6097a5400aa248d9b7b49cb0e729207d8e50cf1fd1b031ee38dee56018091c3"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.txt",
+      "bytes": 99,
+      "sha256": "b265a84b56f72a3530173cebceb974376f4f89b6b6c66de9ec5ac4a6e3e6ad84"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.xml",
+      "bytes": 1613,
+      "sha256": "adb7e8e28dddcfabb7fd448dd25bb6b57170ca8a673d448d490dbb07262e6fe7"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.txt",
+      "bytes": 98,
+      "sha256": "267b2ad44d45aa1fab650ab4145dee2091a8048ba68e29882584261979375231"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.xml",
+      "bytes": 621,
+      "sha256": "fd3b28c9580fec6504ad3ea663ccce83f01e25bcdfba311cdd6007b8870c84bb"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/results.json",
+      "bytes": 20763,
+      "sha256": "d4b99fc369ae44c883fa503b32ef8543bf2d518ebaa644704eaba685547b5f49"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/tests__testing__test_assertion_oracles.txt",
+      "bytes": 99,
+      "sha256": "66f71efdcb84c978d8b0c63444a7b5e15c2c671c04d4c750d2c9ea2d0c9fc62e"
+    },
+    {
+      "path": "canonical-all-five-and-oracles/tests__testing__test_assertion_oracles.xml",
+      "bytes": 2448,
+      "sha256": "ef6de15043e80d0429ac7d7baeb6273c93eb53a2428fd37026027e6eff5b20bd"
+    },
+    {
+      "path": "canonical-all-five-and-oracles.txt",
+      "bytes": 662,
+      "sha256": "5254ae95fab8060bf5fa8fd67a6e6c0afa63abae566a1933ab66e8d2feb9be73"
+    },
+    {
+      "path": "canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.txt",
+      "bytes": 99,
+      "sha256": "034d44f4fed2baf52ecf4c7d88807670483ae00bc5386d63076a952b985f16d0"
+    },
+    {
+      "path": "canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.xml",
+      "bytes": 1613,
+      "sha256": "ed1a21210f780a26ae019bdcc565628b12855e6963dbc63eee067823d6fa5a0d"
+    },
+    {
+      "path": "canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.txt",
+      "bytes": 98,
+      "sha256": "cc5d214ba23b298bbd3a16f0de68d560a4f0305ec77155d674bf6466d5fccbe4"
+    },
+    {
+      "path": "canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.xml",
+      "bytes": 621,
+      "sha256": "2a93fda1f63f7bd2fd26689bfff1a9c9a2da94c27023749b08209b7802a005ef"
+    },
+    {
+      "path": "canonical-python/results.json",
+      "bytes": 13954,
+      "sha256": "e46f33dd3b8239bfda65857a6c771b2b69bde3ea04384d564eabbcb817fff976"
+    },
+    {
+      "path": "canonical-python/tests__testing__test_assertion_oracles.txt",
+      "bytes": 99,
+      "sha256": "e0bbe895b6cdf10cda994c00e1e88a4629d3c23911c1e1f5caeb54b45f860ddc"
+    },
+    {
+      "path": "canonical-python/tests__testing__test_assertion_oracles.xml",
+      "bytes": 2448,
+      "sha256": "dbf45e079aa047e74e3b88dbeeed491adc8d834badeb54b37ef3b7b2a453e75a"
+    },
+    {
+      "path": "canonical-python-command.json",
+      "bytes": 892,
+      "sha256": "82bb0850f32c6cd67b77ef6d1c687fe36920e573c755daa0d7ddf40791e4603e"
+    },
+    {
+      "path": "canonical-python-runner.txt",
+      "bytes": 395,
+      "sha256": "6e1acac6b7325b65109e85289c301f65ae581851eb4b6d3c317d74b30783a71d"
+    },
+    {
+      "path": "execution-driver.py",
+      "bytes": 4346,
+      "sha256": "4c7b3c2b82c5d5b3991046859e5176dfae985f75233a13927721b764f078649b"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_phase4.txt",
+      "bytes": 99,
+      "sha256": "a0cffdf2f9560b2e92c9fb1e33c52ce7b471ce5a6110eb87613c18995b67106b"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_phase4.xml",
+      "bytes": 1362,
+      "sha256": "bc7dad95ea8866f44a525b7b948b0de51a43d32babc2104a0512ffa609f4bd1d"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_pipeline.txt",
+      "bytes": 99,
+      "sha256": "420725a597596e6228f1d390e8e603e2e049e79c83d0d56e2fee9bec2f1a3606"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_pipeline.xml",
+      "bytes": 1129,
+      "sha256": "fc9989bd73fe5eb29a10f6fbfa9fa41c4b583ccabe5bc8bb9791ff5a941590a8"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_rcgs.txt",
+      "bytes": 98,
+      "sha256": "f3c4cdf48008c7e202b864f4f2fb73719a70152d7a94e1bef5430e7760e328db"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_rcgs.xml",
+      "bytes": 627,
+      "sha256": "674cd1c035e0d351682eff07e710e7ec3f43ec793e1cf72594212fd2d4f01791"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.txt",
+      "bytes": 99,
+      "sha256": "3c2030f09dd17f4dc3ab7284aea443ef332cab99932b2a949fc14d24fe24de7f"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.xml",
+      "bytes": 1613,
+      "sha256": "9b67b16e489fc443362641316c2acf47738df4150b359f402fd75eed2436f8a6"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.txt",
+      "bytes": 98,
+      "sha256": "cef6f1e4c4a07db3fda069949f8787a36d970e69759fa8fcec321b6ce86a6723"
+    },
+    {
+      "path": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.xml",
+      "bytes": 621,
+      "sha256": "8993cc2b3e1a0450c5ee379de57abd47f1da997285d5f6bc8113f111a4f8c90f"
+    },
+    {
+      "path": "final/canonical-python/results.json",
+      "bytes": 20714,
+      "sha256": "aa953b12f3c7263e1c37a47e70ebb31ff8bba992258094f1beedb936c20b3892"
+    },
+    {
+      "path": "final/canonical-python/tests__testing__test_assertion_oracles.txt",
+      "bytes": 99,
+      "sha256": "c1cddfde3de450365c60b4f0fb59bbaaa3d08add29a48c3be937356dd2b21615"
+    },
+    {
+      "path": "final/canonical-python/tests__testing__test_assertion_oracles.xml",
+      "bytes": 2448,
+      "sha256": "f064d41835d8d0195db442afe382d838a6e2bf691991c3e04d3fb51a4b7a5a35"
+    },
+    {
+      "path": "final/canonical-python.txt",
+      "bytes": 662,
+      "sha256": "5254ae95fab8060bf5fa8fd67a6e6c0afa63abae566a1933ab66e8d2feb9be73"
+    },
+    {
+      "path": "final/receipt.json",
+      "bytes": 5837,
+      "sha256": "9f741c424c869487bc32a47e9b8b3dd72e4d2babd071df9cc5aec6d2ea51bec9"
+    },
+    {
+      "path": "final/test_rcgs-direct.txt",
+      "bytes": 1552,
+      "sha256": "ed3be9988e40cea4ec952a8d4c6d58db10ec616b2c0a8c8e988d955ceaed42db"
+    },
+    {
+      "path": "final/test_render_contracts-direct.txt",
+      "bytes": 727,
+      "sha256": "d3a839b9573ba1052a76516006ba9b1d24085cc5de6f9d91228ebf0d9de3da56"
+    },
+    {
+      "path": "final/test_retrieval-direct.txt",
+      "bytes": 2847,
+      "sha256": "6ad27db672b49d423f0a6a17a2bbd2d0be6d178f2cc84a7f4b6aa2542f2e13eb"
+    },
+    {
+      "path": "independent-review.json",
+      "bytes": 3391,
+      "sha256": "0d6e61ef3447f3f7604d720d30abb4243e7d2d3f9037459856385f8aacf333d7"
+    },
+    {
+      "path": "static-audit.json",
+      "bytes": 2417,
+      "sha256": "59b21af1cc748b2a4ec65080d8ab69f98374fba366358d6cb856a216484eaed2"
+    },
+    {
+      "path": "test_rcgs-direct.txt",
+      "bytes": 1552,
+      "sha256": "ed3be9988e40cea4ec952a8d4c6d58db10ec616b2c0a8c8e988d955ceaed42db"
+    },
+    {
+      "path": "test_render_contracts-direct.txt",
+      "bytes": 727,
+      "sha256": "d3a839b9573ba1052a76516006ba9b1d24085cc5de6f9d91228ebf0d9de3da56"
+    },
+    {
+      "path": "test_retrieval-direct.txt",
+      "bytes": 2847,
+      "sha256": "6ad27db672b49d423f0a6a17a2bbd2d0be6d178f2cc84a7f4b6aa2542f2e13eb"
+    }
+  ],
+  "productionReady": false
+}

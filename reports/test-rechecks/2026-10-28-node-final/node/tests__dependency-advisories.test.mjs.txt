@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: .: Express refuses forged forwarding through an invalid mapped trust subnet
+ok 1 - .: Express refuses forged forwarding through an invalid mapped trust subnet
+  ---
+  duration_ms: 119.194359
+  type: 'test'
+  ...
+# Subtest: .: compression destroys its native stream when the client aborts
+ok 2 - .: compression destroys its native stream when the client aborts
+  ---
+  duration_ms: 55.318005
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet
+ok 3 - external/maxcore/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet
+  ---
+  duration_ms: 89.91299
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: compression destroys its native stream when the client aborts
+ok 4 - external/maxcore/artifacts/api-server: compression destroys its native stream when the client aborts
+  ---
+  duration_ms: 42.518237
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet
+ok 5 - external/pdim/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet
+  ---
+  duration_ms: 86.997497
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: compression destroys its native stream when the client aborts
+ok 6 - external/pdim/artifacts/api-server: compression destroys its native stream when the client aborts
+  ---
+  duration_ms: 46.65728
+  type: 'test'
+  ...
+# Subtest: PostCSS source maps work and malicious indexed offsets fail promptly
+ok 7 - PostCSS source maps work and malicious indexed offsets fail promptly
+  ---
+  duration_ms: 8.443577
+  type: 'test'
+  ...
+# Subtest: the real typography plugin retains its styles with the patched selector parser
+ok 8 - the real typography plugin retains its styles with the patched selector parser
+  ---
+  duration_ms: 375.020626
+  type: 'test'
+  ...
+# Subtest: pino-pretty retains formatting and fast-copy uses controlled depth errors
+ok 9 - pino-pretty retains formatting and fast-copy uses controlled depth errors
+  ---
+  duration_ms: 33.040721
+  type: 'test'
+  ...
+# Subtest: patched Capacitor creates and syncs both platforms with every installed plugin
+ok 10 - patched Capacitor creates and syncs both platforms with every installed plugin
+  ---
+  duration_ms: 1462.475576
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2456.288581

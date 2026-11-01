@@ -1,0 +1,19 @@
+{
+  "scope": "Credential-free bounded pure-transform map reconstruction and typed/prototype diagnosis; no subject/application execution",
+  "startedAt": "2026-10-28T17:49:00.087860+00:00",
+  "command": [
+    "/workspace/.cloud-tools/node_modules/.bin/node",
+    "/workspace/onboarding-results/c5-next-contract/final-review/typed-map-control.mjs"
+  ],
+  "exitCode": 0,
+  "durationSeconds": 1.0168399990070611,
+  "appCredentialsForwarded": false,
+  "commonBeforeSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "commonAfterSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "commonUnchanged": true,
+  "canonicalBeforeSha256": "3a4baa7bdb84c4863c60801782a09aae05a129a71d9e0bb9334a2e7baf7990f8",
+  "canonicalAfterSha256": "3a4baa7bdb84c4863c60801782a09aae05a129a71d9e0bb9334a2e7baf7990f8",
+  "canonicalUnchanged": true,
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

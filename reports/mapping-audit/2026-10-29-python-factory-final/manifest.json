@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-29T22:05:07.729467+00:00",
+  "status": "REVIEWED_CANDIDATE_NOT_LANDED",
+  "productionReady": false,
+  "canonicalChanges": false,
+  "sourceTestsPassed": 21,
+  "staticChecksPassed": 12,
+  "fullRegisterChecksPassed": 11,
+  "finalReviewChecksPassed": 7,
+  "patchSha256": "e1f2e985a52e33eee9f52a6a0a3f905691b6baf843335e3e310c13b2484e9c1e",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 7091,
+      "sha256": "55082d2399edf06094380f9cb19d9071ad26bd4bce479d9bd008ef9ee4268886"
+    },
+    {
+      "path": "actual-source-comparison.json",
+      "bytes": 13399,
+      "sha256": "8bb80a4ac794a30cba49cd299d393ce38d03e3df178ba7ef7d486fad83ea85a9"
+    },
+    {
+      "path": "base.json",
+      "bytes": 236,
+      "sha256": "59bf7fef496a8daeb644f94639d699d0092bfc9f781339e6f7c702c3c27dc788"
+    },
+    {
+      "path": "baseline-python.json",
+      "bytes": 92943,
+      "sha256": "2ffda7d7e39a5df49ef9457de404f09e371e127a56fce0b1220db050a967decf"
+    },
+    {
+      "path": "build-candidate.py",
+      "bytes": 6141,
+      "sha256": "a5e2ec167aca6f186fc43ccd90d497f39e13bfb309e7e5fb63de95db4aee5580"
+    },
+    {
+      "path": "candidate-python.json",
+      "bytes": 109743,
+      "sha256": "d01f01030e21f1abf00174ab857b31daf4e82a4e916a5b47ae486b7cce95ca98"
+    },
+    {
+      "path": "candidate-source.patch",
+      "bytes": 43264,
+      "sha256": "e1f2e985a52e33eee9f52a6a0a3f905691b6baf843335e3e310c13b2484e9c1e"
+    },
+    {
+      "path": "compare-full-register.py",
+      "bytes": 3242,
+      "sha256": "2ff70d0a75fd6523fda8bd3ed25c158cecf5503fab55a1d501a71cd33571ead9"
+    },
+    {
+      "path": "final-review.json",
+      "bytes": 812,
+      "sha256": "f38f1eb77722573df09d6a3343a6dfd48f96109414d60836cbd6ecb8ef461239"
+    },
+    {
+      "path": "final-review.py",
+      "bytes": 1973,
+      "sha256": "c3192ab31974efb200697a7c5280f63c950453460e9ce5a309f06bf51edbe94e"
+    },
+    {
+      "path": "focused-tests.txt",
+      "bytes": 3501,
+      "sha256": "ddfc773f03c60d3837ccbb3fdf58697e6d810a719ce9a09ce9090add616118b0"
+    },
+    {
+      "path": "full-register-preservation.json",
+      "bytes": 2068,
+      "sha256": "ecb665bf7cc25ed973e6a496c4fc6bdd049f9af0d5316b05ee7998fa96a64270"
+    },
+    {
+      "path": "generate-outside.py",
+      "bytes": 492,
+      "sha256": "88cb8faf52d0acea969f064fe3b28d8c1f4d8c51079e7607c432ef28c6790b59"
+    },
+    {
+      "path": "independent-junit-review.json",
+      "bytes": 649,
+      "sha256": "0c7760a656ae74d5c4e0acab71d378b42f6b4532195fabc93fa0e75b529f8014"
+    },
+    {
+      "path": "independent-junit-review.py",
+      "bytes": 1943,
+      "sha256": "7de7947996aac702e3ff5910c283a53c3a48b24178d2e612d5b4279a6b8d6fd9"
+    },
+    {
+      "path": "junit_evidence.py",
+      "bytes": 1946,
+      "sha256": "2f628127157479063886c0810b6d85dae3b3d1f6b826c43a92a8075c25ec7efb"
+    },
+    {
+      "path": "platform-register.next.py",
+      "bytes": 66083,
+      "sha256": "9371d6d03fb93bdcecc7cd9b676a043776c1f3b02065918934424c0525cec32a"
+    },
+    {
+      "path": "python_factory_mounts.py",
+      "bytes": 18538,
+      "sha256": "0685d52d329ce777bcb991d3752eb5fa3c15ef9240cfc8c37818fe43922e4701"
+    },
+    {
+      "path": "refine-helper.py",
+      "bytes": 9221,
+      "sha256": "b6f5ff5eb2d100c4f2f13beb4487c022d9baa6a976e8fb45c9ef96c550d493b6"
+    },
+    {
+      "path": "registry/platform-register.json",
+      "bytes": 28800956,
+      "sha256": "5781614e91b2e14eac3e635c259a4ce4c663f696b8741e96798d102bbde4b7ed"
+    },
+    {
+      "path": "registry/platform-register.md",
+      "bytes": 40518,
+      "sha256": "2f030f49efe2a88461391facc7bd2459f3c05456e3f31b941018158f5310e4aa"
+    },
+    {
+      "path": "registry-generation.txt",
+      "bytes": 321,
+      "sha256": "e09b98b8ffc8b4c2db3879ca8ee1aea489c3c5320d5164a6cedb76854bc9be47"
+    },
+    {
+      "path": "run-validation.py",
+      "bytes": 4924,
+      "sha256": "36b088953486154300c31cda48f808fab691be5d96ae43beb9b52b0e44ed6910"
+    },
+    {
+      "path": "test_python_factory_mounts.py",
+      "bytes": 17737,
+      "sha256": "6920abcc0232ff29384308a60016c5c5410dda653915a5f2118eb30a38b2c1de"
+    },
+    {
+      "path": "validation-receipt.json",
+      "bytes": 1516,
+      "sha256": "02291a0d8142207a12bd98e71276eacd6f51f068f18cb2ec9323356ec47025a2"
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="development launch prefers the real ESM entry and retains its physical cwd" time="0.002737" classname="test" failure="resolveDesktopServer is not a function">
+		<failure type="testCodeFailure" message="resolveDesktopServer is not a function">
+[Error [ERR_TEST_FAILURE]: resolveDesktopServer is not a function] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: resolveDesktopServer is not a function
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/electron-asar-launch-policy.test.mjs:43:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.start (node:internal/test_runner/test:944:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+}
+		</failure>
+	</testcase>
+	<testcase name="development launch admits a real CJS-only entry" time="0.000762" classname="test" failure="resolveDesktopServer is not a function">
+		<failure type="testCodeFailure" message="resolveDesktopServer is not a function">
+[Error [ERR_TEST_FAILURE]: resolveDesktopServer is not a function] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: resolveDesktopServer is not a function
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/electron-asar-launch-policy.test.mjs:50:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+}
+		</failure>
+	</testcase>
+	<testcase name="a missing bundled server is explicit rather than an invented path" time="0.000544" classname="test" failure="resolveDesktopServer is not a function">
+		<failure type="testCodeFailure" message="resolveDesktopServer is not a function">
+[Error [ERR_TEST_FAILURE]: resolveDesktopServer is not a function] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: resolveDesktopServer is not a function
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/electron-asar-launch-policy.test.mjs:56:16)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+}
+		</failure>
+	</testcase>
+	<testcase name="real ASAR metadata keeps mjs module ancestry virtual and cwd physical" time="0.028060" classname="test" failure="resolveDesktopServer is not a function">
+		<failure type="testCodeFailure" message="resolveDesktopServer is not a function">
+[Error [ERR_TEST_FAILURE]: resolveDesktopServer is not a function] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: resolveDesktopServer is not a function
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/electron-asar-launch-policy.test.mjs:82:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+}
+		</failure>
+	</testcase>
+	<testcase name="real ASAR metadata keeps cjs module ancestry virtual and cwd physical" time="0.010530" classname="test" failure="resolveDesktopServer is not a function">
+		<failure type="testCodeFailure" message="resolveDesktopServer is not a function">
+[Error [ERR_TEST_FAILURE]: resolveDesktopServer is not a function] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: resolveDesktopServer is not a function
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/electron-asar-launch-policy.test.mjs:82:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+}
+		</failure>
+	</testcase>
+	<testcase name="a physical unpacked fallback retains a real directory when no virtual entry exists" time="0.001002" classname="test" failure="resolveDesktopServer is not a function">
+		<failure type="testCodeFailure" message="resolveDesktopServer is not a function">
+[Error [ERR_TEST_FAILURE]: resolveDesktopServer is not a function] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: TypeError: resolveDesktopServer is not a function
+      at TestContext.&lt;anonymous> (file:///workspace/maxbooster7.5/tests/electron-asar-launch-policy.test.mjs:92:20)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+}
+		</failure>
+	</testcase>
+	<!-- tests 6 -->
+	<!-- suites 0 -->
+	<!-- pass 0 -->
+	<!-- fail 6 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 143.484655 -->
+</testsuites>

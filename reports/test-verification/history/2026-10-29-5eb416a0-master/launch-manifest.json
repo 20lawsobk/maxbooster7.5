@@ -1,0 +1,57 @@
+{
+  "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "sourceFreshness": "PASS",
+  "scope": "Current unchanged-source master launch audit and counted progress;0/80Green,9/33549checks,9/53034workitems,NO-GO",
+  "archive": {
+    "path": "launch-evidence.tar.gz",
+    "bytes": 3988838,
+    "sha256": "cc7a9278ef13bdf124aac8184e69dad8118331f20909b0fb926ea6367cd14bc5"
+  },
+  "members": [
+    {
+      "path": "reports/launch-readiness/current/dependencies.json",
+      "bytes": 260643,
+      "sha256": "9b04df7abbfc82dc5126f9ce8d8909425b4f929d6db4254ec2c7319fa034a51b"
+    },
+    {
+      "path": "reports/launch-readiness/current/features.json",
+      "bytes": 4310474,
+      "sha256": "dad755e1b2fef9bac8dfb8f215793b8f43a0f3948168444e77264a84a93ed6d7"
+    },
+    {
+      "path": "reports/launch-readiness/current/gaps.json",
+      "bytes": 73536145,
+      "sha256": "7778110bb9f50d31dd8fdaffe1e63d94f44f6ab0854d6970553d4e3624a67964"
+    },
+    {
+      "path": "reports/launch-readiness/current/manifest.json",
+      "bytes": 1236,
+      "sha256": "d2eee2122427de3019b69d4abd9dfe310b72d462d8db0c71e2bfbc6cc7975456"
+    },
+    {
+      "path": "reports/launch-readiness/current/matrix.md",
+      "bytes": 79784,
+      "sha256": "66d839976a6670571412cd9db0ffb4476096513397cbc60867e9423be8c5ad8f"
+    },
+    {
+      "path": "reports/launch-readiness/current/roadmap.json",
+      "bytes": 27341578,
+      "sha256": "d887f595f797f11b42b9a1e2dc3f320a7f3d8be50f126cf0e41c691aad0b1478"
+    },
+    {
+      "path": "reports/launch-readiness/current/status.json",
+      "bytes": 9843182,
+      "sha256": "c3c81398fd66babf7c09718a94876f35afd2b6557b7cf09b1ee4b9d164ac6458"
+    },
+    {
+      "path": "reports/progress/current/progress.json",
+      "bytes": 6889,
+      "sha256": "3b99dc6db6727d9fad2b1eb36ebaf74d68a871cf38c06cb6f0a16e470d19f116"
+    },
+    {
+      "path": "reports/progress/current/progress.md",
+      "bytes": 1019,
+      "sha256": "44fa14a4e5cb63df00454319186a996b23ad4a5b6b896890141ac1d6c86dc579"
+    }
+  ]
+}

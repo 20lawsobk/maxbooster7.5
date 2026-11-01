@@ -1,0 +1,30 @@
+{
+  "scope": "Read-only source and regression inspection of producer-time foundation only; no P2 admission/global merge or coverage credit",
+  "observedAt": "2026-10-29T23:13:43.541037+00:00",
+  "status": "NO_MATERIAL_FOUNDATION_DEFECT_FOUND",
+  "sourceSha256": {
+    "parent/candidate/scripts/testing/run-all.py": "422355f37c659cf6cc2c26b8b56fba1ee1bde2276d27cafbbb3f442ad05f8f34",
+    "reporter/scripts/testing/coverage-outcome-reporter.mjs": "7a940fc6505a21eb98c522a6250160ea7e84abf044bd470f9e5728edb5193f54",
+    "parent/candidate/tests/testing/test_coverage_command_binding.py": "dd85dbada8d39559995918408c22787a129dbc2a11889a2841f1f1bfd2873af7",
+    "reporter/tests/testing/coverage-outcome-reporter.test.mjs": "416ec75ca266b13d6d8f4d77f96e22277e47b015dcc51ac2b4fd22294d40ea54"
+  },
+  "checks": {
+    "parentBindsFreshXMLBytesAndStrictCounts": true,
+    "parentBindsFreshPublicOutcomeBytesAndNonce": true,
+    "reporterHashUnchangedThroughChild": true,
+    "publicUnhandledErrorsExplicitlyCounted": true,
+    "moduleAndCaseCountsReconcile": true,
+    "missingUnexpectedSelectedModulesCannotBeEligible": true,
+    "parentWindowEnclosesFreshArtifactsAndPublicLifecycle": true,
+    "symlinkArtifactAndAncestorsRejected": true,
+    "invalidEvidenceSetsFailedWithoutCoercingRealChildExit": true,
+    "masterFinalDecisionRejectsInvalidEvidenceEvenOnChildExitZero": true,
+    "noPrivateErrorMessagesInOutcome": true
+  },
+  "limits": [
+    "Review inspected supplied actual-child and public-Vitest regression sources; did not independently rerun tests already passing.",
+    "Foundation does not itself establish that child exit1 is solely a coverage-threshold failure. Future admission consumer must check exact parent command/log/threshold-only reason and complete raw/global provenance before combining counters.",
+    "Foundation source identity relies on surrounding master common.source_inputs before/after guard; no claim of deployment or launch readiness."
+  ],
+  "changesMade": []
+}

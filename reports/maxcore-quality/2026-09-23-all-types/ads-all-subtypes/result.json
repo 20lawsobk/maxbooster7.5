@@ -1,0 +1,150 @@
+{
+  "id": "ads-all-subtypes",
+  "case": {
+    "id": "ads-all-subtypes",
+    "handler": "ads_generate",
+    "request_class": "AdGenerateRequest",
+    "kind": "text",
+    "body": {
+      "user_id": "quality-eval-fictional",
+      "product": "Paper Lantern Harbor mellow instrumental",
+      "artist_name": "Fictional Harbor Artist",
+      "platform": "meta",
+      "num_creatives": 4,
+      "target_subtypes": [
+        "text",
+        "image",
+        "audio",
+        "video"
+      ],
+      "replicate_peak": false
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "error",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 1
+  },
+  "exceptions": [],
+  "agent_outputs": [],
+  "awareness": [],
+  "files": [],
+  "runner_sha256": "f84bfc05e475481d9a29208cbfad49b2572139db4ad445efcf6c0fe0ce1aae2e",
+  "server_sha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.0,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.3,
+      "silicon": null
+    }
+  },
+  "request": {
+    "user_id": "quality-eval-fictional",
+    "product": "Paper Lantern Harbor mellow instrumental",
+    "artist_name": "Fictional Harbor Artist",
+    "platform": "meta",
+    "num_creatives": 4,
+    "target_subtypes": [
+      "text",
+      "image",
+      "audio",
+      "video"
+    ],
+    "replicate_peak": false,
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": null,
+    "user_id": "quality-eval-fictional",
+    "platform": "meta",
+    "ad_type": "video",
+    "product": "Paper Lantern Harbor mellow instrumental",
+    "goal": "streams",
+    "budget_daily": null,
+    "num_creatives": 4,
+    "replicate_peak": false,
+    "genre": null,
+    "artist_name": "Fictional Harbor Artist",
+    "vary_subtypes": true,
+    "target_subtypes": [
+      "text",
+      "image",
+      "audio",
+      "video"
+    ]
+  },
+  "elapsed_seconds": 3.396510009999929,
+  "error": "ValueError: Unsupported social awareness platform: meta",
+  "detail": null,
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/workspace/scripts/evaluate-maxcore-types.py\", line 139, in child\n    response = await asyncio.wait_for(func(**kwargs), 100)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/asyncio/tasks.py\", line 520, in wait_for\n    return await fut\n           ^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py\", line 6160, in ads_generate\n    _merged_aw = _effective_awareness(plat, _merged_awareness_for(req))\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py\", line 1450, in _merged_awareness_for\n    base_awareness = merge_awareness(req)\n                     ^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/generation/orchestrator.py\", line 60, in merge_awareness\n    platform_awareness = format_platform_optimization(raw_platform)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/platform_optimization.py\", line 46, in format_platform_optimization\n    platform = normalize_platform(value)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/platform_optimization.py\", line 41, in normalize_platform\n    raise ValueError(f\"Unsupported social awareness platform: {value}\")\nValueError: Unsupported social awareness platform: meta\n",
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

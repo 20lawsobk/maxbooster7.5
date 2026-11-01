@@ -1,0 +1,608 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-26T12:32:28.611Z",
+  "finishedAt": "2026-10-26T12:33:17.934Z",
+  "testAccountLivemode": false,
+  "webhookIsolation": {
+    "totalCount": 0,
+    "enabledCount": 0,
+    "disabledCount": 0,
+    "endpoints": [],
+    "policy": "Any enabled endpoint is treated as potentially targeting the shared app; no destinations or secrets are persisted."
+  },
+  "tests": [
+    {
+      "scenario": "preflight test-key prefixes and test-mode balance",
+      "status": "PASS",
+      "summary": "Dedicated test bindings accepted and actual Stripe balance livemode was false."
+    },
+    {
+      "scenario": "webhook endpoint isolation before writes",
+      "status": "PASS",
+      "summary": "No enabled test webhook endpoints can receive fixture events."
+    },
+    {
+      "scenario": "publishable/secret-key pairing via new PaymentIntent client_secret",
+      "status": "PASS",
+      "summary": "A newly created test PaymentIntent was fetched with the publishable test key and its client_secret."
+    },
+    {
+      "scenario": "customer, PaymentMethods, and SetupIntent",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "customerId": "cus_VVoiS2LZ8WjwoH",
+      "setupIntentId": "seti_1UUn4k7AtPiLrJubjFeImyuP",
+      "paymentMethodId": "pm_1UUn4k7AtPiLrJubz3TuxTje"
+    },
+    {
+      "scenario": "PaymentIntent: successful test-card payment",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn4m7AtPiLrJub1vTGaAzR",
+      "resourceStatus": "succeeded"
+    },
+    {
+      "scenario": "paymentIntents.confirm: explicit confirmation endpoint",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn4n7AtPiLrJub0R8sItrN",
+      "resourceStatus": "succeeded"
+    },
+    {
+      "scenario": "PaymentIntent: documented decline test fixture",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn4o7AtPiLrJub0F8t41hd",
+      "resourceStatus": "requires_payment_method"
+    },
+    {
+      "scenario": "PaymentIntent: requires_action test fixture",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn4p7AtPiLrJub0zwgKDyM",
+      "resourceStatus": "requires_action"
+    },
+    {
+      "scenario": "PaymentIntent: cancellation",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn4q7AtPiLrJub106KOflY",
+      "resourceStatus": "canceled"
+    },
+    {
+      "scenario": "PaymentIntent: idempotent create",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn4q7AtPiLrJub01G0q2H3",
+      "sameIdOnRetry": true
+    },
+    {
+      "scenario": "charges.list/retrieve for own test payment",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "chargeId": "ch_3UUn4m7AtPiLrJub1XEUfuOM",
+      "paymentIntentId": "pi_3UUn4m7AtPiLrJub1vTGaAzR"
+    },
+    {
+      "scenario": "Checkout Session: payment",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "checkoutSessionId": "cs_test_a1mHzbzTDCBkhNwUi4gmoV8YzpNWJkAZ6eTMFVSkpL8Itx28Tfe3aPkYwg",
+      "mode": "payment",
+      "resourceStatus": "open"
+    },
+    {
+      "scenario": "Checkout Session: subscription",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "checkoutSessionId": "cs_test_a1ZwokpsRY1zdabeSflfxeFHjPfCC55cdKNq5acdfrfCsnSvjqYGEst8Ge",
+      "mode": "subscription",
+      "resourceStatus": "open"
+    },
+    {
+      "scenario": "Checkout Session: setup",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "checkoutSessionId": "cs_test_c1GcOiVYvx8Va7ueXiF0SpGakHJh5mEvaYELt38DZJ5r0DJtdrd2w9Lvgs",
+      "mode": "setup",
+      "resourceStatus": "open"
+    },
+    {
+      "scenario": "checkout.sessions.list/retrieve for owned test sessions",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "checkoutSessionId": "cs_test_a1mHzbzTDCBkhNwUi4gmoV8YzpNWJkAZ6eTMFVSkpL8Itx28Tfe3aPkYwg",
+      "resourceStatus": "open"
+    },
+    {
+      "scenario": "invoices: create, finalize, retrieve, and void",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "invoiceId": "in_1UUn4u7AtPiLrJubR2lTmXPo",
+      "amountDueCents": 950,
+      "resourceStatus": "open"
+    },
+    {
+      "scenario": "subscriptions: create, update, and cancel",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "subscriptionId": "sub_1UUn4w7AtPiLrJubPXdrpyUO",
+      "resourceStatus": "canceled"
+    },
+    {
+      "scenario": "invoices.list/retrieve/pay with an owned test invoice",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "invoiceId": "in_1UUn4x7AtPiLrJub2AAI117Q",
+      "paymentIntentId": "pi_3UUn4y7AtPiLrJub1yRlA5TL",
+      "amountPaidCents": 625,
+      "resourceStatus": "paid"
+    },
+    {
+      "scenario": "paymentMethods.list/detach for owned test method",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentMethodId": "pm_1UUn4k7AtPiLrJubz3TuxTje",
+      "detached": true
+    },
+    {
+      "scenario": "billing portal session",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "portalSessionId": "bps_1UUn527AtPiLrJubZUW8LZs3",
+      "urlWithheld": true
+    },
+    {
+      "scenario": "shipping rate and Checkout shipping payload",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "shippingRateId": "shr_1UUn527AtPiLrJubAyYlT2cb",
+      "checkoutSessionId": "cs_test_a1y8O6Gd8kqauijh7RLHhYpFl3WSV0JoSLGjwJ8HzKuI0VQtkOJ44cvmxO",
+      "resourceStatus": "open"
+    },
+    {
+      "scenario": "Checkout automatic-tax payload",
+      "status": "BLOCKED",
+      "summary": "Stripe test-mode feature or account setup is unavailable; sanitized reason is included.",
+      "failureKind": "account_or_feature_setup_unavailable",
+      "providerDiagnostic": {
+        "message": "Stripe rejected Checkout automatic_tax for the account's current tax configuration.",
+        "providerMessage": "You must have a valid head office address to enable automatic tax calculation in test mode.  Visit [REDACTED_URL] to update it."
+      }
+    },
+    {
+      "scenario": "prices.list/retrieve and products.list/retrieve for owned fixtures",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "productId": "prod_VVoiKrXkht0wog",
+      "priceId": "price_1UUn4s7AtPiLrJubvxDOFkCF",
+      "listAndRetrieve": "PASS"
+    },
+    {
+      "scenario": "Connect Express account, onboarding link, and availability",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "accountId": "acct_1UUn5480T1BhzKlM",
+      "accountLinkExpiresAt": 1793018272,
+      "chargesEnabled": false,
+      "payoutsEnabled": false,
+      "transfersCapability": "inactive",
+      "requirementsCurrentlyDueCount": 6
+    },
+    {
+      "scenario": "accounts.createLoginLink for the owned Connect account",
+      "status": "BLOCKED",
+      "summary": "Stripe test-mode feature or account setup is unavailable; sanitized reason is included.",
+      "failureKind": "account_or_feature_setup_unavailable",
+      "providerDiagnostic": {
+        "message": "Stripe rejected createLoginLink because the owned Express account is not eligible for a dashboard login link.",
+        "providerMessage": "Cannot create a login link for an account that has not completed onboarding."
+      }
+    },
+    {
+      "scenario": "disputes.retrieve/update for own pm_card_createDispute charge",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn577AtPiLrJub1KxYhdwZ",
+      "chargeId": "ch_3UUn577AtPiLrJub1iuMPG44",
+      "disputeId": "du_1UUn587AtPiLrJubOf2kfJlH",
+      "updatedOwnTestDispute": true
+    },
+    {
+      "scenario": "StripeCommerceProvider: refund using real Stripe SDK",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn5A7AtPiLrJub1BoZxzhu",
+      "refundId": "re_3UUn5A7AtPiLrJub1nSYStG7",
+      "refundedCents": 1000
+    },
+    {
+      "scenario": "StripeCommerceProvider: transfer and reversal where enabled",
+      "status": "BLOCKED",
+      "summary": "Stripe test-mode feature or account setup is unavailable; sanitized reason is included.",
+      "failureKind": "account_or_feature_setup_unavailable",
+      "providerDiagnostic": {
+        "message": "The owned Connect account transfers capability is inactive, not active."
+      }
+    },
+    {
+      "scenario": "StripeCommerceProvider: payout where enabled",
+      "status": "BLOCKED",
+      "summary": "Stripe test-mode feature or account setup is unavailable; sanitized reason is included.",
+      "failureKind": "account_or_feature_setup_unavailable",
+      "providerDiagnostic": {
+        "message": "The owned Connect account payoutsEnabled flag is false; payouts must be enabled."
+      }
+    },
+    {
+      "scenario": "topups.retrieve without creating or touching unrelated top-ups",
+      "status": "SKIP",
+      "summary": "No top-up owned by this run exists; no unrelated top-up was listed or retrieved.",
+      "skipReason": "No top-up owned by this run exists; no unrelated top-up was listed or retrieved."
+    },
+    {
+      "scenario": "refunds: partial, full, and idempotency",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn5D7AtPiLrJub1NLhxJeY",
+      "partialRefundId": "re_3UUn5D7AtPiLrJub1fFgDbNZ",
+      "fullRefundId": "re_3UUn5D7AtPiLrJub1pCM6sfS",
+      "refundedCents": 4000,
+      "idempotentRetryMatched": true
+    },
+    {
+      "scenario": "balance transaction and production verifiedPayment",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "paymentIntentId": "pi_3UUn5D7AtPiLrJub1NLhxJeY",
+      "chargeId": "ch_3UUn5D7AtPiLrJub1lZbZt9u",
+      "balanceTransactionId": "txn_3UUn5D7AtPiLrJub1itwr6Ir",
+      "processingFeeCents": 146,
+      "refundedCents": 4000,
+      "balanceTransactionPollAttempts": 1,
+      "balanceTransactionWaitMs": 579,
+      "execution": "Production verifiedPayment bundle with the real Stripe test SDK client."
+    },
+    {
+      "scenario": "verifiedPayment transient missing-balance-transaction rejection",
+      "status": "PASS",
+      "summary": "Assertions passed against Stripe test mode.",
+      "expectedRejection": "Provider settlement accounting is not yet available",
+      "execution": "Production verifiedPayment bundle with a deterministic in-memory Stripe adapter; no Stripe resource was created."
+    }
+  ],
+  "resources": [
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn4j7AtPiLrJub0SdRpDLk"
+    },
+    {
+      "type": "customer",
+      "id": "cus_VVoiS2LZ8WjwoH"
+    },
+    {
+      "type": "setup_intent",
+      "id": "seti_1UUn4k7AtPiLrJubjFeImyuP"
+    },
+    {
+      "type": "payment_method",
+      "id": "pm_1UUn4k7AtPiLrJubz3TuxTje"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn4m7AtPiLrJub1vTGaAzR"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn4n7AtPiLrJub0R8sItrN"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn4o7AtPiLrJub0F8t41hd"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn4p7AtPiLrJub0zwgKDyM"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn4q7AtPiLrJub106KOflY"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn4q7AtPiLrJub01G0q2H3"
+    },
+    {
+      "type": "charge",
+      "id": "ch_3UUn4m7AtPiLrJub1XEUfuOM"
+    },
+    {
+      "type": "product",
+      "id": "prod_VVoiKrXkht0wog"
+    },
+    {
+      "type": "price",
+      "id": "price_1UUn4r7AtPiLrJubuttueNEO"
+    },
+    {
+      "type": "product",
+      "id": "prod_VVoifWhmw1ALo8"
+    },
+    {
+      "type": "price",
+      "id": "price_1UUn4s7AtPiLrJubvxDOFkCF"
+    },
+    {
+      "type": "checkout_session",
+      "id": "cs_test_a1mHzbzTDCBkhNwUi4gmoV8YzpNWJkAZ6eTMFVSkpL8Itx28Tfe3aPkYwg"
+    },
+    {
+      "type": "checkout_session",
+      "id": "cs_test_a1ZwokpsRY1zdabeSflfxeFHjPfCC55cdKNq5acdfrfCsnSvjqYGEst8Ge"
+    },
+    {
+      "type": "checkout_session",
+      "id": "cs_test_c1GcOiVYvx8Va7ueXiF0SpGakHJh5mEvaYELt38DZJ5r0DJtdrd2w9Lvgs"
+    },
+    {
+      "type": "invoice_item",
+      "id": "ii_1UUn4u7AtPiLrJubERqOZEH7"
+    },
+    {
+      "type": "invoice",
+      "id": "in_1UUn4u7AtPiLrJubR2lTmXPo"
+    },
+    {
+      "type": "subscription",
+      "id": "sub_1UUn4w7AtPiLrJubPXdrpyUO"
+    },
+    {
+      "type": "invoice_item",
+      "id": "ii_1UUn4x7AtPiLrJub3OFMkdvo"
+    },
+    {
+      "type": "invoice",
+      "id": "in_1UUn4x7AtPiLrJub2AAI117Q"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn4y7AtPiLrJub1yRlA5TL"
+    },
+    {
+      "type": "billing_portal_session",
+      "id": "bps_1UUn527AtPiLrJubZUW8LZs3"
+    },
+    {
+      "type": "shipping_rate",
+      "id": "shr_1UUn527AtPiLrJubAyYlT2cb"
+    },
+    {
+      "type": "checkout_session",
+      "id": "cs_test_a1y8O6Gd8kqauijh7RLHhYpFl3WSV0JoSLGjwJ8HzKuI0VQtkOJ44cvmxO"
+    },
+    {
+      "type": "connect_account",
+      "id": "acct_1UUn5480T1BhzKlM"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn577AtPiLrJub1KxYhdwZ"
+    },
+    {
+      "type": "dispute",
+      "id": "du_1UUn587AtPiLrJubOf2kfJlH"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn5A7AtPiLrJub1BoZxzhu"
+    },
+    {
+      "type": "refund",
+      "id": "re_3UUn5A7AtPiLrJub1nSYStG7"
+    },
+    {
+      "type": "payment_intent",
+      "id": "pi_3UUn5D7AtPiLrJub1NLhxJeY"
+    },
+    {
+      "type": "refund",
+      "id": "re_3UUn5D7AtPiLrJub1fFgDbNZ"
+    },
+    {
+      "type": "refund",
+      "id": "re_3UUn5D7AtPiLrJub1pCM6sfS"
+    }
+  ],
+  "cleanup": [
+    {
+      "resource": "SetupIntent seti_1UUn4k7AtPiLrJubjFeImyuP",
+      "status": "SKIP",
+      "note": "Stripe SetupIntents have no delete endpoint; any attached owned test PaymentMethod is detached during cleanup."
+    },
+    {
+      "resource": "billing_portal_session bps_1UUn527AtPiLrJubZUW8LZs3",
+      "status": "SKIP",
+      "note": "Portal sessions are short-lived and Stripe exposes no revoke/delete endpoint."
+    },
+    {
+      "resource": "owned Express account onboarding link",
+      "status": "SKIP",
+      "expiresAt": 1793018272,
+      "note": "Stripe onboarding links expire automatically; Stripe exposes no revocation endpoint or link ID."
+    },
+    {
+      "resource": "dispute du_1UUn587AtPiLrJubOf2kfJlH",
+      "status": "SKIP",
+      "note": "Stripe disputes have no delete/revoke API; only this run's documented test-fixture dispute is updated."
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn5D7AtPiLrJub1NLhxJeY",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn5A7AtPiLrJub1BoZxzhu",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn577AtPiLrJub1KxYhdwZ",
+      "status": "SKIP",
+      "note": "The owned dispute-fixture charge is intentionally not refunded while its dispute remains open."
+    },
+    {
+      "resource": "Connect account acct_1UUn5480T1BhzKlM",
+      "status": "PASS"
+    },
+    {
+      "resource": "Checkout Session cs_test_a1y8O6Gd8kqauijh7RLHhYpFl3WSV0JoSLGjwJ8HzKuI0VQtkOJ44cvmxO",
+      "status": "PASS"
+    },
+    {
+      "resource": "Shipping rate shr_1UUn527AtPiLrJubAyYlT2cb",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn4y7AtPiLrJub1yRlA5TL",
+      "status": "PASS"
+    },
+    {
+      "resource": "Invoice in_1UUn4x7AtPiLrJub2AAI117Q",
+      "status": "SKIP",
+      "note": "Stripe paid invoices cannot be deleted; the associated PaymentIntent was checked and any remaining test charge was refunded."
+    },
+    {
+      "resource": "Invoice item ii_1UUn4x7AtPiLrJub3OFMkdvo",
+      "status": "PASS"
+    },
+    {
+      "resource": "Subscription sub_1UUn4w7AtPiLrJubPXdrpyUO",
+      "status": "PASS"
+    },
+    {
+      "resource": "Invoice in_1UUn4u7AtPiLrJubR2lTmXPo",
+      "status": "PASS"
+    },
+    {
+      "resource": "Invoice item ii_1UUn4u7AtPiLrJubERqOZEH7",
+      "status": "PASS"
+    },
+    {
+      "resource": "Checkout Session cs_test_c1GcOiVYvx8Va7ueXiF0SpGakHJh5mEvaYELt38DZJ5r0DJtdrd2w9Lvgs",
+      "status": "PASS"
+    },
+    {
+      "resource": "Checkout Session cs_test_a1ZwokpsRY1zdabeSflfxeFHjPfCC55cdKNq5acdfrfCsnSvjqYGEst8Ge",
+      "status": "PASS"
+    },
+    {
+      "resource": "Checkout Session cs_test_a1mHzbzTDCBkhNwUi4gmoV8YzpNWJkAZ6eTMFVSkpL8Itx28Tfe3aPkYwg",
+      "status": "PASS"
+    },
+    {
+      "resource": "Price price_1UUn4s7AtPiLrJubvxDOFkCF",
+      "status": "PASS"
+    },
+    {
+      "resource": "Product prod_VVoifWhmw1ALo8",
+      "status": "PASS"
+    },
+    {
+      "resource": "Price price_1UUn4r7AtPiLrJubuttueNEO",
+      "status": "PASS"
+    },
+    {
+      "resource": "Product prod_VVoiKrXkht0wog",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn4q7AtPiLrJub01G0q2H3",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn4q7AtPiLrJub106KOflY",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn4p7AtPiLrJub0zwgKDyM",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn4o7AtPiLrJub0F8t41hd",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn4n7AtPiLrJub0R8sItrN",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn4m7AtPiLrJub1vTGaAzR",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentMethod pm_1UUn4k7AtPiLrJubz3TuxTje",
+      "status": "PASS"
+    },
+    {
+      "resource": "Customer cus_VVoiS2LZ8WjwoH",
+      "status": "PASS"
+    },
+    {
+      "resource": "PaymentIntent pi_3UUn4j7AtPiLrJub0SdRpDLk",
+      "status": "PASS"
+    }
+  ],
+  "summary": {
+    "counts": {
+      "PASS": 28,
+      "BLOCKED": 4,
+      "SKIP": 1
+    },
+    "cleanupCounts": {
+      "SKIP": 6,
+      "PASS": 26
+    },
+    "status": "FAIL",
+    "exitCode": 1,
+    "rootFailureReasons": [
+      "BLOCKED: Checkout automatic-tax payload (message=Stripe rejected Checkout automatic_tax for the account's current tax configuration.; providerMessage=You must have a valid head office address to enable automatic tax calculation in test mode.  Visit [REDACTED_URL] to update it.)",
+      "BLOCKED: accounts.createLoginLink for the owned Connect account (message=Stripe rejected createLoginLink because the owned Express account is not eligible for a dashboard login link.; providerMessage=Cannot create a login link for an account that has not completed onboarding.)",
+      "BLOCKED: StripeCommerceProvider: transfer and reversal where enabled (message=The owned Connect account transfers capability is inactive, not active.)",
+      "BLOCKED: StripeCommerceProvider: payout where enabled (message=The owned Connect account payoutsEnabled flag is false; payouts must be enabled.)",
+      "CLEANUP_UNRESOLVED: SetupIntent seti_1UUn4k7AtPiLrJubjFeImyuP (SKIP)",
+      "CLEANUP_UNRESOLVED: billing_portal_session bps_1UUn527AtPiLrJubZUW8LZs3 (SKIP)",
+      "CLEANUP_UNRESOLVED: owned Express account onboarding link (SKIP)",
+      "CLEANUP_UNRESOLVED: dispute du_1UUn587AtPiLrJubOf2kfJlH (SKIP)",
+      "CLEANUP_UNRESOLVED: PaymentIntent pi_3UUn577AtPiLrJub1KxYhdwZ (SKIP)",
+      "CLEANUP_UNRESOLVED: Invoice in_1UUn4x7AtPiLrJub2AAI117Q (SKIP)"
+    ]
+  },
+  "coverageNotes": {
+    "executionMode": "test-mode API scenarios",
+    "stripeJsBrowserConfirmation": "SKIP: no browser fixture was launched; publishable-key/client_secret pairing was verified directly against Stripe API.",
+    "topups": "No top-up was created, listed, or retrieved because no top-up owned by this run exists; unrelated top-ups were not touched.",
+    "verifiedPayment": "Settled-path test polls only the owned charge for up to 20 seconds before invoking the production bundle with the real test SDK; transient missing-balance-transaction rejection is separately asserted with an in-memory fixture.",
+    "appRoutes": "No application route, webhook, database, or live server was invoked."
+  },
+  "commandReceipt": {
+    "command": [
+      "node",
+      "tests/payment-processing/real-stripe-api.mjs"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-26T12:32:28.504574+00:00",
+    "durationSeconds": 49.456,
+    "exitCode": 1,
+    "timedOut": false,
+    "status": "failed",
+    "log": "/workspace/onboarding-results/stripe-test-journeys.txt",
+    "logSha256": "1924cb647149a851a2ecaf6099533aa44f8f66b4933b5ba1dda3043f67541a02"
+  },
+  "scope": "Separate dedicated Stripe TEST API run, before the final master; does not verify deployed Replit application routes",
+  "sourceBaseline": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "currentSourceSha256": {
+    "tests/payment-processing/real-stripe-api.mjs": "e4c172b69f62607cf1b3d1caad182cf13bfc1d95bf1892471d03f1cb5ac21229",
+    "tests/payment-processing/helpers-stripe-test-transport.mjs": "488a65ef86c0133963e54624f616bf603d934ea2921192889866a1eaa187aa3c",
+    "server/services/commerce/provider.ts": "75a6742778f5ce7d24122a9f78e8b7f0788aea1a8b3a82b7a27184cb3d90836b",
+    "server/services/commerce/reversalState.ts": "70897e9eed0d9e23e1d2685360fba55c51bfa235dcaf95ff0cfe70a9c3ae25d8",
+    "server/services/commerce/verification.ts": "dd83137d45e112b8b8b99730153ae77fa5232557595817d892803369b9ba298d"
+  }
+}

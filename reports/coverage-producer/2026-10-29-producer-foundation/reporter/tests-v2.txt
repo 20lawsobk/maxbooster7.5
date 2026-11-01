@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: actual clean run has current nonce, exact passed case, public module identity and own time bounds
+ok 1 - actual clean run has current nonce, exact passed case, public module identity and own time bounds
+  ---
+  duration_ms: 797.074459
+  type: 'test'
+  ...
+# Subtest: actual coverage threshold failure retains passing test outcome without claiming threshold success
+ok 2 - actual coverage threshold failure retains passing test outcome without claiming threshold success
+  ---
+  duration_ms: 751.002999
+  type: 'test'
+  ...
+# Subtest: actual unhandled rejection is recorded despite clean JUnit and the same four threshold errors
+ok 3 - actual unhandled rejection is recorded despite clean JUnit and the same four threshold errors
+  ---
+  duration_ms: 809.138661
+  type: 'test'
+  ...
+# Subtest: actual failed assertion remains failed in both public outcome and JUnit
+ok 4 - actual failed assertion remains failed in both public outcome and JUnit
+  ---
+  duration_ms: 733.649003
+  type: 'test'
+  ...
+# Subtest: actual skipped assertion is counted as skipped and cannot look fully executed
+ok 5 - actual skipped assertion is counted as skipped and cannot look fully executed
+  ---
+  duration_ms: 758.863028
+  type: 'test'
+  ...
+# Subtest: actual collection failure records failed module/error without inventing a passed case
+ok 6 - actual collection failure records failed module/error without inventing a passed case
+  ---
+  duration_ms: 750.740022
+  type: 'test'
+  ...
+# Subtest: missing parent nonce prevents outcome creation
+ok 7 - missing parent nonce prevents outcome creation
+  ---
+  duration_ms: 556.262386
+  type: 'test'
+  ...
+# Subtest: output ancestor symlink cannot redirect the public outcome file
+ok 8 - output ancestor symlink cannot redirect the public outcome file
+  ---
+  duration_ms: 554.057077
+  type: 'test'
+  ...
+# Subtest: an existing owned outcome file is never overwritten
+ok 9 - an existing owned outcome file is never overwritten
+  ---
+  duration_ms: 762.653203
+  type: 'test'
+  ...
+# Subtest: two actual consecutive commands retain separate outcomes with coverage cleaning disabled
+ok 10 - two actual consecutive commands retain separate outcomes with coverage cleaning disabled
+  ---
+  duration_ms: 1582.625456
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8474.685429

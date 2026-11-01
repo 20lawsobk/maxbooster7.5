@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/workspace/.cloud-tools/node_modules/node/bin/node",
+    "/workspace/maxbooster7.5/node_modules/vitest/vitest.mjs",
+    "run",
+    "--config",
+    "/workspace/onboarding-results/c5-admission-independent-review/runtime-control/vitest.config.mjs",
+    "--coverage",
+    "--reporter=default",
+    "--reporter=junit",
+    "--outputFile.junit=/workspace/onboarding-results/c5-admission-independent-review/runtime-control/junit-default.xml",
+    "--coverage.thresholds.lines=0",
+    "--coverage.thresholds.functions=0",
+    "--coverage.thresholds.statements=0",
+    "--coverage.thresholds.branches=0"
+  ],
+  "exitCode": 1,
+  "scope": "Independent owned tiny outside fixture; thresholds temporarily zero ONLY in this diagnostic to isolate unhandled runtime exit; root policies never edited"
+}

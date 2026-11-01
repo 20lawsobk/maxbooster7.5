@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Reproducible diagnostic of held-out text prompt coverage; this is not a quality score or replacement for live request token counts.",
+  "quality": "NOT_ESTABLISHED",
+  "checkpoint": {
+    "sha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "matchesReleaseManifest": true,
+    "matchesFrozenSnapshot": true,
+    "changed": false,
+    "trainingPerformed": false
+  },
+  "tokenizer": {
+    "kind": "checkpoint word-level tokenizer",
+    "vocabularyEntries": 443,
+    "unknownToken": "<UNK>",
+    "servingRejectionThreshold": 0.4
+  },
+  "scope": {
+    "cases": "The eight frozen social held-out cases in snapshot.json.",
+    "serialization": "Recreated with the current _script_prompt serializer and held-out API request fields; awareness was intentionally empty.",
+    "limitation": "The live MaxCore request also adds awareness. These rates therefore do not claim to be exact live-request rates; the source snapshot did not pin script_agent.py."
+  },
+  "cases": [
+    {
+      "caseId": "social-facebook",
+      "criteria": [
+        "80\u2013120 words",
+        "Moss Compass and November 9 are preserved",
+        "2\u20135 relevant music hashtags",
+        "community-oriented reaction/share invitation",
+        "no invented artist, venue, URL, or metrics"
+      ],
+      "tokens": 55,
+      "unknownTokens": 47,
+      "unknownRate": 0.854545,
+      "exceedsServingThresholdWithoutAwareness": true
+    },
+    {
+      "caseId": "social-instagram",
+      "criteria": [
+        "300\u20131200 characters",
+        "title and release date are correct",
+        "3\u20135 precise topical hashtags",
+        "clear link-in-bio action and no direct URL",
+        "no invented artist or metrics"
+      ],
+      "tokens": 50,
+      "unknownTokens": 44,
+      "unknownRate": 0.88,
+      "exceedsServingThresholdWithoutAwareness": true
+    },
+    {
+      "caseId": "social-x",
+      "criteria": [
+        "40\u2013280 characters",
+        "title and release date are correct",
+        "0\u20132 precise hashtags",
+        "clear reply invitation",
+        "no invented artist, URL, or metrics"
+      ],
+      "tokens": 54,
+      "unknownTokens": 47,
+      "unknownRate": 0.87037,
+      "exceedsServingThresholdWithoutAwareness": true
+    },
+    {
+      "caseId": "social-youtube",
+      "criteria": [
+        "1\u20133 sentences in Community-post style",
+        "title and release date are correct",
+        "clear comment or release-day listening invitation",
+        "no fabricated video, premiere, artist, link, or metrics"
+      ],
+      "tokens": 58,
+      "unknownTokens": 46,
+      "unknownRate": 0.793103,
+      "exceedsServingThresholdWithoutAwareness": true
+    },
+    {
+      "caseId": "social-tiktok",
+      "criteria": [
+        "immediate, relevant hook",
+        "Moss Compass and November 9 are correct",
+        "3\u20135 descriptive hashtags",
+        "comment or replay invitation",
+        "no fabricated trend, artist, URL, or metrics"
+      ],
+      "tokens": 61,
+      "unknownTokens": 49,
+      "unknownRate": 0.803279,
+      "exceedsServingThresholdWithoutAwareness": true
+    },
+    {
+      "caseId": "social-linkedin",
+      "criteria": [
+        "400\u20131500 characters",
+        "title and release date are correct",
+        "2\u20134 relevant professional hashtags",
+        "professional tone and genuine closing question",
+        "no invented collaborators, production details, URL, or metrics"
+      ],
+      "tokens": 54,
+      "unknownTokens": 49,
+      "unknownRate": 0.907407,
+      "exceedsServingThresholdWithoutAwareness": true
+    },
+    {
+      "caseId": "social-threads",
+      "criteria": [
+        "40\u2013500 characters",
+        "title and release date are correct",
+        "conversational voice and honest reply invitation",
+        "zero or one topical hashtag",
+        "no invented artist, URL, or metrics"
+      ],
+      "tokens": 51,
+      "unknownTokens": 39,
+      "unknownRate": 0.764706,
+      "exceedsServingThresholdWithoutAwareness": true
+    },
+    {
+      "caseId": "social-google-business",
+      "criteria": [
+        "80\u20131500 characters",
+        "Moss Compass, November 9, and Lantern Quay are accurate",
+        "clear local/community relevance and Learn more action",
+        "no hashtags",
+        "no invented address, hours, price, review, rating, URL, or metrics"
+      ],
+      "tokens": 68,
+      "unknownTokens": 60,
+      "unknownRate": 0.882353,
+      "exceedsServingThresholdWithoutAwareness": true
+    }
+  ],
+  "liveEvaluation": {
+    "recordedGenerationAttempts": 20,
+    "http503Attempts": 20,
+    "allAttemptsRejectedWithoutFallback": true,
+    "diagnosticReasonClass": "ValueError",
+    "reasonMarkers": [
+      "token",
+      "generation",
+      "checkpoint",
+      "valueerror"
+    ],
+    "verbatimReasonAvailable": false
+  },
+  "interpretation": "All eight prompt-plus-control serializations exceed the checkpoint <UNK> rejection threshold even before awareness is added. This is consistent with, but does not prove the exact branch behind, the saved ValueError diagnostic. No generated text/media was returned, so every stated quality criterion remains unscorable.",
+  "sourceHashes": {
+    "evaluations/maxcore-fused/cases.json": "b64d962582805a958f72a2a0bd15b8ba492ab682e99b5aa17ff06230e37f2e90",
+    "external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py": "954e4556c76ae3151058bd3657afdc78163e1cc46dec5ec9c1b91f493b3c8568",
+    "external/maxcore/artifacts/ai-training-server/ai_model/model/tokenizer.py": "9ecd0554b60b2bb50b5bbffce32827a7b341ec58de63c3b40e061c3435318cdd",
+    "external/maxcore/artifacts/ai-training-server/ai_model/model/creative_model.py": "7a7f4c94e1a51ce1373cde0e70bfdad9a0dc5d6a3773900b32786a6f19d63114",
+    "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  }
+}

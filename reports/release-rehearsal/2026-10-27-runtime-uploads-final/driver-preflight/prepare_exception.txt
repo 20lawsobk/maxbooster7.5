@@ -1,0 +1,1 @@
+{"scenario": "prepare_exception", "assertions": "passed", "observedDriverExit": 1, "status": "failed_driver_exception", "calls": {"source": 2, "inventory": 2, "prepare": 1}, "actualPreparationOrColdExecuted": false}

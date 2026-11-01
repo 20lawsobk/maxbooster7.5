@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: actual royalties CSV parser retains quoting, trimming, mapping and malformed-input semantics on v7
+ok 1 - actual royalties CSV parser retains quoting, trimming, mapping and malformed-input semantics on v7
+  ---
+  duration_ms: 91.246645
+  type: 'test'
+  ...
+# Subtest: actual upload middleware accepts real multipart, rejects SVG, size overflow and malformed framing
+ok 2 - actual upload middleware accepts real multipart, rejects SVG, size overflow and malformed framing
+  ---
+  duration_ms: 155.962797
+  type: 'test'
+  ...
+# Subtest: installed sharp decodes and transcodes genuine image bytes
+ok 3 - installed sharp decodes and transcodes genuine image bytes
+  ---
+  duration_ms: 43.390319
+  type: 'test'
+  ...
+# Subtest: all installed tar parents resolve real patched code; archive roundtrip and traversal rejection work
+ok 4 - all installed tar parents resolve real patched code; archive roundtrip and traversal rejection work
+  ---
+  duration_ms: 130.241573
+  type: 'test'
+  ...
+# Subtest: xcode UUID consumer remains compatible with patched UUID v11
+ok 5 - xcode UUID consumer remains compatible with patched UUID v11
+  ---
+  duration_ms: 57.051739
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 981.597996

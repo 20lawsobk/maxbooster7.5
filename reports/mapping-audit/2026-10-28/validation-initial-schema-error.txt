@@ -1,0 +1,13 @@
+Initial report-only validator execution exited1 before producing validation.json:
+
+Traceback (most recent call last):
+  File "reports/mapping-audit/2026-10-28/validate-trace.py", line38
+    start, end = citation["startLine"], citation["endLine"]
+KeyError: 'startLine'
+
+The subordinate raw Python source trace uses line/snippet, while the aggregate
+uses startLine/excerpt/sourceSha256. The aggregate builder now explicitly
+normalizes that representation using the subordinate's exact source hashes.
+The subordinate trace remains unchanged. This was a report-schema defect,
+not an application failure or failed product assertion. The final actual
+validator rechecks every retained excerpt/range/hash and exits0.

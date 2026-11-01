@@ -1,0 +1,41 @@
+{
+  "scope": "Real disposable PostgreSQL, physical filesystem bytes, canonical local PDIM Lua, restarted and competing processes; renewed target integrity verification before retained-source cleanup; no deployed/provider/global-capacity proof",
+  "commands": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=junit",
+        "tests/fabric-migration-outbox-postgres.test.mjs",
+        "tests/fabric-replica-generation.test.mjs",
+        "tests/fabric-root-storage-postgres.test.mjs",
+        "tests/neon-schema-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T21:47:30.430587+00:00",
+      "durationSeconds": 19.392,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fabric-migration-published-guard-final/node.xml",
+      "logSha256": "68ff1d5789d48a23e361a3c647c76050de4eccd8a7a666d79d2adb4ee20ae5e0"
+    }
+  ],
+  "sourceFiles": {
+    "server/pocket-dimension/fabric/control/Rebalancer.ts": "27a7dd3852ff182b56e7a9fc374c9f2dae8342772fab135fe9025c5d427b927a",
+    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts": "da97fef3794c8282f11208e16689f717ebf12adf39f01eebe56b8a8069572323",
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76",
+    "migrations/0099_fabric_migration_journal.sql": "8faa7feabf1ee0151b9eb3085297bbfd9f7743322fff20f215c9a042a5fd6b27",
+    "tests/fabric-migration-outbox-postgres.test.mjs": "a5fa879468e24aa154cfe55b4a7cdaea1e67ea6b9c57a6a1a2a02eaaa33f72c0",
+    "tests/fabric-replica-generation.test.mjs": "72b5abd3b5c24594ad0d3137c8fa3d59575b4cc4470668f5a873d32ffec6b289",
+    "tests/unit/pdim-canonical-owner.test.ts": "fa9b9ca45054ded762c34a836afd6ddab3ac4bdcdda2e84e8f6a6e45278026f3",
+    "shared/schema.ts": "ce79392f833de48cc9bf3fe1ab6f158558b64824ccdcecce03ba277713bb1411"
+  },
+  "junitCases": 25,
+  "failedCases": 0,
+  "sourceInputsUnchanged": true,
+  "sourceInputsSha256": "1bffd19f52e0e03535fefca06a40e4b712fd235491423f4525862acea730fbc4"
+}

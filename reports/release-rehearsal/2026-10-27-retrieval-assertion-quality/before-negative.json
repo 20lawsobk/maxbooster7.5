@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "scope": "Two actual module _check(False) invocations in a private pytest child; probes contain no extra assertions or substitute checker",
+  "command": [
+    "/workspace/.cloud-python/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--import-mode=importlib",
+    "/tmp/retrieval-negative-oracle-lg349_ql/test_actual_retrieval_oracles.py",
+    "--junitxml=/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-retrieval-assertion-quality/before-negative.xml"
+  ],
+  "startedAt": "2026-10-28T02:26:54.571244+00:00",
+  "finishedAt": "2026-10-28T02:26:54.955001+00:00",
+  "exitCode": 0,
+  "probeSource": "from ai_model.retrieval import test_pipeline,test_phase4\n\ndef test_actual_pipeline_false_check():\n    test_pipeline._check('owned pipeline false condition',False)\n\ndef test_actual_phase4_false_check():\n    test_phase4._check('owned phase4 false condition',False)\n",
+  "outputSha256": "449f48faab28952069f2e297454c2a3b0f42069bcbc27c7b2b56439fc80297ed",
+  "sourceHashes": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py": "443598baf5030e0fe136804507492f1e1a9bb08dd4abe9937ca17ed530d0dfa2",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py": "5a960476962079db68d39fcb414cd8a0ae67beba7214fddf8385fd9426595534"
+  },
+  "productionReady": false
+}

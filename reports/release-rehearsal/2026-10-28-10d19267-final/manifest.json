@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "scope": "Actual10d portable cold-payload rehearsal, unchanged admitted inputs and37-check independent audit; not production launch approval",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "sourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "sourceInputsUnchanged": true,
+  "admittedInputsUnchanged": true,
+  "productionReady": false,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 6052,
+      "sha256": "2819a6d8d54ef1ee4ad3ea368f53bfea4866ca2a17d1169409d11c48413f13c4"
+    },
+    {
+      "path": "admitted-after-observation.txt",
+      "bytes": 713118,
+      "sha256": "23cbd95f13716ad48fb66a1cfaa96821f49ef3d285335d64a2b45c55f30a7c1b"
+    },
+    {
+      "path": "admitted-after.json",
+      "bytes": 848929,
+      "sha256": "8eecc5c9468b5a350f39decd8aa4e8a0619d19c5f92e718e0e596774d63f0337"
+    },
+    {
+      "path": "admitted-before-observation.txt",
+      "bytes": 713118,
+      "sha256": "23cbd95f13716ad48fb66a1cfaa96821f49ef3d285335d64a2b45c55f30a7c1b"
+    },
+    {
+      "path": "admitted-before.json",
+      "bytes": 848929,
+      "sha256": "8eecc5c9468b5a350f39decd8aa4e8a0619d19c5f92e718e0e596774d63f0337"
+    },
+    {
+      "path": "admitted-diff.json",
+      "bytes": 80,
+      "sha256": "7b8e1860b8407c89ab4fe6e1b0fad9fa238f83779daa0b47b67abcc2e17cd769"
+    },
+    {
+      "path": "app_remainder-members.txt",
+      "bytes": 76072,
+      "sha256": "41b101493626a6b3a5a222ade26c1ef39c5c155c2c121eb3cdf0c1113a44ef3b"
+    },
+    {
+      "path": "cold/packed-acceptance.json",
+      "bytes": 18194,
+      "sha256": "9eec722f3950dfb3bd7792e1133cfc134087b39088d86d2de64baac46f2cf009"
+    },
+    {
+      "path": "cold/packed-postgres.log",
+      "bytes": 716,
+      "sha256": "d2262ee8d2f86c6b70ee1128dd0c5f0d33add263e173c435f07b2df81ec818ea"
+    },
+    {
+      "path": "cold/packed-setup.log",
+      "bytes": 14178,
+      "sha256": "31370993ae12e5504455a7e80799f35c79b84dfd96cb56b78481205ff6035d82"
+    },
+    {
+      "path": "cold/packed-startup.log",
+      "bytes": 157565,
+      "sha256": "24784b484b40d4e74c21f33d614fccc55cb77aab2f5bd1d25a8dbd4951bc06f9"
+    },
+    {
+      "path": "cold-runner.txt",
+      "bytes": 43,
+      "sha256": "7add66abc87a7448f4f9493cce529389d95d6667b6d99700740b630373e5cb90"
+    },
+    {
+      "path": "execution-driver.py",
+      "bytes": 7855,
+      "sha256": "f2eb6d2a0ed71daf5ddf2d9775cd13abf00deb2241dcd7fc85569629ff1244c7"
+    },
+    {
+      "path": "external_maxcore-members.txt",
+      "bytes": 5195341,
+      "sha256": "c0d14aeb397194efd63b20cc2c05ecb037d781835398ddfe7d0eaa881236d6b7"
+    },
+    {
+      "path": "hygiene-audit.json",
+      "bytes": 2441,
+      "sha256": "0bb4e168d71b01667a05f103c0c51d3a06f094e3d5c90e2a489ab9370a9342e4"
+    },
+    {
+      "path": "prepare.txt",
+      "bytes": 54226,
+      "sha256": "556180953365c27d2664eacc02e3846c5fba81120b34967ab8b0f12d14aac849"
+    },
+    {
+      "path": "release-manifest.json",
+      "bytes": 910224,
+      "sha256": "fc22e387b8f9caa7e06c514be6e6319d564238175c5a9f1f621e7f94803e51d2"
+    },
+    {
+      "path": "source-code-inputs-after.json",
+      "bytes": 518093,
+      "sha256": "74501da07a78cf6ac65e5ce36b6562b1b6de00dc7b8be41b77403dada4934237"
+    },
+    {
+      "path": "source-code-inputs.json",
+      "bytes": 518093,
+      "sha256": "74501da07a78cf6ac65e5ce36b6562b1b6de00dc7b8be41b77403dada4934237"
+    },
+    {
+      "path": "source-inputs.json",
+      "bytes": 848929,
+      "sha256": "8eecc5c9468b5a350f39decd8aa4e8a0619d19c5f92e718e0e596774d63f0337"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 6023,
+      "sha256": "4d6210e8b547a1cab301946b8d8fa00b4fb1ff1c2f2ce92ed1b5273d866cf445"
+    },
+    {
+      "path": "verify-after-cold.txt",
+      "bytes": 285,
+      "sha256": "777bb8b19e58a39fa4702df6ff481c255ec2f1866b95abefd30a4429a3d1d486"
+    },
+    {
+      "path": "verify.txt",
+      "bytes": 285,
+      "sha256": "777bb8b19e58a39fa4702df6ff481c255ec2f1866b95abefd30a4429a3d1d486"
+    }
+  ]
+}

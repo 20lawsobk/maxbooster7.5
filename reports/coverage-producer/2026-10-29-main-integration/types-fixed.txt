@@ -1,0 +1,4 @@
+
+> max-booster@3.0.0 check
+> tsc -p tsconfig.server.json && tsc -p tsconfig.client.json
+

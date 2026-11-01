@@ -1,0 +1,277 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-26T02:43:18.870966+00:00",
+  "finishedAt": "2026-10-26T02:43:25.713597+00:00",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "interpreter": "/workspace/.cloud-python/bin/python",
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "timeout": 0,
+    "skipped": 0,
+    "blocked": 0,
+    "empty": 0
+  },
+  "counts": {
+    "tests": 54,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "enabled": false,
+    "status": "not_requested"
+  },
+  "isolation": "Fresh interpreter and disposable HOME/state per file; no application credentials; only ephemeral loopback networking; child process group cleanup",
+  "limits": "Blocked/skip/timeout are not passes; fixture training does not establish generation quality or production readiness",
+  "duplicateSnapshots": [
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py"
+  ],
+  "suites": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+      "description": "Campaign generation must not substitute the retired template composer.",
+      "cases": [
+        {
+          "name": "CampaignFailClosedTests.test_campaign_reports_unavailable_backend_without_snapshot_gate",
+          "description": "campaign reports unavailable backend without snapshot gate"
+        },
+        {
+          "name": "CampaignFailClosedTests.test_bound_campaign_explicitly_reports_missing_learned_backend",
+          "description": "bound campaign explicitly reports missing learned backend"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "2563b0b8b287c977feefb33f292d7868784291d4ed15f4f66e40e41188dfd5d4",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py --output /workspace/onboarding-results/fix-python-handlers-final",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 2.405,
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__generation__test_campaign.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__generation__test_campaign.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py",
+      "description": "Real rollout assembly with a controlled inference boundary and public scan.",
+      "cases": [
+        {
+          "name": "test_unverified_release_keeps_all_slots_without_invented_milestones",
+          "description": "unverified release keeps all slots without invented milestones"
+        },
+        {
+          "name": "test_multiplatform_campaign_keeps_normalized_names_and_actual_sections",
+          "description": "multiplatform campaign keeps normalized names and actual sections"
+        },
+        {
+          "name": "test_backend_provenance_failure_never_substitutes_complete_template",
+          "description": "backend provenance failure never substitutes complete template"
+        },
+        {
+          "name": "test_backend_exception_aborts_whole_campaign_without_leaking_plan",
+          "description": "backend exception aborts whole campaign without leaking plan"
+        },
+        {
+          "name": "test_unverified_metrics_links_and_marketing_claims_fail_explicitly",
+          "description": "unverified metrics links and marketing claims fail explicitly"
+        },
+        {
+          "name": "test_invalid_campaign_controls_fail_before_any_backend_call",
+          "description": "invalid campaign controls fail before any backend call"
+        },
+        {
+          "name": "test_failed_optional_asset_is_explicit_without_inventing_delivery",
+          "description": "failed optional asset is explicit without inventing delivery"
+        },
+        {
+          "name": "test_actual_script_agent_runs_under_unique_slot_plans_and_one_public_scan",
+          "description": "actual script agent runs under unique slot plans and one public scan"
+        },
+        {
+          "name": "test_specification_or_unsafe_asset_identifiers_never_count_as_generated_images",
+          "description": "specification or unsafe asset identifiers never count as generated images"
+        },
+        {
+          "name": "test_expired_inherited_budget_blocks_inference_and_preserves_context",
+          "description": "expired inherited budget blocks inference and preserves context"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "70bceb94f74672cd7729a88f776facf9c4a5cd51ee5f194cb01a94aee535aa12",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py --output /workspace/onboarding-results/fix-python-handlers-final",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 3.788,
+      "counts": {
+        "tests": 29,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__tests__test_campaign_rollout.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_campaign_rollout.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
+      "description": "Handler/legacy body contracts, distinct from real media route admission.\n\nThe dedicated-media HTTP tests exercise the production admission and delivery\npipeline. Explicit ``__wrapped__`` calls below test retained internal handlers;\nthey are not evidence that a retired automatic fallback is available publicly.",
+      "cases": [
+        {
+          "name": "test_ads_meta_uses_social_awareness_but_keeps_network_identity",
+          "description": "ads meta uses social awareness but keeps network identity"
+        },
+        {
+          "name": "test_ad_script_uses_agent_run_and_exposes_source",
+          "description": "ad script uses agent run and exposes source"
+        },
+        {
+          "name": "test_ad_script_failure_is_not_disguised_as_template",
+          "description": "ad script failure is not disguised as template"
+        },
+        {
+          "name": "test_ad_awareness_fallback_is_not_claimed_as_generated",
+          "description": "ad awareness fallback is not claimed as generated"
+        },
+        {
+          "name": "test_campaign_passes_platform_specific_awareness_to_builder",
+          "description": "campaign passes platform specific awareness to builder"
+        },
+        {
+          "name": "test_studio_soundtrack_deadline_covers_admission_and_render",
+          "description": "studio soundtrack deadline covers admission and render"
+        },
+        {
+          "name": "test_internal_model_and_health_listeners_are_loopback_only",
+          "description": "internal model and health listeners are loopback only"
+        },
+        {
+          "name": "test_requested_pathtrace_passes_subject_and_rejects_unsupported",
+          "description": "requested pathtrace passes subject and rejects unsupported"
+        },
+        {
+          "name": "test_soundtrack_passes_genre_mood_and_intent_to_isolated_renderer",
+          "description": "soundtrack passes genre mood and intent to isolated renderer"
+        },
+        {
+          "name": "test_dataset_audio_reports_bytes_and_targets_not_invented_measurements",
+          "description": "dataset audio reports bytes and targets not invented measurements"
+        },
+        {
+          "name": "test_model_script_guard_rejects_template_and_awareness",
+          "description": "model script guard rejects template and awareness"
+        },
+        {
+          "name": "test_generic_content_rejects_stale_cached_awareness",
+          "description": "generic content rejects stale cached awareness"
+        },
+        {
+          "name": "test_api_content_rejects_cached_fake_score",
+          "description": "api content rejects cached fake score"
+        },
+        {
+          "name": "test_api_text_rejects_legacy_cached_score",
+          "description": "api text rejects legacy cached score"
+        },
+        {
+          "name": "test_api_content_fresh_copy_is_model_text_without_fake_scores",
+          "description": "api content fresh copy is model text without fake scores"
+        },
+        {
+          "name": "test_alias_media_bodies_mark_asset_identifiers_as_specs",
+          "description": "alias media bodies mark asset identifiers as specs"
+        },
+        {
+          "name": "test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs",
+          "description": "unavailable model media routes never enter legacy render or create jobs"
+        },
+        {
+          "name": "test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool",
+          "description": "audio explicit direction reaches synth and avoids genre pool"
+        },
+        {
+          "name": "test_audio_synth_receives_actual_instrument_and_prompt",
+          "description": "audio synth receives actual instrument and prompt"
+        },
+        {
+          "name": "test_audio_reference_body_rejects_unfulfillable_piano_direction",
+          "description": "audio reference body rejects unfulfillable piano direction"
+        },
+        {
+          "name": "test_audio_internal_body_caller_mood_and_targets_beat_fast_priors",
+          "description": "audio internal body caller mood and targets beat fast priors"
+        },
+        {
+          "name": "test_daw_and_social_model_failures_are_service_unavailable",
+          "description": "daw and social model failures are service unavailable"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "e196f7b10a11953f0f99c12d0794922279bf02623a96bf05cc1587966c69a214",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py --output /workspace/onboarding-results/fix-python-handlers-final",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 4.427,
+      "counts": {
+        "tests": 23,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
+    }
+  ]
+}

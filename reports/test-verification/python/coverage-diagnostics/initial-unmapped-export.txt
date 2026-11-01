@@ -1,0 +1,5 @@
+coverage combine (exit 0)
+Combined 101 files, skipped 4
+
+coverage json (exit 1)
+No source for code: '<repo>/external/maxcore/artifacts/ai-training-server/job-update'; see https://coverage.readthedocs.io/en/7.17.0/messages.html#error-no-source

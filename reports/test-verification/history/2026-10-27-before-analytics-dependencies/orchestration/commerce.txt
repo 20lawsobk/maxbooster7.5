@@ -1,0 +1,22 @@
+beat-loop-lifecycle-postgres.test: passed {'tests': 10, 'failures': 0, 'errors': 0, 'skipped': 0}
+business-integrity-postgres.test: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
+business-integrity.test: passed {'tests': 3, 'failures': 0, 'errors': 0, 'skipped': 0}
+compensation-races-postgres.test: passed {'tests': 10, 'failures': 0, 'errors': 0, 'skipped': 0}
+database-commerce.test: passed {'tests': 13, 'failures': 0, 'errors': 0, 'skipped': 1}
+inbound-billing.test: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
+inbound-commerce.test: passed {'tests': 5, 'failures': 0, 'errors': 0, 'skipped': 0}
+inbound-known-failures: passed {'tests': 5, 'failures': 0, 'errors': 0, 'skipped': 0}
+inbound-legacy-services.test: passed {'tests': 3, 'failures': 0, 'errors': 0, 'skipped': 0}
+inbound-registration.test: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
+inbound-storefront.test: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
+outbound-commerce: passed {'tests': 7, 'failures': 0, 'errors': 0, 'skipped': 0}
+outbound-membership-auth: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
+outbound-services-webhooks: passed {'tests': 8, 'failures': 0, 'errors': 0, 'skipped': 0}
+outbound-stripe-resource-ownership.test: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
+outbound-stripe-test-transport.test: passed {'tests': 3, 'failures': 0, 'errors': 0, 'skipped': 0}
+outbound-topup-journal: passed {'tests': 3, 'failures': 0, 'errors': 0, 'skipped': 0}
+provider-only-preferences.test: passed {'tests': 10, 'failures': 0, 'errors': 0, 'skipped': 0}
+settlement-dispute-hold-postgres.test: passed {'tests': 21, 'failures': 0, 'errors': 0, 'skipped': 0}
+subscription-authority-postgres.test: passed {'tests': 16, 'failures': 0, 'errors': 0, 'skipped': 0}
+legacy-beat: passed {'tests': 14, 'failures': 0, 'errors': 0, 'skipped': 0}
+provider-report-summary: passed None

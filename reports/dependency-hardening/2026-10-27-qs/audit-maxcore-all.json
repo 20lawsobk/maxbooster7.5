@@ -1,0 +1,17 @@
+{
+  "command": [
+    "pnpm",
+    "audit",
+    "--audit-level",
+    "low",
+    "--json"
+  ],
+  "cwd": "external/maxcore",
+  "startedAt": "2026-10-27T22:19:47.150732+00:00",
+  "durationSeconds": 2.053,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/audit-maxcore-all.txt",
+  "logSha256": "d280b1ff06aade900371046ccb37b89907b24ba8ecb2fb3d557beddba187649f"
+}

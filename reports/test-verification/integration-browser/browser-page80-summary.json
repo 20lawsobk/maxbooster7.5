@@ -1,0 +1,78 @@
+{
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "scope": "Actual isolated Chromium component/audio regressions plus bounded 80-page application acceptance",
+  "browser": {
+    "files": [
+      "tests/auth-session-transient-browser.test.mjs",
+      "tests/local-media-renderer-browser.test.mjs",
+      "tests/storefront-hook-transition.test.mjs",
+      "tests/studio-load-save-guard.test.mjs",
+      "tests/studio-plugin-audio-browser.test.mjs"
+    ],
+    "passed": 5,
+    "failed": 0,
+    "exitCode": 0,
+    "caseNames": [
+      "AuthProvider preserves verified identity and avoids false sign-out during session throttling",
+      "Explicit media renderers show errors, retry and preview delivered artifacts in the browser",
+      "Storefront keeps hook order across pending, missing and loaded public/owner states",
+      "Studio never saves an unread project and permits an empty project only after a successful load",
+      "Studio playback processes saved inserts, edits, bypass, ordering and removal in real Chromium"
+    ],
+    "log": "browser.tap",
+    "initialAttempt": {
+      "passed": 3,
+      "failed": 2,
+      "cause": "Chromium descendants continued writing temporary profiles after launcher exit; cleanup raised ENOTEMPTY",
+      "log": "browser.initial.tap",
+      "repair": "Capture PID-identity descendants and stop them before removing temporary profiles; assertions unchanged"
+    }
+  },
+  "page80": {
+    "command": "node scripts/testing/page80-acceptance.mjs",
+    "decision": "PASS_WITH_UNTESTED_CATEGORIES",
+    "failed": 0,
+    "counts": {
+      "authenticated": 42,
+      "administrator": 11,
+      "public": 27
+    },
+    "passed": 80,
+    "cleanup": "pass",
+    "readiness": {
+      "scope": "sealed non-ML authentication, projects, and frontend acceptance",
+      "fullStackReadiness": "NOT_PROVEN: separate real imported MaxCore/model acceptance required",
+      "expectedDegradedReadinessAsserted": true,
+      "unifiedAwarenessReady": false,
+      "status": 503,
+      "aggregate": "degraded",
+      "subsystems": {
+        "database": {
+          "status": "ok"
+        },
+        "redis": {
+          "status": "ok"
+        },
+        "routes": {
+          "status": "ok",
+          "detail": "all route sections registered"
+        },
+        "audit": {
+          "status": "unknown",
+          "detail": "initializing"
+        },
+        "automation": {
+          "status": "ok",
+          "detail": "workflows=0"
+        },
+        "maxcore": {
+          "status": "unknown",
+          "detail": "MaxCore not configured (no URL/key)"
+        }
+      }
+    },
+    "report": "page80/page80.json",
+    "productionReady": false
+  },
+  "productionReady": false
+}

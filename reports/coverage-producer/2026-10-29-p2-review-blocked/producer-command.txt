@@ -1,0 +1,1 @@
+{"status":"typed_compatible_unmerged","profiles":9,"cleanup":{"processGroup":385854,"signals":[],"complete":true,"remainingLivePids":[]},"output":"/workspace/onboarding-results/c5-admission-prototype/candidate/runtime"}

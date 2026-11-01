@@ -1,0 +1,1 @@
+{"status":"typed_compatible_unmerged","profiles":9,"cleanup":{"processGroup":385574,"signals":[],"complete":true,"remainingLivePids":[]},"output":"/workspace/onboarding-results/node-failure-2026-10-29/candidate/producer/actual-p1"}

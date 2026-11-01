@@ -1,0 +1,2219 @@
+{
+  "vulnerabilities": [
+    {
+      "hash": "a1b420eddbe3a658f5a366148022b3c1",
+      "location": {
+        "end": {
+          "col": 26,
+          "line": 262
+        },
+        "lines": "logger.warn({\n  timestamp: new Date().toISOString(),\n  method: req.method,\n  url: req.originalUrl,\n  error: normalized.message,\n  stack: normalized.stack,\n  context: normalized.context,\n  userId: ((req as unknown as Record<string, unknown>).user as any)?.id,\n  ip: req.ip,\n}, \"CRITICAL ERROR:\")",
+        "path": "server/middleware/errorHandler.ts",
+        "start": {
+          "col": 5,
+          "line": 253
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/errorHandler.ts` (line 253):\n\n```typescript\nlogger.warn({\n  timestamp: new Date().toISOString(),\n  method: req.method,\n  url: req.originalUrl,\n  error: normalized.message,\n  stack: normalized.stack,\n  context: normalized.context,\n  userId: ((req as unknown as Record<string, unknown>).user as any)?.id,\n  ip: req.ip,\n}, \"CRITICAL ERROR:\")\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "f419ebb531f0a3f4a080e029d43d5924",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 1097
+        },
+        "lines": "logger.info(\n  {\n    userId: stateData.userId,\n    platform: p.name,\n    username: p.username,\n  },\n  `[OAuth] Successfully connected ${p.name} for user`,\n)",
+        "path": "server/routes/socialOAuth.ts",
+        "start": {
+          "col": 7,
+          "line": 1090
+        }
+      },
+      "message": "Username sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/socialOAuth.ts` (line 1090):\n\n```typescript\nlogger.info(\n  {\n    userId: stateData.userId,\n    platform: p.name,\n    username: p.username,\n  },\n  `[OAuth] Successfully connected ${p.name} for user`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "USERNAME"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "7437a63ee0b3e27b66dedc2558def38d",
+      "location": {
+        "end": {
+          "col": 80,
+          "line": 267
+        },
+        "lines": "logger.info(updateData, `Admin ${req.user?.email} updated user ${userId}:`)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 5,
+          "line": 267
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 267):\n\n```typescript\nlogger.info(updateData, `Admin ${req.user?.email} updated user ${userId}:`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "68232b6281720857177a4c80075d518d",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 444
+        },
+        "lines": "logger.info(\n  `Status page subscriber added: ${subscriber?.id} - ${subscriber?.email}`,\n)",
+        "path": "server/services/statusPageService.ts",
+        "start": {
+          "col": 5,
+          "line": 442
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/statusPageService.ts` (line 442):\n\n```typescript\nlogger.info(\n  `Status page subscriber added: ${subscriber?.id} - ${subscriber?.email}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "ca4ce0b674d4472f54fd64748c1a118f",
+      "location": {
+        "end": {
+          "col": 12,
+          "line": 566
+        },
+        "lines": "logger.info(\n  {\n    hasAccessToken: !!tokenData.access_token,\n    hasRefreshToken: !!tokenData.refresh_token,\n    expiresIn: tokenData.expires_in,\n  },\n  `[OAuth] Twitter token exchange SUCCESS`,\n)",
+        "path": "server/routes/socialOAuth.ts",
+        "start": {
+          "col": 11,
+          "line": 559
+        }
+      },
+      "message": "Auth Token sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/socialOAuth.ts` (line 559):\n\n```typescript\nlogger.info(\n  {\n    hasAccessToken: !!tokenData.access_token,\n    hasRefreshToken: !!tokenData.refresh_token,\n    expiresIn: tokenData.expires_in,\n  },\n  `[OAuth] Twitter token exchange SUCCESS`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "AUTH-TOKEN"
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "hash": "8dc9f7c78f49ed8add507b03c064a818",
+      "location": {
+        "end": {
+          "col": 69,
+          "line": 454
+        },
+        "lines": "logger.warn(`Forgot password rate limit exceeded for IP: ${ip}`)",
+        "path": "server/middleware/rateLimiter.ts",
+        "start": {
+          "col": 5,
+          "line": 454
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/rateLimiter.ts` (line 454):\n\n```typescript\nlogger.warn(`Forgot password rate limit exceeded for IP: ${ip}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "b95b672f00cf439ebc85579e3db5ad11",
+      "location": {
+        "end": {
+          "col": 76,
+          "line": 184
+        },
+        "lines": "logger.info(`Admin ${req.user?.email} replied to ticket ${ticketId}`)",
+        "path": "server/routes/support.ts",
+        "start": {
+          "col": 7,
+          "line": 184
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/support.ts` (line 184):\n\n```typescript\nlogger.info(`Admin ${req.user?.email} replied to ticket ${ticketId}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "9a64ed436c61e78ddc082e211997a960",
+      "location": {
+        "end": {
+          "col": 91,
+          "line": 264
+        },
+        "lines": "logger.info(`Admin ${req.user?.email} removed tag \"${tag}\" from ticket ${ticketId}`)",
+        "path": "server/routes/support.ts",
+        "start": {
+          "col": 7,
+          "line": 264
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/support.ts` (line 264):\n\n```typescript\nlogger.info(`Admin ${req.user?.email} removed tag \"${tag}\" from ticket ${ticketId}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "ad572d2753128b4d72c69d2044afd05d",
+      "location": {
+        "end": {
+          "col": 12,
+          "line": 608
+        },
+        "lines": "logger.info(\n  `[DNS] ✅ Authoritative nameserver online — ${BASE_DOMAIN} → ${DNS_SERVER_IP} (UDP+TCP :${DNS_PORT})`,\n)",
+        "path": "server/services/dnsServer.ts",
+        "start": {
+          "col": 11,
+          "line": 606
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/dnsServer.ts` (line 606):\n\n```typescript\nlogger.info(\n  `[DNS] ✅ Authoritative nameserver online — ${BASE_DOMAIN} → ${DNS_SERVER_IP} (UDP+TCP :${DNS_PORT})`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "3527307f2ba9cb5923c883d6cd78d5ca",
+      "location": {
+        "end": {
+          "col": 12,
+          "line": 105
+        },
+        "lines": "logger.info(\n  `✅ Successfully deleted account: ${user?.id} (${user?.email})`,\n)",
+        "path": "server/services/accountDeletionService.ts",
+        "start": {
+          "col": 11,
+          "line": 103
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/accountDeletionService.ts` (line 103):\n\n```typescript\nlogger.info(\n  `✅ Successfully deleted account: ${user?.id} (${user?.email})`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "0b599033772879652253c6a32b26744d",
+      "location": {
+        "end": {
+          "col": 64,
+          "line": 260
+        },
+        "lines": "logger.info(`Admin ${req.user!.email} unblocked IP: ${ip}`)",
+        "path": "server/routes/selfHealingApi.ts",
+        "start": {
+          "col": 5,
+          "line": 260
+        }
+      },
+      "message": "Email and IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/selfHealingApi.ts` (line 260):\n\n```typescript\nlogger.info(`Admin ${req.user!.email} unblocked IP: ${ip}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS",
+        "EMAIL"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "95077371b4cc7a9df7a1b1ae92da498b",
+      "location": {
+        "end": {
+          "col": 14,
+          "line": 464
+        },
+        "lines": "logger.info(\n  `[SocialSync] Instagram: @${bestIgAccount.username}, followers=${bestIgAccount?.followers_count}`,\n)",
+        "path": "server/services/socialSyncService.ts",
+        "start": {
+          "col": 13,
+          "line": 462
+        }
+      },
+      "message": "Username sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/socialSyncService.ts` (line 462):\n\n```typescript\nlogger.info(\n  `[SocialSync] Instagram: @${bestIgAccount.username}, followers=${bestIgAccount?.followers_count}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "USERNAME"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "e639c06931b1d693e79300f6728ed7ed",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 236
+        },
+        "lines": "logger.info(\n  `📝 GDPR Deletion Audit Record Persisted - ` +\n    `UserId: ${record?.userId}, ` +\n    `Email: ${record?.userEmail}, ` +\n    `DeletedAt: ${record?.deletedAt.toISOString()}, ` +\n    `Reason: ${record?.reason}`,\n)",
+        "path": "server/services/accountDeletionService.ts",
+        "start": {
+          "col": 7,
+          "line": 230
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/accountDeletionService.ts` (line 230):\n\n```typescript\nlogger.info(\n  `📝 GDPR Deletion Audit Record Persisted - ` +\n    `UserId: ${record?.userId}, ` +\n    `Email: ${record?.userEmail}, ` +\n    `DeletedAt: ${record?.deletedAt.toISOString()}, ` +\n    `Reason: ${record?.reason}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "74de872d4db5029fb42efbc44666da24",
+      "location": {
+        "end": {
+          "col": 122,
+          "line": 670
+        },
+        "lines": "logger.info(`Admin ${req.user?.email} reviewed report ${reportId} with action: ${action}. Notes: ${notes || \"None\"}`)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 5,
+          "line": 670
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 670):\n\n```typescript\nlogger.info(`Admin ${req.user?.email} reviewed report ${reportId} with action: ${action}. Notes: ${notes || \"None\"}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "02033f142a527c63f5cca1644aa1982c",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 753
+        },
+        "lines": "logger.info(\n  `Admin ${req.user?.email} banned user ${userId}. Duration: ${duration || \"permanent\"}. Reason: ${reason}`,\n)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 5,
+          "line": 751
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 751):\n\n```typescript\nlogger.info(\n  `Admin ${req.user?.email} banned user ${userId}. Duration: ${duration || \"permanent\"}. Reason: ${reason}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "ca2c18bd1c29af80c4e12d25cb6c77c3",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 948
+        },
+        "lines": "logger.info(\n  `[AdDispatch] optimizeBidding(${campaignId}): dailyBudget ${currentDaily} → ${newDaily} (roas=${metrics.roas.toFixed(2)})`,\n)",
+        "path": "server/services/advertisingDispatchService.ts",
+        "start": {
+          "col": 5,
+          "line": 946
+        }
+      },
+      "message": "Budget sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "PCI",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/advertisingDispatchService.ts` (line 946):\n\n```typescript\nlogger.info(\n  `[AdDispatch] optimizeBidding(${campaignId}): dailyBudget ${currentDaily} → ${newDaily} (roas=${metrics.roas.toFixed(2)})`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "BUDGET"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "f76c1597b664b114ed31d24a5361a437",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 697
+        },
+        "lines": "logger.info(\n  `Admin ${req.user?.email} removed content ${contentId}. Reason: ${reason}`,\n)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 5,
+          "line": 695
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 695):\n\n```typescript\nlogger.info(\n  `Admin ${req.user?.email} removed content ${contentId}. Reason: ${reason}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "17c94d79546bcc382568d9a5966a020b",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 335
+        },
+        "lines": "logger.info({ detail: updateData }, `Admin ${req.user?.email} updated ticket ${ticketId}:`,\n)",
+        "path": "server/routes/support.ts",
+        "start": {
+          "col": 7,
+          "line": 334
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/support.ts` (line 334):\n\n```typescript\nlogger.info({ detail: updateData }, `Admin ${req.user?.email} updated ticket ${ticketId}:`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "e1085ec8aa0011b5b4642e89e0bcbad0",
+      "location": {
+        "end": {
+          "col": 52,
+          "line": 166
+        },
+        "lines": "logger.warn({\n  requestOrigin,\n  allowed,\n  ip: req.ip,\n}, `Origin blocked: ${req.method} ${req.path}`)",
+        "path": "server/middleware/requestValidation.ts",
+        "start": {
+          "col": 5,
+          "line": 162
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/requestValidation.ts` (line 162):\n\n```typescript\nlogger.warn({\n  requestOrigin,\n  allowed,\n  ip: req.ip,\n}, `Origin blocked: ${req.method} ${req.path}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "be0efdc43152bb5e4a4b3c9d4952f9cc",
+      "location": {
+        "end": {
+          "col": 71,
+          "line": 940
+        },
+        "lines": "logger.info(`🚫 IP ${ipAddress} blocked for rate limit abuse`)",
+        "path": "server/security-system.ts",
+        "start": {
+          "col": 7,
+          "line": 940
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/security-system.ts` (line 940):\n\n```typescript\nlogger.info(`🚫 IP ${ipAddress} blocked for rate limit abuse`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "ef9c0aeda9f0e7ab5d5f2420a22eff11",
+      "location": {
+        "end": {
+          "col": 10,
+          "line": 654
+        },
+        "lines": "logger.warn(\n  {\n    status: tokenResponse!.status,\n    ok: tokenResponse!.ok,\n    hasAccessToken: !!tokenData.access_token,\n    error: tokenData.error || \"none\",\n  },\n  `[OAuth] Token exchange response for ${platform}`,\n)",
+        "path": "server/routes/socialOAuth.ts",
+        "start": {
+          "col": 9,
+          "line": 646
+        }
+      },
+      "message": "Auth Token sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/socialOAuth.ts` (line 646):\n\n```typescript\nlogger.warn(\n  {\n    status: tokenResponse!.status,\n    ok: tokenResponse!.ok,\n    hasAccessToken: !!tokenData.access_token,\n    error: tokenData.error || \"none\",\n  },\n  `[OAuth] Token exchange response for ${platform}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "AUTH-TOKEN"
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "hash": "e0bfd3354cd6b09447b2665a474039b8",
+      "location": {
+        "end": {
+          "col": 68,
+          "line": 2439
+        },
+        "lines": "logger.info(`[Google OAuth] User logged in: ${user.email}`)",
+        "path": "server/routes.ts",
+        "start": {
+          "col": 9,
+          "line": 2439
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes.ts` (line 2439):\n\n```typescript\nlogger.info(`[Google OAuth] User logged in: ${user.email}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "7dc25ff981f346f6907e82a71403209a",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 533
+        },
+        "lines": "logger.info(\n  `[SMS] Max Booster branded code sent via ${sender} to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`,\n)",
+        "path": "server/routes/notifications.ts",
+        "start": {
+          "col": 7,
+          "line": 531
+        }
+      },
+      "message": "Phone Number sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/notifications.ts` (line 531):\n\n```typescript\nlogger.info(\n  `[SMS] Max Booster branded code sent via ${sender} to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "PHONE-NUMBER"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "56fb63ba5eb06441f8bfe4f6546c883a",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 151
+        },
+        "lines": "logger.info(\n  `🗑️ Starting permanent deletion for user ${userId} (${userEmail})`,\n)",
+        "path": "server/services/accountDeletionService.ts",
+        "start": {
+          "col": 5,
+          "line": 149
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/accountDeletionService.ts` (line 149):\n\n```typescript\nlogger.info(\n  `🗑️ Starting permanent deletion for user ${userId} (${userEmail})`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "a5d19c5d5db834ddd5accb64a6aa609b",
+      "location": {
+        "end": {
+          "col": 72,
+          "line": 212
+        },
+        "lines": "process.stdout.write(`[TCP] Listening on ${LISTEN_IP}:${DNS_PORT}\\n`)",
+        "path": "vps-dns-proxy/dns-proxy-node.js",
+        "start": {
+          "col": 3,
+          "line": 212
+        }
+      },
+      "message": "IP Address sent to Standard Output",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `vps-dns-proxy/dns-proxy-node.js` (line 212):\n\n```typescript\nprocess.stdout.write(`[TCP] Listening on ${LISTEN_IP}:${DNS_PORT}\\n`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "8f9d7972b13a1951a7934752f4861695",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 204
+        },
+        "lines": "logger.info(\n  `[BeatMoneyLoop] Admin user resolved: ${this._adminId} (${adminEmail})`,\n)",
+        "path": "server/services/beatMoneyLoopService.ts",
+        "start": {
+          "col": 7,
+          "line": 202
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/beatMoneyLoopService.ts` (line 202):\n\n```typescript\nlogger.info(\n  `[BeatMoneyLoop] Admin user resolved: ${this._adminId} (${adminEmail})`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "c36bb36539403e1c97589252ca2c48ae",
+      "location": {
+        "end": {
+          "col": 78,
+          "line": 403
+        },
+        "lines": "logger.info(`Registered ISRC registrant code ${code} for user ${userId}`)",
+        "path": "server/services/musicCodes.ts",
+        "start": {
+          "col": 5,
+          "line": 403
+        }
+      },
+      "message": "Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/musicCodes.ts` (line 403):\n\n```typescript\nlogger.info(`Registered ISRC registrant code ${code} for user ${userId}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "PHYSICAL-ADDRESS"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "653bef413141748db06523b09c396445",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 487
+        },
+        "lines": "logger.warn(\n  `2FA rate limit exceeded for ${userId ? `user ${userId}` : `IP ${ip}`}`,\n)",
+        "path": "server/middleware/rateLimiter.ts",
+        "start": {
+          "col": 5,
+          "line": 485
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/rateLimiter.ts` (line 485):\n\n```typescript\nlogger.warn(\n  `2FA rate limit exceeded for ${userId ? `user ${userId}` : `IP ${ip}`}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "c2d9598092aafd4c5a565df288beea89",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 85
+        },
+        "lines": "logger.info(\n  `[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} deactivated payment bypass`,\n)",
+        "path": "server/routes/paymentBypass.ts",
+        "start": {
+          "col": 5,
+          "line": 83
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/paymentBypass.ts` (line 83):\n\n```typescript\nlogger.info(\n  `[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} deactivated payment bypass`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "a524a6eea740a941a55355982ebcebd0",
+      "location": {
+        "end": {
+          "col": 59,
+          "line": 381
+        },
+        "lines": "logger.warn(`Login rate limit exceeded for IP: ${ip}`)",
+        "path": "server/middleware/rateLimiter.ts",
+        "start": {
+          "col": 5,
+          "line": 381
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/rateLimiter.ts` (line 381):\n\n```typescript\nlogger.warn(`Login rate limit exceeded for IP: ${ip}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "783870b8fae33012a2560eed72235fa2",
+      "location": {
+        "end": {
+          "col": 63,
+          "line": 470
+        },
+        "lines": "logger.info(`Subscription verified: ${subscriber?.email}`)",
+        "path": "server/services/statusPageService.ts",
+        "start": {
+          "col": 5,
+          "line": 470
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/statusPageService.ts` (line 470):\n\n```typescript\nlogger.info(`Subscription verified: ${subscriber?.email}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "59f9e09b576fcc3ea71439a9cf6e9041",
+      "location": {
+        "end": {
+          "col": 139,
+          "line": 119
+        },
+        "lines": "print(f\"  after {ROUND_BUDGET} rounds, remaining backlog per tenant: \"\n      f\"{ {t: len(sched2.tenants[t].queue) for t in stats2} } \"\n      f\"(none empty => {'genuinely still contended' if still_backlogged else 'DRAINED -- window too long, not a valid measurement'})\")",
+        "path": "tools/vgpu_scheduler/demo.py",
+        "start": {
+          "col": 5,
+          "line": 117
+        }
+      },
+      "message": "Budget sent to Standard Output",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "PCI",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `tools/vgpu_scheduler/demo.py` (line 117):\n\n```python\nprint(f\"  after {ROUND_BUDGET} rounds, remaining backlog per tenant: \"\n      f\"{ {t: len(sched2.tenants[t].queue) for t in stats2} } \"\n      f\"(none empty => {'genuinely still contended' if still_backlogged else 'DRAINED -- window too long, not a valid measurement'})\")\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "BUDGET"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "7a8cde66d41324f1555439ddf0dbcaf4",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 178
+        },
+        "lines": "logger.info(\n  `✅ GDPR Account Deletion Completed - ` +\n    `User: ${userId} (${userEmail}) - ` +\n    `Timestamp: ${new Date().toISOString()} - ` +\n    `All related data permanently deleted via cascade`,\n)",
+        "path": "server/services/accountDeletionService.ts",
+        "start": {
+          "col": 7,
+          "line": 173
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/accountDeletionService.ts` (line 173):\n\n```typescript\nlogger.info(\n  `✅ GDPR Account Deletion Completed - ` +\n    `User: ${userId} (${userEmail}) - ` +\n    `Timestamp: ${new Date().toISOString()} - ` +\n    `All related data permanently deleted via cascade`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "f45dbb6e0f71f69fef58d89966e94031",
+      "location": {
+        "end": {
+          "col": 68,
+          "line": 273
+        },
+        "lines": "logger.warn(`Admin ${req.user!.email} cleared ALL blocked IPs`)",
+        "path": "server/routes/selfHealingApi.ts",
+        "start": {
+          "col": 5,
+          "line": 273
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/selfHealingApi.ts` (line 273):\n\n```typescript\nlogger.warn(`Admin ${req.user!.email} cleared ALL blocked IPs`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "d6ec7c991e7f32edecf4a79d1aef437d",
+      "location": {
+        "end": {
+          "col": 66,
+          "line": 419
+        },
+        "lines": "logger.warn(`Registration rate limit exceeded for IP: ${ip}`)",
+        "path": "server/middleware/rateLimiter.ts",
+        "start": {
+          "col": 5,
+          "line": 419
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/rateLimiter.ts` (line 419):\n\n```typescript\nlogger.warn(`Registration rate limit exceeded for IP: ${ip}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "83b40f54398ac2a8d052354c1300b0f8",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 647
+        },
+        "lines": "logger.warn(\n  { err: error },\n  `Failed to send verification email to ${subscriber?.email}:`,\n)",
+        "path": "server/services/statusPageService.ts",
+        "start": {
+          "col": 7,
+          "line": 644
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/statusPageService.ts` (line 644):\n\n```typescript\nlogger.warn(\n  { err: error },\n  `Failed to send verification email to ${subscriber?.email}:`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "855d84f1fc615f22d0ddb61ba0d5784e",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 1144
+        },
+        "lines": "logger.info(\n  `Admin ${req.user?.email} initiated email to ${targetUser[0].email}: ${subject}`,\n)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 7,
+          "line": 1142
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 1142):\n\n```typescript\nlogger.info(\n  `Admin ${req.user?.email} initiated email to ${targetUser[0].email}: ${subject}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "e1d011359941b26edca605777b0039c6",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 61
+        },
+        "lines": "logger.info(\n  `[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} activated bypass for ${durationHours}h (requested ${rawHours}h)`,\n)",
+        "path": "server/routes/paymentBypass.ts",
+        "start": {
+          "col": 5,
+          "line": 59
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/paymentBypass.ts` (line 59):\n\n```typescript\nlogger.info(\n  `[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} activated bypass for ${durationHours}h (requested ${rawHours}h)`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "220f4908afc8875e5ea0ae380bc699f1",
+      "location": {
+        "end": {
+          "col": 71,
+          "line": 213
+        },
+        "lines": "logger.warn(`⚠️ Global rate limit exceeded for IP: ${req.ip}`)",
+        "path": "server/middleware/globalRateLimiter.ts",
+        "start": {
+          "col": 5,
+          "line": 213
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/globalRateLimiter.ts` (line 213):\n\n```typescript\nlogger.warn(`⚠️ Global rate limit exceeded for IP: ${req.ip}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "c440b19422dd08e6acc7bb2cc9c32ba3",
+      "location": {
+        "end": {
+          "col": 44,
+          "line": 1046
+        },
+        "lines": "logger.info(`✅ Unblocked IP ${ip}`)",
+        "path": "server/services/selfHealingSecurityEngine.ts",
+        "start": {
+          "col": 7,
+          "line": 1046
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/selfHealingSecurityEngine.ts` (line 1046):\n\n```typescript\nlogger.info(`✅ Unblocked IP ${ip}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "ac904ed89b920a78befb8cf1ad306c3b",
+      "location": {
+        "end": {
+          "col": 64,
+          "line": 147
+        },
+        "lines": "logger.info(`✅ Admin account created: ${admin?.email}`)",
+        "path": "server/init-admin.ts",
+        "start": {
+          "col": 7,
+          "line": 147
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/init-admin.ts` (line 147):\n\n```typescript\nlogger.info(`✅ Admin account created: ${admin?.email}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "49d144aa8753516a4e79f689f5663729",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 719
+        },
+        "lines": "logger.info(\n  `Admin ${req.user?.email} warned user ${userId}. Severity: ${severity}. Reason: ${reason}`,\n)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 5,
+          "line": 717
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 717):\n\n```typescript\nlogger.info(\n  `Admin ${req.user?.email} warned user ${userId}. Severity: ${severity}. Reason: ${reason}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "ea2333393c66ad8e641a7b06aad89158",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 352
+        },
+        "lines": "logger.warn(\n  { err: error },\n  `Failed to send weekly email to ${report?.userEmail}:`,\n)",
+        "path": "server/services/weeklyInsightsService.ts",
+        "start": {
+          "col": 7,
+          "line": 349
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/weeklyInsightsService.ts` (line 349):\n\n```typescript\nlogger.warn(\n  { err: error },\n  `Failed to send weekly email to ${report?.userEmail}:`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "f85225e890eee0baae243979f00921e6",
+      "location": {
+        "end": {
+          "col": 10,
+          "line": 198
+        },
+        "lines": "logger.warn(\n  `[BeatMoneyLoop] No admin user found with role='admin' AND email='${adminEmail}' — loop will be disabled until the account exists`,\n)",
+        "path": "server/services/beatMoneyLoopService.ts",
+        "start": {
+          "col": 9,
+          "line": 196
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/beatMoneyLoopService.ts` (line 196):\n\n```typescript\nlogger.warn(\n  `[BeatMoneyLoop] No admin user found with role='admin' AND email='${adminEmail}' — loop will be disabled until the account exists`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "e6c90fd6bff749e84f8deee3ecbc1660",
+      "location": {
+        "end": {
+          "col": 62,
+          "line": 412
+        },
+        "lines": "logger.info(`📧 Welcome email sent to ${data.email}`)",
+        "path": "server/services/emailService.ts",
+        "start": {
+          "col": 7,
+          "line": 412
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/emailService.ts` (line 412):\n\n```typescript\nlogger.info(`📧 Welcome email sent to ${data.email}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "136dca1cb9cd3a3174caad68ae22dbbd",
+      "location": {
+        "end": {
+          "col": 12,
+          "line": 611
+        },
+        "lines": "logger.info(\n  `[DNS] 📋 NS records: ${PLATFORM_NS} + ${PLATFORM_NS2} → ${DNS_SERVER_IP}`,\n)",
+        "path": "server/services/dnsServer.ts",
+        "start": {
+          "col": 11,
+          "line": 609
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/dnsServer.ts` (line 609):\n\n```typescript\nlogger.info(\n  `[DNS] 📋 NS records: ${PLATFORM_NS} + ${PLATFORM_NS2} → ${DNS_SERVER_IP}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "dae3ffa158657dfaf4b588fd6199d487",
+      "location": {
+        "end": {
+          "col": 79,
+          "line": 382
+        },
+        "lines": "logger.info(`Admin ${req.user?.email} permanently deleted user ${userId}`)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 5,
+          "line": 382
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 382):\n\n```typescript\nlogger.info(`Admin ${req.user?.email} permanently deleted user ${userId}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "0cd5b1922b21fc49f96ce302793a1240",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 115
+        },
+        "lines": "logger.info(\n  `[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} extended bypass by ${additionalHours}h (requested ${rawHours}h)`,\n)",
+        "path": "server/routes/paymentBypass.ts",
+        "start": {
+          "col": 5,
+          "line": 113
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/paymentBypass.ts` (line 113):\n\n```typescript\nlogger.info(\n  `[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} extended bypass by ${additionalHours}h (requested ${rawHours}h)`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "17b1e4a7e84d6b9249e23120ec73a8b5",
+      "location": {
+        "end": {
+          "col": 64,
+          "line": 175
+        },
+        "lines": "logger.info(`📧 Email sent to ${(user as any)?.email}`)",
+        "path": "server/services/notificationService.ts",
+        "start": {
+          "col": 7,
+          "line": 175
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/notificationService.ts` (line 175):\n\n```typescript\nlogger.info(`📧 Email sent to ${(user as any)?.email}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "f3339b769764b970283bd5b1b4716f78",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 41
+        },
+        "lines": "logger.warn(\n  { ip: req.ip, userAgent: req.get(\"user-agent\") },\n  `CSRF validation failed: Missing CSRF cookie - ${req.method} ${req.path}`,\n)",
+        "path": "server/middleware/csrf.ts",
+        "start": {
+          "col": 5,
+          "line": 38
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/csrf.ts` (line 38):\n\n```typescript\nlogger.warn(\n  { ip: req.ip, userAgent: req.get(\"user-agent\") },\n  `CSRF validation failed: Missing CSRF cookie - ${req.method} ${req.path}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "373e74f785b32ae9160675f839eec68f",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 223
+        },
+        "lines": "logger.info(\n  `Admin ${req.user?.email} tagged ticket ${ticketId}: ${cleaned.join(\", \")}`,\n)",
+        "path": "server/routes/support.ts",
+        "start": {
+          "col": 7,
+          "line": 221
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/support.ts` (line 221):\n\n```typescript\nlogger.info(\n  `Admin ${req.user?.email} tagged ticket ${ticketId}: ${cleaned.join(\", \")}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "dc605d4589d4eb552d2d5f5d27f3a185",
+      "location": {
+        "end": {
+          "col": 75,
+          "line": 384
+        },
+        "lines": "logger.info(`User ${req.user?.email} created ticket ${newTicket?.id}`)",
+        "path": "server/routes/support.ts",
+        "start": {
+          "col": 5,
+          "line": 384
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/support.ts` (line 384):\n\n```typescript\nlogger.info(`User ${req.user?.email} created ticket ${newTicket?.id}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "7b80c5206c0d5e43a6cfc9ca256815e5",
+      "location": {
+        "end": {
+          "col": 77,
+          "line": 315
+        },
+        "lines": "logger.info(`📧 Weekly insights email sent to ${report?.userEmail}`)",
+        "path": "server/services/weeklyInsightsService.ts",
+        "start": {
+          "col": 7,
+          "line": 315
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/weeklyInsightsService.ts` (line 315):\n\n```typescript\nlogger.info(`📧 Weekly insights email sent to ${report?.userEmail}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "28e0cebd3e56f007032e4b6266687b51",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 106
+        },
+        "lines": "logger.warn(\n  {\n    requestId: req.requestId,\n    method: req.method,\n    url: req.originalUrl,\n    statusCode: res.statusCode,\n    duration: `${duration.toFixed(2)}ms`,\n    userAgent: req.get(\"user-agent\"),\n    ip: req.ip,\n  },\n  `🐌 SLOW REQUEST: ${req.method} ${req.originalUrl} - ${duration.toFixed(2)}ms`,\n)",
+        "path": "server/middleware/requestCorrelation.ts",
+        "start": {
+          "col": 7,
+          "line": 95
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/requestCorrelation.ts` (line 95):\n\n```typescript\nlogger.warn(\n  {\n    requestId: req.requestId,\n    method: req.method,\n    url: req.originalUrl,\n    statusCode: res.statusCode,\n    duration: `${duration.toFixed(2)}ms`,\n    userAgent: req.get(\"user-agent\"),\n    ip: req.ip,\n  },\n  `🐌 SLOW REQUEST: ${req.method} ${req.originalUrl} - ${duration.toFixed(2)}ms`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "719e1a00bb8e74d471502835e18ecf45",
+      "location": {
+        "end": {
+          "col": 69,
+          "line": 471
+        },
+        "lines": "logger.warn(`Rate limit exceeded: ${req.ip} on ${req.path}`)",
+        "path": "server/middleware/scalableRateLimiter.ts",
+        "start": {
+          "col": 9,
+          "line": 471
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/scalableRateLimiter.ts` (line 471):\n\n```typescript\nlogger.warn(`Rate limit exceeded: ${req.ip} on ${req.path}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "bf7b16e2544acba7e8a0ead95c668b29",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 824
+        },
+        "lines": "logger.info(\n  `🚫 Blocked IP ${ipAddress} for ${reason} (${(durationMs / 60000).toFixed(0)} minutes)`,\n)",
+        "path": "server/services/selfHealingSecurityEngine.ts",
+        "start": {
+          "col": 7,
+          "line": 822
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/selfHealingSecurityEngine.ts` (line 822):\n\n```typescript\nlogger.info(\n  `🚫 Blocked IP ${ipAddress} for ${reason} (${(durationMs / 60000).toFixed(0)} minutes)`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "6ace7cf5a684c4ea08020811e4fc858c",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 319
+        },
+        "lines": "logger.info(\n  `Admin ${req.user?.email} suspended user ${userId}. Reason: ${reason || \"Not specified\"}`,\n)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 5,
+          "line": 317
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 317):\n\n```typescript\nlogger.info(\n  `Admin ${req.user?.email} suspended user ${userId}. Reason: ${reason || \"Not specified\"}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "6bb8ee3acb36370e20c7581d810e05d9",
+      "location": {
+        "end": {
+          "col": 54,
+          "line": 680
+        },
+        "lines": "console?.log(`   ├── Email: ${adminEmail}`)",
+        "path": "server/scripts/setupAdmin.ts",
+        "start": {
+          "col": 5,
+          "line": 680
+        }
+      },
+      "message": "Email sent to Standard Output",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/scripts/setupAdmin.ts` (line 680):\n\n```typescript\nconsole?.log(`   ├── Email: ${adminEmail}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "5df45d5215d099101ffdb2a150c1b4f7",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 355
+        },
+        "lines": "logger.debug(\n  {\n    ip: lookupIp,\n    continent: geo.continent,\n    country: geo.country,\n    selectedIp,\n  },\n  \"[GeoDNS] Geo-routing query\",\n)",
+        "path": "server/services/geoDns.ts",
+        "start": {
+          "col": 5,
+          "line": 347
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/geoDns.ts` (line 347):\n\n```typescript\nlogger.debug(\n  {\n    ip: lookupIp,\n    continent: geo.continent,\n    country: geo.country,\n    selectedIp,\n  },\n  \"[GeoDNS] Geo-routing query\",\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "aaee40afb37748e28dfe75ab32add810",
+      "location": {
+        "end": {
+          "col": 61,
+          "line": 143
+        },
+        "lines": "logger.warn({\n  ip: req.ip,\n  userAgent: req.get(\"user-agent\"),\n}, `Mutation without Origin: ${req.method} ${req.path}`)",
+        "path": "server/middleware/requestValidation.ts",
+        "start": {
+          "col": 5,
+          "line": 140
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/requestValidation.ts` (line 140):\n\n```typescript\nlogger.warn({\n  ip: req.ip,\n  userAgent: req.get(\"user-agent\"),\n}, `Mutation without Origin: ${req.method} ${req.path}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "6d6ccbf697e6ef6b53855bed77681063",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 271
+        },
+        "lines": "logger.info(\n  `[Dunning] Step ${step} email sent to ${email} for invoice ${invoiceId}`,\n)",
+        "path": "server/services/dunningService.ts",
+        "start": {
+          "col": 5,
+          "line": 269
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/dunningService.ts` (line 269):\n\n```typescript\nlogger.info(\n  `[Dunning] Step ${step} email sent to ${email} for invoice ${invoiceId}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "d54febc48a8bfcd2b4b486393346260f",
+      "location": {
+        "end": {
+          "col": 71,
+          "line": 358
+        },
+        "lines": "logger.info(`Admin ${req.user?.email} reactivated user ${userId}`)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 5,
+          "line": 358
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 358):\n\n```typescript\nlogger.info(`Admin ${req.user?.email} reactivated user ${userId}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "a593c598b2480a6a324d16a4f187d6b7",
+      "location": {
+        "end": {
+          "col": 79,
+          "line": 1615
+        },
+        "lines": "logger.info(`Email notification requested for job ${jobId} to ${email}`)",
+        "path": "server/routes/export.ts",
+        "start": {
+          "col": 7,
+          "line": 1615
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/export.ts` (line 1615):\n\n```typescript\nlogger.info(`Email notification requested for job ${jobId} to ${email}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "43498dfdd13d0a5d14aa9dfb783e9c96",
+      "location": {
+        "end": {
+          "col": 70,
+          "line": 2423
+        },
+        "lines": "logger.info(`[Google OAuth] Created new user: ${user.email}`)",
+        "path": "server/routes.ts",
+        "start": {
+          "col": 9,
+          "line": 2423
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes.ts` (line 2423):\n\n```typescript\nlogger.info(`[Google OAuth] Created new user: ${user.email}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "c69f16af452b6d2fbbbb35cc49985ed7",
+      "location": {
+        "end": {
+          "col": 61,
+          "line": 78
+        },
+        "lines": "logger.info(`✅ Admin account exists: ${adminEmail}`)",
+        "path": "server/init-admin.ts",
+        "start": {
+          "col": 7,
+          "line": 78
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/init-admin.ts` (line 78):\n\n```typescript\nlogger.info(`✅ Admin account exists: ${adminEmail}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "4a909f88d94028b1d14bc6d09fa7f62d",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 52
+        },
+        "lines": "logger.warn(\n  { ip: req.ip, userAgent: req.get(\"user-agent\") },\n  `CSRF validation failed: Missing CSRF header/body token - ${req.method} ${req.path}`,\n)",
+        "path": "server/middleware/csrf.ts",
+        "start": {
+          "col": 5,
+          "line": 49
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/csrf.ts` (line 49):\n\n```typescript\nlogger.warn(\n  { ip: req.ip, userAgent: req.get(\"user-agent\") },\n  `CSRF validation failed: Missing CSRF header/body token - ${req.method} ${req.path}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "07366aa62be9666a55340a7fe492f434",
+      "location": {
+        "end": {
+          "col": 73,
+          "line": 574
+        },
+        "lines": "logger.info({ userId: user.id }, \"[Login] SUCCESS for userId\")",
+        "path": "server/routes.ts",
+        "start": {
+          "col": 11,
+          "line": 574
+        }
+      },
+      "message": "Username sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes.ts` (line 574):\n\n```typescript\nlogger.info({ userId: user.id }, \"[Login] SUCCESS for userId\")\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "USERNAME"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "be9cfdd69c9dc37fd1c231ea2c064746",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 64
+        },
+        "lines": "logger.warn(\n  { ip: req.ip, userAgent: req.get(\"user-agent\") },\n  `CSRF validation failed: Token mismatch - ${req.method} ${req.path}`,\n)",
+        "path": "server/middleware/csrf.ts",
+        "start": {
+          "col": 5,
+          "line": 61
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/csrf.ts` (line 61):\n\n```typescript\nlogger.warn(\n  { ip: req.ip, userAgent: req.get(\"user-agent\") },\n  `CSRF validation failed: Token mismatch - ${req.method} ${req.path}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "08f63279064f82a85f8ec0df4c810efc",
+      "location": {
+        "end": {
+          "col": 65,
+          "line": 1048
+        },
+        "lines": "logger.warn({ err: error }, `Failed to unblock IP ${ip}:`)",
+        "path": "server/services/selfHealingSecurityEngine.ts",
+        "start": {
+          "col": 7,
+          "line": 1048
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/selfHealingSecurityEngine.ts` (line 1048):\n\n```typescript\nlogger.warn({ err: error }, `Failed to unblock IP ${ip}:`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "14e773fa09d6f162116fe2d43a179bd9",
+      "location": {
+        "end": {
+          "col": 72,
+          "line": 208
+        },
+        "lines": "process.stdout.write(`[UDP] Listening on ${LISTEN_IP}:${DNS_PORT}\\n`)",
+        "path": "vps-dns-proxy/dns-proxy-node.js",
+        "start": {
+          "col": 3,
+          "line": 208
+        }
+      },
+      "message": "IP Address sent to Standard Output",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `vps-dns-proxy/dns-proxy-node.js` (line 208):\n\n```typescript\nprocess.stdout.write(`[UDP] Listening on ${LISTEN_IP}:${DNS_PORT}\\n`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "0a378728075eaa83af580d07e00b54ba",
+      "location": {
+        "end": {
+          "col": 60,
+          "line": 966
+        },
+        "lines": "logger.info(`✅ IP ${ipAddress} successfully blocked`)",
+        "path": "server/security-system.ts",
+        "start": {
+          "col": 5,
+          "line": 966
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/security-system.ts` (line 966):\n\n```typescript\nlogger.info(`✅ IP ${ipAddress} successfully blocked`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "bff04ef7d1cbd829bf4e2452027d18b0",
+      "location": {
+        "end": {
+          "col": 10,
+          "line": 1102
+        },
+        "lines": "logger.info(\n  `🚫 IP ${ipAddress} added to blacklist (${permanent ? \"permanent\" : `expires in ${duration / 1000}s`})`,\n)",
+        "path": "server/security-system.ts",
+        "start": {
+          "col": 9,
+          "line": 1100
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/security-system.ts` (line 1100):\n\n```typescript\nlogger.info(\n  `🚫 IP ${ipAddress} added to blacklist (${permanent ? \"permanent\" : `expires in ${duration / 1000}s`})`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "c91f959ca800970b2c0b42449ccd33c7",
+      "location": {
+        "end": {
+          "col": 53,
+          "line": 313
+        },
+        "lines": "logger.warn(`Rate limit exceeded for IP: ${ip}`)",
+        "path": "server/middleware/rateLimiter.ts",
+        "start": {
+          "col": 5,
+          "line": 313
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/middleware/rateLimiter.ts` (line 313):\n\n```typescript\nlogger.warn(`Rate limit exceeded for IP: ${ip}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "7fecbd2ec2f84a3e72dd28e4ace30df3",
+      "location": {
+        "end": {
+          "col": 76,
+          "line": 1632
+        },
+        "lines": "logger.info(`📩 Sync inquiry received from ${data?.inquirerEmail}`)",
+        "path": "server/services/distributionService.ts",
+        "start": {
+          "col": 7,
+          "line": 1632
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/distributionService.ts` (line 1632):\n\n```typescript\nlogger.info(`📩 Sync inquiry received from ${data?.inquirerEmail}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "faa05ad608bb3659cfbace9645e97830",
+      "location": {
+        "end": {
+          "col": 6,
+          "line": 407
+        },
+        "lines": "logger.info(\n  `Admin ${req.user?.email} granted lifetime subscription to user ${userId}`,\n)",
+        "path": "server/routes/admin.ts",
+        "start": {
+          "col": 5,
+          "line": 405
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/routes/admin.ts` (line 405):\n\n```typescript\nlogger.info(\n  `Admin ${req.user?.email} granted lifetime subscription to user ${userId}`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "042fb17c92aa1a60b80ab260db321608",
+      "location": {
+        "end": {
+          "col": 8,
+          "line": 829
+        },
+        "lines": "logger.warn(\n  { err: error },\n  `Failed to persist IP block for ${ipAddress}:`,\n)",
+        "path": "server/services/selfHealingSecurityEngine.ts",
+        "start": {
+          "col": 7,
+          "line": 826
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/selfHealingSecurityEngine.ts` (line 826):\n\n```typescript\nlogger.warn(\n  { err: error },\n  `Failed to persist IP block for ${ipAddress}:`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    },
+    {
+      "hash": "a3602f712da01e97b1b2e0e21615ac74",
+      "location": {
+        "end": {
+          "col": 10,
+          "line": 621
+        },
+        "lines": "logger.warn(\n  { err: error },\n  `Failed to notify subscriber ${subscriber?.email}:`,\n)",
+        "path": "server/services/statusPageService.ts",
+        "start": {
+          "col": 9,
+          "line": 618
+        }
+      },
+      "message": "Email sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/services/statusPageService.ts` (line 618):\n\n```typescript\nlogger.warn(\n  { err: error },\n  `Failed to notify subscriber ${subscriber?.email}:`,\n)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "4b79531ad4700d9bb1ff44354ae52132",
+      "location": {
+        "end": {
+          "col": 42,
+          "line": 56
+        },
+        "lines": "console?.log(`   Email: ${adminEmail}`)",
+        "path": "server/scripts/setupAdmin.ts",
+        "start": {
+          "col": 3,
+          "line": 56
+        }
+      },
+      "message": "Email sent to Standard Output",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/scripts/setupAdmin.ts` (line 56):\n\n```typescript\nconsole?.log(`   Email: ${adminEmail}`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "EMAIL"
+      ],
+      "severity": "LOW"
+    },
+    {
+      "hash": "d6512b91ca0232d9c69071e3dd709df6",
+      "location": {
+        "end": {
+          "col": 79,
+          "line": 273
+        },
+        "lines": "logger.warn(`[Validation] Blocking IP ${ip} - too many validation errors`)",
+        "path": "server/safety/inputValidation.ts",
+        "start": {
+          "col": 5,
+          "line": 273
+        }
+      },
+      "message": "IP Address sent to Logs",
+      "privacyViolations": [
+        "GDPR-A5-32",
+        "CCPA",
+        "NIST-800-53"
+      ],
+      "remediationPrompt": "Delete the offending code in `server/safety/inputValidation.ts` (line 273):\n\n```typescript\nlogger.warn(`[Validation] Blocking IP ${ip} - too many validation errors`)\n```\n",
+      "remediationStrategy": "deletion",
+      "remediationSummary": "Fix by deleting the offending code.",
+      "ruleIds": [
+        "IP-ADDRESS"
+      ],
+      "severity": "MEDIUM"
+    }
+  ]
+}

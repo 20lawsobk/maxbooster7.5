@@ -1,0 +1,69 @@
+{
+  "generatedAt": "2026-10-26T18:35:43.905199+00:00",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "node": {
+    "files": 9,
+    "failedFiles": 0,
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  },
+  "pythonArchiveRegressions": {
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "pdimSmoke": {
+    "scope": "Original PDIM HTTP assertions, real disposable PostgreSQL/fabric; loopback only",
+    "source": "external/pdim/scripts/src/smoke-load-test.ts",
+    "status": "passed",
+    "startedAt": "2026-10-26T18:29:06.765Z",
+    "productionDatabaseUsed": false,
+    "startup": "Dedicated real-app fixture; dataset schedulers and logical corpus auto-push not started",
+    "exitCode": 0,
+    "passedTests": 54,
+    "totalTests": 54,
+    "cleanup": "Owned test/server processes stopped; disposable PostgreSQL and temporary fabric removed",
+    "finishedAt": "2026-10-26T18:29:10.869Z"
+  },
+  "checks": {
+    "rootTypes": "passed",
+    "pdimLibTypes": "passed",
+    "pdimApiTypes": "passed",
+    "rootPdimOwnerUnitCases": 7,
+    "gitDiffCheck": "passed"
+  },
+  "criticalRegressions": [
+    "Actual PostgreSQL advisory backend termination before publication followed by successor cleanup/publication and readable dedup retry",
+    "Stale-owner compensation cannot mutate successor generation or immutable replica",
+    "Live delta-dependent child remains readable after base delete409",
+    "Legacy unindexed dependency guard preserves object without creating deletion journal",
+    "Imported boot reconciliation waits through whole publication and retains unknown chunks",
+    "Actual handlers enforce pocket/volume/object lineage and dependency409"
+  ],
+  "productionReadiness": false,
+  "limits": [
+    "Configured production Neon requires coordinated migration0096 with all old writers/controllers drained; no production DDL/dataupdates executed",
+    "Immutable raw replicas still depend on configured canonical PDIM authority; multi-host state authority remains a separate gate",
+    "Imported full multi-owner failover is unverified; conservative reconciliation retains unknown rows instead of fabricating deletion permission",
+    "Legacy dependency backfill requires real container-header evidence",
+    "Full integrated master rerun must use current working tree",
+    "Recheck counts overlap the preceding root SQL run; do not add them as unique test cases"
+  ],
+  "finalSourceRechecks": {
+    "files": 2,
+    "failedFiles": 0,
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  }
+}

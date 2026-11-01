@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="70" failures="0" errors="0" time="0.349373595">
+    <testsuite name="tests/unit/maxcore-client-thin-transport.test.ts" timestamp="2026-10-28T02:13:48.199Z" hostname="af966a6fd55d" tests="9" failures="0" errors="0" skipped="0" time="0.156594815">
+        <testcase classname="tests/unit/maxcore-client-thin-transport.test.ts" name="MaxCore client is transport, not another AI processing layer &gt; generate fetches canonical context without local planning and returns the unmodified MaxCore output" time="0.1145474">
+        </testcase>
+        <testcase classname="tests/unit/maxcore-client-thin-transport.test.ts" name="MaxCore client is transport, not another AI processing layer &gt; infer fetches canonical context without local planning and returns the unmodified MaxCore output" time="0.003033395">
+        </testcase>
+        <testcase classname="tests/unit/maxcore-client-thin-transport.test.ts" name="MaxCore client is transport, not another AI processing layer &gt; generate propagates required awareness 503 without tripping connectivity breaker" time="0.003220828">
+        </testcase>
+        <testcase classname="tests/unit/maxcore-client-thin-transport.test.ts" name="MaxCore client is transport, not another AI processing layer &gt; infer propagates required awareness 503 without tripping connectivity breaker" time="0.001409416">
+        </testcase>
+        <testcase classname="tests/unit/maxcore-client-thin-transport.test.ts" name="MaxCore client is transport, not another AI processing layer &gt; closes a half-open circuit after authenticated model info proves the local model is ready" time="0.012986299">
+        </testcase>
+        <testcase classname="tests/unit/maxcore-client-thin-transport.test.ts" name="MaxCore client is transport, not another AI processing layer &gt; releases the half-open probe reservation when cached health fast-fails before fetch" time="0.007421895">
+        </testcase>
+        <testcase classname="tests/unit/maxcore-client-thin-transport.test.ts" name="MaxCore client is transport, not another AI processing layer &gt; does not close a half-open circuit on &apos;boot JSON&apos;" time="0.005791976">
+        </testcase>
+        <testcase classname="tests/unit/maxcore-client-thin-transport.test.ts" name="MaxCore client is transport, not another AI processing layer &gt; does not close a half-open circuit on &apos;model-not-ready JSON&apos;" time="0.004031622">
+        </testcase>
+        <testcase classname="tests/unit/maxcore-client-thin-transport.test.ts" name="MaxCore client is transport, not another AI processing layer &gt; does not close a half-open circuit on &apos;generic HTML&apos;" time="0.00200869">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/required-awareness-dependency.test.ts" timestamp="2026-10-28T02:13:48.201Z" hostname="af966a6fd55d" tests="55" failures="0" errors="0" skipped="0" time="0.18568522">
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 400 to503 and retains the received upstream cause" time="0.089126375">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 401 to503 and retains the received upstream cause" time="0.008511928">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 403 to503 and retains the received upstream cause" time="0.004318624">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 404 to503 and retains the received upstream cause" time="0.001958945">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 405 to503 and retains the received upstream cause" time="0.001643299">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 408 to503 and retains the received upstream cause" time="0.001778082">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 422 to503 and retains the received upstream cause" time="0.001520914">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 429 to503 and retains the received upstream cause" time="0.001186159">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 500 to503 and retains the received upstream cause" time="0.002398167">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 502 to503 and retains the received upstream cause" time="0.001409466">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 503 to503 and retains the received upstream cause" time="0.001334844">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot HTTP 504 to503 and retains the received upstream cause" time="0.001462075">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot network failure to503 without issuing generation" time="0.001492541">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot timeout failure to503 without issuing generation" time="0.003767022">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot html failure to503 without issuing generation" time="0.001596979">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate maps required snapshot invalid-json failure to503 without issuing generation" time="0.001727596">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required warming receipt rejection fail-closed" time="0.002906074">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required expired receipt rejection fail-closed" time="0.001832745">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required missing-id receipt rejection fail-closed" time="0.00145171">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required blank-id receipt rejection fail-closed" time="0.001353502">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required empty-text receipt rejection fail-closed" time="0.001642808">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate keeps required empty-object receipt rejection fail-closed" time="0.001418089">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate preserves valid required awareness and the caller body for /generate/content" time="0.002359739">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate preserves valid required awareness and the caller body for /generate/image" time="0.001943772">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; generate preserves valid required awareness and the caller body for /generate/audio" time="0.001753615">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 400 to503 and retains the received upstream cause" time="0.001984694">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 401 to503 and retains the received upstream cause" time="0.001546753">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 403 to503 and retains the received upstream cause" time="0.001871083">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 404 to503 and retains the received upstream cause" time="0.001906465">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 405 to503 and retains the received upstream cause" time="0.002125176">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 408 to503 and retains the received upstream cause" time="0.001977703">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 422 to503 and retains the received upstream cause" time="0.001781117">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 429 to503 and retains the received upstream cause" time="0.002020017">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 500 to503 and retains the received upstream cause" time="0.001824292">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 502 to503 and retains the received upstream cause" time="0.001462917">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 503 to503 and retains the received upstream cause" time="0.001353642">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot HTTP 504 to503 and retains the received upstream cause" time="0.001685752">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot network failure to503 without issuing generation" time="0.001526943">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot timeout failure to503 without issuing generation" time="0.002864771">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot html failure to503 without issuing generation" time="0.000984244">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer maps required snapshot invalid-json failure to503 without issuing generation" time="0.000938525">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required warming receipt rejection fail-closed" time="0.001058817">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required expired receipt rejection fail-closed" time="0.001637059">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required missing-id receipt rejection fail-closed" time="0.001718843">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required blank-id receipt rejection fail-closed" time="0.001095713">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required empty-text receipt rejection fail-closed" time="0.000960819">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer keeps required empty-object receipt rejection fail-closed" time="0.000904725">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer preserves valid required awareness and the caller body for /generate/content" time="0.000997995">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer preserves valid required awareness and the caller body for /generate/image" time="0.001037395">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; infer preserves valid required awareness and the caller body for /generate/audio" time="0.001071326">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; does not request or replace awareness for unrelated private analytics endpoints" time="0.000633625">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; preserves generic operation HTTP400; snapshot classification never rewrites public/domain policy" time="0.000564832">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; preserves generic operation HTTP401; snapshot classification never rewrites public/domain policy" time="0.000449448">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; preserves generic operation HTTP403; snapshot classification never rewrites public/domain policy" time="0.000401837">
+        </testcase>
+        <testcase classname="tests/unit/required-awareness-dependency.test.ts" name="required generation awareness is a fixed internal dependency &gt; preserves generic operation HTTP404; snapshot classification never rewrites public/domain policy" time="0.000531231">
+        </testcase>
+    </testsuite>
+    <testsuite name="server/services/__tests__/unifiedAwarenessContext.test.ts" timestamp="2026-10-28T02:13:48.210Z" hostname="af966a6fd55d" tests="6" failures="0" errors="0" skipped="0" time="0.00709356">
+        <testcase classname="server/services/__tests__/unifiedAwarenessContext.test.ts" name="MaxCore unified awareness facade &gt; preserves caller direction and full snapshot receipt without local planning" time="0.002828166">
+        </testcase>
+        <testcase classname="server/services/__tests__/unifiedAwarenessContext.test.ts" name="MaxCore unified awareness facade &gt; fails closed on an unavailable required snapshot" time="0.000591132">
+        </testcase>
+        <testcase classname="server/services/__tests__/unifiedAwarenessContext.test.ts" name="MaxCore unified awareness facade &gt; rejects absent snapshot receipts rather than returning empty context" time="0.001033449">
+        </testcase>
+        <testcase classname="server/services/__tests__/unifiedAwarenessContext.test.ts" name="MaxCore unified awareness facade &gt; maps the actual Python conditioning-string schema without inventing confidence" time="0.000585984">
+        </testcase>
+        <testcase classname="server/services/__tests__/unifiedAwarenessContext.test.ts" name="MaxCore unified awareness facade &gt; omits optional conditioning while MaxCore is warming" time="0.000329367">
+        </testcase>
+        <testcase classname="server/services/__tests__/unifiedAwarenessContext.test.ts" name="MaxCore unified awareness facade &gt; forwards authoritative status without inferring provider availability" time="0.000495988">
+        </testcase>
+    </testsuite>
+</testsuites>

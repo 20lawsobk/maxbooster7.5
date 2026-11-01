@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "scope": "Independent synthetic JUnit reader controls; not product acceptance",
+  "checks": [
+    {
+      "check": "distinct-classes",
+      "uniquePassingLeaves": 2,
+      "expected": 2,
+      "status": "PASS"
+    },
+    {
+      "check": "same-class-pass-pass",
+      "uniquePassingLeaves": 0,
+      "expected": 0,
+      "status": "PASS"
+    },
+    {
+      "check": "same-class-pass-failure",
+      "uniquePassingLeaves": 0,
+      "expected": 0,
+      "status": "PASS"
+    },
+    {
+      "check": "same-class-pass-skip",
+      "uniquePassingLeaves": 0,
+      "expected": 0,
+      "status": "PASS"
+    },
+    {
+      "check": "missing-class",
+      "uniquePassingLeaves": 0,
+      "expected": 0,
+      "status": "PASS"
+    },
+    {
+      "check": "unique-legacy-name",
+      "uniquePassingLeaves": 1,
+      "expected": 1,
+      "status": "PASS"
+    },
+    {
+      "check": "nonpython-scope-not-invented",
+      "uniquePassingLeaves": 0,
+      "expected": 0,
+      "status": "PASS"
+    },
+    {
+      "check": "distinct-class-mixed-outcome",
+      "uniquePassingLeaves": 1,
+      "expected": 1,
+      "status": "PASS"
+    }
+  ],
+  "passed": 8
+}

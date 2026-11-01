@@ -1,0 +1,27 @@
+{
+  "scope": "Outside-only candidate, not landed",
+  "createdAt": "2026-10-29T22:34:43.070878+00:00",
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "sourceFiles": [
+    {
+      "path": "scripts/testing/report-progress.py",
+      "beforeSha256": "8a675a19dd0f4b7ba42cf165d0e3da6fa631dbfe1dec55343fe3cafec202ef30",
+      "afterSha256": "ec0024fa83ea34aad9e03cb436438584ccb5b4c5854d5e876bf8ae13b2742cc7"
+    },
+    {
+      "path": "tests/testing/test_report_progress.py",
+      "beforeSha256": "076a4704ec35129727c754e5b5dff7c1a3f5f727f9704da2e9e7bc5d20db923d",
+      "afterSha256": "5ade36db3ec3369ac4bcb1803730772a6327dae9005503bdc99a94240a29426e"
+    }
+  ],
+  "patchSha256": "3b97a736c2660e673f3d3ca612fa4f5e8a6f5f7bcb38c3db54a66f5002e77fbb",
+  "gitApplyCheckExit": 0,
+  "rootSourceUnchanged": true,
+  "framework": {
+    "passed": 15,
+    "deselected": 1,
+    "subtestsPassed": 21,
+    "reasonForDeselection": "Actual collect read-only regression depends on canonical artifacts being reconciled. Parent full master is currently producing those files; no test scope or real readiness is changed."
+  },
+  "productionReady": false
+}

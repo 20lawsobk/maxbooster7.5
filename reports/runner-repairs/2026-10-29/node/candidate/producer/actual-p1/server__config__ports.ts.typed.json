@@ -1,0 +1,202 @@
+{
+  "version": "maxbooster-coverage-coordinate-v1",
+  "sentinels": [
+    {
+      "path": "statementMap.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.2.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.3.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.4.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.5.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.6.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.7.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.8.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.9.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.10.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.11.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.12.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.13.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.14.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.15.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.16.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.17.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.18.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.19.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.20.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.0.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.1.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.2.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.0.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.0.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.0.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.0.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.0.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.0.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.2.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.2.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.2.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.2.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.2.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.2.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.3.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.3.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.3.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.3.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.3.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.3.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.5.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.5.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.5.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.5.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.5.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.5.locations.1.end.column",
+      "type": "undefined"
+    }
+  ],
+  "sourceSha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d",
+  "contractSha256": "19d319e1ec60d9b846dcb3f1b25e29e89ad9cbba1d66b7d1d3e113f9814ce499",
+  "rawTypedSha256": "beb659cdc5579a37f261109e47c2243f9ee8acf264503922bace5f955b98a12b",
+  "wireSha256": "63810b1c560bffa2c60b86b9d470ca498d682c7e22d40ab913aecb18748db2b0",
+  "provenanceKind": "actual-shared-provider-replay"
+}

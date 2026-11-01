@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="fabric migration journals recover physical I/O and accounting across process restarts" time="12.392393" disabled="0" errors="0" tests="14" failures="0" skipped="0" timestamp="2026-10-27T10:12:00.504Z" hostname="2fc971e77ddd">
+		<testcase name="verified target and original replica retain exact bytes with balanced accounting" time="0.801128" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="restart after reservation before physical write resumes the same target key" time="0.770573" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="ambiguous completed target write remains journaled and is resumed without double charge" time="0.788766" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="actual corrupted PDIM target is retired and a new immutable key recovers after process restart" time="0.795276" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="SQL rollback after target retirement safely rotates the retained tombstoned key on retry" time="0.837611" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="failed target verification retains the source and reserved target until successful retry" time="0.909965" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="SQL publication failure preserves original catalog and recovers after restart" time="0.856395" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="source deletion outage retains published target and durable cleanup receipt" time="0.776627" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="SQL failure after physical deletion retries cleanup without double subtraction" time="0.771651" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="a removed source reclaims an interrupted unpublished target and refunds its reservation" time="0.787188" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="insufficient target capacity denies admission before physical I/O or journal publication" time="0.799804" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="terminated catalog owner cannot republish or double-account after successor migration recovery" time="0.786213" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="discard after lost SQL owner atomically denies delayed old PDIM publication" time="0.820276" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="two independent processes serialize migration without duplicate capacity charges" time="1.180290" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+	</testsuite>
+	<testcase name="canonical PDIM permanently fences deleted replica keys and refuses immutable replacement" time="0.040866" classname="test" file="/workspace/maxbooster7.5/tests/fabric-replica-generation.test.mjs"/>
+	<testcase name="a delayed replica publication cannot resurrect bytes after a newer cleanup ACK" time="0.003289" classname="test" file="/workspace/maxbooster7.5/tests/fabric-replica-generation.test.mjs"/>
+	<testcase name="active root fabric preserves shared bytes and recovers failed SQL publication/deletion" time="1.411199" classname="test" file="/workspace/maxbooster7.5/tests/fabric-root-storage-postgres.test.mjs"/>
+	<!-- tests 18 -->
+	<!-- suites 0 -->
+	<!-- pass 18 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 14393.385445 -->
+</testsuites>

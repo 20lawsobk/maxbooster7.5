@@ -1,0 +1,21 @@
+{
+  "scope": "Launch audit reporting/inventory/provenance regressions, not product feature tests",
+  "command": [
+    "/workspace/.cloud-python/bin/python",
+    "-m",
+    "pytest",
+    "tests/testing/test_launch_readiness_audit.py",
+    "-q",
+    "--junitxml=reports/launch-readiness/focused-2026-10-28/pytest.xml"
+  ],
+  "exitCode": 0,
+  "cases": 42,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "sourceSha256": {
+    "scripts/testing/launch-readiness-audit.py": "67266d4052c84b45517ba2042dab2cf04131ad6bf14147726a5986015b823c36",
+    "tests/testing/test_launch_readiness_audit.py": "44a81984703f06289255e59b1640d45edbc0c09e95b4dd79d0c78f0517103d18"
+  },
+  "productionReady": false
+}

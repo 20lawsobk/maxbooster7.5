@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "scope": "Owned test-fixture restoration only",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1509,
+      "sha256": "a5b6bda25ed849af6f5bae320f624d72ef93140649cc696c48907a8330e6d1e0"
+    },
+    {
+      "path": "execution.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "helper-sql-acceptance.json",
+      "bytes": 1836,
+      "sha256": "b0592a734d6d5f940ebffd5538d0eb34ba1f10b01bfba29b5bd958a6b0f91d0d"
+    },
+    {
+      "path": "receipt.json",
+      "bytes": 802,
+      "sha256": "700537a4225ba58747bb3c6f59e7d216331c523e5574b24f3e64ee76b24b11e1"
+    },
+    {
+      "path": "test-restoration.mjs",
+      "bytes": 6087,
+      "sha256": "1b9f7a6545dcdc17c61ca16fa8fb89ed65ff2d4083f947034e4a4b0c18fd5664"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "observedAt": "2026-10-28T12:58:12.541984+00:00",
+  "manifests": 39,
+  "artifactChecks": 1030,
+  "passing": 1030,
+  "failed": [],
+  "coldArtifacts": 23
+}

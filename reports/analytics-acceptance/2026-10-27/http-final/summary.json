@@ -1,0 +1,64 @@
+{
+  "startedAt": "2026-10-28T01:33:17.779Z",
+  "scope": "Disposable PostgreSQL and real source application; all external TCP/TLS and UDP denied",
+  "sourceRevision": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "requestedFiles": [
+    "tests/ai-analytics-integration.test.ts"
+  ],
+  "status": "passed",
+  "productionReady": false,
+  "testSourceSha256": {
+    "tests/integration/maxcore-local-supervisor.integration.test.ts": "081722358385e5d0429e83f6039d5efdb10e6ea729f8593c02b9f267ad6adc7a",
+    "tests/health.test.ts": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+    "tests/api-guards.test.ts": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
+    "tests/auth-flows.test.ts": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+    "tests/security-hardening.test.ts": "7ec70cba3a3a46fd2c0aabd25fc95d4b70ac4c88f662a682c837789928319ffb",
+    "tests/webhook-security.test.ts": "3a7ee49bc10878f8ee9a6be9dc63d7b3eecceac81a84c4a43e30299a529bf570",
+    "tests/critical-paths.test.ts": "822daa3fe77125760fafe4c470f2a8e77c85c5cd7207db3576bb6b04ef436815",
+    "tests/audit-persistence.test.ts": "47bf5e847deac86a43af68d9b014eb41141176394aee03370fa4fc4402f7edde",
+    "tests/paid-user-e2e.test.ts": "26578fd010a861800fdf1ba6844308f27250a66430699df9029e5468f7bea118",
+    "tests/ai-analytics-integration.test.ts": "85448e877fe126fb9a195b3c542d053c674dd3cab66e77efa9ae904eacc11aa3",
+    "tests/cache-invalidation.test.ts": "9ee9d9102c7ffc09430c4866815acb87326fe4601d8cd0cf50434e643f142998",
+    "tests/unit/cache-cross-pod.test.ts": "c28df33e28a574afc6a48f1505267a3f50f743962096fb6cf22acf59e66ad246",
+    "tests/file-management.test.ts": "65e4c00bd698becb27406b4fa804cedfc9b92d3d023b13c80f72bd7ad8cb04dc",
+    "tests/direct-upload.test.ts": "dffb53dbdfea5a75c7cd9e6feeb1fbc29a5e9d156570329d8c439dfa7f27c10c",
+    "tests/billing-lifecycle.test.ts": "4fa8ee102099997981b1f1370e8b5162a494dec1c2835db1e47559920e143bfe",
+    "tests/auth-2fa.test.ts": "8154915e4a7b7cdbdd04b70e313c33edd510296c69c3437e4c184a8fed60f950",
+    "tests/feature-press-pitching-ar.test.ts": "b29f91664c5473fcb096b8771aae193a92d32d8f5dfb025e77a194e7ee8886dc",
+    "tests/feature-catalog-production.test.ts": "6564177a6f09af587cb8d474d801ff6b05001445b2b547d89960a32ae5e83f3c",
+    "tests/feature-revenue-merch.test.ts": "924f087eb8359799a5cd880087e7cd737eed5caaa86913dc76011b9ed38cc2f7",
+    "tests/feature-marketplace-distribution.test.ts": "58f7ffa2e3f04fe4efa912942c9b9b3e328fc5b9fa7a4a046f056b994b4066fd",
+    "tests/feature-storefront-dns.test.ts": "2831eb5748f4a2de2098c06881fabaa37c24d09f0078b6aa630cf83d992b645c",
+    "vitest.integration.config.ts": "b13108817eae6a92fef7f1ea9c4a34e1502582d3f1f77a366c7f074b6a2ffca5",
+    "scripts/testing/integration-browser.mjs": "fb481f18f985d6d7e748d4f00dd067e536980ac03a495bdb2149030b9448f4b6"
+  },
+  "ephemeralDatabase": "pass",
+  "analyticsFixture": {
+    "status": "started",
+    "implementation": "canonical MaxCore ai_model/analytics.py",
+    "scope": "private transient numerical analysis only; general model/generation/readiness unavailable; no learning, persistence or public feed ingestion",
+    "sourceSha256": {
+      "tests/contracts/helpers-account-analytics-server.py": "9b66d8805eea33cfdbfcfff5bfe5c9a439de91c6efba3ca6866c65987e976812",
+      "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py": "f870b4bd97afc51fc51f3a744e03438340b20f759344f0d7e1e25d1efaa44cae"
+    }
+  },
+  "applicationRoutes": "pass",
+  "workerWorkingDirectory": "temporary fixture; source root used only for module/test resolution",
+  "trustedProxy": "Exact loopback fixture origin receives TLS forwarding and stable TEST-NET identities per file/client; hostile probes use distinct clients, production blocking and rate limits retained",
+  "exitCode": 0,
+  "signal": null,
+  "testProcessCleanup": {
+    "tracked": 3,
+    "remaining": []
+  },
+  "appProcessCleanup": {
+    "tracked": 2,
+    "remaining": []
+  },
+  "analyticsProcessCleanup": {
+    "tracked": 1,
+    "remaining": []
+  },
+  "postgresCleanup": "pass",
+  "finishedAt": "2026-10-28T01:33:30.625Z"
+}

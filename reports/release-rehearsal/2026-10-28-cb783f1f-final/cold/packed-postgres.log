@@ -1,0 +1,7 @@
+2026-10-28 12:30:10.703 UTC [195158] LOG:  starting PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-10-28 12:30:10.703 UTC [195158] LOG:  listening on IPv4 address "127.0.0.1", port 43429
+2026-10-28 12:30:10.703 UTC [195158] LOG:  listening on Unix socket "/tmp/readiness-packed-thqw7H/.s.PGSQL.43429"
+2026-10-28 12:30:10.704 UTC [195161] LOG:  database system was shut down at 2026-10-28 12:30:10 UTC
+2026-10-28 12:30:10.706 UTC [195158] LOG:  database system is ready to accept connections
+2026-10-28 12:30:44.502 UTC [195158] LOG:  received immediate shutdown request
+2026-10-28 12:30:44.504 UTC [195158] LOG:  database system is shut down

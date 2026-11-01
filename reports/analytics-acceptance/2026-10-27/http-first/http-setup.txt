@@ -1,0 +1,320 @@
+git rev-parse HEAD
+c06fbecdb32a5c3b76662f631604bfd9abac386b
+
+/workspace/.cloud-tools/node_modules/node/bin/node node_modules/drizzle-kit/bin.cjs generate --config=/tmp/maxbooster-http-tests-O9c6yb/drizzle.json
+Reading config file '/tmp/maxbooster-http-tests-O9c6yb/drizzle.json'
+282 tables
+achievements 11 columns 0 indexes 0 fks
+ad_campaigns 21 columns 0 indexes 0 fks
+ad_creatives 15 columns 0 indexes 0 fks
+ad_delivery_logs 10 columns 2 indexes 0 fks
+ai_model_versions 13 columns 0 indexes 0 fks
+ai_models 15 columns 2 indexes 0 fks
+alert_incidents 11 columns 0 indexes 0 fks
+alert_rules 9 columns 0 indexes 0 fks
+analytics 10 columns 2 indexes 0 fks
+api_keys 11 columns 2 indexes 0 fks
+api_usage 8 columns 0 indexes 0 fks
+approval_history 8 columns 0 indexes 0 fks
+approval_requests 11 columns 0 indexes 0 fks
+approval_steps 8 columns 0 indexes 0 fks
+approval_workflows 7 columns 0 indexes 0 fks
+ar_discoveries 43 columns 0 indexes 0 fks
+artist_connections 7 columns 0 indexes 0 fks
+artist_dna_snapshots 9 columns 0 indexes 0 fks
+artist_identity_links 11 columns 0 indexes 0 fks
+artist_profile_releases 5 columns 0 indexes 0 fks
+artist_profiles 38 columns 0 indexes 1 fks
+artist_progress_snapshots 11 columns 0 indexes 0 fks
+artist_scores 18 columns 0 indexes 0 fks
+assistant_conversations 4 columns 1 indexes 0 fks
+assistant_messages 5 columns 1 indexes 0 fks
+audio_clips 17 columns 2 indexes 0 fks
+audit_logs 12 columns 4 indexes 1 fks
+autopilot_cross_insights 7 columns 0 indexes 0 fks
+autopilot_insights 11 columns 0 indexes 0 fks
+autopilot_learning_data 21 columns 0 indexes 0 fks
+autopilot_preferences 31 columns 0 indexes 0 fks
+batch_templates 13 columns 0 indexes 0 fks
+beat_discovery_scores 10 columns 0 indexes 0 fks
+beat_interactions 9 columns 0 indexes 0 fks
+beat_likes 4 columns 2 indexes 0 fks
+beat_money_loop_cycles 16 columns 2 indexes 0 fks
+beat_money_loop_state 11 columns 0 indexes 0 fks
+beat_pricing_snapshots 11 columns 2 indexes 0 fks
+beat_promotions 16 columns 0 indexes 0 fks
+beats 16 columns 3 indexes 1 fks
+best_posting_times 14 columns 0 indexes 0 fks
+bogo_promotions 24 columns 0 indexes 0 fks
+budget_line_items 12 columns 1 indexes 0 fks
+campaigns 14 columns 2 indexes 0 fks
+cancellation_feedback 8 columns 2 indexes 0 fks
+career_coach_recommendations 11 columns 0 indexes 0 fks
+career_goals 13 columns 0 indexes 0 fks
+catalog_import_jobs 12 columns 1 indexes 0 fks
+catalog_import_rows 12 columns 1 indexes 0 fks
+claimed_domains 20 columns 0 indexes 2 fks
+collab_snapshots 7 columns 0 indexes 0 fks
+collaboration_access_requests 11 columns 0 indexes 0 fks
+collaboration_comments 13 columns 0 indexes 0 fks
+collaboration_projects 12 columns 0 indexes 0 fks
+collaboration_versions 12 columns 0 indexes 0 fks
+comp_versions 13 columns 0 indexes 0 fks
+competitor_profiles 17 columns 0 indexes 0 fks
+content_calendar 13 columns 2 indexes 0 fks
+content_id_registrations 24 columns 2 indexes 0 fks
+contract_templates 10 columns 1 indexes 0 fks
+countdown_analytics 7 columns 0 indexes 0 fks
+countdown_tasks 8 columns 0 indexes 0 fks
+custom_workflows 12 columns 2 indexes 0 fks
+customer_health_scores 14 columns 3 indexes 0 fks
+customer_memberships 9 columns 3 indexes 0 fks
+dispute_messages 6 columns 0 indexes 0 fks
+distribution_sla_metrics 20 columns 2 indexes 0 fks
+distributor_history_imports 10 columns 0 indexes 0 fks
+distro_releases 8 columns 2 indexes 0 fks
+distro_tracks 9 columns 1 indexes 0 fks
+dmca_notices 29 columns 2 indexes 0 fks
+dmca_strikes 13 columns 2 indexes 0 fks
+dns_provider_credentials 9 columns 1 indexes 0 fks
+dns_record_cache 13 columns 2 indexes 0 fks
+dns_templates 8 columns 1 indexes 0 fks
+dns_zone_records 14 columns 3 indexes 0 fks
+dns_zones 11 columns 2 indexes 0 fks
+dnssec_keys 13 columns 2 indexes 0 fks
+domain_contacts 11 columns 0 indexes 1 fks
+domain_events 7 columns 0 indexes 1 fks
+dsp_analytics 13 columns 3 indexes 0 fks
+dsp_providers 6 columns 0 indexes 0 fks
+dsp_rates 9 columns 1 indexes 0 fks
+dsp_sync_status 9 columns 0 indexes 0 fks
+dsp_user_platform_status 14 columns 1 indexes 0 fks
+dunning_state 9 columns 3 indexes 0 fks
+email_events 9 columns 0 indexes 0 fks
+email_messages 11 columns 0 indexes 0 fks
+email_preferences 11 columns 0 indexes 0 fks
+exchange_rates 6 columns 1 indexes 0 fks
+explanation_logs 11 columns 0 indexes 0 fks
+fabric_catalog_fence 2 columns 0 indexes 0 fks
+fabric_chunks 8 columns 0 indexes 0 fks
+fabric_deletion_chunks 6 columns 1 indexes 0 fks
+fabric_deletion_objects 3 columns 0 indexes 0 fks
+fabric_migration_jobs 10 columns 0 indexes 0 fks
+fabric_object_dependencies 2 columns 1 indexes 2 fks
+fabric_objects 9 columns 0 indexes 1 fks
+fabric_pockets 6 columns 0 indexes 0 fks
+fabric_storage_nodes 9 columns 0 indexes 0 fks
+fabric_volumes 5 columns 0 indexes 1 fks
+fan_campaigns 16 columns 2 indexes 0 fks
+fan_credit_transactions 8 columns 1 indexes 1 fks
+fan_loyalty_configs 8 columns 0 indexes 1 fks
+fan_messages 10 columns 1 indexes 0 fks
+fan_segments 8 columns 0 indexes 0 fks
+fan_subscribers 14 columns 2 indexes 0 fks
+fan_wallets 8 columns 2 indexes 1 fks
+feature_events 6 columns 2 indexes 0 fks
+filter_presets 8 columns 0 indexes 0 fks
+generated_contracts 13 columns 2 indexes 0 fks
+generation_arm_stats 9 columns 1 indexes 0 fks
+generation_history 7 columns 1 indexes 0 fks
+global_rankings 25 columns 0 indexes 0 fks
+hashtag_research 16 columns 0 indexes 0 fks
+historical_analytics 28 columns 0 indexes 0 fks
+hns_auctions 11 columns 2 indexes 0 fks
+hybrid_storage_files 6 columns 3 indexes 0 fks
+hybrid_storage_imports 3 columns 0 indexes 0 fks
+hyperfollow_pages 7 columns 1 indexes 0 fks
+inference_runs 15 columns 0 indexes 0 fks
+instant_payouts 12 columns 2 indexes 0 fks
+invoices 23 columns 2 indexes 0 fks
+ip_blacklist 11 columns 0 indexes 0 fks
+isrc_registry 8 columns 2 indexes 0 fks
+jwt_tokens 8 columns 2 indexes 0 fks
+kyc_documents 9 columns 1 indexes 0 fks
+kyc_verifications 10 columns 0 indexes 0 fks
+label_settings 5 columns 0 indexes 0 fks
+label_submissions 19 columns 2 indexes 0 fks
+ledger_entries 11 columns 2 indexes 0 fks
+legal_holds 12 columns 2 indexes 0 fks
+license_templates 17 columns 2 indexes 0 fks
+listener_cohorts 12 columns 0 indexes 0 fks
+listing_license_tiers 18 columns 1 indexes 0 fks
+listing_stems 13 columns 0 indexes 0 fks
+listings 19 columns 4 indexes 0 fks
+lyrics_syncs 12 columns 0 indexes 0 fks
+markers 8 columns 0 indexes 0 fks
+marketplace_disputes 15 columns 3 indexes 0 fks
+marketplace_recommendations 12 columns 0 indexes 0 fks
+membership_tiers 14 columns 1 indexes 0 fks
+merch_items 17 columns 2 indexes 0 fks
+merch_orders 11 columns 2 indexes 0 fks
+midi_clips 11 columns 1 indexes 0 fks
+midi_notes 9 columns 1 indexes 0 fks
+mini_videos 15 columns 0 indexes 0 fks
+mobile_device_tokens 10 columns 0 indexes 0 fks
+music_impact_metrics 10 columns 0 indexes 0 fks
+music_video_productions 20 columns 1 indexes 0 fks
+music_workflow_automations 9 columns 0 indexes 0 fks
+music_workflow_execution_logs 8 columns 0 indexes 0 fks
+nlp_query_logs 12 columns 0 indexes 0 fks
+notifications 9 columns 2 indexes 1 fks
+nps_responses 6 columns 2 indexes 0 fks
+onboarding_tasks 11 columns 0 indexes 0 fks
+orders 13 columns 5 indexes 0 fks
+organic_asset_lifetime 11 columns 0 indexes 0 fks
+organic_assets 12 columns 0 indexes 0 fks
+organic_channels 10 columns 0 indexes 0 fks
+organic_roi_snapshots 10 columns 0 indexes 0 fks
+outreach_campaigns 14 columns 1 indexes 1 fks
+outreach_pitches 16 columns 3 indexes 1 fks
+pg_sessions 3 columns 1 indexes 0 fks
+platform_api_configs 19 columns 0 indexes 0 fks
+platform_data_sources 32 columns 0 indexes 0 fks
+platform_royalty_rates 8 columns 0 indexes 0 fks
+playlist_attributions 25 columns 0 indexes 0 fks
+playlist_journeys 22 columns 0 indexes 0 fks
+playlist_pitches 18 columns 2 indexes 0 fks
+plugin_catalog 14 columns 0 indexes 0 fks
+plugin_instances 10 columns 0 indexes 0 fks
+plugin_presets 8 columns 0 indexes 0 fks
+posts 17 columns 2 indexes 0 fks
+pre_save_campaigns 22 columns 2 indexes 0 fks
+pre_save_entries 17 columns 2 indexes 0 fks
+pre_save_pages 28 columns 0 indexes 0 fks
+press_kits 19 columns 2 indexes 0 fks
+profile_claim_events 8 columns 0 indexes 0 fks
+profile_claim_pipeline 13 columns 0 indexes 0 fks
+profile_split_events 12 columns 0 indexes 0 fks
+project_budgets 13 columns 1 indexes 0 fks
+project_members 6 columns 0 indexes 0 fks
+project_royalty_splits 6 columns 1 indexes 0 fks
+projects 23 columns 1 indexes 0 fks
+promo_cards 18 columns 0 indexes 0 fks
+publishing_rights 18 columns 2 indexes 0 fks
+push_subscriptions 8 columns 1 indexes 0 fks
+radio_pitches 19 columns 2 indexes 0 fks
+recoupment_accounts 12 columns 1 indexes 0 fks
+refresh_tokens 8 columns 2 indexes 0 fks
+refunds 16 columns 3 indexes 0 fks
+release_countdowns 9 columns 0 indexes 0 fks
+release_scheduled_actions 8 columns 2 indexes 0 fks
+release_version_history 8 columns 1 indexes 0 fks
+release_workflow_requests 9 columns 2 indexes 0 fks
+releases 10 columns 1 indexes 1 fks
+revenue_events 10 columns 2 indexes 0 fks
+revenue_forecasts 19 columns 0 indexes 0 fks
+royalty_disputes 13 columns 2 indexes 0 fks
+royalty_splits 26 columns 3 indexes 0 fks
+royalty_statements 9 columns 2 indexes 0 fks
+royalty_transactions 18 columns 3 indexes 0 fks
+sample_clearances 21 columns 2 indexes 0 fks
+scheduled_post_batches 9 columns 0 indexes 0 fks
+search_history 5 columns 0 indexes 0 fks
+security_threats 16 columns 3 indexes 0 fks
+sent_emails 11 columns 0 indexes 0 fks
+sessions 9 columns 1 indexes 1 fks
+setlists 8 columns 2 indexes 1 fks
+share_links 18 columns 0 indexes 0 fks
+shows 18 columns 3 indexes 0 fks
+social_accounts 13 columns 0 indexes 0 fks
+social_autopilot_content 13 columns 0 indexes 0 fks
+social_campaigns 11 columns 2 indexes 0 fks
+social_inbox_messages 28 columns 0 indexes 0 fks
+social_keywords 7 columns 0 indexes 0 fks
+social_media_jobs 10 columns 3 indexes 1 fks
+social_mentions 17 columns 0 indexes 0 fks
+social_pattern_aggregates 14 columns 0 indexes 0 fks
+social_reply_templates 6 columns 1 indexes 0 fks
+songwriting_sessions 17 columns 1 indexes 0 fks
+split_contracts 6 columns 1 indexes 0 fks
+split_payments 12 columns 2 indexes 0 fks
+split_sheets 10 columns 0 indexes 0 fks
+spotify_canvases 12 columns 0 indexes 0 fks
+sso_configs 11 columns 0 indexes 0 fks
+status_page_incident_services 5 columns 0 indexes 0 fks
+status_page_incident_updates 5 columns 0 indexes 0 fks
+status_page_incidents 8 columns 0 indexes 0 fks
+status_page_services 9 columns 0 indexes 0 fks
+status_page_subscribers 6 columns 0 indexes 0 fks
+status_page_uptime_metrics 7 columns 1 indexes 0 fks
+stem_exports 31 columns 0 indexes 0 fks
+storefront_domains 13 columns 2 indexes 0 fks
+storefront_follows 4 columns 2 indexes 0 fks
+storefront_hosts 15 columns 0 indexes 0 fks
+storefront_likes 4 columns 2 indexes 0 fks
+storefront_orders 16 columns 5 indexes 0 fks
+storefront_ratings 7 columns 2 indexes 0 fks
+storefront_templates 10 columns 0 indexes 0 fks
+storefronts 15 columns 2 indexes 0 fks
+studio_pinned_folders 6 columns 1 indexes 0 fks
+studio_projects 22 columns 2 indexes 0 fks
+studio_recent_files 8 columns 1 indexes 0 fks
+studio_samples 12 columns 0 indexes 0 fks
+studio_templates 15 columns 2 indexes 0 fks
+studio_tracks 15 columns 0 indexes 0 fks
+subscriptions 9 columns 1 indexes 1 fks
+support_tickets 14 columns 3 indexes 0 fks
+sync_license_inquiries 17 columns 3 indexes 0 fks
+sync_licenses 30 columns 0 indexes 0 fks
+sync_placements 31 columns 0 indexes 0 fks
+sync_submissions 20 columns 2 indexes 0 fks
+system_logs 8 columns 0 indexes 0 fks
+system_metrics 8 columns 0 indexes 0 fks
+system_settings 7 columns 0 indexes 0 fks
+take_groups 14 columns 0 indexes 0 fks
+take_lanes 15 columns 0 indexes 0 fks
+take_segments 15 columns 0 indexes 0 fks
+tax_forms 12 columns 2 indexes 0 fks
+tax_treaty_rates 8 columns 0 indexes 0 fks
+toolost_connection 9 columns 0 indexes 0 fks
+upc_registry 7 columns 2 indexes 0 fks
+user_achievements 7 columns 0 indexes 0 fks
+user_brand_voices 16 columns 0 indexes 0 fks
+user_onboarding 13 columns 0 indexes 0 fks
+user_storage 9 columns 0 indexes 0 fks
+user_storage_files 13 columns 0 indexes 0 fks
+user_streaks 8 columns 0 indexes 0 fks
+user_taste_profiles 14 columns 0 indexes 0 fks
+users 35 columns 3 indexes 0 fks
+venue_contacts 24 columns 1 indexes 0 fks
+warp_markers 5 columns 0 indexes 0 fks
+workspace_audit_log 13 columns 3 indexes 0 fks
+workspace_catalogs 8 columns 0 indexes 0 fks
+workspace_invitations 12 columns 0 indexes 0 fks
+workspace_members 9 columns 0 indexes 0 fks
+workspace_roles 6 columns 0 indexes 0 fks
+workspaces 10 columns 0 indexes 0 fks
+youtube_connections 10 columns 0 indexes 0 fks
+youtube_uploads 13 columns 0 indexes 0 fks
+
+[✓] Your SQL migration file ➜ /tmp/maxbooster-http-tests-O9c6yb/generated/0000_bitter_star_brand.sql 🚀
+
+initdb -D /tmp/maxbooster-http-tests-O9c6yb/pg -U test_fixture --auth=trust --no-locale --encoding=UTF8
+The files belonging to this database system will be owned by user "agent".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+creating directory /tmp/maxbooster-http-tests-O9c6yb/pg ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+Success. You can now start the database server using:
+
+    pg_ctl -D /tmp/maxbooster-http-tests-O9c6yb/pg -l logfile start
+
+
+pg_ctl -D /tmp/maxbooster-http-tests-O9c6yb/pg -l /tmp/maxbooster-http-tests-O9c6yb/postgres.txt -o -h 127.0.0.1 -k /tmp/maxbooster-http-tests-O9c6yb -p 46167 -c shared_buffers=32MB -c max_connections=40 -w start
+waiting for server to start.... done
+server started
+

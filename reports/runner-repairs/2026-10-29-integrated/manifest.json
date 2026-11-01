@@ -1,0 +1,20 @@
+{
+  "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 843,
+      "sha256": "977f15ca4cd4b893729c22ca605cea5787bb2662b6b65cc97ef94fde9852102b"
+    },
+    {
+      "path": "focused.junit.xml",
+      "bytes": 24066,
+      "sha256": "6896cc2c37c9fd676e5552c1b2ea4d6b6e44094e187a5f42070590cda8f398e1"
+    },
+    {
+      "path": "focused.txt",
+      "bytes": 260,
+      "sha256": "510887df2490c502746a5d727ed1eac908af180c0287308a1a6fd687c90ecdcf"
+    }
+  ]
+}

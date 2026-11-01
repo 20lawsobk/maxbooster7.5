@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 2183,
+      "sha256": "e45b66592961b5da704ab5d53a5f2ce211333966efcc0a9e4f69e5203dd28071"
+    },
+    {
+      "path": "input-manifest-snapshot.json",
+      "bytes": 1236,
+      "sha256": "a9c03e3f67ba94d35050295b1d9fff29568569a6249f98e5ba8c603985b545a7"
+    },
+    {
+      "path": "review.json",
+      "bytes": 2833,
+      "sha256": "f673590158d08de7e625a77c99b1b238a8760741b30b102b76d88f451055a172"
+    }
+  ],
+  "productionReady": false
+}

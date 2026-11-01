@@ -1,0 +1,6 @@
+[05:04:22.146] INFO (437421): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+JUNIT report written to /workspace/onboarding-results/critical-coverage-vitest-final.xml
+ERROR: Coverage for lines (78.99%) does not meet global threshold (100%)
+ERROR: Coverage for functions (66.66%) does not meet global threshold (100%)
+ERROR: Coverage for statements (71.74%) does not meet global threshold (100%)
+ERROR: Coverage for branches (67.76%) does not meet global threshold (100%)

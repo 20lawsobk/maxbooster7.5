@@ -1,0 +1,80 @@
+{
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
+  "selectedGroups": [
+    "checks"
+  ],
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:34:48.553620+00:00",
+      "durationSeconds": 31.803,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/final-checks/orchestration/types.txt",
+      "logSha256": "2ffa91ca4d46f5e0ba57779604229aa88b9399d80e7e811d7627a6db927afa94",
+      "group": "checks",
+      "id": "types"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:35:20.356929+00:00",
+      "durationSeconds": 49.945,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/final-checks/orchestration/lint.txt",
+      "logSha256": "06da543667ff102b992477b32f1825628ff2dfc482d6132e417c6e1e0c4501cb",
+      "group": "checks",
+      "id": "lint"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:36:10.302600+00:00",
+      "durationSeconds": 17.84,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/final-checks/orchestration/build.txt",
+      "logSha256": "1122a0fb8efaf10aa3b9bed8c8a6b543d5971a04ebf18666bf6bcb367b021ab4",
+      "group": "checks",
+      "id": "build"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "security:audit"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:36:28.142886+00:00",
+      "durationSeconds": 1.029,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/final-checks/orchestration/audit.txt",
+      "logSha256": "091f8d8ecc06b56cc5886c3398169f806dc39ae7c675dfc582f640b22b8611b9",
+      "group": "checks",
+      "id": "audit"
+    }
+  ],
+  "productionReady": false,
+  "status": "failed",
+  "allTestsPassed": false
+}

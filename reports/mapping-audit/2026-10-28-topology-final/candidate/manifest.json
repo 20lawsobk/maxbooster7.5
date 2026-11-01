@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "scope": "Selected final outside-repository topology proposal/proofs only; not feature or launch certification",
+  "productionReady": false,
+  "artifacts": {
+    "README.md": {
+      "bytes": 7786,
+      "sha256": "5c32e3662d673c9807a0c4be8ab0bb67a54445208aa6b6c771e410a19637a972"
+    },
+    "candidate.patch": {
+      "bytes": 36143,
+      "sha256": "bb12479dfde12508348a5d7b8a4e7373322b8f73d16ef23c23c09d98b979eb86"
+    },
+    "summary.json": {
+      "bytes": 2504,
+      "sha256": "91dfbb70f6c97e00339ad66d289c8a767d4393445af4c2ee50d6cd96c1c5ad59"
+    },
+    "backend-id-remap.json": {
+      "bytes": 103248,
+      "sha256": "d6341674ec658fc77ee0c80ea85e749c116d205e4fa2dc4b2a2347f670d0b5b4"
+    },
+    "patch-check.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "node-before-final.txt": {
+      "bytes": 15175,
+      "sha256": "c25d058dd89b02faa54251348e560a7962831b6deda65a91b72718a45a8dc92e"
+    },
+    "node-final.txt": {
+      "bytes": 7380,
+      "sha256": "0f15e9c1dedb333ef7a59eb23fddca5ca2e458c11abd88fc56391a5a633a8091"
+    },
+    "finite-before-lexical.txt": {
+      "bytes": 13674,
+      "sha256": "a94877281436865492a3c83a6969e9ed55c99b6b29f34a2d71dc51f1b3738e0e"
+    },
+    "finite-tests-final.txt": {
+      "bytes": 5530,
+      "sha256": "68e58596b9533c02e567cf21cae101d3da9e36cc104b2c008f255982d0c9bd8c"
+    },
+    "consumer-final.txt": {
+      "bytes": 555,
+      "sha256": "c54b8da41945eb858758baaa106ca78d3b2253649bdb3bf5b6bae66ffa1f2f1d"
+    },
+    "consumer-final.xml": {
+      "bytes": 1687,
+      "sha256": "72ff6acd6fe2f45e505ef306ccf3e26388e45000b1b5cce5e8d60f9fc175de5e"
+    },
+    "platform-self-test-final.txt": {
+      "bytes": 133,
+      "sha256": "2aa94c04b915cd2c6af508146bdba20cb9ef93945d2cb92ea8e660fc07989a91"
+    },
+    "repository-before.json": {
+      "bytes": 2197618,
+      "sha256": "cf57a030087815d072e527dfb890404573a1da45bf4566e9a533a65fefc021be"
+    },
+    "repository-after.json": {
+      "bytes": 2239962,
+      "sha256": "3ebb36692a2da1d9cb21989ebf57804a119c23e2cc1be0f1960a97d636fc02dd"
+    },
+    "repository-route-diff.json": {
+      "bytes": 7364,
+      "sha256": "b8a61d8869ef3a15f12cc76f8b3a658b545085c08913c11708cf033ddb233eb5"
+    },
+    "repository-source-inputs.json": {
+      "bytes": 316912,
+      "sha256": "5e984f418ac7478a85616d1b47ab52f19a069c9ddc212ddd9df263d79a1c4587"
+    },
+    "repository-scan-receipt.json": {
+      "bytes": 946,
+      "sha256": "b1868c50cb9239592ffa1ebd04f0f0030059c8b67ca7a7d8e888f144e8f70880"
+    },
+    "repository-scan.py": {
+      "bytes": 2161,
+      "sha256": "7d0ede5dda810d2176c0a7d2bac9d84203df9077f383f1369356898866527b48"
+    },
+    "prepare-final.py": {
+      "bytes": 5328,
+      "sha256": "fdb44ef7a90cb7f9c5dee5f222cd01c5874a18550e778920e0bf84b442ac31ac"
+    },
+    "scripts/audit-endpoints.mjs": {
+      "bytes": 85362,
+      "sha256": "5d0d339b1e497910f59763646be74ee0204ae29d28a9208fe2b14f69cd631303"
+    },
+    "scripts/lib/finite-route-paths.mjs": {
+      "bytes": 8213,
+      "sha256": "c6b6e8d51e49f31d85d4a168852ef49859feb1f85c1ea9e25205a0a574c54288"
+    },
+    "scripts/testing/platform-register.py": {
+      "bytes": 51113,
+      "sha256": "bdbcf9a3426e4447fcc68fc7514e01dba8d27823dff900e38d903b012b9b0aff"
+    },
+    "tests/endpoint-topology.test.mjs": {
+      "bytes": 6506,
+      "sha256": "4b97011ea7147ee3fed7eaaf8650b897fb7a3af9ebd14531f8226f3979c09aec"
+    },
+    "tests/finite-route-paths.test.mjs": {
+      "bytes": 5218,
+      "sha256": "f05acb9390269a2b36a553cb9c940475d4e050528f2d1a1ac1e78f3a303e9264"
+    },
+    "tests/testing/test_endpoint_mount_resolution.py": {
+      "bytes": 4221,
+      "sha256": "f0bb84c0f26508cb200bcb893bf102bdd32032f4ed79a58a9939bfed312a0482"
+    },
+    "finite-review/README.md": {
+      "bytes": 2433,
+      "sha256": "12199a0046662d505bf702360c2d73b7740abfc5cd6f2af6197c0ea498702192"
+    },
+    "finite-review/class-static-proof.mjs": {
+      "bytes": 1034,
+      "sha256": "8160ab976ceae99a5af6e3f5f57dc2c09338920b63ba911f6cb860527866c3f4"
+    },
+    "finite-review/class-static-result.json": {
+      "bytes": 482,
+      "sha256": "73c6149881da2e1cce580f514db5f358f8aa4319f89624313906f5941ecbff46"
+    },
+    "finite-review/counterexamples.mjs": {
+      "bytes": 834,
+      "sha256": "e23382355228fb652ce8e093ac5917a43c2b622220d971439efc7965cf5e1741"
+    },
+    "finite-review/extra-cases.mjs": {
+      "bytes": 1124,
+      "sha256": "507351f0fee7d3502dc2f206c6e1c4715b5c09e9f4f48fd2173ee4fca785f3cd"
+    },
+    "finite-review/manifest.json": {
+      "bytes": 1112,
+      "sha256": "aec070ef7645b90efc16c4b4aed5f9987372177d2d2f97d0e28e19c856536fe8"
+    },
+    "finite-review/review-proof.mjs": {
+      "bytes": 1849,
+      "sha256": "79ae48554f111670cdd8951b423f52ae78bf00b6ba20d57d29cc86c180678c99"
+    },
+    "finite-review/review-result.json": {
+      "bytes": 2162,
+      "sha256": "0fda9bda311aeedabedcd299b8889126b186c8c852e386d6fbce6cd9cbd586f8"
+    }
+  }
+}

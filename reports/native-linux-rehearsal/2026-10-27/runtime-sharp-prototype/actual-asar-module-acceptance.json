@@ -1,0 +1,22 @@
+{
+  "name": "actual-asar-module-acceptance",
+  "executable": "/controller/node22",
+  "args": [
+    "/project/scripts/testing/electron-asar-module-acceptance.mjs",
+    "--electron-binary",
+    "/artifact/max-booster",
+    "--output-json",
+    "/evidence/asar-module-acceptance.json"
+  ],
+  "cwd": "/project",
+  "startedAt": "2026-10-28T02:37:25.792Z",
+  "pid": 36,
+  "exitCode": 0,
+  "signal": null,
+  "stoppedByFixture": false,
+  "spawnError": null,
+  "boundedDurationMs": 20000,
+  "moduleResolutionFailureObserved": false,
+  "sandboxFailureObserved": false,
+  "bundledServerExitObserved": false
+}

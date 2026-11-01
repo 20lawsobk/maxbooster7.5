@@ -1,0 +1,1 @@
+{"byGroup": {"commerce": 21, "integration-browser": 26, "manual-destructive-provider": 37, "python": 120, "root-node": 112, "root-unit": 295, "runner-support": 68, "subsystems": 5}, "canonicalTestFiles": 616, "nonExecutableSupportFiles": 10, "retainedSnapshotFiles": 71, "supportSourceFiles": 68}

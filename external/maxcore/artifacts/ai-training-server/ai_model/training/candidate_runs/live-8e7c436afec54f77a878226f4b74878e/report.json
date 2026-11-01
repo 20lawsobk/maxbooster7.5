@@ -1,0 +1,91 @@
+{
+  "architecture": "byte-causal-transformer-v1",
+  "backend_exclusive": true,
+  "candidate_dispatch_counts": {
+    "add": 8,
+    "cross_entropy": 2,
+    "embedding": 4,
+    "embedding_backward": 2,
+    "equal": 11,
+    "initialize": 11,
+    "sgd": 11,
+    "tanh": 2,
+    "tanh_backward": 1,
+    "transformer_backward": 1,
+    "transformer_forward": 2
+  },
+  "changed_parameters": [
+    "embedding.weight",
+    "position.weight",
+    "norm1.gamma",
+    "norm1.beta",
+    "attention.qkv_proj.weight",
+    "attention.out_proj.weight",
+    "norm2.gamma",
+    "norm2.beta",
+    "hidden.weight",
+    "contract.weight",
+    "output.weight"
+  ],
+  "checkpoint_sha256": "7c58b93ea7223aa2bd469fd07026a647670faf83deae017f29451ee187463a6f",
+  "chunks_seen": 1,
+  "corpus_chunks": 124,
+  "device": "cpu",
+  "execution_contract": "software DigitalGPU initialization/forward/backward/gradient accumulation/SGD; torch storage and serialization",
+  "final_training_loss": 5.772200107574463,
+  "gemm_backward_calls": 10,
+  "gemm_forward_calls": 5,
+  "holdout_sha256": "658eff5f221847c575b5a6205e8efc543718938ad52a9963b387711670dcbb75",
+  "inference_backend_scope": "manual-digital-v1",
+  "input_sha256": "ce378de9c1d8a55d26da76ee38194cb1d8ca8ff551ebd3cbffffcdd2243ba495",
+  "manifest_sha256": "e9c4567f454e1173953271f0eb676ef9150d8871a3e2ceeaf7c6b5ce06d247c5",
+  "promotion": {
+    "eligible": false,
+    "promotion_performed": false,
+    "reasons": [
+      "Verified artifact bundle, frozen evaluation and signed independent review required"
+    ]
+  },
+  "protected_after": {
+    "ai_model/model/tokenizer.py": "9ecd0554b60b2bb50b5bbffce32827a7b341ec58de63c3b40e061c3435318cdd",
+    "ai_model/weights/fine_tune_public_datasets.json": "faeed7bbe81f3dfc22f576d5fdb4e0da957b970f5034a3d23ec7b9800df23d26",
+    "ai_model/weights/model.corrupt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+    "ai_model/weights/social_base.json": "7fee0bb143477c853946a85d41eabc699744dffb2abe13397703d4cf0b2e3cd5"
+  },
+  "protected_before": {
+    "ai_model/model/tokenizer.py": "9ecd0554b60b2bb50b5bbffce32827a7b341ec58de63c3b40e061c3435318cdd",
+    "ai_model/weights/fine_tune_public_datasets.json": "faeed7bbe81f3dfc22f576d5fdb4e0da957b970f5034a3d23ec7b9800df23d26",
+    "ai_model/weights/model.corrupt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+    "ai_model/weights/social_base.json": "7fee0bb143477c853946a85d41eabc699744dffb2abe13397703d4cf0b2e3cd5"
+  },
+  "protected_unchanged": true,
+  "quality_claim": "none; training loss is not holdout quality",
+  "sample": {
+    "bytes_hex": "4cc2ce13ffd0",
+    "smoke_only": false,
+    "text": "L\ufffd\ufffd\u0013\ufffd\ufffd",
+    "token_ids": [
+      76,
+      194,
+      206,
+      19,
+      255,
+      208
+    ]
+  },
+  "schema": 1,
+  "seed": 1729,
+  "smoke_only": false,
+  "steps": 1,
+  "torch_version": "2.13.0+cpu",
+  "trained_tokens": 128,
+  "training_backend_scope": "manual-digital-v1",
+  "training_loss": [
+    5.863822937011719
+  ],
+  "training_tokens": 128
+}

@@ -1,0 +1,271 @@
+--- a/scripts/testing/platform-register.py
++++ b/scripts/testing/platform-register.py
+@@ -438,14 +438,218 @@
+     return sorted({p for p in source + tests if Path(p).suffix in suffixes})
+ 
+ 
++def python_factory_mounts(trees):
++    """Resolve finite direct FastAPI factory mounts without importing source.
++
++    Only unambiguous module applications, top-level synchronous factories and
++    direct returned APIRouter bindings qualify. Unsupported data/control flow
++    retains the original declared-only route; source topology is not runtime
++    availability or behavioral acceptance.
++    """
++    parents, bindings, contexts, diagnostics = {}, {}, defaultdict(list), []
++    for file, tree in trees.items():
++        for node in ast.walk(tree):
++            for child in ast.iter_child_nodes(node): parents[(file, child)] = node
++
++    def controls(file, node, stop=None):
++        result = []
++        child = node
++        while (parent := parents.get((file, child))) is not None and parent is not stop:
++            if isinstance(parent, ast.If):
++                result.append({"file": file, "line": parent.lineno, "kind": "if" if child in parent.body else "else",
++                               "expression": ast.unparse(parent.test)})
++            elif isinstance(parent, ast.Try):
++                branch = "try" if child in parent.body else "finally" if child in parent.finalbody else "else" if child in parent.orelse else "except"
++                result.append({"file": file, "line": parent.lineno, "kind": branch})
++            elif isinstance(parent, ast.ExceptHandler):
++                result.append({"file": file, "line": parent.lineno, "kind": "except-handler",
++                               "expression": ast.unparse(parent.type) if parent.type else "BaseException"})
++            child = parent
++        return result
++
++    def local_nodes(scope):
++        def visit(node):
++            yield node
++            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
++                return
++            for child in ast.iter_child_nodes(node): yield from visit(child)
++        for statement in scope.body: yield from visit(statement)
++
++    def stores(file, scope):
++        key = file, scope
++        if key in bindings: return bindings[key]
++        found = defaultdict(list)
++        if isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef)):
++            args = scope.args
++            for arg in [*args.posonlyargs, *args.args, *args.kwonlyargs, *([args.vararg] if args.vararg else []), *([args.kwarg] if args.kwarg else [])]:
++                found[arg.arg].append(("parameter", arg, None))
++        for node in local_nodes(scope):
++            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
++                found[node.name].append(("definition", node, None))
++            elif isinstance(node, ast.ImportFrom):
++                for alias in node.names: found[alias.asname or alias.name].append(("from", node, alias.name))
++            elif isinstance(node, ast.Import):
++                for alias in node.names: found[alias.asname or alias.name.split(".")[0]].append(("import", node, alias.name))
++            elif isinstance(node, (ast.Assign, ast.AnnAssign, ast.NamedExpr)):
++                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
++                for target in targets:
++                    for part in ast.walk(target):
++                        if isinstance(part, ast.Name) and isinstance(part.ctx, ast.Store): found[part.id].append(("assignment", node, node.value))
++            elif isinstance(node, (ast.For, ast.AsyncFor, ast.comprehension)):
++                for part in ast.walk(node.target):
++                    if isinstance(part, ast.Name) and isinstance(part.ctx, ast.Store): found[part.id].append(("iteration", node, None))
++            elif isinstance(node, ast.AugAssign):
++                for part in ast.walk(node.target):
++                    if isinstance(part, ast.Name) and isinstance(part.ctx, ast.Store): found[part.id].append(("augmented", node, None))
++            elif isinstance(node, ast.ExceptHandler) and node.name:
++                found[node.name].append(("exception", node, None))
++            elif isinstance(node, (ast.Global, ast.Nonlocal)):
++                for name in node.names: found[name].append(("dynamic-scope", node, None))
++            elif isinstance(node, ast.Delete):
++                for target in node.targets:
++                    for part in ast.walk(target):
++                        if isinstance(part, ast.Name): found[part.id].append(("delete", node, None))
++        bindings[key] = found
++        return found
++
++    def constructor(file, scope, expression, wanted):
++        if not isinstance(expression, ast.Name): return None
++        options = stores(file, scope).get(expression.id, [])
++        if not options and scope is not trees[file]: options = stores(file, trees[file]).get(expression.id, [])
++        imports = [row for row in options if row[0] == "from" and row[1].module == "fastapi" and row[1].level == 0 and row[2] == wanted]
++        if len(imports) != 1: return None
++        for kind, node, value in options:
++            if (kind, node, value) == imports[0]: continue
++            # The Director's optional FastAPI import has an explicit None
++            # fallback. Retain that availability condition rather than treating
++            # arbitrary reassignments as the constructor binding.
++            if not (kind == "assignment" and isinstance(value, ast.Constant) and value.value is None
++                    and any(item["kind"] == "except-handler" and item.get("expression") in {"ImportError", "ModuleNotFoundError"}
++                            for item in controls(file, node, trees[file]))): return None
++        return controls(file, imports[0][1], trees[file])
++
++    def prefix(call):
++        if any(keyword.arg is None for keyword in call.keywords): return None
++        values = [keyword.value for keyword in call.keywords if keyword.arg == "prefix"]
++        if len(values) > 1: return None
++        value = values[0] if values else ast.Constant(value="")
++        if not isinstance(value, ast.Constant) or not isinstance(value.value, str): return None
++        text = value.value
++        return text if len(text) <= 2048 and (not text or text.startswith("/") and not text.endswith("/")) else None
++
++    def module_file(file, import_node):
++        module = import_node.module or ""
++        if not module or any(part in {"", ".", ".."} for part in module.split(".")): return None
++        origin = Path(file).parent
++        if import_node.level:
++            if import_node.level > len(origin.parts): return None
++            base = origin
++            for _ in range(import_node.level - 1): base = base.parent
++            candidates = [base]
++        else:
++            candidates = [origin, *origin.parents]
++        for base in candidates:
++            target = base.joinpath(*module.split("."))
++            matches = [str(target.with_suffix(".py")), str(target / "__init__.py")]
++            hits = [name for name in matches if name in trees]
++            if hits: return hits[0] if len(hits) == 1 else None
++        return None
++
++    factories = {}
++    for file, tree in trees.items():
++        for name, values in stores(file, tree).items():
++            if len(values) != 1 or values[0][0] != "definition" or not isinstance(values[0][1], ast.FunctionDef): continue
++            factory = values[0][1]
++            # Nested/deferred factory definitions are not module exports.
++            if parents.get((file, factory)) is not tree: continue
++            for statement in factory.body:
++                if not isinstance(statement, (ast.Assign, ast.AnnAssign)) or not isinstance(statement.value, ast.Call): continue
++                targets = statement.targets if isinstance(statement, ast.Assign) else [statement.target]
++                if len(targets) != 1 or not isinstance(targets[0], ast.Name): continue
++                owner = targets[0].id
++                if len(stores(file, factory).get(owner, [])) != 1: continue
++                constructor_conditions = constructor(file, factory, statement.value.func, "APIRouter")
++                router_prefix = prefix(statement.value)
++                if constructor_conditions is None or router_prefix is None or statement.value.args: continue
++                returns = [node for node in local_nodes(factory) if isinstance(node, ast.Return)]
++                if not any(isinstance(node.value, ast.Name) and node.value.id == owner for node in returns): continue
++                if any(not (isinstance(node.value, ast.Name) and node.value.id == owner) and
++                       not (node.value is None or isinstance(node.value, ast.Constant) and node.value.value is None) for node in returns): continue
++                optional = [node for node in returns if not isinstance(node.value, ast.Name)]
++                routes = []
++                for handler in factory.body:
++                    if not isinstance(handler, (ast.FunctionDef, ast.AsyncFunctionDef)): continue
++                    for decorator in handler.decorator_list:
++                        if (isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute)
++                                and isinstance(decorator.func.value, ast.Name) and decorator.func.value.id == owner):
++                            routes.append(decorator)
++                conditions = [*controls(file, factory, tree), *constructor_conditions]
++                for node in optional:
++                    conditions.extend(controls(file, node, factory))
++                    conditions.append({"file": file, "line": node.lineno, "kind": "factory-may-return-none"})
++                factories[(file, name)] = {"factory": factory, "owner": owner, "prefix": router_prefix,
++                                          "routes": routes, "conditions": conditions}
++
++    def called_factory(file, expression, include_line):
++        if isinstance(expression, ast.Name):
++            values = stores(file, trees[file]).get(expression.id, [])
++            if len(values) != 1 or values[0][0] != "assignment": return None
++            assignment = values[0][1]
++            if assignment.lineno >= include_line or len(getattr(assignment, "targets", [assignment.target] if isinstance(assignment, ast.AnnAssign) else [])) != 1: return None
++            expression = assignment.value
++            assigned_conditions = controls(file, assignment, trees[file])
++        else: assigned_conditions = []
++        if not isinstance(expression, ast.Call) or not isinstance(expression.func, ast.Name): return None
++        values = stores(file, trees[file]).get(expression.func.id, [])
++        if len(values) != 1: return None
++        kind, binding, exported = values[0]
++        if kind == "definition": key = file, expression.func.id
++        elif kind == "from":
++            target = module_file(file, binding)
++            key = target, exported
++        else: return None
++        descriptor = factories.get(key)
++        if descriptor is None: return None
++        return key, descriptor, [*assigned_conditions, *controls(file, binding, trees[file])]
++
++    for file, tree in trees.items():
++        apps = {}
++        for name, values in stores(file, tree).items():
++            if len(values) != 1 or values[0][0] != "assignment": continue
++            node = values[0][1]
++            if parents.get((file, node)) is not tree or not isinstance(node.value, ast.Call): continue
++            if not node.value.args and constructor(file, tree, node.value.func, "FastAPI") is not None: apps[name] = node
++        if not apps: continue
++        for node in local_nodes(tree):
++            if (not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute) or node.func.attr != "include_router"
++                    or not isinstance(node.func.value, ast.Name) or node.func.value.id not in apps or len(node.args) != 1): continue
++            mount_prefix = prefix(node)
++            if mount_prefix is None: continue
++            bound = called_factory(file, node.args[0], node.lineno)
++            if bound is None: continue
++            key, descriptor, import_conditions = bound
++            conditions = [*import_conditions, *descriptor["conditions"], *controls(file, node, tree)]
++            unique = {json.dumps(value, sort_keys=True): value for value in conditions}
++            conditions = [unique[key] for key in sorted(unique)]
++            for decorator in descriptor["routes"]:
++                contexts[(key[0], decorator.lineno)].append({
++                    "processScope": "python-app:" + file + "::" + node.func.value.id,
++                    "routerPrefix": descriptor["prefix"], "includeRouterPrefix": mount_prefix,
++                    "factory": {"file": key[0], "name": key[1], "line": descriptor["factory"].lineno},
++                    "mountSource": {"file": file, "line": node.lineno}, "mountConditions": conditions,
++                    "mountConditional": bool(conditions), "runtimeAvailability": "UNVERIFIED"})
++    return contexts, diagnostics
++
++
+ def python_routes(paths):
+-    rows, unknown = [], []
++    rows, unknown, trees = [], [], {}
+     for file in paths:
+         if not file.endswith(".py") or not file.startswith(("server/", "external/")): continue
+         try: tree = ast.parse((ROOT / file).read_text())
+         except (SyntaxError, UnicodeError) as error:
+             unknown.append({"kind": "python-parse-diagnostic", "file": file, "line": getattr(error, "lineno", None)})
+             continue
++        trees[file] = tree
+         owners = {}
+         for node in ast.walk(tree):
+             if isinstance(node, (ast.Assign, ast.AnnAssign)):
+@@ -473,7 +677,21 @@
+                     rows.append({"file": file, "line": decorator.lineno, "method": verb, "path": path,
+                                  "processScope": "python-declared:" + file, "confidence": "declared-only; mount prefix unverified",
+                                  "receiver": owner, "handler": node.name, "mountResolved": owners[owner] in ("FastAPI", "Flask")})
+-    return rows, unknown
++    mounted, mount_unknown = python_factory_mounts(trees)
++    expanded = []
++    for row in rows:
++        contexts = mounted.get((row["file"], row["line"]), [])
++        if not contexts:
++            expanded.append(row)
++            continue
++        for context in contexts:
++            resolved_path = context["includeRouterPrefix"] + context["routerPrefix"] + row["path"] if isinstance(row["path"], str) else None
++            expanded.append({**row, **context, "declaredPath": row["path"], "path": resolved_path,
++                             "declarationSubjectId": identifier("api", row["file"], row["line"], row["method"], row["path"]),
++                             "pathResolved": resolved_path is not None,
++                             "mountResolved": resolved_path is not None and not context["mountConditional"],
++                             "confidence": "source-proven conditional factory mount" if context["mountConditional"] else "source-proven factory mount; runtime unverified"})
++    return expanded, unknown + mount_unknown
+ 
+ 
+ def native_routes(paths):
+@@ -723,11 +941,20 @@
+                            "processScope": "typescript-declared:" + raw["file"], "confidence": raw["confidence"],
+                            "mountResolved": base is not None and bool(path), "origin": "typescript-router-ast"})
+     python, python_unknown = python_routes(source); unknown += python_unknown
+-    for raw in python + native_routes(source):
+-        routes.append({"id": identifier("api", raw["file"], raw["line"], raw["method"], raw["path"]),
+-                       "method": raw["method"], "path": raw["path"], "source": location(raw["file"], raw["line"]),
+-                       "processScope": raw["processScope"], "confidence": raw["confidence"], "mountResolved": raw["mountResolved"],
+-                       "origin": "python-decorator-ast" if raw["file"].endswith(".py") else "native-source-declaration"})
++    other_routes = python + native_routes(source)
++    other_id_counts = Counter((row["file"], row["line"], row["method"], row["path"]) for row in other_routes)
++    for raw in other_routes:
++        parts = (raw["file"], raw["line"], raw["method"], raw["path"])
++        if other_id_counts[parts] > 1:
++            parts += (raw["processScope"], json.dumps(raw.get("mountSource"), sort_keys=True))
++        item = {"id": identifier("api", *parts),
++                "method": raw["method"], "path": raw["path"], "source": location(raw["file"], raw["line"]),
++                "processScope": raw["processScope"], "confidence": raw["confidence"], "mountResolved": raw["mountResolved"],
++                "origin": "python-decorator-ast" if raw["file"].endswith(".py") else "native-source-declaration"}
++        for key in ("declaredPath", "declarationSubjectId", "pathResolved", "routerPrefix", "includeRouterPrefix", "factory",
++                    "mountSource", "mountConditions", "mountConditional", "runtimeAvailability"):
++            if key in raw: item[key] = raw[key]
++        routes.append(item)
+     route_by_location = defaultdict(list)
+     for item in routes:
+         file = item["source"]["file"]; path = item["path"] or "<computed>"

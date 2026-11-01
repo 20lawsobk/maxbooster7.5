@@ -1,0 +1,221 @@
+{
+  "scope": "Compiler denominator-only control, not an execution or global coverage result",
+  "fixtures": [
+    {
+      "name": "multiple",
+      "ignored": 4,
+      "counts": {
+        "statementMap": {
+          "candidate": 5,
+          "control": 5
+        },
+        "fnMap": {
+          "candidate": 2,
+          "control": 2
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "nested",
+      "ignored": 3,
+      "counts": {
+        "statementMap": {
+          "candidate": 3,
+          "control": 2
+        },
+        "fnMap": {
+          "candidate": 2,
+          "control": 2
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "classes",
+      "ignored": 2,
+      "counts": {
+        "statementMap": {
+          "candidate": 4,
+          "control": 2
+        },
+        "fnMap": {
+          "candidate": 2,
+          "control": 2
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "classInitializers",
+      "ignored": 2,
+      "counts": {
+        "statementMap": {
+          "candidate": 5,
+          "control": 4
+        },
+        "fnMap": {
+          "candidate": 2,
+          "control": 2
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "arrowWrapper",
+      "ignored": 2,
+      "counts": {
+        "statementMap": {
+          "candidate": 4,
+          "control": 4
+        },
+        "fnMap": {
+          "candidate": 2,
+          "control": 2
+        },
+        "branchMap": {
+          "candidate": 2,
+          "control": 2
+        }
+      }
+    },
+    {
+      "name": "unicode",
+      "ignored": 3,
+      "counts": {
+        "statementMap": {
+          "candidate": 3,
+          "control": 3
+        },
+        "fnMap": {
+          "candidate": 2,
+          "control": 2
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "escapedAuthorIdentifier",
+      "ignored": 0,
+      "counts": {
+        "statementMap": {
+          "candidate": 6,
+          "control": 3
+        },
+        "fnMap": {
+          "candidate": 3,
+          "control": 2
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "destructuredAuthorBinding",
+      "ignored": 0,
+      "counts": {
+        "statementMap": {
+          "candidate": 5,
+          "control": 3
+        },
+        "fnMap": {
+          "candidate": 2,
+          "control": 1
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "shadowedAuthorBinding",
+      "ignored": 0,
+      "counts": {
+        "statementMap": {
+          "candidate": 3,
+          "control": 1
+        },
+        "fnMap": {
+          "candidate": 2,
+          "control": 1
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "jsx",
+      "ignored": 3,
+      "counts": {
+        "statementMap": {
+          "candidate": 1,
+          "control": 1
+        },
+        "fnMap": {
+          "candidate": 1,
+          "control": 1
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "typed",
+      "ignored": 3,
+      "counts": {
+        "statementMap": {
+          "candidate": 1,
+          "control": 1
+        },
+        "fnMap": {
+          "candidate": 1,
+          "control": 1
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    },
+    {
+      "name": "defaultAnonymous",
+      "ignored": 2,
+      "counts": {
+        "statementMap": {
+          "candidate": 2,
+          "control": 1
+        },
+        "fnMap": {
+          "candidate": 1,
+          "control": 1
+        },
+        "branchMap": {
+          "candidate": 1,
+          "control": 1
+        }
+      }
+    }
+  ]
+}

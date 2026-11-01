@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="15" failures="4" errors="0" time="2.442783167">
+    <testsuite name="tests/file-management.test.ts" timestamp="2026-10-26T23:25:48.169Z" hostname="2fc971e77ddd" tests="15" failures="4" errors="0" skipped="0" time="2.442783167">
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 1. registers and logs in a test user" time="1.048320264">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 2. rejects unauthenticated upload with 401 or 403" time="0.005580056">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; isolates private hybrid bytes on both download routes" time="0.830684062">
+            <failure message="expected 200 to be 403 // Object.is equality" type="AssertionError">
+AssertionError: expected 200 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 200
+
+ ❯ tests/file-management.test.ts:159:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 3. uploads a small audio file and receives a storage key" time="0.170373112">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 4. downloads the uploaded file and verifies content-type and byte payload" time="0.034813525">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 5. cross-user access to a file is rejected (403) or not found (404)" time="0.027087599">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 6. deletes the uploaded file and returns success" time="0.034324859">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 7. GET of a deleted file returns 404" time="0.047596785">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 8. delete of a completely unknown file key returns 401, 403, or 404" time="0.054943335">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 9. GET /api/storage/quota returns quota info when authenticated" time="0.079539422">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10a. double-encoded traversal in file key is rejected (never 200)" time="0.046437406">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10b. literal &apos;..&apos; segments in file key are rejected (never 200)" time="0.049597463">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10c. backslash and encoded-NUL keys are rejected (never 200)" time="0.005334756">
+            <failure message="expected [ 400, 403, 404 ] to include 429" type="AssertionError">
+AssertionError: expected [ 400, 403, 404 ] to include 429
+ ❯ tests/file-management.test.ts:281:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10d. restore of the deleted file makes it downloadable again" time="0.002299519">
+            <failure message="expected 429 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 429 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 429
+
+ ❯ tests/file-management.test.ts:292:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10. GET /api/storage/quota returns 401 or 403 without authentication" time="0.00224794">
+            <failure message="expected [ 401, 403 ] to include 429" type="AssertionError">
+AssertionError: expected [ 401, 403 ] to include 429
+ ❯ tests/file-management.test.ts:306:24
+            </failure>
+        </testcase>
+    </testsuite>
+</testsuites>

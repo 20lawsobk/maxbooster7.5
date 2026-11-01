@@ -1,0 +1,149 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-25T15:29:40.968895+00:00",
+  "finishedAt": "2026-10-25T15:29:42.711814+00:00",
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "interpreter": "/workspace/.cloud-python/bin/python",
+  "summary": {
+    "passed": 0,
+    "failed": 1,
+    "timeout": 0,
+    "skipped": 0,
+    "blocked": 0,
+    "empty": 0
+  },
+  "counts": {
+    "tests": 13,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0
+  },
+  "isolation": "Fresh interpreter and disposable HOME/state per file; no application credentials; only ephemeral loopback networking; child process group cleanup",
+  "limits": "Blocked/skip/timeout are not passes; fixture training does not establish generation quality or production readiness",
+  "duplicateSnapshots": [
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py"
+  ],
+  "suites": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+      "description": "Voice-over synthesis regression tests (Task: birdcall narration fix).\n\nGuards the failure class where \"voice-over\" videos shipped unintelligible\naudio: narration must be real speech at the pipeline sample rate, not the\narpeggio synth and not a pitch-shifted (wrong-rate) render.",
+      "cases": [
+        {
+          "name": "test_strips_emoji_hashtags_urls_tokens",
+          "description": "strips emoji hashtags urls tokens"
+        },
+        {
+          "name": "test_empty_and_symbol_only",
+          "description": "empty and symbol only"
+        },
+        {
+          "name": "test_valid_voices_pass_through",
+          "description": "valid voices pass through"
+        },
+        {
+          "name": "test_invalid_voices_fall_back",
+          "description": "invalid voices fall back"
+        },
+        {
+          "name": "test_valid_wpm_pass_through",
+          "description": "valid wpm pass through"
+        },
+        {
+          "name": "test_invalid_wpm_fall_back",
+          "description": "invalid wpm fall back"
+        },
+        {
+          "name": "test_produces_speech_at_pipeline_rate",
+          "description": "produces speech at pipeline rate"
+        },
+        {
+          "name": "test_non_default_voice_and_pace",
+          "description": "non default voice and pace"
+        },
+        {
+          "name": "test_invalid_voice_and_pace_still_render",
+          "description": "invalid voice and pace still render"
+        },
+        {
+          "name": "test_empty_text_returns_false",
+          "description": "empty text returns false"
+        },
+        {
+          "name": "test_voice_dominates_ducked_music",
+          "description": "voice dominates ducked music"
+        },
+        {
+          "name": "test_voiceover_track_end_to_end",
+          "description": "voiceover track end to end"
+        },
+        {
+          "name": "test_never_raises_on_bad_music_path",
+          "description": "never raises on bad music path"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "ea87da98f3e016d101d9de2ee5e541e7ea4bc0e19fb9adc44c43e54498310da1",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /workspace/maxbooster7.5/reports/test-verification/python/recheck-voiceover",
+      "status": "failed",
+      "exitCode": 1,
+      "durationSeconds": 1.742,
+      "counts": {
+        "tests": 13,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__tests__test_voiceover.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_voiceover.txt"
+    }
+  ]
+}

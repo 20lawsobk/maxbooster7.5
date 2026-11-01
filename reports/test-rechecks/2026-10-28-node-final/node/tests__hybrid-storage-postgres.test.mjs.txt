@@ -1,0 +1,149 @@
+TAP version 13
+# Subtest: hybrid metadata is shared across independent services without lost updates
+    # Subtest: concurrent writes, fresh reads, unique same-name keys and ownership
+    ok 1 - concurrent writes, fresh reads, unique same-name keys and ownership
+      ---
+      duration_ms: 605.252178
+      type: 'test'
+      ...
+    # Subtest: public bytes have independent ownership records
+    ok 2 - public bytes have independent ownership records
+      ---
+      duration_ms: 78.440706
+      type: 'test'
+      ...
+    # Subtest: concurrent final deletion and dedup admission preserve every successful upload
+    ok 3 - concurrent final deletion and dedup admission preserve every successful upload
+      ---
+      duration_ms: 878.854808
+      type: 'test'
+      ...
+    # Subtest: independent immutable handles reject missing/corrupt bytes and replacement
+    ok 4 - independent immutable handles reject missing/corrupt bytes and replacement
+      ---
+      duration_ms: 65.619526
+      type: 'test'
+      ...
+    # Subtest: metadata publication failures retain invisible recoverable intents and never ACK
+    ok 5 - metadata publication failures retain invisible recoverable intents and never ACK
+      ---
+      duration_ms: 99.518561
+      type: 'test'
+      ...
+    # Subtest: physical delete failure remains durable and retryable from another worker
+    ok 6 - physical delete failure remains durable and retryable from another worker
+      ---
+      duration_ms: 58.493377
+      type: 'test'
+      ...
+    # Subtest: empty analytics, missing objects and download authority have explicit outcomes
+    ok 7 - empty analytics, missing objects and download authority have explicit outcomes
+      ---
+      duration_ms: 3.921475
+      type: 'test'
+      ...
+    # Subtest: invalid uploads never create an intent and zero-byte files remain readable
+    ok 8 - invalid uploads never create an intent and zero-byte files remain readable
+      ---
+      duration_ms: 7.014041
+      type: 'test'
+      ...
+    # Subtest: folder and tier filters preserve owner boundaries and stable download URLs
+    ok 9 - folder and tier filters preserve owner boundaries and stable download URLs
+      ---
+      duration_ms: 138.20287
+      type: 'test'
+      ...
+    # Subtest: physical analytics count shared bytes once and scope logical ownership
+    ok 10 - physical analytics count shared bytes once and scope logical ownership
+      ---
+      duration_ms: 70.460704
+      type: 'test'
+      ...
+    # Subtest: cleanup recommendations and deletion honor age, access and owner
+    ok 11 - cleanup recommendations and deletion honor age, access and owner
+      ---
+      duration_ms: 293.163371
+      type: 'test'
+      ...
+    # Subtest: legacy hot-tier decisions only migrate old, infrequently used physical entries
+    ok 12 - legacy hot-tier decisions only migrate old, infrequently used physical entries
+      ---
+      duration_ms: 90.678796
+      type: 'test'
+      ...
+    # Subtest: SQL publication and duplicate-key failures reject without partial committed rows
+    ok 13 - SQL publication and duplicate-key failures reject without partial committed rows
+      ---
+      duration_ms: 68.888057
+      type: 'test'
+      ...
+    # Subtest: invalid byte receipts and corrupted pending data never become visible
+    ok 14 - invalid byte receipts and corrupted pending data never become visible
+      ---
+      duration_ms: 5.177911
+      type: 'test'
+      ...
+    # Subtest: deduplicated and active reads verify full content before acknowledgement
+    ok 15 - deduplicated and active reads verify full content before acknowledgement
+      ---
+      duration_ms: 59.999753
+      type: 'test'
+      ...
+    # Subtest: immutable publication needs a confirmed manifest and rejects corrupt metadata
+    ok 16 - immutable publication needs a confirmed manifest and rejects corrupt metadata
+      ---
+      duration_ms: 114.918212
+      type: 'test'
+      ...
+    # Subtest: legacy parser rejects public-map corruption and cyclic or unresolved ownership
+    ok 17 - legacy parser rejects public-map corruption and cyclic or unresolved ownership
+      ---
+      duration_ms: 1.256356
+      type: 'test'
+      ...
+    # Subtest: verified containers reject inconsistent headers and decoded lengths
+    ok 18 - verified containers reject inconsistent headers and decoded lengths
+      ---
+      duration_ms: 0.65638
+      type: 'test'
+      ...
+    # Subtest: rollback transport failures preserve the original error and release SQL clients
+    ok 19 - rollback transport failures preserve the original error and release SQL clients
+      ---
+      duration_ms: 73.882325
+      type: 'test'
+      ...
+    # Subtest: a deletion waiting on the content lock observes a completed concurrent deletion
+    ok 20 - a deletion waiting on the content lock observes a completed concurrent deletion
+      ---
+      duration_ms: 58.421432
+      type: 'test'
+      ...
+    # Subtest: legacy aliases retain the original blob after primary deletion and cannot resurrect
+    ok 21 - legacy aliases retain the original blob after primary deletion and cannot resurrect
+      ---
+      duration_ms: 7.090546
+      type: 'test'
+      ...
+    # Subtest: unknown legacy references abort the entire import and retain the source
+    ok 22 - unknown legacy references abort the entire import and retain the source
+      ---
+      duration_ms: 4.856456
+      type: 'test'
+      ...
+    1..22
+ok 1 - hybrid metadata is shared across independent services without lost updates
+  ---
+  duration_ms: 3537.461517
+  type: 'suite'
+  ...
+1..1
+# tests 22
+# suites 1
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3674.775236

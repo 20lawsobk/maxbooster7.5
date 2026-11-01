@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-28T13:01:55.784656+00:00",
+  "scope": "Outside-checkout source topology and inventory-consumer repair proposal; no feature acceptance or launch certification",
+  "productionReady": false,
+  "repositorySourceModified": false,
+  "headAtFinalization": "bca5f4e1f632db835dc90b1e57d85f919ed6e0aa",
+  "patchCheckExitCode": 0,
+  "sourceFiles": {
+    "scripts/audit-endpoints.mjs": {
+      "beforeSha256": "d4532347e5bb688306125b52c138a7dfbaf4d4e98727cf03eceae6b17de09513",
+      "afterSha256": "5d0d339b1e497910f59763646be74ee0204ae29d28a9208fe2b14f69cd631303",
+      "bytes": 85362
+    },
+    "scripts/lib/finite-route-paths.mjs": {
+      "beforeSha256": null,
+      "afterSha256": "c6b6e8d51e49f31d85d4a168852ef49859feb1f85c1ea9e25205a0a574c54288",
+      "bytes": 8213
+    },
+    "scripts/testing/platform-register.py": {
+      "beforeSha256": "25bf59e91f237d3f256d26bf046e6b3d42c43d3c67863bdb21c88f27f5b457d1",
+      "afterSha256": "bdbcf9a3426e4447fcc68fc7514e01dba8d27823dff900e38d903b012b9b0aff",
+      "bytes": 51113
+    },
+    "tests/endpoint-topology.test.mjs": {
+      "beforeSha256": null,
+      "afterSha256": "4b97011ea7147ee3fed7eaaf8650b897fb7a3af9ebd14531f8226f3979c09aec",
+      "bytes": 6506
+    },
+    "tests/finite-route-paths.test.mjs": {
+      "beforeSha256": null,
+      "afterSha256": "f05acb9390269a2b36a553cb9c940475d4e050528f2d1a1ac1e78f3a303e9264",
+      "bytes": 5218
+    },
+    "tests/testing/test_endpoint_mount_resolution.py": {
+      "beforeSha256": null,
+      "afterSha256": "f0bb84c0f26508cb200bcb893bf102bdd32032f4ed79a58a9939bfed312a0482",
+      "bytes": 4221
+    }
+  },
+  "node": {
+    "tests": 38,
+    "pass": 38,
+    "fail": 0,
+    "skip": 0
+  },
+  "consumer": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skip": 0
+  },
+  "selfTest": "PASS",
+  "repositoryAudit": {
+    "beforeBackendRows": 2391,
+    "afterBackendRows": 2393,
+    "oldRowsReplaced": 4,
+    "newRows": 6,
+    "unresolvedDynamicBefore": 13,
+    "unresolvedDynamicAfter": 13,
+    "duplicates": 0,
+    "previouslyMaskedUnresolvedMounts": 40
+  },
+  "pageWork": {
+    "pages": 80,
+    "businessSections": 2162,
+    "changedBackendIds": 4,
+    "referencesToChangedIds": 0,
+    "requiredHandEdits": 0
+  },
+  "remaining": "Regex import/router binding limits, conditional/deferred mounts and other130previousmappingdiagnostics still need runtime proof; corrected consumer exposes40unresolved mounts. No existing behaviors passed by this inventory repair."
+}

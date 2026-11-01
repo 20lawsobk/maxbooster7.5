@@ -1,0 +1,20 @@
+{
+  "scope": "Outside candidate only; not landed; no page or feature launch approval",
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "candidate": {
+    "tests": 7,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "baselineNegativeControl": {
+    "tests": 7,
+    "failures": 3,
+    "errors": 0,
+    "skipped": 0
+  },
+  "baselineFailuresExpected": true,
+  "gitApplyCheckExitCode": 0,
+  "realCanonicalProgressReadonly": "Must rerun after parent launch audit reconciliation and serialized source integration",
+  "sourcePatchSha256": "3a3fa0cc6c3f6598e45e4f8d95b7acbb661b3280bea7d014749602ce1867de83"
+}

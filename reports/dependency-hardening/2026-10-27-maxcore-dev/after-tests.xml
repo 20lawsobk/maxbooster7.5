@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="actual scripts and TypeDoc consumers resolve the compatible patched graph" time="0.001660" classname="test"/>
+	<testcase name="actual BiDi parser handles valid input and reports invalid field paths with its own Zod" time="0.079525" classname="test"/>
+	<testcase name="actual BiDi Zod rejects oversized array before element traversal" time="0.002018" classname="test"/>
+	<testcase name="actual BiDi Zod rejects oversized map before element traversal" time="0.001096" classname="test"/>
+	<testcase name="actual BiDi Zod rejects oversized set before element traversal" time="0.001270" classname="test"/>
+	<testcase name="actual TypeDoc Markdown preserves normal rendering and bounds six advisory inputs" time="1.342650" classname="test"/>
+	<testcase name="actual upgraded Puppeteer drives configured Chromium through owned loopback CDP" time="0.755881" classname="test"/>
+	<!-- tests 7 -->
+	<!-- suites 0 -->
+	<!-- pass 7 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 2367.790346 -->
+</testsuites>

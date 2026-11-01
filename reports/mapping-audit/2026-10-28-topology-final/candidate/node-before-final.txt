@@ -1,0 +1,440 @@
+TAP version 13
+# Subtest: Actual durable exports inherit their canonical nested /api/export mount
+not ok 1 - Actual durable exports inherit their canonical nested /api/export mount
+  ---
+  duration_ms: 404.651388
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:26:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '/jobs/:jobId/:action'
+    - '/api/export/jobs/:jobId/:action'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '/api/export/jobs/:jobId/:action'
+  actual: '/jobs/:jobId/:action'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:30:38)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: Actual Fan Hub finite template yields all four concrete public method/action paths
+not ok 2 - Actual Fan Hub finite template yields all four concrete public method/action paths
+  ---
+  duration_ms: 392.268126
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:34:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + []
+    - [
+    -   'GET /api/fan-hub/consent/:token',
+    -   'GET /api/fan-hub/unsubscribe/:token',
+    -   'POST /api/fan-hub/consent/:token',
+    -   'POST /api/fan-hub/unsubscribe/:token'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'GET /api/fan-hub/consent/:token'
+    1: 'GET /api/fan-hub/unsubscribe/:token'
+    2: 'POST /api/fan-hub/consent/:token'
+    3: 'POST /api/fan-hub/unsubscribe/:token'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:37:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Every source-proven alias of a nested child router is preserved
+not ok 3 - Every source-proven alias of a nested child router is preserved
+  ---
+  duration_ms: 432.766767
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:44:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   '/nested/leaf'
+    -   '/one/nested/leaf',
+    -   '/two/nested/leaf'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '/one/nested/leaf'
+    1: '/two/nested/leaf'
+  actual:
+    0: '/nested/leaf'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:50:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Identical shared-router paths in separate application processes remain distinct
+not ok 4 - Identical shared-router paths in separate application processes remain distinct
+  ---
+  duration_ms: 372.276604
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:54:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        {
+          path: '/same/leaf',
+          scope: 'main-app'
+        },
+    -   {
+    -     path: '/same/leaf',
+    -     scope: 'standalone:server/sidecar.ts'
+    -   }
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      path: '/same/leaf'
+      scope: 'main-app'
+    1:
+      path: '/same/leaf'
+      scope: 'standalone:server/sidecar.ts'
+  actual:
+    0:
+      path: '/same/leaf'
+      scope: 'main-app'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:60:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Cycles terminate with an explicit mount diagnostic rather than unlimited invented paths
+not ok 5 - Cycles terminate with an explicit mount diagnostic rather than unlimited invented paths
+  ---
+  duration_ms: 379.617628
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:65:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(report.unresolvedDynamic.some(row=>row.reason==='mount-cycle-or-depth-limit'))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:72:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Unknown runtime templates and shadowed loop names never become literal high-confidence routes
+not ok 6 - Unknown runtime templates and shadowed loop names never become literal high-confidence routes
+  ---
+  duration_ms: 401.226038
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:75:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:80:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Unmounted child modules are retained with explicit unresolved topology
+not ok 7 - Unmounted child modules are retained with explicit unresolved topology
+  ---
+  duration_ms: 384.007981
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:84:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'high'
+    - 'unmounted-or-unresolved'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'unmounted-or-unresolved'
+  actual: 'high'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:90:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Unknown interpolated mount prefixes remain explicit rather than literal complete URLs
+not ok 8 - Unknown interpolated mount prefixes remain explicit rather than literal complete URLs
+  ---
+  duration_ms: 407.616501
+  type: 'test'
+  location: '/workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:93:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'high'
+    - 'unmounted-or-unresolved'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'unmounted-or-unresolved'
+  actual: 'high'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/onboarding-results/topology-candidate/tests/endpoint-topology.test.mjs:99:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: actual Fan Hub declarations produce GET/POST consent/unsubscribe routes
+ok 9 - actual Fan Hub declarations produce GET/POST consent/unsubscribe routes
+  ---
+  duration_ms: 60.174249
+  type: 'test'
+  ...
+# Subtest: const named literal arrays and repeated template variables retain correlation
+ok 10 - const named literal arrays and repeated template variables retain correlation
+  ---
+  duration_ms: 1.177516
+  type: 'test'
+  ...
+# Subtest: independent nested finite loops expand within a fixed bound
+ok 11 - independent nested finite loops expand within a fixed bound
+  ---
+  duration_ms: 0.791854
+  type: 'test'
+  ...
+# Subtest: unsupported runtime array stays unresolved
+ok 12 - unsupported runtime array stays unresolved
+  ---
+  duration_ms: 0.443268
+  type: 'test'
+  ...
+# Subtest: unsupported let loop binding stays unresolved
+ok 13 - unsupported let loop binding stays unresolved
+  ---
+  duration_ms: 0.32475
+  type: 'test'
+  ...
+# Subtest: unsupported mutated named array stays unresolved
+ok 14 - unsupported mutated named array stays unresolved
+  ---
+  duration_ms: 0.688618
+  type: 'test'
+  ...
+# Subtest: unsupported aliased named array stays unresolved
+ok 15 - unsupported aliased named array stays unresolved
+  ---
+  duration_ms: 0.434826
+  type: 'test'
+  ...
+# Subtest: unsupported shadowed local constant stays unresolved
+ok 16 - unsupported shadowed local constant stays unresolved
+  ---
+  duration_ms: 0.588978
+  type: 'test'
+  ...
+# Subtest: unsupported shadowed parameter stays unresolved
+ok 17 - unsupported shadowed parameter stays unresolved
+  ---
+  duration_ms: 0.8548
+  type: 'test'
+  ...
+# Subtest: unsupported shadowed catch binding stays unresolved
+ok 18 - unsupported shadowed catch binding stays unresolved
+  ---
+  duration_ms: 0.590861
+  type: 'test'
+  ...
+# Subtest: unsupported deferred closure stays unresolved
+ok 19 - unsupported deferred closure stays unresolved
+  ---
+  duration_ms: 0.389648
+  type: 'test'
+  ...
+# Subtest: unsupported reassignment stays unresolved
+ok 20 - unsupported reassignment stays unresolved
+  ---
+  duration_ms: 0.332602
+  type: 'test'
+  ...
+# Subtest: unsupported runtime interpolation stays unresolved
+ok 21 - unsupported runtime interpolation stays unresolved
+  ---
+  duration_ms: 0.31157
+  type: 'test'
+  ...
+# Subtest: unsupported unknown interpolation stays unresolved
+ok 22 - unsupported unknown interpolation stays unresolved
+  ---
+  duration_ms: 0.145079
+  type: 'test'
+  ...
+# Subtest: unsupported empty finite array stays unresolved
+ok 23 - unsupported empty finite array stays unresolved
+  ---
+  duration_ms: 0.144859
+  type: 'test'
+  ...
+# Subtest: unsupported spread element stays unresolved
+ok 24 - unsupported spread element stays unresolved
+  ---
+  duration_ms: 0.207843
+  type: 'test'
+  ...
+# Subtest: large finite products stay unresolved instead of truncating paths
+ok 25 - large finite products stay unresolved instead of truncating paths
+  ---
+  duration_ms: 0.435407
+  type: 'test'
+  ...
+# Subtest: excessive path lengths stay unresolved
+ok 26 - excessive path lengths stay unresolved
+  ---
+  duration_ms: 0.205059
+  type: 'test'
+  ...
+# Subtest: unsupported lexical classic for binding stays unresolved
+ok 27 - unsupported lexical classic for binding stays unresolved
+  ---
+  duration_ms: 0.45707
+  type: 'test'
+  ...
+# Subtest: unsupported lexical for-in binding stays unresolved
+ok 28 - unsupported lexical for-in binding stays unresolved
+  ---
+  duration_ms: 0.251319
+  type: 'test'
+  ...
+# Subtest: unsupported lexical switch-case binding stays unresolved
+ok 29 - unsupported lexical switch-case binding stays unresolved
+  ---
+  duration_ms: 0.340263
+  type: 'test'
+  ...
+# Subtest: unsupported lexical enum binding stays unresolved
+ok 30 - unsupported lexical enum binding stays unresolved
+  ---
+  duration_ms: 0.494997
+  type: 'test'
+  ...
+# Subtest: unsupported lexical namespace binding stays unresolved
+ok 31 - unsupported lexical namespace binding stays unresolved
+  ---
+  duration_ms: 0.414104
+  type: 'test'
+  ...
+# Subtest: unsupported lexical named class expression stays unresolved
+ok 32 - unsupported lexical named class expression stays unresolved
+  ---
+  duration_ms: 0.563209
+  type: 'test'
+  ...
+# Subtest: unsupported lexical with scope stays unresolved
+ok 33 - unsupported lexical with scope stays unresolved
+  ---
+  duration_ms: 0.381886
+  type: 'test'
+  ...
+# Subtest: unsupported lexical destructuring write stays unresolved
+ok 34 - unsupported lexical destructuring write stays unresolved
+  ---
+  duration_ms: 0.296798
+  type: 'test'
+  ...
+# Subtest: unsupported lexical outer named array hidden by classic for stays unresolved
+ok 35 - unsupported lexical outer named array hidden by classic for stays unresolved
+  ---
+  duration_ms: 0.205039
+  type: 'test'
+  ...
+# Subtest: unsupported lexical outer named array hidden by for-of stays unresolved
+ok 36 - unsupported lexical outer named array hidden by for-of stays unresolved
+  ---
+  duration_ms: 0.176366
+  type: 'test'
+  ...
+# Subtest: unsupported lexical outer named array hidden by class name stays unresolved
+ok 37 - unsupported lexical outer named array hidden by class name stays unresolved
+  ---
+  duration_ms: 0.189095
+  type: 'test'
+  ...
+# Subtest: a switch-local finite const array resolves its actual binding
+ok 38 - a switch-local finite const array resolves its actual binding
+  ---
+  duration_ms: 0.434495
+  type: 'test'
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 30
+# fail 8
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3252.747107

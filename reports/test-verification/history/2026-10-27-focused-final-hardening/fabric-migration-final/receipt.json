@@ -1,0 +1,74 @@
+{
+  "scope": "Disposable owned PostgreSQL; actual filesystem bytes/restarted processes; canonical local PDIM Lua including delayed stale publication. Not deployed migration/provider/global-capacity proof.",
+  "sourceFiles": {
+    "server/pocket-dimension/fabric/control/Rebalancer.ts": "27a7dd3852ff182b56e7a9fc374c9f2dae8342772fab135fe9025c5d427b927a",
+    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts": "c06dd762c17914e4ac19943ec951be3636613029dd2dcd4c39b48330a80ae9ef",
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "e778eb0b762ec4afbd4f38067a5a863eb7574885b484350050a0bfb869a1efa1",
+    "migrations/0099_fabric_migration_journal.sql": "8faa7feabf1ee0151b9eb3085297bbfd9f7743322fff20f215c9a042a5fd6b27",
+    "tests/fabric-migration-outbox-postgres.test.mjs": "6af3a63ad1f48e35e475cdcbd2ee03fcae1770d6e695de0cb9e69ba2b8ca9626",
+    "tests/fabric-replica-generation.test.mjs": "72b5abd3b5c24594ad0d3137c8fa3d59575b4cc4470668f5a873d32ffec6b289",
+    "tests/unit/pdim-canonical-owner.test.ts": "fa9b9ca45054ded762c34a836afd6ddab3ac4bdcdda2e84e8f6a6e45278026f3"
+  },
+  "commands": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=junit",
+        "tests/fabric-migration-outbox-postgres.test.mjs",
+        "tests/fabric-replica-generation.test.mjs",
+        "tests/fabric-root-storage-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T10:07:39.710446+00:00",
+      "durationSeconds": 13.701,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fabric-migration-final/node.xml",
+      "logSha256": "da5988d15487e57add1cdd0b7ce3e50a8d39d0ee1195e7d132d8eedd222c1061"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/eslint/bin/eslint.js",
+        "server/pocket-dimension/fabric/control/Rebalancer.ts",
+        "server/pocket-dimension/fabric/infra/MigrationOutbox.ts",
+        "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+        "tests/fabric-migration-outbox-postgres.test.mjs",
+        "tests/fabric-replica-generation.test.mjs",
+        "tests/unit/pdim-canonical-owner.test.ts",
+        "--quiet"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T10:07:53.411223+00:00",
+      "durationSeconds": 1.224,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fabric-migration-final/lint.txt",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "check:server"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T10:07:54.635235+00:00",
+      "durationSeconds": 42.812,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fabric-migration-final/types.txt",
+      "logSha256": "d3bafa07b0038ad49c07fb79173a2d36cf281a3cb0a37187567d4b739b9d1630"
+    }
+  ],
+  "permanentTombstones": "Replica deletion marks immutable physical keys permanently; metadata retention prevents resurrection by delayed stale writers. Tombstones are control metadata, not content-byte capacity.",
+  "junitCases": 15,
+  "failedCases": 0
+}

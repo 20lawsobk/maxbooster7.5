@@ -1,0 +1,392 @@
+{
+  "scope": "Source parsing/actual consumer AST only, not current master or runtime proof",
+  "checks": {
+    "all221DeclarationsRetained": true,
+    "declarationSourceOrderUnchanged": true,
+    "allSubjectIdsPreserved": true,
+    "noSubjectIdCollisions": true,
+    "allRequiredChecksPreserved": true,
+    "allOriginalMountWarningsByteEqual": true,
+    "allOriginalPythonDiagnosticsRetained": true,
+    "exact19FactoryDeclarations": true,
+    "exact13UnconditionalSourcePaths": true,
+    "exact6ConditionalSourcePaths": true,
+    "allRuntimeAvailabilityUnverified": true,
+    "currentPlatformBackendCountPreserved": true
+  },
+  "before": {
+    "declarations": 221,
+    "subjectIds": 221,
+    "checks": 1287,
+    "mountWarnings": 19
+  },
+  "after": {
+    "declarations": 221,
+    "subjectIds": 221,
+    "checks": 1287,
+    "mountWarnings": 19
+  },
+  "changed": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+      "line": 255,
+      "method": "GET",
+      "beforePath": "/capability",
+      "resolvedPath": "/api/analytics/capability",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-e8e4a036051eff3f",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "name": "create_router",
+        "line": 252
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1250
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+      "line": 262,
+      "method": "POST",
+      "beforePath": "/predict",
+      "resolvedPath": "/api/analytics/predict",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-a1f340f59332d78e",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "name": "create_router",
+        "line": 252
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1250
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+      "line": 266,
+      "method": "POST",
+      "beforePath": "/insights",
+      "resolvedPath": "/api/analytics/insights",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-4f9324aca2b97b4b",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "name": "create_router",
+        "line": 252
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1250
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 174,
+      "method": "POST",
+      "beforePath": "/campaign",
+      "resolvedPath": "/api/director/campaign",
+      "conditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-9299cfd1c947a1a4",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 222,
+      "method": "POST",
+      "beforePath": "/feedback",
+      "resolvedPath": "/api/director/feedback",
+      "conditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-2f285e0c500f8b0f",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 248,
+      "method": "GET",
+      "beforePath": "/platforms",
+      "resolvedPath": "/api/director/platforms",
+      "conditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-b0620d2505196b4d",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 260,
+      "method": "GET",
+      "beforePath": "/config",
+      "resolvedPath": "/api/director/config",
+      "conditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-41570e3eb2bd2da3",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 269,
+      "method": "GET",
+      "beforePath": "/metrics",
+      "resolvedPath": "/api/director/metrics",
+      "conditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-f51c6acc6ec5dc3a",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 278,
+      "method": "GET",
+      "beforePath": "/metrics/prometheus",
+      "resolvedPath": "/api/director/metrics/prometheus",
+      "conditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-9dfbb46d34147f13",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 159,
+      "method": "POST",
+      "beforePath": "/image",
+      "resolvedPath": "/api/analysis/image",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-42deb4116b2557e0",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 163,
+      "method": "POST",
+      "beforePath": "/video",
+      "resolvedPath": "/api/analysis/video",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-5ff5f045652ab661",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 167,
+      "method": "POST",
+      "beforePath": "/text",
+      "resolvedPath": "/api/analysis/text",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-6708a28c5a8d26c0",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 178,
+      "method": "POST",
+      "beforePath": "/website",
+      "resolvedPath": "/api/analysis/website",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-2c6445d266374190",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 201,
+      "method": "POST",
+      "beforePath": "/upload",
+      "resolvedPath": "/api/analysis/upload",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-8e623814d5812cf5",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+      "line": 535,
+      "method": "GET",
+      "beforePath": "/api/training/candidates/live",
+      "resolvedPath": "/api/training/candidates/live",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-f0d401be967e7979",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "name": "create_router",
+        "line": 519
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2616
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+      "line": 539,
+      "method": "GET",
+      "beforePath": "/api/training/candidates/live/{run_id}",
+      "resolvedPath": "/api/training/candidates/live/{run_id}",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-a2d5112e6f836b75",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "name": "create_router",
+        "line": 519
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2616
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+      "line": 546,
+      "method": "POST",
+      "beforePath": "/api/training/candidates/live",
+      "resolvedPath": "/api/training/candidates/live",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-63c25a5b3c0f3b69",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "name": "create_router",
+        "line": 519
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2616
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+      "line": 201,
+      "method": "GET",
+      "beforePath": "/api/training/media/{modality}/preflight",
+      "resolvedPath": "/api/training/media/{modality}/preflight",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-dc501135f7da694a",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+        "name": "create_router",
+        "line": 182
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2627
+      }
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+      "line": 205,
+      "method": "POST",
+      "beforePath": "/api/training/media/{modality}/preflight",
+      "resolvedPath": "/api/training/media/{modality}/preflight",
+      "conditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "subjectId": "api-46c9778776fd3ea7",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+        "name": "create_router",
+        "line": 182
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2627
+      }
+    }
+  ]
+}

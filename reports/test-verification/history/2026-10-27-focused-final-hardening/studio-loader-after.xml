@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="1" failures="1" errors="0" time="18.085195692">
+    <testsuite name="tests/unit/studio-loader-browser.test.ts" timestamp="2026-10-27T09:56:38.939Z" hostname="2fc971e77ddd" tests="1" failures="1" errors="0" skipped="0" time="18.085195692">
+        <testcase classname="tests/unit/studio-loader-browser.test.ts" name="StudioLoader with the installed Query client &gt; reacts to actual query completion, failure, retry and authentication outcomes" time="17.350688389">
+            <failure message="expected [ Array(1) ] to deeply equal []" type="AssertionError">
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   &quot;TypeError: Cannot read properties of null (reading &apos;message&apos;)
++     at StudioLoader (http://127.0.0.1:35677/fixture.js:29548:48)
++     at Object.react_stack_bottom_frame (http://127.0.0.1:35677/fixture.js:19771:22)
++     at renderWithHooks (http://127.0.0.1:35677/fixture.js:6916:26)
++     at updateFunctionComponent (http://127.0.0.1:35677/fixture.js:8737:23)
++     at beginWork (http://127.0.0.1:35677/fixture.js:9787:22)
++     at runWithFiberInDEV (http://127.0.0.1:35677/fixture.js:2259:74)
++     at performUnitOfWork (http://127.0.0.1:35677/fixture.js:13823:100)
++     at workLoopSync (http://127.0.0.1:35677/fixture.js:13686:45)
++     at renderRootSync (http://127.0.0.1:35677/fixture.js:13670:15)
++     at performWorkOnRoot (http://127.0.0.1:35677/fixture.js:13089:39)&quot;,
++ ]
+
+ ❯ contains tests/unit/studio-loader-browser.test.ts:22:26
+ ❯ tests/unit/studio-loader-browser.test.ts:138:11
+            </failure>
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -1,0 +1,56 @@
+TAP version 13
+# [pdim-restore] Extracting fixture.pdim (zstd-19) → /tmp/maxbooster-test-v_ktimkk/maxbooster-test-suf8vsoc/publish-zstd-LBELML/.pdim-scratch-fixture-189955/ (staging for fixture/) ...
+# [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
+# [pdim-restore] ✅ fixture/ restored from fixture.pdim
+# [pdim-restore] Checksum mismatch for fixture.pdim
+# Subtest: shared packer removes source only after a gate-valid zstd capsule and real restore round-trips
+ok 1 - shared packer removes source only after a gate-valid zstd capsule and real restore round-trips
+  ---
+  duration_ms: 202.558013
+  type: 'test'
+  ...
+# Subtest: missing required directory fails instead of claiming a successful capsule
+ok 2 - missing required directory fails instead of claiming a successful capsule
+  ---
+  duration_ms: 54.568765
+  type: 'test'
+  ...
+# Subtest: GNU tar also restores zstd capsules when bsdtar is unavailable
+ok 3 - GNU tar also restores zstd capsules when bsdtar is unavailable
+  ---
+  duration_ms: 179.450265
+  type: 'test'
+  ...
+# Subtest: source-tree packing preserves files until the shell performs cleanup
+ok 4 - source-tree packing preserves files until the shell performs cleanup
+  ---
+  duration_ms: 113.291747
+  type: 'test'
+  ...
+# Subtest: compressor failure retains source and the previous archive
+ok 5 - compressor failure retains source and the previous archive
+  ---
+  duration_ms: 65.967961
+  type: 'test'
+  ...
+# Subtest: both publishing paths use shared deployment packing while retaining adaptive app-capsule generation
+ok 6 - both publishing paths use shared deployment packing while retaining adaptive app-capsule generation
+  ---
+  duration_ms: 0.640866
+  type: 'test'
+  ...
+# Subtest: adaptive application capsule is verified by a fresh reader; legacy gzip pockets remain readable
+ok 7 - adaptive application capsule is verified by a fresh reader; legacy gzip pockets remain readable
+  ---
+  duration_ms: 334.423292
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1093.12216

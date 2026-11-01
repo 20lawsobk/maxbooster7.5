@@ -1,0 +1,172 @@
+{
+  "sourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+  "oldEntryCount": 36,
+  "newEntryCount": 46,
+  "changedOrAddedEntries": [
+    {
+      "path": "maxbooster7.5/package.json",
+      "operation": "update-existing-entry",
+      "previousAfterSha256": "67f4a5d6927d9bd6b86fe06b205b159189998fa1b91d6827e10e3dbab9bdafa3",
+      "afterSha256": "c420224cea151616ead279a82a7f0d41bce84fed723a441e542c59d274ea8f97",
+      "acceptedBeforeSha256": [
+        "e389578807ff19ce5f8d36e0e925bc2295eaa9b3ee73cefbeb76fa849e9dabac",
+        "93bece56f9e8ef56d5cbf12e3fc30c44ce35b2cbf49b5131cbc05663da1ae647",
+        "8623c9da4326fd6c3de6a9ab9d8886d991fcf2099df89352e7d29655a90ec409",
+        "48371f36785469112d7d6ff1b50ccb48a7c7edaaff814c581cb51e142f661bbe",
+        "67f4a5d6927d9bd6b86fe06b205b159189998fa1b91d6827e10e3dbab9bdafa3"
+      ]
+    },
+    {
+      "path": "maxbooster7.5/package-lock.json",
+      "operation": "update-existing-entry",
+      "previousAfterSha256": "8668bbe6353c5f0ef6fb015d1620ecf33851a08479c9d6847392064abfe427fb",
+      "afterSha256": "4593ecca6bfce71d83ab7a8401750e4dbf612f705a36a274c0dc029a9b5ad1c9",
+      "acceptedBeforeSha256": [
+        "68b79d609c13fab588c7958db22bcfea5459e9916275e7128c565db31c5c38fc",
+        "64ab8c071a112741820ab9f3abf9fab025c66c86e33a90b4e5b74001cf27be71",
+        "d6fbe58424cfdd8276556a1d99f394a0e421edbac4f03aebac14d2f9931c7c44",
+        "c2b4be865deb840cd8637ef0b9db3e221c6435039d43dd4a9c86da39cf42a91d",
+        "8668bbe6353c5f0ef6fb015d1620ecf33851a08479c9d6847392064abfe427fb"
+      ]
+    },
+    {
+      "path": "maxbooster7.5/pnpm-lock.yaml",
+      "operation": "update-existing-entry",
+      "previousAfterSha256": "56649fa2fbcc42188b805535fb4db2e9f72202e02eca162dca21eb633ff1f958",
+      "afterSha256": "fabf05171115023773b75bd235a465b0965c93276a7fb9f246bfb54cb7e2517c",
+      "acceptedBeforeSha256": [
+        "2e81ba75e79b0ba04e8441b9b2eb39493e295659761117bd5c4f0e1a75cba0c1",
+        "36d77816f08362e0a2991e056451723cc1f906de83148f17020d5e4f901ea08c",
+        "c43464a5527b64246fa4881a237c242435b79871bdfd4fe34b86ddf7cf40ee72",
+        "84c99c295ebdc0632d2e66037da5de972753887d7ad8da0c3375e991d26815fa",
+        "e163bc8ed3083232414656dcaf0969ffe0c589fb35f9801aa8a70e6412c23c68",
+        "56649fa2fbcc42188b805535fb4db2e9f72202e02eca162dca21eb633ff1f958"
+      ]
+    },
+    {
+      "path": "maxbooster7.5/maxbooster7.5/package.json",
+      "operation": "update-existing-entry",
+      "previousAfterSha256": "67f4a5d6927d9bd6b86fe06b205b159189998fa1b91d6827e10e3dbab9bdafa3",
+      "afterSha256": "c420224cea151616ead279a82a7f0d41bce84fed723a441e542c59d274ea8f97",
+      "acceptedBeforeSha256": [
+        "e389578807ff19ce5f8d36e0e925bc2295eaa9b3ee73cefbeb76fa849e9dabac",
+        "93bece56f9e8ef56d5cbf12e3fc30c44ce35b2cbf49b5131cbc05663da1ae647",
+        "8623c9da4326fd6c3de6a9ab9d8886d991fcf2099df89352e7d29655a90ec409",
+        "48371f36785469112d7d6ff1b50ccb48a7c7edaaff814c581cb51e142f661bbe",
+        "67f4a5d6927d9bd6b86fe06b205b159189998fa1b91d6827e10e3dbab9bdafa3"
+      ]
+    },
+    {
+      "path": "maxbooster7.5/maxbooster7.5/package-lock.json",
+      "operation": "update-existing-entry",
+      "previousAfterSha256": "8668bbe6353c5f0ef6fb015d1620ecf33851a08479c9d6847392064abfe427fb",
+      "afterSha256": "4593ecca6bfce71d83ab7a8401750e4dbf612f705a36a274c0dc029a9b5ad1c9",
+      "acceptedBeforeSha256": [
+        "68b79d609c13fab588c7958db22bcfea5459e9916275e7128c565db31c5c38fc",
+        "64ab8c071a112741820ab9f3abf9fab025c66c86e33a90b4e5b74001cf27be71",
+        "d6fbe58424cfdd8276556a1d99f394a0e421edbac4f03aebac14d2f9931c7c44",
+        "c2b4be865deb840cd8637ef0b9db3e221c6435039d43dd4a9c86da39cf42a91d",
+        "8668bbe6353c5f0ef6fb015d1620ecf33851a08479c9d6847392064abfe427fb"
+      ]
+    },
+    {
+      "path": "maxbooster7.5/maxbooster7.5/pnpm-lock.yaml",
+      "operation": "update-existing-entry",
+      "previousAfterSha256": "56649fa2fbcc42188b805535fb4db2e9f72202e02eca162dca21eb633ff1f958",
+      "afterSha256": "fabf05171115023773b75bd235a465b0965c93276a7fb9f246bfb54cb7e2517c",
+      "acceptedBeforeSha256": [
+        "2e81ba75e79b0ba04e8441b9b2eb39493e295659761117bd5c4f0e1a75cba0c1",
+        "36d77816f08362e0a2991e056451723cc1f906de83148f17020d5e4f901ea08c",
+        "c43464a5527b64246fa4881a237c242435b79871bdfd4fe34b86ddf7cf40ee72",
+        "84c99c295ebdc0632d2e66037da5de972753887d7ad8da0c3375e991d26815fa",
+        "e163bc8ed3083232414656dcaf0969ffe0c589fb35f9801aa8a70e6412c23c68",
+        "56649fa2fbcc42188b805535fb4db2e9f72202e02eca162dca21eb633ff1f958"
+      ]
+    },
+    {
+      "path": "maxbooster7.5/server/monitoring/alertingService.ts",
+      "operation": "guarded-known-original-update",
+      "originalSourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+      "beforeSha256": "e9a42e8bc24435156314b9b378c6a2fd156e19fc59c434d2da8525a970d5cc8f",
+      "afterSha256": "b7aefd988b825b138264d2bc14c37a3c486b4021e7cdbf9c659397b4348cb0b8",
+      "originalMayBeNestedOnlyIfExactHashMatches": false,
+      "acceptedBeforeSha256": [
+        "7e229669ef25881b49df9c7e21d75738e105a71f2fa0da3308cfeeb65ea58944"
+      ]
+    },
+    {
+      "path": "maxbooster7.5/server/monitoring/emailMonitor.ts",
+      "operation": "guarded-known-original-update",
+      "originalSourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+      "beforeSha256": "db4e1fa16ede8461f28fd4540b38ad532745daa98fdf7f7badb3c171ce15b2f9",
+      "afterSha256": "17cdb56f917deeaa17c4895100f7340de11dbf9be39a9bebf2010a21297965cf",
+      "originalMayBeNestedOnlyIfExactHashMatches": false
+    },
+    {
+      "path": "maxbooster7.5/server/workers/index.ts",
+      "operation": "guarded-known-original-update",
+      "originalSourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+      "beforeSha256": "44e851d9df09331b60464ffdc1116cb052c2c0b8765f26e23d27c2bece167339",
+      "afterSha256": "4c05b8d909b46c9fa0117dba583c2b86ebe04e3dd7a911663ed4ce42fe169f98",
+      "originalMayBeNestedOnlyIfExactHashMatches": false
+    },
+    {
+      "path": "maxbooster7.5/server/lib/sendgridAlertTransport.ts",
+      "operation": "guarded-add",
+      "afterSha256": "bc2e412164e1bd13400210eba71422c7476c27e7294f45dc47d06759e6369bc6"
+    },
+    {
+      "path": "maxbooster7.5/maxbooster7.5/server/monitoring/alertingService.ts",
+      "operation": "guarded-known-original-update",
+      "originalSourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+      "beforeSha256": "e9a42e8bc24435156314b9b378c6a2fd156e19fc59c434d2da8525a970d5cc8f",
+      "afterSha256": "b7aefd988b825b138264d2bc14c37a3c486b4021e7cdbf9c659397b4348cb0b8",
+      "originalMayBeNestedOnlyIfExactHashMatches": true,
+      "acceptedBeforeSha256": [
+        "7e229669ef25881b49df9c7e21d75738e105a71f2fa0da3308cfeeb65ea58944"
+      ]
+    },
+    {
+      "path": "maxbooster7.5/maxbooster7.5/server/monitoring/emailMonitor.ts",
+      "operation": "guarded-known-original-update",
+      "originalSourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+      "beforeSha256": "db4e1fa16ede8461f28fd4540b38ad532745daa98fdf7f7badb3c171ce15b2f9",
+      "afterSha256": "17cdb56f917deeaa17c4895100f7340de11dbf9be39a9bebf2010a21297965cf",
+      "originalMayBeNestedOnlyIfExactHashMatches": true
+    },
+    {
+      "path": "maxbooster7.5/maxbooster7.5/server/workers/index.ts",
+      "operation": "guarded-known-original-update",
+      "originalSourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+      "beforeSha256": "44e851d9df09331b60464ffdc1116cb052c2c0b8765f26e23d27c2bece167339",
+      "afterSha256": "4c05b8d909b46c9fa0117dba583c2b86ebe04e3dd7a911663ed4ce42fe169f98",
+      "originalMayBeNestedOnlyIfExactHashMatches": true
+    },
+    {
+      "path": "maxbooster7.5/maxbooster7.5/server/lib/sendgridAlertTransport.ts",
+      "operation": "guarded-add",
+      "afterSha256": "bc2e412164e1bd13400210eba71422c7476c27e7294f45dc47d06759e6369bc6"
+    },
+    {
+      "path": "maxbooster7.5/server/routes/monitoring.ts",
+      "operation": "guarded-known-original-update",
+      "originalSourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+      "beforeSha256": "4598b82ac0c4c5aaf9c571adf1879c37f94ace6ad9b631da9c037c6c3541d6ca",
+      "afterSha256": "ed5f56bd7008793cc3a92073fea437bb3e40becfb41c3be7c7389dfa25e3ca2f",
+      "originalMayBeNestedOnlyIfExactHashMatches": false,
+      "patchScope": "Onlyawaitoutcomeandtest-alertstatusresponse; originalrouteunrelatedcodepreserved"
+    },
+    {
+      "path": "maxbooster7.5/maxbooster7.5/server/routes/monitoring.ts",
+      "operation": "guarded-known-original-update",
+      "originalSourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+      "beforeSha256": "4598b82ac0c4c5aaf9c571adf1879c37f94ace6ad9b631da9c037c6c3541d6ca",
+      "afterSha256": "ed5f56bd7008793cc3a92073fea437bb3e40becfb41c3be7c7389dfa25e3ca2f",
+      "originalMayBeNestedOnlyIfExactHashMatches": true,
+      "patchScope": "Onlyawaitoutcomeandtest-alertstatusresponse; originalrouteunrelatedcodepreserved"
+    }
+  ],
+  "existingBeforeHashesAndPredecessorsPreserved": true,
+  "scope": "Known-original hashes only; nested caller upgrades apply only to exact same bytes and otherwise fail whole-bundle preflight; no actual retained legacy working tree exists here.",
+  "runtimeCoherence": "BothSDKcallersandtest-alertrouterecognizeprovideracceptance/failure/cooldown; sameknown-originalhashesrequiredforeachroot."
+}

@@ -1,0 +1,24 @@
+{
+  "sourceRevision": "cb783f1f9b34719a214dd7f9203a31dea64c051e",
+  "scope": "Full canonical Node group after fixture-only Chromium socket correction; preserves a160 master and does not claim other groups reran",
+  "run": {
+    "command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "scripts/testing/run-node-suites.py",
+      "--output",
+      "reports/test-rechecks/2026-10-28-node-final/node"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-28T12:12:32.481725+00:00",
+    "durationSeconds": 126.867,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/test-rechecks/2026-10-28-node-final/runner.txt",
+    "logSha256": "13b0ad0b549e9749f296738e7fa21d0bafd5bcb53064ca48768f5c81c0ee00cc"
+  },
+  "sourceInputsSha256": "eba9dafdb3a96f430c05e6782cd9b23b21f5eeb01ba71c51e9b9875a313dbd07",
+  "sourceInputsAfterSha256": "eba9dafdb3a96f430c05e6782cd9b23b21f5eeb01ba71c51e9b9875a313dbd07",
+  "sourceInputsUnchanged": true,
+  "productionReady": false
+}

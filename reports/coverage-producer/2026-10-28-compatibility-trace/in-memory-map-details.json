@@ -1,0 +1,188 @@
+{
+  "file": "/workspace/maxbooster7.5/server/config/ports.ts",
+  "rawComparison": {
+    "compatible": false,
+    "mismatches": [
+      "statementMap",
+      "fnMap",
+      "branchMap"
+    ]
+  },
+  "serializedComparison": {
+    "compatible": false,
+    "mismatches": [
+      "statementMap",
+      "fnMap"
+    ]
+  },
+  "branchMapDifferences": [
+    {
+      "path": "branchMap.0.loc.end.column",
+      "aType": "object",
+      "bType": "number",
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.0.locations.0.end.column",
+      "aType": "object",
+      "bType": "number",
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.0.locations.1.start.line",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.0.locations.1.start.column",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.0.locations.1.end.line",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.0.locations.1.end.column",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.2.loc.end.column",
+      "aType": "object",
+      "bType": "number",
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.2.locations.0.end.column",
+      "aType": "object",
+      "bType": "number",
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.2.locations.1.start.line",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.2.locations.1.start.column",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.2.locations.1.end.line",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.2.locations.1.end.column",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.3.loc.end.column",
+      "aType": "object",
+      "bType": "number",
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.3.locations.0.end.column",
+      "aType": "object",
+      "bType": "number",
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.3.locations.1.start.line",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.3.locations.1.start.column",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.3.locations.1.end.line",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.3.locations.1.end.column",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.5.loc.end.column",
+      "aType": "object",
+      "bType": "number",
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.5.locations.0.end.column",
+      "aType": "object",
+      "bType": "number",
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.5.locations.1.start.line",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.5.locations.1.start.column",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.5.locations.1.end.line",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    },
+    {
+      "path": "branchMap.5.locations.1.end.column",
+      "aPresent": false,
+      "bPresent": true,
+      "a": null,
+      "b": null
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "sourceRevision": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "scope": "Bounded, disposable recovery and read-only retained-evidence verification.",
+  "runs": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/platform-register.py",
+        "--self-test"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:22:15.582181+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/platform-register.py.txt",
+      "logSha256": "2aa94c04b915cd2c6af508146bdba20cb9ef93945d2cb92ea8e660fc07989a91",
+      "file": "scripts/testing/platform-register.py"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/run-engine-load.py",
+        "--python",
+        "/workspace/.cloud-python/bin/python",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification/operations/engine-load"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:22:15.850238+00:00",
+      "durationSeconds": 0.315,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/load_test.py.txt",
+      "logSha256": "92bd7628d63d7d84a124ed10a67103d840713164f3c2a7670b532ff18c26444c",
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
+      "operationalProfile": "bounded-legacy-digital-gpu-numeric-dedup-v1",
+      "evidence": "/workspace/maxbooster7.5/reports/test-verification/operations/engine-load/results.json"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "evaluations/maxcore-quality/verify_types.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:22:16.167654+00:00",
+      "durationSeconds": 0.064,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/verify_types.py.txt",
+      "logSha256": "691363e9eab1755dbdd5c05f8f6cdeef85e7c640e0f745e9bd96037266ff67d4",
+      "file": "evaluations/maxcore-quality/verify_types.py"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "evaluations/maxcore-quality/verify_evidence.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:22:16.234646+00:00",
+      "durationSeconds": 0.032,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/verify_evidence.py.txt",
+      "logSha256": "a0f71bf11dda59c66151378bcdc0d7ce48f61c7c6134e3e3594d6808a9337be5",
+      "file": "evaluations/maxcore-quality/verify_evidence.py"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/maxcore-isolated-recovery-acceptance.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:22:16.269603+00:00",
+      "durationSeconds": 5.812,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/maxcore-isolated-recovery-acceptance.py.txt",
+      "logSha256": "c6a98b5ca785667938d61dfa9e88b672af1adba34da5d98b60210300922a2294",
+      "file": "scripts/maxcore-isolated-recovery-acceptance.py"
+    },
+    {
+      "command": [
+        "node",
+        "tests/payment-processing/run.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T23:22:22.083269+00:00",
+      "durationSeconds": 13.722,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/run.mjs.txt",
+      "logSha256": "2d514ae9c36d4b7c45896af5bd55ccb47e49449edd3650aa07364853cb7692ae",
+      "file": "tests/payment-processing/run.mjs"
+    }
+  ]
+}

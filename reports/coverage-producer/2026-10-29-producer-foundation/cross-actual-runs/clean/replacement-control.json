@@ -1,0 +1,8 @@
+{
+  "boundActualCaseCount": 2,
+  "forgedLeafCaseCount": 1,
+  "boundSha256": "34e62d15a587bc56a68b7d81210c2a45354f94ff95a757ecd60cf5428c1f474c",
+  "forgedSha256": "56ce06fe789a3f5feddfaa48802df3cc16fd9c515099efd76a712f65909e215c",
+  "replacementRejectedByBoundHash": true,
+  "originalOneVs2771ControlReference": "/workspace/onboarding-results/c5-admission-prototype/review/canonical-junit-binding-control.json"
+}

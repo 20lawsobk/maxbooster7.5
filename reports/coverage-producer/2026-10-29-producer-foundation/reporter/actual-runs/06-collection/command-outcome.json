@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "actual-public-Vitest-onTestRunEnd",
+  "runId": "c3f2f655-940b-4e5b-9d91-ab3da826403f",
+  "repositoryRoot": "/tmp/c5-outcome-ofOtGb",
+  "runtime": {
+    "node": "22.23.3",
+    "v8": "12.4.254.21-node.57"
+  },
+  "reporterSha256": "7a940fc6505a21eb98c522a6250160ea7e84abf044bd470f9e5728edb5193f54",
+  "initializedAt": "2026-10-29T23:09:14.014Z",
+  "startedAt": "2026-10-29T23:09:14.024Z",
+  "finishedAt": "2026-10-29T23:09:14.223Z",
+  "reason": "failed",
+  "unhandledErrorCount": 0,
+  "testCaseCounts": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "pending": 0
+  },
+  "testModuleCount": 1,
+  "moduleStates": {
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "pending": 0,
+    "queued": 0
+  },
+  "moduleErrorCount": 1,
+  "testCaseErrorCount": 0,
+  "selectedModules": [
+    "actual.test.ts"
+  ],
+  "missingModules": [],
+  "unexpectedModules": [],
+  "modules": [
+    {
+      "file": "actual.test.ts",
+      "state": "failed",
+      "testCaseCounts": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "pending": 0
+      },
+      "errorCount": 1
+    }
+  ],
+  "scope": "Actual public reporter arguments; counts only, no error messages or private data. Not a coverage threshold or launch decision."
+}

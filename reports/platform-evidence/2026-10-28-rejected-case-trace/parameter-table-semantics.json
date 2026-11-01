@@ -1,0 +1,32 @@
+{
+  "scope": "Source-only installed Vitest parameter-table/title semantics, not product execution",
+  "mixedTables": {
+    "arrayOnlyCases": false,
+    "callbackReceivesOriginalRow": true,
+    "emptyArrayTitleItems": [],
+    "conclusion": "Empty-array title formatting may collide with undefined while the callback still receives the actual array; this trace does not infer a lost input or product bug."
+  },
+  "sourceCitations": [
+    {
+      "path": "node_modules/@vitest/runner/dist/chunk-artifact.js",
+      "line": 2015,
+      "endLine": 2033,
+      "sha256": "bf6af6d2f4469911879a67e83b8f9e7b20332cf42795032c53457b10ccc1c617",
+      "excerpt": "2015: \t\t}\n2016: \t\treturn (name, optionsOrFn, fnOrOptions) => {\n2017: \t\t\tconst _name = formatName(name);\n2018: \t\t\tconst arrayOnlyCases = cases.every(Array.isArray);\n2019: \t\t\tconst { options, handler } = parseArguments(optionsOrFn, fnOrOptions);\n2020: \t\t\tconst fnFirst = typeof optionsOrFn === \"function\";\n2021: \t\t\tcases.forEach((i, idx) => {\n2022: \t\t\t\tconst items = Array.isArray(i) ? i : [i];\n2023: \t\t\t\tif (fnFirst) {\n2024: \t\t\t\t\tif (arrayOnlyCases) {\n2025: \t\t\t\t\t\ttest(formatTitle(_name, items, idx), handler ? () => handler(...items) : undefined, options.timeout);\n2026: \t\t\t\t\t} else {\n2027: \t\t\t\t\t\ttest(formatTitle(_name, items, idx), handler ? () => handler(i) : undefined, options.timeout);\n2028: \t\t\t\t\t}\n2029: \t\t\t\t} else {\n2030: \t\t\t\t\tif (arrayOnlyCases) {\n2031: \t\t\t\t\t\ttest(formatTitle(_name, items, idx), options, handler ? () => handler(...items) : undefined);\n2032: \t\t\t\t\t} else {\n2033: \t\t\t\t\t\ttest(formatTitle(_name, items, idx), options, handler ? () => handler(i) : undefined);"
+    },
+    {
+      "path": "node_modules/@vitest/runner/dist/chunk-artifact.js",
+      "line": 2169,
+      "endLine": 2175,
+      "sha256": "bf6af6d2f4469911879a67e83b8f9e7b20332cf42795032c53457b10ccc1c617",
+      "excerpt": "2169: function formatTitle(template, items, idx) {\n2170: \tif (template.includes(\"%#\") || template.includes(\"%$\")) {\n2171: \t\t// '%#' match index of the test case\n2172: \t\ttemplate = template.replace(/%%/g, \"__vitest_escaped_%__\").replace(/%#/g, `${idx}`).replace(/%\\$/g, `${idx + 1}`).replace(/__vitest_escaped_%__/g, \"%%\");\n2173: \t}\n2174: \tconst count = template.split(\"%\").length - 1;\n2175: \tif (template.includes(\"%f\")) {"
+    },
+    {
+      "path": "node_modules/@vitest/runner/dist/chunk-artifact.js",
+      "line": 2203,
+      "endLine": 2215,
+      "sha256": "bf6af6d2f4469911879a67e83b8f9e7b20332cf42795032c53457b10ccc1c617",
+      "excerpt": "2203: \t\ttemplate,\n2204: \t\tformatRegExp,\n2205: \t\t// format \"%\"\n2206: \t\t(match) => {\n2207: \t\t\tif (i < count) {\n2208: \t\t\t\toutput += format(match[0], items[i++]);\n2209: \t\t\t} else {\n2210: \t\t\t\toutput += match[0];\n2211: \t\t\t}\n2212: \t\t},\n2213: \t\t// format \"$\"\n2214: \t\t(nonMatch) => {\n2215: \t\t\toutput += formatAttribute(nonMatch);"
+    }
+  ]
+}

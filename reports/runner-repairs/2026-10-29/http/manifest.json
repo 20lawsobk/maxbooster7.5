@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T22:58:22.707745+00:00",
+  "scope": "Outside-only candidate digest correction; not landed or launch approval",
+  "files": {
+    "README.md": "561ac8c455fa04ec4f4900b9e488ac610216771271b0c4874571b45608c5e1c9",
+    "candidate-map.json": "98064ef08746b717d025c4934904aa3d6cf8a7f6c843abd1a0c15e4e44b303c4",
+    "recheck.json": "7fb3281e7e0d123d5958eb7da9ff068df90e0e675d1b8b38f4f0951d38392a0a",
+    "recheck.py": "2ed87b2f65f8d237dc32a185fa20f15dc3805bf9c30be494767f19ccbad61e8d",
+    "source.patch": "76696d962bf300a7b2bad62e8552a070a3218e070d1f6e02c5885e8bf8d1bbfb"
+  }
+}

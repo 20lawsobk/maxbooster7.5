@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: AI analytics page renders honest measured, insufficient, failure and account-transition states
+not ok 1 - AI analytics page renders honest measured, insufficient, failure and account-transition states
+  ---
+  duration_ms: 848.379098
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/account-analytics-browser.test.mjs:16:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + {
+    +   columnNumber: 14,
+    +   exception: {
+    +     className: 'TypeError',
+    +     description: "TypeError: Cannot read properties of null (reading 'textContent')\n" +
+    +       '    at <anonymous>:1:15',
+    +     objectId: '-1023971284087100849.2.2',
+    +     subtype: 'error',
+    +     type: 'object'
+    +   },
+    +   exceptionId: 1,
+    +   lineNumber: 0,
+    +   scriptId: '3',
+    +   stackTrace: {
+    +     callFrames: [
+    +       {
+    +         columnNumber: 14,
+    +         functionName: '',
+    +         lineNumber: 0,
+    +         scriptId: '3',
+    +         url: ''
+    +       }
+    +     ]
+    +   },
+    +   text: 'Uncaught'
+    + }
+    - undefined
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  actual:
+    exceptionId: 1
+    text: 'Uncaught'
+    lineNumber: 0
+    columnNumber: 14
+    scriptId: '3'
+    stackTrace:
+      callFrames:
+        0:
+          functionName: ''
+          scriptId: '3'
+          url: ''
+          lineNumber: 0
+          columnNumber: 14
+    exception:
+      type: 'object'
+      subtype: 'error'
+      className: 'TypeError'
+      description: |-
+        TypeError: Cannot read properties of null (reading 'textContent')
+            at <anonymous>:1:15
+      objectId: '-1023971284087100849.2.2'
+  operator: 'strictEqual'
+  stack: |-
+    evaluate (file:///workspace/maxbooster7.5/tests/account-analytics-browser.test.mjs:98:12)
+    async contains (file:///workspace/maxbooster7.5/tests/account-analytics-browser.test.mjs:104:11)
+    async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/account-analytics-browser.test.mjs:112:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: private owner aggregates reach actual MaxCore statistics without model or learning state
+    # Subtest: capability is dedicated and model-free; unauthorized direct requests fail
+    ok 1 - capability is dedicated and model-free; unauthorized direct requests fail
+      ---
+      duration_ms: 9.382192
+      type: 'test'
+      ...
+    # Subtest: calendar-day SQL and MaxCore OLS produce exact owned trend with no foreign/current-day data
+    ok 2 - calendar-day SQL and MaxCore OLS produce exact owned trend with no foreign/current-day data
+      ---
+      duration_ms: 14.214051
+      type: 'test'
+      ...
+    # Subtest: owned factual summaries preserve exact currency fractions and listener-observation caveat
+    ok 3 - owned factual summaries preserve exact currency fractions and listener-observation caveat
+      ---
+      duration_ms: 16.176741
+      type: 'test'
+      ...
+    # Subtest: multiple platforms aggregate once per UTC day without flattening missing days
+    ok 4 - multiple platforms aggregate once per UTC day without flattening missing days
+      ---
+      duration_ms: 5.014955
+      type: 'test'
+      ...
+    # Subtest: empty account does not inherit another owner's data or claim zero performance
+    ok 5 - empty account does not inherit another owner's data or claim zero performance
+      ---
+      duration_ms: 6.625585
+      type: 'test'
+      ...
+    # Subtest: lifetime post counters cannot masquerade as timestamped daily engagement history
+    ok 6 - lifetime post counters cannot masquerade as timestamped daily engagement history
+      ---
+      duration_ms: 2.659762
+      type: 'test'
+      ...
+    # Subtest: invalid input and absent identity reject before SQL or external requests
+    ok 7 - invalid input and absent identity reject before SQL or external requests
+      ---
+      duration_ms: 1.667285
+      type: 'test'
+      ...
+    # Subtest: invalid recorded numeric values fail explicitly rather than entering public learning or fabricating output
+    ok 8 - invalid recorded numeric values fail explicitly rather than entering public learning or fabricating output
+      ---
+      duration_ms: 1.600344
+      type: 'test'
+      ...
+    # Subtest: unavailable or structurally empty MaxCore output never invokes a local forecast fallback
+    ok 9 - unavailable or structurally empty MaxCore output never invokes a local forecast fallback
+      ---
+      duration_ms: 4.367688
+      type: 'test'
+      ...
+    # Subtest: generic availability cannot advertise a dedicated model-free no-retention analytics capability
+    ok 10 - generic availability cannot advertise a dedicated model-free no-retention analytics capability
+      ---
+      duration_ms: 0.810352
+      type: 'test'
+      ...
+    # Subtest: protocol mismatches cannot replace the requested forecast calendar or observation accounting
+    ok 11 - protocol mismatches cannot replace the requested forecast calendar or observation accounting
+      ---
+      duration_ms: 5.368118
+      type: 'test'
+      ...
+    # Subtest: personal summaries reject unbacked totals, impossible counts and ready states without observations
+    ok 12 - personal summaries reject unbacked totals, impossible counts and ready states without observations
+      ---
+      duration_ms: 4.91304
+      type: 'test'
+      ...
+    1..12
+ok 2 - private owner aggregates reach actual MaxCore statistics without model or learning state
+  ---
+  duration_ms: 1380.480529
+  type: 'test'
+  ...
+1..2
+# tests 14
+# suites 0
+# pass 13
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1888.745453

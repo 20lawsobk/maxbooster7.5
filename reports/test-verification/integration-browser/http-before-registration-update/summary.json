@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-10-25T15:27:23.473Z",
+  "scope": "Disposable PostgreSQL and real source application; all external TCP/TLS and UDP denied",
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "requestedFiles": [],
+  "status": "failed",
+  "productionReady": false,
+  "ephemeralDatabase": "pass",
+  "applicationRoutes": "pass",
+  "exitCode": 1,
+  "signal": null,
+  "testProcessCleanup": {
+    "tracked": 29,
+    "remaining": []
+  },
+  "appProcessCleanup": {
+    "tracked": 2,
+    "remaining": []
+  },
+  "postgresCleanup": "pass",
+  "finishedAt": "2026-10-25T15:31:06.734Z"
+}

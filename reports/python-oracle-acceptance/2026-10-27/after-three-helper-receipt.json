@@ -1,0 +1,28 @@
+{
+  "scope": "ExactAST helper oracle counterexample, intentional failures are expected; not failed production behavior",
+  "startedAt": "2026-10-28T02:33:50.474247+00:00",
+  "command": [
+    "/workspace/.cloud-python/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-s",
+    "-p",
+    "no:cacheprovider",
+    "/tmp/maxbooster-oracle-after-kdeq__kp/test_oracle_probe.py",
+    "--junitxml=/workspace/maxbooster7.5/reports/python-oracle-acceptance/2026-10-27/after-three-helper.xml"
+  ],
+  "exitCode": 1,
+  "expectedExitCode": 1,
+  "expectedOutcomeObserved": true,
+  "sourceHashes": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py": "fe0c63324c0c7f84cdedcee00d840e0f0720394c87621650aea1d3b3a8396d06",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py": "d02d7e7d77884fc0bdf461957a96535ac0f68decb22f4322b51754d9d47c6e22",
+    "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py": "7a2511e3ddd699be46a6998c6ad2107248b64e2993300cf678edeaf49a5d975e"
+  },
+  "logSha256": "2268c60ee1fa407044b89593cdd5813a90807df695c0f542e8eef35a19be1ea1",
+  "pytestCases": 3,
+  "assertionFailures": 3,
+  "errors": 0,
+  "productionTestsExecuted": false
+}

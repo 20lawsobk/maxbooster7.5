@@ -1,0 +1,23 @@
+............F                                                            [100%]
+=================================== FAILURES ===================================
+_____________ TestMixAndTrack.test_never_raises_on_bad_music_path ______________
+
+self = <tests.test_voiceover.TestMixAndTrack object at 0x7f0f8b271760>
+tmp_path = PosixPath('<scratch>/pytest-of-agent/pytest-0/test_never_raises_on_bad_music0')
+
+    def test_never_raises_on_bad_music_path(self, tmp_path):
+        path = voiceover_track(
+            "Hello world narration.", out_dir=str(tmp_path),
+            job_id="badmusicjob1", duration_sec=2.0,
+            music_path=str(tmp_path / "missing.wav"),
+        )
+        # Falls back to narration-only, never raises
+>       assert path and Path(path).exists()
+E       assert (None)
+
+tests/test_voiceover.py:186: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  voiceover:voiceover.py:251 [voiceover] track build error: Required audio artifact is missing
+=========================== short test summary info ============================
+FAILED tests/test_voiceover.py::TestMixAndTrack::test_never_raises_on_bad_music_path
+1 failed, 12 passed in 1.50s

@@ -1,0 +1,51 @@
+TAP version 13
+# Subtest: successful clean install replaces stale generated tree without modifying source/locks
+not ok 1 - successful clean install replaces stale generated tree without modifying source/locks
+  ---
+  duration_ms: 37.966186
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/nested-reconciliation.test.mjs:26:1'
+  failureType: 'testCodeFailure'
+  error: 'Clean installed tree rejected: node_modules/qs/package.json: qs@6.16.0; validated floor 6.16.1'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    reconcile (file:///workspace/maxbooster7.5/scripts/reconcile-nested-dependencies.mjs:64:34)
+    TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/nested-reconciliation.test.mjs:29:18)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: failed frozen install preserves existing runtime
+ok 2 - failed frozen install preserves existing runtime
+  ---
+  duration_ms: 32.013638
+  type: 'test'
+  ...
+# Subtest: unexpected lock mutation is rejected before promotion
+ok 3 - unexpected lock mutation is rejected before promotion
+  ---
+  duration_ms: 29.112312
+  type: 'test'
+  ...
+# Subtest: offline diagnostic never replaces installed files
+ok 4 - offline diagnostic never replaces installed files
+  ---
+  duration_ms: 27.658338
+  type: 'test'
+  ...
+# Subtest: stale newly installed dependency is rejected before promotion
+ok 5 - stale newly installed dependency is rejected before promotion
+  ---
+  duration_ms: 28.211243
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 304.230744

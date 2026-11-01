@@ -1,0 +1,36 @@
+[
+  {
+    "command": [
+      "/workspace/.cloud-tools/node_modules/.bin/node",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "--config",
+      "vitest.config.ts",
+      "--configLoader",
+      "runner",
+      "--no-cache",
+      "tests/unit/auth-page-age-policy.test.ts",
+      "tests/unit/deployment-small-file-codec.test.ts",
+      "tests/unit/email-provider-ack.test.ts",
+      "tests/unit/frontend-batch-response-contracts.test.ts",
+      "tests/unit/marketplace-storefront-page-contracts.test.ts",
+      "tests/unit/password-policy.test.ts",
+      "tests/unit/registrationCompletion.test.ts",
+      "tests/unit/registrationCompletionBoundary.test.ts",
+      "tests/unit/subscriptionCheckout.test.ts",
+      "tests/unit/support-ticket-validation.test.ts",
+      "--reporter=verbose",
+      "--reporter=junit",
+      "--outputFile.junit=/workspace/onboarding-results/case-identity-repairs/vitest/before.junit.xml"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-29T08:48:57.436498+00:00",
+    "durationSeconds": 0.472,
+    "exitCode": 1,
+    "timedOut": false,
+    "status": "failed",
+    "log": "/workspace/onboarding-results/case-identity-repairs/vitest/before.log",
+    "logSha256": "d73fd0703c4a718b7208843c3986b98502233c930fadb8d5609e0dabfea4375d",
+    "variant": "before"
+  }
+]

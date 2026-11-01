@@ -1,0 +1,12 @@
+{
+  "staleBuildContractInputs": [
+    "client/src/components/layout/AppLayout.tsx",
+    "client/src/components/layout/Sidebar.tsx",
+    "client/src/components/layout/TopBar.tsx",
+    "package.json",
+    "script/lib/capsulePack.ts",
+    "scripts/lib/production-simulation-copy.mjs",
+    "server/services/generationAwareness.ts"
+  ],
+  "action": "Copy actual current bytes and require owned ordinary build if validateBuild rejects old dist; no edits to manifests"
+}

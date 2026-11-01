@@ -1,0 +1,32 @@
+{
+  "containerId": "b4ee499aa6cb48db2d2468996870910144a79a4efab5936026c8d10082aa90f6",
+  "imageId": "sha256:eea183eb4c41ac422b04130b51a9cd3e0b5c505d64447a19000c383eb6edd752",
+  "networkMode": "none",
+  "privileged": false,
+  "readOnlyRootfs": true,
+  "user": "1000:1000",
+  "nanoCPUs": 1000000000,
+  "memory": 2147483648,
+  "mounts": [
+    {
+      "source": "/tmp/maxbooster-linux-u3f69z18/out-bcrypt-fixed/linux-unpacked",
+      "destination": "/artifact",
+      "rw": false
+    },
+    {
+      "source": "/tmp/maxbooster-linux-u3f69z18/controller",
+      "destination": "/controller",
+      "rw": false
+    },
+    {
+      "source": "/tmp/maxbooster-linux-u3f69z18/project",
+      "destination": "/project",
+      "rw": false
+    },
+    {
+      "source": "/tmp/maxbooster-linux-u3f69z18/runtime-evidence-bcrypt-fixed",
+      "destination": "/evidence",
+      "rw": true
+    }
+  ]
+}

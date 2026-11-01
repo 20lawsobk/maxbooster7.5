@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-29T22:32:13.583477+00:00",
+  "source": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "scope": "Source review and explicit candidate-map identity checks only; frozen master leaf qualification still pending",
+  "checkIds": [
+    "api-7f174c69ff83279c/access-policy",
+    "api-2153be5bc8e5692b/access-policy",
+    "api-50167c08abd2dfe2/access-policy",
+    "api-059a423751b44e6c/access-policy",
+    "api-ebf54287f664010e/access-policy",
+    "api-ef05357bba6ab833/access-policy",
+    "api-3f640ac3745d3b6a/access-policy",
+    "api-0772b8611dc21e1d/access-policy",
+    "api-51e06323624f6bc1/access-policy"
+  ],
+  "caseReferences": 23,
+  "allTestHashesMatch": true,
+  "sourceFilesSha256": {
+    "scripts/testing/junit_evidence.py": "2f628127157479063886c0810b6d85dae3b3d1f6b826c43a92a8075c25ec7efb",
+    "scripts/testing/platform-register.py": "9371d6d03fb93bdcecc7cd9b676a043776c1f3b02065918934424c0525cec32a",
+    "scripts/testing/summarize-results.py": "4171c579d8cb2d8c60737e3d399e3efc4909471d412fcc930beb6d603b01962e",
+    "scripts/testing/commerce-legacy-fixture.mjs": "035f06113c85eeb27f2fcae51719de68ddb5c00512ae3cd774ba68ad093fc6ee",
+    "scripts/testing/run-commerce.py": "3f28e1853e0f2b39e3008e801829a267ca7333baeb603871e4147dff319c2479",
+    "tests/platform-acceptance-map.json": "fdf034abff7cd2d870cae58f4ed49ee46d9d889772f9e324cf6d9998d3b56553",
+    "tests/billing-lifecycle.test.ts": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+    "tests/file-management.test.ts": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+    "tests/helpers-http-fixture.ts": "842e1ba63238541b529d7eaebdff4b4243bb79cabcbe767d338272e85655f13d",
+    "vitest.beat-loop.config.ts": "b0845cd81cbc43beb3fad1605078e2859850276b26f1083e24c5da2e6a1d2529"
+  },
+  "findings": [],
+  "limits": [
+    "No full endpoint/page/tenant/provider/readiness approval follows from access-policy proof.",
+    "Current Python/commerce qualifying producer receipts must be rechecked after final master postprocessing."
+  ]
+}

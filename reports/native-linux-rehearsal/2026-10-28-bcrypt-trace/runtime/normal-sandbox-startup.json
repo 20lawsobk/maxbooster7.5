@@ -1,0 +1,20 @@
+{
+  "name": "normal-sandbox-startup",
+  "executable": "/artifact/max-booster",
+  "args": [
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--user-data-dir=/profile/normal-sandbox-startup"
+  ],
+  "cwd": "/profile",
+  "startedAt": "2026-10-28T09:05:15.468Z",
+  "pid": 115,
+  "exitCode": null,
+  "signal": "SIGTRAP",
+  "stoppedByFixture": false,
+  "spawnError": null,
+  "boundedDurationMs": 10000,
+  "moduleResolutionFailureObserved": false,
+  "sandboxFailureObserved": true,
+  "bundledServerExitObserved": false
+}

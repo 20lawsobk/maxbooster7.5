@@ -1,0 +1,18 @@
+{
+  "name": "exact-bundled-server-child",
+  "executable": "/artifact/max-booster",
+  "args": [
+    "/artifact/resources/app.asar/dist/index.mjs"
+  ],
+  "cwd": "/artifact/resources",
+  "startedAt": "2026-10-28T02:37:24.184Z",
+  "pid": 22,
+  "exitCode": 1,
+  "signal": null,
+  "stoppedByFixture": false,
+  "spawnError": null,
+  "boundedDurationMs": 12000,
+  "moduleResolutionFailureObserved": true,
+  "sandboxFailureObserved": false,
+  "bundledServerExitObserved": false
+}

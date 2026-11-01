@@ -1,0 +1,2300 @@
+[
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/README.md",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/README.md",
+    "bytes": 5268,
+    "sha256": "f5db6dda95b7c71db0a24fba890ebcc4af141d7e75836cd1491ef2963fefb958"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/candidate/docs/testing/coverage-producer-foundation.md",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/candidate/docs/testing/coverage-producer-foundation.md",
+    "bytes": 4567,
+    "sha256": "4e443431a30ce7510e9c96d849e871b0fffd2220307ad69203985bffa4f6be4b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/candidate/scripts/testing/common.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/candidate/scripts/testing/common.py",
+    "bytes": 5349,
+    "sha256": "d04c8fd61742e11409e4de31484104c42496dfb1c4167057c585634ce3ba28e6"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/candidate/scripts/testing/coverage-outcome-reporter.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/candidate/scripts/testing/coverage-outcome-reporter.mjs",
+    "bytes": 5699,
+    "sha256": "8f98f6ddf10431532d0972157191c3ae96354758fe19b51a0d4636ed537fd219"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/candidate/scripts/testing/run-all.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/candidate/scripts/testing/run-all.py",
+    "bytes": 26105,
+    "sha256": "b64f351c43a24f5e61fea8130baecba352e0fa2036c9b96f8ed2123b630a44d7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/candidate/tests/testing/coverage-outcome-reporter.test.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/candidate/tests/testing/coverage-outcome-reporter.test.mjs",
+    "bytes": 13083,
+    "sha256": "539fb9ea8fc934ee3dcd26e243697f7bc2bee8320f3736bc4377e39229b0a27b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/candidate/tests/testing/test_coverage_command_binding.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/candidate/tests/testing/test_coverage_command_binding.py",
+    "bytes": 13300,
+    "sha256": "fcaac833ae622278364e95e797eae3a5638b92541326e2adbbdac6158f1cedd5"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/actual.test.ts",
+    "bytes": 179,
+    "sha256": "1f3f84ec3bc74995d71df92507ce3a6663cd0a3d554e150734f6b85395515c72"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/evidence/command.txt",
+    "bytes": 556,
+    "sha256": "40fd37d8d2d27b29b6ac48e55a3d59853950ce2055274a36a7dc5155ce20f167"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/evidence/coverage/command-outcomes/d7d26e20-571a-4a4c-ad60-aa985c392e42.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/evidence/coverage/command-outcomes/d7d26e20-571a-4a4c-ad60-aa985c392e42.json",
+    "bytes": 1307,
+    "sha256": "edc7f774ae3e7c41b609056e80126624df5067444e3fc3f993d81f4d06dd95ba"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "32667dec509c6a10010b005e046e4517d3b7580cb773d3133e5cd47110c32c79"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/evidence/root/coverage-unit.junit.xml",
+    "bytes": 558,
+    "sha256": "e7e80ece2d3a42f3160a3885ee6831a0ee72384003fab3df06946d63e08db259"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/forged-one-case.xml",
+    "bytes": 402,
+    "sha256": "39acbed2bfcd8df30cdee31a156371f41b91e61ede4717293ce0e09c9b426d00"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/parent-command-receipt.json",
+    "bytes": 3775,
+    "sha256": "2494298b45fdbf44b7944dee22c08b48b92bcb5389d5b89609e7984266ba521b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/replacement-control.json",
+    "bytes": 412,
+    "sha256": "1a90b7514c03e9e4caaa9769f2a992b9f9a59766a670d2dae8cba6de139ee492"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/clean/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/clean/vitest.config.mjs",
+    "bytes": 459,
+    "sha256": "b00eb3f72a33aaec23ff6490ec3bd4250004471be1e025ba4c2570822cb5b680"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/actual.test.ts",
+    "bytes": 179,
+    "sha256": "1f3f84ec3bc74995d71df92507ce3a6663cd0a3d554e150734f6b85395515c72"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/evidence/command.txt",
+    "bytes": 556,
+    "sha256": "09ddfb5ea638118e5dad7dec02dda0b89496ac9dc95dbb2a44b08f5816e44d86"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/evidence/coverage/command-outcomes/16260412-2ff3-4a3c-af12-c57877c4b1b3.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/evidence/coverage/command-outcomes/16260412-2ff3-4a3c-af12-c57877c4b1b3.json",
+    "bytes": 1307,
+    "sha256": "660d406960fcb32f1dbc6baca1458c25f9476fc04f17fbcbf49ae4a5e48d0ec4"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/evidence/coverage/command-outcomes/aab43445-d82c-474f-a0ac-90797f5227a8.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/evidence/coverage/command-outcomes/aab43445-d82c-474f-a0ac-90797f5227a8.json",
+    "bytes": 1307,
+    "sha256": "2b50be5e971574837d89875f2d3d4bc0abd88b2950d2296e47e6287854b7bbd9"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "ec0afca8912f9fb1d993ab66f137688f4f9e9d4583dd321751324e3ec1f63833"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/evidence/repeat-command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/evidence/repeat-command.txt",
+    "bytes": 556,
+    "sha256": "09ddfb5ea638118e5dad7dec02dda0b89496ac9dc95dbb2a44b08f5816e44d86"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/evidence/root/coverage-unit.junit.xml",
+    "bytes": 558,
+    "sha256": "ccdfecbd3c1851d549cff44bb6b49d79d503cc70016770cd49bc8d4eaed6f31f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/first-actual-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/first-actual-outcome.json",
+    "bytes": 1307,
+    "sha256": "660d406960fcb32f1dbc6baca1458c25f9476fc04f17fbcbf49ae4a5e48d0ec4"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/first-actual.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/first-actual.junit.xml",
+    "bytes": 558,
+    "sha256": "0567a9d789cc1203645cb41ee5312182e3a4ff9b5ebbb0586e8ab0f19e1358f2"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/forged-one-case.xml",
+    "bytes": 402,
+    "sha256": "87ba99d9f60ae14a939903d2f4c087828183e85dea97c4de93d5b22e748e478a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/parent-command-receipt.json",
+    "bytes": 3775,
+    "sha256": "d6b8aa8e7aca7c02506d6e0b1cd2050c26306249f5723c9b6c1a1ba72c22c32a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/repeat-parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/repeat-parent-command-receipt.json",
+    "bytes": 3643,
+    "sha256": "ca4df906173147839a94b2d2015eee019a1d2ebff7fed6bfa3b069109355e6ca"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/replacement-control.json",
+    "bytes": 412,
+    "sha256": "53d210412498e9daabde268e95bd1f7c395274b1615bca7df947527fcac55a32"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/repeat/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/repeat/vitest.config.mjs",
+    "bytes": 460,
+    "sha256": "ac8cc7f78c31ea386dd39e985f5a08a6078ffc0db67502199f6c996454ca0766"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/actual.test.ts",
+    "bytes": 179,
+    "sha256": "1f3f84ec3bc74995d71df92507ce3a6663cd0a3d554e150734f6b85395515c72"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/evidence/command.txt",
+    "bytes": 844,
+    "sha256": "853e26e1b3feda2dac2e2326634503e962bd0835fd42229c476dc71d21db814b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/evidence/coverage/command-outcomes/3366129c-f321-4be2-88a5-26ac46114b3c.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/evidence/coverage/command-outcomes/3366129c-f321-4be2-88a5-26ac46114b3c.json",
+    "bytes": 1307,
+    "sha256": "419dce08da7aebb5069f3beec3d20c3513573c43c2a3965198119b16e2964d3a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "c427c3fda92e9d3dc94e8550350b861f6a5b7051d53f776846de6bfab139331b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/evidence/root/coverage-unit.junit.xml",
+    "bytes": 558,
+    "sha256": "db1949e7e0b887dd6c33aa1918af5f72d9272a597a23ef84e78a56cd360a8262"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/forged-one-case.xml",
+    "bytes": 402,
+    "sha256": "bfc662a786792b9549c18433fbe86967497ab4accb2e7a2bc7fe015d157c2bfa"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/parent-command-receipt.json",
+    "bytes": 3775,
+    "sha256": "6f4c6695441dc163288dea947139ee8aee0dfaa3d302f91350f146b8ea780a7b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/replacement-control.json",
+    "bytes": 412,
+    "sha256": "20195224d55c594dec666355a39f67b37e7496d755b38166e26513e7dfff100c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/threshold/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/threshold/vitest.config.mjs",
+    "bytes": 467,
+    "sha256": "71fd085fb0d96941680625fda1804152a4b83b84a44364e15c6bf3a760ce1f30"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/actual.test.ts",
+    "bytes": 303,
+    "sha256": "6f9b631f087d6589e9893bc0ee1969f5a62d56465afebe299cc1da1eaeec688b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/evidence/command.txt",
+    "bytes": 844,
+    "sha256": "f21b45c76c5f18876b8dbb8fc18e31d14bfa8f1b574b116cd55d71c56f39837b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/evidence/coverage/command-outcomes/4f9c0153-c71b-49ac-83ff-628eb4700e85.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/evidence/coverage/command-outcomes/4f9c0153-c71b-49ac-83ff-628eb4700e85.json",
+    "bytes": 1307,
+    "sha256": "0c938a3bb58ea54893678e71f109b412dfafd6a9a000a3c4d183630371148f07"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "79ff62ec5538f833330437ff70fd77962f517e73c9fce28bb482333b4d700baf"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/evidence/root/coverage-unit.junit.xml",
+    "bytes": 556,
+    "sha256": "ba37a591f23bb727d062cc7cca1d51eaa31bb8c78e7a95815f0e54e81f9f3991"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/forged-one-case.xml",
+    "bytes": 400,
+    "sha256": "051fb4d3279ea9b2f61628e13e0b2db89a6853a5ea71234118d2d9f18eaf410c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/parent-command-receipt.json",
+    "bytes": 3776,
+    "sha256": "326c5c05f551eaa7f4fe2921b2411ff554721aa3247501848f4c6b630ac9806c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/replacement-control.json",
+    "bytes": 412,
+    "sha256": "984e4baf0defb1b83073860d42ce4465780eb207855b0dee9c8b959e5956b8a3"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-current-final/unhandled/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-current-final/unhandled/vitest.config.mjs",
+    "bytes": 467,
+    "sha256": "7fd85183754e8a9c7198a3b217315709b9675172d09bdbfc9391a67d7acf8ed2"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/actual.test.ts",
+    "bytes": 179,
+    "sha256": "1f3f84ec3bc74995d71df92507ce3a6663cd0a3d554e150734f6b85395515c72"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/evidence/command.txt",
+    "bytes": 556,
+    "sha256": "cd6887d6f8112738ab7e87f82154f9e55f9ba9589ef089e3b924ee4ebd154e97"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/evidence/coverage/command-outcomes/7eea4337-83dc-4624-b8cb-de5a96266dcb.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/evidence/coverage/command-outcomes/7eea4337-83dc-4624-b8cb-de5a96266dcb.json",
+    "bytes": 1307,
+    "sha256": "fcb52df1db6deb1bc58f47c9044882421869cd6ae6180341ab3b26a3a32f195c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/evidence/coverage/command-outcomes/af040a5c-c33e-404f-b9a6-cc0d526729a4.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/evidence/coverage/command-outcomes/af040a5c-c33e-404f-b9a6-cc0d526729a4.json",
+    "bytes": 1307,
+    "sha256": "fff14eb1cde97b46af714106b9ebe9a1b30bdf11ef0ac9fa497cee46ff81d614"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "d7289d6f1221c2a717814328b1f8f926df3fe383c1ffa4c7f735ce6e11ece7fa"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/evidence/repeat-command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/evidence/repeat-command.txt",
+    "bytes": 556,
+    "sha256": "cd6887d6f8112738ab7e87f82154f9e55f9ba9589ef089e3b924ee4ebd154e97"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/evidence/root/coverage-unit.junit.xml",
+    "bytes": 558,
+    "sha256": "63ec057bb3222bd7a2bf5d8b5ec216e69c0b54cc5f89db62963604fd3436845b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/first-actual-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/first-actual-outcome.json",
+    "bytes": 1307,
+    "sha256": "fff14eb1cde97b46af714106b9ebe9a1b30bdf11ef0ac9fa497cee46ff81d614"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/first-actual.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/first-actual.junit.xml",
+    "bytes": 558,
+    "sha256": "9c6e6b8ee820d7a74b1627332efb8e68d53566b4347d692a66914f345b0fb3a3"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/forged-one-case.xml",
+    "bytes": 402,
+    "sha256": "943a2a7d6a015c860f81f2cae87f6e8926c1a998a8bf80cd65a03a550bcbecdf"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/parent-command-receipt.json",
+    "bytes": 3775,
+    "sha256": "a89c94815d59910fa55dabc38c5c62266ede33a136f35161f6ffb1d4040f4cac"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/repeat-parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/repeat-parent-command-receipt.json",
+    "bytes": 3643,
+    "sha256": "4e509ce1b0ddf8dcf791c6ed5b1c5501c68bf39f74c6fce02ce464eadde008b2"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/replacement-control.json",
+    "bytes": 412,
+    "sha256": "35988e0d1c18e042565c3d44a3ae693f5c21eb821d327f1b619d7bcad1cc7386"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-repeat-final/repeat/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-repeat-final/repeat/vitest.config.mjs",
+    "bytes": 460,
+    "sha256": "d75e6492812da39677d05f82a4e2dabbc4c814c4902c67f7e3d54e91d1963ad4"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/actual.test.ts",
+    "bytes": 179,
+    "sha256": "1f3f84ec3bc74995d71df92507ce3a6663cd0a3d554e150734f6b85395515c72"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/evidence/command.txt",
+    "bytes": 556,
+    "sha256": "46f6a8ed4be875f2191076d8d3e68d8f8b8866d3c91a19eab203155176711053"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/evidence/coverage/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/evidence/coverage/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "3512d708a8a622ac3fb03acecc3c450b461b1fbb8270c3e78c96369b5c5ad523"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "0119306a32d9d68105148dec772e78812be5ef582e776d668896fea69b736b98"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/evidence/root/coverage-unit.junit.xml",
+    "bytes": 558,
+    "sha256": "34e62d15a587bc56a68b7d81210c2a45354f94ff95a757ecd60cf5428c1f474c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/forged-one-case.xml",
+    "bytes": 402,
+    "sha256": "56ce06fe789a3f5feddfaa48802df3cc16fd9c515099efd76a712f65909e215c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/parent-command-receipt.json",
+    "bytes": 3737,
+    "sha256": "396bd9e5647ceded10a8da422af9cbdb9bd04827d794b07a2ab8cc144229f723"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/replacement-control.json",
+    "bytes": 412,
+    "sha256": "8bd1c76a320f56f2f8a1364902c750cb657c1ed95c80502caf562e0b71c2cce1"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/clean/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/clean/vitest.config.mjs",
+    "bytes": 444,
+    "sha256": "f080eeaa9733f4e80d29ec8d38268325dc90b1a8cde9efaea1e1db0c0ae3d6e0"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/actual.test.ts",
+    "bytes": 179,
+    "sha256": "1f3f84ec3bc74995d71df92507ce3a6663cd0a3d554e150734f6b85395515c72"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/evidence/command.txt",
+    "bytes": 844,
+    "sha256": "5069427495686bb097b8aff13e7e0008771b7a221701e1efaefd591f6ea560c7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/evidence/coverage/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/evidence/coverage/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "4a0bf9e0a73703df4df543db1aa234f12f23d0a09ff9ecc8b884742da407c562"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "4f75aa8d6441ae7d13f2b4b9cebaaa3290e701dbf3e2f168c51c20e15813d80b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/evidence/root/coverage-unit.junit.xml",
+    "bytes": 558,
+    "sha256": "833aa3fac15432efb42a394f2cb132e343b34678acc85f0ba614a0d1207e519f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/forged-one-case.xml",
+    "bytes": 402,
+    "sha256": "b9f716caefd7f1dda0ea299de82a1b0c4577ba1222a21f6235b073a685847999"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/parent-command-receipt.json",
+    "bytes": 3737,
+    "sha256": "f5a7db8064d0128cea19f62dcd2d44c20d17e4234e4433fc0b6017eba6536af7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/replacement-control.json",
+    "bytes": 412,
+    "sha256": "9f435a21e78c4f240b0c8f13ce990ba1c129919d6735cc81eb9fec13cbed10a2"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/threshold/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/threshold/vitest.config.mjs",
+    "bytes": 452,
+    "sha256": "dc9db06569304c78f64e4e5c0c6a7bad0ef81a8913c8de99481ea281a998946d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/actual.test.ts",
+    "bytes": 303,
+    "sha256": "6f9b631f087d6589e9893bc0ee1969f5a62d56465afebe299cc1da1eaeec688b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/evidence/command.txt",
+    "bytes": 844,
+    "sha256": "a0f7581d4dfccebc87c93470424dc398abca7e9c991d94eb2c873ce8f8a41511"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/evidence/coverage/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/evidence/coverage/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "4eebacab37a254625a2ce423be6854e11bdbbed0325b692a18f6340db4f0b035"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "3beb05b23f4f5ce301120b1c51e1005bd08b32172c69a62513ea16ea2803cd61"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/evidence/root/coverage-unit.junit.xml",
+    "bytes": 558,
+    "sha256": "ca0f53ca122bd8a0e09f615d27c9ca63d0015f808fc675df5e37d7beaec79a1a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/forged-one-case.xml",
+    "bytes": 402,
+    "sha256": "d2c89afcb5e8cf00b3820a3141bdd8b0d42e080f15ca6d508db32de0211d76e4"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/parent-command-receipt.json",
+    "bytes": 3738,
+    "sha256": "11d5ec338e238edcb1277214dbe9591066d01f32c4f783aa7c8952a6d54ebe9b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/replacement-control.json",
+    "bytes": 412,
+    "sha256": "57b5c6c9fbe8b129e958d473a322f495b6ae72fe720f464047140ef807c2b096"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs/unhandled/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs/unhandled/vitest.config.mjs",
+    "bytes": 452,
+    "sha256": "4ef7751bc65fec1b7651676f8a416ceaa263620c0420efff85b5a9ffcf030166"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/actual.test.ts",
+    "bytes": 179,
+    "sha256": "1f3f84ec3bc74995d71df92507ce3a6663cd0a3d554e150734f6b85395515c72"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/evidence/command.txt",
+    "bytes": 556,
+    "sha256": "e240ad1a8a163d847abce5f86ca4572de1a96883bc3c7c85d3eaed09bd23fe27"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/evidence/coverage/command-outcomes/96c8b18e-5c39-4297-a37d-7c24a8a96f10.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/evidence/coverage/command-outcomes/96c8b18e-5c39-4297-a37d-7c24a8a96f10.json",
+    "bytes": 1307,
+    "sha256": "733192a36f5c84ce77f03ba54fbbe0ff5efc82abdd25afcd4b1466717dadaaab"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "a3244f022fff6efa045599deaa53e1dc7d6f03910ce946115fd1f1dbb7137cb1"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/evidence/root/coverage-unit.junit.xml",
+    "bytes": 558,
+    "sha256": "df226af9d59b9e5fe66b71e69e4f2f45a0b5fbd85165c9396a67fcfd381c56bc"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/forged-one-case.xml",
+    "bytes": 402,
+    "sha256": "67d5e87fbaee0928c9f6bea62496a07e2101a9a3fcdc9f930b08846c20a1e44e"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/parent-command-receipt.json",
+    "bytes": 3775,
+    "sha256": "6690e5e237fc382805bd4c49d8c1934d29373826a0cc3bee6037e5b83381bde6"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/replacement-control.json",
+    "bytes": 412,
+    "sha256": "ee6e63a909eddf74595ecbf21bdfcdb56d3cbad1835201aa2a8555d674db2b6d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/clean/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/clean/vitest.config.mjs",
+    "bytes": 459,
+    "sha256": "ded387bb30867f246e043d48169bc2eb038d30b18c486f481096391e5885b051"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/actual.test.ts",
+    "bytes": 179,
+    "sha256": "1f3f84ec3bc74995d71df92507ce3a6663cd0a3d554e150734f6b85395515c72"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/evidence/command.txt",
+    "bytes": 844,
+    "sha256": "472ed9c5300eefdf3d27af86ec5718d306419cfd99713c1b6290f0b076797993"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/evidence/coverage/command-outcomes/7ed97141-9918-4c80-8702-1420fc138a64.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/evidence/coverage/command-outcomes/7ed97141-9918-4c80-8702-1420fc138a64.json",
+    "bytes": 1307,
+    "sha256": "9ae457447c8dfd19f9455846d7f031098d6760139046c06c1afd45bccb621e5d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "24b7338cb44c8c1c62b4afe080e5ef847dcf021cc5b6b7041c277ebe8a0e2825"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/evidence/root/coverage-unit.junit.xml",
+    "bytes": 556,
+    "sha256": "b5f1f6535130cc765011892ba0e18cc04a1f8be7ecb40da900bca3e408cfb1fd"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/forged-one-case.xml",
+    "bytes": 400,
+    "sha256": "e7ce697b309c60527b5d7f7c8825dff79148086b235b07b44d6b1e7429a7b201"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/parent-command-receipt.json",
+    "bytes": 3775,
+    "sha256": "1933fe3e03b8068b3f933e0bb17b5ca5ea750ac557e252050f68ccc956f62ef7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/replacement-control.json",
+    "bytes": 412,
+    "sha256": "60e732353e6c4abd2e0f882cdcf2af0923a99444f56d7c7f2a0793c4a279b7df"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/threshold/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/threshold/vitest.config.mjs",
+    "bytes": 467,
+    "sha256": "e26447a123ea4e5657515f37c71dfc26cd5f5de3c5b720a8e6a3a26992a751c6"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/actual.test.ts",
+    "bytes": 303,
+    "sha256": "6f9b631f087d6589e9893bc0ee1969f5a62d56465afebe299cc1da1eaeec688b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/evidence/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/evidence/command.txt",
+    "bytes": 844,
+    "sha256": "84206866cedfebd40781f3d0253c1c58f816c83e755bd0d4c84bfd8fc25cc9ae"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/evidence/coverage/command-outcomes/31e3e751-5a5f-4040-8037-a5b18c9400a0.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/evidence/coverage/command-outcomes/31e3e751-5a5f-4040-8037-a5b18c9400a0.json",
+    "bytes": 1307,
+    "sha256": "2867b75f7337eb2f68b2f40c69fcf59d623275e81c7405f923c7b65937e497cf"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/evidence/coverage/coverage-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/evidence/coverage/coverage-final.json",
+    "bytes": 970,
+    "sha256": "25645f2e1eb8d47dfa0aad08e6f2ac93fba2f0747de49426cc4415784e5127c8"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/evidence/root/coverage-unit.junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/evidence/root/coverage-unit.junit.xml",
+    "bytes": 557,
+    "sha256": "6ee7927b4f9b10bf74f2f51d253c676c5b9826777e08770e7a957b6a60169eef"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/forged-one-case.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/forged-one-case.xml",
+    "bytes": 402,
+    "sha256": "d244697f5f0b926ab6f4e7fa8ec9ebcbaad885e92197e8543acdb568a1983b88"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/parent-command-receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/parent-command-receipt.json",
+    "bytes": 3775,
+    "sha256": "801c234ef43da50f47343154919be47879749f8674138df2925699d7f8efc6a9"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/replacement-control.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/replacement-control.json",
+    "bytes": 412,
+    "sha256": "9246b15609679213c60ccfb33c545acc3cd1f05ccf5c13c54424b78d90b7b11d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-actual-runs-v2/unhandled/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-actual-runs-v2/unhandled/vitest.config.mjs",
+    "bytes": 467,
+    "sha256": "8a3c4e0ffab7b85e91f08bfb3e3f249f60605c6c7542d71b591df44652cbe262"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-integration-current-final.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-integration-current-final.py",
+    "bytes": 6752,
+    "sha256": "3a3dd27a4f5c6cc7e5d7ca51beeb04d2f06972edf45bb55b2d0d6d6f3cfd1e92"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-integration-current-final.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-integration-current-final.txt",
+    "bytes": 1578,
+    "sha256": "abe0a4fc1147fb24b78826ad6bdc9edcc9fff09d4e771c0ec95d85e0ec172af4"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-integration-initial.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-integration-initial.py",
+    "bytes": 5543,
+    "sha256": "e7484a01d2aab3c0d8791e73f1720bf6afdecc9acb4e93fe97c41470de4844a8"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-integration-repeat-final.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-integration-repeat-final.txt",
+    "bytes": 438,
+    "sha256": "fc9d0c6aad013a6ee41217869df41fa6fbc62be57a2fb69834064f71d0d7bc7d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-integration-v2-failed.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-integration-v2-failed.py",
+    "bytes": 6735,
+    "sha256": "5adb253df7b69ec2a3b84660c36eea08f708d36d019b51e7fa1d11b27e855b10"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-integration-v2.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-integration-v2.txt",
+    "bytes": 397,
+    "sha256": "cdad68126a96a169cf04fc5c06ca6bd7c4dfd55d26253b60a9b9b9ad7c698250"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-integration.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-integration.py",
+    "bytes": 6718,
+    "sha256": "a51fab246e03820b41e28b4b09e083c88547ed10386a7eaac37fb4e3f0d68f2d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-integration.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-integration.txt",
+    "bytes": 1072,
+    "sha256": "b7cbc3bb9c0fac71198049fc4f8b697882dd947611d4301520fd9f6d1527a37d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-results-current-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-results-current-final.json",
+    "bytes": 2077,
+    "sha256": "c577b943b5463f37af792d70f927b41709dc321edc495b3b9db3b45439ecb5f3"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-results-repeat-final.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-results-repeat-final.json",
+    "bytes": 691,
+    "sha256": "a59048994946907a1ef97319e93f8037af68b7d953221494c29807bfe984c39a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/cross-results.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/cross-results.json",
+    "bytes": 1471,
+    "sha256": "f9764541579aa12c256749bdd91f4123369947a1b2eb236f610813ac953e92ca"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/independent-review/final-review.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/independent-review/final-review.json",
+    "bytes": 2848,
+    "sha256": "1b56c9d02adeb745063e1bcc622429919bf75766d7d4c2db82bbb3f78cfc4645"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/independent-review/repeat-safe-review.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/independent-review/repeat-safe-review.json",
+    "bytes": 2206,
+    "sha256": "56a1ea33a3885525f790e2b52967f11e88ea3b72857f2a66e4ade699b7237266"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/independent-review/review.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/independent-review/review.json",
+    "bytes": 1990,
+    "sha256": "c8738f3ed36e28c3108cd34bd59d3bbba9e297f756004f4c2ecb4521c708586f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/README.md",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/README.md",
+    "bytes": 3760,
+    "sha256": "a447ef71219ef907f08d74f7a767a44cf71427bcd722b3d2e3e92a3c6e37a63d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/candidate/scripts/testing/common.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/candidate/scripts/testing/common.py",
+    "bytes": 5349,
+    "sha256": "d04c8fd61742e11409e4de31484104c42496dfb1c4167057c585634ce3ba28e6"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/candidate/scripts/testing/run-all.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/candidate/scripts/testing/run-all.py",
+    "bytes": 26105,
+    "sha256": "b64f351c43a24f5e61fea8130baecba352e0fa2036c9b96f8ed2123b630a44d7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/candidate/tests/testing/test_coverage_command_binding.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/candidate/tests/testing/test_coverage_command_binding.py",
+    "bytes": 13300,
+    "sha256": "fcaac833ae622278364e95e797eae3a5638b92541326e2adbbdac6158f1cedd5"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/helpers.py.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/helpers.py.txt",
+    "bytes": 10095,
+    "sha256": "f52002d9e777e9ae8b6dd8ec3248c9cf4aa7a93462c68f3f4f9f02fcd1774d05"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/history/pre-repeat-safe/README.md",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/history/pre-repeat-safe/README.md",
+    "bytes": 3288,
+    "sha256": "328544afa6521d89000f0b871c9ca2c36da86a4b1b597ecbb78cbf71f7b72f52"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/history/pre-repeat-safe/candidate/scripts/testing/run-all.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/history/pre-repeat-safe/candidate/scripts/testing/run-all.py",
+    "bytes": 25822,
+    "sha256": "422355f37c659cf6cc2c26b8b56fba1ee1bde2276d27cafbbb3f442ad05f8f34"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/history/pre-repeat-safe/candidate/tests/testing/test_coverage_command_binding.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/history/pre-repeat-safe/candidate/tests/testing/test_coverage_command_binding.py",
+    "bytes": 12249,
+    "sha256": "dd85dbada8d39559995918408c22787a129dbc2a11889a2841f1f1bfd2873af7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/history/pre-repeat-safe/manifest.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/history/pre-repeat-safe/manifest.json",
+    "bytes": 2189,
+    "sha256": "d733f6a18205231472e672f9bf7a965a9e9682f176abe2c8d3501100f3318070"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/history/pre-repeat-safe/results.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/history/pre-repeat-safe/results.json",
+    "bytes": 2615,
+    "sha256": "25e48570de9b435d3bea755850680a3e75f2a41965cb9fb3d5007483a5a9da40"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/history/pre-repeat-safe/source.patch",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/history/pre-repeat-safe/source.patch",
+    "bytes": 29743,
+    "sha256": "4d2470fb06f55678dc313d4f9a263ccb8c16ad941cd7aad9dd3743e09efc4009"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/history/pre-repeat-safe/tests-final.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/history/pre-repeat-safe/tests-final.txt",
+    "bytes": 111,
+    "sha256": "771f524353779d71f16ff57ef1304f58f99fca34be7fad066cd0943929985cf7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/manifest.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/manifest.json",
+    "bytes": 3773,
+    "sha256": "b83c9f5e49a96dd5392ce5b4ff8128a3281b8eb0288e719c04f76376b52676db"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/results.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/results.json",
+    "bytes": 2865,
+    "sha256": "0520e1141779f8b0a100ed727a64ac632e0bdb54ba9901f5416c4c6ae623a8b3"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/run-all.baseline.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/run-all.baseline.py",
+    "bytes": 12035,
+    "sha256": "f40f9eaf6ab65cb6871493a0a5ce51ace1339fae8cb45d5d195b49de0aca9d2e"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/source.patch",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/source.patch",
+    "bytes": 31102,
+    "sha256": "5faf15d07a063388dc7c87ce98aeb76ab147b41042c14ab039c733ce1c003587"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/tests-final.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/tests-final.txt",
+    "bytes": 111,
+    "sha256": "771f524353779d71f16ff57ef1304f58f99fca34be7fad066cd0943929985cf7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/tests-initial.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/tests-initial.txt",
+    "bytes": 769,
+    "sha256": "b067b8626d7d9a386ed6b8002836b4f7a90b1b7803fe634768288dc2ed2e6f11"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/tests-portable.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/tests-portable.txt",
+    "bytes": 110,
+    "sha256": "0b8a76cd17060161fc0145df9cfa7ab50c7e95e69c551374c3227d0182f503d2"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/tests-repeat-safe-final.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/tests-repeat-safe-final.txt",
+    "bytes": 112,
+    "sha256": "9eb173f2b9700b265d326cb410cbe37c9a1cfa0ea035951e17d4e81b4a77892d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/tests-repeat-safe.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/tests-repeat-safe.txt",
+    "bytes": 111,
+    "sha256": "1df85e68c98e842e31bdb8beacd720b76408b64c17afd546d4fd6fdbbf818dfc"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/tests-strict-modules.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/tests-strict-modules.txt",
+    "bytes": 110,
+    "sha256": "d9a693ce50a8481ed202b9b402d1f9a1c38ecb0a3b011cb7437c0268680ad57c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/parent/tests.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/parent/tests.txt",
+    "bytes": 110,
+    "sha256": "8fd461756898efd4ddb5817479baace41cab84af665103f926b1dae49a485907"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/01-passed/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/01-passed/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/01-passed/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/01-passed/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "bd3f1514b3be0bebb83acfbc4886b05173dd64e82b19f249b790a77e62fda58c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/01-passed/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/01-passed/command.txt",
+    "bytes": 557,
+    "sha256": "3e7a1201e99def555e44f3a5c3881ef119a3ab52797f0dcbee27ecfaba6ad063"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/01-passed/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/01-passed/junit.xml",
+    "bytes": 436,
+    "sha256": "151eb1970d38d471c5b01880c0eb54769addb55e02be047e38ceedc02f1ecd96"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/01-passed/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/01-passed/receipt.json",
+    "bytes": 1100,
+    "sha256": "677bfb181ca209289bc2772229793543c7725a5037c66d473db2ba38020ec68b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/01-passed/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/01-passed/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/01-passed/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/01-passed/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "d0e820ec6d7783075e6b4cd1ab2583906d2859f6970ac9d4a6fcd3ae0bad7ac4"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/02-threshold/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/02-threshold/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/02-threshold/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/02-threshold/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "0f1dfcbcd9716443a7e5dd989163a5a9909f6048487317d6c78fce85e6574bdd"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/02-threshold/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/02-threshold/command.txt",
+    "bytes": 845,
+    "sha256": "6a3e53409a6ff996ab8469ddccf466edd4eaea9587660da4cff3230663120a40"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/02-threshold/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/02-threshold/junit.xml",
+    "bytes": 436,
+    "sha256": "7ac9f2eaeb2026ca126a86f857774dc7aa1b300c01d5f3b8bc1030d450dfceda"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/02-threshold/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/02-threshold/receipt.json",
+    "bytes": 1100,
+    "sha256": "411291c31bb6d70ea7227d246577e702c631d472b6c9e7da5dae36cca3b04f2b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/02-threshold/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/02-threshold/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/02-threshold/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/02-threshold/vitest.config.mjs",
+    "bytes": 421,
+    "sha256": "d7183c54fe813e5ce664175c5836aae8392e755c786d3a32fd530cb87d3d2177"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/03-unhandled/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/03-unhandled/actual.test.ts",
+    "bytes": 277,
+    "sha256": "853360b819eef45f1abd0eb7c9c810c32ba185ff1ca466c96ca75a93243974bf"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/03-unhandled/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/03-unhandled/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "994843fb9ce351fab4c848c36654e2baa95c259355b09d6ff113df0c0cd5b243"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/03-unhandled/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/03-unhandled/command.txt",
+    "bytes": 845,
+    "sha256": "47441ec2f41372161719ff5de27aa4de6ebb656bcd40715e4c662863f9d363ac"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/03-unhandled/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/03-unhandled/junit.xml",
+    "bytes": 466,
+    "sha256": "a89c06a6ae5b0f588a05f400eb3d8181061b238e4948ae2bd9828f71fb82c02f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/03-unhandled/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/03-unhandled/receipt.json",
+    "bytes": 1100,
+    "sha256": "656882342952eaa4224d78f85139ee7f0c65c44caa76b99f1fe5f2687589aa07"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/03-unhandled/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/03-unhandled/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/03-unhandled/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/03-unhandled/vitest.config.mjs",
+    "bytes": 421,
+    "sha256": "89354601707b5c878aba5e171031e0cdb1d70ddcdf4afe21f493361561aeb505"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/04-failed/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/04-failed/actual.test.ts",
+    "bytes": 120,
+    "sha256": "6d362b76428e34c61d19832a70f38358569669ef212b48e30eb7fd1a3841f35c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/04-failed/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/04-failed/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "6e0fb7246b16a0db516d3fec92ad2288f3093b6d3770852ce771ad91b8d3e1ee"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/04-failed/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/04-failed/command.txt",
+    "bytes": 57,
+    "sha256": "c65da757fa86e437820042a9a00abe99e16f41ce477f6a9b73754751ae873214"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/04-failed/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/04-failed/junit.xml",
+    "bytes": 668,
+    "sha256": "acb5d8403bee82b772c39a1bfd9fbdcb94e491a6ddb1f90e9a6c7dd3266db415"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/04-failed/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/04-failed/receipt.json",
+    "bytes": 1100,
+    "sha256": "4b91890e535905179f3c63e150fcbe50a4e8cb98519793ab5e7be97d26de473f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/04-failed/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/04-failed/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/04-failed/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/04-failed/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "950f0f1f31d6af99683f2ec7e713eefd53bfe6149c850a5e9029768edf764cff"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/05-skipped/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/05-skipped/actual.test.ts",
+    "bytes": 98,
+    "sha256": "605d7c8e1fa0053d9d2b4bc4c37d56749820faf77812a7b6e7cd527c0417b42a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/05-skipped/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/05-skipped/command-outcome.json",
+    "bytes": 1308,
+    "sha256": "57b2c5bd4c5ae268b8d6d3271ed482f44159d980dbe5b19ad1c0a05882f0cb4f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/05-skipped/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/05-skipped/command.txt",
+    "bytes": 557,
+    "sha256": "c31d94df825a53bb7abf955aa9cde40dc6879c9248a44f78e343fe9bf2f8855c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/05-skipped/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/05-skipped/junit.xml",
+    "bytes": 429,
+    "sha256": "67cd92986fd5f71aeb94331b0d8de20e29bb631d8553097ea11f726c037492c9"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/05-skipped/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/05-skipped/receipt.json",
+    "bytes": 1100,
+    "sha256": "ec8090c2ce4d626d80315ea409412e0936d611266511bedd6f2f5fe3e993a4c4"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/05-skipped/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/05-skipped/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/05-skipped/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/05-skipped/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "7bf14233f06f2b188d9176f73780dccdb6a8c753d36f890c32c7f8b4efb34691"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/06-collection/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/06-collection/actual.test.ts",
+    "bytes": 34,
+    "sha256": "af50b34eeb7aaafe191bc608dfe6614de490493290e90090fc7551aa5110ee32"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/06-collection/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/06-collection/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "77e0ec7787a4650245d1dca87134de305d39448530dd625092c266cbde9f113b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/06-collection/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/06-collection/command.txt",
+    "bytes": 57,
+    "sha256": "14f12ea15a1a5c67ad5c9515448e423afca9800f51be86035fda823e6aab13ee"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/06-collection/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/06-collection/junit.xml",
+    "bytes": 864,
+    "sha256": "a9964421d4e6726db95a79294a5b82e9d5e5c68044da85333dcdb900d8b40afd"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/06-collection/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/06-collection/receipt.json",
+    "bytes": 1100,
+    "sha256": "04f66fcf4f677c62d67629148448a4d914456218938bd02497de962c77ef304f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/06-collection/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/06-collection/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/06-collection/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/06-collection/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "8cd80bc72d81a27e665bcaf6932deacfbb09ad83a47a020b50146bcce19f0b7b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/07-nonce/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/07-nonce/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/07-nonce/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/07-nonce/command.txt",
+    "bytes": 2030,
+    "sha256": "090895593af946347012cca1bb78d2456558799c570ff3cb3854179dbf0ba939"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/07-nonce/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/07-nonce/junit.xml",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/07-nonce/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/07-nonce/receipt.json",
+    "bytes": 976,
+    "sha256": "49d513d0edcf0da07122f998970f378cdd588f81240e227459ab1fbf22c0a031"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/07-nonce/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/07-nonce/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/07-nonce/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/07-nonce/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "9dfeb5ecc1c565582f17b2030294f7a532ee1c1ac25a273f1fb94122f84493bb"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/08-symlink/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/08-symlink/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/08-symlink/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/08-symlink/command.txt",
+    "bytes": 2194,
+    "sha256": "265908527b7a4657eeb82fe00702a16b37103339528566375e17cfe9f3ea6860"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/08-symlink/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/08-symlink/junit.xml",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/08-symlink/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/08-symlink/receipt.json",
+    "bytes": 976,
+    "sha256": "2b22a858aa511a19ca8aeecfb517d084e608bef61a92071654f2ed77c427e072"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/08-symlink/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/08-symlink/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/08-symlink/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/08-symlink/vitest.config.mjs",
+    "bytes": 414,
+    "sha256": "e8ee09c139b0871541d48baf2e113a6bc71f7d8de1430dfec0f026471dd03572"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/09-existing/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/09-existing/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/09-existing/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/09-existing/command-outcome.json",
+    "bytes": 29,
+    "sha256": "16e362a431e2681cbd3be49e5e4c6483a9128567d03f86c69c026d74305605ec"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/09-existing/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/09-existing/command.txt",
+    "bytes": 1993,
+    "sha256": "a3e28d7b968568d5fa30a1a93c73cfbb7b2c603997f2fc38c8c938f6d7f14c3b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/09-existing/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/09-existing/junit.xml",
+    "bytes": 436,
+    "sha256": "a7020a0c7980324be2e19e55afcc8dc00553bbfafbb76a6a5261cedb008d8d78"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/09-existing/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/09-existing/receipt.json",
+    "bytes": 1100,
+    "sha256": "803be6e5d8f833e6c6a85c406bcd68951f01c90104390a7bab7c84c56dac2703"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/09-existing/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/09-existing/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs/09-existing/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs/09-existing/vitest.config.mjs",
+    "bytes": 414,
+    "sha256": "45a8d7822dc5dbab318894c7694375f79c43607750252cadd7e8847097a7973f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/01-passed/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/01-passed/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/01-passed/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/01-passed/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "248729dd376d09eeaba21f0e09b6d178078c9c268bc98747c06b61df09fd663e"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/01-passed/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/01-passed/command.txt",
+    "bytes": 557,
+    "sha256": "3dc2db5f794d054f00cf3675ffca04ea10be26cf378609c9f4b8bdb2da57f0c9"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/01-passed/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/01-passed/junit.xml",
+    "bytes": 436,
+    "sha256": "fc811964e16f6a3bbc72d185c839fc1fb16ec957f5fe804841b7c5566ff83e79"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/01-passed/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/01-passed/receipt.json",
+    "bytes": 1100,
+    "sha256": "f5b2d3819e9ab948f17c4208638d9f5f29341ca0208ca0bf163928bfdd086c33"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/01-passed/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/01-passed/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/01-passed/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/01-passed/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "cae4e8c10899e76541e29f2f4449c79c3f3f77dbaa6f387dd8ea61177097eabc"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/02-threshold/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/02-threshold/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/02-threshold/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/02-threshold/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "57ef4f49e7ec85e740787c7dd44677b51a3441e6ee1ccc2d2b89d84a476add6c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/02-threshold/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/02-threshold/command.txt",
+    "bytes": 845,
+    "sha256": "3db35b971db7414e5e80b0ff043cf78176275180c53ec2816722c3ac5d3e9f47"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/02-threshold/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/02-threshold/junit.xml",
+    "bytes": 436,
+    "sha256": "209426ea53f5c13ee0ef02a57f1890995ee649a1cd6c7dfb2503b2c04224db23"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/02-threshold/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/02-threshold/receipt.json",
+    "bytes": 1100,
+    "sha256": "633cc583a77d21a10686a41bd9b6ba77a1d8cb270e52125126c6c987239b4bb9"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/02-threshold/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/02-threshold/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/02-threshold/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/02-threshold/vitest.config.mjs",
+    "bytes": 421,
+    "sha256": "b92d486c646d44bc1a1ff594c7b30760866675fbff49a3f23681bbef748fead1"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/03-unhandled/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/03-unhandled/actual.test.ts",
+    "bytes": 277,
+    "sha256": "853360b819eef45f1abd0eb7c9c810c32ba185ff1ca466c96ca75a93243974bf"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/03-unhandled/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/03-unhandled/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "81510f2fd530c4c888278768460d20033b67758c16878f5745210bbc91be7246"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/03-unhandled/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/03-unhandled/command.txt",
+    "bytes": 845,
+    "sha256": "d652843681e4441e39cd9042a3dd70119254f646214bb55f6a37a0da40b60698"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/03-unhandled/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/03-unhandled/junit.xml",
+    "bytes": 466,
+    "sha256": "9b496d87535100b94c105dbc5e0b6fa8e2c2a1a707bb9011fbd0efde8bb5b89a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/03-unhandled/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/03-unhandled/receipt.json",
+    "bytes": 1100,
+    "sha256": "863e58dcb5851acc9aadb006aaf42122b917a6dda321f09c47d5c554b97a23cf"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/03-unhandled/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/03-unhandled/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/03-unhandled/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/03-unhandled/vitest.config.mjs",
+    "bytes": 421,
+    "sha256": "a7bdf26c0b340bb329413f375c2971427aed63151729caa0d783d137efcfa577"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/04-failed/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/04-failed/actual.test.ts",
+    "bytes": 120,
+    "sha256": "6d362b76428e34c61d19832a70f38358569669ef212b48e30eb7fd1a3841f35c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/04-failed/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/04-failed/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "f2a9176ca2c3b0e532aec0be8a3b945bafb6cd8cb97d41d515002e1492dfa84c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/04-failed/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/04-failed/command.txt",
+    "bytes": 57,
+    "sha256": "dcb682f2c5091182ba96386566eb67315a3b824b902d252950ba5688aa619076"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/04-failed/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/04-failed/junit.xml",
+    "bytes": 668,
+    "sha256": "3f568e41c9498cb36a36285009fa3d35ca8aee949cb5fa238c0957db772feb2e"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/04-failed/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/04-failed/receipt.json",
+    "bytes": 1100,
+    "sha256": "ed62726056b9dcdc9fb065d6765eeed9be0d456b02e2cd3373ace1b4d200f41a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/04-failed/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/04-failed/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/04-failed/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/04-failed/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "b68f4fe84acdc6d937f9aeef9ca339f2a2e5de78aa8e039b2e47d3e9c2c1b5b7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/05-skipped/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/05-skipped/actual.test.ts",
+    "bytes": 98,
+    "sha256": "605d7c8e1fa0053d9d2b4bc4c37d56749820faf77812a7b6e7cd527c0417b42a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/05-skipped/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/05-skipped/command-outcome.json",
+    "bytes": 1308,
+    "sha256": "31b0ea17aa2110a6619bd3735a91ebe594db38e69c7a3f0d6219c1ec3913ccbd"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/05-skipped/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/05-skipped/command.txt",
+    "bytes": 557,
+    "sha256": "4565a414af7fca2f5ab3ef8bf961e868b708c8bbdd6804d4786e46d5014f264b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/05-skipped/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/05-skipped/junit.xml",
+    "bytes": 429,
+    "sha256": "b9ea7a7e601d95b32d12a26139c7771384a5b42868720cdf9571d7f32133ecde"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/05-skipped/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/05-skipped/receipt.json",
+    "bytes": 1100,
+    "sha256": "4365af0f2f1e91f870eadaf8177a212d8087a7191414c51f3ac6407a4d935c12"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/05-skipped/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/05-skipped/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/05-skipped/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/05-skipped/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "1c7faf74fd0e72a44716a0c3baa4c07f29c7bbfe2c46e01effbf3212097b7b01"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/06-collection/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/06-collection/actual.test.ts",
+    "bytes": 34,
+    "sha256": "af50b34eeb7aaafe191bc608dfe6614de490493290e90090fc7551aa5110ee32"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/06-collection/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/06-collection/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "cf5ea1078f75d87ed6225f9361bbd9f77974221e1fc605b4e029313994066410"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/06-collection/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/06-collection/command.txt",
+    "bytes": 57,
+    "sha256": "3f65c710c90ed6f21347049a95e0b2b657517a0b981cc04e49153110ca66492f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/06-collection/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/06-collection/junit.xml",
+    "bytes": 864,
+    "sha256": "e5a42bf65a04faaa7a8267c5d9ee9e56bd63058ed1ef5ac90d81655c9b16a3b7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/06-collection/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/06-collection/receipt.json",
+    "bytes": 1100,
+    "sha256": "b2e592f83b5a32ffb670e7d00f2a1fdc8f8124889479c8635422125c8f67052d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/06-collection/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/06-collection/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/06-collection/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/06-collection/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "44428b0f49c59c0650d20e48a38d7c8c125953bbd062604d6ba99a0c4dcc7469"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/07-nonce/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/07-nonce/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/07-nonce/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/07-nonce/command.txt",
+    "bytes": 2030,
+    "sha256": "2c303947ac2e777eff040f592c863c04fd34b906ec532467c84e8c828ba71412"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/07-nonce/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/07-nonce/junit.xml",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/07-nonce/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/07-nonce/receipt.json",
+    "bytes": 976,
+    "sha256": "34b91d1baf1f31b3166fb2408368d82b0a40def54358673a72e7f9faba09b234"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/07-nonce/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/07-nonce/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/07-nonce/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/07-nonce/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "448c6334fb55430ce7e14a632270e05781cf83f000958a5183c820ea76c72f79"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/08-symlink/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/08-symlink/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/08-symlink/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/08-symlink/command.txt",
+    "bytes": 2194,
+    "sha256": "5086614fde99489d4d8758bd6dde97d854b57d4c18c14879bea6666e60b29062"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/08-symlink/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/08-symlink/junit.xml",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/08-symlink/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/08-symlink/receipt.json",
+    "bytes": 976,
+    "sha256": "98f989c5347416cc3969f400665953bc5905c6d5b9a7de8ada4ca78bf9ed8ab4"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/08-symlink/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/08-symlink/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/08-symlink/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/08-symlink/vitest.config.mjs",
+    "bytes": 414,
+    "sha256": "60c331a5eb50864a09253e80261a1b742840894477d769c4c3c897e65cc2dfc2"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/09-existing/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/09-existing/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/09-existing/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/09-existing/command-outcome.json",
+    "bytes": 29,
+    "sha256": "16e362a431e2681cbd3be49e5e4c6483a9128567d03f86c69c026d74305605ec"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/09-existing/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/09-existing/command.txt",
+    "bytes": 2069,
+    "sha256": "0c5195252fc04f2120f5457451ca82d288d4e4c307b3bf05771d8ca1d3c65091"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/09-existing/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/09-existing/junit.xml",
+    "bytes": 436,
+    "sha256": "a9b708add690cc04a36d178852bfa61bd30374b632ceb304cbb91fd234b06d73"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/09-existing/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/09-existing/receipt.json",
+    "bytes": 1100,
+    "sha256": "7e163a47307a48eaf31a3427940cd30c36f8d13e48a086f01257bc55bb892ef4"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/09-existing/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/09-existing/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/09-existing/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/09-existing/vitest.config.mjs",
+    "bytes": 414,
+    "sha256": "f024e8e0645d828d94ff431d4810007cef18dd00982028146a6bccaccce32d31"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "b623972ac5e5fc18e2bf93ce50fcdf48929800aa754cb1cf82a417d39e4f56c7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/command.txt",
+    "bytes": 557,
+    "sha256": "906d43c8747a80a9de04fc760dfd94910ab9dbf906d79bdd35963d36badf07eb"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/junit.xml",
+    "bytes": 436,
+    "sha256": "dc709d2d8db68bb7e06ca13f25004f3d7bf63185fd4c25eb4c1c822d6ad7aed3"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/receipt.json",
+    "bytes": 1100,
+    "sha256": "168087a55a1dd9625d099ad719d849e200fb93b60a327faf12125ab29ddd6528"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/repeat.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/repeat.json",
+    "bytes": 508,
+    "sha256": "c510b6c153ac66bc84594350977efb9797cc7ae93286e2b3333eeca3d3e06036"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/second-command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/second-command-outcome.json",
+    "bytes": 1307,
+    "sha256": "ed9bae19e75bd087845d8e5ead6295c77d936a8e78bb47187f96782fdf3d9443"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/second-command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/second-command.txt",
+    "bytes": 557,
+    "sha256": "906d43c8747a80a9de04fc760dfd94910ab9dbf906d79bdd35963d36badf07eb"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/second-junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/second-junit.xml",
+    "bytes": 435,
+    "sha256": "c0cabf70b8f548c8a4cf8b9a92db66886928256ea8e2746a49cbb5cf33b133fd"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/10-repeat/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/10-repeat/vitest.config.mjs",
+    "bytes": 414,
+    "sha256": "64ad93a28f2c680daf9d76aec84af732261b20bb3045905fe047642e1cc5a69a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/11-dangling/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/11-dangling/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/11-dangling/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/11-dangling/command.txt",
+    "bytes": 2194,
+    "sha256": "5086614fde99489d4d8758bd6dde97d854b57d4c18c14879bea6666e60b29062"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/11-dangling/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/11-dangling/junit.xml",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/11-dangling/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/11-dangling/receipt.json",
+    "bytes": 976,
+    "sha256": "97d8817b71c07af3770bfb070ac740b47e88df49f94bfe1f9688d9d6ade33689"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/11-dangling/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/11-dangling/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-final/11-dangling/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-final/11-dangling/vitest.config.mjs",
+    "bytes": 414,
+    "sha256": "acaa3674f438c8823a2ca42fd704d7604214dddc7f9ac559c88d2c05616c327b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/01-passed/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/01-passed/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/01-passed/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/01-passed/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "381e38fe93ca753401ead12f37a50612ea84c2bac32f6126202aa8c17b5fdc9d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/01-passed/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/01-passed/command.txt",
+    "bytes": 557,
+    "sha256": "e9d78a73d7a4f387e635572054f2093c77e79c6839fe8f18009e5d93969c42b9"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/01-passed/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/01-passed/junit.xml",
+    "bytes": 436,
+    "sha256": "c832f3a905b5bcbc223a1d38c4d25957c3c18c1d347249811a1497f552131f8e"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/01-passed/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/01-passed/receipt.json",
+    "bytes": 1100,
+    "sha256": "8d3462f170a916eebb44a490f88a5550891a73aabdc3b0f67191214ca85c75ac"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/01-passed/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/01-passed/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/01-passed/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/01-passed/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "04844232dba4ee6faf8c3f66dc9f877ece83874c6e09d616157b4fe1dfce9f16"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/02-threshold/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/02-threshold/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/02-threshold/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/02-threshold/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "cd6e102a38f6d927a20670012121862b9008056212bb9bc749556426e1943c71"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/02-threshold/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/02-threshold/command.txt",
+    "bytes": 845,
+    "sha256": "b66b1df2dd6f1c8ae40de384d3b061f12b9d8da06a748ff391942a72442019c6"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/02-threshold/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/02-threshold/junit.xml",
+    "bytes": 436,
+    "sha256": "325e9c99c841cdaa22c7bdc9f2e63904aaa4e4691b68adf64b5612963bc49009"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/02-threshold/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/02-threshold/receipt.json",
+    "bytes": 1100,
+    "sha256": "81a2c3b7856042a165fd3776467e831453eb59041f0de6336f2699e56101c33a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/02-threshold/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/02-threshold/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/02-threshold/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/02-threshold/vitest.config.mjs",
+    "bytes": 421,
+    "sha256": "56d1ddd51e5b7cdf10a953a162bf86f419a9cef5e2b387547b678c08197fd833"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/03-unhandled/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/03-unhandled/actual.test.ts",
+    "bytes": 277,
+    "sha256": "853360b819eef45f1abd0eb7c9c810c32ba185ff1ca466c96ca75a93243974bf"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/03-unhandled/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/03-unhandled/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "dd33ecf3718d801208e05d305faccfd2d6ff48c2c9dde3a010c1a05045a58150"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/03-unhandled/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/03-unhandled/command.txt",
+    "bytes": 845,
+    "sha256": "5637cef1d9ba4dac428279d19804d45bf946a8853011da0647ca1fc76b634926"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/03-unhandled/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/03-unhandled/junit.xml",
+    "bytes": 465,
+    "sha256": "6a0f90d44c8d3db08d6a747658d8dbcd6e9ae0e9928e3ca77cca281f641eb79a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/03-unhandled/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/03-unhandled/receipt.json",
+    "bytes": 1100,
+    "sha256": "f0dbb46c5f9556ce4a66028c45d00e642530e4bb17469de9603f9fff5e33f4de"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/03-unhandled/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/03-unhandled/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/03-unhandled/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/03-unhandled/vitest.config.mjs",
+    "bytes": 421,
+    "sha256": "9480773b565c7c7e259135aad57782f10407a5c1242eff225ffdb6983e625557"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/04-failed/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/04-failed/actual.test.ts",
+    "bytes": 120,
+    "sha256": "6d362b76428e34c61d19832a70f38358569669ef212b48e30eb7fd1a3841f35c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/04-failed/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/04-failed/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "ba430482902e548972189539b5a09394d3207d40958415032a0bff0d0c3a68e2"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/04-failed/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/04-failed/command.txt",
+    "bytes": 57,
+    "sha256": "4d298078681f70c1f8dd6d71050bbb625b60522998292b23fa6086723d9813d2"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/04-failed/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/04-failed/junit.xml",
+    "bytes": 667,
+    "sha256": "05d9ff1f2bea2f5d10cd362cc53485213ac27f2bdab3e5c9b32d2a96b373690a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/04-failed/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/04-failed/receipt.json",
+    "bytes": 1100,
+    "sha256": "6e9ba647887e28afda56fa34acdc03817e5ec567c6736bdfdb67efd4eba95ac6"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/04-failed/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/04-failed/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/04-failed/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/04-failed/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "72e07467ec2daa332f7fc8da63b4999b4a63a1eec94be512547bfad02ab43cd7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/05-skipped/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/05-skipped/actual.test.ts",
+    "bytes": 98,
+    "sha256": "605d7c8e1fa0053d9d2b4bc4c37d56749820faf77812a7b6e7cd527c0417b42a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/05-skipped/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/05-skipped/command-outcome.json",
+    "bytes": 1308,
+    "sha256": "07ab956b753f912a8b903195d38b1cd889e0f3d0a01f798f1e1db232fba0ccaa"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/05-skipped/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/05-skipped/command.txt",
+    "bytes": 557,
+    "sha256": "bbb902881be6edcd100759629f0317118d870352e4d9b6e7c79f32309badd782"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/05-skipped/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/05-skipped/junit.xml",
+    "bytes": 429,
+    "sha256": "2143a8bbb203c75c9c6ce0dc023e7c88272506217cfcfeb5ecef3dc043960b5a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/05-skipped/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/05-skipped/receipt.json",
+    "bytes": 1100,
+    "sha256": "7434f70f83d6c87a8ea54d932304034b91a953861fecc3670b8117acfa0d4706"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/05-skipped/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/05-skipped/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/05-skipped/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/05-skipped/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "8303f8fb71d8af178a567fab3425486a0925cf903e4c03a5ee86a67721887978"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/06-collection/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/06-collection/actual.test.ts",
+    "bytes": 34,
+    "sha256": "af50b34eeb7aaafe191bc608dfe6614de490493290e90090fc7551aa5110ee32"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/06-collection/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/06-collection/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "ae932cad0b241e984ad1e7b94d18f4a0eb5cf1405ba92420cfd059f7d5dcfc93"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/06-collection/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/06-collection/command.txt",
+    "bytes": 57,
+    "sha256": "86b8587236f4c832aa1aacbb858c6650f346428f3b6db54924a2e3af68dacf3c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/06-collection/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/06-collection/junit.xml",
+    "bytes": 864,
+    "sha256": "d836dc4e9e27d1c138d2a438151a44374f9f9b1d5bc92d398f2e8de3b9ac3441"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/06-collection/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/06-collection/receipt.json",
+    "bytes": 1100,
+    "sha256": "40d6adec4a4f29f7dc19c6fda09e770d90930c36430b2e456adbf9764bfdcfd7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/06-collection/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/06-collection/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/06-collection/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/06-collection/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "8125954f576c02a4311b3c385f24ddbbf8c9b59c89ddd9ce825f0080b9430c91"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/07-nonce/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/07-nonce/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/07-nonce/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/07-nonce/command.txt",
+    "bytes": 2030,
+    "sha256": "090895593af946347012cca1bb78d2456558799c570ff3cb3854179dbf0ba939"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/07-nonce/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/07-nonce/junit.xml",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/07-nonce/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/07-nonce/receipt.json",
+    "bytes": 976,
+    "sha256": "3e2c564a81c7b48a5d0b094f6f645b3e69a138d907cc967e1ff4d96bc5d10722"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/07-nonce/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/07-nonce/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/07-nonce/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/07-nonce/vitest.config.mjs",
+    "bytes": 413,
+    "sha256": "45c07451155e18f8fb268ec11e416080ca90bcd93444ff76987d083024eced9b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/08-symlink/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/08-symlink/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/08-symlink/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/08-symlink/command.txt",
+    "bytes": 2194,
+    "sha256": "265908527b7a4657eeb82fe00702a16b37103339528566375e17cfe9f3ea6860"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/08-symlink/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/08-symlink/junit.xml",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/08-symlink/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/08-symlink/receipt.json",
+    "bytes": 976,
+    "sha256": "90267646d5a11511d8a60c9f6bfab46203f3a53642c6db0c89f32678ff6c0469"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/08-symlink/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/08-symlink/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/08-symlink/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/08-symlink/vitest.config.mjs",
+    "bytes": 414,
+    "sha256": "51fdbb010be4faa2491160694b7e30b730a603e688e74385d9230c70ed233593"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/09-existing/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/09-existing/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/09-existing/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/09-existing/command-outcome.json",
+    "bytes": 29,
+    "sha256": "16e362a431e2681cbd3be49e5e4c6483a9128567d03f86c69c026d74305605ec"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/09-existing/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/09-existing/command.txt",
+    "bytes": 2069,
+    "sha256": "e54b17782758d9405e3b3b8543f769e735891b1c0e7c346de8d3f0692ec91812"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/09-existing/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/09-existing/junit.xml",
+    "bytes": 436,
+    "sha256": "424ebb67f0672e384b86df25b7963f9c2e47732e515cdca20147fafcb8bb894c"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/09-existing/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/09-existing/receipt.json",
+    "bytes": 1100,
+    "sha256": "b59471239efd635aeff8ed4d24f8cb8c705aada0d8361989bd53ac46bee5dd5d"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/09-existing/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/09-existing/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/09-existing/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/09-existing/vitest.config.mjs",
+    "bytes": 414,
+    "sha256": "66f1e677bad572569f3c36ad75d2ed655cca6199fd0b1b19188e1aeebcd4f6c8"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/actual.test.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/actual.test.ts",
+    "bytes": 121,
+    "sha256": "1786d0dc5cb2d3f0bb647f8e0807b3b05b5a1c2b9a2f70aa045c00d961d252fe"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/command-outcome.json",
+    "bytes": 1307,
+    "sha256": "97caddd205bfe0e913dc3eecfc843ae44d43367009a8a179dde899fc020246f3"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/command.txt",
+    "bytes": 557,
+    "sha256": "6755180dfb926ef3a5ec18902cf633727972c2debb3255d01f07d1ff2a4d96c7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/junit.xml",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/junit.xml",
+    "bytes": 436,
+    "sha256": "4970cee1efc2733668fe9c34fcbb49f9c4753bcc466f611b20264fd562539b08"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/receipt.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/receipt.json",
+    "bytes": 1100,
+    "sha256": "1e76e13a22c4eff440f343d6139216ca69e0a92e88ababb7bf3f393edf65d304"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/repeat.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/repeat.json",
+    "bytes": 423,
+    "sha256": "232e71eee3eb728801055ce57666fc5ae4348949132a9492c9c3b353d57b61b1"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/second-command-outcome.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/second-command-outcome.json",
+    "bytes": 1307,
+    "sha256": "01e328f38feeb5e6998059ff6925a446a53ee2bbc2a486c20e2a914853ec57ec"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/second-command.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/second-command.txt",
+    "bytes": 557,
+    "sha256": "6755180dfb926ef3a5ec18902cf633727972c2debb3255d01f07d1ff2a4d96c7"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/subject.ts",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/subject.ts",
+    "bytes": 77,
+    "sha256": "2bffce8a692dd0b5ebecd02f45e7bf69cf0b1ca9e7f158d32d2c775a00e60845"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/actual-runs-v2/10-repeat/vitest.config.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/actual-runs-v2/10-repeat/vitest.config.mjs",
+    "bytes": 414,
+    "sha256": "b08831ee63282193216cdf50fcc3a0aee95e118d0f30f727af9e53f7980fc798"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/api-contract.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/api-contract.json",
+    "bytes": 1076,
+    "sha256": "13395e09d5efe15277bb08a3dad27cab8b378681e82256062e4d258331f692ed"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/scripts/testing/coverage-outcome-reporter.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/scripts/testing/coverage-outcome-reporter.mjs",
+    "bytes": 5699,
+    "sha256": "8f98f6ddf10431532d0972157191c3ae96354758fe19b51a0d4636ed537fd219"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/tests/testing/coverage-outcome-reporter.test.mjs",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/tests/testing/coverage-outcome-reporter.test.mjs",
+    "bytes": 13083,
+    "sha256": "539fb9ea8fc934ee3dcd26e243697f7bc2bee8320f3736bc4377e39229b0a27b"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/tests-final.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/tests-final.txt",
+    "bytes": 2623,
+    "sha256": "039ddcc4b52890eae57274e2763a6ced8c7638954ba58a0d0a6dd546c99def1a"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/tests-v2.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/tests-v2.txt",
+    "bytes": 2391,
+    "sha256": "7f5ee1f7ec45aca5beaf5c9308002063e7a044084e6a0b6058ae0a95d0716415"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/reporter/tests.txt",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/reporter/tests.txt",
+    "bytes": 2135,
+    "sha256": "f709179a8e0c51bfceee71f9ba29758bc0a3e3416d39625d120fc3642860cb4e"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/source-manifest.json",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/source-manifest.json",
+    "bytes": 968,
+    "sha256": "f911f5c63579da651ceb28a40e829cceb4ae7c8c50668b1d2ad2a75a7d61ea6f"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/source.patch",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/source.patch",
+    "bytes": 54903,
+    "sha256": "14aa2133f7a94c05dff7164445d6fe15c2917c1601488f5c51a49fd117e6ab77"
+  },
+  {
+    "source": "/workspace/onboarding-results/c5-producer-foundation/verify-package.py",
+    "destination": "reports/coverage-producer/2026-10-29-producer-foundation/verify-package.py",
+    "bytes": 627,
+    "sha256": "47e50bf7051848893ea5e3a9be749a3569d22d00d113b2aee831ed198242576c"
+  }
+]

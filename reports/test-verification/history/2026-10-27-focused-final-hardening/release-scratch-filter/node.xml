@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="publishing graph builds the application remainder before finalizing" time="0.003931" classname="test" file="/workspace/maxbooster7.5/tests/deployment-remainder-contract.test.mjs"/>
+	<testcase name="remainder inventory retains pre-restore modules and selects runtime assets" time="0.036040" classname="test" file="/workspace/maxbooster7.5/tests/deployment-remainder-contract.test.mjs"/>
+	<!-- tests 2 -->
+	<!-- suites 0 -->
+	<!-- pass 2 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 126.996101 -->
+</testsuites>

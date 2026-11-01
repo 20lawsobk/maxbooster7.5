@@ -1,0 +1,310 @@
+TAP version 13
+# Subtest: finite coordinates roundtrip with original zero denominator and UTF16 source
+ok 1 - finite coordinates roundtrip with original zero denominator and UTF16 source
+  ---
+  duration_ms: 9.724117
+  type: 'test'
+  ...
+# Subtest: rejects NaN column
+ok 2 - rejects NaN column
+  ---
+  duration_ms: 1.095464
+  type: 'test'
+  ...
+# Subtest: rejects negative Infinity column
+ok 3 - rejects negative Infinity column
+  ---
+  duration_ms: 0.405762
+  type: 'test'
+  ...
+# Subtest: rejects raw null column
+ok 4 - rejects raw null column
+  ---
+  duration_ms: 0.552344
+  type: 'test'
+  ...
+# Subtest: rejects negative column
+ok 5 - rejects negative column
+  ---
+  duration_ms: 0.391952
+  type: 'test'
+  ...
+# Subtest: rejects fraction column
+ok 6 - rejects fraction column
+  ---
+  duration_ms: 0.59601
+  type: 'test'
+  ...
+# Subtest: rejects boolean column
+ok 7 - rejects boolean column
+  ---
+  duration_ms: 0.327535
+  type: 'test'
+  ...
+# Subtest: rejects out of source column
+ok 8 - rejects out of source column
+  ---
+  duration_ms: 0.547867
+  type: 'test'
+  ...
+# Subtest: rejects partial undefined column
+ok 9 - rejects partial undefined column
+  ---
+  duration_ms: 0.486244
+  type: 'test'
+  ...
+# Subtest: rejects unsupported shape r => r.extra = true
+ok 10 - rejects unsupported shape r => r.extra = true
+  ---
+  duration_ms: 0.509058
+  type: 'test'
+  ...
+# Subtest: rejects unsupported shape r => r.statementMap[0].extra = 1
+ok 11 - rejects unsupported shape r => r.statementMap[0].extra = 1
+  ---
+  duration_ms: 0.421536
+  type: 'test'
+  ...
+# Subtest: rejects unsupported shape r => Object.setPrototypeOf(r.statementMap[0], { hidden: true })
+ok 12 - rejects unsupported shape r => Object.setPrototypeOf(r.statementMap[0], { hidden: true })
+  ---
+  duration_ms: 0.322226
+  type: 'test'
+  ...
+# Subtest: rejects unsupported shape r => Object.defineProperty(r.statementMap[0], 'evil', { get() { throw Error('getter should never execute'); }, enumerable: true })
+ok 13 - rejects unsupported shape r => Object.defineProperty(r.statementMap[0], 'evil', { get() { throw Error('getter should never execute'); }, enumerable: true })
+  ---
+  duration_ms: 0.353774
+  type: 'test'
+  ...
+# Subtest: rejects unsupported shape r => r.s[1] = 0
+ok 14 - rejects unsupported shape r => r.s[1] = 0
+  ---
+  duration_ms: 0.215395
+  type: 'test'
+  ...
+# Subtest: rejects unsupported shape r => r.s[0] = -1
+ok 15 - rejects unsupported shape r => r.s[0] = -1
+  ---
+  duration_ms: 0.211329
+  type: 'test'
+  ...
+# Subtest: rejects unsupported shape r => r.s[0] = 0.5
+ok 16 - rejects unsupported shape r => r.s[0] = 0.5
+  ---
+  duration_ms: 0.306352
+  type: 'test'
+  ...
+# Subtest: only attested end Infinity and full AST-proven synthetic else roundtrip
+ok 17 - only attested end Infinity and full AST-proven synthetic else roundtrip
+  ---
+  duration_ms: 1.996263
+  type: 'test'
+  ...
+# Subtest: sentinel proof rejects (raw, ctx) => delete ctx.provenance
+ok 18 - sentinel proof rejects (raw, ctx) => delete ctx.provenance
+  ---
+  duration_ms: 0.539184
+  type: 'test'
+  ...
+# Subtest: sentinel proof rejects (raw, ctx) => ctx.body += 'stale'
+ok 19 - sentinel proof rejects (raw, ctx) => ctx.body += 'stale'
+  ---
+  duration_ms: 0.45024
+  type: 'test'
+  ...
+# Subtest: sentinel proof rejects (raw, ctx) => ctx.map.sourcesContent = ['wrong']
+ok 20 - sentinel proof rejects (raw, ctx) => ctx.map.sourcesContent = ['wrong']
+  ---
+  duration_ms: 0.47693
+  type: 'test'
+  ...
+# Subtest: sentinel proof rejects (raw, ctx) => ctx.provenance.providerSha256 = 'b'.repeat(64)
+ok 21 - sentinel proof rejects (raw, ctx) => ctx.provenance.providerSha256 = 'b'.repeat(64)
+  ---
+  duration_ms: 0.425482
+  type: 'test'
+  ...
+# Subtest: sentinel proof rejects (raw, ctx) => raw.branchMap[0].locations[1].start.column = 0
+ok 22 - sentinel proof rejects (raw, ctx) => raw.branchMap[0].locations[1].start.column = 0
+  ---
+  duration_ms: 0.294194
+  type: 'test'
+  ...
+# Subtest: sentinel proof rejects (raw, ctx) => raw.statementMap[0].start.column = Infinity
+ok 23 - sentinel proof rejects (raw, ctx) => raw.statementMap[0].start.column = Infinity
+  ---
+  duration_ms: 0.433274
+  type: 'test'
+  ...
+# Subtest: sentinel proof rejects (raw, ctx) => ctx.provenance.replay.branchMap[0].type = 'switch'
+ok 24 - sentinel proof rejects (raw, ctx) => ctx.provenance.replay.branchMap[0].type = 'switch'
+  ---
+  duration_ms: 0.724173
+  type: 'test'
+  ...
+# Subtest: wire refuses absent, changed, duplicate or partial sentinel sidecar
+ok 25 - wire refuses absent, changed, duplicate or partial sentinel sidecar
+  ---
+  duration_ms: 1.796181
+  type: 'test'
+  ...
+# Subtest: authored helper remains original; authored policy lookalikes reject
+ok 26 - authored helper remains original; authored policy lookalikes reject
+  ---
+  duration_ms: 3.901919
+  type: 'test'
+  ...
+# Subtest: public Vite transform/provider retains authored helper arrows and all zero original functions
+ok 27 - public Vite transform/provider retains authored helper arrows and all zero original functions
+  ---
+  duration_ms: 177.905746
+  type: 'test'
+  ...
+# Subtest: actual Debugger UTF16 wrapper binding rejects stale maps and wrong prefix
+ok 28 - actual Debugger UTF16 wrapper binding rejects stale maps and wrong prefix
+  ---
+  duration_ms: 188.700451
+  type: 'test'
+  ...
+# Subtest: wire rejects unsupported prototypes and accessors before serialization or cloning
+ok 29 - wire rejects unsupported prototypes and accessors before serialization or cloning
+  ---
+  duration_ms: 1.149695
+  type: 'test'
+  ...
+# Subtest: manifest requires exact unique actual inspector records for all nine originals
+ok 30 - manifest requires exact unique actual inspector records for all nine originals
+  ---
+  duration_ms: 0.886278
+  type: 'test'
+  ...
+# Subtest: manifest rejects counter tamper
+ok 31 - manifest rejects counter tamper
+  ---
+  duration_ms: 0.303358
+  type: 'test'
+  ...
+# Subtest: manifest rejects function tamper
+ok 32 - manifest rejects function tamper
+  ---
+  duration_ms: 0.189587
+  type: 'test'
+  ...
+# Subtest: manifest rejects raw duplicate ID
+ok 33 - manifest rejects raw duplicate ID
+  ---
+  duration_ms: 0.32514
+  type: 'test'
+  ...
+# Subtest: manifest rejects manifest duplicate ID
+ok 34 - manifest rejects manifest duplicate ID
+  ---
+  duration_ms: 0.321596
+  type: 'test'
+  ...
+# Subtest: manifest rejects manifest duplicate original
+ok 35 - manifest rejects manifest duplicate original
+  ---
+  duration_ms: 0.381976
+  type: 'test'
+  ...
+# Subtest: manifest rejects missing original
+ok 36 - manifest rejects missing original
+  ---
+  duration_ms: 0.632765
+  type: 'test'
+  ...
+# Subtest: manifest rejects runtime mismatch
+ok 37 - manifest rejects runtime mismatch
+  ---
+  duration_ms: 0.181284
+  type: 'test'
+  ...
+# Subtest: manifest rejects root mismatch
+ok 38 - manifest rejects root mismatch
+  ---
+  duration_ms: 0.3378
+  type: 'test'
+  ...
+# Subtest: manifest rejects target mismatch
+ok 39 - manifest rejects target mismatch
+  ---
+  duration_ms: 0.2385
+  type: 'test'
+  ...
+# Subtest: manifest rejects producer mismatch
+ok 40 - manifest rejects producer mismatch
+  ---
+  duration_ms: 0.171659
+  type: 'test'
+  ...
+# Subtest: manifest rejects snapshot mismatch
+ok 41 - manifest rejects snapshot mismatch
+  ---
+  duration_ms: 0.135886
+  type: 'test'
+  ...
+# Subtest: manifest rejects snapshot overlap
+ok 42 - manifest rejects snapshot overlap
+  ---
+  duration_ms: 0.130527
+  type: 'test'
+  ...
+# Subtest: manifest rejects runtime URL mismatch
+ok 43 - manifest rejects runtime URL mismatch
+  ---
+  duration_ms: 0.210918
+  type: 'test'
+  ...
+# Subtest: manifest rejects observed URL mismatch
+ok 44 - manifest rejects observed URL mismatch
+  ---
+  duration_ms: 0.181454
+  type: 'test'
+  ...
+# Subtest: manifest rejects module URL mismatch
+ok 45 - manifest rejects module URL mismatch
+  ---
+  duration_ms: 0.17246
+  type: 'test'
+  ...
+# Subtest: manifest rejects script/raw URL substitution
+ok 46 - manifest rejects script/raw URL substitution
+  ---
+  duration_ms: 0.175775
+  type: 'test'
+  ...
+# Subtest: manifest rejects wrapper mismatch
+ok 47 - manifest rejects wrapper mismatch
+  ---
+  duration_ms: 0.171419
+  type: 'test'
+  ...
+# Subtest: manifest rejects contract mismatch
+ok 48 - manifest rejects contract mismatch
+  ---
+  duration_ms: 0.312972
+  type: 'test'
+  ...
+# Subtest: authoritative common inventory keeps C++ SQL locks and untracked code while excluding generated snapshots/coverage
+ok 49 - authoritative common inventory keeps C++ SQL locks and untracked code while excluding generated snapshots/coverage
+  ---
+  duration_ms: 97.870954
+  type: 'test'
+  ...
+# Subtest: public Istanbul inline and file contract reporters preserve raw typed maps/counters identically
+ok 50 - public Istanbul inline and file contract reporters preserve raw typed maps/counters identically
+  ---
+  duration_ms: 53.367192
+  type: 'test'
+  ...
+1..50
+# tests 50
+# suites 0
+# pass 50
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1094.528548

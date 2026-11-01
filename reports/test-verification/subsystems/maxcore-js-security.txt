@@ -1,0 +1,11 @@
+orval@8.33.0 OK
+fast-uri@3.1.9 OK
+js-yaml@4.3.2 OK
+postcss@8.5.26 OK
+esbuild@0.28.1 OK
+nanoid@3.3.18 OK
+ip-address@10.7.4 OK
+markdown-it@14.3.3 OK
+undici@6.29.1 OK
+@xmldom/xmldom: not present in this workspace dependency graph
+dompurify: not present in this workspace dependency graph

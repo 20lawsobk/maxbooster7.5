@@ -1,0 +1,78 @@
+{
+  "scope": "Post-integration correction rechecks; original failures retained",
+  "beforeSha256": "65262126a9ff7d37a26f723396d32994afc8ae9612f785e3bc4f7f52af085952",
+  "afterSha256": "65262126a9ff7d37a26f723396d32994afc8ae9612f785e3bc4f7f52af085952",
+  "unchanged": true,
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/testing/coverage-provenance.test.mjs",
+        "tests/testing/coverage-coordinate-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T22:20:25.799420+00:00",
+      "durationSeconds": 5.852,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/coverage-producer/2026-10-29-main-integration/framework-fixed.txt",
+      "logSha256": "58e825617c8cb75870a724131ae2c342706dcba32d7c9dc8f094001ab8d1002a",
+      "id": "framework-fixed"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/testing/test_summary_results.py",
+        "tests/testing/test_platform_plan.py",
+        "--junitxml=reports/coverage-producer/2026-10-29-main-integration/input-guards-fixed.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T22:20:25.799833+00:00",
+      "durationSeconds": 2.149,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/coverage-producer/2026-10-29-main-integration/input-guards-fixed.txt",
+      "logSha256": "28636a55f0e7df806d71440a7e64d820073f314fda0c0aa63122fbd41c14e3f3",
+      "id": "input-guards-fixed"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T22:20:25.799944+00:00",
+      "durationSeconds": 28.653,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/coverage-producer/2026-10-29-main-integration/types-fixed.txt",
+      "logSha256": "2ffa91ca4d46f5e0ba57779604229aa88b9399d80e7e811d7627a6db927afa94",
+      "id": "types-fixed"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T22:20:25.800374+00:00",
+      "durationSeconds": 53.455,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/coverage-producer/2026-10-29-main-integration/lint-fixed.txt",
+      "logSha256": "06da543667ff102b992477b32f1825628ff2dfc482d6132e417c6e1e0c4501cb",
+      "id": "lint-fixed"
+    }
+  ],
+  "productionReady": false
+}

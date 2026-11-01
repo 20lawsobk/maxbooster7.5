@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "/workspace/.cloud-tools/node_modules/.bin/node",
+    "--test",
+    "--test-reporter=tap",
+    "tests/testing/coverage-provenance.test.mjs"
+  ],
+  "start": "2026-10-28T01:45:03.326847+00:00",
+  "end": "2026-10-28T01:45:05.254611+00:00",
+  "exitCode": 0,
+  "sourcesBefore": {
+    "scripts/testing/coverage-provenance.mjs": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030",
+    "scripts/testing/coverage-node-bootstrap.mjs": "bd1a984cf459aeb3c0c6416bf72091f0d08752628c7cbff47b33d3577805baa4",
+    "scripts/testing/collect-node-coverage.mjs": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3",
+    "tests/testing/coverage-provenance.test.mjs": "58492a0d5130c0acbd291699d671c3ebcb894680e6ecd285beceb3f10cc8a85f"
+  },
+  "sourcesAfter": {
+    "scripts/testing/coverage-provenance.mjs": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030",
+    "scripts/testing/coverage-node-bootstrap.mjs": "bd1a984cf459aeb3c0c6416bf72091f0d08752628c7cbff47b33d3577805baa4",
+    "scripts/testing/collect-node-coverage.mjs": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3",
+    "tests/testing/coverage-provenance.test.mjs": "58492a0d5130c0acbd291699d671c3ebcb894680e6ecd285beceb3f10cc8a85f"
+  },
+  "outputSha256": "6030381d3e8fc6eeecd46ffc49da9ee5277262a15e700d6ba13ff85b4edfcb5a",
+  "scope": "Fourteen framework/provenance/cleanup/admission tests; real database suite rejected before execution or output",
+  "initialFixtureFailure": "Indirect SQL contract did not spell startDisposablePostgres in its top-level test; corrected fixture to existing direct database backup/restore test. Initial failure retained.",
+  "productionReady": false
+}

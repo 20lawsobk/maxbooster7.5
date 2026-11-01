@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "status": "REVIEW_BLOCKED",
+  "landed": false,
+  "mergedIntoGlobalCoverage": false,
+  "publishedCoverageCredit": false,
+  "productionReady": false,
+  "portableCases": {
+    "tests": 52,
+    "passed": 52,
+    "failed": 0,
+    "skipped": 0
+  },
+  "confirmedMissingRequirements": [
+    "canonical-parent-junit-hash-and-count-binding",
+    "public-Vitest-unhandled-error-outcome",
+    "exact-source-pinned-producer-implementation-keyset",
+    "resolved-owned-output-without-symlink-escape",
+    "unique-terminal-TAP-summary"
+  ],
+  "actualHistoricalProducerReceipt": "candidate/runtime/receipt.json",
+  "historicalReplay": "historical-replay.json",
+  "currentAdmissionRejection": "admission.txt",
+  "independentReviews": [
+    "review/canonical-junit-binding-control.json",
+    "/workspace/onboarding-results/c5-admission-independent-review/findings.json"
+  ]
+}

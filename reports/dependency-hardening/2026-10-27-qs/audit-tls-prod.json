@@ -1,0 +1,19 @@
+{
+  "command": [
+    "npm",
+    "audit",
+    "--omit=dev",
+    "--audit-level=low",
+    "--json",
+    "--cache",
+    "/workspace/.npm-cache"
+  ],
+  "cwd": "tls-proxy",
+  "startedAt": "2026-10-27T22:21:45.071264+00:00",
+  "durationSeconds": 0.727,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/audit-tls-prod.txt",
+  "logSha256": "5cbaa0d2bb5c6d7336b4bdd38b17c22cb1eeea55ff4cce416e68a69bac3ed8c2"
+}

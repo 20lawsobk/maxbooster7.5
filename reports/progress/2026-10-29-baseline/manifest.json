@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "scope": "Historical counted baseline only",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 849,
+      "sha256": "ca7cb6e499c82253c2a0c1c3ce0fb7246643ffdf3ef16fb66039b2bd7aabf266"
+    },
+    {
+      "path": "candidate-usage.md",
+      "bytes": 3104,
+      "sha256": "3d237cab52e5cf0f4ef002b6496157ee50bbe12b33963a6d8f70b88278a07cd5"
+    },
+    {
+      "path": "measurement.txt",
+      "bytes": 144,
+      "sha256": "a99621a1406949248c6c74e8143f30c1d78402c0c19991a49696179fe331367a"
+    },
+    {
+      "path": "progress.json",
+      "bytes": 6854,
+      "sha256": "c62207155e545ebc651295a98923011f273a7dce82399ede8d079f67fe90d882"
+    },
+    {
+      "path": "progress.md",
+      "bytes": 1019,
+      "sha256": "8573a08c691104e5c793fb363a8dc5bb76843e50332ea7e8dccfad34854e2d60"
+    }
+  ]
+}

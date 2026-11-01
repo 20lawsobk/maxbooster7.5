@@ -1,0 +1,24 @@
+{
+  "command": [
+    "npm",
+    "audit",
+    "--audit-level=low",
+    "--json"
+  ],
+  "cwd": "tls-proxy",
+  "startedAt": "2026-10-28T01:30:44.788231+00:00",
+  "durationSeconds": 0.746,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/audit-tls-all.txt",
+  "logSha256": "5cbaa0d2bb5c6d7336b4bdd38b17c22cb1eeea55ff4cce416e68a69bac3ed8c2",
+  "vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  }
+}

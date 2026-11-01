@@ -1,0 +1,50 @@
+{
+  "scope": "Focused evidence machinery and actual owned SQL money-loop; no feature Green inferred",
+  "sourceInputsBefore": "1b29bd30b6a713e76d698732076c26aa206a4bc4cda0732dc8092bc6acdf716e",
+  "sourceInputsAfter": "1b29bd30b6a713e76d698732076c26aa206a4bc4cda0732dc8092bc6acdf716e",
+  "sourceInputsUnchanged": true,
+  "runs": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/testing/test_launch_readiness_audit.py",
+        "tests/testing/test_report_progress.py",
+        "tests/testing/test_catalog_snapshot_ownership.py",
+        "tests/testing/test_commerce_subject_selector.py",
+        "--junitxml=reports/platform-evidence/2026-10-29-integration-rechecks/framework.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T08:52:25.436071+00:00",
+      "durationSeconds": 15.023,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/platform-evidence/2026-10-29-integration-rechecks/framework.txt",
+      "logSha256": "add605239e09757e09cf45db79c632ee267846db7be3c29072163dedab747dd3",
+      "id": "framework"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/run-commerce.py",
+        "--only",
+        "legacy-beat",
+        "--output",
+        "reports/platform-evidence/2026-10-29-integration-rechecks/commerce"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T08:52:25.436505+00:00",
+      "durationSeconds": 5.307,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/platform-evidence/2026-10-29-integration-rechecks/legacy-beat.txt",
+      "logSha256": "5fb336d97682f0691cf4f018fba146b456e434b1c5324faa8b880dccdc304665",
+      "id": "legacy-beat"
+    }
+  ],
+  "productionReady": false
+}

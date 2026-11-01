@@ -1,0 +1,64 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "mode": "clean",
+      "status": "passed",
+      "actualCommandExit": 0,
+      "proofStatus": "bound",
+      "testOutcomeEligibleForCounterAdmission": true,
+      "actualCases": 2,
+      "unhandledErrorCount": 0,
+      "retainedActualChildExit": true,
+      "staleXmlReplacedByActualChild": true,
+      "laterXmlSubstitutionRejectedByHash": true,
+      "sourceImplementationUnchanged": true,
+      "consecutiveOutcomeBytesPreserved": false
+    },
+    {
+      "mode": "threshold",
+      "status": "passed",
+      "actualCommandExit": 1,
+      "proofStatus": "bound",
+      "testOutcomeEligibleForCounterAdmission": true,
+      "actualCases": 2,
+      "unhandledErrorCount": 0,
+      "retainedActualChildExit": true,
+      "staleXmlReplacedByActualChild": true,
+      "laterXmlSubstitutionRejectedByHash": true,
+      "sourceImplementationUnchanged": true,
+      "consecutiveOutcomeBytesPreserved": false
+    },
+    {
+      "mode": "unhandled",
+      "status": "passed",
+      "actualCommandExit": 1,
+      "proofStatus": "bound",
+      "testOutcomeEligibleForCounterAdmission": false,
+      "actualCases": 2,
+      "unhandledErrorCount": 1,
+      "retainedActualChildExit": true,
+      "staleXmlReplacedByActualChild": true,
+      "laterXmlSubstitutionRejectedByHash": true,
+      "sourceImplementationUnchanged": true,
+      "consecutiveOutcomeBytesPreserved": false
+    },
+    {
+      "mode": "repeat",
+      "status": "passed",
+      "actualCommandExit": 0,
+      "proofStatus": "bound",
+      "testOutcomeEligibleForCounterAdmission": true,
+      "actualCases": 2,
+      "unhandledErrorCount": 0,
+      "retainedActualChildExit": true,
+      "staleXmlReplacedByActualChild": true,
+      "laterXmlSubstitutionRejectedByHash": true,
+      "sourceImplementationUnchanged": true,
+      "consecutiveOutcomeBytesPreserved": true
+    }
+  ],
+  "productionReady": false,
+  "globalCoverageModified": false,
+  "scope": "Parent/current-machine test-outcome proof foundation only; not merged coverage or application launch acceptance."
+}

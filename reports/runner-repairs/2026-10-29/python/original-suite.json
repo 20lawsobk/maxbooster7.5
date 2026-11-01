@@ -1,0 +1,72 @@
+{
+  "file": "tests/testing/test_report_progress.py",
+  "description": "Behavior and malformed-evidence checks for the counted progress report.",
+  "cases": [
+    {
+      "name": "CountedProgressTests.test_independent_denominators_and_no_invented_implementation_or_test_total",
+      "description": "independent denominators and no invented implementation or test total"
+    },
+    {
+      "name": "CountedProgressTests.test_green_color_requires_all_gates_checks_and_no_blockers",
+      "description": "green color requires all gates checks and no blockers"
+    },
+    {
+      "name": "CountedProgressTests.test_stale_keeps_only_historical_observation_and_no_current_pass_credit",
+      "description": "stale keeps only historical observation and no current pass credit"
+    },
+    {
+      "name": "CountedProgressTests.test_raw_fraction_is_separate_from_istanbul_truncated_percent",
+      "description": "raw fraction is separate from istanbul truncated percent"
+    },
+    {
+      "name": "CountedProgressTests.test_missing_page_and_duplicate_page_cannot_reduce_eighty_page_target",
+      "description": "missing page and duplicate page cannot reduce eighty page target"
+    },
+    {
+      "name": "CountedProgressTests.test_summary_counts_must_equal_actual_rows",
+      "description": "summary counts must equal actual rows"
+    },
+    {
+      "name": "CountedProgressTests.test_boolean_counts_are_rejected",
+      "description": "boolean counts are rejected"
+    },
+    {
+      "name": "CountedProgressTests.test_plan_and_readiness_statuses_must_agree",
+      "description": "plan and readiness statuses must agree"
+    },
+    {
+      "name": "CountedProgressTests.test_duplicate_check_identity_is_not_counted_twice",
+      "description": "duplicate check identity is not counted twice"
+    },
+    {
+      "name": "CountedProgressTests.test_coverage_overflow_negative_boolean_and_stale_summary_are_rejected",
+      "description": "coverage overflow negative boolean and stale summary are rejected"
+    },
+    {
+      "name": "CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent",
+      "description": "zero denominator has no fabricated completion percent"
+    },
+    {
+      "name": "CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged",
+      "description": "real collection leaves all git visible files unchanged"
+    },
+    {
+      "name": "CountedProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two",
+      "description": "missing input cli writes unavailable and returns two"
+    }
+  ],
+  "blockedReason": null,
+  "sourceSha256": "076a4704ec35129727c754e5b5dff7c1a3f5f727f9704da2e9e7bc5d20db923d",
+  "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_report_progress.py --output /workspace/maxbooster7.5/reports/test-verification/python --coverage",
+  "status": "failed",
+  "exitCode": 1,
+  "durationSeconds": 10.433,
+  "counts": {
+    "tests": 26,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0
+  },
+  "junit": "tests__testing__test_report_progress.xml",
+  "log": "tests__testing__test_report_progress.txt"
+}

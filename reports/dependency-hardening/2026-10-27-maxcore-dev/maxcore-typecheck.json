@@ -1,0 +1,16 @@
+{
+  "command": [
+    "pnpm",
+    "--filter",
+    "@workspace/scripts",
+    "typecheck"
+  ],
+  "cwd": "external/maxcore",
+  "startedAt": "2026-10-28T01:21:32.835733+00:00",
+  "durationSeconds": 1.473,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-maxcore-dev/maxcore-typecheck.txt",
+  "logSha256": "f924c4496d33a6a6256520dbe091b8bc27a0f1ce19d9e6c7be8ad6f65d274508"
+}

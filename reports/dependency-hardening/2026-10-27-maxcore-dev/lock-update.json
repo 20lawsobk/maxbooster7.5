@@ -1,0 +1,17 @@
+{
+  "command": [
+    "pnpm",
+    "install",
+    "--lockfile-only",
+    "--ignore-scripts",
+    "--no-frozen-lockfile"
+  ],
+  "cwd": "external/maxcore",
+  "startedAt": "2026-10-28T01:19:55.809303+00:00",
+  "durationSeconds": 17.487,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-maxcore-dev/lock-update.txt",
+  "logSha256": "ce2bc4ee92b73c55fc37818066ae5ffbe410022f769558ac62ba851bd6b31347"
+}

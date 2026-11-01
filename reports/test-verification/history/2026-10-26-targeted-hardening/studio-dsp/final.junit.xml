@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="203" failures="0" errors="0" time="1.693562647">
+    <testsuite name="tests/unit/dsp-production-contracts.test.ts" timestamp="2026-10-26T12:21:46.833Z" hostname="2fc971e77ddd" tests="203" failures="0" errors="0" skipped="0" time="1.693562647">
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-plate-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.014449845">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-hall-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.011399519">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-room-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.01046192">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-chamber-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.004578025">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-spring-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.007800195">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-shimmer-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.004259655">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-gated-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.00540327">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-ambient-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.007865564">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-cathedral-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.006201373">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vintage-reverb preserves timing, stereo shape, finite samples and caller-owned input" time="0.004145553">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-tape-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.003053195">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-digital-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.002792932">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-ping-pong-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.003353619">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-slapback-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.00224746">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-mod-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.003981796">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-ducking-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.002852473">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-multi-tap-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.00546296">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-filter-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.004366907">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-reverse-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.003319997">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-granular-delay preserves timing, stereo shape, finite samples and caller-owned input" time="0.003766902">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vca-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.00291724">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-optical-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.002742437">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-fet-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.002827726">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-tube-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.003354159">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-multiband-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.00557554">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-parallel-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.002219638">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-bus-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.002189613">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-mastering-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.002213799">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vintage-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.002213538">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-glue-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.002151565">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-parametric-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.002995699">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-graphic-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.002497787">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vintage-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.002507943">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-linear-phase-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.002110383">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-dynamic-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.004059503">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-surgical-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.00296369">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-analog-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.002253749">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-mastering-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.00290462">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-midside-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.002414031">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-tilt-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.002056132">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-tube-distortion preserves timing, stereo shape, finite samples and caller-owned input" time="0.002943119">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-tape-distortion preserves timing, stereo shape, finite samples and caller-owned input" time="0.002517317">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-transistor-distortion preserves timing, stereo shape, finite samples and caller-owned input" time="0.00229407">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-fuzz-distortion preserves timing, stereo shape, finite samples and caller-owned input" time="0.002410336">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-bitcrush preserves timing, stereo shape, finite samples and caller-owned input" time="0.002724128">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-waveshaper preserves timing, stereo shape, finite samples and caller-owned input" time="0.002847695">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-overdrive preserves timing, stereo shape, finite samples and caller-owned input" time="0.002257685">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-saturation preserves timing, stereo shape, finite samples and caller-owned input" time="0.002233319">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-lofi preserves timing, stereo shape, finite samples and caller-owned input" time="0.002404337">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-amp preserves timing, stereo shape, finite samples and caller-owned input" time="0.002626452">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-chorus preserves timing, stereo shape, finite samples and caller-owned input" time="0.00293702">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-flanger preserves timing, stereo shape, finite samples and caller-owned input" time="0.002467692">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-phaser preserves timing, stereo shape, finite samples and caller-owned input" time="0.004073414">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-tremolo preserves timing, stereo shape, finite samples and caller-owned input" time="0.002378818">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vibrato preserves timing, stereo shape, finite samples and caller-owned input" time="0.002076993">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-ring-mod preserves timing, stereo shape, finite samples and caller-owned input" time="0.002819523">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-rotary preserves timing, stereo shape, finite samples and caller-owned input" time="0.003111543">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-ensemble preserves timing, stereo shape, finite samples and caller-owned input" time="0.002940254">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-dimension preserves timing, stereo shape, finite samples and caller-owned input" time="0.002590728">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-auto-pan preserves timing, stereo shape, finite samples and caller-owned input" time="0.002947806">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-gate preserves timing, stereo shape, finite samples and caller-owned input" time="0.002375513">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-expander preserves timing, stereo shape, finite samples and caller-owned input" time="0.002391336">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-de-esser preserves timing, stereo shape, finite samples and caller-owned input" time="0.002602505">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-transient-shaper preserves timing, stereo shape, finite samples and caller-owned input" time="0.002233348">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-envelope-follower preserves timing, stereo shape, finite samples and caller-owned input" time="0.002264756">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-ducker preserves timing, stereo shape, finite samples and caller-owned input" time="0.002670779">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-limiter-pro preserves timing, stereo shape, finite samples and caller-owned input" time="0.012601457">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-maximizer preserves timing, stereo shape, finite samples and caller-owned input" time="0.002308422">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-leveler preserves timing, stereo shape, finite samples and caller-owned input" time="0.002129302">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-pumper preserves timing, stereo shape, finite samples and caller-owned input" time="0.002787535">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-auto-tune preserves timing, stereo shape, finite samples and caller-owned input" time="0.477124601">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-harmony preserves timing, stereo shape, finite samples and caller-owned input" time="0.003131794">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vocal-doubler preserves timing, stereo shape, finite samples and caller-owned input" time="0.004188647">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-formant-shifter preserves timing, stereo shape, finite samples and caller-owned input" time="0.002664179">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vocal-compressor preserves timing, stereo shape, finite samples and caller-owned input" time="0.002531569">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vocal-eq preserves timing, stereo shape, finite samples and caller-owned input" time="0.002694595">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-de-breath preserves timing, stereo shape, finite samples and caller-owned input" time="0.002182562">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vocal-exciter preserves timing, stereo shape, finite samples and caller-owned input" time="0.004012161">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vocal-rider preserves timing, stereo shape, finite samples and caller-owned input" time="0.002976119">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vocoder preserves timing, stereo shape, finite samples and caller-owned input" time="0.004955174">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-u87-modeler preserves timing, stereo shape, finite samples and caller-owned input" time="0.003126165">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-c414-modeler preserves timing, stereo shape, finite samples and caller-owned input" time="0.003112544">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-sm7b-modeler preserves timing, stereo shape, finite samples and caller-owned input" time="0.003947765">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-ribbon-modeler preserves timing, stereo shape, finite samples and caller-owned input" time="0.003192275">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-sm58-modeler preserves timing, stereo shape, finite samples and caller-owned input" time="0.002696347">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-mic-preamp preserves timing, stereo shape, finite samples and caller-owned input" time="0.002670798">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-room-sim preserves timing, stereo shape, finite samples and caller-owned input" time="0.004176569">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-mic-isolator preserves timing, stereo shape, finite samples and caller-owned input" time="0.003150211">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-plosive-reducer preserves timing, stereo shape, finite samples and caller-owned input" time="0.002373741">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-channel-strip preserves timing, stereo shape, finite samples and caller-owned input" time="0.002939303">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-digital-delay mix=0 preserves dry samples exactly" time="0.001775067">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-plate-reverb mix=0 preserves dry samples exactly" time="0.001977352">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-chorus mix=0 preserves dry samples exactly" time="0.002759132">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-ring-mod mix=0 preserves dry samples exactly" time="0.001877662">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; mb-vca-compressor mix=0 preserves dry samples exactly" time="0.001748267">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio effects process actual sample blocks &gt; digital delay time moves a real impulse and feedback creates a decaying repeat" time="0.002860124">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; grand-piano renders exact finite stereo frames and reset deactivates the voice" time="0.003834023">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; upright-piano renders exact finite stereo frames and reset deactivates the voice" time="0.002947706">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; electric-piano renders exact finite stereo frames and reset deactivates the voice" time="0.003058553">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; clavinet renders exact finite stereo frames and reset deactivates the voice" time="0.002077403">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; honky-tonk renders exact finite stereo frames and reset deactivates the voice" time="0.004358505">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; toy-piano renders exact finite stereo frames and reset deactivates the voice" time="0.002480552">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; tack-piano renders exact finite stereo frames and reset deactivates the voice" time="0.002501262">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; prepared-piano renders exact finite stereo frames and reset deactivates the voice" time="0.001804942">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; felt-piano renders exact finite stereo frames and reset deactivates the voice" time="0.001923291">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; glass-piano renders exact finite stereo frames and reset deactivates the voice" time="0.002032386">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; orchestral-strings renders exact finite stereo frames and reset deactivates the voice" time="0.005528659">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; violin renders exact finite stereo frames and reset deactivates the voice" time="0.003326547">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; cello renders exact finite stereo frames and reset deactivates the voice" time="0.004197931">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; contrabass renders exact finite stereo frames and reset deactivates the voice" time="0.003603496">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; viola renders exact finite stereo frames and reset deactivates the voice" time="0.004730034">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; string-quartet renders exact finite stereo frames and reset deactivates the voice" time="0.008273018">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; cinematic-strings renders exact finite stereo frames and reset deactivates the voice" time="0.008238176">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; pizzicato-strings renders exact finite stereo frames and reset deactivates the voice" time="0.001877622">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; tremolo-strings renders exact finite stereo frames and reset deactivates the voice" time="0.003074237">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; synth-strings renders exact finite stereo frames and reset deactivates the voice" time="0.002423205">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; acoustic-drums renders exact finite stereo frames and reset deactivates the voice" time="0.001248053">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; electronic-drums renders exact finite stereo frames and reset deactivates the voice" time="0.001084786">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; breakbeat-drums renders exact finite stereo frames and reset deactivates the voice" time="0.001293952">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; trap-drums renders exact finite stereo frames and reset deactivates the voice" time="0.001308303">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; jazz-drums renders exact finite stereo frames and reset deactivates the voice" time="0.001495285">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; rock-drums renders exact finite stereo frames and reset deactivates the voice" time="0.00118003">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; percussion renders exact finite stereo frames and reset deactivates the voice" time="0.001118006">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; industrial-drums renders exact finite stereo frames and reset deactivates the voice" time="0.001154642">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; lofi-drums renders exact finite stereo frames and reset deactivates the voice" time="0.002131084">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; orchestral-drums renders exact finite stereo frames and reset deactivates the voice" time="0.001316526">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; electric-bass renders exact finite stereo frames and reset deactivates the voice" time="0.001589758">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; synth-bass renders exact finite stereo frames and reset deactivates the voice" time="0.002021529">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; acoustic-bass renders exact finite stereo frames and reset deactivates the voice" time="0.003059825">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; sub-bass renders exact finite stereo frames and reset deactivates the voice" time="0.000947089">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; wobble-bass renders exact finite stereo frames and reset deactivates the voice" time="0.002153729">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; funk-bass renders exact finite stereo frames and reset deactivates the voice" time="0.00197591">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; reese-bass renders exact finite stereo frames and reset deactivates the voice" time="0.002186278">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; fm-bass renders exact finite stereo frames and reset deactivates the voice" time="0.001741607">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; pluck-bass renders exact finite stereo frames and reset deactivates the voice" time="0.002258056">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; growl-bass renders exact finite stereo frames and reset deactivates the voice" time="0.00249941">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; warm-pad renders exact finite stereo frames and reset deactivates the voice" time="0.002396645">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; string-pad renders exact finite stereo frames and reset deactivates the voice" time="0.005970545">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; choir-pad renders exact finite stereo frames and reset deactivates the voice" time="0.005873059">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; glass-pad renders exact finite stereo frames and reset deactivates the voice" time="0.00281153">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; dark-pad renders exact finite stereo frames and reset deactivates the voice" time="0.003054347">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; evolving-pad renders exact finite stereo frames and reset deactivates the voice" time="0.004231583">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; noise-pad renders exact finite stereo frames and reset deactivates the voice" time="0.00293749">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; brass-pad renders exact finite stereo frames and reset deactivates the voice" time="0.003400358">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; digital-pad renders exact finite stereo frames and reset deactivates the voice" time="0.002675816">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; space-pad renders exact finite stereo frames and reset deactivates the voice" time="0.003054807">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; minimoog renders exact finite stereo frames and reset deactivates the voice" time="0.00155759">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; prophet renders exact finite stereo frames and reset deactivates the voice" time="0.002087929">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; jupiter renders exact finite stereo frames and reset deactivates the voice" time="0.002347721">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; oberheim renders exact finite stereo frames and reset deactivates the voice" time="0.001559262">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; arp-2600 renders exact finite stereo frames and reset deactivates the voice" time="0.001486412">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; sh-101 renders exact finite stereo frames and reset deactivates the voice" time="0.001245539">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; juno renders exact finite stereo frames and reset deactivates the voice" time="0.002047018">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; ms-20 renders exact finite stereo frames and reset deactivates the voice" time="0.001649427">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; odyssey renders exact finite stereo frames and reset deactivates the voice" time="0.001787076">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; polysix renders exact finite stereo frames and reset deactivates the voice" time="0.00261206">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; dx7-bell renders exact finite stereo frames and reset deactivates the voice" time="0.00202863">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; dx7-bass renders exact finite stereo frames and reset deactivates the voice" time="0.001977302">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; dx7-epiano renders exact finite stereo frames and reset deactivates the voice" time="0.003197012">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; dx7-brass renders exact finite stereo frames and reset deactivates the voice" time="0.001182383">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; dx7-pad renders exact finite stereo frames and reset deactivates the voice" time="0.001283386">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; dx7-lead renders exact finite stereo frames and reset deactivates the voice" time="0.001522126">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; dx7-keys renders exact finite stereo frames and reset deactivates the voice" time="0.001315314">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; dx7-perc renders exact finite stereo frames and reset deactivates the voice" time="0.001156995">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; fm8 renders exact finite stereo frames and reset deactivates the voice" time="0.003637056">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; modular-fm renders exact finite stereo frames and reset deactivates the voice" time="0.001785964">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; serum renders exact finite stereo frames and reset deactivates the voice" time="0.010013423">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; massive renders exact finite stereo frames and reset deactivates the voice" time="0.011758806">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; synthwave renders exact finite stereo frames and reset deactivates the voice" time="0.005778526">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; vocal-wavetable renders exact finite stereo frames and reset deactivates the voice" time="0.003132414">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; organic-wavetable renders exact finite stereo frames and reset deactivates the voice" time="0.005928372">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; digital-wavetable renders exact finite stereo frames and reset deactivates the voice" time="0.002950059">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; ppg renders exact finite stereo frames and reset deactivates the voice" time="0.004582642">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; microtonal renders exact finite stereo frames and reset deactivates the voice" time="0.002934967">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; hybrid renders exact finite stereo frames and reset deactivates the voice" time="0.004676013">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; granular-wavetable renders exact finite stereo frames and reset deactivates the voice" time="0.005488409">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; basic-sampler renders exact finite stereo frames and reset deactivates the voice" time="0.020615365">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; multisample renders exact finite stereo frames and reset deactivates the voice" time="0.225719622">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; granular-sampler renders exact finite stereo frames and reset deactivates the voice" time="0.077283568">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; stretch-sampler renders exact finite stereo frames and reset deactivates the voice" time="0.031988028">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; slicer renders exact finite stereo frames and reset deactivates the voice" time="0.008796768">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; rompler renders exact finite stereo frames and reset deactivates the voice" time="0.130385132">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; looper renders exact finite stereo frames and reset deactivates the voice" time="0.009673831">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; texture-sampler renders exact finite stereo frames and reset deactivates the voice" time="0.055036033">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; resynthesis renders exact finite stereo frames and reset deactivates the voice" time="0.006268084">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="registered Studio instrument render lifecycle &gt; voice-sampler renders exact finite stereo frames and reset deactivates the voice" time="0.014022421">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="DSP primitive signal contracts &gt; unsupported and inherited plugin names do not invoke object prototype members" time="0.000624863">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="DSP primitive signal contracts &gt; copy and dry/wet mixing do not alias the input and preserve unity endpoints" time="0.00052997">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="DSP primitive signal contracts &gt; high-pass rejects DC while low-pass retains DC after settling" time="0.001639763">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="DSP primitive signal contracts &gt; all-pass changes phase while preserving impulse energy" time="0.000303898">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="DSP primitive signal contracts &gt; lowpass attenuates alternating Nyquist input and reset clears filter history" time="0.000253172">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="DSP primitive signal contracts &gt; delay interpolation preserves a fractional impulse and clear removes history" time="0.000138188">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="DSP primitive signal contracts &gt; ADSR attack reaches sustain and release reaches zero without nonfinite samples" time="0.000637662">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; oscillator frequency ratios change the actual played fundamental" time="0.009064202">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; rejects nonfinite envelopes and excessive oscillator counts before allocating render work" time="0.001513943">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; kick generates nonempty bounded audio for the requested duration" time="0.00257258">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; snare generates nonempty bounded audio for the requested duration" time="0.001857752">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; hihat generates nonempty bounded audio for the requested duration" time="0.003306527">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; clap generates nonempty bounded audio for the requested duration" time="0.002548945">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; kick zero distortion and tone are genuine controls rather than replaced defaults" time="0.002420451">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; FM and wavetable preserve exact requested samples, are bounded and respect voice choice" time="0.009438335">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; formant and ring controls preserve dry mix exactly, do not mutate input and affect wet audio" time="0.023079521">
+        </testcase>
+        <testcase classname="tests/unit/dsp-production-contracts.test.ts" name="shared offline synthesizer actual waveform generation &gt; rejects unsupported instruments, invalid notes and nonfinite/resource-exhausting render controls" time="0.001263065">
+        </testcase>
+    </testsuite>
+</testsuites>

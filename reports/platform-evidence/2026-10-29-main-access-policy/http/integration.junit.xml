@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="110" failures="0" errors="0" time="8.536079541">
+    <testsuite name="tests/api-guards.test.ts" timestamp="2026-10-29T09:02:10.472Z" hostname="af966a6fd55d" tests="34" failures="0" errors="0" skipped="0" time="1.002277758">
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/me → 200 (public, returns null)" time="0.080383116">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/notifications → 401" time="0.025392225">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/sessions → 401" time="0.024302589">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/login-history → 401" time="0.022518696">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/admin/users → 401 or 403" time="0.030769053">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/marketplace/my-beats → 401" time="0.034292723">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; POST /api/marketplace/listings → 401 or 403" time="0.006754512">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/distribution/releases → 401" time="0.024960147">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/royalties → 401" time="0.022394355">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/workspace → 401" time="0.030848187">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/analytics/overview → 401" time="0.037229376">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; POST /api/billing/create-checkout-session requires an existing account" time="0.003317248">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; public registration checkout validates input before any provider request" time="0.002178309">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/files/list → 401" time="0.020854114">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/artist-profiles → 401" time="0.031391678">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/achievements → 401" time="0.024850863">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/shows → 401" time="0.030086923">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/merch → 401" time="0.023068616">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/label-submissions → 401" time="0.020823232">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/venues → 401" time="0.021941766">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/music-videos → 401" time="0.03161542">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/fan-campaigns → 401" time="0.023475811">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/collaboration → 401" time="0.025839856">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/files/not-a-uuid/download → 400 or 401" time="0.029752929">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/artist-profiles/bad-id → 400 or 401" time="0.023676825">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; PATCH /api/artist-profiles/bad-id → 400 or 401 or 403" time="0.00317939">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/files/sql-injection-attempt/download → 400 or 401" time="0.021935566">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/health is public" time="0.001727297">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /health is public" time="0.001678974">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /ready is public" time="0.001660396">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/ping is public" time="0.000976595">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/marketplace/beats is public" time="0.03176078">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Error reporting endpoint &gt; POST /api/errors accepts client error reports without auth" time="0.035536566">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Error reporting endpoint &gt; POST /api/errors rate-limits excessive reports" time="0.247515467">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/auth-flows.test.ts" timestamp="2026-10-29T09:02:10.482Z" hostname="af966a6fd55d" tests="27" failures="0" errors="0" skipped="0" time="2.038948032">
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 1. registers a new user" time="0.470255031">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 2. rejects duplicate registration" time="0.074654319">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 3. logs in with correct credentials" time="0.29419244">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 4. GET /api/auth/me returns user when authenticated" time="0.029513715">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 5. onboarding status is accessible" time="0.028427911">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 6. profile is accessible when authenticated" time="0.028939012">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 7. sessions list is accessible" time="0.030059854">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 8. login history is accessible" time="0.027482974">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 9. logout succeeds" time="0.032573549">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 10. /api/auth/me returns null or 401 after logout" time="0.034300578">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 11. rejects login with wrong password" time="0.270083174">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 12. GET /api/social/callback/:platform with no state redirects with error" time="0.028408067">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 13. GET /api/social/callback/:platform with tampered/invalid state redirects with invalid_state" time="0.034167276">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 14. GET /api/social/callback/:platform with base64-but-bad-HMAC state redirects with invalid_state" time="0.023710248">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 15. an OAuth provider error without session-bound state is rejected as invalid_state" time="0.023135621">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 16. POST /api/social/connect/:platform without auth returns 401 or 403" time="0.004315205">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 17. POST /api/social/connect/:platform with valid auth returns an authUrl" time="0.024050417">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 18. GET /api/social/platforms returns a platform list" time="0.027680036">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 19. GET /api/social/connections requires authentication" time="0.028868426">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 20. GET /api/auth/google initiates Google OAuth — redirects to Google or error page" time="0.030276702">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 21. GET /api/auth/google/callback?error=access_denied redirects with google_denied" time="0.032215099">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 22. GET /api/auth/google/callback with no state redirects with invalid_state" time="0.023060217">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 24. GET /api/auth/oauth/initiate without auth returns 401" time="0.031561732">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 24b. GET /api/auth/oauth/initiate?platform=google with auth redirects to Google or error page" time="0.331400117">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 25. GET /api/auth/oauth/callback?platform=spotify&amp;error=access_denied redirects with oauth_denied" time="0.024445468">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 26. GET /api/auth/oauth/callback without state redirects with invalid_state" time="0.023846794">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 23. GET /api/auth/google/callback with valid state reaches a different redirect than invalid_state" time="0.02292027">
+            <system-err>
+[AuthTest] GOOGLE_CLIENT_ID not configured — skipping valid-state callback test
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/billing-lifecycle.test.ts" timestamp="2026-10-29T09:02:10.487Z" hostname="af966a6fd55d" tests="17" failures="0" errors="0" skipped="0" time="2.167698405">
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 1. registers and logs in an owned fixture user and captures its ID" time="0.72337566">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 2. webhook endpoint exists (not 404)" time="0.027140527">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 3. rejects webhook with no stripe-signature header" time="0.02208865">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 4. rejects webhook with an invalid stripe-signature header" time="0.023417665">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 5. a signed subscription event cannot grant entitlement without current provider verification" time="0.054696402">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 6. checkout.session.completed (subscription mode) updates subscription_tier" time="0.041346105">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 7. idempotency: same event ID fired twice — second response is idempotent, tier unchanged" time="0.186089425">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 8. a valid signed event cannot replace a user&apos;s tier from unverified payload metadata" time="0.056431681">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 9. GET /api/billing/subscription returns complete tier shape when authenticated" time="0.090126814">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 10. GET /api/billing/subscription returns 401 when unauthenticated" time="0.033528557">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription rejects suspended session" time="0.179049806">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription rejects banned session" time="0.171950974">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription rejects mfa-required session" time="0.143749485">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription rejects trial-expired session" time="0.145586698">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; access policy: GET /api/billing/subscription rejects subscription-expired session" time="0.157004697">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 11. GET /api/billing/plans returns a non-empty plan list without auth" time="0.050210404">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 12. POST /api/billing/create-checkout-session rejects invalid plan" time="0.058216606">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/file-management.test.ts" timestamp="2026-10-29T09:02:10.490Z" hostname="af966a6fd55d" tests="20" failures="0" errors="0" skipped="0" time="3.192417895">
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 1. registers and logs in a test user" time="0.888212025">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 2. rejects unauthenticated upload with 401 or 403" time="0.006817763">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; isolates private hybrid bytes on both download routes" time="0.786204199">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 3. uploads a small audio file and receives a storage key" time="0.28984401">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 4. downloads the uploaded file and verifies content-type and byte payload" time="0.046527197">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 5. cross-user access to a file is rejected (403) or not found (404)" time="0.039324848">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 6. deletes the uploaded file and returns success" time="0.050957987">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 7. GET of a deleted file returns 404" time="0.068742373">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 8. delete of a completely unknown file key returns 401, 403, or 404" time="0.03612337">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 9. GET /api/storage/quota returns quota info when authenticated" time="0.062134447">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10a. double-encoded traversal in file key is rejected (never 200)" time="0.048471938">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10b. literal &apos;..&apos; segments in file key are rejected (never 200)" time="0.05023777">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10c. backslash and encoded-NUL keys are rejected (never 200)" time="0.085677807">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10d. restore of the deleted file makes it downloadable again" time="0.123669778">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10. GET /api/storage/quota returns 401 or 403 without authentication" time="0.035164602">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects suspended session" time="0.113684592">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects banned session" time="0.109210227">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects mfa-required session" time="0.109206712">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects trial-expired session" time="0.112005247">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; access policy: GET /api/storage/quota rejects subscription-expired session" time="0.12584037">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/health.test.ts" timestamp="2026-10-29T09:02:10.494Z" hostname="af966a6fd55d" tests="12" failures="0" errors="0" skipped="0" time="0.134737451">
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /health returns 200" time="0.031208766">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/health returns 200" time="0.003710412">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /ready reflects the actual admitted dependency set" time="0.002513295">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/ready does not confuse a sealed fixture with full readiness" time="0.065638331">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /healthz returns 200" time="0.009934829">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /readyz uses the same truthful readiness contract" time="0.005591792">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/ping returns ok:true" time="0.004394945">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; /startup returns startup phase details" time="0.002093321">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-Content-Type-Options is nosniff" time="0.002847278">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-Frame-Options is present" time="0.00204684">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-XSS-Protection header is set" time="0.001767559">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; Server header is absent or masked" time="0.001168044">
+        </testcase>
+    </testsuite>
+</testsuites>

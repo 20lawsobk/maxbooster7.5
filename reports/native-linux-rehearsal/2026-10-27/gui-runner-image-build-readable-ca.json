@@ -1,0 +1,22 @@
+{
+  "command": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "build",
+    "--progress=plain",
+    "--secret",
+    "id=proxy_ca,src=/usr/local/share/ca-certificates/environment-proxy-ca.crt",
+    "--tag",
+    "maxbooster-linux-u3f69z18-gui:local",
+    "/tmp/maxbooster-linux-u3f69z18/gui-runner-context"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T02:10:46.164011+00:00",
+  "durationSeconds": 19.642,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/native-linux-rehearsal/2026-10-27/gui-runner-image-build-readable-ca.txt",
+  "logSha256": "834d0b303c73fe0b5a417b3dc1f42115ca8f93887d0d879ed04220f96e3ebb91",
+  "ownedImage": "maxbooster-linux-u3f69z18-gui:local"
+}

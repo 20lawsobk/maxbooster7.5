@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="202" failures="0" errors="0" time="17.761084442">
+    <testsuite name="tests/direct-upload.test.ts" timestamp="2026-10-26T02:47:25.383Z" hostname="2fc971e77ddd" tests="4" failures="0" errors="0" skipped="0" time="1.056919928">
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 1. registers and logs in a test user" time="0.640984523">
+        </testcase>
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 2. issues a reserved direct upload URL" time="0.035959528">
+        </testcase>
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 3. uploads the reserved bytes and persists the file" time="0.255655778">
+        </testcase>
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 4. rejects reusing the same upload URL" time="0.122140691">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-catalog-production.test.ts" timestamp="2026-10-26T02:47:25.385Z" hostname="2fc971e77ddd" tests="33" failures="0" errors="0" skipped="0" time="2.010096263">
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; setup: register and login test user" time="0.778577073">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing returns list" time="0.038106763">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing/stats returns statistics" time="0.029675349">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; POST /api/sync-licensing creates a license opportunity" time="0.031848232">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing/:id retrieves the license" time="0.029499559">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; PUT /api/sync-licensing/:id updates the license" time="0.062718984">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; PATCH /api/sync-licensing/:id/status updates status" time="0.04461504">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; DELETE /api/sync-licensing/:id removes the license" time="0.071128956">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing without auth → 401" time="0.030592859">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances returns list" time="0.036974425">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances/stats returns statistics" time="0.056256781">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; POST /api/sample-clearances creates a clearance request" time="0.060378299">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances/:id retrieves clearance" time="0.038192252">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; PUT /api/sample-clearances/:id updates clearance" time="0.040984313">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; DELETE /api/sample-clearances/:id removes clearance" time="0.036882687">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances without auth → 401" time="0.029004832">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos returns list" time="0.028553011">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos/stats returns statistics" time="0.047443136">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; POST /api/music-videos creates a video project" time="0.038846759">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos/:id retrieves video project" time="0.029163191">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; PUT /api/music-videos/:id updates video project" time="0.041576697">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos/diffusion/status returns diffusion status" time="0.028513191">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; DELETE /api/music-videos/:id removes video project" time="0.033665253">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos without auth → 401" time="0.023776176">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting returns list" time="0.030172679">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting/stats returns statistics" time="0.046777022">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; POST /api/songwriting creates a song project" time="0.039151254">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting/:id retrieves song project" time="0.026905692">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; PUT /api/songwriting/:id updates song project" time="0.034611886">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting/rhyme/:word returns rhyme suggestions" time="0.031647143">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; POST /api/songwriting/ai-assist returns AI suggestions" time="0.035543506">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; DELETE /api/songwriting/:id removes song project" time="0.045768902">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting without auth → 401" time="0.027023494">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-marketplace-distribution.test.ts" timestamp="2026-10-26T02:47:25.399Z" hostname="2fc971e77ddd" tests="43" failures="0" errors="0" skipped="0" time="2.027204871">
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; setup: register and login test user" time="0.730757809">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats returns beat listings (public)" time="0.053313646">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats supports genre filter" time="0.051451373">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats supports BPM range filter" time="0.02371946">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats supports pagination" time="0.037950127">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/producers returns producer list (public)" time="0.033568657">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/license-templates returns license templates" time="0.031849494">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/my-beats returns authenticated user beats" time="0.030849936">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/purchases returns user purchases" time="0.036930979">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/for-you returns personalised recommendations" time="0.056672874">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/ai-recommendations returns AI beat recs" time="0.030621221">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/taste-profile returns listener taste profile" time="0.027561115">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/my-stems returns stems for authenticated user" time="0.026108113">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/collaborations returns collab requests" time="0.025104048">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/contracts returns contract list" time="0.0233947">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/affiliates returns affiliate program info" time="0.02281728">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/escrow returns escrow transactions" time="0.024569302">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/sales-analytics returns sales data" time="0.026088854">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Marketplace auth guards &gt; GET /api/marketplace/my-beats without auth → 401/403" time="0.020791834">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Marketplace auth guards &gt; GET /api/marketplace/purchases without auth → 401/403" time="0.02079561">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/platforms requires a connected distributor before a live catalog is claimed" time="0.025520126">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/platforms/status reports no fabricated provider connection" time="0.025613306">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases returns user releases" time="0.025390581">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/policies returns DSP submission policies" time="0.023080176">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; POST /api/distribution/releases rejects a draft without a title" time="0.032170032">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; POST /api/distribution/releases creates a release" time="0.031144946">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases/:id retrieves release" time="0.042786352">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; PATCH /api/distribution/releases/:id updates release metadata" time="0.063547654">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases/:id/status gets release status" time="0.030461606">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/hyperfollow returns HyperFollow pages" time="0.024774748">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; POST /api/distribution/validate validates release data" time="0.026653071">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; DELETE /api/distribution/releases/:id removes release" time="0.057837046">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases without auth → 401" time="0.023823063">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/summary returns royalty summary" time="0.024953868">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties returns royalty records" time="0.024118398">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/platform-breakdown returns per-platform breakdown" time="0.025622476">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/top-tracks returns top earning tracks" time="0.024601897">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/splits returns split configurations" time="0.023670493">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/forecast returns earnings forecast" time="0.024472572">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties without auth → 401" time="0.019822579">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Money loop: sale triggers royalty records &gt; POST /api/marketplace/checkout/initiate → 200 or 402 (Stripe gated)" time="0.027970153">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Money loop: sale triggers royalty records &gt; GET /api/royalties/statements returns statements list" time="0.026340855">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Money loop: sale triggers royalty records &gt; GET /api/royalties/transactions returns transactions list" time="0.029331446">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-press-pitching-ar.test.ts" timestamp="2026-10-26T02:47:25.406Z" hostname="2fc971e77ddd" tests="35" failures="0" errors="0" skipped="0" time="2.26274489">
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; setup: register and login test user" time="0.71536535">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; GET /api/press-kit returns press kit (empty on new account)" time="0.032384711">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; PUT /api/press-kit creates or updates press kit" time="0.045914015">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; GET /api/press-kit returns updated press kit" time="0.045524062">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; POST /api/press-kit/publish publishes the press kit" time="0.038132086">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; GET /api/press-kit without auth returns 401" time="0.03333814">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; GET /api/venues returns empty list for new user" time="0.038592256">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; GET /api/venues/stats returns venue statistics" time="0.052774999">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; POST /api/venues creates a venue" time="0.050973452">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; GET /api/venues/:id retrieves the created venue" time="0.032099861">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; PUT /api/venues/:id updates the venue" time="0.083186645">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; DELETE /api/venues/:id removes the venue" time="0.08113501">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/curators requires authentication" time="0.025199762">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/curators returns curators for a paid account" time="0.042046376">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching returns list" time="0.035361892">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/stats returns statistics" time="0.048502224">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; POST /api/playlist-pitching creates a pitch" time="0.050038787">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/:id retrieves pitch" time="0.037979777">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; PATCH /api/playlist-pitching/:id/status updates status" time="0.091697522">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; DELETE /api/playlist-pitching/:id removes pitch" time="0.05050135">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; GET /api/radio-pitches returns list" time="0.028809308">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; GET /api/radio-pitches/stats returns statistics" time="0.04110777">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; POST /api/radio-pitches creates a pitch" time="0.049471336">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; GET /api/radio-pitches/:id retrieves pitch" time="0.035816388">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; DELETE /api/radio-pitches/:id removes pitch" time="0.040649989">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; GET /api/label-submissions returns list" time="0.033617752">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; GET /api/label-submissions/stats returns statistics" time="0.048878963">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; POST /api/label-submissions creates a submission" time="0.045385297">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; GET /api/label-submissions/:id retrieves submission" time="0.037389456">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; PATCH /api/label-submissions/:id/status updates status" time="0.048464368">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; POST /api/label-submissions/:id/followup logs a followup" time="0.053333827">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; DELETE /api/label-submissions/:id removes submission" time="0.061617503">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Auth guards (unauthenticated) &gt; GET /api/venues without auth → 401" time="0.036219657">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Auth guards (unauthenticated) &gt; GET /api/radio-pitches without auth → 401" time="0.035505769">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Auth guards (unauthenticated) &gt; GET /api/label-submissions without auth → 401" time="0.030290032">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-revenue-merch.test.ts" timestamp="2026-10-26T02:47:25.411Z" hostname="2fc971e77ddd" tests="37" failures="0" errors="0" skipped="0" time="2.010928598">
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; setup: register and login test user" time="0.698876296">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns returns list" time="0.037848888">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/stats returns statistics" time="0.057871573">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; POST /api/fan-campaigns creates a campaign" time="0.054055618">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/:id retrieves campaign" time="0.040512675">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; PUT /api/fan-campaigns/:id updates campaign" time="0.065631693">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; DELETE /api/fan-campaigns/:id removes campaign" time="0.074182951">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns without auth → 401" time="0.021423344">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast returns current forecast" time="0.034674881">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/projections returns projections" time="0.036029353">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/accuracy returns forecast accuracy metrics" time="0.028408399">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/rate returns growth rate" time="0.032559369">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; POST /api/revenue-forecast/generate triggers AI forecast generation" time="0.030416448">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast without auth → 401" time="0.023152932">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets returns list" time="0.030009814">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets creates a budget" time="0.027614081">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id retrieves budget" time="0.025753844">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id/items returns budget items" time="0.038888536">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets/:id/items adds a budget item" time="0.032962618">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; PUT /api/project-budgets/:id updates budget" time="0.075646739">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/items/:id removes budget item" time="0.035595108">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/:id removes budget" time="0.032849247">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets without auth → 401" time="0.028864696">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch returns merch list" time="0.037055601">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/stats returns merch statistics" time="0.033956497">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/orders returns order list" time="0.035862132">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; POST /api/merch creates a merch item" time="0.036145768">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/:id retrieves merch item" time="0.027488051">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; PUT /api/merch/:id updates merch item" time="0.037224326">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; DELETE /api/merch/:id removes merch item" time="0.030988295">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch without auth → 401" time="0.027774577">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/templates returns contract templates" time="0.031005005">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/my-contracts returns user contracts" time="0.032760623">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/tax-rates is accessible with country param" time="0.025772994">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/stats/summary returns contract statistics" time="0.028139093">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations returns recommendations" time="0.032926173">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations without auth → 401" time="0.024564">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-storefront-dns.test.ts" timestamp="2026-10-26T02:47:25.416Z" hostname="2fc971e77ddd" tests="36" failures="0" errors="0" skipped="0" time="7.079817651">
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; setup: register and login test user" time="0.873285964">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/templates returns available templates (public)" time="0.034790461">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/my returns current user storefront" time="0.038162722">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/suggest-url returns URL suggestions" time="0.031991499">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/generate-slug generates a URL slug" time="0.028435535">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/check-domain checks domain availability (public)" time="0.028707701">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; POST /api/storefront/create creates a storefront" time="0.048967919">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/:slug retrieves storefront by slug (public)" time="0.041148466">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/public/:slug retrieves public storefront" time="0.030748399">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; PUT /api/storefront/:id/customize customizes the storefront" time="0.034096368">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; PATCH /api/storefront/:id/publish publishes the storefront" time="0.085859014">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/:storefrontId/listings returns storefront listings" time="0.030087181">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/check-subdomain/:sub checks subdomain availability" time="0.027820612">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; POST /api/storefront/generate-subdomain generates a subdomain" time="0.029655029">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; DELETE /api/storefront/:id removes the storefront" time="0.037393241">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/my without auth → 401" time="0.029797444">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; GET /api/storefront-domains/search searches available domains (public)" time="2.545273662">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; POST /api/storefront-domains/managed/check checks managed domain availability (public)" time="0.030291109">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; POST /api/storefront-domains/platform/check checks platform domain (public)" time="0.037788767">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; GET /api/storefront-domains/dns/status returns DNS infrastructure status" time="0.033722755">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; GET /api/storefront-domains/propagation returns propagation info" time="0.031650829">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/info returns DNS system info (public)" time="0.027723406">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/usage returns DNS usage stats" time="0.028679218">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/zones returns user DNS zones" time="0.026112607">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; POST /api/dns-manager/zones creates a DNS zone" time="0.038581984">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/zones/:zoneId/records lists zone records" time="0.031943511">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; POST /api/dns-manager/zones/:zoneId/records adds a DNS record" time="0.030552894">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; DELETE /api/dns-manager/zones/:zoneId removes zone" time="0.041983084">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/zones without auth → 401" time="0.028997829">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/config returns registrar configuration (public)" time="0.031023894">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/search searches domain availability (public)" time="2.555801596">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/whois/:domain returns WHOIS data (public)" time="0.024502838">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/my-domains returns user registered domains" time="0.025509467">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/contacts returns user contact profiles" time="0.02647345">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/my-domains without auth → 401" time="0.024514726">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/contacts without auth → 401" time="0.023720824">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/file-management.test.ts" timestamp="2026-10-26T02:47:25.421Z" hostname="2fc971e77ddd" tests="14" failures="0" errors="0" skipped="0" time="1.313372241">
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 1. registers and logs in a test user" time="0.719304786">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 2. rejects unauthenticated upload with 401 or 403" time="0.005769066">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 3. uploads a small audio file and receives a storage key" time="0.122012158">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 4. downloads the uploaded file and verifies content-type and byte payload" time="0.039477294">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 5. cross-user access to a file is rejected (403) or not found (404)" time="0.025878794">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 6. deletes the uploaded file and returns success" time="0.032658098">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 7. GET of a deleted file returns 404" time="0.033415676">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 8. delete of a completely unknown file key returns 401, 403, or 404" time="0.038541237">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 9. GET /api/storage/quota returns quota info when authenticated" time="0.032179147">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10a. double-encoded traversal in file key is rejected (never 200)" time="0.02833639">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10b. literal &apos;..&apos; segments in file key are rejected (never 200)" time="0.026310074">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10c. backslash and encoded-NUL keys are rejected (never 200)" time="0.054727506">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10d. restore of the deleted file makes it downloadable again" time="0.124121354">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10. GET /api/storage/quota returns 401 or 403 without authentication" time="0.025005051">
+        </testcase>
+    </testsuite>
+</testsuites>

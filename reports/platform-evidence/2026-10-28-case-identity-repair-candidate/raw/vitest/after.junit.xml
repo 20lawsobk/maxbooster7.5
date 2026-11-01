@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="173" failures="0" errors="0" time="3.674843142">
+    <testsuite name="tests/unit/auth-page-age-policy.test.ts" timestamp="2026-10-29T08:49:14.843Z" hostname="af966a6fd55d" tests="48" failures="0" errors="0" skipped="0" time="1.661288029">
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; accepts the exact UTC sixteenth birthday, not the preceding day" time="0.00219271">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; uses UTC even when an instant&apos;s written offset crosses a calendar day" time="0.000373354">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; validates leap dates and February 29 anniversary boundaries" time="0.000425092">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB undefined [row 0]" time="0.000375637">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB null [row 1]" time="0.000117257">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;&quot; [row 2]" time="0.000083776">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot; &quot; [row 3]" time="0.000123857">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB 20100615 [row 4]" time="0.000126711">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB {} [row 5]" time="0.000287864">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB undefined [row 6]" time="0.000270779">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2010-6-15&quot; [row 7]" time="0.000190207">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2010/06/15&quot; [row 8]" time="0.000083766">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2010-06-15T00:00:00Z&quot; [row 9]" time="0.000075464">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot; 2010-06-15&quot; [row 10]" time="0.000080752">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2010-06-15 &quot; [row 11]" time="0.000061984">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2010-02-29&quot; [row 12]" time="0.000069495">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2010-04-31&quot; [row 13]" time="0.000062163">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2010-13-01&quot; [row 14]" time="0.000055153">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2010-00-01&quot; [row 15]" time="0.000084948">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2010-01-00&quot; [row 16]" time="0.000075434">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;0000-01-01&quot; [row 17]" time="0.000055193">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;9999-01-01&quot; [row 18]" time="0.000063777">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; fails closed for missing, malformed, normalized-invalid or future DOB &quot;2026-06-16&quot; [row 19]" time="0.000041353">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Shared minimum age 16 policy &gt; shared Zod signup/checkout schemas reject missing and normalized-invalid DOB" time="0.003351089">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Registration password and paid consent boundaries (offline route fixtures) &gt; rejects unsafe password &quot;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&quot; before account or provider writes" time="0.118438176">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Registration password and paid consent boundaries (offline route fixtures) &gt; rejects unsafe password &quot;ééééééééééééééééééééééééééééééééééééé&quot; before account or provider writes" time="0.073338994">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Registration password and paid consent boundaries (offline route fixtures) &gt; rejects unsafe password {} before account or provider writes" time="0.065987371">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Registration password and paid consent boundaries (offline route fixtures) &gt; rejects unsafe password 42 before account or provider writes" time="0.071420549">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Registration password and paid consent boundaries (offline route fixtures) &gt; records verified birthdate and explicit marketing choice before establishing the paid session" time="0.044181096">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Registration password and paid consent boundaries (offline route fixtures) &gt; rolls back a failed consent write and retries the paid checkout without a second account" time="0.062605105">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; password signup and public checkout reject ineligible DOB undefined before creation/payment" time="0.050337115">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; password signup and public checkout reject ineligible DOB &quot;2010-02-30&quot; before creation/payment" time="0.056226736">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; password signup and public checkout reject ineligible DOB &quot;2999-01-01&quot; before creation/payment" time="0.046645336">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; password signup and public checkout reject ineligible DOB &quot;2020-01-01&quot; before creation/payment" time="0.080271154">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; paid registration rechecks Stripe metadata DOB undefined before creating any account" time="0.023497423">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; paid registration rechecks Stripe metadata DOB &quot;2010-02-30&quot; before creating any account" time="0.039646792">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; paid registration rechecks Stripe metadata DOB &quot;2999-01-01&quot; before creating any account" time="0.022983355">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; paid registration rechecks Stripe metadata DOB &quot;2020-01-01&quot; before creating any account" time="0.028850018">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; preserves existing-account paid registration sign-in recovery even with no historical DOB" time="0.028671904">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; new Google login without signup eligibility is redirected to collect DOB, never created" time="0.028826797">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; existing Google login without any DOB remains supported" time="0.034051706">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; new Google signup validates DOB in POST, binds a DOB-free server receipt to state and consumes it" time="0.113161821">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; a failed Google eligibility replacement cannot reuse an earlier valid receipt" time="0.045662113">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; rejects a expired Google signup receipt without creating a new account" time="0.027848841">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; rejects a wrong-state Google signup receipt without creating a new account" time="0.024769242">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; rejects a old-policy Google signup receipt without creating a new account" time="0.026380885">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; Google eligibility POST has explicit CSRF validation despite the existing OAuth path exemption" time="0.000248485">
+        </testcase>
+        <testcase classname="tests/unit/auth-page-age-policy.test.ts" name="Actual account-creation route eligibility gates (offline stubs) &gt; edited registration/policy sources have no obvious TypeScript/TSX syntax errors" time="0.533668161">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/deployment-small-file-codec.test.ts" timestamp="2026-10-29T08:49:14.865Z" hostname="af966a6fd55d" tests="6" failures="0" errors="0" skipped="0" time="0.647822276">
+        <testcase classname="tests/unit/deployment-small-file-codec.test.ts" name="deployment small-file native compression &gt; retains exact bytes through its container [row 0]" time="0.003512071">
+        </testcase>
+        <testcase classname="tests/unit/deployment-small-file-codec.test.ts" name="deployment small-file native compression &gt; retains exact bytes through its container [row 1]" time="0.073782648">
+        </testcase>
+        <testcase classname="tests/unit/deployment-small-file-codec.test.ts" name="deployment small-file native compression &gt; retains exact bytes through its container [row 2]" time="0.046728933">
+        </testcase>
+        <testcase classname="tests/unit/deployment-small-file-codec.test.ts" name="deployment small-file native compression &gt; produces zstd frames readable by the existing CLI restore path" time="0.071947828">
+        </testcase>
+        <testcase classname="tests/unit/deployment-small-file-codec.test.ts" name="deployment small-file native compression &gt; reads legacy CLI-compressed containers without migration" time="0.440256596">
+        </testcase>
+        <testcase classname="tests/unit/deployment-small-file-codec.test.ts" name="deployment small-file native compression &gt; rejects corruption rather than returning fabricated content" time="0.005551149">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/email-provider-ack.test.ts" timestamp="2026-10-29T08:49:14.866Z" hostname="af966a6fd55d" tests="29" failures="0" errors="0" skipped="0" time="0.00967919">
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email provider acceptance contract &gt; accepts a confirmed provider message ID" time="0.001469879">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email provider acceptance contract &gt; rejects resolved provider error responses instead of acknowledging jobs" time="0.000852667">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email provider acceptance contract &gt; rejects missing or unconfirmed provider acceptance: undefined" time="0.000260754">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email provider acceptance contract &gt; rejects missing or unconfirmed provider acceptance: null" time="0.000150787">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email provider acceptance contract &gt; rejects missing or unconfirmed provider acceptance: {&quot;data&quot;:null}" time="0.000146381">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email provider acceptance contract &gt; rejects missing or unconfirmed provider acceptance: {&quot;data&quot;:{}}" time="0.00012563">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email provider acceptance contract &gt; rejects missing or unconfirmed provider acceptance: {&quot;data&quot;:{&quot;id&quot;:&quot;&quot;}}" time="0.000155184">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email provider acceptance contract &gt; rejects missing or unconfirmed provider acceptance: {&quot;data&quot;:{&quot;id&quot;:&quot;  &quot;}}" time="0.000124148">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email worker configuration &gt; rejects missing provider API key: undefined" time="0.000469909">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email worker configuration &gt; rejects missing provider API key: &quot;&quot;" time="0.001182475">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email worker configuration &gt; rejects missing provider API key: &quot;   &quot;" time="0.000189986">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email worker configuration &gt; rejects missing verified sender: undefined" time="0.000155665">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email worker configuration &gt; rejects missing verified sender: &quot;&quot;" time="0.000091058">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email worker configuration &gt; rejects missing verified sender: &quot;   &quot;" time="0.000075304">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="email worker configuration &gt; accepts configured provider and sender after trimming" time="0.000522408">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; reuses the same stable key through retries inside provider window" time="0.000228115">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; permits the final millisecond inside the window but fails at expiry" time="0.000173061">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects missing, oversized, or unsafe queue IDs [row 0]" time="0.0001323">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects missing, oversized, or unsafe queue IDs [row 1]" time="0.000094563">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects missing, oversized, or unsafe queue IDs [row 2]" time="0.000077668">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects missing, oversized, or unsafe queue IDs [row 3]" time="0.000073011">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects missing, oversized, or unsafe queue IDs [row 4]" time="0.000126521">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects missing, oversized, or unsafe queue IDs [row 5]" time="0.000076516">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects missing, oversized, or unsafe queue IDs [row 6]" time="0.000074102">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects unreliable original enqueue timestamps [row 0]" time="0.000123266">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects unreliable original enqueue timestamps [row 1]" time="0.000079119">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects unreliable original enqueue timestamps [row 2]" time="0.000070396">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects unreliable original enqueue timestamps [row 3]" time="0.000063556">
+        </testcase>
+        <testcase classname="tests/unit/email-provider-ack.test.ts" name="queued email idempotency retry boundary &gt; rejects an enqueue timestamp after the current clock" time="0.000113741">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/frontend-batch-response-contracts.test.ts" timestamp="2026-10-29T08:49:14.870Z" hostname="af966a6fd55d" tests="9" failures="0" errors="0" skipped="0" time="0.689160716">
+        <testcase classname="tests/unit/frontend-batch-response-contracts.test.ts" name="frontend batch Response contracts &gt; parses actual Response JSON for every batch action hook" time="0.052338522">
+        </testcase>
+        <testcase classname="tests/unit/frontend-batch-response-contracts.test.ts" name="frontend batch Response contracts &gt; rejects malformed batch JSON instead of synthesizing successful IDs [row 0]" time="0.001506674">
+        </testcase>
+        <testcase classname="tests/unit/frontend-batch-response-contracts.test.ts" name="frontend batch Response contracts &gt; rejects malformed batch JSON instead of synthesizing successful IDs [row 1]" time="0.00058949">
+        </testcase>
+        <testcase classname="tests/unit/frontend-batch-response-contracts.test.ts" name="frontend batch Response contracts &gt; rejects malformed batch JSON instead of synthesizing successful IDs [row 2]" time="0.000559054">
+        </testcase>
+        <testcase classname="tests/unit/frontend-batch-response-contracts.test.ts" name="frontend batch Response contracts &gt; rejects mismatched totals and unexpected IDs" time="0.000667808">
+        </testcase>
+        <testcase classname="tests/unit/frontend-batch-response-contracts.test.ts" name="frontend batch Response contracts &gt; parses the server progress DTO and rejects malformed terminal states" time="0.00251736">
+        </testcase>
+        <testcase classname="tests/unit/frontend-batch-response-contracts.test.ts" name="frontend template Response contracts &gt; extracts studio template list envelopes and direct mutation DTOs" time="0.001214384">
+        </testcase>
+        <testcase classname="tests/unit/frontend-batch-response-contracts.test.ts" name="frontend template Response contracts &gt; extracts batch template envelopes and direct mutation DTOs" time="0.001018788">
+        </testcase>
+        <testcase classname="tests/unit/frontend-batch-response-contracts.test.ts" name="frontend template Response contracts &gt; rejects malformed template payloads before mutation success handlers" time="0.001087722">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/marketplace-storefront-page-contracts.test.ts" timestamp="2026-10-29T08:49:14.873Z" hostname="af966a6fd55d" tests="10" failures="0" errors="0" skipped="0" time="0.555097055">
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; parses Marketplace without syntax errors" time="0.190441093">
+        </testcase>
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; parses StorefrontBuilder without syntax errors" time="0.051200078">
+        </testcase>
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; rejects malformed lists rather than rendering an empty success [row 0]" time="0.136510764">
+        </testcase>
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; rejects malformed lists rather than rendering an empty success [row 1]" time="0.033037014">
+        </testcase>
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; preserves authentic empty lists and request failures" time="0.113244335">
+        </testcase>
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; builds canonical encoded links independently of domain aliases" time="0.024460115">
+        </testcase>
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; scopes owner reads and editor drafts to the authenticated identity" time="0.000758876">
+        </testcase>
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; keeps failures distinct from empty states and removes fake saved licenses" time="0.000769902">
+        </testcase>
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; matches the verified promotion route and Veo asset contract" time="0.00105989">
+        </testcase>
+        <testcase classname="tests/unit/marketplace-storefront-page-contracts.test.ts" name="Marketplace and storefront page contracts &gt; does not claim publication, DNS readiness, or clipboard success prematurely" time="0.000571173">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/password-policy.test.ts" timestamp="2026-10-29T08:49:14.874Z" hostname="af966a6fd55d" tests="13" failures="0" errors="0" skipped="0" time="0.010959587">
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects invalid input null" time="0.001690852">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects invalid input undefined" time="0.00025168">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects invalid input {}" time="0.000123547">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects invalid input 123" time="0.000196146">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects invalid input &quot;&quot;" time="0.000180342">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects invalid input &quot;short&quot;" time="0.000160202">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; accepts exactly 72 UTF-8 bytes [row 0]" time="0.000975733">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; accepts exactly 72 UTF-8 bytes [row 1]" time="0.000297489">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; accepts exactly 72 UTF-8 bytes [row 2]" time="0.000421146">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects input beyond 72 UTF-8 bytes [row 0]" time="0.000492353">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects input beyond 72 UTF-8 bytes [row 1]" time="0.000274444">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects input beyond 72 UTF-8 bytes [row 2]" time="0.000206061">
+        </testcase>
+        <testcase classname="tests/unit/password-policy.test.ts" name="new password bcrypt boundary &gt; rejects distinct passwords bcrypt would otherwise treat as equal" time="0.003807192">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/registrationCompletion.test.ts" timestamp="2026-10-29T08:49:14.876Z" hostname="af966a6fd55d" tests="12" failures="0" errors="0" skipped="0" time="0.03425133">
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; accepts a bounded Stripe checkout session id: cs_test_123" time="0.001877694">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; accepts a bounded Stripe checkout session id: cs_live_abcDEF123" time="0.000333554">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; rejects an invalid checkout session id [row 0]" time="0.001004006">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; rejects an invalid checkout session id [row 1]" time="0.000358982">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; rejects an invalid checkout session id [row 2]" time="0.000219862">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; rejects an invalid checkout session id [row 3]" time="0.000323699">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; rejects an invalid checkout session id [row 4]" time="0.000281094">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; enforces the backend bcrypt password boundary" time="0.001084818">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; requires an explicit verified response" time="0.0009278">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; requires both a created user and durable consent evidence" time="0.016945368">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; surfaces a partially-created account as a special completion error" time="0.000873569">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletion.test.ts" name="registration completion &gt; times out a response body that never finishes" time="0.008051082">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/registrationCompletionBoundary.test.ts" timestamp="2026-10-29T08:49:14.878Z" hostname="af966a6fd55d" tests="8" failures="0" errors="0" skipped="0" time="0.006080583">
+        <testcase classname="tests/unit/registrationCompletionBoundary.test.ts" name="paid registration completion boundary &gt; normalizes verification requests" time="0.002448856">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletionBoundary.test.ts" name="paid registration completion boundary &gt; rejects invalid verification sessions [row 0]" time="0.000471757">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletionBoundary.test.ts" name="paid registration completion boundary &gt; rejects invalid verification sessions [row 1]" time="0.000171679">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletionBoundary.test.ts" name="paid registration completion boundary &gt; rejects invalid verification sessions [row 2]" time="0.000211018">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletionBoundary.test.ts" name="paid registration completion boundary &gt; normalizes a valid completion request" time="0.000361336">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletionBoundary.test.ts" name="paid registration completion boundary &gt; caps password length before bcrypt is called" time="0.000144498">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletionBoundary.test.ts" name="paid registration completion boundary &gt; requires the legal acceptances used for durable consent evidence" time="0.000253773">
+        </testcase>
+        <testcase classname="tests/unit/registrationCompletionBoundary.test.ts" name="paid registration completion boundary &gt; rejects non-boolean marketing consent" time="0.000213102">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/subscriptionCheckout.test.ts" timestamp="2026-10-29T08:49:14.879Z" hostname="af966a6fd55d" tests="15" failures="0" errors="0" skipped="0" time="0.041168169">
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; waits for authentication to resolve instead of redirecting early" time="0.006684691">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; preserves the requested subscription tier when login is required" time="0.00044371">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; continues checkout for an authenticated user" time="0.000216967">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; accepts a usable Stripe client secret" time="0.000297529">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; rejects checkout objects without a usable client secret [row 0]" time="0.000369428">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; rejects checkout objects without a usable client secret [row 1]" time="0.000303839">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; rejects checkout objects without a usable client secret [row 2]" time="0.004725464">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; rejects checkout objects without a usable client secret [row 3]" time="0.000656942">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; maps non-object malformed payloads to a retryable checkout error [row 0]" time="0.001175665">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; maps non-object malformed payloads to a retryable checkout error [row 1]" time="0.000420435">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; maps non-object malformed payloads to a retryable checkout error [row 2]" time="0.000460506">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; maps non-object malformed payloads to a retryable checkout error [row 3]" time="0.000279111">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; recognizes Stripe configuration failures" time="0.004523419">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; times out a response body that never finishes" time="0.016932491">
+        </testcase>
+        <testcase classname="tests/unit/subscriptionCheckout.test.ts" name="subscription checkout lifecycle &gt; uses structured API errors safely for checkout setup failures" time="0.000290779">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/support-ticket-validation.test.ts" timestamp="2026-10-29T08:49:14.882Z" hostname="af966a6fd55d" tests="23" failures="0" errors="0" skipped="0" time="0.019336207">
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed ticket input [row 0]" time="0.003674116">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed ticket input [row 1]" time="0.003392801">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed ticket input [row 2]" time="0.000246482">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed ticket input [row 3]" time="0.000562399">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed ticket input [row 4]" time="0.00038389">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed ticket input [row 5]" time="0.000279491">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed ticket input [row 6]" time="0.000475498">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; normalizes creation and discards caller-controlled identity/status" time="0.001011457">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 0]" time="0.002040931">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 1]" time="0.000413664">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 2]" time="0.00029137">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 3]" time="0.000121003">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 4]" time="0.000355878">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 5]" time="0.000135505">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 6]" time="0.000195675">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 7]" time="0.000342247">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 8]" time="0.000783853">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects unsafe admin updates input [row 9]" time="0.000147423">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; converts a valid resolution timestamp to a database Date" time="0.000680387">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed staff messages input [row 0]" time="0.00026508">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed staff messages input [row 1]" time="0.000365502">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed staff messages input [row 2]" time="0.000126611">
+        </testcase>
+        <testcase classname="tests/unit/support-ticket-validation.test.ts" name="support ticket write validation &gt; rejects malformed staff messages input [row 3]" time="0.000262887">
+        </testcase>
+    </testsuite>
+</testsuites>

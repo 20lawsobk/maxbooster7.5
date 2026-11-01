@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-26T02:32:24.771973+00:00",
+  "finishedAt": "2026-10-26T02:32:24.993209+00:00",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "interpreter": "/workspace/.cloud-python/bin/python",
+  "summary": {
+    "passed": 1,
+    "failed": 0,
+    "timeout": 0,
+    "skipped": 0,
+    "blocked": 0,
+    "empty": 0
+  },
+  "counts": {
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "enabled": false,
+    "status": "not_requested"
+  },
+  "isolation": "Fresh interpreter and disposable HOME/state per file; no application credentials; only ephemeral loopback networking; child process group cleanup",
+  "limits": "Blocked/skip/timeout are not passes; fixture training does not establish generation quality or production readiness",
+  "duplicateSnapshots": [
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py"
+  ],
+  "suites": [
+    {
+      "file": "tests/testing/test_summary_results.py",
+      "description": "Retain every case in mixed Node/Vitest JUnit layouts without double counts.",
+      "cases": [
+        {
+          "name": "test_mixed_root_cases_and_nested_suites_keep_skips_and_each_case_once",
+          "description": "mixed root cases and nested suites keep skips and each case once"
+        },
+        {
+          "name": "test_suite_names_and_explicit_file_survive_without_default_file",
+          "description": "suite names and explicit file survive without default file"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "d8e8865148878d7d42b927ded7a917610ea7f36a07d04b57367bf1f3d829bafb",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_summary_results.py --output /workspace/maxbooster7.5/reports/test-verification/runner-regressions",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.22,
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "tests__testing__test_summary_results.xml",
+      "log": "tests__testing__test_summary_results.txt"
+    }
+  ]
+}

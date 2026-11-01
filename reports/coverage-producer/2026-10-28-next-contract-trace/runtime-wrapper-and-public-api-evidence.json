@@ -1,0 +1,136 @@
+{
+  "scope": "Installed source observation; no evaluator or application module executed",
+  "files": [
+    {
+      "path": "node_modules/vite/dist/node/index.js",
+      "bytes": 3630,
+      "sha256": "8b142bd1231a46bf2cad4c05b3f76de5b183064ee771b9934fbaffb70b914652",
+      "citations": [
+        {
+          "term": "ssrTransform as moduleRunnerTransform",
+          "line": 30,
+          "utf8ByteOffset": 3318,
+          "excerpt": "DevEnvironment, loadConfigFromFile, loadEnv, mergeAlias, mergeConfig, ssrTransform as moduleRunnerTransform, normalizePath, optimizeDeps, parseAst, parseAstAsync, perEnvironmentPlugin, perEnvironmentState, preprocessCSS, preview, resolveConfig, resolveEnvPrefix, rollupVersion, runnerImport, searchFo"
+        },
+        {
+          "term": "createServerModuleRunner",
+          "line": 2,
+          "utf8ByteOffset": 441,
+          "excerpt": "ath, St as perEnvironmentState, Tt as isCSSRequest, _ as build, _t as createServerModuleRunnerTransport, b as createBuilder, bt as resolveEnvPrefix, c as sortUserPlugins, dt as searchForWorkspaceRoot, f as createRunnableDevEnvironment, ft as isFileLoadingAllowed, g as BuildEnvironment, gt as createS"
+        }
+      ]
+    },
+    {
+      "path": "node_modules/vite/package.json",
+      "bytes": 5158,
+      "sha256": "aae1f593c0e6f320989b60af6e90f8ed4ea5137e5a0b9db663f9b0088333eb3c",
+      "citations": [
+        {
+          "term": "\"./module-runner\"",
+          "line": 26,
+          "utf8ByteOffset": 497,
+          "excerpt": "ndex.js\",\n    \"./client\": {\n      \"types\": \"./client.d.ts\"\n    },\n    \"./module-runner\": \"./dist/node/module-runner.js\",\n    \"./dist/client/*\": \"./dist/client/*\",\n    \"./types/*\": {\n      \"types\": \"./types/*\"\n    },\n    \"./types/internal/*\": null,\n    \"./package.json\": \"./package.json\"\n  },\n  \"types"
+        }
+      ]
+    },
+    {
+      "path": "node_modules/vitest/dist/module-evaluator.js",
+      "bytes": 13377,
+      "sha256": "a0b36fb2211d2587d8df68d5855d48141be27e99bdb973378a83f927e03b004e",
+      "citations": [
+        {
+          "term": "const codeDefinition =",
+          "line": 192,
+          "utf8ByteOffset": 7795,
+          "excerpt": "gumentsList);\n\t\t// add 'use strict' since ESM enables it by default\n\t\tconst codeDefinition = `'use strict';async (${argumentsList.join(\",\")})=>{{`;\n\t\tconst wrappedCode = `${codeDefinition}${code}\\n}}`;\n\t\tconst options = {\n\t\t\tfilename: module.id.startsWith(\"mock:\") ? module.id.slice(5) : module.id,\n\t"
+        },
+        {
+          "term": "startOffset: codeDefinition.length",
+          "line": 202,
+          "utf8ByteOffset": 8316,
+          "excerpt": "= this.debug.startCalculateModuleExecutionInfo(options.filename, {\n\t\t\tstartOffset: codeDefinition.length,\n\t\t\timporter\n\t\t});\n\t\ttry {\n\t\t\tawait (this.vm ? vm.runInContext(wrappedCode, this.vm.context, options) : vm.runInThisContext(wrappedCode, options))(\n\t\t\t\tcontext[ssrModuleExportsKey],\n\t\t\t\tcontext[s"
+        },
+        {
+          "term": "vm.runInThisContext",
+          "line": 206,
+          "utf8ByteOffset": 8455,
+          "excerpt": "t (this.vm ? vm.runInContext(wrappedCode, this.vm.context, options) : vm.runInThisContext(wrappedCode, options))(\n\t\t\t\tcontext[ssrModuleExportsKey],\n\t\t\t\tcontext[ssrImportMetaKey],\n\t\t\t\tcontext[ssrImportKey],\n\t\t\t\tcontext[ssrDynamicImportKey],\n\t\t\t\tcontext[ssrExportAllKey],\n\t\t\t\t// vite 7 support, remove "
+        }
+      ]
+    },
+    {
+      "path": "node_modules/vite/dist/node/module-runner.js",
+      "bytes": 50376,
+      "sha256": "e9e66cba21fc780ae9a5a64da48503afa49bf9bc25c69007333c7835b763b89c",
+      "citations": [
+        {
+          "term": "startOffset = getAsyncFunctionDeclarationPaddingLineCount()",
+          "line": 911,
+          "utf8ByteOffset": 38418,
+          "excerpt": "s.sourcemapInterceptor : void 0);\n}\nvar ESModulesEvaluator = class {\n\tstartOffset = getAsyncFunctionDeclarationPaddingLineCount();\n\tasync runInlinedModule(context, code) {\n\t\tawait new AsyncFunction(ssrModuleExportsKey, ssrImportMetaKey, ssrImportKey, ssrDynamicImportKey, ssrExportAllKey, ssrExportNa"
+        },
+        {
+          "term": "async runInlinedModule",
+          "line": 912,
+          "utf8ByteOffset": 38480,
+          "excerpt": "lass {\n\tstartOffset = getAsyncFunctionDeclarationPaddingLineCount();\n\tasync runInlinedModule(context, code) {\n\t\tawait new AsyncFunction(ssrModuleExportsKey, ssrImportMetaKey, ssrImportKey, ssrDynamicImportKey, ssrExportAllKey, ssrExportNameKey, \"\\\"use strict\\\";\" + code)(context[ssrModuleExportsKey],"
+        }
+      ]
+    },
+    {
+      "path": "node_modules/ast-v8-to-istanbul/dist/index.mjs",
+      "bytes": 20912,
+      "sha256": "855d3467ff70f75a152bee7fd3e51fc8c1207b7f25809853570f099ed1c1e566",
+      "citations": [
+        {
+          "term": "startOffset: e.start + this.wrapperLength",
+          "line": 471,
+          "utf8ByteOffset": 14259,
+          "excerpt": "tor.getLoc(t.decl);\n\t\tif (r === null) return;\n\t\tlet i = getCount({\n\t\t\tstartOffset: e.start + this.wrapperLength,\n\t\t\tendOffset: e.end + this.wrapperLength\n\t\t}, this.ranges);\n\t\tif (this.ignoreSourceCode) {\n\t\t\tlet t = this.locator.getLoc(e) || n, r = this.locator.getSourceLines(t, this.#e(t));\n\t\t\tif (r"
+        },
+        {
+          "term": "endOffset: e.end + this.wrapperLength",
+          "line": 472,
+          "utf8ByteOffset": 14305,
+          "excerpt": "\t\tlet i = getCount({\n\t\t\tstartOffset: e.start + this.wrapperLength,\n\t\t\tendOffset: e.end + this.wrapperLength\n\t\t}, this.ranges);\n\t\tif (this.ignoreSourceCode) {\n\t\t\tlet t = this.locator.getLoc(e) || n, r = this.locator.getSourceLines(t, this.#e(t));\n\t\t\tif (r != null && this.ignoreSourceCode(r, \"function"
+        }
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/coverage-v8/dist/index.js",
+      "bytes": 1719,
+      "sha256": "be14126e3dc6e83461555879c53945dd8adbce254d6ffba32e4e83ee04e270e7",
+      "citations": [
+        {
+          "term": "async getProvider()",
+          "line": 47,
+          "utf8ByteOffset": 1326,
+          "excerpt": "\tawait session.post(\"Profiler.disable\");\n\t\tsession.disconnect();\n\t},\n\tasync getProvider() {\n\t\treturn loadProvider();\n\t}\n};\nfunction filterResult(coverage) {\n\tif (!coverage.url.startsWith(\"file://\")) {\n\t\treturn false;\n\t}\n\tif (coverage.url.includes(\"/node_modules/\")) {\n\t\treturn false;\n\t}\n\tif (coverage"
+        },
+        {
+          "term": "startOffset: options?.moduleExecutionInfo",
+          "line": 33,
+          "utf8ByteOffset": 980,
+          "excerpt": "{\n\t\t\tif (filterResult(entry)) {\n\t\t\t\tresult.push({\n\t\t\t\t\t...entry,\n\t\t\t\t\tstartOffset: options?.moduleExecutionInfo?.get(normalize(fileURLToPath(entry.url)))?.startOffset || 0\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\t\treturn { result };\n\t},\n\tasync stopCoverage({ isolate }) {\n\t\tif (isolate === false) {\n\t\t\treturn;\n\t\t}\n\t\tawait s"
+        }
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/coverage-v8/dist/load-provider-CdgAx3rL.js",
+      "bytes": 236,
+      "sha256": "abbdb4bd0d65b5c4d624d45c3e3cd4360bb4759948a3ec4f6935e777902eb571",
+      "citations": [
+        {
+          "term": "return new V8CoverageProvider()",
+          "line": 8,
+          "utf8ByteOffset": 170,
+          "excerpt": " V8CoverageProvider } = await import(\n\t\t/* @vite-ignore */\n\t\tname\n);\n\treturn new V8CoverageProvider();\n}\n\nexport { loadProvider as l };\n"
+        }
+      ]
+    }
+  ],
+  "correction": "The earlier plain-Vite evaluator citation describes Vite default behavior only. Actual canonical VitestModuleEvaluator records codeDefinition.length, a UTF-16 wrapper prefix length. A zero-counter call with wrapperLength=0 cannot verify actual runtime offset alignment.",
+  "supportedViteTransformEntry": "vite.moduleRunnerTransform",
+  "remainingVersionPinnedHook": "The coverage package public getProvider() loads its provider, but remapCoverage is an implementation method; adapter use must be version/hash guarded and tested, not assumed a stable cross-version interface.",
+  "productionReady": false
+}

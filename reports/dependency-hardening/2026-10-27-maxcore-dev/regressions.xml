@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name=".: Express refuses forged forwarding through an invalid mapped trust subnet" time="0.128588" classname="test"/>
+	<testcase name=".: compression destroys its native stream when the client aborts" time="0.053888" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet" time="0.075441" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: compression destroys its native stream when the client aborts" time="0.044124" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet" time="0.076131" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: compression destroys its native stream when the client aborts" time="0.045169" classname="test"/>
+	<testcase name="PostCSS source maps work and malicious indexed offsets fail promptly" time="0.007481" classname="test"/>
+	<testcase name="the real typography plugin retains its styles with the patched selector parser" time="0.418738" classname="test"/>
+	<testcase name="pino-pretty retains formatting and fast-copy uses controlled depth errors" time="0.033780" classname="test"/>
+	<testcase name="patched Capacitor creates and syncs both platforms with every installed plugin" time="1.626850" classname="test"/>
+	<testcase name="Electron download native transport preserves redirects, agent, progress and failure cleanup" time="0.040130" classname="test"/>
+	<testcase name="artifact timeouts and cancellation bound stalled headers and stalled bodies" time="0.109098" classname="test"/>
+	<testcase name="cross-origin artifact redirects cannot forward credentials" time="0.007052" classname="test"/>
+	<testcase name="real Electron packager verifies checksum, downloads via patched transport, then reuses artifact cache" time="0.386209" classname="test"/>
+	<testcase name="installed code generators compile each real OpenAPI spec into isolated React-query and Zod outputs" time="2.122329" classname="test"/>
+	<testcase name="PDIM's installed upload middleware parses multipart bytes and enforces size limits" time="0.142546" classname="test"/>
+	<testcase name="redirect transport strips credentials across hosts (array headers)" time="0.047838" classname="test"/>
+	<testcase name="redirect transport strips credentials across hosts (object headers)" time="0.007180" classname="test"/>
+	<testcase name="patched Axios preserves JSON, redirects, binary downloads and cancellation" time="0.120476" classname="test"/>
+	<testcase name="Google's installed gaxios consumer resolves patched Undici and sends real HTTP" time="0.113354" classname="test"/>
+	<testcase name="patched IP parser retains IPv4/IPv6 subnet and mapped-address behavior" time="0.014210" classname="test"/>
+	<testcase name="replay is opt-in, idempotent, and preserves unrelated files" time="0.004231" classname="test"/>
+	<testcase name="successive updates accept original and verified predecessors, never custom edits" time="0.002765" classname="test"/>
+	<testcase name="invalid predecessor lists and predecessors on additions are rejected" time="0.001113" classname="test"/>
+	<testcase name="guarded additions create only absent files and replay idempotently" time="0.001329" classname="test"/>
+	<testcase name="guarded additions refuse existing custom files and symlinks" time="0.001407" classname="test"/>
+	<testcase name="preflight rejects custom edits before changing another file" time="0.000952" classname="test"/>
+	<testcase name="invalid hashes, traversal, duplicates, and symlinks fail closed" time="0.001277" classname="test"/>
+	<testcase name="upstream Puppeteer browser manager no longer requires extract-zip" time="0.002973" classname="test"/>
+	<testcase name="actual patent generator renders valid Letter PDF using supplied local Chromium" time="1.606302" classname="test"/>
+	<testcase name=".: comma encoding handles JSON body, encodeValuesOnly=false" time="0.003944" classname="test"/>
+	<testcase name=".: comma encoding handles JSON body, encodeValuesOnly=true" time="0.000302" classname="test"/>
+	<testcase name=".: comma encoding handles prototype-preserving query, encodeValuesOnly=false" time="0.000377" classname="test"/>
+	<testcase name=".: comma encoding handles prototype-preserving query, encodeValuesOnly=true" time="0.000302" classname="test"/>
+	<testcase name=".: comma encoding handles null-prototype query, encodeValuesOnly=false" time="0.000402" classname="test"/>
+	<testcase name=".: comma encoding handles null-prototype query, encodeValuesOnly=true" time="0.000310" classname="test"/>
+	<testcase name=".: literal parameters, nested objects and ordinary array formats retain their values" time="0.001004" classname="test"/>
+	<testcase name=".: actual Express query, form and JSON consumers return serialized output and stay healthy" time="0.144119" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false" time="0.001750" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true" time="0.000306" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false" time="0.000424" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true" time="0.000277" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false" time="0.000343" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true" time="0.000425" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values" time="0.000735" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy" time="0.073079" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false" time="0.001562" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true" time="0.000190" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false" time="0.000441" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true" time="0.000282" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false" time="0.000431" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true" time="0.000247" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values" time="0.000620" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy" time="0.069667" classname="test"/>
+	<testcase name="release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy" time="0.056277" classname="test"/>
+	<testcase name="installed stale nested copy fails despite patched top-level package and lock" time="0.003321" classname="test"/>
+	<testcase name="unpatched node-forge is rejected even when only a nested consumer installs it" time="0.002369" classname="test"/>
+	<testcase name="missing workspace, prerelease version and escaping installed symlink fail closed" time="0.004116" classname="test"/>
+	<testcase name="fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x" time="0.003161" classname="test"/>
+	<testcase name="all security families reject stale nested copies and accept explicitly validated branches" time="0.118416" classname="test"/>
+	<testcase name="unpatched brace walkers and shared HTTP cache policies cannot be reintroduced" time="0.003330" classname="test"/>
+	<testcase name="capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules" time="0.013003" classname="test"/>
+	<testcase name="restored output gate rejects absent artifacts and invalid JS without executing it" time="0.055151" classname="test"/>
+	<testcase name="restored Node provenance admits the provisioned pin and rejects stale or malformed records" time="0.000936" classname="test"/>
+	<!-- tests 64 -->
+	<!-- suites 0 -->
+	<!-- pass 64 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 3165.472094 -->
+</testsuites>

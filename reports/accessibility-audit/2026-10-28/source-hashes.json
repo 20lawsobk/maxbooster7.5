@@ -1,0 +1,30 @@
+{
+  "client/src/components/layout/AppLayout.tsx": {
+    "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563",
+    "bytes": 4095
+  },
+  "client/src/components/layout/TopBar.tsx": {
+    "sha256": "901166b719f70315848436ec770d490c35c04abd5e304afc8d9c99e5c0adbb2f",
+    "bytes": 3579
+  },
+  "client/src/components/layout/Sidebar.tsx": {
+    "sha256": "8006ac3b3030c495a0364af6c87fe2f67eb1129fca5f08bef112a88297cef0d4",
+    "bytes": 13593
+  },
+  "client/src/components/ui/button.tsx": {
+    "sha256": "4ec2ac7b6bfb6a4ce80770e57f1c24d82bf36b4976783e9d2513cff0e650d1bb",
+    "bytes": 2979
+  },
+  "tests/layout-navigation-accessibility-browser.test.mjs": {
+    "sha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
+    "bytes": 11588
+  },
+  "tests/helpers-browser-processes.mjs": {
+    "sha256": "4647f3d7b1130d5dae6304e972735523dd26b8639215b86415b79f82d1dafcd6",
+    "bytes": 786
+  },
+  "script/deployment/owned-processes.mjs": {
+    "sha256": "36ce439bd8ecb9edf9f758cdf2b1636da2fd9d70944981928f8eb3b0cad0f2d9",
+    "bytes": 3921
+  }
+}

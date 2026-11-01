@@ -1,0 +1,34 @@
+{
+  "createdUtc": "2026-10-29T08:51:25.524771+00:00",
+  "sourceRevision": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+  "scope": "outside-only review candidate; no changes landed",
+  "sourcePatchDryRun": "git apply --check passed; not applied",
+  "pythonSyntaxCheck": "all three candidate/audit sources AST-parse passed",
+  "baselineRegressionResult": {
+    "tests": 6,
+    "failures": 6,
+    "exitCode": 1
+  },
+  "candidateRegressionResult": {
+    "tests": 6,
+    "failures": 0,
+    "exitCode": 0
+  },
+  "artifactsSha256": {
+    "README.md": "e24ae4e9cbcda9a3c4d1f02a0e7fcfb619f77128430d005975d0123b8ef63278",
+    "candidate/scripts/testing/generate-catalog.py": "e83b2f217d5d29c9c2d04406b6881ae8fab392d116337b28e8b7fbe77fc14ef3",
+    "candidate/tests/testing/test_catalog_snapshot_ownership.py": "ab062f6aba7079b7b2bf87f74ffdbf534d5a4efb45b4ff9b12964add2bca5883",
+    "catalog-repair.patch": "fe7e0c6efe32a1316675f756453b9a1550aec6a05e1ed255a24073270296eb56",
+    "catalog-source.patch": "1cc0f998410d7fc430069ced17fe4a184985761e35a4783b00c4cf6af1c1891b",
+    "catalog-tests.patch": "d6f2ebae013aa9f964c1d033d2b67c479148c827d107cec7ee5131bffbdff2df",
+    "receipts/actual-census.json": "ab62783f1ad690874a5ee0886db77f8853b43544349147eb972a68caa3b4bc1c",
+    "receipts/actual-node-current-selectors.json": "fc52799128332f25eadebb1f539b9bdb2d91f7dc5d48d1213f291b5899839038",
+    "receipts/actual-node-report-selector.txt": "505a1229283900008d9d788337c69504a9d1aa078ca0c941805ba3aac2a7612a",
+    "receipts/baseline-regressions.txt": "6f4713080154e2a80c00cd0d62afbdf7d380aba58080c14783a282cc283154cf",
+    "receipts/candidate-regressions.txt": "38167449fc9809c8eadbd47fa41ffee62d74b1d84a32e99422387fbf418ec2ef",
+    "receipts/protected-sha256-after.json": "53992be7f6997ba1e5e53bf823d0866e0c75487213dabb3bcb254bce51cd463d",
+    "receipts/protected-sha256-before.json": "53992be7f6997ba1e5e53bf823d0866e0c75487213dabb3bcb254bce51cd463d",
+    "receipts/regressions.json": "fa3a48dd3a93eb50e5bfd6742f4c29a576a2b939f28b1fbd14eed1ec02999a3f",
+    "verify_candidate.py": "7d455c0929ae6f1a26c77635d256117ff43fc3a935104404c2311b3d6420bcac"
+  }
+}

@@ -1,0 +1,503 @@
+{
+  "observedAt": "2026-10-29T22:34:14.100082+00:00",
+  "scope": "Read-only existing historical d9 workflow jobs; 8a9 remains local and unverified by remote CI",
+  "runs": [
+    {
+      "run": {
+        "conclusion": "failure",
+        "createdAt": "2026-10-28T18:32:53Z",
+        "databaseId": 40746138378,
+        "headSha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+        "name": "Build Desktop Apps",
+        "status": "completed",
+        "url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138378"
+      },
+      "jobs": {
+        "total_count": 5,
+        "jobs": [
+          {
+            "id": 123020321768,
+            "run_id": 40746138378,
+            "workflow_name": "Build Desktop Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138378",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJUj6A",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020321768",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138378/job/123020321768",
+            "status": "completed",
+            "conclusion": "failure",
+            "created_at": "2026-10-28T18:32:53Z",
+            "started_at": "2026-10-28T18:32:53Z",
+            "completed_at": "2026-10-28T18:32:57Z",
+            "name": "build-macos",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020321768",
+            "labels": [
+              "macos-latest"
+            ],
+            "runner_id": 0,
+            "runner_name": "",
+            "runner_group_id": 0,
+            "runner_group_name": ""
+          },
+          {
+            "id": 123020322151,
+            "run_id": 40746138378,
+            "workflow_name": "Build Desktop Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138378",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJUlZw",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020322151",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138378/job/123020322151",
+            "status": "completed",
+            "conclusion": "failure",
+            "created_at": "2026-10-28T18:32:53Z",
+            "started_at": "2026-10-28T18:32:53Z",
+            "completed_at": "2026-10-28T18:32:56Z",
+            "name": "build-windows",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020322151",
+            "labels": [
+              "windows-2022"
+            ],
+            "runner_id": 0,
+            "runner_name": "",
+            "runner_group_id": 0,
+            "runner_group_name": ""
+          },
+          {
+            "id": 123020322309,
+            "run_id": 40746138378,
+            "workflow_name": "Build Desktop Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138378",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJUmBQ",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020322309",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138378/job/123020322309",
+            "status": "completed",
+            "conclusion": "failure",
+            "created_at": "2026-10-28T18:32:53Z",
+            "started_at": "2026-10-28T18:32:53Z",
+            "completed_at": "2026-10-28T18:32:57Z",
+            "name": "build-linux",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020322309",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 0,
+            "runner_name": "",
+            "runner_group_id": 0,
+            "runner_group_name": ""
+          },
+          {
+            "id": 123020354349,
+            "run_id": 40746138378,
+            "workflow_name": "Build Desktop Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138378",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJWjLQ",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020354349",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138378/job/123020354349",
+            "status": "completed",
+            "conclusion": "failure",
+            "created_at": "2026-10-28T18:32:57Z",
+            "started_at": "2026-10-28T18:32:57Z",
+            "completed_at": "2026-10-28T18:33:00Z",
+            "name": "build-summary",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020354349",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 0,
+            "runner_name": "",
+            "runner_group_id": 0,
+            "runner_group_name": ""
+          },
+          {
+            "id": 123020356873,
+            "run_id": 40746138378,
+            "workflow_name": "Build Desktop Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138378",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJWtCQ",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020356873",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138378/job/123020356873",
+            "status": "completed",
+            "conclusion": "skipped",
+            "created_at": "2026-10-28T18:32:57Z",
+            "started_at": "2026-10-28T18:32:57Z",
+            "completed_at": "2026-10-28T18:32:57Z",
+            "name": "create-release",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020356873",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": null,
+            "runner_name": null,
+            "runner_group_id": null,
+            "runner_group_name": null
+          }
+        ]
+      },
+      "annotations": [
+        {
+          "jobId": 123020321768,
+          "annotations": [
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "failure",
+              "title": "",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "raw_details": ""
+            },
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "notice",
+              "title": "",
+              "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+              "raw_details": ""
+            }
+          ]
+        },
+        {
+          "jobId": 123020322151,
+          "annotations": [
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "failure",
+              "title": "",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "raw_details": ""
+            }
+          ]
+        },
+        {
+          "jobId": 123020322309,
+          "annotations": [
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "failure",
+              "title": "",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "raw_details": ""
+            },
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "notice",
+              "title": "",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "raw_details": ""
+            }
+          ]
+        },
+        {
+          "jobId": 123020354349,
+          "annotations": [
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "failure",
+              "title": "",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "raw_details": ""
+            },
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "notice",
+              "title": "",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "raw_details": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run": {
+        "conclusion": "failure",
+        "createdAt": "2026-10-28T18:32:53Z",
+        "databaseId": 40746138552,
+        "headSha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+        "name": "Build Mobile Apps",
+        "status": "completed",
+        "url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138552"
+      },
+      "jobs": {
+        "total_count": 5,
+        "jobs": [
+          {
+            "id": 123020323399,
+            "run_id": 40746138552,
+            "workflow_name": "Build Mobile Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138552",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJUqRw",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020323399",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138552/job/123020323399",
+            "status": "completed",
+            "conclusion": "failure",
+            "created_at": "2026-10-28T18:32:54Z",
+            "started_at": "2026-10-28T18:32:54Z",
+            "completed_at": "2026-10-28T18:32:57Z",
+            "name": "build-ios",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020323399",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 0,
+            "runner_name": "",
+            "runner_group_id": 0,
+            "runner_group_name": ""
+          },
+          {
+            "id": 123020323770,
+            "run_id": 40746138552,
+            "workflow_name": "Build Mobile Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138552",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJUrug",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020323770",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138552/job/123020323770",
+            "status": "completed",
+            "conclusion": "failure",
+            "created_at": "2026-10-28T18:32:54Z",
+            "started_at": "2026-10-28T18:32:54Z",
+            "completed_at": "2026-10-28T18:32:59Z",
+            "name": "build-android",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020323770",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 0,
+            "runner_name": "",
+            "runner_group_id": 0,
+            "runner_group_name": ""
+          },
+          {
+            "id": 123020370878,
+            "run_id": 40746138552,
+            "workflow_name": "Build Mobile Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138552",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJXjvg",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020370878",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138552/job/123020370878",
+            "status": "completed",
+            "conclusion": "failure",
+            "created_at": "2026-10-28T18:32:59Z",
+            "started_at": "2026-10-28T18:32:59Z",
+            "completed_at": "2026-10-28T18:33:02Z",
+            "name": "build-summary",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020370878",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 0,
+            "runner_name": "",
+            "runner_group_id": 0,
+            "runner_group_name": ""
+          },
+          {
+            "id": 123020372666,
+            "run_id": 40746138552,
+            "workflow_name": "Build Mobile Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138552",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJXqug",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020372666",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138552/job/123020372666",
+            "status": "completed",
+            "conclusion": "skipped",
+            "created_at": "2026-10-28T18:32:59Z",
+            "started_at": "2026-10-28T18:32:59Z",
+            "completed_at": "2026-10-28T18:32:59Z",
+            "name": "create-release",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020372666",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": null,
+            "runner_name": null,
+            "runner_group_id": null,
+            "runner_group_name": null
+          },
+          {
+            "id": 123020373332,
+            "run_id": 40746138552,
+            "workflow_name": "Build Mobile Apps",
+            "head_branch": "sophia/platform-production-hardening-2026-10-27",
+            "run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/runs/40746138552",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOQp4i1M8AAAAcpJXtVA",
+            "head_sha": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+            "url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/actions/jobs/123020373332",
+            "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40746138552/job/123020373332",
+            "status": "completed",
+            "conclusion": "skipped",
+            "created_at": "2026-10-28T18:32:59Z",
+            "started_at": "2026-10-28T18:32:59Z",
+            "completed_at": "2026-10-28T18:32:59Z",
+            "name": "upload-to-play-store",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/20lawsobk/maxbooster7.5/check-runs/123020373332",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": null,
+            "runner_name": null,
+            "runner_group_id": null,
+            "runner_group_name": null
+          }
+        ]
+      },
+      "annotations": [
+        {
+          "jobId": 123020323399,
+          "annotations": [
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "failure",
+              "title": "",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "raw_details": ""
+            },
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "notice",
+              "title": "",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "raw_details": ""
+            }
+          ]
+        },
+        {
+          "jobId": 123020323770,
+          "annotations": [
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "failure",
+              "title": "",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "raw_details": ""
+            },
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "notice",
+              "title": "",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "raw_details": ""
+            }
+          ]
+        },
+        {
+          "jobId": 123020370878,
+          "annotations": [
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "failure",
+              "title": "",
+              "message": "The job was not started because your account is locked due to a billing issue.",
+              "raw_details": ""
+            },
+            {
+              "path": ".github",
+              "blob_href": "https://github.com/20lawsobk/maxbooster7.5/blob/d9d04498a02c25a1b6ce03306adc20727e9aa2d1/.github",
+              "start_line": 1,
+              "start_column": null,
+              "end_line": 1,
+              "end_column": null,
+              "annotation_level": "notice",
+              "title": "",
+              "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+              "raw_details": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

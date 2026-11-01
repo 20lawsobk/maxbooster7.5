@@ -1,0 +1,1 @@
+{"status":"collected_unmerged","exitCode":0,"profiles":1,"output":"reports/coverage-producer/2026-10-28-keepnames-final/profile"}

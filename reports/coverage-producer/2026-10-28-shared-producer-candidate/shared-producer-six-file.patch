@@ -1,0 +1,626 @@
+diff --git a/scripts/testing/coverage-coordinate-contract.mjs b/scripts/testing/coverage-coordinate-contract.mjs
+new file mode 100644
+--- /dev/null
++++ b/scripts/testing/coverage-coordinate-contract.mjs
+@@ -0,0 +1,153 @@
++/** Lossless versioned coordinate wire codec. No legacy JSON normalization. */
++import { createHash } from 'node:crypto';
++import { isDeepStrictEqual } from 'node:util';
++import ts from 'typescript';
++export const contractVersion = 'maxbooster-coverage-coordinate-v1';
++export const sha256 = value => createHash('sha256').update(value).digest('hex');
++const fail = message => { throw Error('Coverage coordinate contract: ' + message); };
++function object(value, keys, label) { if (!value || typeof value !== 'object' || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype)
++    fail(label + ' must be a plain object'); const own = Reflect.ownKeys(value); if (own.some(k => typeof k !== 'string' || !Object.hasOwn(value, k) || !Object.getOwnPropertyDescriptor(value, k)?.enumerable || !('value' in Object.getOwnPropertyDescriptor(value, k))))
++    fail(label + ' has unsupported descriptor'); if (keys && (!keys.every(k => Object.hasOwn(value, k)) || own.some(k => !keys.includes(k))))
++    fail(label + ' fields'); }
++function integer(value, min, label) { if (!Number.isSafeInteger(value) || value < min)
++    fail(label + ' integer'); }
++function array(value, label) { if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || Reflect.ownKeys(value).some(k => k !== 'length' && (typeof k !== 'string' || !/^\d+$/.test(k) || Number(k) >= value.length || !('value' in Object.getOwnPropertyDescriptor(value, k)) || !Object.getOwnPropertyDescriptor(value, k).enumerable)) || Array.from({ length: value.length }, (_, i) => !Object.hasOwn(value, i)).some(Boolean))
++    fail(label + ' dense array'); }
++const maps = raw => ({ statementMap: raw.statementMap, fnMap: raw.fnMap, branchMap: raw.branchMap });
++const typed = value => value === undefined ? ['undefined'] : value === Infinity ? ['positive-infinity'] : value instanceof Map ? ['provider-meta-fnNames', ...value.entries()] : Array.isArray(value) ? value.map(typed) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(k => [k, typed(value[k])])) : value;
++export const typedSha256 = value => sha256(JSON.stringify(typed(value)));
++export function validateRawCoverage(raw, { source, sourceFile, contract, provenance, body, map } = {}) {
++    if (typeof source !== 'string' || typeof sourceFile !== 'string' || !contract || typeof contract !== 'object')
++        fail('source and producer contract required');
++    object(raw, ['path', 'statementMap', 'fnMap', 'branchMap', 's', 'f', 'b'], 'coverage');
++    if (raw.path !== sourceFile)
++        fail('source identity');
++    const lines = source.split(/\r\n|\n|\r/), sentinels = [], implicit = [];
++    const ast = ts.createSourceFile(sourceFile, source, ts.ScriptTarget.Latest, true, sourceFile.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
++    if (ast.parseDiagnostics.length)
++        fail('original TypeScript parse');
++    function visit(n) { if (ts.isIfStatement(n) && !n.elseStatement) {
++        const p = ast.getLineAndCharacterOfPosition(n.getStart(ast)), end = ast.getLineAndCharacterOfPosition(n.getEnd());
++        const isElseIf = ts.isIfStatement(n.parent) && n.parent.elseStatement === n;
++        implicit.push({ line: p.line + 1, column: p.character, endLine: end.line + 1, precedingEnd: isElseIf ? n.parent.thenStatement.getStart(ast) : n.getStart(ast), start: n.getStart(ast) });
++    } ts.forEachChild(n, visit); }
++    visit(ast);
++    function position(p, end, label) { object(p, ['line', 'column'], label); integer(p.line, 1, label + '.line'); if (p.line > lines.length)
++        fail(label + ' outside source'); if (p.column === Infinity && end) {
++        sentinels.push({ path: label + '.column', type: 'positive-infinity' });
++        return;
++    } integer(p.column, 0, label + '.column'); if (p.column > lines[p.line - 1].length)
++        fail(label + ' column outside UTF16 source'); }
++    function loc(l, label, synthetic = false) { object(l, ['start', 'end'], label); if (synthetic) {
++        for (const k of ['start', 'end']) {
++            object(l[k], ['line', 'column'], label + '.' + k);
++            if (l[k].line !== undefined || l[k].column !== undefined)
++                fail('partial synthetic location');
++            for (const c of ['line', 'column'])
++                sentinels.push({ path: label + '.' + k + '.' + c, type: 'undefined' });
++        }
++        return;
++    } position(l.start, false, label + '.start'); position(l.end, true, label + '.end'); if (l.end.line < l.start.line || (l.end.line === l.start.line && l.end.column < l.start.column))
++        fail(label + ' inverted span'); }
++    function dictionary(v, label) { object(v, null, label); for (const id of Object.keys(v))
++        if (!/^(?:0|[1-9]\d*)$/.test(id))
++            fail(label + ' invalid ID'); }
++    for (const k of ['statementMap', 'fnMap', 'branchMap', 's', 'f', 'b'])
++        dictionary(raw[k], k);
++    for (const [id, l] of Object.entries(raw.statementMap))
++        loc(l, `statementMap.${id}`);
++    for (const [id, f] of Object.entries(raw.fnMap)) {
++        object(f, ['name', 'decl', 'loc', 'line'], `fnMap.${id}`);
++        if (typeof f.name !== 'string')
++            fail('function name');
++        integer(f.line, 1, 'function line');if(f.line>lines.length)fail('function line outside source');
++        loc(f.decl, `fnMap.${id}.decl`);
++        loc(f.loc, `fnMap.${id}.loc`);
++    }
++    for (const [id, b] of Object.entries(raw.branchMap)) {
++        object(b, ['loc', 'type', 'locations', 'line'], `branchMap.${id}`);
++        if (!['if', 'binary-expr', 'cond-expr', 'switch', 'default-arg'].includes(b.type))
++            fail('unsupported branch type');
++        integer(b.line, 1, 'branch line');if(b.line>lines.length)fail('branch line outside source');
++        loc(b.loc, `branchMap.${id}.loc`);
++        array(b.locations, 'branch locations');
++        if (!b.locations.length)
++            fail('empty branch');
++        b.locations.forEach((l, i) => { const undef = l?.start?.line === undefined || l?.start?.column === undefined || l?.end?.line === undefined || l?.end?.column === undefined; const genuine = undef && b.type === 'if' && i === 1 && b.locations.length === 2 && implicit.some(n => n.endLine === b.loc.end.line && ((n.line === b.loc.start.line && n.column === b.loc.start.column) || (ast.getPositionOfLineAndCharacter(b.loc.start.line - 1, b.loc.start.column) >= n.precedingEnd && ast.getPositionOfLineAndCharacter(b.loc.start.line - 1, b.loc.start.column) <= n.start))); if (undef && !genuine)
++            fail('synthetic location lacks original implicit-else provenance ' + sourceFile + ':' + id + ':' + i + '@' + b.loc.start.line + ':' + b.loc.start.column); loc(l, `branchMap.${id}.locations.${i}`, genuine); });
++    }
++    for (const [counter, map] of [['s', 'statementMap'], ['f', 'fnMap'], ['b', 'branchMap']]) {
++        if (!isDeepStrictEqual(Object.keys(raw[counter]), Object.keys(raw[map])))
++            fail(counter + ' ID dimensions');
++        for (const [id, value] of Object.entries(raw[counter]))
++            if (counter === 'b') {
++                array(value, 'branch counters');
++                if (value.length !== raw.branchMap[id].locations.length)
++                    fail('branch arm dimensions');
++                value.forEach(v => integer(v, 0, 'branch count'));
++            }
++            else
++                integer(value, 0, 'counter');
++    }
++    if (sentinels.length) {
++        if (!provenance || !['actual-shared-provider-replay', 'actual-public-Istanbul-pre-JSON-sidecar'].includes(provenance.kind) || provenance.sourceSha256 !== sha256(source) || provenance.contractSha256 !== typedSha256(contract) || !provenance.replay || !isDeepStrictEqual(maps(raw), maps(provenance.replay)))
++            fail('sentinel requires same-source pinned provider raw replay');
++        if (typeof body !== 'string' || !map || sha256(body) !== provenance.bodySha256 || sha256(JSON.stringify(map)) !== provenance.mapSha256 || contract.provider?.implementationSha256 !== provenance.providerSha256)
++            fail('actual body/map/provider identity');
++        for (const k of ['bodySha256', 'mapSha256', 'providerSha256'])
++            if (!/^[a-f0-9]{64}$/.test(provenance[k] || ''))
++                fail('missing ' + k);
++        if (provenance.kind === 'actual-public-Istanbul-pre-JSON-sidecar' && !/^[a-f0-9]{64}$/.test(provenance.rawSidecarSha256 || ''))
++            fail('canonical raw sidecar missing');
++    }
++    return { sentinels, sourceSha256: sha256(source), contractSha256: typedSha256(contract), rawTypedSha256: typedSha256(raw) };
++}
++export function encodeCoverage(raw, context) { const checked = validateRawCoverage(raw, context); const wire = JSON.parse(JSON.stringify(raw)); const sidecar = { version: contractVersion, ...checked, wireSha256: sha256(JSON.stringify(wire)), provenanceKind: context.provenance?.kind || 'finite-only' }; return { wire, sidecar }; }
++function validateWireTree(value, label = 'wire') {
++    if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
++    if (typeof value === 'number') { if (!Number.isFinite(value)) fail(label + ' non-JSON number'); return; }
++    if (Array.isArray(value)) { array(value, label); value.forEach((v, i) => validateWireTree(v, label + '.' + i)); return; }
++    object(value, null, label);
++    for (const [key, child] of Object.entries(value)) validateWireTree(child, label + '.' + key);
++}
++export function decodeCoverage(wire, sidecar, context) {
++    validateWireTree(wire);
++    object(sidecar, ['version', 'sentinels', 'sourceSha256', 'contractSha256', 'rawTypedSha256', 'wireSha256', 'provenanceKind'], 'sidecar');
++    if (sidecar.provenanceKind !== (context.provenance?.kind || 'finite-only') || sidecar.version !== contractVersion || sha256(JSON.stringify(wire)) !== sidecar.wireSha256 || sha256(context.source) !== sidecar.sourceSha256 || typedSha256(context.contract) !== sidecar.contractSha256)
++        fail('wire/contract/source identity');
++    const restored = structuredClone(wire);
++    array(sidecar.sentinels, 'sentinels');
++    const seen = new Set();
++    for (const record of sidecar.sentinels) {
++        object(record, ['path', 'type'], 'sentinel');
++        if (typeof record.path !== 'string' || seen.has(record.path))
++            fail('duplicate sentinel');
++        seen.add(record.path);
++        const parts = record.path.split('.');
++        if (parts.some(p => ['__proto__', 'prototype', 'constructor'].includes(p)))
++            fail('unsafe sentinel path');
++        const key = parts.pop();
++        let parent = restored;
++        for (const part of parts) {
++            if (!parent || typeof parent !== 'object' || !Object.hasOwn(parent, part))
++                fail('missing sentinel parent');
++            parent = parent[part];
++        }
++        if (record.type === 'positive-infinity') {
++            if (key !== 'column' || !record.path.endsWith('.end.column') || parent[key] !== null)
++                fail('invalid Infinity wire value');
++            parent[key] = Infinity;
++        }
++        else if (record.type === 'undefined') {
++            if (Object.hasOwn(parent, key) || !['line', 'column'].includes(key))
++                fail('invalid undefined wire value');
++            parent[key] = undefined;
++        }
++        else
++            fail('unknown sentinel');
++    }
++    const checked = validateRawCoverage(restored, context);
++    if (checked.rawTypedSha256 !== sidecar.rawTypedSha256 || !isDeepStrictEqual(checked.sentinels, sidecar.sentinels))
++        fail('raw typed identity');
++    return restored;
++}
+diff --git a/scripts/testing/coverage-shared-provider.mjs b/scripts/testing/coverage-shared-provider.mjs
+new file mode 100644
+--- /dev/null
++++ b/scripts/testing/coverage-shared-provider.mjs
+@@ -0,0 +1,70 @@
++/** Version-pinned shared public-Vite / actual coverage-v8 provider contract. */
++import fs from 'node:fs';
++import path from 'node:path';
++import { pathToFileURL } from 'node:url';
++import { isDeepStrictEqual } from 'node:util';
++import ts from 'typescript';
++import coverageV8 from '@vitest/coverage-v8';
++import { moduleRunnerTransform } from 'vite';
++import {validateRanges,validateSourceMap}from'./coverage-provenance.mjs';
++import { sha256, typedSha256, encodeCoverage, decodeCoverage } from './coverage-coordinate-contract.mjs';
++export const subjectFiles = Object.freeze(['server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts', 'server/lib/pdimClient.ts', 'server/logger.ts', 'server/logSanitizer.ts', 'server/config/ports.ts', 'server/lib/luaExecutor.ts', 'server/lib/pdimCircuitBreaker.ts', 'external/pdim/artifacts/api-server/src/redis/store.ts', 'external/pdim/artifacts/api-server/src/workers/lua-pool.ts']);
++export const transformOptions = Object.freeze({ target: 'esnext', minify: false, minifyIdentifiers: false, minifySyntax: false, minifyWhitespace: false, treeShaking: false, keepNames: false, supported: { 'dynamic-import': true, 'import-meta': true } });
++export const wrapperArgs = Object.freeze(['__vite_ssr_exports__', '__vite_ssr_import_meta__', '__vite_ssr_import__', '__vite_ssr_dynamic_import__', '__vite_ssr_exportAll__', '__vite_ssr_exportName__', '__filename', '__dirname', 'module', 'exports', 'require']);
++export const prefix = `'use strict';async (${wrapperArgs.join(',')})=>{{`, suffix = '\n}}';
++export function originalCoverageData(raw) { const keys = ['path', 'statementMap', 'fnMap', 'branchMap', 's', 'f', 'b']; if (!raw || Object.getPrototypeOf(raw) !== Object.prototype || Reflect.ownKeys(raw).some(k => !keys.includes(k) && k !== 'meta'))
++    throw Error('Unsupported provider coverage fields'); if (raw.meta) {
++    if (Object.getPrototypeOf(raw.meta) !== Object.prototype || !isDeepStrictEqual(Object.keys(raw.meta), ['lastBranch', 'lastFunction', 'lastStatement', 'seen', 'fnNames']) || !(raw.meta.fnNames instanceof Map) || Object.getPrototypeOf(raw.meta.fnNames) !== Map.prototype || Reflect.ownKeys(raw.meta.fnNames).length)
++        throw Error('Unsupported provider transient metadata');
++} for (const k of Reflect.ownKeys(raw)) {
++    const d = Object.getOwnPropertyDescriptor(raw, k);
++    if (!('value' in d) || !d.enumerable)
++        throw Error('Unsupported provider descriptor');
++} return Object.fromEntries(keys.map(k => [k, raw[k]])); }
++const pins = { 'vite': '7.3.7', 'vitest': '4.1.12', '@vitest/coverage-v8': '4.1.12', 'esbuild': '0.28.2', 'ast-v8-to-istanbul': '1.0.7', 'typescript': '5.9.3' };
++const providerSha256 = '9f7848b27aabc311e867d9a034b4f569892e68533b837116ab932e05fa20558f', evaluatorSha256 = 'a0b36fb2211d2587d8df68d5855d48141be27e99bdb973378a83f927e03b004e';
++export function assertOriginalPolicy(source, file) { const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true); if (ast.parseDiagnostics.length)
++    throw Error('Original TS parse failed'); let identifiers = 0, authoredHelpers = 0; function visit(n) { if (ts.isIdentifier(n)) {
++    identifiers++;
++    if (n.text === '__name')
++        authoredHelpers++;
++    if (n.text.startsWith('__vite_ssr_') || n.text.startsWith('__vite__cjsImport') || n.text === '_ts_decorate')
++        throw Error('Authored identifier could be hidden by provider generated-node policy');
++} if (ts.isPropertyAccessExpression(n) && ts.isMetaProperty(n.expression) && ['env', 'vitest'].includes(n.name.text))
++    throw Error('Authored import.meta policy requires independent support'); if (ts.isPropertyAccessExpression(n) && ['exports', 'module'].includes(n.expression.getText(ast)))
++    throw Error('Inline CommonJS requires independent evaluator contract'); ts.forEachChild(n, visit); } visit(ast); return { originalAstIdentifiers: identifiers, authoredNameHelpersRetained: authoredHelpers, generatedName: 'provider SSR-only policy; original name helpers retained', sourceSha256: sha256(source) }; }
++export function createContract(root) { root = fs.realpathSync(root); if (typeof moduleRunnerTransform !== 'function')
++    throw Error('Public Vite moduleRunnerTransform unavailable'); const versions = {}; for (const [name, expected] of Object.entries(pins)) {
++    const json = path.join(root, 'node_modules', name, 'package.json');
++    versions[name] = JSON.parse(fs.readFileSync(json)).version;
++    if (versions[name] !== expected)
++        throw Error('Unsupported ' + name + ' version');
++} if (sha256(fs.readFileSync(path.join(root, 'node_modules/@vitest/coverage-v8/dist/provider.js'))) !== providerSha256 || sha256(fs.readFileSync(path.join(root, 'node_modules/vitest/dist/module-evaluator.js'))) !== evaluatorSha256)
++    throw Error('Unsupported provider/evaluator implementation'); const tsconfigs = {}; for (const f of ['tsconfig.json', 'external/pdim/tsconfig.base.json', 'external/pdim/artifacts/api-server/tsconfig.json'])
++    tsconfigs[f] = sha256(fs.readFileSync(path.join(root, f))); const implementations={};for(const file of ['vite/dist/node/index.js','vite/dist/node/chunks/config.js','esbuild/lib/main.js','ast-v8-to-istanbul/dist/index.mjs','typescript/lib/typescript.js'])implementations[file]=sha256(fs.readFileSync(path.join(root,'node_modules',file)));return { version: 'maxbooster-shared-vite-provider-v1', repositoryRoot:root, implementations, runtime: { node: process.versions.node, v8: process.versions.v8 }, versions, tsconfigs, transform: { publicApi: 'Vite createServer / createServerModuleRunner + moduleRunnerTransform', configFile: false, envFile: false, server: { middlewareMode: true, hmr: false, watch: null }, esbuild: transformOptions, tsconfig: 'actual Vite tsconfig resolution' }, provider: { package: '@vitest/coverage-v8', hook: 'remapCoverage', implementationSha256: providerSha256, ignoreClassMethods: [], policy: 'unchanged installed provider SSR/original-node policy guarded against authored matches' }, wrapper: { implementationSha256: evaluatorSha256, encoding: 'UTF-16 code units', prefix, suffix, length: prefix.length } }; }
++export function validateExecuted(item, { executed, body, map, source, contract }) { if (item.prefix !== contract.wrapper.prefix || item.suffix !== contract.wrapper.suffix || item.wrapperLength !== item.prefix.length)
++    throw Error('Wrong actual wrapper'); if (executed !== item.prefix + body + item.suffix || sha256(executed) !== item.codeSha256 || sha256(body) !== item.bodySha256 || sha256(JSON.stringify(map)) !== item.mapSha256 || sha256(source) !== item.originalSourceSha256)
++    throw Error('Stale body/map/source/runtime binding'); if (!map || map.version !== 3 || !Array.isArray(map.sources) || !Array.isArray(map.sourcesContent) || map.sources.length !== 1 || map.sourcesContent.length !== 1 || map.sourcesContent[0] !== source)
++    throw Error('Original source-map content binding'); validateRanges(item.coverage,executed); return assertOriginalPolicy(source, item.file); }
++export async function createSharedProvider(root) { const contract = createContract(root), provider = await coverageV8.getProvider(); if (typeof provider.remapCoverage !== 'function')
++    throw Error('Pinned provider hook unavailable'); provider.options = { ignoreClassMethods: [] }; provider.ctx = { logger: { error: message => { throw Error(message); } } }; return { contract, async convert(item, bytes) { const audit = validateExecuted(item, { ...bytes, contract });const originalSources=validateSourceMap(bytes.map,item.file,root);if(originalSources.length!==1||originalSources[0].file!==item.file)throw Error('Source map original/module identity mismatch'); const invoke = () => provider.remapCoverage(pathToFileURL(item.file).href, item.wrapperLength, { code: bytes.body, map: bytes.map }, item.coverage.functions); const actual = Object.values(await invoke()), replayed = Object.values(await invoke()); if (actual.length !== 1 || !isDeepStrictEqual(actual, replayed))
++        throw Error('Non-unique/non-repeatable provider output'); const providerRaw = actual[0], raw = originalCoverageData(providerRaw), replay = originalCoverageData(replayed[0]), provenance = { kind: 'actual-shared-provider-replay', sourceSha256: sha256(bytes.source), contractSha256: typedSha256(contract), providerSha256, bodySha256: item.bodySha256, mapSha256: item.mapSha256, executedSha256: item.codeSha256, rangesSha256: typedSha256(item.coverage.functions), replay }; const context = { source: bytes.source, sourceFile: item.file, contract, provenance, body: bytes.body, map: bytes.map }; const encoded = encodeCoverage(raw, context); if (!isDeepStrictEqual(decodeCoverage(encoded.wire, encoded.sidecar, context), raw))
++        throw Error('Typed roundtrip changed original maps/counters'); return { raw, providerRaw, replay, encoded, provenance, audit }; } }; }
++
++/** Bind every manifest script to the one actual inspector record before conversion. */
++export function validateCapturedManifest(manifest,{raw,root,target,contract,producerId}) {
++ const fail=message=>{throw Error('Actual capture manifest: '+message);};
++ if(!manifest||manifest.schemaVersion!==3||manifest.kind!=='actual-P1-shared-Vite-Debugger-runtime'||manifest.root!==root||manifest.target!==target||target!=='tests/fabric-replica-generation.test.mjs')fail('root/target/schema identity');
++ if(!isDeepStrictEqual(manifest.contract,contract)||manifest.contractSha256!==typedSha256(contract)||!isDeepStrictEqual(manifest.runtime,contract.runtime)||manifest.offsetEncoding!=='UTF-16 code units')fail('runtime/contract identity');
++ if(typeof producerId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(producerId)||manifest.producerId!==producerId||manifest.snapshot?.id!==producerId+'-1'||manifest.snapshot?.reset!=='Profiler.startPreciseCoverage before imports; one take after actual node:test lifecycle'||manifest.snapshot?.overlap!=='single fresh process, single snapshot; no merge')fail('producer/snapshot identity');
++ const start=Date.parse(manifest.snapshot.window?.startedAt),end=Date.parse(manifest.snapshot.window?.finishedAt);if(!Number.isFinite(start)||!Number.isFinite(end)||end<start)fail('snapshot window');
++ if(!raw||!Array.isArray(raw.result)||!Array.isArray(manifest.scripts)||manifest.scripts.length!==subjectFiles.length)fail('complete actual raw scripts');
++ const rawIds=new Map();for(const record of raw.result){if(typeof record?.scriptId!=='string'||typeof record.url!=='string'||rawIds.has(record.scriptId))fail('duplicate/invalid actual script ID');rawIds.set(record.scriptId,record);}
++ const files=new Set(),ids=new Set(),urls=new Set();
++ for(const item of manifest.scripts){const file=path.relative(root,item.file).split(path.sep).join('/');if(!subjectFiles.includes(file)||files.has(file)||ids.has(item.scriptId))fail('duplicate/missing original or script');files.add(file);ids.add(item.scriptId);
++  const record=rawIds.get(item.scriptId);if(!record||!isDeepStrictEqual(record,item.coverage)||item.coverage.scriptId!==item.scriptId||item.runtimeUrl!==record.url||urls.has(record.url))fail('manifest counters differ from unique actual raw record');urls.add(record.url);
++  const url=pathToFileURL(item.file).href;if(![item.file,url].includes(record.url)||![item.file,url].includes(item.observedDebuggerUrl)||item.id!==item.file||item.url!=='/'+file)fail('ambiguous module/runtime URL');
++  if(item.prefix!==contract.wrapper.prefix||item.suffix!==contract.wrapper.suffix||item.wrapperLength!==contract.wrapper.length||item.wrapperLength!==item.prefix.length)fail('actual wrapper identity');
++ }
++ return true;
++}
+diff --git a/scripts/testing/coverage-node-vite-entry.mjs b/scripts/testing/coverage-node-vite-entry.mjs
+new file mode 100644
+--- /dev/null
++++ b/scripts/testing/coverage-node-vite-entry.mjs
+@@ -0,0 +1,99 @@
++/** Real node:test entry; exactly one in-process suite, no listeners or watchers. */
++import fs from 'node:fs';
++import path from 'node:path';
++import vm from 'node:vm';
++import { createRequire } from 'node:module';
++import { pathToFileURL } from 'node:url';
++import { after } from 'node:test';
++import { Session } from 'node:inspector';
++import { createServer, createServerModuleRunner } from 'vite';
++import { ssrModuleExportsKey, ssrImportMetaKey, ssrImportKey, ssrDynamicImportKey, ssrExportAllKey, ssrExportNameKey } from 'vite/module-runner';
++import { createContract, subjectFiles, transformOptions, prefix, suffix, assertOriginalPolicy } from './coverage-shared-provider.mjs';
++import { sha256, typedSha256 } from './coverage-coordinate-contract.mjs';
++const root = fs.realpathSync(process.env.P1_REPOSITORY_ROOT || '.'), target = process.env.P1_TARGET;
++if (target !== 'tests/fabric-replica-generation.test.mjs')
++    throw Error('Only the proven in-process P1 suite is supported');
++const out = process.env.P1_OUTPUT;
++if (!out || !fs.statSync(out).isDirectory())
++    throw Error('Owned output missing');
++const contract = createContract(root), inspector = new Session();
++inspector.connect();
++const post = (method, params = {}) => new Promise((resolve, reject) => inspector.post(method, params, (error, result) => error ? reject(error) : resolve(result)));
++const observed = new Map(), pending = new Set(), failures = [], transforms = new Map();
++let server, runner, flushed = false, observedBytes = 0;
++const producerId=process.env.P1_PRODUCER_ID,startedAt=new Date().toISOString();if(!/^[a-f0-9-]{36}$/.test(producerId||''))throw Error('Parent-owned producer identity missing');
++const inScope = file => subjectFiles.includes(path.relative(root, file).split(path.sep).join('/'));
++const isProduction = file => ['server/', 'shared/', 'client/', 'external/', 'built-in plugins dsp/'].some(p => path.relative(root, file).split(path.sep).join('/').startsWith(p)) && !file.split(path.sep).includes('node_modules');
++inspector.on('Debugger.scriptParsed', ({ params }) => {
++    if (!params.url.startsWith(root) && !params.url.startsWith(pathToFileURL(root).href))
++        return;
++    const task = post('Debugger.getScriptSource', { scriptId: params.scriptId }).then(({ scriptSource }) => { observedBytes += Buffer.byteLength(scriptSource); if (observedBytes > 16 * 1024 * 1024)
++        throw Error('Owned script capture exceeds limit'); observed.set(params.scriptId, { url: params.url, code: scriptSource }); }).catch(error => failures.push(error.message));
++    pending.add(task);
++    void task.finally(() => pending.delete(task));
++});
++after(async () => {
++    if (flushed)
++        return;
++    flushed = true;
++    try {
++        try{await runner?.close();}catch(error){failures.push('runner close: '+error.message);}try{await server?.close();}catch(error){failures.push('server close: '+error.message);}
++        const raw = await post('Profiler.takePreciseCoverage');
++        await Promise.all([...pending]);
++        const rawBytes = JSON.stringify(raw);
++        if (Buffer.byteLength(rawBytes) > 16 * 1024 * 1024)
++            throw Error('Raw profiler output exceeds limit');
++        fs.writeFileSync(path.join(out, 'raw-v8.json'), rawBytes, { flag: 'wx' });
++        const scripts = [];
++        for (const item of raw.result) {
++            const actual = observed.get(item.scriptId);
++            if (!actual)
++                continue;
++            const candidates = [...transforms.values()].filter(t => t.wrapped === actual.code);
++            if (!candidates.length)
++                continue;
++            if (candidates.length !== 1)
++                throw Error('Ambiguous wrapper/body match');
++            const t = candidates[0], stem = sha256(actual.code);
++            fs.writeFileSync(path.join(out, stem + '.executed.js'), actual.code, { flag: 'wx' });
++            fs.writeFileSync(path.join(out, stem + '.body.js'), t.code, { flag: 'wx' });
++            fs.writeFileSync(path.join(out, stem + '.js.map'), JSON.stringify(t.map), { flag: 'wx' });
++            scripts.push({ ...t, code: undefined, wrapped: undefined, map: undefined, scriptId: item.scriptId, runtimeUrl: item.url, observedDebuggerUrl: actual.url, codeFile: stem + '.executed.js', bodyFile: stem + '.body.js', mapFile: stem + '.js.map', codeSha256: sha256(actual.code), bodySha256: sha256(t.code), mapSha256: sha256(JSON.stringify(t.map)), coverage: item });
++        }
++        if (scripts.length !== subjectFiles.length || scripts.length !== transforms.size)
++            throw Error('Missing original runtime script coverage');
++        if (failures.length)
++            throw Error('Inspector capture failed: ' + failures.join(';'));
++        fs.writeFileSync(path.join(out, 'manifest.json'), JSON.stringify({ schemaVersion: 3, kind: 'actual-P1-shared-Vite-Debugger-runtime', producerId, snapshot: { id: producerId + '-1', window: { startedAt, finishedAt: new Date().toISOString() }, reset: 'Profiler.startPreciseCoverage before imports; one take after actual node:test lifecycle', overlap: 'single fresh process, single snapshot; no merge' }, root, target, runtime: { node: process.versions.node, v8: process.versions.v8 }, contract, contractSha256: typedSha256(contract), offsetEncoding: 'UTF-16 code units', rawSha256: sha256(rawBytes), scripts }, null, 2), { flag: 'wx' });
++    }
++    finally {
++        try {
++            await post('Profiler.stopPreciseCoverage');
++        }
++        finally {
++            inspector.disconnect();
++        }
++    }
++});
++await post('Debugger.enable');
++await post('Profiler.enable');
++await post('Profiler.startPreciseCoverage', { callCount: true, detailed: true });
++server = await createServer({ root, configFile: false, envFile: false, logLevel: 'silent', clearScreen: false, appType: 'custom', cacheDir: path.join(out, 'vite-cache'), server: { middlewareMode: true, hmr: false, watch: null }, esbuild: transformOptions, optimizeDeps: { noDiscovery: true, include: [] }, ssr: { optimizeDeps: { noDiscovery: true, include: [] } } });
++const evaluator = { startOffset: 0, runExternalModule: id => import(id), async runInlinedModule(context, code, module) {
++        const file = module.file, id = module.id, wrapped = prefix + code + suffix;
++        const transformed = server.environments.ssr.moduleGraph.getModuleById(id)?.transformResult;
++        if (isProduction(file)) {
++            if (!inScope(file))
++                throw Error('P1 production subject allowlist exceeded');
++            assertOriginalPolicy(fs.readFileSync(file, 'utf8'), file);
++            if (!transformed?.map || transforms.has(file))
++                throw Error('Missing/duplicate actual transform');
++            transforms.set(file, { file, id, url: module.url, code, wrapped, prefix, suffix, wrapperLength: prefix.length, map: transformed.map, originalSourceSha256: sha256(fs.readFileSync(file)) });
++        }
++        const exp = context[ssrModuleExportsKey], meta = context[ssrImportMetaKey], exportName = context[ssrExportNameKey] || ((name, get) => Object.defineProperty(exp, name, { enumerable: true, configurable: true, get }));
++        const fn = vm.runInThisContext(wrapped, { filename: pathToFileURL(file).href, lineOffset: 0, columnOffset: -prefix.length });
++        await fn(exp, meta, context[ssrImportKey], context[ssrDynamicImportKey], context[ssrExportAllKey], exportName, file, path.dirname(file), { exports: exp }, exp, createRequire(meta.url));
++        Object.seal(exp);
++    } };
++runner = createServerModuleRunner(server.environments.ssr, { hmr: false, sourcemapInterceptor: false, evaluator });
++await runner.import(path.join(root, target));
+diff --git a/scripts/testing/collect-node-coverage.mjs b/scripts/testing/collect-node-coverage.mjs
+--- a/scripts/testing/collect-node-coverage.mjs
++++ b/scripts/testing/collect-node-coverage.mjs
+@@ -1,74 +1,114 @@
+-/** Run one existing canonical Node suite in a credential-free owned producer. */
++/** Collect one existing P1 suite using the shared Vite/provider typed contract. */
+ import fs from 'node:fs';
++import {randomUUID}from'node:crypto';
+ import path from 'node:path';
++import assert from 'node:assert/strict';
+ import { fileURLToPath } from 'node:url';
+ import { spawnSync } from 'node:child_process';
+-import { createRequire } from 'node:module';
+-import { sha256, ownedPath, validateManifest, validateIstanbul, compareCoverageMaps, runOwnedCommand, createKeepNamesPolicy } from './coverage-provenance.mjs';
+-const require = createRequire(import.meta.url);
+-const root = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
+-const args = process.argv.slice(2), target = args[0], requested = args[1];
+-if (!target || !requested || !/^tests\/[\w./-]+\.test\.mjs$/.test(target) || target.includes('..')) throw Error('Use: node scripts/testing/collect-node-coverage.mjs tests/existing.test.mjs reports/owned-output');
+-// P1 proves this in-process suite only. pg_ctl and other daemonizing fixtures
+-// require independent-session ownership tracking before admission is safe.
+-if (target !== 'tests/fabric-replica-generation.test.mjs') throw Error('P1 coverage producer supports only tests/fabric-replica-generation.test.mjs; other suites require independent-session ownership tracking');
+-const tracked = spawnSync('git', ['ls-files','--',target], { cwd: root, encoding:'utf8' });
+-if (tracked.status || tracked.stdout.trim() !== target || !/from\s*["']node:test["']/.test(fs.readFileSync(path.join(root,target),'utf8'))) throw Error('Only an existing Git-visible canonical node:test suite is supported');
+-const output = ownedPath(path.join(root,'reports'), path.resolve(root,requested));
+-if (fs.existsSync(output)) throw Error('Producer output must be a new owned directory');
+-fs.mkdirSync(output,{recursive:true,mode:0o700});
+-const home=path.join(output,'home');fs.mkdirSync(home,{mode:0o700});
+-function sourceInputs() {
+- const list=spawnSync('git',['ls-files','-cz','--others','--exclude-standard'],{cwd:root,encoding:'utf8'});
+- if(list.status!==0)throw Error('Cannot inventory current source');
+- const files={};
+- for(const file of [...new Set(list.stdout.split('\0').filter(Boolean))].sort()){
+-  if(/^(reports|docs|dist)\//.test(file)||file.split('/').some(part=>['node_modules','__pycache__','.local'].includes(part)))continue;
+-  if(!/\.(?:[cm]?[jt]sx?|json|py|sh|go|rs|sql|nix|toml|ya?ml)$/.test(file)&&!['.replit','package-lock.json','pnpm-lock.yaml'].includes(file))continue;
+-  const full=path.join(root,file);if(fs.existsSync(full)&&fs.statSync(full).isFile())files[file]=sha256(fs.readFileSync(full));
+- }
+- return {scope:'Git-visible code/config files including new source; docs/reports/dist/private ignored state excluded',sha256:sha256(JSON.stringify(files)),files};
++import { serialize, deserialize } from 'node:v8';
++import { isDeepStrictEqual } from 'node:util';
++import { createSharedProvider, subjectFiles, originalCoverageData,validateCapturedManifest } from './coverage-shared-provider.mjs';
++import { sha256, typedSha256, encodeCoverage, decodeCoverage } from './coverage-coordinate-contract.mjs';
++const here = path.dirname(fileURLToPath(import.meta.url)), args = process.argv.slice(2);
++let explicitRoot;
++if (args[0] === '--repository-root') {
++    args.shift();
++    explicitRoot = args.shift();
+ }
+-const inputsBefore=sourceInputs();
+-const sourceBefore=sha256(fs.readFileSync(path.join(root,target)));
+-const env={PATH:process.env.PATH||'/usr/bin:/bin',HOME:home,TMPDIR:home,LANG:'C',CI:'1',MAXBOOSTER_NODE_COVERAGE_DIR:output,NODE_V8_COVERAGE:path.join(output,'node-native-corroboration')};
+-if(process.env.LD_LIBRARY_PATH)env.LD_LIBRARY_PATH=process.env.LD_LIBRARY_PATH;
+-const command=['--import',path.join(root,'scripts/testing/coverage-node-bootstrap.mjs'),'--import','tsx','--test','--test-concurrency=1','--test-reporter=tap',target];
+-const run=await runOwnedCommand(process.execPath,command,{cwd:root,env,timeoutMs:120000,maxBuffer:8*1024*1024});
+-fs.writeFileSync(path.join(output,'test.txt'),(run.stdout||'')+(run.stderr||''));
+-const report={schemaVersion:1,scope:'One existing Node suite; separate UNMERGED profile, not global coverage',command:[process.execPath,...command],sourceRevision:spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).stdout.trim(),test:target,testSha256:sourceBefore,exitCode:run.status,signal:run.signal,timedOut:run.timedOut,bufferExceeded:run.bufferExceeded,cleanup:run.cleanup,status:'collecting',profiles:[],productionReady:false,mergedIntoGlobalCoverage:false};
+-try{
+- if(run.status!==0||run.error||run.timedOut||run.bufferExceeded||!run.cleanup.complete)throw Error('Existing test execution, producer or owned-process cleanup failed');
+- const inputsAfter=sourceInputs(); report.sourceInputs={beforeSha256:inputsBefore.sha256,afterSha256:inputsAfter.sha256,unchanged:inputsBefore.sha256===inputsAfter.sha256};
+- fs.writeFileSync(path.join(output,'source-inputs.json'),JSON.stringify({before:inputsBefore,after:inputsAfter},null,2));
+- if(inputsBefore.sha256!==inputsAfter.sha256||sourceBefore!==sha256(fs.readFileSync(path.join(root,target))))throw Error('Source/configuration changed during execution');
+- const [{convert},{parseAstAsync},{default:libCoverage}]=await Promise.all([import('ast-v8-to-istanbul'),import('vite'),import('istanbul-lib-coverage')]);
+- const combined=libCoverage.createCoverageMap({});
+- for(const member of fs.readdirSync(output).filter(x=>/^\d+-\d+$/.test(x))){
+-  const directory=path.join(output,member),manifest=JSON.parse(fs.readFileSync(path.join(directory,'manifest.json'),'utf8'));
+-  validateManifest(manifest,directory,root);
+-  report.profiles.push({producerId:manifest.producerId,manifestSha256:sha256(fs.readFileSync(path.join(directory,'manifest.json'))),runtime:manifest.runtime});
+-  for(const script of manifest.scripts){
+-   const code=fs.readFileSync(path.join(directory,script.codeFile),'utf8');
+-   const map=script.mapFile?JSON.parse(fs.readFileSync(path.join(directory,script.mapFile),'utf8')):undefined;
+-   const ast=await parseAstAsync(code);
+-   const generatedPolicy=createKeepNamesPolicy({code,sourceMap:map,ast});
+-   const converted=await convert({code,sourceMap:map,ast,ignoreNode:generatedPolicy.ignoreNode,coverage:{url:script.url,functions:script.coverage.functions}});
+-   (report.generatedNodePolicies??=[]).push({scriptId:script.scriptId,...generatedPolicy.audit});
+-   for(const[file,data]of Object.entries(converted)){
+-    validateIstanbul(data);
+-    if(combined.files().includes(file)&&!compareCoverageMaps(combined.fileCoverageFor(file).toJSON(),data).compatible)throw Error('Incompatible producer maps for '+file);
+-    combined.merge({[file]:data});
+-   }
+-  }
+- }
+- if(!combined.files().length)throw Error('No retained executed production source');
+- fs.writeFileSync(path.join(output,'coverage-final.json'),JSON.stringify(combined.toJSON()));
+- fs.writeFileSync(path.join(output,'coverage-summary.json'),JSON.stringify({total:combined.getCoverageSummary().toJSON(),...Object.fromEntries(combined.files().map(file=>[file,combined.fileCoverageFor(file).toSummary().toJSON()]))},null,2));
+- const baseline=path.join(root,'reports/test-verification/coverage/coverage-final.json');
+- if(fs.existsSync(baseline)){const global=JSON.parse(fs.readFileSync(baseline,'utf8'));report.comparison={baselineSha256:sha256(fs.readFileSync(baseline)),files:combined.files().map(file=>({file,...(global[file]?compareCoverageMaps(global[file],combined.fileCoverageFor(file).toJSON()):{compatible:false,mismatches:['missing-global-source']})}))};}
+- report.converter={package:'ast-v8-to-istanbul',version:JSON.parse(fs.readFileSync(path.join(path.dirname(require.resolve('ast-v8-to-istanbul')),'../package.json'),'utf8')).version};
+- report.status='collected_unmerged';
+-}catch(error){report.status='failed';report.error=error.message;process.exitCode=1;}
+-finally{fs.writeFileSync(path.join(output,'receipt.json'),JSON.stringify(report,null,2));fs.rmSync(home,{recursive:true,force:true});}
+-console.log(JSON.stringify({status:report.status,exitCode:report.exitCode,profiles:report.profiles.length,output:path.relative(root,output)}));
++const root = fs.realpathSync(explicitRoot || path.join(here, '../..')), target = args[0], requested = args[1], canonical = args[2];
++if(explicitRoot&&(here===root||here.startsWith(root+path.sep)))throw Error('Repository override is only for an outside review copy');
++// The allowlist is checked before importing app code or creating any output.
++if (target !== 'tests/fabric-replica-generation.test.mjs' || !requested || args.length > 3)
++    throw Error('P1 supports only tests/fabric-replica-generation.test.mjs and a new owned output');
++const tracked = spawnSync('git', ['ls-files', '--', target], { cwd: root, encoding: 'utf8' });
++if (tracked.status || tracked.stdout.trim() !== target || !/from\s*["']node:test["']/.test(fs.readFileSync(path.join(root, target), 'utf8')))
++    throw Error('An existing Git-visible canonical node:test suite is required');
++const { runOwnedCommand, ownedPath } = await import(path.join(root, 'scripts/testing/coverage-provenance.mjs'));
++const out = ownedPath(explicitRoot ? here : path.join(root, 'reports'), path.resolve(root, requested));
++if (fs.existsSync(out))
++    throw Error('Producer output must be a new owned directory');
++function sourceInputs() { const list = spawnSync('git', ['ls-files', '-cz', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }); if (list.status)
++    throw Error('Source inventory failed'); const files = {}; for (const file of [...new Set(list.stdout.split('\0').filter(Boolean))].sort()) {
++    if (/^(reports|docs|dist)\//.test(file) || file.split('/').some(p => ['node_modules', '__pycache__', '.local'].includes(p)))
++        continue;
++    if (!/\.(?:[cm]?[jt]sx?|json|py|sh|go|rs|sql|nix|toml|ya?ml)$/.test(file) && !['.replit', 'package-lock.json', 'pnpm-lock.yaml'].includes(file))
++        continue;
++    const full = path.join(root, file);
++    if (fs.existsSync(full) && fs.statSync(full).isFile())
++        files[file] = sha256(fs.readFileSync(full));
++} return { sha256: sha256(JSON.stringify(files)), files }; }
++const inputsBefore = sourceInputs(), canonicalFile = path.join(root, 'reports/test-verification/coverage/coverage-final.json'), globalBefore = sha256(fs.readFileSync(canonicalFile)), testSha256 = sha256(fs.readFileSync(path.join(root, target))), candidateFiles = {};
++const candidatePaths=Object.fromEntries(['coverage-coordinate-contract.mjs','coverage-shared-provider.mjs','coverage-node-vite-entry.mjs','collect-node-coverage.mjs','coverage-raw-sidecar-reporter.cjs'].map(f=>[f,path.join(here,f)]));candidatePaths['tests/testing/coverage-coordinate-contract.test.mjs']=explicitRoot?path.join(here,'coverage-coordinate-contract.test.mjs'):path.join(root,'tests/testing/coverage-coordinate-contract.test.mjs');for(const[f,full]of Object.entries(candidatePaths))candidateFiles[f]=sha256(fs.readFileSync(full));
++const { contract, convert } = await createSharedProvider(root);const producerId=randomUUID();
++fs.mkdirSync(out, { recursive: true, mode: 0o700 });
++const home = path.join(out, 'home');
++fs.mkdirSync(home, { mode: 0o700 });
++const env = { PATH: process.env.PATH || '/usr/bin:/bin', HOME: home, TMPDIR: home, LANG: 'C', CI: '1', P1_REPOSITORY_ROOT: root, P1_TARGET: target, P1_OUTPUT: out,P1_PRODUCER_ID:producerId, NODE_V8_COVERAGE:path.join(out,'node-native-corroboration') };
++if (process.env.LD_LIBRARY_PATH)
++    env.LD_LIBRARY_PATH = process.env.LD_LIBRARY_PATH;
++const command = ['--test', '--test-concurrency=1', '--test-reporter=tap', path.join(here, 'coverage-node-vite-entry.mjs')], run = await runOwnedCommand(process.execPath, command, { cwd: root, env, timeoutMs: 120000, maxBuffer: 8 * 1024 * 1024 });
++fs.writeFileSync(path.join(out, 'test.txt'), run.stdout + run.stderr);
++const receipt = { schemaVersion: 2, status: 'collecting', sourceRevision: spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout.trim(), sourceInputsBeforeSha256: inputsBefore.sha256, test: target, testSha256, contract, contractSha256: typedSha256(contract), candidateFiles, command: [process.execPath, ...command], envKeys: Object.keys(env), exitCode: run.status, signal: run.signal, timedOut: run.timedOut, bufferExceeded: run.bufferExceeded, cleanup: run.cleanup, profiles: [], mergedIntoGlobalCoverage: false, productionReady: false };
++try {
++    if (run.status || run.error || run.timedOut || run.bufferExceeded || !run.cleanup.complete)
++        throw Error('Actual suite or owned cleanup failed');
++    const manifest = JSON.parse(fs.readFileSync(path.join(out, 'manifest.json')));
++    if (manifest.schemaVersion !== 3 || manifest.contractSha256 !== typedSha256(contract) || manifest.rawSha256 !== sha256(fs.readFileSync(path.join(out, 'raw-v8.json'))))
++        throw Error('Unsupported/stale actual capture contract');
++    const raw=JSON.parse(fs.readFileSync(path.join(out,'raw-v8.json')));validateCapturedManifest(manifest,{raw,root,target,contract,producerId});receipt.producerId = manifest.producerId;
++    receipt.snapshot = manifest.snapshot;
++    const rawManifest = canonical ? JSON.parse(fs.readFileSync(path.join(canonical, 'manifest.json'))) : null;
++    if (rawManifest && rawManifest.contractSha256 !== typedSha256(contract))
++        throw Error('Canonical sidecar has different/unproven producer contract');
++    for (const item of manifest.scripts) {
++        if (!subjectFiles.includes(path.relative(root, item.file)))
++            throw Error('Unsupported retained production source');
++        const bytes = { source: fs.readFileSync(item.file, 'utf8'), body: fs.readFileSync(ownedPath(out, path.resolve(out, item.bodyFile)), 'utf8'), executed: fs.readFileSync(ownedPath(out, path.resolve(out, item.codeFile)), 'utf8'), map: JSON.parse(fs.readFileSync(ownedPath(out, path.resolve(out, item.mapFile)))) };
++        const result = await convert(item, bytes), stem = path.relative(root, item.file).replaceAll('/', '__');
++        fs.writeFileSync(path.join(out, stem + '.raw.v8'), serialize(result.providerRaw));
++        fs.writeFileSync(path.join(out, stem + '.wire.json'), JSON.stringify(result.encoded.wire));
++        fs.writeFileSync(path.join(out, stem + '.typed.json'), JSON.stringify(result.encoded.sidecar, null, 2));
++        const mapComparison = {};
++        if (rawManifest) {
++            const ci = rawManifest.files.find(x => x.file === path.relative(root, item.file));
++            if (!ci)
++                throw Error('Missing canonical original');
++            const rawBytes = fs.readFileSync(ownedPath(canonical, path.resolve(canonical, ci.name)));
++            assert.equal(sha256(rawBytes), ci.sha256);
++            assert.equal(sha256(bytes.source), ci.sourceSha256);
++            const canonicalRaw = originalCoverageData(deserialize(rawBytes)), provenance = { ...result.provenance, kind: 'actual-public-Istanbul-pre-JSON-sidecar', rawSidecarSha256: ci.sha256 }, context = { source: bytes.source, sourceFile: item.file, contract, provenance, body: bytes.body, map: bytes.map }, encoded = encodeCoverage(canonicalRaw, context), decoded = decodeCoverage(encoded.wire, encoded.sidecar, context);
++            for (const k of ['statementMap', 'fnMap', 'branchMap'])
++                mapComparison[k] = isDeepStrictEqual(decoded[k], result.raw[k]);
++            if (Object.values(mapComparison).some(v => !v))
++                throw Error('Complete canonical map mismatch');
++            fs.writeFileSync(path.join(out, stem + '.canonical.wire.json'), JSON.stringify(encoded.wire));
++            fs.writeFileSync(path.join(out, stem + '.canonical.typed.json'), JSON.stringify(encoded.sidecar, null, 2));
++        }
++        const zeros = { statements: Object.values(result.raw.s).filter(n => n === 0).length, functions: Object.values(result.raw.f).filter(n => n === 0).length, branchArms: Object.values(result.raw.b).flat().filter(n => n === 0).length };
++        if (stem === 'server__config__ports.ts') {
++            const id = Object.keys(result.raw.fnMap).find(id => result.raw.fnMap[id].name === 'loopbackUrl');
++            assert.ok(id);
++            assert.equal(result.raw.f[id], 0);
++            assert.ok(zeros.branchArms > 0);
++        }
++        receipt.profiles.push({ file: path.relative(root, item.file), scriptId: item.scriptId, wrapperLength: item.wrapperLength, codeSha256: item.codeSha256, bodySha256: item.bodySha256, mapSha256: item.mapSha256, rawTypedSha256: typedSha256(result.raw), sentinels: result.encoded.sidecar.sentinels.length, zeros, mapComparison, audit: result.audit });
++    }
++    assert.deepEqual(receipt.profiles.map(x => x.file).sort(), [...subjectFiles].sort());
++    const inputsAfter = sourceInputs();
++    receipt.sourceInputs = { beforeSha256: inputsBefore.sha256, afterSha256: inputsAfter.sha256, unchanged: inputsBefore.sha256 === inputsAfter.sha256 };
++    fs.writeFileSync(path.join(out, 'source-inputs.json'), JSON.stringify({ before: inputsBefore, after: inputsAfter }, null, 2));
++    receipt.globalCoverage = { beforeSha256: globalBefore, afterSha256: sha256(fs.readFileSync(canonicalFile)) };
++    if (!receipt.sourceInputs.unchanged || receipt.globalCoverage.beforeSha256 !== receipt.globalCoverage.afterSha256 || testSha256 !== sha256(fs.readFileSync(path.join(root, target))))
++        throw Error('Source/global coverage changed during capture');
++    for(const[f,sha]of Object.entries(candidateFiles))if(sha256(fs.readFileSync(candidatePaths[f]))!==sha)throw Error('Outside candidate files changed during execution');receipt.nativeCorroboration={directory:'node-native-corroboration',scope:'Separate Node native V8 corroboration; never combined with the same inspector snapshot'};receipt.status = rawManifest ? 'typed_compatible_unmerged' : 'typed_collected_no_canonical_baseline_unmerged';
++}
++catch (error) {
++    receipt.status = 'failed';
++    receipt.error = error.stack;
++    process.exitCode = 1;
++}
++finally {
++    fs.writeFileSync(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2));
++    fs.rmSync(home, { recursive: true, force: true });
++}
++console.log(JSON.stringify({ status: receipt.status, profiles: receipt.profiles.length, cleanup: receipt.cleanup, output: out }));
+diff --git a/scripts/testing/coverage-raw-sidecar-reporter.cjs b/scripts/testing/coverage-raw-sidecar-reporter.cjs
+new file mode 100644
+--- /dev/null
++++ b/scripts/testing/coverage-raw-sidecar-reporter.cjs
+@@ -0,0 +1,18 @@
++/** Public Istanbul reporter: lossless pre-JSON capture; counters are never changed. */
++const fs = require('node:fs'), path = require('node:path'), v8 = require('node:v8'), crypto = require('node:crypto');
++const { ReportBase } = require('istanbul-lib-report');
++const subjects = new Set(['server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts', 'server/lib/pdimClient.ts', 'server/logger.ts', 'server/logSanitizer.ts', 'server/config/ports.ts', 'server/lib/luaExecutor.ts', 'server/lib/pdimCircuitBreaker.ts', 'external/pdim/artifacts/api-server/src/redis/store.ts', 'external/pdim/artifacts/api-server/src/workers/lua-pool.ts']);
++const hash = x => crypto.createHash('sha256').update(x).digest('hex');
++const ordered = x => Array.isArray(x) ? x.map(ordered) : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map(k => [k, ordered(x[k])])) : x;
++module.exports = class RawSidecar extends ReportBase {
++    constructor(options) { super(); this.root = fs.realpathSync(options.projectRoot); this.out = path.resolve(options.output); this.files = []; this.contract = JSON.parse(fs.readFileSync(options.contractFile)); if (this.contract.version !== 'maxbooster-shared-vite-provider-v1' || this.contract.provider.implementationSha256 !== hash(fs.readFileSync(path.join(this.root, 'node_modules/@vitest/coverage-v8/dist/provider.js'))))
++        throw Error('Unsupported canonical provider contract'); for(const [f,sha]of Object.entries(this.contract.implementations||{}))if(hash(fs.readFileSync(path.join(this.root,'node_modules',f)))!==sha)throw Error('Canonical installed transform changed');for (const [f, sha] of Object.entries(this.contract.tsconfigs))
++        if (hash(fs.readFileSync(path.join(this.root, f))) !== sha)
++            throw Error('Canonical tsconfig changed'); if (this.contract.runtime.node !== process.versions.node || this.contract.runtime.v8 !== process.versions.v8)
++        throw Error('Canonical runtime changed'); this.contractSha256 = hash(JSON.stringify(ordered(this.contract))); if (fs.existsSync(this.out))
++        throw Error('Raw sidecar output must be new'); fs.mkdirSync(this.out, { recursive: true, mode: 0o700 }); }
++    onDetail(node) { const raw = node.getFileCoverage().data; const file = path.relative(this.root, raw.path).split(path.sep).join('/'); if (!subjects.has(file))
++        return; const bytes = v8.serialize(raw), name = file.replaceAll('/', '__') + '.v8'; fs.writeFileSync(path.join(this.out, name), bytes, { flag: 'wx' }); this.files.push({ file, name, bytes: bytes.length, sha256: hash(bytes), sourceSha256: hash(fs.readFileSync(raw.path)) }); }
++    onEnd() { if (this.files.length !== subjects.size)
++        throw Error('Missing canonical P1 raw originals'); fs.writeFileSync(path.join(this.out, 'manifest.json'), JSON.stringify({ schemaVersion: 1, kind: 'actual-public-Istanbul-pre-JSON-sidecar', contract: this.contract, contractSha256: this.contractSha256, runtime: { node: process.versions.node, v8: process.versions.v8 }, files: this.files.sort((a, b) => a.file.localeCompare(b.file)), counterMutation: false, mergedIntoGlobalCoverage: false }, null, 2)); }
++};
+diff --git a/tests/testing/coverage-coordinate-contract.test.mjs b/tests/testing/coverage-coordinate-contract.test.mjs
+new file mode 100644
+--- /dev/null
++++ b/tests/testing/coverage-coordinate-contract.test.mjs
+@@ -0,0 +1,74 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import vm from 'node:vm';
++import { Session } from 'node:inspector';
++import { isDeepStrictEqual } from 'node:util';
++import { pathToFileURL } from 'node:url';
++import { encodeCoverage, decodeCoverage, sha256, typedSha256 } from '../../scripts/testing/coverage-coordinate-contract.mjs';
++import { assertOriginalPolicy, validateExecuted, transformOptions,validateCapturedManifest,subjectFiles } from '../../scripts/testing/coverage-shared-provider.mjs';
++import { transformWithEsbuild, moduleRunnerTransform } from 'vite';
++import coverageV8 from '@vitest/coverage-v8';
++const source = 'if (true) { void 0; }\n', sourceFile = '/fixture.ts', contract = { version: 'finite-fixture', provider: { implementationSha256: 'a'.repeat(64) } };
++const loc = () => ({ start: { line: 1, column: 0 }, end: { line: 1, column: source.trimEnd().length } });
++const fixture = () => ({ path: sourceFile, statementMap: { 0: loc() }, fnMap: {}, branchMap: {}, s: { 0: 0 }, f: {}, b: {} });
++const context = { source, sourceFile, contract };
++test('finite coordinates roundtrip with original zero denominator and UTF16 source', () => { const raw = fixture(), encoded = encodeCoverage(raw, context); assert.deepEqual(decodeCoverage(encoded.wire, encoded.sidecar, context), raw); assert.equal(encoded.wire.s[0], 0); assert.equal(Object.keys(encoded.wire.statementMap).length, 1); });
++for (const [value, label] of [[NaN, 'NaN'], [-Infinity, 'negative Infinity'], [null, 'raw null'], [-1, 'negative'], [0.5, 'fraction'], [true, 'boolean'], [9999, 'out of source'], [undefined, 'partial undefined']])
++    test('rejects ' + label + ' column', () => { const raw = fixture(); raw.statementMap[0].end.column = value; assert.throws(() => encodeCoverage(raw, context)); });
++for (const mutate of [r => r.extra = true, r => r.statementMap[0].extra = 1, r => Object.setPrototypeOf(r.statementMap[0], { hidden: true }), r => Object.defineProperty(r.statementMap[0], 'evil', { get() { throw Error('getter should never execute'); }, enumerable: true }), r => r.s[1] = 0, r => r.s[0] = -1, r => r.s[0] = 0.5])
++    test('rejects unsupported shape ' + mutate.toString(), () => { const raw = fixture(); mutate(raw); assert.throws(() => encodeCoverage(raw, context)); });
++function sentinelFixture() { const raw = fixture(); raw.statementMap[0].end.column = Infinity; raw.branchMap[0] = { type: 'if', loc: loc(), line: 1, locations: [loc(), { start: { line: undefined, column: undefined }, end: { line: undefined, column: undefined } }] }; raw.b[0] = [0, 0]; const body = 'actual-body', map = { version: 3, sources: [sourceFile], sourcesContent: [source], names: [], mappings: '' }; const ctx = { ...context, body, map, provenance: { kind: 'actual-shared-provider-replay', sourceSha256: sha256(source), contractSha256: typedSha256(contract), providerSha256: contract.provider.implementationSha256, bodySha256: sha256(body), mapSha256: sha256(JSON.stringify(map)), replay: structuredClone(raw) } }; return { raw, ctx }; }
++test('only attested end Infinity and full AST-proven synthetic else roundtrip', () => { const { raw, ctx } = sentinelFixture(), e = encodeCoverage(raw, ctx); assert.equal(e.wire.statementMap[0].end.column, null); assert.deepEqual(e.wire.branchMap[0].locations[1], { start: {}, end: {} }); assert.equal(e.sidecar.sentinels.length, 5); assert.deepEqual(decodeCoverage(e.wire, e.sidecar, ctx), raw); assert.deepEqual(e.wire.b[0], [0, 0]); });
++for (const mutate of [(raw, ctx) => delete ctx.provenance, (raw, ctx) => ctx.body += 'stale', (raw, ctx) => ctx.map.sourcesContent = ['wrong'], (raw, ctx) => ctx.provenance.providerSha256 = 'b'.repeat(64), (raw, ctx) => raw.branchMap[0].locations[1].start.column = 0, (raw, ctx) => raw.statementMap[0].start.column = Infinity, (raw, ctx) => ctx.provenance.replay.branchMap[0].type = 'switch'])
++    test('sentinel proof rejects ' + mutate.toString(), () => { const { raw, ctx } = sentinelFixture(); mutate(raw, ctx); assert.throws(() => encodeCoverage(raw, ctx)); });
++test('wire refuses absent, changed, duplicate or partial sentinel sidecar', () => { const { raw, ctx } = sentinelFixture(), e = encodeCoverage(raw, ctx); for (const edit of [x => delete x.sidecar, x => x.wire.s[0]++, x => x.sidecar.sentinels.push(x.sidecar.sentinels[0]), x => x.sidecar.sentinels.pop(), x => x.sidecar.sentinels[0].type = 'nan']) {
++    const copy = structuredClone(e);
++    edit(copy);
++    assert.throws(() => decodeCoverage(copy.wire, copy.sidecar, ctx));
++} assert.throws(() => decodeCoverage(e.wire, e.sidecar, { ...ctx, source: source + '\n' })); });
++test('authored helper remains original; authored policy lookalikes reject', () => { const audit = assertOriginalPolicy('export const __name = (fn) => fn;', 'helper.ts'); assert.equal(audit.authoredNameHelpersRetained, 1); for (const s of ['export const __vite_ssr_import_0__=()=>0;', 'export function _ts_decorate(){}', 'export const x=import.meta.env;', 'module.exports=()=>1;'])
++    assert.throws(() => assertOriginalPolicy(s, 'bad.ts')); });
++test('public Vite transform/provider retains authored helper arrows and all zero original functions', async () => { const text = 'export const __name = (fn) => fn;\nexport const untouched = (n) => n ? 1 : 2;\n'; assertOriginalPolicy(text, '/helper.ts'); const transformed = await transformWithEsbuild(text, '/helper.ts', { ...transformOptions, sourcemap: true, tsconfigRaw: { compilerOptions: {} } }); const ssr = await moduleRunnerTransform(transformed.code, transformed.map, '/helper.ts', text); const p = await coverageV8.getProvider(); p.options = { ignoreClassMethods: [] }; p.ctx = { logger: { error: m => { throw Error(m); } } }; const raw = Object.values(await p.remapCoverage('file:///helper.ts', 0, ssr, []))[0]; assert.equal(Object.keys(raw.fnMap).length, 2); assert.ok(Object.values(raw.f).every(n => n === 0)); assert.ok(Object.values(raw.b).flat().every(n => n === 0)); assert.deepEqual(Object.values(raw.fnMap).map(f => f.decl.start.line).sort(), [1, 2]); });
++test('actual Debugger UTF16 wrapper binding rejects stale maps and wrong prefix', async () => { const session = new Session(); session.connect(); const post = (method, params = {}) => new Promise((resolve, reject) => session.post(method, params, (e, r) => e ? reject(e) : resolve(r))); const observed = []; session.on('Debugger.scriptParsed', ({ params }) => { if (params.url === 'unicode-coverage-fixture.js')
++    observed.push(post('Debugger.getScriptSource', { scriptId: params.scriptId })); }); try {
++    await post('Debugger.enable');
++    const prefix = "/*😀\r\n*/(async()=>{", body = "const text='🌍'; return text;", suffix = '})', executed = prefix + body + suffix;
++    const run = vm.runInThisContext(executed, { filename: 'unicode-coverage-fixture.js' });
++    assert.equal(await run(), '🌍');
++    const captures = await Promise.all(observed);
++    assert.ok(captures.some(c => c.scriptSource === executed));
++    assert.ok(Buffer.byteLength(prefix) > prefix.length);
++    const map = { version: 3, sources: ['/unicode.ts'], sourcesContent: ['const text="🌍";'], names: [], mappings: '' };
++    const item = { file: '/unicode.ts', prefix, suffix, wrapperLength: prefix.length, codeSha256: sha256(executed), bodySha256: sha256(body), mapSha256: sha256(JSON.stringify(map)), originalSourceSha256: sha256('const text="🌍";'), coverage: { functions: [{ functionName:'fixture',isBlockCoverage:true,ranges: [{ startOffset: 0, endOffset: executed.length, count: 1 }] }] } };
++    const c = { wrapper: { prefix, suffix } }, bytes = { executed, body, map, source: 'const text="🌍";', contract: c };
++    validateExecuted(item, bytes);
++    for (const changed of [{ ...item, prefix: prefix + 'x' }, { ...item, wrapperLength: Buffer.byteLength(prefix) }, { ...item, mapSha256: 'a'.repeat(64) }, { ...item, coverage: { functions: [{ functionName:'fixture',isBlockCoverage:true,ranges: [{ startOffset: 0, endOffset: executed.length + 1, count: 1 }] }] } }])
++        assert.throws(() => validateExecuted(changed, bytes));
++}
++finally {
++    session.disconnect();
++} });
++
++test('wire rejects unsupported prototypes and accessors before serialization or cloning', () => { for (const mutate of [e => Object.setPrototypeOf(e.wire.s, { injected: true }), e => Object.defineProperty(e.wire.statementMap, '0', {get() {throw Error('must never run');}, enumerable: true}), e => e.wire.s[Symbol('extra')] = 1]) {const e = encodeCoverage(fixture(), context); mutate(e); assert.throws(() => decodeCoverage(e.wire, e.sidecar, context));} });
++function captureFixture(){const root='/fixture-root',producerId='12345678-1234-1234-1234-123456789abc',target='tests/fabric-replica-generation.test.mjs';const contract={runtime:{node:'22.fixture',v8:'fixture'},wrapper:{prefix:'P',suffix:'S',length:1}};const scripts=subjectFiles.map((file,i)=>{const full=root+'/'+file,coverage={scriptId:String(i+1),url:full,functions:[{functionName:'f',isBlockCoverage:true,ranges:[{startOffset:0,endOffset:3,count:0}]}]};return{file:full,id:full,url:'/'+file,scriptId:coverage.scriptId,runtimeUrl:full,observedDebuggerUrl:full,prefix:'P',suffix:'S',wrapperLength:1,coverage};});const raw={result:scripts.map(x=>structuredClone(x.coverage))};const manifest={schemaVersion:3,kind:'actual-P1-shared-Vite-Debugger-runtime',root,target,contract,contractSha256:typedSha256(contract),runtime:contract.runtime,offsetEncoding:'UTF-16 code units',producerId,snapshot:{id:producerId+'-1',window:{startedAt:'2026-10-29T01:00:00.000Z',finishedAt:'2026-10-29T01:00:01.000Z'},reset:'Profiler.startPreciseCoverage before imports; one take after actual node:test lifecycle',overlap:'single fresh process, single snapshot; no merge'},scripts};return{manifest,context:{raw,root,target,contract,producerId}};}
++test('manifest requires exact unique actual inspector records for all nine originals',()=>{const{manifest,context}=captureFixture();assert.equal(validateCapturedManifest(manifest,context),true);});
++for(const[label,mutate]of[
++ ['counter tamper',(m,c)=>m.scripts[0].coverage.functions[0].ranges[0].count=999],
++ ['function tamper',(m,c)=>m.scripts[0].coverage.functions[0].functionName='forged'],
++ ['raw duplicate ID',(m,c)=>c.raw.result.push(structuredClone(c.raw.result[0]))],
++ ['manifest duplicate ID',(m,c)=>m.scripts[1].scriptId=m.scripts[0].scriptId],
++ ['manifest duplicate original',(m,c)=>m.scripts[1].file=m.scripts[0].file],
++ ['missing original',(m,c)=>m.scripts.pop()],
++ ['runtime mismatch',(m,c)=>m.runtime={node:'wrong',v8:'wrong'}],
++ ['root mismatch',(m,c)=>m.root='/another-root'],
++ ['target mismatch',(m,c)=>m.target='tests/another.test.mjs'],
++ ['producer mismatch',(m,c)=>m.producerId='a'.repeat(36)],
++ ['snapshot mismatch',(m,c)=>m.snapshot.id+='wrong'],
++ ['snapshot overlap',(m,c)=>m.snapshot.overlap='unknown'],
++ ['runtime URL mismatch',(m,c)=>m.scripts[0].runtimeUrl='file:///other.ts'],
++ ['observed URL mismatch',(m,c)=>m.scripts[0].observedDebuggerUrl='file:///other.ts'],
++ ['module URL mismatch',(m,c)=>m.scripts[0].url='/other.ts'],
++ ['script/raw URL substitution',(m,c)=>{m.scripts[0].coverage.url='/other';c.raw.result[0].url='/other';m.scripts[0].runtimeUrl='/other';}],
++ ['wrapper mismatch',(m,c)=>m.scripts[0].wrapperLength=2],
++ ['contract mismatch',(m,c)=>m.contractSha256='0'.repeat(64)]
++])test('manifest rejects '+label,()=>{const{manifest,context}=captureFixture();mutate(manifest,context);assert.throws(()=>validateCapturedManifest(manifest,context));});

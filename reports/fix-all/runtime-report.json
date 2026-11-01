@@ -1,0 +1,20 @@
+[
+  {
+    "path": "/api/ready",
+    "status": 200,
+    "ms": 186,
+    "snippet": "{\"status\":\"ok\",\"timestamp\":\"2026-08-07T11:40:37.720Z\",\"buildId\":\"12a4b7dd\",\"subsystems\":[{\"name\":\"database\",\"status\":\"ok\",\"lastChecked\":1786102837720,\"latencyMs\":28},{\"name\":\"redis\",\"status\":\"ok\",\"las"
+  },
+  {
+    "path": "/",
+    "status": 200,
+    "ms": 51,
+    "snippet": "<!doctype html>\n<html lang=\"en\" dir=\"ltr\" prefix=\"og: https://ogp.me/ns#\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <title>Max Booster - AI Music Career Management Platform</title>\n    <meta\n      na"
+  },
+  {
+    "path": "/api/auth/user",
+    "status": 404,
+    "ms": 42,
+    "snippet": "{\"error\":\"Not found\",\"message\":\"API endpoint /api/auth/user does not exist\",\"status\":404}"
+  }
+]

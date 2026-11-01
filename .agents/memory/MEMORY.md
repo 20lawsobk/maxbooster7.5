@@ -1,5 +1,2 @@
-- [Repository import constraints](repository-import.md) — upstream LFS quota blocks two model assets; nested Git reference lacks a configured URL.
-- [Live-awareness scope](live-awareness.md) — live social-landscape endpoints do not require already-trained data; keep awareness and generation readiness separate.
-- [Database selection](database-selection.md) — user chose the existing Neon database for development; do not substitute the template database.
-- [Verification boundaries](verification-boundaries.md) — serialize deployment fixtures; keep developer-host size separate from verified publishing readiness.
-- [Learning-state durability](learning-state-durability.md) — retain development checkpoints inside the ignored workspace; historical curricula must remain reproducible.
+- [Nix dependency editing](nix-dependency-editing.md) — verify custom dependency expressions actually change; the package remover can report success without removing them.
+- [User-local Nix constraints](user-local-nix.md) — custom stores avoid platform permissions but do not repair Replit's environment loader.

@@ -1,0 +1,37 @@
+{
+  "command": [
+    "/workspace/.cloud-python/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/testing/test_platform_evidence.py",
+    "tests/testing/test_summary_results.py",
+    "tests/testing/test_endpoint_mount_resolution.py",
+    "--junitxml=/workspace/onboarding-results/case-identity-repairs/python/framework-sealed.junit.xml"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-29T08:50:40.010413+00:00",
+  "durationSeconds": 13.043,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "/workspace/onboarding-results/case-identity-repairs/python/framework-sealed.log",
+  "logSha256": "5d3f9b5f1a4cf2eff08010a14be9a587fde39cc6e215450cd5380370768f32d0",
+  "candidateInputsBefore": {
+    "scripts/testing/junit_evidence.py": "2f628127157479063886c0810b6d85dae3b3d1f6b826c43a92a8075c25ec7efb",
+    "scripts/testing/platform-register.py": "ef8982d404971acd5d1f0aacf277c0cc51e6c40c54fd7d9ac50d576e561f2d2e",
+    "scripts/testing/summarize-results.py": "4171c579d8cb2d8c60737e3d399e3efc4909471d412fcc930beb6d603b01962e",
+    "tests/testing/test_platform_evidence.py": "661ae5f953fc8c84c6e262d255f73b7f73afde2bb57f895435e22a36e2afa84d",
+    "tests/testing/test_summary_results.py": "82ef8c0e5987ba783fdd9eec2d7a578bf222d26309f560e820cf33ddec6f1835",
+    "tests/testing/test_endpoint_mount_resolution.py": "f0bb84c0f26508cb200bcb893bf102bdd32032f4ed79a58a9939bfed312a0482"
+  },
+  "candidateInputsAfter": {
+    "scripts/testing/junit_evidence.py": "2f628127157479063886c0810b6d85dae3b3d1f6b826c43a92a8075c25ec7efb",
+    "scripts/testing/platform-register.py": "ef8982d404971acd5d1f0aacf277c0cc51e6c40c54fd7d9ac50d576e561f2d2e",
+    "scripts/testing/summarize-results.py": "4171c579d8cb2d8c60737e3d399e3efc4909471d412fcc930beb6d603b01962e",
+    "tests/testing/test_platform_evidence.py": "661ae5f953fc8c84c6e262d255f73b7f73afde2bb57f895435e22a36e2afa84d",
+    "tests/testing/test_summary_results.py": "82ef8c0e5987ba783fdd9eec2d7a578bf222d26309f560e820cf33ddec6f1835",
+    "tests/testing/test_endpoint_mount_resolution.py": "f0bb84c0f26508cb200bcb893bf102bdd32032f4ed79a58a9939bfed312a0482"
+  },
+  "candidateInputsUnchanged": true
+}

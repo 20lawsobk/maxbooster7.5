@@ -1,0 +1,68 @@
+{
+  "observedAt": "2026-10-29T23:06:07.965414+00:00",
+  "candidatePath": "/workspace/onboarding-results/c5-admission-prototype/candidate/admit-node-coverage.mjs",
+  "candidateSha256": "6adca491a233e76086ac4e6907b449291ce23ffe4dddc43001318d4c5bafc964",
+  "scope": "Independent outside prototype review only; no root writes, no provider/application imports, no production admission",
+  "decision": "REVIEW_BLOCKED_FOR_PRODUCTION_INTEGRATION",
+  "findings": [
+    {
+      "id": "P2-R1",
+      "severity": "high",
+      "area": "Canonical assertion runtime acceptance",
+      "confirmed": true,
+      "rootCause": "JUnitReporter.onTestRunEnd(testModules) does not include unhandledErrors. P2 admits job exit1 from exactly four threshold messages but cannot distinguish additional hidden unhandled rejection.",
+      "actualProof": {
+        "junitTests": 1,
+        "junitFailures": 0,
+        "junitErrors": 0,
+        "allThresholds100Exit": 1,
+        "thresholdsZeroJunitExit": 1,
+        "thresholdsZeroDefaultExit": 1,
+        "defaultReportsUnhandledRejection": true
+      },
+      "requiredFix": "Bind a current canonical machine-readable onTestRunEnd result including unhandledErrors=0 and reason=passed to the actual parent command/source/window; JUnit plus log parsing is insufficient. Keep thresholds100.",
+      "acceptance": "Actual tiny unhandled fixture rejected even though its case passes and coverage also fails; clean current canonical producer passes its runtime gate."
+    },
+    {
+      "id": "P2-R2",
+      "severity": "high",
+      "area": "Actual producer implementation binding",
+      "confirmed": "Isolated gate/control + static complete CLI dataflow",
+      "rootCause": "candidateFiles exact required keys are not checked. {} passes assertProducerEvidence and makes the complete CLI Object.entries loop verify zero implementation files. Present hashes only self-bind bytes, not equality to the admitted current-source implementation.",
+      "requiredFix": "Require exact known implementation inventory and hashes equal to current admitted source inputs or an explicit immutable versioned prototype bundle. Production integration must use the landed current implementation and rerun master/P1 after code changes.",
+      "acceptance": "Deleted/empty/partial/extra implementation inventory and changed helper bytes rejected before output."
+    },
+    {
+      "id": "P2-R3",
+      "severity": "medium",
+      "area": "Output ownership",
+      "confirmed": "Faithful isolated guard reproduction, not full stale CLI execution",
+      "rootCause": "Output ownership uses lexical startsWith only; an existing symlink ancestor can redirect new output outside candidate ownership.",
+      "requiredFix": "Resolve and validate every existing output ancestor under real candidate-owned base; reject symlink components and create owned output with checked parent.",
+      "acceptance": "Ancestor symlink escape rejected before any directory creation."
+    },
+    {
+      "id": "P2-R4",
+      "severity": "medium",
+      "area": "TAP result identity/counts",
+      "confirmed": true,
+      "rootCause": "Object.fromEntries over regex matchAll accepts duplicate totals; an earlier # fail1 is silently overwritten by later # fail0.",
+      "requiredFix": "Require exactly one occurrence of each expected totals field and the exact intended two unique passing leaf cases/no failure lines from one completed TAP stream.",
+      "acceptance": "Conflicting duplicate totals, concatenated runs, missing fields and reused test identity rejected."
+    }
+  ],
+  "positiveChecks": [
+    "Exact complete original maps/path/IDs are required before counter addition.",
+    "Counter arithmetic rejects negatives/non-integers/nonfinite values/overflow, preserves zero arms and untouched IDs.",
+    "Raw inspector records bind to unique observed scriptIDs and actual captured bytes/provider replay.",
+    "Parent command/snapshot windows and source equality are guarded.",
+    "CLI only writes a new outside candidate and never intentionally opens authoritative global data for write.",
+    "Current stale root should reject captured 8a9 admission; no current-source credit claimed."
+  ],
+  "additionalTrackedLimits": [
+    "usedSnapshots parameter is not populated by CLI. A single fresh canonical + oneproducer dry run adds once; cumulative production integration needs a persistent admitted-snapshot ledger.",
+    "New output uses exclusive files and cleanup on caught exceptions but final directory is visible before both writes complete; atomic publish via private staging+rename would make the transactional wording accurate.",
+    "Parent canonical reviewer separately identified missing JUnit artifact hash binding; not duplicated here as an independently rerun claim."
+  ],
+  "actualRuntimeFixtureScope": "One owned outside TS test plus one uncalled subject function; diagnostic thresholds0 used only in outside controls to isolate runtime failure, never root configuration."
+}

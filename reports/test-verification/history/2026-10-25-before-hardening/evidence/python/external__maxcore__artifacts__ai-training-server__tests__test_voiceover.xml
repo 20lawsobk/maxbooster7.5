@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="13" time="1.635" timestamp="2026-10-25T22:44:56.149004+00:00" hostname="2fc971e77ddd"><testcase classname="tests.test_voiceover.TestCleanVoText" name="test_strips_emoji_hashtags_urls_tokens" time="0.001" /><testcase classname="tests.test_voiceover.TestCleanVoText" name="test_empty_and_symbol_only" time="0.000" /><testcase classname="tests.test_voiceover.TestNarratorControls" name="test_valid_voices_pass_through" time="0.000" /><testcase classname="tests.test_voiceover.TestNarratorControls" name="test_invalid_voices_fall_back" time="0.000" /><testcase classname="tests.test_voiceover.TestNarratorControls" name="test_valid_wpm_pass_through" time="0.000" /><testcase classname="tests.test_voiceover.TestNarratorControls" name="test_invalid_wpm_fall_back" time="0.000" /><testcase classname="tests.test_voiceover.TestSynthesizeVoiceover" name="test_produces_speech_at_pipeline_rate" time="0.142" /><testcase classname="tests.test_voiceover.TestSynthesizeVoiceover" name="test_non_default_voice_and_pace" time="0.264" /><testcase classname="tests.test_voiceover.TestSynthesizeVoiceover" name="test_invalid_voice_and_pace_still_render" time="0.133" /><testcase classname="tests.test_voiceover.TestSynthesizeVoiceover" name="test_empty_text_returns_false" time="0.001" /><testcase classname="tests.test_voiceover.TestMixAndTrack" name="test_voice_dominates_ducked_music" time="0.252" /><testcase classname="tests.test_voiceover.TestMixAndTrack" name="test_voiceover_track_end_to_end" time="0.432" /><testcase classname="tests.test_voiceover.TestMixAndTrack" name="test_never_raises_on_bad_music_path" time="0.225"><failure message="assert (None)">self = &lt;tests.test_voiceover.TestMixAndTrack object at 0x7fc7fc1e7da0&gt;
+tmp_path = PosixPath('&lt;scratch&gt;/pytest-of-agent/pytest-0/test_never_raises_on_bad_music0')
+
+    def test_never_raises_on_bad_music_path(self, tmp_path):
+        path = voiceover_track(
+            "Hello world narration.", out_dir=str(tmp_path),
+            job_id="badmusicjob1", duration_sec=2.0,
+            music_path=str(tmp_path / "missing.wav"),
+        )
+        # Falls back to narration-only, never raises
+&gt;       assert path and Path(path).exists()
+E       assert (None)
+
+tests/test_voiceover.py:186: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,102 @@
+{
+  "observedAt": "2026-10-28T09:01:22.411365+00:00",
+  "scope": "Read-only recheck of two historical native workflow job lists; no new workflow, build, publish or account mutation",
+  "productionReady": false,
+  "runs": [
+    {
+      "run": 40590087208,
+      "total": 5,
+      "jobs": [
+        {
+          "id": 122491758465,
+          "name": "build-windows",
+          "status": "completed",
+          "conclusion": "failure",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087208/job/122491758465",
+          "executedSteps": 0
+        },
+        {
+          "id": 122491758690,
+          "name": "build-linux",
+          "status": "completed",
+          "conclusion": "failure",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087208/job/122491758690",
+          "executedSteps": 0
+        },
+        {
+          "id": 122491758702,
+          "name": "build-macos",
+          "status": "completed",
+          "conclusion": "failure",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087208/job/122491758702",
+          "executedSteps": 0
+        },
+        {
+          "id": 122491793089,
+          "name": "build-summary",
+          "status": "completed",
+          "conclusion": "failure",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087208/job/122491793089",
+          "executedSteps": 0
+        },
+        {
+          "id": 122491795765,
+          "name": "create-release",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087208/job/122491795765",
+          "executedSteps": 0
+        }
+      ]
+    },
+    {
+      "run": 40590087686,
+      "total": 5,
+      "jobs": [
+        {
+          "id": 122491759939,
+          "name": "build-android",
+          "status": "completed",
+          "conclusion": "failure",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087686/job/122491759939",
+          "executedSteps": 0
+        },
+        {
+          "id": 122491760470,
+          "name": "build-ios",
+          "status": "completed",
+          "conclusion": "failure",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087686/job/122491760470",
+          "executedSteps": 0
+        },
+        {
+          "id": 122491785290,
+          "name": "create-release",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087686/job/122491785290",
+          "executedSteps": 0
+        },
+        {
+          "id": 122491785605,
+          "name": "upload-to-play-store",
+          "status": "completed",
+          "conclusion": "skipped",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087686/job/122491785605",
+          "executedSteps": 0
+        },
+        {
+          "id": 122491786234,
+          "name": "build-summary",
+          "status": "completed",
+          "conclusion": "failure",
+          "html_url": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087686/job/122491786234",
+          "executedSteps": 0
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "These immutable historical jobs do not establish current billing-account state or execute current source. Prior check annotations identify why those runs never started."
+  ]
+}

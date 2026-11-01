@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "scope": "Preserved original failure reproductions and focused current-execution evidence-gate regressions, not product or launch approval",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "productionReady": false,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 6975,
+      "sha256": "ba47ff353cdf492d79968746fd3b8d97fc7f274e30a87e954b955dcaee2ed7e4"
+    },
+    {
+      "path": "platform-evidence-duplicate-file-green-2026-10-28.txt",
+      "bytes": 181,
+      "sha256": "e9299761d45a32800c9575db1d673197f28b9992188c8cf960052ad420231087"
+    },
+    {
+      "path": "platform-evidence-duplicate-file-green-2026-10-28.xml",
+      "bytes": 20461,
+      "sha256": "5cbb6e2f6e31c1724f29c03c7af76556df30edda41fcc93c938b62ed0dfebced"
+    },
+    {
+      "path": "platform-evidence-duplicate-file-red-2026-10-28.txt",
+      "bytes": 12406,
+      "sha256": "9e9706d98865e42ce909d1620798e82430d7192b165e1b524a711cd96b7fbeef"
+    },
+    {
+      "path": "platform-evidence-final-2026-10-28.txt",
+      "bytes": 180,
+      "sha256": "0f37def55822f7cfe3c50cfb34de076cbfb0e65ecdb7ae1657837a452e26f2b3"
+    },
+    {
+      "path": "platform-evidence-final-2026-10-28.xml",
+      "bytes": 19056,
+      "sha256": "3761dbcf9aae2e3e300ff699d20663a7267e2d250b4198ac486b98060dd9e2f6"
+    },
+    {
+      "path": "platform-evidence-fixed-2026-10-28.txt",
+      "bytes": 180,
+      "sha256": "c60fff521a7d0b6ba3c323ba625242543424a75383bceba94e98222ce853f810"
+    },
+    {
+      "path": "platform-evidence-fixed-2026-10-28.xml",
+      "bytes": 18079,
+      "sha256": "14d370227b80ce0bece2fe3cdad017080605c040ae0c78688155c64624a0655a"
+    },
+    {
+      "path": "platform-evidence-review-2026-10-28.json",
+      "bytes": 1824,
+      "sha256": "3c48fe401467fd7f3b6fc3f862bb8df903447f869424377a091fb51c9027be43"
+    },
+    {
+      "path": "platform-evidence-reviewed-final-2026-10-28.txt",
+      "bytes": 181,
+      "sha256": "b9e1877e3c735bca77ab446275cf0d6e3bde057dd562031d9d370b1978d29a15"
+    },
+    {
+      "path": "platform-evidence-reviewed-final-2026-10-28.xml",
+      "bytes": 20013,
+      "sha256": "5b1b098e81067743e6d17f6289ec1157f3dda540a86039c3bffc5747dcf2f4ba"
+    },
+    {
+      "path": "platform-evidence-stale-baseline-2026-10-28.txt",
+      "bytes": 3985,
+      "sha256": "c4a1d41e09cdcc71bde432f3fc7e4b1b91b989b8ef910464543cd5b5d05115cb"
+    },
+    {
+      "path": "receipt.json",
+      "bytes": 6687,
+      "sha256": "29fcb939f4f7a60a438748d7d69076c0032d2ba1c0428243b541d6170e80973c"
+    }
+  ]
+}

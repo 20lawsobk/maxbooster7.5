@@ -1,0 +1,43 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.12 [39m[90m/workspace/onboarding-results/c5-admission-independent-review/runtime-control[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m unhandled.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 30[2mms[22m[39m
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: independent-review-unhandled[39m
+[36m [2m❯[22m unhandled.test.ts:[2m3:105[22m[39m
+
+[90m [2m❯[22m ../../../maxbooster7.5/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m302:11[22m[39m
+[90m [2m❯[22m ../../../maxbooster7.5/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m1903:26[22m[39m
+[90m [2m❯[22m ../../../maxbooster7.5/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m2326:20[22m[39m
+[90m [2m❯[22m runWithCancel ../../../maxbooster7.5/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m2323:10[22m[39m
+[90m [2m❯[22m ../../../maxbooster7.5/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m2305:20[22m[39m
+[90m [2m❯[22m runWithTimeout ../../../maxbooster7.5/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m2272:10[22m[39m
+[90m [2m❯[22m ../../../maxbooster7.5/node_modules/@vitest/runner/dist/chunk-artifact.js:[2m2956:64[22m[39m
+
+[31mThis error originated in "[1munhandled.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1massertion passes but async runtime rejects[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 23:05:09
+[2m   Duration [22m 246ms[2m (transform 29ms, setup 0ms, import 43ms, tests 30ms, environment 0ms)[22m
+
+JUNIT report written to /workspace/onboarding-results/c5-admission-independent-review/runtime-control/junit-default.xml
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+------------|---------|----------|---------|---------|-------------------
+File        | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------|---------|----------|---------|---------|-------------------
+All files   |       0 |        0 |       0 |       0 |                   
+ subject.ts |       0 |        0 |       0 |       0 | 1                 
+------------|---------|----------|---------|---------|-------------------

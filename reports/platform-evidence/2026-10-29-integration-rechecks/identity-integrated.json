@@ -1,0 +1,61 @@
+{
+  "scope": "Current integrated exact identity repairs; not feature launch acceptance",
+  "beforeSha256": "3d121548247300ff9fde41443995a3dfcf3a5df6d002f610512e8bf68fa47209",
+  "afterSha256": "3d121548247300ff9fde41443995a3dfcf3a5df6d002f610512e8bf68fa47209",
+  "unchanged": true,
+  "runs": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/testing/test_platform_evidence.py",
+        "tests/testing/test_summary_results.py",
+        "tests/testing/test_endpoint_mount_resolution.py",
+        "--junitxml=reports/platform-evidence/2026-10-29-integration-rechecks/identity-framework.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T08:56:19.385136+00:00",
+      "durationSeconds": 14.639,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/platform-evidence/2026-10-29-integration-rechecks/identity-framework.txt",
+      "logSha256": "70485b9be1c3ad3f529c4d0d9e917b08bb546f9528a4a871ac991ca2a4f2b968",
+      "id": "identity-framework"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "vitest.config.ts",
+        "--reporter=verbose",
+        "--reporter=junit",
+        "--outputFile=reports/platform-evidence/2026-10-29-integration-rechecks/identity-vitest.xml",
+        "tests/unit/auth-page-age-policy.test.ts",
+        "tests/unit/deployment-small-file-codec.test.ts",
+        "tests/unit/email-provider-ack.test.ts",
+        "tests/unit/frontend-batch-response-contracts.test.ts",
+        "tests/unit/marketplace-storefront-page-contracts.test.ts",
+        "tests/unit/password-policy.test.ts",
+        "tests/unit/registrationCompletion.test.ts",
+        "tests/unit/registrationCompletionBoundary.test.ts",
+        "tests/unit/subscriptionCheckout.test.ts",
+        "tests/unit/support-ticket-validation.test.ts"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T08:56:19.385479+00:00",
+      "durationSeconds": 4.688,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/platform-evidence/2026-10-29-integration-rechecks/identity-vitest.txt",
+      "logSha256": "43ec9064717cd9a4d96bb82403b0bfc81d0cc77db790ca563eb0d7a754d8d11b",
+      "id": "identity-vitest"
+    }
+  ],
+  "productionReady": false
+}

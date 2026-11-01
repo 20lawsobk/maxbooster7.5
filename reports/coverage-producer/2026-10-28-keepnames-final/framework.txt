@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: accepts retained actual runtime code, UTF-16 ranges and a genuinely unexecuted branch
+ok 1 - accepts retained actual runtime code, UTF-16 ranges and a genuinely unexecuted branch
+  ---
+  duration_ms: 177.764394
+  type: 'test'
+  ...
+# Subtest: rejects stale original source and changed executed code
+ok 2 - rejects stale original source and changed executed code
+  ---
+  duration_ms: 30.874907
+  type: 'test'
+  ...
+# Subtest: rejects changed raw counters and malformed offsets rather than salvaging hits
+ok 3 - rejects changed raw counters and malformed offsets rather than salvaging hits
+  ---
+  duration_ms: 33.2506
+  type: 'test'
+  ...
+# Subtest: rejects incomplete producers and malformed UTF-8
+ok 4 - rejects incomplete producers and malformed UTF-8
+  ---
+  duration_ms: 31.591258
+  type: 'test'
+  ...
+# Subtest: retains exact original contents in inline source maps and rejects missing/stale mappings
+ok 5 - retains exact original contents in inline source maps and rejects missing/stale mappings
+  ---
+  duration_ms: 34.998627
+  type: 'test'
+  ...
+# Subtest: rejects traversal, external sources and symlink escape
+ok 6 - rejects traversal, external sources and symlink escape
+  ---
+  duration_ms: 34.332972
+  type: 'test'
+  ...
+# Subtest: requires complete identical maps even when functions and branches match
+ok 7 - requires complete identical maps even when functions and branches match
+  ---
+  duration_ms: 1.137105
+  type: 'test'
+  ...
+# Subtest: rejects branch arity and counter/map mismatches
+ok 8 - rejects branch arity and counter/map mismatches
+  ---
+  duration_ms: 0.308856
+  type: 'test'
+  ...
+# Subtest: timeout terminates an owned descendant which ignores TERM and retains pipes
+ok 9 - timeout terminates an owned descendant which ignores TERM and retains pipes
+  ---
+  duration_ms: 1197.478114
+  type: 'test'
+  ...
+# Subtest: direct exit 0 is preserved while its owned lingering descendant is cleaned
+ok 10 - direct exit 0 is preserved while its owned lingering descendant is cleaned
+  ---
+  duration_ms: 267.117812
+  type: 'test'
+  ...
+# Subtest: direct exit 7 is preserved while its owned lingering descendant is cleaned
+ok 11 - direct exit 7 is preserved while its owned lingering descendant is cleaned
+  ---
+  duration_ms: 283.705891
+  type: 'test'
+  ...
+# Subtest: output bound forces a TERM-resistant direct runner to stop promptly
+ok 12 - output bound forces a TERM-resistant direct runner to stop promptly
+  ---
+  duration_ms: 154.284871
+  type: 'test'
+  ...
+# Subtest: spawn failure is preserved with no invented child or cleanup success claim
+ok 13 - spawn failure is preserved with no invented child or cleanup success claim
+  ---
+  duration_ms: 3.057181
+  type: 'test'
+  ...
+# Subtest: P1 rejects a real PostgreSQL suite before execution or output creation
+ok 14 - P1 rejects a real PostgreSQL suite before execution or output creation
+  ---
+  duration_ms: 532.765336
+  type: 'test'
+  ...
+# Subtest: actual isolated VM retains the complete original denominator and unexecuted original function and branch
+ok 15 - actual isolated VM retains the complete original denominator and unexecuted original function and branch
+  ---
+  duration_ms: 132.676295
+  type: 'test'
+  ...
+# Subtest: actual esbuild helpers never hide an author-defined __name function or its call
+ok 16 - actual esbuild helpers never hide an author-defined __name function or its call
+  ---
+  duration_ms: 6.973238
+  type: 'test'
+  ...
+# Subtest: an author-written exact lookalike helper pair remains original source
+ok 17 - an author-written exact lookalike helper pair remains original source
+  ---
+  duration_ms: 6.700647
+  type: 'test'
+  ...
+# Subtest: function-valued helper arguments are not removed with a compiler wrapper
+ok 18 - function-valued helper arguments are not removed with a compiler wrapper
+  ---
+  duration_ms: 4.941673
+  type: 'test'
+  ...
+# Subtest: a mapped prelude is not accepted as a generated prefix
+ok 19 - a mapped prelude is not accepted as a generated prefix
+  ---
+  duration_ms: 4.097865
+  type: 'test'
+  ...
+# Subtest: reassigned generated bindings fail closed instead of hiding their code
+ok 20 - reassigned generated bindings fail closed instead of hiding their code
+  ---
+  duration_ms: 4.862264
+  type: 'test'
+  ...
+# Subtest: Unicode original declaration identifiers are matched by parsed identity and exact original coordinate
+ok 21 - Unicode original declaration identifiers are matched by parsed identity and exact original coordinate
+  ---
+  duration_ms: 3.909102
+  type: 'test'
+  ...
+# Subtest: unmapped original JavaScript is never classified as compiler output
+ok 22 - unmapped original JavaScript is never classified as compiler output
+  ---
+  duration_ms: 0.524892
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3455.771921

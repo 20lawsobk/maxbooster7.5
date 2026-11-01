@@ -1,0 +1,167 @@
+{
+  "reportVersion": 1,
+  "startedAt": "2026-10-19T20:44:56.258Z",
+  "completedAt": "2026-10-19T20:46:06.162Z",
+  "status": "pass",
+  "liveSource": true,
+  "durableBackupCreated": false,
+  "recoveryMode": "ephemeral",
+  "sourceAccess": "read-only exported snapshot",
+  "runCommand": "env -i PATH=\"$PATH\" HOME=/tmp NEON_DATABASE_URL=\"$NEON_DATABASE_URL\" node --import tsx scripts/database-recovery-drill.mjs",
+  "safety": {
+    "sourceMutation": false,
+    "appStarted": false,
+    "providerCalls": false,
+    "dumpScratchMode": "0600",
+    "scratchRemoved": true,
+    "targetNetwork": "loopback and private Unix socket only"
+  },
+  "evidence": {
+    "source": {
+      "serverMajor": 17,
+      "tableCount": 341,
+      "schemaDefinitionRecordCount": 7280,
+      "schemaFingerprint": "ad5e571a491f4475470a3ae854c706bd8ee34632b936cb3a00c71fb55058f071",
+      "schemaSections": {
+        "relations": {
+          "count": 1088,
+          "fingerprint": "397bdda9a21c5c4c7cbe861cc3c40ae686b7dc04730e01db2d18be4d109430cc"
+        },
+        "columns": {
+          "count": 4962,
+          "fingerprint": "c0f05345fe724ed6508e9248c7df7514ccb72965feab7ef590584b094e9b76df"
+        },
+        "types": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "constraints": {
+          "count": 478,
+          "fingerprint": "b6e94fe082efe3ad2aee5d60815d997422413a66f64347654429baaac747f202"
+        },
+        "indexes": {
+          "count": 733,
+          "fingerprint": "2cf0d7abab172be379414f5278a80ebc6f42d5f2688d27652c53ff055b19836f"
+        },
+        "functions": {
+          "count": 2,
+          "fingerprint": "da9abec49ba1fe1fc4d13da1241e12de7c7e6bdc0d44991cf9599d9cc08f0c62"
+        },
+        "sequences": {
+          "count": 14,
+          "fingerprint": "26b8c586bcc85f4d5a1580d103c965f2c9f26fb7b545d58328f664b578613709"
+        },
+        "triggers": {
+          "count": 3,
+          "fingerprint": "9b154857aeb2f23c860a2ed1e57cb23c8a00cd8d2c1d9b31ecfdca8563ecca6b"
+        },
+        "policies": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      }
+    },
+    "dump": {
+      "durability": "uncommitted",
+      "bytes": 24037616,
+      "sha256": "e6cb48a9aa772a3f88625b2aa47d91e25e014e22671561123d29a57b11c55a46",
+      "sourceVersion": "17.11",
+      "consistentSnapshot": true
+    },
+    "restoredSchema": {
+      "count": 7280,
+      "fingerprint": "ad5e571a491f4475470a3ae854c706bd8ee34632b936cb3a00c71fb55058f071",
+      "sections": {
+        "relations": {
+          "count": 1088,
+          "fingerprint": "397bdda9a21c5c4c7cbe861cc3c40ae686b7dc04730e01db2d18be4d109430cc"
+        },
+        "columns": {
+          "count": 4962,
+          "fingerprint": "c0f05345fe724ed6508e9248c7df7514ccb72965feab7ef590584b094e9b76df"
+        },
+        "types": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "constraints": {
+          "count": 478,
+          "fingerprint": "b6e94fe082efe3ad2aee5d60815d997422413a66f64347654429baaac747f202"
+        },
+        "indexes": {
+          "count": 733,
+          "fingerprint": "2cf0d7abab172be379414f5278a80ebc6f42d5f2688d27652c53ff055b19836f"
+        },
+        "functions": {
+          "count": 2,
+          "fingerprint": "da9abec49ba1fe1fc4d13da1241e12de7c7e6bdc0d44991cf9599d9cc08f0c62"
+        },
+        "sequences": {
+          "count": 14,
+          "fingerprint": "26b8c586bcc85f4d5a1580d103c965f2c9f26fb7b545d58328f664b578613709"
+        },
+        "triggers": {
+          "count": 3,
+          "fingerprint": "9b154857aeb2f23c860a2ed1e57cb23c8a00cd8d2c1d9b31ecfdca8563ecca6b"
+        },
+        "policies": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      }
+    },
+    "restore": {
+      "targetMajor": 17,
+      "schemaDefinitionRecordCount": 7280,
+      "tableCount": 341,
+      "aggregateRowCount": "35792",
+      "exactPerTableCountsMatched": true,
+      "exactPerTableContentHashesMatched": true,
+      "targetIdentityMatched": true,
+      "targetWasEmpty": true
+    }
+  },
+  "checks": [
+    {
+      "name": "source transaction is read-only",
+      "status": "pass",
+      "detail": "transaction_read_only=on"
+    },
+    {
+      "name": "dump scratch file is private",
+      "status": "pass",
+      "detail": "mode=0600"
+    },
+    {
+      "name": "restore target identity is exact",
+      "status": "pass",
+      "detail": "database, role, data directory, listener, and unique port matched"
+    },
+    {
+      "name": "restore target is empty",
+      "status": "pass",
+      "detail": "zero user relations before restore"
+    },
+    {
+      "name": "restored schema fingerprint matches source snapshot",
+      "status": "pass",
+      "detail": "7280 canonical schema-definition records compared"
+    },
+    {
+      "name": "restored table inventory matches source snapshot",
+      "status": "pass",
+      "detail": "341 table row counts matched exactly"
+    },
+    {
+      "name": "restored row content hashes match source snapshot",
+      "status": "pass",
+      "detail": "341 deterministic per-table content hashes matched"
+    },
+    {
+      "name": "restored database is nonempty",
+      "status": "pass",
+      "detail": "7280 canonical schema-definition records restored"
+    }
+  ],
+  "failures": []
+}

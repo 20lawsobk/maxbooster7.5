@@ -1,0 +1,19 @@
+{
+  "command": [
+    "pnpm",
+    "install",
+    "--frozen-lockfile",
+    "--ignore-scripts",
+    "--config.manage-package-manager-versions=false",
+    "--store-dir",
+    "/workspace/.cloud-tools/share/pnpm/store"
+  ],
+  "cwd": "external/pdim",
+  "startedAt": "2026-10-27T22:18:41.175302+00:00",
+  "durationSeconds": 1.576,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/install-pdim.txt",
+  "logSha256": "1fe727aa65ea45c1c383b49e86c073c7f8991050ae3546599507df9868f0e1c8"
+}

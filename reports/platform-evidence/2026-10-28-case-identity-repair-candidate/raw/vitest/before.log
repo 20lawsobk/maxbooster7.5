@@ -1,0 +1,183 @@
+
+ RUN  v4.1.12 /workspace/onboarding-results/case-identity-repairs/vitest/before
+
+ ✓ tests/unit/frontend-batch-response-contracts.test.ts > frontend batch Response contracts > parses actual Response JSON for every batch action hook 50ms
+ ✓ tests/unit/frontend-batch-response-contracts.test.ts > frontend batch Response contracts > rejects malformed batch JSON instead of synthesizing successful IDs 2ms
+ ✓ tests/unit/frontend-batch-response-contracts.test.ts > frontend batch Response contracts > rejects malformed batch JSON instead of synthesizing successful IDs 1ms
+ ✓ tests/unit/frontend-batch-response-contracts.test.ts > frontend batch Response contracts > rejects malformed batch JSON instead of synthesizing successful IDs 0ms
+ ✓ tests/unit/frontend-batch-response-contracts.test.ts > frontend batch Response contracts > rejects mismatched totals and unexpected IDs 1ms
+ ✓ tests/unit/frontend-batch-response-contracts.test.ts > frontend batch Response contracts > parses the server progress DTO and rejects malformed terminal states 2ms
+ ✓ tests/unit/frontend-batch-response-contracts.test.ts > frontend template Response contracts > extracts studio template list envelopes and direct mutation DTOs 1ms
+ ✓ tests/unit/frontend-batch-response-contracts.test.ts > frontend template Response contracts > extracts batch template envelopes and direct mutation DTOs 1ms
+ ✓ tests/unit/frontend-batch-response-contracts.test.ts > frontend template Response contracts > rejects malformed template payloads before mutation success handlers 1ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > accepts the exact UTC sixteenth birthday, not the preceding day 3ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > uses UTC even when an instant's written offset crosses a calendar day 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > validates leap dates and February 29 anniversary boundaries 1ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB undefined 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB null 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB " " 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB 20100615 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB {} 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB undefined 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2010-6-15" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2010/06/15" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2010-06-15T00:00:00Z" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB " 2010-06-15" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2010-06-15 " 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2010-02-29" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2010-04-31" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2010-13-01" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2010-00-01" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2010-01-00" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "0000-01-01" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "9999-01-01" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB "2026-06-16" 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Shared minimum age 16 policy > shared Zod signup/checkout schemas reject missing and normalized-invalid DOB 5ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Registration password and paid consent boundaries (offline route fixtures) > rejects unsafe password "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" before account or provider writes 140ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Registration password and paid consent boundaries (offline route fixtures) > rejects unsafe password "ééééééééééééééééééééééééééééééééééééé" before account or provider writes 79ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Registration password and paid consent boundaries (offline route fixtures) > rejects unsafe password {} before account or provider writes 61ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Registration password and paid consent boundaries (offline route fixtures) > rejects unsafe password 42 before account or provider writes 71ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Registration password and paid consent boundaries (offline route fixtures) > records verified birthdate and explicit marketing choice before establishing the paid session 43ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Registration password and paid consent boundaries (offline route fixtures) > rolls back a failed consent write and retries the paid checkout without a second account 70ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > password signup and public checkout reject ineligible DOB undefined before creation/payment 50ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > password signup and public checkout reject ineligible DOB "2010-02-30" before creation/payment 46ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > password signup and public checkout reject ineligible DOB "2999-01-01" before creation/payment 47ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > password signup and public checkout reject ineligible DOB "2020-01-01" before creation/payment 52ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > paid registration rechecks Stripe metadata DOB undefined before creating any account 31ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > paid registration rechecks Stripe metadata DOB "2010-02-30" before creating any account 28ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > paid registration rechecks Stripe metadata DOB "2999-01-01" before creating any account 41ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > paid registration rechecks Stripe metadata DOB "2020-01-01" before creating any account 37ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > parses Marketplace without syntax errors 211ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > preserves existing-account paid registration sign-in recovery even with no historical DOB 38ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > new Google login without signup eligibility is redirected to collect DOB, never created 39ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > existing Google login without any DOB remains supported 31ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > parses StorefrontBuilder without syntax errors 59ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > rejects malformed lists rather than rendering an empty success 105ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > new Google signup validates DOB in POST, binds a DOB-free server receipt to state and consumes it 89ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > a failed Google eligibility replacement cannot reuse an earlier valid receipt 61ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > rejects malformed lists rather than rendering an empty success 33ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > preserves authentic empty lists and request failures 97ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > builds canonical encoded links independently of domain aliases 21ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > scopes owner reads and editor drafts to the authenticated identity 1ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > keeps failures distinct from empty states and removes fake saved licenses 1ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > matches the verified promotion route and Veo asset contract 1ms
+ ✓ tests/unit/marketplace-storefront-page-contracts.test.ts > Marketplace and storefront page contracts > does not claim publication, DNS readiness, or clipboard success prematurely 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > waits for authentication to resolve instead of redirecting early 3ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > preserves the requested subscription tier when login is required 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > continues checkout for an authenticated user 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > accepts a usable Stripe client secret 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > rejects checkout objects without a usable client secret 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > rejects checkout objects without a usable client secret 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > rejects checkout objects without a usable client secret 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > rejects checkout objects without a usable client secret 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > maps non-object malformed payloads to a retryable checkout error 1ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > maps non-object malformed payloads to a retryable checkout error 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > maps non-object malformed payloads to a retryable checkout error 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > maps non-object malformed payloads to a retryable checkout error 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > recognizes Stripe configuration failures 0ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > times out a response body that never finishes 8ms
+ ✓ tests/unit/subscriptionCheckout.test.ts > subscription checkout lifecycle > uses structured API errors safely for checkout setup failures 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > rejects a expired Google signup receipt without creating a new account 28ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > rejects a wrong-state Google signup receipt without creating a new account 29ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > rejects a old-policy Google signup receipt without creating a new account 40ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > Google eligibility POST has explicit CSRF validation despite the existing OAuth path exemption 0ms
+ ✓ tests/unit/auth-page-age-policy.test.ts > Actual account-creation route eligibility gates (offline stubs) > edited registration/policy sources have no obvious TypeScript/TSX syntax errors 561ms
+ ✓ tests/unit/email-provider-ack.test.ts > email provider acceptance contract > accepts a confirmed provider message ID 2ms
+ ✓ tests/unit/email-provider-ack.test.ts > email provider acceptance contract > rejects resolved provider error responses instead of acknowledging jobs 1ms
+ ✓ tests/unit/email-provider-ack.test.ts > email provider acceptance contract > rejects missing or unconfirmed provider acceptance: undefined 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email provider acceptance contract > rejects missing or unconfirmed provider acceptance: null 4ms
+ ✓ tests/unit/email-provider-ack.test.ts > email provider acceptance contract > rejects missing or unconfirmed provider acceptance: {"data":null} 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email provider acceptance contract > rejects missing or unconfirmed provider acceptance: {"data":{}} 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email provider acceptance contract > rejects missing or unconfirmed provider acceptance: {"data":{"id":""}} 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email provider acceptance contract > rejects missing or unconfirmed provider acceptance: {"data":{"id":"  "}} 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email worker configuration > rejects missing provider API key: undefined 1ms
+ ✓ tests/unit/email-provider-ack.test.ts > email worker configuration > rejects missing provider API key: "" 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email worker configuration > rejects missing provider API key: "   " 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email worker configuration > rejects missing verified sender: undefined 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email worker configuration > rejects missing verified sender: "" 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email worker configuration > rejects missing verified sender: "   " 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > email worker configuration > accepts configured provider and sender after trimming 4ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > reuses the same stable key through retries inside provider window 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > permits the final millisecond inside the window but fails at expiry 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs 2ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects unreliable original enqueue timestamps 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects unreliable original enqueue timestamps 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects unreliable original enqueue timestamps 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects unreliable original enqueue timestamps 0ms
+ ✓ tests/unit/email-provider-ack.test.ts > queued email idempotency retry boundary > rejects an enqueue timestamp after the current clock 0ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > accepts a bounded Stripe checkout session id: cs_test_123 2ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > accepts a bounded Stripe checkout session id: cs_live_abcDEF123 0ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > rejects an invalid checkout session id 1ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > rejects an invalid checkout session id 0ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > rejects an invalid checkout session id 0ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > rejects an invalid checkout session id 0ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > rejects an invalid checkout session id 0ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > enforces the backend bcrypt password boundary 1ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > requires an explicit verified response 1ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > requires both a created user and durable consent evidence 1ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > surfaces a partially-created account as a special completion error 1ms
+ ✓ tests/unit/registrationCompletion.test.ts > registration completion > times out a response body that never finishes 4ms
+ ✓ tests/unit/registrationCompletionBoundary.test.ts > paid registration completion boundary > normalizes verification requests 3ms
+ ✓ tests/unit/registrationCompletionBoundary.test.ts > paid registration completion boundary > rejects invalid verification sessions 0ms
+ ✓ tests/unit/registrationCompletionBoundary.test.ts > paid registration completion boundary > rejects invalid verification sessions 0ms
+ ✓ tests/unit/registrationCompletionBoundary.test.ts > paid registration completion boundary > rejects invalid verification sessions 0ms
+ ✓ tests/unit/registrationCompletionBoundary.test.ts > paid registration completion boundary > normalizes a valid completion request 0ms
+ ✓ tests/unit/registrationCompletionBoundary.test.ts > paid registration completion boundary > caps password length before bcrypt is called 0ms
+ ✓ tests/unit/registrationCompletionBoundary.test.ts > paid registration completion boundary > requires the legal acceptances used for durable consent evidence 0ms
+ ✓ tests/unit/registrationCompletionBoundary.test.ts > paid registration completion boundary > rejects non-boolean marketing consent 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed ticket input 2ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed ticket input 2ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed ticket input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed ticket input 1ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed ticket input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed ticket input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed ticket input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > normalizes creation and discards caller-controlled identity/status 1ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 2ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 1ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects unsafe admin updates input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > converts a valid resolution timestamp to a database Date 1ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed staff messages input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed staff messages input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed staff messages input 0ms
+ ✓ tests/unit/support-ticket-validation.test.ts > support ticket write validation > rejects malformed staff messages input 0ms
+ ✓ tests/unit/deployment-small-file-codec.test.ts > deployment small-file native compression > retains exact bytes through its container 4ms
+ ✓ tests/unit/deployment-small-file-codec.test.ts > deployment small-file native compression > retains exact bytes through its container 61ms
+ ✓ tests/unit/deployment-small-file-codec.test.ts > deployment small-file native compression > retains exact bytes through its container 44ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects invalid input null 1ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects invalid input undefined 0ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects invalid input {} 0ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects invalid input 123 0ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects invalid input "" 0ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects invalid input "short" 0ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > accepts exactly 72 UTF-8 bytes 1ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > accepts exactly 72 UTF-8 bytes 0ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > accepts exactly 72 UTF-8 bytes 1ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects input beyond 72 UTF-8 bytes 1ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects input beyond 72 UTF-8 bytes 0ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects input beyond 72 UTF-8 bytes 0ms
+ ✓ tests/unit/password-policy.test.ts > new password bcrypt boundary > rejects distinct passwords bcrypt would otherwise treat as equal 5ms
+ ✓ tests/unit/deployment-small-file-codec.test.ts > deployment small-file native compression > produces zstd frames readable by the existing CLI restore path 53ms
+ ✓ tests/unit/deployment-small-file-codec.test.ts > deployment small-file native compression > reads legacy CLI-compressed containers without migration 149ms
+ ✓ tests/unit/deployment-small-file-codec.test.ts > deployment small-file native compression > rejects corruption rather than returning fabricated content 5ms
+
+ Test Files  10 passed (10)
+      Tests  173 passed (173)
+   Start at  08:49:06
+   Duration  3.86s (transform 1.20s, setup 169ms, import 1.99s, tests 3.55s, environment 1ms)
+
+JUNIT report written to /workspace/onboarding-results/case-identity-repairs/vitest/before.junit.xml

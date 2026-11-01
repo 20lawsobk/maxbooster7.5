@@ -1,0 +1,9 @@
+{
+  "scope": "Actual current CI unit JUnit only, before final feature qualification",
+  "source": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "artifactSha256": "e859583261c5e66989793be0606fef2f1c983cfb876ae5fe15df8f9d8ace75f4",
+  "cases": 2728,
+  "notPassed": 0,
+  "duplicateIdentities": [],
+  "indexedTitleRows": 82
+}

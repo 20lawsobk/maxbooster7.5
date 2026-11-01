@@ -1,0 +1,72 @@
+{
+  "reviewedAt": "2026-10-27T21:53:50.244562+00:00",
+  "scope": "Independent read-only verification of recorded portable cold payload, current source/payload provenance, scratch hygiene and owned cleanup; not deployed readiness",
+  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
+  "summarySha256": "87a4bf3cb759205f9beb6bbe6cf72f7f2304c8a6c8297ae31235f4e45a1b80c4",
+  "recordedEvidenceChecks": {
+    "prepare": true,
+    "verify": true,
+    "cold": true,
+    "verify-after-cold": true,
+    "driver": true,
+    "recordedSourceDigest": true,
+    "recordedSourceMatchesPreparedManifest": true,
+    "codeInputRecordedDigest": true,
+    "currentSourceMatches": true,
+    "currentPayloadMatchesManifest": true,
+    "currentGitHeadMatches": true,
+    "appArchiveMatchesManifest": true,
+    "sourceScratchAbsent": true,
+    "archiveScratchAbsent": true,
+    "ownedDescendantsCleaned": true,
+    "allCommandExitsZero": true
+  },
+  "allChecksPass": true,
+  "recordedRunExitCodes": {
+    "prepare": 0,
+    "verify": 0,
+    "cold": 0,
+    "verify-after-cold": 0
+  },
+  "preparedSourceSha256": "b4a3646d379377213190f0daac2e401365dee00fa63ecc7071b08d5503727934",
+  "sourceInventoryEntries": 4554,
+  "currentSourceMatchesAtReview": true,
+  "changedCurrentSourcePaths": [],
+  "sourceScratchEntries": [],
+  "actualAppArchiveEntries": 1891,
+  "appArchiveSha256": "eba3de48d51b23f5233f2ba11429f311cf839009b8cc05dbd6c61e27ea06868e",
+  "appArchiveScratchEntries": [],
+  "runtimeRegistryPresent": true,
+  "migration0099Members": [
+    "migrations/0099_fabric_migration_journal.sql"
+  ],
+  "coldStartup": "pass",
+  "readinessScope": {
+    "accepted": true,
+    "scope": "cold-startup-with-ml-unavailable",
+    "productionReady": false,
+    "unverifiedNonMl": []
+  },
+  "observedHttpStatuses": {
+    "health": 200,
+    "frontend": 200,
+    "anonymousAuth": 200,
+    "protectedApi": 401,
+    "maxcoreLiveness": 200,
+    "modelLiveness": 200,
+    "maxcoreReadiness": 503,
+    "modelReadiness": 503,
+    "readiness": 503
+  },
+  "processCleanup": {
+    "tracked": 40,
+    "remaining": []
+  },
+  "preparedArtifactCurrentAfterCold": true,
+  "productionReady": false,
+  "limits": [
+    "Portable local copied payload only; not actual Replit Nix/publishing image or deployed HTTPS identity.",
+    "Empty public state and denied non-loopback egress leave awareness/generation unavailable; cold startup passage is not capability or creative-quality passage.",
+    "No global concurrent-client capacity, deployed provider delivery or coordinated production migration/backup/recovery claim."
+  ]
+}

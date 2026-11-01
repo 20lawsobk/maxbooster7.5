@@ -1,0 +1,25 @@
+JUNIT report written to /tmp/c5-outcome-uSvdm8/junit.xml
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: EEXIST: file already exists, open '/tmp/c5-outcome-uSvdm8/coverage/command-outcome.json'[39m
+[90m [2m❯[22m Object.openSync node:fs:[2m560:18[22m[39m
+[90m [2m❯[22m Object.writeFileSync node:fs:[2m2444:35[22m[39m
+[36m [2m❯[22m CoverageOutcomeReporter.onTestRunEnd ../../workspace/onboarding-results/c5-producer-foundation/reporter/scripts/testing/coverage-outcome-reporter.mjs:[2m79:8[22m[39m
+    [90m 77|[39m     fs.mkdirSync(path.dirname(this.output), { recursive: true, mode: 0…
+    [90m 78|[39m     [34mregularAncestors[39m([35mthis[39m[33m.[39moutput)[33m;[39m
+    [90m 79|[39m     fs.writeFileSync(this.output, JSON.stringify(outcome, null, 2) + '…
+    [90m   |[39m        [31m^[39m
+    [90m 80|[39m   }
+    [90m 81|[39m }
+[90m [2m❯[22m ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m14051:56[22m[39m
+[90m [2m❯[22m Vitest.report ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m14051:36[22m[39m
+[90m [2m❯[22m TestRun.end ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m12674:21[22m[39m
+[90m [2m❯[22m ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m13674:6[22m[39m
+[90m [2m❯[22m ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m13684:11[22m[39m
+[90m [2m❯[22m ../../workspace/maxbooster7.5/node_modules/vitest/dist/chunks/cli-api.B0Pz1_R7.js:[2m13546:19[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ errno: -17, code: 'EEXIST', syscall: 'open', path: '/tmp/c5-outcome-uSvdm8/coverage/command-outcome.json' }[39m
+
+
+

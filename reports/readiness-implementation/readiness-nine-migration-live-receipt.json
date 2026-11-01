@@ -1,0 +1,109 @@
+{
+  "reportVersion": 1,
+  "startedAt": "2026-09-23T15:39:52.286Z",
+  "completedAt": "2026-09-23T15:39:56.290Z",
+  "status": "pass",
+  "databaseEffect": "committed",
+  "priorAttempt": "rolled-back-before-this-run-due-to-local-verifier-parser",
+  "exactApprovedFiles": [
+    {
+      "filename": "0020_security_authority.sql",
+      "sha256": "e468beb1c0bb0510cd94af54857e291476dc6a652a2052df236eacb36f0be833"
+    },
+    {
+      "filename": "0022_integrations_distribution_submissions.sql",
+      "sha256": "40a9cc7acffbf41be8caca537e32c21cac70da51fc8e9d21f5d186c228bb36fc"
+    },
+    {
+      "filename": "0023_generic_export_jobs.sql",
+      "sha256": "9c71fd780507bb2e967e07d574319b6d1c734672ffef81b778e4c01c8c51a785"
+    },
+    {
+      "filename": "0023_integrations_sms_attempts.sql",
+      "sha256": "2e325f200ea91348a7788825365ddd0104f0515f3f60d2afbd7f636a9f01bdf9"
+    },
+    {
+      "filename": "0024_account_erasure_workflow.sql",
+      "sha256": "d28c0309d45ee08ed694c46d5147c330c60336c1ca0eee381bdd24f0c91ded19"
+    },
+    {
+      "filename": "0025_integration_notification_digest.sql",
+      "sha256": "014e4d4d568564b0569dc1e8f86074787319610beb86e3ffb5eb38e37526ea46"
+    },
+    {
+      "filename": "0091_growth_split_revisions.sql",
+      "sha256": "f228a71122c40aa2d92eeff5d1e45c77f6947ac39882a6d118e71e8846b801fd"
+    },
+    {
+      "filename": "0093_growth_merch_checkout.sql",
+      "sha256": "0af5b16edff50e8215e1c0182251c3a5832f268d69d5805bb849f243eb929472"
+    },
+    {
+      "filename": "0094_client_sync_receipts.sql",
+      "sha256": "ff6495b4ecf7723097f07812e65eb5069ca34c812c5cc2d0f1dde1c1754dede7"
+    }
+  ],
+  "lineage": {
+    "backupDumpGeneration": "1790176753074258",
+    "backupManifestGeneration": "1790176753238982",
+    "backupDumpSha256": "ed904938c6c661132fcbe45bf6af13133eb732c9b4c6c851d1a9f8acea31c4f6",
+    "workerReceiptGeneration": "1790177652544249",
+    "workerReceiptSha256": "765bf6116231571d4cdc92b5d65456f3d57e092d1ccf0ccc9f48eeec532a3543",
+    "sourceRevision": "7c3ffa434314c22fcfd7aee39502444bc3bff5df",
+    "currentSourceHash": "617750ea33753f39254bb0c3ac70e3f9ef1fe6f23172364512d9896842c34c06"
+  },
+  "rehearsal": {
+    "retainedRestore": true,
+    "priorThreeReplay": true,
+    "nextNine": true,
+    "projectedQueries": 12,
+    "pgSessionsUnchanged": true,
+    "commerceUnchanged": true,
+    "passed": true
+  },
+  "preflight": {
+    "baselineSchemaFingerprint": "1b5e04ef868ae8367b5900f4d500fad6221c6c7ac8825853c130e9fe32f2d398",
+    "hashesVerified": true,
+    "candidateCollisions": 0,
+    "protectedSignature": "c106d08da55309fe6f9055fad3da10e45cac4208988e5411346eb6f2fa40c267",
+    "commerceTables": [
+      "commerce_allocations",
+      "commerce_draws",
+      "commerce_entries",
+      "commerce_journals",
+      "commerce_operations",
+      "commerce_schedules",
+      "commerce_sources",
+      "commerce_statements",
+      "commerce_webhook_inbox",
+      "commerce_webhook_receipts"
+    ]
+  },
+  "postconditions": {
+    "projectedCandidateQueries": 12,
+    "allReadinessTables": 31,
+    "allReadinessColumns": 234,
+    "newTablesEmpty": true,
+    "pgSessionsAndCommerceUnchanged": true,
+    "commerceTablesPresent": [
+      "commerce_allocations",
+      "commerce_draws",
+      "commerce_entries",
+      "commerce_journals",
+      "commerce_operations",
+      "commerce_schedules",
+      "commerce_sources",
+      "commerce_statements",
+      "commerce_webhook_inbox",
+      "commerce_webhook_receipts"
+    ]
+  },
+  "externalReceipt": {
+    "name": "private-readiness-migration-receipts/2026-09-23T15-39-55-796Z-c285437604cf6e2f21cb91e97b6dac0901e628a0b033fe65aea23ff01ae1e253.json",
+    "generation": "1790177996145335",
+    "sha256": "c285437604cf6e2f21cb91e97b6dac0901e628a0b033fe65aea23ff01ae1e253",
+    "size": "3002",
+    "bucketBinding": "705915ec895518cca0f9df40e89a791bbd4377f9bc1d32653002c198b14e04e9"
+  },
+  "failures": []
+}

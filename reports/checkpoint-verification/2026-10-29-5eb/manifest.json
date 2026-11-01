@@ -1,0 +1,19 @@
+{
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 1007,
+      "sha256": "0822e9d4876849127cbb9193ec85d173459d33a5e51bcc979d747af96cfc4c91"
+    },
+    {
+      "path": "c5-copy-receipt.json",
+      "bytes": 1016,
+      "sha256": "1acbeb378a66cd72c90e3555e7fb06d97e752a91cc4ddbc939ddcc40a6c7820e"
+    },
+    {
+      "path": "hygiene.json",
+      "bytes": 1196,
+      "sha256": "07336db910f7708397626d64b5c7f978c670fe73a09964ab0626810615dad7da"
+    }
+  ]
+}

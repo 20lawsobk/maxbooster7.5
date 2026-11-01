@@ -1,0 +1,1078 @@
+{
+  "metadata": {
+    "vulnerabilities": {
+      "critical": 0,
+      "high": 10,
+      "info": 0,
+      "low": 2,
+      "moderate": 60
+    }
+  },
+  "findings": [
+    {
+      "id": "RUSTSEC-2026-0190@anyhow-1.0.101",
+      "package": {
+        "ecosystem": "crates.io",
+        "name": "anyhow",
+        "purl": "pkg:cargo/anyhow",
+        "version": "1.0.101"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.0.103"
+      }
+    },
+    {
+      "id": "RUSTSEC-2025-0057@fxhash-0.2.1",
+      "package": {
+        "ecosystem": "crates.io",
+        "name": "fxhash",
+        "purl": "pkg:cargo/fxhash",
+        "version": "0.2.1"
+      },
+      "severity": "moderate"
+    },
+    {
+      "id": "GHSA-5jgf-p345-68v8@fast-uri-3.1.5",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri",
+        "purl": "pkg:npm/fast-uri",
+        "version": "3.1.5"
+      },
+      "severity": "high",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "3.1.6"
+      }
+    },
+    {
+      "id": "GHSA-f65p-4m7j-42xc@fast-uri-3.1.5",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri",
+        "purl": "pkg:npm/fast-uri",
+        "version": "3.1.5"
+      },
+      "severity": "high",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "3.1.6"
+      }
+    },
+    {
+      "id": "GHSA-fph4-wmhf-6fwf@fast-uri-3.1.5",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri",
+        "purl": "pkg:npm/fast-uri",
+        "version": "3.1.5"
+      },
+      "severity": "high",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "3.1.6"
+      }
+    },
+    {
+      "id": "GHSA-jqff-g426-hqxp@fast-uri-3.1.5",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri",
+        "purl": "pkg:npm/fast-uri",
+        "version": "3.1.5"
+      },
+      "severity": "high",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "3.1.6"
+      }
+    },
+    {
+      "id": "GHSA-5jgf-p345-68v8@fast-uri-4.1.2",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri",
+        "purl": "pkg:npm/fast-uri",
+        "version": "4.1.2"
+      },
+      "severity": "high",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "4.1.3"
+      }
+    },
+    {
+      "id": "GHSA-f65p-4m7j-42xc@fast-uri-4.1.2",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri",
+        "purl": "pkg:npm/fast-uri",
+        "version": "4.1.2"
+      },
+      "severity": "high",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "4.1.3"
+      }
+    },
+    {
+      "id": "GHSA-fph4-wmhf-6fwf@fast-uri-4.1.2",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri",
+        "purl": "pkg:npm/fast-uri",
+        "version": "4.1.2"
+      },
+      "severity": "high",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "4.1.3"
+      }
+    },
+    {
+      "id": "GHSA-jqff-g426-hqxp@fast-uri-4.1.2",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri",
+        "purl": "pkg:npm/fast-uri",
+        "version": "4.1.2"
+      },
+      "severity": "high",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "4.1.3"
+      }
+    },
+    {
+      "id": "GO-2026-5004@github.com/jackc/pgx/v5-5.9.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "github.com/jackc/pgx/v5",
+        "purl": "pkg:golang/github.com/jackc/pgx/v5",
+        "version": "5.9.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "5.9.2"
+      }
+    },
+    {
+      "id": "GHSA-j88v-2chj-qfwx@github.com/jackc/pgx/v5-5.9.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "github.com/jackc/pgx/v5",
+        "purl": "pkg:golang/github.com/jackc/pgx/v5",
+        "version": "5.9.0"
+      },
+      "severity": "low",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "5.9.2"
+      }
+    },
+    {
+      "id": "GO-2026-6179@golang.org/x/mod-0.35.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/mod",
+        "purl": "pkg:golang/golang.org/x/mod",
+        "version": "0.35.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.40.0"
+      }
+    },
+    {
+      "id": "GO-2026-6180@golang.org/x/mod-0.35.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/mod",
+        "purl": "pkg:golang/golang.org/x/mod",
+        "version": "0.35.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.40.0"
+      }
+    },
+    {
+      "id": "GO-2026-5025@golang.org/x/net-0.54.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/net",
+        "purl": "pkg:golang/golang.org/x/net",
+        "version": "0.54.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.55.0"
+      }
+    },
+    {
+      "id": "GO-2026-5026@golang.org/x/net-0.54.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/net",
+        "purl": "pkg:golang/golang.org/x/net",
+        "version": "0.54.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.55.0"
+      }
+    },
+    {
+      "id": "GO-2026-5027@golang.org/x/net-0.54.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/net",
+        "purl": "pkg:golang/golang.org/x/net",
+        "version": "0.54.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.55.0"
+      }
+    },
+    {
+      "id": "GO-2026-5028@golang.org/x/net-0.54.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/net",
+        "purl": "pkg:golang/golang.org/x/net",
+        "version": "0.54.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.55.0"
+      }
+    },
+    {
+      "id": "GO-2026-5029@golang.org/x/net-0.54.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/net",
+        "purl": "pkg:golang/golang.org/x/net",
+        "version": "0.54.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.55.0"
+      }
+    },
+    {
+      "id": "GO-2026-5030@golang.org/x/net-0.54.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/net",
+        "purl": "pkg:golang/golang.org/x/net",
+        "version": "0.54.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.55.0"
+      }
+    },
+    {
+      "id": "GO-2026-5942@golang.org/x/net-0.54.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/net",
+        "purl": "pkg:golang/golang.org/x/net",
+        "version": "0.54.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.56.0"
+      }
+    },
+    {
+      "id": "GHSA-5cv4-jp36-h3mw@golang.org/x/net-0.54.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/net",
+        "purl": "pkg:golang/golang.org/x/net",
+        "version": "0.54.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.55.0"
+      }
+    },
+    {
+      "id": "GO-2026-5970@golang.org/x/text-0.37.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/text",
+        "purl": "pkg:golang/golang.org/x/text",
+        "version": "0.37.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.39.0"
+      }
+    },
+    {
+      "id": "GO-2025-3955@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.1"
+      }
+    },
+    {
+      "id": "GO-2025-4006@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.2"
+      }
+    },
+    {
+      "id": "GO-2025-4007@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.3"
+      }
+    },
+    {
+      "id": "GO-2025-4008@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.2"
+      }
+    },
+    {
+      "id": "GO-2025-4009@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.2"
+      }
+    },
+    {
+      "id": "GO-2025-4010@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.2"
+      }
+    },
+    {
+      "id": "GO-2025-4011@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.2"
+      }
+    },
+    {
+      "id": "GO-2025-4012@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.2"
+      }
+    },
+    {
+      "id": "GO-2025-4013@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.2"
+      }
+    },
+    {
+      "id": "GO-2025-4014@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.2"
+      }
+    },
+    {
+      "id": "GO-2025-4015@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.2"
+      }
+    },
+    {
+      "id": "GO-2025-4155@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.5"
+      }
+    },
+    {
+      "id": "GO-2025-4175@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.5"
+      }
+    },
+    {
+      "id": "GO-2026-4337@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.7"
+      }
+    },
+    {
+      "id": "GO-2026-4340@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.6"
+      }
+    },
+    {
+      "id": "GO-2026-4341@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.6"
+      }
+    },
+    {
+      "id": "GO-2026-4342@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.6"
+      }
+    },
+    {
+      "id": "GO-2026-4601@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.8"
+      }
+    },
+    {
+      "id": "GO-2026-4602@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.8"
+      }
+    },
+    {
+      "id": "GO-2026-4603@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.8"
+      }
+    },
+    {
+      "id": "GO-2026-4864@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.9"
+      }
+    },
+    {
+      "id": "GO-2026-4865@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.9"
+      }
+    },
+    {
+      "id": "GO-2026-4869@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.9"
+      }
+    },
+    {
+      "id": "GO-2026-4870@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.9"
+      }
+    },
+    {
+      "id": "GO-2026-4918@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.10"
+      }
+    },
+    {
+      "id": "GO-2026-4946@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.9"
+      }
+    },
+    {
+      "id": "GO-2026-4947@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.9"
+      }
+    },
+    {
+      "id": "GO-2026-4970@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.12"
+      }
+    },
+    {
+      "id": "GO-2026-4971@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.10"
+      }
+    },
+    {
+      "id": "GO-2026-4976@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.10"
+      }
+    },
+    {
+      "id": "GO-2026-4977@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.10"
+      }
+    },
+    {
+      "id": "GO-2026-4980@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.10"
+      }
+    },
+    {
+      "id": "GO-2026-4981@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.10"
+      }
+    },
+    {
+      "id": "GO-2026-4982@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.10"
+      }
+    },
+    {
+      "id": "GO-2026-4986@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.10"
+      }
+    },
+    {
+      "id": "GO-2026-5026@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.13"
+      }
+    },
+    {
+      "id": "GO-2026-5037@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.11"
+      }
+    },
+    {
+      "id": "GO-2026-5038@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.11"
+      }
+    },
+    {
+      "id": "GO-2026-5039@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.11"
+      }
+    },
+    {
+      "id": "GO-2026-5856@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.12"
+      }
+    },
+    {
+      "id": "GO-2026-5972@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.13"
+      }
+    },
+    {
+      "id": "GO-2026-6088@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.13"
+      }
+    },
+    {
+      "id": "GO-2026-6089@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.13"
+      }
+    },
+    {
+      "id": "GO-2026-6090@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.13"
+      }
+    },
+    {
+      "id": "GO-2026-6091@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.13"
+      }
+    },
+    {
+      "id": "GO-2026-6218@stdlib-1.25.0",
+      "package": {
+        "ecosystem": "Go",
+        "name": "stdlib",
+        "purl": "pkg:golang/stdlib",
+        "version": "1.25.0"
+      },
+      "severity": "moderate",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "1.25.13"
+      }
+    },
+    {
+      "id": "GHSA-7pqw-9j4j-h8q3@extract-zip-2.0.1",
+      "package": {
+        "ecosystem": "npm",
+        "name": "extract-zip",
+        "purl": "pkg:npm/extract-zip",
+        "version": "2.0.1"
+      },
+      "severity": "high"
+    },
+    {
+      "id": "GHSA-jmr9-qjv8-65gv@extract-zip-2.0.1",
+      "package": {
+        "ecosystem": "npm",
+        "name": "extract-zip",
+        "purl": "pkg:npm/extract-zip",
+        "version": "2.0.1"
+      },
+      "severity": "high"
+    },
+    {
+      "id": "GHSA-g7r4-m6w7-qqqr@esbuild-0.27.7",
+      "package": {
+        "ecosystem": "npm",
+        "name": "esbuild",
+        "purl": "pkg:npm/esbuild",
+        "version": "0.27.7"
+      },
+      "severity": "low",
+      "fix": {
+        "available": true,
+        "requiresMajorUpdate": false,
+        "version": "0.28.1"
+      }
+    }
+  ]
+}

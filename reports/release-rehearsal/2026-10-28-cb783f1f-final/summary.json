@@ -1,0 +1,156 @@
+{
+  "startedAt": "2026-10-28T12:15:15.810138+00:00",
+  "scope": "Fresh credential-free publicbuildprofile; prepared portable payload and disposable local cold startup; no Replit deployment or global capacity claim",
+  "productionReady": false,
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "release:prepare"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T12:15:17.251425+00:00",
+      "durationSeconds": 887.744,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-28-cb783f1f-final/prepare.txt",
+      "logSha256": "0b19b2940dc92b4920ac0d68d8694582d8a17c1202a8ebf0f1e9692b902c05d7",
+      "id": "prepare"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "release:verify"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T12:30:04.995517+00:00",
+      "durationSeconds": 2.026,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-28-cb783f1f-final/verify.txt",
+      "logSha256": "777bb8b19e58a39fa4702df6ff481c255ec2f1866b95abefd30a4429a3d1d486",
+      "id": "verify"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/readiness-packed-acceptance.mjs",
+        "/tmp/maxbooster-empty-public-state-xyqimqeh",
+        "/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-28-cb783f1f-final/cold"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T12:30:07.060882+00:00",
+      "durationSeconds": 39.745,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-28-cb783f1f-final/cold-runner.txt",
+      "logSha256": "7add66abc87a7448f4f9493cce529389d95d6667b6d99700740b630373e5cb90",
+      "id": "cold"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "release:verify"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T12:30:46.806298+00:00",
+      "durationSeconds": 2.125,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-28-cb783f1f-final/verify-after-cold.txt",
+      "logSha256": "777bb8b19e58a39fa4702df6ff481c255ec2f1866b95abefd30a4429a3d1d486",
+      "id": "verify-after-cold"
+    }
+  ],
+  "sourceRevision": "cb783f1f9b34719a214dd7f9203a31dea64c051e",
+  "previousAttempt": "reports/release-rehearsal/2026-10-27-analytics-dependencies-final/summary.json",
+  "retainedAttempts": [
+    "reports/release-rehearsal/2026-10-26/summary.json",
+    "reports/release-rehearsal/2026-10-27/summary.json",
+    "reports/release-rehearsal/2026-10-27-final/summary.json",
+    "reports/release-rehearsal/2026-10-27-platform-final/summary.json",
+    "reports/release-rehearsal/2026-10-27-published-guard-final/summary.json",
+    "reports/release-rehearsal/2026-10-27-analytics-dependencies-final/summary.json"
+  ],
+  "inputScope": "Credential-free live-awareness public build; application/provider/database secrets are not forwarded",
+  "executionDriverSha256": "f2eb6d2a0ed71daf5ddf2d9775cd13abf00deb2241dcd7fc85569629ff1244c7",
+  "admittedSnapshotScope": "Full release-admitted inventory immediately before command and after final command/failure; separate from preparer in-memory snapshot",
+  "sourceInputsSha256": "eba9dafdb3a96f430c05e6782cd9b23b21f5eeb01ba71c51e9b9875a313dbd07",
+  "admittedObservations": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--input-type=module",
+        "-e",
+        "import {inventory,sourceIncluded} from './script/lib/releaseInventory.ts'; console.log(JSON.stringify(await inventory(process.cwd(),sourceIncluded)));"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T12:15:16.090913+00:00",
+      "durationSeconds": 1.141,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-28-cb783f1f-final/admitted-before-observation.txt",
+      "logSha256": "c1480f34da8542e66bc64023968c458fdce942c7634842caf67c28f0c0d22ed2",
+      "id": "before"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--input-type=module",
+        "-e",
+        "import {inventory,sourceIncluded} from './script/lib/releaseInventory.ts'; console.log(JSON.stringify(await inventory(process.cwd(),sourceIncluded)));"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T12:30:49.181854+00:00",
+      "durationSeconds": 1.088,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-28-cb783f1f-final/admitted-after-observation.txt",
+      "logSha256": "c1480f34da8542e66bc64023968c458fdce942c7634842caf67c28f0c0d22ed2",
+      "id": "after"
+    }
+  ],
+  "admittedBeforeSha256": "5b74c597f83b7dc3ffba88be62997d00d5ba44f0a78a880933d71c4f9d3e5f58",
+  "releaseManifestSha256": "99c608aa1d885a5359eacf95df12693f68f5efc447dc4a9a74915a86faa4d68f",
+  "release": {
+    "createdAt": "2026-10-28T12:30:04.029Z",
+    "sourceSha256": "eed078537e75d534a1d6a4d2c0b862f6c533f7d885428f3413d2faa5db2d0698",
+    "sourceEntries": 4526,
+    "payloadEntries": 37,
+    "payloadBytes": 719499770,
+    "buildEnvironment": "51e58334ae1096531e056a6f8ee642b8d13f07f2a9fcc617617e98c55ebed3d0",
+    "modelServing": {
+      "mode": "live-awareness",
+      "state": "runtime-managed",
+      "readinessRequired": true
+    }
+  },
+  "coldStartup": "pass",
+  "coldReportedProductionReady": false,
+  "readinessScope": {
+    "accepted": true,
+    "scope": "cold-startup-with-ml-unavailable",
+    "productionReady": false,
+    "unverifiedNonMl": []
+  },
+  "preparedArtifactCurrentAfterCold": true,
+  "status": "passed_cold_payload_scope",
+  "sourceInputsAfterSha256": "eba9dafdb3a96f430c05e6782cd9b23b21f5eeb01ba71c51e9b9875a313dbd07",
+  "sourceInputsUnchanged": true,
+  "admittedAfterSha256": "5b74c597f83b7dc3ffba88be62997d00d5ba44f0a78a880933d71c4f9d3e5f58",
+  "admittedInputsUnchanged": true,
+  "finishedAt": "2026-10-28T12:30:50.292507+00:00"
+}

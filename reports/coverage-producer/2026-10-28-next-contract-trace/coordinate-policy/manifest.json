@@ -1,0 +1,26 @@
+{
+  "scope": "Outside-checkout read-only coordinate policy source/proposal artifacts",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 2466,
+      "sha256": "fa73af8bd26fa55659ca1acb300e9c00c9880c3f9f960b5c85553b084b51e806"
+    },
+    {
+      "path": "coordinate-contract-proposal.json",
+      "bytes": 8054,
+      "sha256": "5f67e6ae1397583ebf5f52c3bd896830b6923f3c05ea9afa531b9cef1a059dbc"
+    },
+    {
+      "path": "library-evidence.json",
+      "bytes": 28396,
+      "sha256": "e41845419cf8c013c25bca38480264b39973430182b62d62e50625451f6abe19"
+    },
+    {
+      "path": "validation.json",
+      "bytes": 504,
+      "sha256": "28a0afef97fb2c9c9cfd571e2005d6d0ff12127717704cfac383a504c338106c"
+    }
+  ],
+  "productionReady": false
+}

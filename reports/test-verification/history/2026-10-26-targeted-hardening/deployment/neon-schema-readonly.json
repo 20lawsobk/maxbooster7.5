@@ -1,0 +1,14 @@
+{
+  "observedAt": "2026-10-26T18:01:25.818Z",
+  "status": "read",
+  "scope": "Read-only schema metadata through the configured Neon binding; no application rows or credentials retained",
+  "checks": [
+    {
+      "fabric_objects_present": true,
+      "fabric_chunks_present": true,
+      "deletion_journal_present": false,
+      "ref_count_present": false,
+      "delta_base_column_present": false
+    }
+  ]
+}

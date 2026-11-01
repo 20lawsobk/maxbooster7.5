@@ -1,0 +1,18 @@
+file:///artifact/resources/app.asar/dist/index.mjs:33
+      throw new Error(
+            ^
+
+Error: [env] Critical environment variables missing:
+  SESSION_SECRET: Invalid input: expected string, received undefined
+    at parseEnv (file:///artifact/resources/app.asar/dist/index.mjs:33:13)
+    at server/config/env.ts (file:///artifact/resources/app.asar/dist/index.mjs:101:11)
+    at __init (file:///artifact/resources/app.asar/dist/index.mjs:12:58)
+    at server/config/index.ts (file:///artifact/resources/app.asar/dist/index.mjs:502:5)
+    at __init (file:///artifact/resources/app.asar/dist/index.mjs:12:58)
+    at file:///artifact/resources/app.asar/dist/index.mjs:345060:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v24.22.0

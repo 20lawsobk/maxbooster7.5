@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-28T12:56:17.729Z",
+  "scope": "Read-only finite path helper adversarial independent review",
+  "helper": {
+    "file": "/workspace/onboarding-results/topology-candidate/scripts/lib/finite-route-paths.mjs",
+    "sha256": "7f19a3548ebe99a32c43e60da79bb41d25ad050f01ba44dad870a996903d6220"
+  },
+  "repositorySourceModified": false,
+  "observations": [
+    {
+      "name": "for-statement-shadow",
+      "source": "for(const action of [\"outer\"]){for(let action=\"inner\"; true;){router.get(`/${action}`,h);break}}",
+      "expected": [
+        "/inner"
+      ],
+      "actualRegistration": [
+        "/inner"
+      ],
+      "candidateResult": [
+        "/outer"
+      ],
+      "sourceExecutionScope": "credential-free synthetic fixture only; helper never executes application source"
+    },
+    {
+      "name": "for-in-shadow",
+      "source": "for(const action of [\"outer\"]){for(const action in {inner:1}){router.get(`/${action}`,h)}}",
+      "expected": [
+        "/inner"
+      ],
+      "actualRegistration": [
+        "/inner"
+      ],
+      "candidateResult": [
+        "/outer"
+      ],
+      "sourceExecutionScope": "credential-free synthetic fixture only; helper never executes application source"
+    },
+    {
+      "name": "switch-case-shadow",
+      "source": "for(const action of [\"outer\"]){switch(1){case 1: const action=\"inner\";router.get(`/${action}`,h);break;}}",
+      "expected": [
+        "/inner"
+      ],
+      "actualRegistration": [
+        "/inner"
+      ],
+      "candidateResult": [
+        "/outer"
+      ],
+      "sourceExecutionScope": "credential-free synthetic fixture only; helper never executes application source"
+    },
+    {
+      "name": "switch-default-shadow",
+      "source": "for(const action of [\"outer\"]){switch(1){default: const action=\"inner\";router.get(`/${action}`,h);break;}}",
+      "expected": [
+        "/inner"
+      ],
+      "actualRegistration": [
+        "/inner"
+      ],
+      "candidateResult": [
+        "/outer"
+      ],
+      "sourceExecutionScope": "credential-free synthetic fixture only; helper never executes application source"
+    }
+  ]
+}

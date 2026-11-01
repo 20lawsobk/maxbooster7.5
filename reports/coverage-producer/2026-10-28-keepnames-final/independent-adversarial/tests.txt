@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: actual isolated VM retains the complete original denominator and unexecuted original function and branch
+ok 1 - actual isolated VM retains the complete original denominator and unexecuted original function and branch
+  ---
+  duration_ms: 270.158904
+  type: 'test'
+  ...
+# Subtest: retained ports runtime loses phantom helpers and retains every real node and zero-hit function
+ok 2 - retained ports runtime loses phantom helpers and retains every real node and zero-hit function
+  ---
+  duration_ms: 37.036759
+  type: 'test'
+  ...
+# Subtest: actual esbuild helpers never hide an author-defined __name function or its call
+ok 3 - actual esbuild helpers never hide an author-defined __name function or its call
+  ---
+  duration_ms: 5.958087
+  type: 'test'
+  ...
+# Subtest: an author-written exact lookalike helper pair remains original source
+ok 4 - an author-written exact lookalike helper pair remains original source
+  ---
+  duration_ms: 3.526349
+  type: 'test'
+  ...
+# Subtest: function-valued helper arguments are not removed with a compiler wrapper
+ok 5 - function-valued helper arguments are not removed with a compiler wrapper
+  ---
+  duration_ms: 3.061348
+  type: 'test'
+  ...
+# Subtest: a mapped prelude is not accepted as a generated prefix
+ok 6 - a mapped prelude is not accepted as a generated prefix
+  ---
+  duration_ms: 4.06385
+  type: 'test'
+  ...
+# Subtest: reassigned generated bindings fail closed instead of hiding their code
+ok 7 - reassigned generated bindings fail closed instead of hiding their code
+  ---
+  duration_ms: 2.855117
+  type: 'test'
+  ...
+# Subtest: Unicode original declaration identifiers are matched by parsed identity and exact original coordinate
+ok 8 - Unicode original declaration identifiers are matched by parsed identity and exact original coordinate
+  ---
+  duration_ms: 2.12845
+  type: 'test'
+  ...
+# Subtest: unmapped original JavaScript is never classified as compiler output
+ok 9 - unmapped original JavaScript is never classified as compiler output
+  ---
+  duration_ms: 0.617552
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 920.640905

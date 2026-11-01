@@ -1,0 +1,235 @@
+{
+  "id": "image-spec",
+  "case": {
+    "id": "image-spec",
+    "handler": "maxcore_generate_image",
+    "request_class": "MaxcoreMediaRequest",
+    "kind": "spec",
+    "body": {
+      "inputs": {
+        "normalized": {
+          "semantic": {
+            "topic": "Paper lanterns reflected in a quiet harbor"
+          }
+        }
+      },
+      "step": {
+        "params": {
+          "slots": [
+            {
+              "id": "cover",
+              "platform": "instagram",
+              "purpose": "cover artwork"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "returned",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/generation/orchestrator.py:<genexpr>": 3,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1,
+    "ai_model/quality_awareness.py:<module>": 1,
+    "ai_model/quality_awareness.py:platform_awareness_string": 1,
+    "ai_model/quality_awareness.py:self_sufficiency": 2,
+    "ai_model/quality_awareness.py:_own_corpus_size": 2,
+    "ai_model/quality_awareness.py:_store": 2,
+    "ai_model/quality_awareness.py:_modality_retire_threshold": 2,
+    "ai_model/quality_awareness.py:retire_threshold": 2,
+    "ai_model/quality_awareness.py:get_doc": 1,
+    "ai_model/quality_awareness.py:_doc_age_seconds": 1,
+    "ai_model/quality_awareness.py:_max_age_seconds": 1,
+    "ai_model/agents/visual_spec_agent.py:run": 1,
+    "ai_model/agents/visual_spec_agent.py:_extract_genre_mood": 5,
+    "ai_model/gpu/pocket_pool.py:spawn_sync": 2,
+    "ai_model/gpu/pocket_pool.py:__init__": 1,
+    "ai_model/gpu/sizing.py:hyper_gpu_sizing": 1,
+    "ai_model/gpu/hyper_backend.py:__init__": 1,
+    "ai_model/gpu/hyper_core.py:__init__": 3,
+    "ai_model/gpu/digital_gpu.py:__init__": 2,
+    "ai_model/gpu/native/kernels.py:get_native_kernels": 1,
+    "ai_model/gpu/pocket_pool.py:_register_birth": 1,
+    "ai_model/gpu/pocket_pool.py:begin_work": 1,
+    "ai_model/gpu/pocket_pool.py:_register_death": 1,
+    "ai_model/gpu/pocket_pool.py:die": 1,
+    "ai_model/gpu/hyper_backend.py:flush_vram": 1,
+    "ai_model/gpu/hyper_core.py:flush_vram": 1,
+    "ai_model/gpu/hyper_core.py:flush": 1,
+    "ai_model/agents/visual_spec_agent.py:_build_thumbnail_prompt": 1,
+    "ai_model/agents/visual_spec_agent.py:_build_thumbnail_prompt_alt": 1,
+    "ai_model/agents/visual_spec_agent.py:_score_visual_prompt": 2,
+    "ai_model/agents/visual_spec_agent.py:<genexpr>": 10,
+    "ai_model/agents/visual_spec_agent.py:<lambda>": 2,
+    "ai_model/agents/visual_spec_agent.py:_pick_color_from_awareness": 1,
+    "ai_model/gpu/hyper_backend.py:status": 1,
+    "ai_model/gpu/hyper_core.py:status": 12,
+    "ai_model/gpu/hyper_core.py:<genexpr>": 10,
+    "ai_model/gpu/hyper_core.py:used_bytes": 1,
+    "ai_model/gpu/hyper_core.py:silicon_report": 1
+  },
+  "exceptions": [
+    {
+      "file": "ai_model/gpu/pocket_pool.py",
+      "function": "spawn_sync",
+      "error": "ValueError: Prompt loses over 40% of its tokens to checkpoint <UNK>"
+    }
+  ],
+  "agent_outputs": [],
+  "awareness": [
+    {
+      "function": "get_doc",
+      "nonempty": true
+    }
+  ],
+  "files": [],
+  "runner_sha256": "323069a2a56a7bbb0f161fbbb294cd63a78d57ff9a4b634cc17ad357c872532f",
+  "server_sha256": "f4f480f54c21d0ba289b75b3ecf6e48bd537fdb7a0c8af5f051dc39400c2f03e",
+  "job_storage": "evaluation-local job metadata; not PDIM/client durability",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 0.5,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 0.8,
+      "silicon": null
+    }
+  },
+  "request": {
+    "inputs": {
+      "normalized": {
+        "semantic": {
+          "topic": "Paper lanterns reflected in a quiet harbor"
+        }
+      }
+    },
+    "step": {
+      "params": {
+        "slots": [
+          {
+            "id": "cover",
+            "platform": "instagram",
+            "purpose": "cover artwork"
+          }
+        ]
+      }
+    },
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": null,
+    "step": {
+      "params": {
+        "slots": [
+          {
+            "id": "cover",
+            "platform": "instagram",
+            "purpose": "cover artwork"
+          }
+        ]
+      }
+    },
+    "inputs": {
+      "normalized": {
+        "semantic": {
+          "topic": "Paper lanterns reflected in a quiet harbor"
+        }
+      }
+    }
+  },
+  "elapsed_seconds": 3.005020290999937,
+  "response": {
+    "outputs": [
+      {
+        "url": "asset://cover/4x5.png",
+        "asset_status": "spec_only",
+        "platform": "instagram",
+        "slotId": "cover",
+        "meta": {
+          "aspect_ratio": "4:5",
+          "style_tags": [
+            "cinematic"
+          ],
+          "concept": "Cinematic visual for 'Paper lanterns reflected in a quiet harbor' \u2014 cover artwork. Aspect ratio 4:5. Platform: instagram.",
+          "format": "png",
+          "source": "concept_spec"
+        }
+      }
+    ],
+    "kind": "specification",
+    "processing_time_ms": 260.3
+  },
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

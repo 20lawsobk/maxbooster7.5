@@ -1,0 +1,24 @@
+TAP version 13
+# Subtest: Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus
+not ok 1 - Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus
+  ---
+  duration_ms: 10239.439776
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:15:1'
+  failureType: 'testCodeFailure'
+  error: 'Chromium startup timeout'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    Timeout._onTimeout (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:59:55)
+    listOnTimeout (node:internal/timers:585:17)
+    process.processTimers (node:internal/timers:521:7)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10430.655022

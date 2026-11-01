@@ -1,0 +1,27 @@
+{
+  "reviewedAt": "2026-10-27T09:56:18.911439+00:00",
+  "priorColdReceipt": "reports/release-rehearsal/2026-10-27-final/summary.json",
+  "priorReceiptChecks": {
+    "log:prepare": true,
+    "log:verify": true,
+    "log:cold": true,
+    "log:verify-after-cold": true,
+    "executionDriver": true,
+    "releaseSourceInventory": true
+  },
+  "priorActualAppCapsuleScratchMatches": [
+    ".pdim-cluster-test-Pidv4k/cluster-fixture.mjs"
+  ],
+  "priorColdScopeOnly": true,
+  "newPreparedArtifactRequired": true,
+  "focusedCases": {
+    "unit.xml": 3,
+    "node.xml": 2
+  },
+  "sourceFiles": {
+    "scripts/lib/production-simulation-copy.mjs": "400e127c91bb4c6cb90d3dbf0fbc16aeb0e23fffbb0e97b04b82cabcd841b297",
+    "script/lib/dockerignoreScan.ts": "51107cd15863735a5cc05474764c8d3e5bc0a3847d6077bb7d94b5e047166dd5",
+    "tests/unit/production-simulation-copy.test.ts": "f1a1f6c1f569b9075779864e6e99ca685175e315e1fed7c9a5d6457e76afdbfd",
+    "tests/deployment-remainder-contract.test.mjs": "3d065e31199fa0d870c22f1e05b62624a3a6aca84e5ce223e34ae42d544de53f"
+  }
+}

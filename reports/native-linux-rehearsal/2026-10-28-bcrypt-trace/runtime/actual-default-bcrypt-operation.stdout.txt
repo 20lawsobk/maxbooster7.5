@@ -1,0 +1,1 @@
+{"selected":"/artifact/resources/app.asar/node_modules/bcrypt/prebuilds/linux-x64/bcrypt.glibc.node","version":"6.0.0","correctPasswordAccepted":true,"wrongPasswordRejected":true,"cost":12,"prebuildsOnlyOverridePresent":false}

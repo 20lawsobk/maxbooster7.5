@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: KYC missing documents remain an actionable checklist
+ok 1 - KYC missing documents remain an actionable checklist
+  ---
+  duration_ms: 176.624075
+  type: 'test'
+  ...
+# Subtest: verified identity cannot be edited by its owner
+ok 2 - verified identity cannot be edited by its owner
+  ---
+  duration_ms: 92.655579
+  type: 'test'
+  ...
+# Subtest: approval requires current reviewed evidence inside a transaction
+ok 3 - approval requires current reviewed evidence inside a transaction
+  ---
+  duration_ms: 59.664379
+  type: 'test'
+  ...
+# Subtest: API token issuance stores only its verifier and audit metadata; owner revocation disables it
+ok 4 - API token issuance stores only its verifier and audit metadata; owner revocation disables it
+  ---
+  duration_ms: 6.610043
+  type: 'test'
+  ...
+# Subtest: support metadata mutations are server-side JSONB expressions, not stale snapshots
+ok 5 - support metadata mutations are server-side JSONB expressions, not stale snapshots
+  ---
+  duration_ms: 0.23226
+  type: 'test'
+  ...
+# Subtest: existing bearer verifier accepts a matching token, then rejects revocation and expiry
+ok 6 - existing bearer verifier accepts a matching token, then rejects revocation and expiry
+  ---
+  duration_ms: 25.436433
+  type: 'test'
+  ...
+# Subtest: moderation removal persists local effect, recipient warning and actor audit
+ok 7 - moderation removal persists local effect, recipient warning and actor audit
+  ---
+  duration_ms: 14.301421
+  type: 'test'
+  ...
+# Subtest: all changed domain modules parse without loading external boundaries
+ok 8 - all changed domain modules parse without loading external boundaries
+  ---
+  duration_ms: 98.434723
+  type: 'test'
+  ...
+# Subtest: KYC reviewer digest binds identity/evidence and approval stores an immutable snapshot under parent lock
+ok 9 - KYC reviewer digest binds identity/evidence and approval stores an immutable snapshot under parent lock
+  ---
+  duration_ms: 53.174319
+  type: 'test'
+  ...
+# Subtest: runtime governance rate limit uses one atomic cluster counter across policy edits and fails closed
+ok 10 - runtime governance rate limit uses one atomic cluster counter across policy edits and fails closed
+  ---
+  duration_ms: 29.077657
+  type: 'test'
+  ...
+# Subtest: governance policy differentiates disabled registration from unavailable or malformed policy
+ok 11 - governance policy differentiates disabled registration from unavailable or malformed policy
+  ---
+  duration_ms: 6.839398
+  type: 'test'
+  ...
+# Subtest: support routes reject Express 5 array or empty ticket parameters before database access
+ok 12 - support routes reject Express 5 array or empty ticket parameters before database access
+  ---
+  duration_ms: 108.491404
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1161.728217

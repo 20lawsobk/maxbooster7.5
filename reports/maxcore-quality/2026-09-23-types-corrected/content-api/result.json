@@ -1,0 +1,254 @@
+{
+  "id": "content-api",
+  "case": {
+    "id": "content-api",
+    "handler": "api_generate_content",
+    "request_class": "ApiGenerateContentRequest",
+    "kind": "text",
+    "body": {
+      "platform": "instagram",
+      "topic": "Paper Lantern Harbor mellow instrumental release",
+      "tone": "authentic",
+      "include_hashtags": false,
+      "max_chars": 180
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "returned",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/request_intelligence.py:beat_context_awareness": 1,
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/generation/orchestrator.py:<genexpr>": 4,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1,
+    "ai_model/gpu/pocket_pool.py:spawn": 4,
+    "ai_model/gpu/pocket_pool.py:<lambda>": 1,
+    "ai_model/gpu/pocket_pool.py:__init__": 1,
+    "ai_model/gpu/sizing.py:hyper_gpu_sizing": 1,
+    "ai_model/gpu/hyper_backend.py:__init__": 1,
+    "ai_model/gpu/hyper_core.py:__init__": 3,
+    "ai_model/gpu/digital_gpu.py:__init__": 2,
+    "ai_model/gpu/native/kernels.py:get_native_kernels": 1,
+    "ai_model/gpu/pocket_pool.py:_register_birth": 1,
+    "ai_model/gpu/pocket_pool.py:begin_work": 1,
+    "ai_model/gpu/pocket_pool.py:_register_death": 1,
+    "ai_model/gpu/pocket_pool.py:die": 1,
+    "ai_model/gpu/hyper_backend.py:flush_vram": 1,
+    "ai_model/gpu/hyper_core.py:flush_vram": 1,
+    "ai_model/gpu/hyper_core.py:flush": 1,
+    "ai_model/gpu/hyper_backend.py:status": 1,
+    "ai_model/gpu/hyper_core.py:status": 12,
+    "ai_model/gpu/hyper_core.py:<genexpr>": 10,
+    "ai_model/gpu/hyper_core.py:used_bytes": 1,
+    "ai_model/gpu/hyper_core.py:silicon_report": 1
+  },
+  "exceptions": [],
+  "agent_outputs": [],
+  "awareness": [],
+  "files": [],
+  "runner_sha256": "7ac76463d05f22bffe337775bcf270ccd73434701a7add75cd15afe80b078d8c",
+  "server_sha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7",
+  "job_storage": "evaluation-local job metadata; not PDIM/client durability",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.1,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 1.7,
+      "silicon": null
+    }
+  },
+  "request": {
+    "platform": "instagram",
+    "topic": "Paper Lantern Harbor mellow instrumental release",
+    "tone": "authentic",
+    "include_hashtags": false,
+    "max_chars": 180,
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": null,
+    "platform": "instagram",
+    "topic": "Paper Lantern Harbor mellow instrumental release",
+    "tone": "authentic",
+    "genre": null,
+    "artist_name": null,
+    "artist_bio": null,
+    "brand_voice": null,
+    "target_audience": null,
+    "avoid_topics": null,
+    "preferred_hashtags": null,
+    "recent_post_snippets": null,
+    "artist": null,
+    "goal": null,
+    "title": null,
+    "artistProfileId": null,
+    "variants": null,
+    "max_chars": 180,
+    "include_hashtags": false,
+    "include_cta": true,
+    "mood": null,
+    "bpm": null,
+    "key": null,
+    "platforms": null,
+    "beat_context": null,
+    "platform_constraints": null
+  },
+  "elapsed_seconds": 3.962066299000071,
+  "response": {
+    "caption": "The secret the artist kept for six months just dropped: Paper Lantern Harbor mellow instrumental release \u2014 go listen now! \ud83c\udfa7\n\nPaper Lantern Harbor mellow instrumental release is a",
+    "char_count": 178,
+    "variants": [
+      {
+        "caption": "The secret the artist kept for six months just dropped: Paper Lantern Harbor mellow instrumental release \u2014 go listen now! \ud83c\udfa7\n\nPaper Lantern Harbor mellow instrumental release is a",
+        "hook": "The secret the artist kept for six months just dropped: Paper Lantern Harbor mellow instrumental release \u2014 go listen now! \ud83c\udfa7",
+        "body": "Paper Lantern Harbor mellow instrumental release is a different experience at different volumes.\n\nQuiet, it's intimate.\n\nLoud, it's something else entirely. Try it both ways.",
+        "cta": "Add Paper Lantern Harbor mellow instrumental release to the playlist \u2014 link in bio",
+        "score": 98.0,
+        "char_count": 178
+      }
+    ],
+    "hook": "The secret the artist kept for six months just dropped: Paper Lantern Harbor mellow instrumental release \u2014 go listen now! \ud83c\udfa7",
+    "body": "Paper Lantern Harbor mellow instrumental release is a different experience at different volumes.\n\nQuiet, it's intimate.\n\nLoud, it's something else entirely. Try it both ways.",
+    "cta": "Add Paper Lantern Harbor mellow instrumental release to the playlist \u2014 link in bio",
+    "hashtags": [],
+    "confidence": 1.0,
+    "quality_score": 98.0,
+    "ai_disclosure": false,
+    "platform": "instagram",
+    "intelligence": {
+      "modality": "content",
+      "platform": "instagram",
+      "intent": "drive_engagement",
+      "intent_label": "Drive engagement",
+      "intent_confidence": 1.0,
+      "audience": "millennials & Gen-Z (18-34)",
+      "tone": "authentic",
+      "keywords": [
+        "paper",
+        "lantern",
+        "harbor",
+        "mellow",
+        "instrumental",
+        "release"
+      ],
+      "strategy": {
+        "aspect_ratio": "1:1",
+        "layout": "square_1_1",
+        "hook_style": "aesthetic_curiosity",
+        "cta_style": "save_share",
+        "word_count_target": [
+          20,
+          60
+        ],
+        "hashtags_target": 5,
+        "tempo": "medium",
+        "candidate_count": 3,
+        "temperature": 0.9
+      },
+      "directives": [
+        "Optimise for: Drive engagement",
+        "Open with a aesthetic curiosity hook within the first line",
+        "Keep copy medium and roughly 20-60 words",
+        "Close with a save share call-to-action",
+        "Work in keywords: paper, lantern, harbor, mellow",
+        "Land the full hook inside the first 125 characters \u2014 that is all viewers see before the fold",
+        "Aim for high-arousal emotion (awe, excitement, joy) \u2014 arousal level drives shares more than emotion type",
+        "Structure as Hook \u2192 Value \u2192 CTA \u2014 this three-part shape earns 23% more engagement",
+        "Use identity language ('this is for the ones who...') to create belonging before the ask",
+        "Close with a one-tap ask (emoji reaction or tag-a-friend) \u2014 low friction wins comments",
+        "Style-match current chart leaders: Hip-Hop/Rap, hip hop (live quality buffer, weight 1.0)"
+      ],
+      "suggested_cta": "Drop a \ud83d\udd25 if this hits \u2014 tell me in the comments",
+      "notes": [
+        "quality buffer active \u2014 60 studied exemplars from 2026-09-23T20:06:34Z, self-sufficiency 0/500"
+      ],
+      "producer_metadata": {
+        "mood": "",
+        "bpm": null,
+        "key": "",
+        "energy": 0.5
+      },
+      "ai_disclosure": false,
+      "hook_score": 92.0,
+      "candidates_considered": 125,
+      "composer": {
+        "bodies_considered": 20,
+        "ctas_considered": 22
+      }
+    },
+    "cached": true,
+    "storage_warning": "pdim storage is offline \u2014 quality awareness and retrieval index are running in local fallback mode; output quality may be reduced",
+    "processing_time_ms": 548.3
+  },
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

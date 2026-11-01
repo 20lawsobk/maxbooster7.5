@@ -1,0 +1,6 @@
+<testsuites name="vitest tests" tests="1" failures="0" errors="0" time="0.03199759">
+    <testsuite name="actual.test.ts" timestamp="2026-10-29T23:18:14.376Z" hostname="af966a6fd55d" tests="1" failures="0" errors="0" skipped="0" time="0.03199759">
+        <testcase classname="actual.test.ts" name="first actual passing case" time="0.001635439">
+        </testcase>
+        </testsuite>
+</testsuites>

@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "run": {
+    "directory": "reports/maxcore-fused/live-1790386655338",
+    "timestampUtc": "2026-09-26T01:37:35.338Z",
+    "harnessExecution": "COMPLETE",
+    "outputQuality": "NOT_ESTABLISHED",
+    "frozenSeed": 41873,
+    "frozenSnapshotId": "b906f926a195343c2bef5cc2c2f0515d1762c4abecdf347eeb1b6f7a9661868a",
+    "frozenSnapshotDigest": "bd6011bc998aed3f8ac0b02623b3c5e47e8885f3e17e4440898bf3f3cfeb06d4",
+    "caseDefinitionsSha256": "bfd4f0cfd65b0dc4e1f532c537a4027b73d2d891eb1446079b1b0d5b8019ca57",
+    "evaluatorSha256": "c58b004b616ed524014b95ebcf62cc88fd28bfb7379c0a092cd68e71d2ffd8fe"
+  },
+  "preconditionsAndIntegrity": {
+    "readinessHttpStatus": 200,
+    "awarenessSnapshotStable": true,
+    "awarenessSnapshotIdBeforeAndAfter": "b906f926a195343c2bef5cc2c2f0515d1762c4abecdf347eeb1b6f7a9661868a",
+    "checkpointSha256Before": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "checkpointSha256After": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "releaseManifestSha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+    "checkpointBytesUnchanged": true,
+    "trainingEndpointCalledByEvaluator": false,
+    "externalPaidGenerationOrPublishing": false,
+    "runtimeRecoverySimulation": "NOT_REOPENED_BY_THIS_OUTPUT_QUALITY_EVALUATION"
+  },
+  "summary": {
+    "generationAttempts": 12,
+    "http503Responses": 12,
+    "modelTextOutputs": 0,
+    "mediaArtifacts": 0,
+    "requestScopedGpuDispatch": "NOT_ESTABLISHED",
+    "finding": "The live service accepted readiness and exposed the pinned checkpoint, but rejected every frozen held-out case before producing model text or media. Five text/specification cases hit the checkpoint unknown-token conditioning gate. Audio and rendered-video cases were rejected by the legacy learned-media route. Output-quality criteria therefore remain NOT_ESTABLISHED; no quality score is reported."
+  },
+  "cases": [
+    {
+      "id": "text",
+      "kind": "text",
+      "attempts": 2,
+      "route": "/api/generate/text",
+      "response": {
+        "httpStatus": 503,
+        "error": "MaxCore text generation model failed",
+        "reason": "ValueError: Prompt loses over 40% of its tokens to checkpoint <UNK> (3100/3907 tokens); checkpoint vocabulary cannot represent this conditioning. No inference or fallback ran.",
+        "unknownTokens": 3100,
+        "totalTokens": 3907,
+        "errorDigest": "ad0900aab1a1622ceebf02dceccea8cd93f3bfe2a531babfc32cd6ebeb57f399"
+      },
+      "modelOutput": null,
+      "quality": "NOT_ESTABLISHED",
+      "criteria": [
+        {"criterion": "one sentence", "result": "NOT_ESTABLISHED"},
+        {"criterion": "title and date preserved", "result": "NOT_ESTABLISHED"},
+        {"criterion": "no invented performer or metrics", "result": "NOT_ESTABLISHED"}
+      ]
+    },
+    {
+      "id": "music",
+      "kind": "audio",
+      "attempts": 1,
+      "route": "/api/generate/audio",
+      "response": {
+        "httpStatus": 503,
+        "reason": "Learned media generation unavailable on this legacy route; select explicit procedural dedicated_controls",
+        "errorDigest": "8a29014d679ae2c0638c30ff73281a2b7ec84b9cdbe0612fb92871038838d048"
+      },
+      "modelOutput": null,
+      "quality": "NOT_ESTABLISHED",
+      "criteria": [
+        {"criterion": "audible piano and percussion", "result": "NOT_ESTABLISHED"},
+        {"criterion": "no vocals", "result": "NOT_ESTABLISHED"},
+        {"criterion": "musically coherent original phrase", "result": "NOT_ESTABLISHED"}
+      ]
+    },
+    {
+      "id": "social",
+      "kind": "text",
+      "attempts": 2,
+      "route": "/api/generate/text",
+      "response": {
+        "httpStatus": 503,
+        "error": "MaxCore text generation model failed",
+        "reason": "ValueError: Prompt loses over 40% of its tokens to checkpoint <UNK> (3191/4022 tokens); checkpoint vocabulary cannot represent this conditioning. No inference or fallback ran.",
+        "unknownTokens": 3191,
+        "totalTokens": 4022,
+        "errorDigest": "c5d91d4bc59ddf4128d3c1cc6ffe703a6d0b545564cfc6960ebcd09f8b5b6dad"
+      },
+      "modelOutput": null,
+      "quality": "NOT_ESTABLISHED",
+      "criteria": [
+        {"criterion": "under 35 words", "result": "NOT_ESTABLISHED"},
+        {"criterion": "correct release date", "result": "NOT_ESTABLISHED"},
+        {"criterion": "link in bio", "result": "NOT_ESTABLISHED"},
+        {"criterion": "no fabricated success", "result": "NOT_ESTABLISHED"}
+      ]
+    },
+    {
+      "id": "advertising",
+      "kind": "text",
+      "attempts": 2,
+      "route": "/api/generate/text",
+      "response": {
+        "httpStatus": 503,
+        "error": "MaxCore text generation model failed",
+        "reason": "ValueError: Prompt loses over 40% of its tokens to checkpoint <UNK> (3120/3915 tokens); checkpoint vocabulary cannot represent this conditioning. No inference or fallback ran.",
+        "unknownTokens": 3120,
+        "totalTokens": 3915,
+        "errorDigest": "ac0a70c511b876e79557b50c6ab0c509643bd1c8af4cc6f1064bca034b796a89"
+      },
+      "modelOutput": null,
+      "quality": "NOT_ESTABLISHED",
+      "criteria": [
+        {"criterion": "two distinct headlines", "result": "NOT_ESTABLISHED"},
+        {"criterion": "each under eight words", "result": "NOT_ESTABLISHED"},
+        {"criterion": "grounded piano brief", "result": "NOT_ESTABLISHED"},
+        {"criterion": "no endorsement or guarantee", "result": "NOT_ESTABLISHED"}
+      ]
+    },
+    {
+      "id": "culture",
+      "kind": "text",
+      "attempts": 2,
+      "route": "/api/generate/text",
+      "response": {
+        "httpStatus": 503,
+        "error": "MaxCore text generation model failed",
+        "reason": "ValueError: Prompt loses over 40% of its tokens to checkpoint <UNK> (3136/3944 tokens); checkpoint vocabulary cannot represent this conditioning. No inference or fallback ran.",
+        "unknownTokens": 3136,
+        "totalTokens": 3944,
+        "errorDigest": "986c30b40b521fb3514333b8a010ec98ef97edadce027f89edb162b4d8ca8741"
+      },
+      "modelOutput": null,
+      "quality": "NOT_ESTABLISHED",
+      "criteria": [
+        {"criterion": "Spanish", "result": "NOT_ESTABLISHED"},
+        {"criterion": "two sentences", "result": "NOT_ESTABLISHED"},
+        {"criterion": "free admission and date", "result": "NOT_ESTABLISHED"},
+        {"criterion": "no cultural stereotypes or invented traditions", "result": "NOT_ESTABLISHED"}
+      ]
+    },
+    {
+      "id": "video-spec",
+      "kind": "scene-spec",
+      "attempts": 2,
+      "route": "/api/generate/text",
+      "response": {
+        "httpStatus": 503,
+        "error": "MaxCore text generation model failed",
+        "reason": "ValueError: Prompt loses over 40% of its tokens to checkpoint <UNK> (3162/3973 tokens); checkpoint vocabulary cannot represent this conditioning. No inference or fallback ran.",
+        "unknownTokens": 3162,
+        "totalTokens": 3973,
+        "errorDigest": "947c88bca13e8a4caace523e671ce9c334d5e966b3925018f2a63a1372640afc"
+      },
+      "modelOutput": null,
+      "quality": "NOT_ESTABLISHED",
+      "criteria": [
+        {"criterion": "explicit scene specification", "result": "NOT_ESTABLISHED"},
+        {"criterion": "four-second timing", "result": "NOT_ESTABLISHED"},
+        {"criterion": "stable lantern identity", "result": "NOT_ESTABLISHED"},
+        {"criterion": "not described as completed media", "result": "NOT_ESTABLISHED"}
+      ]
+    },
+    {
+      "id": "video-clip",
+      "kind": "video",
+      "attempts": 1,
+      "route": "/api/video/generate-ai",
+      "response": {
+        "httpStatus": 503,
+        "reason": "Learned media generation unavailable on this legacy route; select explicit procedural dedicated_controls",
+        "errorDigest": "8a29014d679ae2c0638c30ff73281a2b7ec84b9cdbe0612fb92871038838d048"
+      },
+      "modelOutput": null,
+      "quality": "NOT_ESTABLISHED",
+      "criteria": [
+        {"criterion": "actual decodable clip", "result": "NOT_ESTABLISHED"},
+        {"criterion": "stable lantern identity and position", "result": "NOT_ESTABLISHED"},
+        {"criterion": "continuous camera motion", "result": "NOT_ESTABLISHED"},
+        {"criterion": "no cuts or text", "result": "NOT_ESTABLISHED"}
+      ]
+    }
+  ],
+  "interpretation": {
+    "apiRejectionsAreModelOutputs": false,
+    "observedConditioningGateCountsAreServerReportedValues": true,
+    "noFallbackOrProceduralSubstitutionUsed": true,
+    "noTrainingOrCheckpointChange": true,
+    "runtimeRecoveryAcceptanceImplication": "NONE"
+  }
+}

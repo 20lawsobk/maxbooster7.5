@@ -1,0 +1,19 @@
+{
+  "command": [
+    "npm",
+    "uninstall",
+    "@sendgrid/mail",
+    "--package-lock-only",
+    "--ignore-scripts",
+    "--no-audit",
+    "--no-fund"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:28:18.079128+00:00",
+  "durationSeconds": 1.375,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/lock-update-root.txt",
+  "logSha256": "b125771fda8addd462adfe7f7b03299feb35e28badbb2d16ae8589e371216f8f"
+}

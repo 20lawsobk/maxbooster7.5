@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: historical publishing shell only reuses prebuilt output for source-less input
+ok 1 - historical publishing shell only reuses prebuilt output for source-less input
+  ---
+  duration_ms: 7.918995
+  type: 'test'
+  ...
+# Subtest: compile path builds the same complete runtime entry set as prepared publishing
+ok 2 - compile path builds the same complete runtime entry set as prepared publishing
+  ---
+  duration_ms: 0.420043
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 112.959964

@@ -1,0 +1,26 @@
+{
+  "evaluator": "Replit Agent, direct qualitative inspection of all 20 recorded continuations; not independent human review",
+  "evidence": "2026-09-23-full-prefix/results.json",
+  "scope": "full-prefix diagnostic only; exclusive digital-GPU execution was not verified, so these scores are not acceptance evidence for the required operating configuration. Isolated KV serving path produced no output and is unscored.",
+  "dimensions": ["coherence", "task_relevance", "constraint_grounding"],
+  "score_scale": [0, 1, 2],
+  "scores_apply_individually_to_each_listed_seed": true,
+  "cases": [
+    {"id":"hook-release","seeds":[23101,23102],"scores":[0,0,0],"rationale":"Unknown markers and disconnected words/numbers; neither sample forms a release hook, conveys mellow piano music or invites listening coherently."},
+    {"id":"hook-process","seeds":[23101,23102],"scores":[0,0,0],"rationale":"Garbled strings with LinkedIn control tokens; neither describes the contrast between a dry and reverberant clap."},
+    {"id":"caption-show","seeds":[23101,23102],"scores":[0,0,0],"rationale":"No coherent event invitation or preservation of Cedar Room, October 18 and 7 pm. Repeated markers and fragments cannot demonstrate compliance."},
+    {"id":"caption-beat","seeds":[23101,23102],"scores":[0,0,0],"rationale":"No coherent beat caption or story question; Copper Steps, 92 BPM and boom bap are not communicated. Isolated music words do not satisfy the task."},
+    {"id":"script-teaching","seeds":[23101,23102],"scores":[0,0,0],"rationale":"Neither sample supplies three intelligible lines; no explanation of muddy vocals, low mids or equal-loudness comparison."},
+    {"id":"script-story","seeds":[23101,23102],"scores":[0,0,0],"rationale":"Disconnected tokens instead of a spoon/cup-to-percussion story; no meaningful request to name a rhythm."},
+    {"id":"optimize-retention","seeds":[23101,23102],"scores":[0,0,0],"rationale":"No actionable revision of the silent opening, nor reference to starting the drum demonstration; output remains garbled."},
+    {"id":"optimize-cta","seeds":[23101,23102],"scores":[0,0,0],"rationale":"Scattered pre-save/streams tokens do not make a listening CTA; neither output communicates link in bio or a coherent caption."},
+    {"id":"grounded-summary","seeds":[23101,23102],"scores":[0,0,0],"rationale":"Neither output is an intelligible factual sentence preserving Glass Orchard, instrumental and November 6; fragments cannot demonstrate grounding."},
+    {"id":"spanish-caption","seeds":[23101,23102],"scores":[0,0,0],"rationale":"English fragments, numeric fragments and unknown/control markers rather than an intelligible Spanish invitation; no meaningful Jardin de Cobre caption."}
+  ],
+  "scored_samples": 20,
+  "passing_samples": 0,
+  "threshold_samples": 16,
+  "all_categories_have_a_pass": false,
+  "diagnostic_verdict": "FAIL",
+  "serving_quality_verdict": "UNMEASURABLE: 20/20 calls errored before the first token; not a scored 0-percent prose result"
+}

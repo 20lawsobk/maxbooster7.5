@@ -1,0 +1,9 @@
+{
+  "completed": true,
+  "productionReady": false,
+  "controllerNode": "v22.23.3",
+  "uid": 1000,
+  "appCredentialsPresent": false,
+  "networkIsolationRequired": "Docker --network none; verify actual HostConfig separately",
+  "scope": "Actual packaged executable/embedded child startup observations; no fake readiness responder, no delivery, no rendered-window claim. Diagnostic no-sandbox is not production sandbox verification."
+}

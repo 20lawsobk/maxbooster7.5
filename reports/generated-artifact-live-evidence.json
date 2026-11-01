@@ -1,0 +1,57 @@
+{
+  "scope": "Bounded authenticated dedicated-renderer lifecycle probes; not release certification",
+  "authentication": "Ordinary existing-account login and CSRF; no bypass, seeding, or entitlement changes",
+  "artifacts": [
+    {
+      "kind": "audio",
+      "evidence_source": "Prior live probe result supplied by owning agent",
+      "bytes": 3244,
+      "sha256": "12485d82c769c93a7bb815b65e43fff0d5ef037ee6947d17562752d050590c62",
+      "duration_seconds": 0.1,
+      "sample_rate": 8000,
+      "durable": true,
+      "retrievable": true,
+      "decoded": true,
+      "anonymous_rejected": true
+    },
+    {
+      "kind": "image",
+      "evidence_source": "Prior live probe result supplied by owning agent",
+      "bytes": 5519,
+      "sha256": "f0154f75d16315e75a424b1ee36b16dca4aa58787d452dff7bb0ca2188dd7632",
+      "width": 64,
+      "height": 64,
+      "durable": true,
+      "retrievable": true,
+      "decoded": true,
+      "anonymous_rejected": true
+    },
+    {
+      "kind": "video",
+      "evidence_source": "Executed node scripts/generated-artifact-live-probe.mjs video against existing running app",
+      "bytes": 1453,
+      "sha256": "3a0c6937d8451392834d1ce07da7ab02e9372fa60a5b385552c65643d5dd8c5e",
+      "width": 64,
+      "height": 64,
+      "duration_seconds": 0.125,
+      "frames": 1,
+      "fps": 8,
+      "durable": true,
+      "retrievable": true,
+      "decoded": true,
+      "anonymous_rejected": true,
+      "trained": false,
+      "elapsed_ms": 4043
+    }
+  ],
+  "verified_path": "Authenticated app generation -> imported private proxy -> Python dedicated renderer -> private Node commit -> PDIM -> authorized retrieval, receipt digest/size/actual-media metadata comparison, anonymous rejection",
+  "changes_during_video_probe": "Probe/schema support only; no restart; exactly one video generated, no audio/image regenerated, no user data deleted",
+  "limitations": [
+    "Procedural synthesis, typographic poster layout, and procedural video; not trained semantic generation.",
+    "Quality remains not_evaluated: no listening, aesthetic, photorealism, subject/reference fidelity, or commercial-quality claim.",
+    "One-frame video verifies the encoded delivery contract, not motion quality or temporal continuity.",
+    "Tiny artifacts do not establish full-length performance, large-media capacity, concurrency safety, or release readiness.",
+    "Anonymous rejection is verified; a separate second-account ownership attack was not exercised by these live probes.",
+    "Historical interrupted-job recovery and retry/cancellation behavior are not independently certified by these three successful live artifacts."
+  ]
+}

@@ -1,0 +1,815 @@
+#!/usr/bin/env node
+/**
+ * PDIM Capsule Restore — Extract & Boot
+ *
+ * Extracts node_modules.pdim (and python_runtime.pdim if present) on first
+ * startup.  Idempotent: skips extraction when the sentinel file
+ * node_modules/.pdim-restored already exists.
+ *
+ * Reads the compression format from *.manifest.json written by the packer
+ * (script/build.ts, via script/lib/capsulePack.ts):
+ *   "zstd-*" → tar --zstd -xf   (zstd, current default — see capsulePack.ts
+ *                                for the real benchmark that picked it)
+ *   "xz-*"   → tar -xJf         (XZ)
+ *   anything else (e.g. "gzip-9") → tar -xzf (gzip, legacy fallback)
+ * bsdtar (preferred below when available) auto-detects the format from the
+ * stream itself and needs no format-specific flag at all.
+ */
+
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  rmSync,
+  mkdirSync,
+  renameSync,
+  readdirSync,
+  createReadStream,
+  lstatSync,
+  readlinkSync,
+} from "fs";
+import { createHash } from "crypto";
+import { spawn, spawnSync } from "child_process";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const ROOT = resolve(__dirname, "..");
+
+// True only when this file was launched directly (`node dist/pdim-restore.mjs
+// <mode>`), not when it's imported as a module (e.g. by the round-trip test
+// importing `restoreCapsule` against a synthetic fixture). Mirrors the
+// CommonJS `require.main === module` check for ESM. Without this guard,
+// merely importing the file for its exports would immediately run the real
+// "restore everything under the actual project ROOT" CLI dispatch below.
+const isMainModule =
+  !!process.argv[1] && resolve(process.argv[1]) === resolve(__filename);
+
+// Resolve bsdtar once per process. bsdtar (libarchive) sets
+// ARCHIVE_EXTRACT_ATOMIC by default, which is libarchive's actual fix for
+// the "Directory renamed before its status could be extracted" extractor
+// race — not a workaround, a different (safer) extraction strategy. Falls
+// back to null (caller uses GNU tar + exit-code tolerance) if unavailable.
+let _bsdtarBinCache;
+function resolveBsdtar() {
+  if (_bsdtarBinCache !== undefined) return _bsdtarBinCache;
+  try {
+    const probe = spawnSync("bsdtar", ["--version"], { stdio: "ignore" });
+    _bsdtarBinCache = probe.status === 0 ? "bsdtar" : null;
+  } catch {
+    _bsdtarBinCache = null;
+  }
+  return _bsdtarBinCache;
+}
+
+// Reserved VM deployments keep the same persistent disk across the rapid
+// crash/restart cycles a slow cold boot causes: the platform kills a
+// container that doesn't open its port in time and immediately starts a new
+// one on the SAME volume. If the killed container's `tar` child was
+// orphaned rather than torn down before the new one starts, two tar
+// processes end up extracting into the same node_modules/ tree at once —
+// which is exactly what produced tar's "Directory renamed before its status
+// could be extracted" warnings. A simple PID lockfile makes a fresh restore
+// attempt wait for (or clean up after) a prior one instead of racing it.
+export async function acquireRestoreLock(targetDir, { root = ROOT, timeoutMs = 120_000 } = {}) {
+  const lockPath = resolve(root, `${targetDir.replace(/[\/]/g, "_")}.pdim-restore.lock`);
+  const isPidAlive = (pid) => {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const deadline = Date.now() + timeoutMs;
+  let announced = false;
+  while (Date.now() < deadline) {
+    if (existsSync(lockPath)) {
+      const heldPid = Number(readFileSync(lockPath, "utf8").trim());
+      if (heldPid && isPidAlive(heldPid)) {
+        if (!announced) {
+          announced = true;
+          console.log(
+            `[pdim-restore] ${targetDir}/ restore already in progress (pid ${heldPid}) — waiting instead of racing it`,
+          );
+        }
+        await new Promise((r) => setTimeout(r, Math.min(500, Math.max(1, deadline - Date.now()))));
+        continue;
+      }
+      // Stale lock from a killed process — safe to reclaim.
+      try {
+        rmSync(lockPath, { force: true });
+      } catch {}
+    }
+    try {
+      writeFileSync(lockPath, String(process.pid), { flag: "wx" });
+      return () => {
+        try {
+          rmSync(lockPath, { force: true });
+        } catch {}
+      };
+    } catch {
+      // Another process won the race to create the lock file — retry the loop.
+      continue;
+    }
+  }
+
+  throw new Error(`[pdim-restore] ${targetDir}/ restore lock timed out; refusing concurrent extraction`);
+}
+
+function readManifest(manifestPath) {
+  try {
+    if (existsSync(manifestPath)) {
+      return JSON.parse(readFileSync(manifestPath, "utf8"));
+    }
+  } catch (_) {}
+  return null;
+}
+
+// GNU tar has no single combined short flag for zstd the way -xzf/-xJf cover
+// gzip/xz; it needs the filter selected explicitly via --zstd alongside -xf.
+// This only matters for the GNU-tar fallback path (bsdtar, preferred when
+// available, auto-detects the format itself and needs no flag at all).
+// Exported as its own pure function so the branch selection for each real
+// codec id the manifest can report is covered directly, independent of
+// whether bsdtar happens to be installed in whatever environment the test
+// runs in.
+export function tarFlagsForCompression(compression) {
+  if (compression && compression.startsWith("zstd")) return ["--zstd", "-xf"];
+  if (compression && compression.startsWith("xz")) return ["-xJf"];
+  return ["-xzf"];
+}
+
+export async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
+  const capsulePath = resolve(ROOT, capsuleName);
+  const manifestPath = resolve(ROOT, manifestName);
+  const sentinelPath = resolve(ROOT, targetDir, sentinel || ".pdim-restored");
+
+  if (!existsSync(capsulePath)) {
+    console.log(`[pdim-restore] ${capsuleName}: capsule not found — skipping`);
+    return true;
+  }
+
+  const manifest = readManifest(manifestPath);
+  if (!/^[a-f0-9]{64}$/i.test(manifest?.sha256 ?? "")) {
+    console.error(`[pdim-restore] ${capsuleName}: missing valid SHA-256 manifest`);
+    return false;
+  }
+  const restoredCurrent = () => existsSync(sentinelPath) && readFileSync(sentinelPath, "utf8").trim() === manifest.sha256;
+  if (restoredCurrent()) {
+    console.log(`[pdim-restore] ${targetDir}/ already restored — skipping`);
+    return true;
+  }
+
+  let releaseLock;
+  try { releaseLock = await acquireRestoreLock(targetDir); }
+  catch (error) { console.error(error.message); return false; }
+  // Another process may have finished the restore while we were waiting on
+  // the lock — re-check the sentinel before starting a redundant extraction.
+  if (restoredCurrent()) {
+    releaseLock();
+    console.log(`[pdim-restore] ${targetDir}/ restored while waiting on lock — skipping`);
+    return true;
+  }
+
+  const compression = manifest?.compression || "gzip-9";
+  const tarFlags = tarFlagsForCompression(compression);
+
+  // Prefer bsdtar (libarchive) over GNU tar for the actual extraction. This
+  // isn't a warning-tolerance workaround — libarchive ships a real fix for
+  // this exact class of bug: it added ARCHIVE_EXTRACT_ATOMIC (atomic
+  // directory creation/rename during extraction, avoiding the create→rename
+  // window that the kernel/overlayfs "Directory renamed before its status
+  // could be extracted" race lands in) and bsdtar enables it by default.
+  // GNU tar has no equivalent flag — this is a tool-level fix, not a
+  // config tweak. libarchive auto-detects gzip/xz from the stream, so no
+  // format-specific flag is needed; GNU tar's exit-code-tolerant path below
+  // remains as a safety net for any environment where bsdtar is unavailable.
+  const bsdtarBin = resolveBsdtar();
+
+  // Extract into a scratch directory that nothing else in the tree has ever
+  // seen, then swap it into place with a single rename — instead of
+  // extracting the thousands of individual files/dirs of node_modules
+  // directly on top of the real target path. GNU tar's "Directory renamed
+  // before its status could be extracted" is a known extractor race
+  // (reported against Docker/overlay filesystems and container runtimes
+  // generally) triggered by rapid nested mkdir/rename traffic landing on a
+  // path that already has directory entries in it — exactly the shape of a
+  // fresh multi-thousand-file node_modules extraction. Extracting into an
+  // empty scratch dir removes any pre-existing entries for tar to collide
+  // with; the only operation touching the real target path is one atomic
+  // rename after the archive is fully verified.
+  const scratchDir = resolve(ROOT, `.pdim-scratch-${targetDir.replace(/[\/]/g, "_")}-${process.pid}`);
+  const finalTargetPath = resolve(ROOT, targetDir);
+
+  // Clean up any scratch leftovers from a prior crashed attempt (same or
+  // different pid) before starting a fresh one.
+  try {
+    const prefix = `.pdim-scratch-${targetDir.replace(/[\/]/g, "_")}-`;
+    for (const entry of readdirSync(ROOT)) {
+      if (entry.startsWith(prefix)) {
+        rmSync(resolve(ROOT, entry), { recursive: true, force: true });
+      }
+    }
+  } catch {}
+
+  try {
+    mkdirSync(scratchDir, { recursive: true });
+  } catch (e) {
+    console.error(`[pdim-restore] ERROR: could not create scratch dir ${scratchDir}: ${e.message}`);
+    releaseLock();
+    return false;
+  }
+
+  console.log(
+    `[pdim-restore] Extracting ${capsuleName} (${compression}) → ${scratchDir}/ (staging for ${targetDir}/) ...`,
+  );
+
+  // Stream the capsule through tar's stdin while simultaneously hashing the
+  // same bytes as they pass through, instead of reading the whole file once
+  // to verify its checksum and then reading it AGAIN to extract it. For a
+  // large capsule (node_modules can be hundreds of MB to multi-GB) that
+  // double read was itself enough to blow the deployment's startup-probe
+  // window — the "Extracting" log never even appeared before the platform
+  // killed and restarted the container. One read now covers both.
+  return new Promise((resolvePromise) => {
+    const fail = (msg) => {
+      console.error(`[pdim-restore] ERROR: ${msg}`);
+      // Remove the scratch tree so the next boot retries cleanly; the real
+      // target path was never touched, so it's left exactly as it was.
+      try {
+        rmSync(scratchDir, { recursive: true, force: true });
+      } catch {}
+      releaseLock();
+      resolvePromise(false);
+    };
+
+    // Each capsule extracts into its own scratch/target directory, so running
+    // the four restores concurrently is safe (no shared-path writes) and
+    // turns total wall-clock time from the SUM of all extractions into
+    // roughly the MAX of the largest one — needed to stay under the
+    // deployment promote-step startup-probe timeout now that four capsules
+    // ship. The archive's internal paths already start with the target dir
+    // name (e.g. "node_modules/..."), so extracting with -C scratchDir
+    // reproduces "scratchDir/node_modules/...".
+    // Capture stderr instead of piping straight to the console: the scratch-
+    // dir swap alone did NOT eliminate "Directory renamed before its status
+    // could be extracted" (confirmed against real deploy logs — it recurred
+    // verbatim even extracting into a brand-new empty directory). That rules
+    // out a collision with pre-existing entries and matches a well-documented
+    // GNU tar / overlayfs kernel race (identical message reported against
+    // RHEL, Ubuntu, and Docker/dokku for large nested node_modules-style
+    // trees): the kernel's overlay copy-up renames a just-created directory
+    // out from under tar between mkdir and the follow-up stat/chmod call.
+    // The content already written into that directory is NOT lost — only the
+    // final metadata touch-up on it is — so this specific, well-known warning
+    // class is treated as non-fatal (with a loud log and a post-extraction
+    // sanity check below), while anything else on stderr still fails hard.
+    const usingBsdtar = !!bsdtarBin;
+    const child = usingBsdtar
+      ? spawn(bsdtarBin, ["-x", "-f", "-", "-C", scratchDir], {
+          stdio: ["pipe", "inherit", "pipe"],
+        })
+      : spawn("tar", [...tarFlags, "-", "-C", scratchDir], {
+          stdio: ["pipe", "inherit", "pipe"],
+        });
+    if (usingBsdtar) {
+      console.log(`[pdim-restore] Using bsdtar (libarchive, atomic extraction) for ${capsuleName}`);
+    } else {
+      console.log(`[pdim-restore] bsdtar not found — falling back to GNU tar for ${capsuleName}`);
+    }
+
+    let stderrBuf = "";
+    child.stderr.on("data", (chunk) => {
+      const text = chunk.toString();
+      stderrBuf += text;
+      process.stderr.write(text);
+    });
+
+    const hash = manifest?.sha256 ? createHash("sha256") : null;
+    const source = createReadStream(capsulePath);
+    let sourceErrored = false;
+
+    source.on("data", (chunk) => {
+      if (hash) hash.update(chunk);
+    });
+    source.on("error", (err) => {
+      sourceErrored = true;
+      clearTimeout(timer);
+      child.kill("SIGKILL");
+      fail(`failed reading ${capsuleName}: ${err.message}`);
+    });
+    source.pipe(child.stdin);
+
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      fail(`tar timed out after 900s extracting ${capsuleName}`);
+    }, 900_000);
+
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      fail(`tar spawn failed: ${err.message}`);
+    });
+
+    child.on("exit", (code) => {
+      clearTimeout(timer);
+      if (sourceErrored) return; // already handled by source's error path
+
+      // GNU tar's own documented exit-status contract (see `man tar`,
+      // RETURN VALUE): 0 = success, 1 = "some files differ" (non-fatal
+      // warnings were printed but the archive was otherwise processed),
+      // 2 = fatal error. This is the standard, well-established way tooling
+      // distinguishes the two (e.g. rsync/tar wrappers across CI systems
+      // treat exit 1 as warn-and-continue) — it's tar itself telling us
+      // which class of outcome this was, not a guess based on matching
+      // specific message text. Real production logs from THIS app show
+      // exactly this: the overlayfs kernel race that renames a just-created
+      // directory out from under tar mid-extraction (documented in RHEL
+      // solution 3449271, Ubuntu kernel bug #1728489, moby/moby #19647 for
+      // this identical message on large nested node_modules-style trees)
+      // only ever produces exit 1 — the archive content is fully written,
+      // just missing a final metadata touch-up on the affected dirs. A
+      // genuinely fatal problem (truncated archive, disk full, permission
+      // denial) exits >=2. We still verify the resulting tree size below
+      // rather than trusting exit 1 blindly.
+      if (code === 2 || (code !== 0 && code !== 1)) {
+        return fail(`tar exited with fatal code ${code}`);
+      }
+      if (code === 1) {
+        console.error(
+          `[pdim-restore] WARN: tar exited 1 (warnings only, per its own ` +
+            `exit-status contract) while extracting ${capsuleName} — likely ` +
+            `the known overlayfs "Directory renamed" kernel race; content is ` +
+            `still written, only trailing dir metadata touch-up was skipped. ` +
+            `Continuing; verifying tree size below.`,
+        );
+      }
+
+      if (hash) {
+        const actual = hash.digest("hex");
+        if (actual !== manifest.sha256) {
+          return fail(
+            `checksum mismatch for ${capsuleName}\n` +
+              `  expected ${manifest.sha256}\n  actual   ${actual}`,
+          );
+        }
+      }
+
+      // Archive contents landed at scratchDir/<targetDir>/... (the archive's
+      // internal paths already start with the target dir name). Swap the
+      // fully-verified tree into place with one atomic rename instead of the
+      // thousands of individual creates a direct extraction would perform on
+      // the live path.
+      const extractedPath = resolve(scratchDir, targetDir);
+      if (!existsSync(extractedPath)) {
+        return fail(
+          `extraction succeeded but ${extractedPath} was not produced — archive layout mismatch`,
+        );
+      }
+
+      // Sanity-check the tree size, since the benign-warning path above
+      // deliberately tolerates a nonzero tar exit code — this catches the
+      // case where "benign-looking" warnings actually coincided with real
+      // content loss instead of just a skipped metadata touch-up.
+      let entryCount = 0;
+      try {
+        entryCount = readdirSync(extractedPath).length;
+      } catch (e) {
+        return fail(`could not verify extracted tree at ${extractedPath}: ${e.message}`);
+      }
+      if (entryCount === 0) {
+        return fail(`extraction produced an empty ${targetDir}/ directory — treating as failed`);
+      }
+      const MIN_ENTRIES = { node_modules: 500 };
+      const minExpected = MIN_ENTRIES[targetDir];
+      if (minExpected && entryCount < minExpected) {
+        return fail(
+          `extracted ${targetDir}/ has only ${entryCount} entries (expected ${minExpected}+) — treating as failed`,
+        );
+      }
+
+      try {
+        rmSync(finalTargetPath, { recursive: true, force: true });
+        mkdirSync(dirname(finalTargetPath), { recursive: true });
+        renameSync(extractedPath, finalTargetPath);
+      } catch (e) {
+        return fail(`failed to swap ${extractedPath} into ${finalTargetPath}: ${e.message}`);
+      } finally {
+        try {
+          rmSync(scratchDir, { recursive: true, force: true });
+        } catch {}
+      }
+
+      // Write the sentinel only after a fully successful extraction+swap so
+      // subsequent boots skip re-extraction (idempotent restore).
+      try {
+        writeFileSync(sentinelPath, manifest.sha256);
+      } catch (e) {
+        console.error(
+          `[pdim-restore] WARN: could not write sentinel ${sentinelPath}: ${e.message}`,
+        );
+      }
+
+      console.log(`[pdim-restore] ✅ ${targetDir}/ restored from ${capsuleName}`);
+      releaseLock();
+      resolvePromise(true);
+    });
+  });
+}
+
+/**
+ * Restores the "app remainder" capsule — every file that survives a
+ * .dockerignore-aware scan of the whole repo minus the four other capsules
+ * and the small pre-restore bootstrap set (see script/lib/dockerignoreScan.ts
+ * for exactly how that set is computed at pack time). Unlike restoreCapsule()
+ * above, the archive has no single top-level directory name: it's an
+ * arbitrary set of files scattered across many directories (client/, server/,
+ * migrations/, bin/, dist/public/, top-level config files, etc.), some of
+ * which share a parent directory with files that were deliberately left
+ * OUTSIDE this capsule (dist/pdim-restore.mjs must never be inside it, while
+ * dist/cluster.mjs is). So restore extracts into a scratch dir with the
+ * archive's own relative paths preserved, then merges each top-level entry
+ * found under the scratch dir into ROOT individually — instead of one single
+ * directory-swap rename, since there is no single directory to swap.
+ */
+export async function restoreAppRemainderCapsule(
+  capsuleName,
+  manifestName,
+  sentinelName,
+) {
+  const capsulePath = resolve(ROOT, capsuleName);
+  const manifestPath = resolve(ROOT, manifestName);
+  const sentinelPath = resolve(ROOT, sentinelName);
+  const lockKey = "__app_remainder__";
+
+  if (!existsSync(capsulePath)) {
+    console.log(`[pdim-restore] ${capsuleName}: capsule not found — skipping`);
+    return true;
+  }
+  const manifest = readManifest(manifestPath);
+  if (!/^[a-f0-9]{64}$/i.test(manifest?.sha256 ?? "")) {
+    console.error(`[pdim-restore] ${capsuleName}: missing valid SHA-256 manifest`);
+    return false;
+  }
+  const restoredCurrent = () => existsSync(sentinelPath) && readFileSync(sentinelPath, "utf8").trim() === manifest.sha256;
+  if (restoredCurrent()) {
+    console.log(`[pdim-restore] app remainder already restored — skipping`);
+    return true;
+  }
+
+  let releaseLock;
+  try { releaseLock = await acquireRestoreLock(lockKey); }
+  catch (error) { console.error(error.message); return false; }
+  if (restoredCurrent()) {
+    releaseLock();
+    console.log(
+      `[pdim-restore] app remainder restored while waiting on lock — skipping`,
+    );
+    return true;
+  }
+
+  const compression = manifest?.compression || "gzip-9";
+  const tarFlags = tarFlagsForCompression(compression);
+  const bsdtarBin = resolveBsdtar();
+
+  const scratchDir = resolve(ROOT, `.pdim-scratch-${lockKey}-${process.pid}`);
+  try {
+    const prefix = `.pdim-scratch-${lockKey}-`;
+    for (const entry of readdirSync(ROOT)) {
+      if (entry.startsWith(prefix)) {
+        rmSync(resolve(ROOT, entry), { recursive: true, force: true });
+      }
+    }
+  } catch {}
+
+  try {
+    mkdirSync(scratchDir, { recursive: true });
+  } catch (e) {
+    console.error(
+      `[pdim-restore] ERROR: could not create scratch dir ${scratchDir}: ${e.message}`,
+    );
+    releaseLock();
+    return false;
+  }
+
+  console.log(
+    `[pdim-restore] Extracting ${capsuleName} (${compression}) → ${scratchDir}/ (staging app remainder) ...`,
+  );
+
+  return new Promise((resolvePromise) => {
+    const fail = (msg) => {
+      console.error(`[pdim-restore] ERROR: ${msg}`);
+      try {
+        rmSync(scratchDir, { recursive: true, force: true });
+      } catch {}
+      releaseLock();
+      resolvePromise(false);
+    };
+
+    const usingBsdtar = !!bsdtarBin;
+    const child = usingBsdtar
+      ? spawn(bsdtarBin, ["-x", "-f", "-", "-C", scratchDir], {
+          stdio: ["pipe", "inherit", "pipe"],
+        })
+      : spawn("tar", [...tarFlags, "-", "-C", scratchDir], {
+          stdio: ["pipe", "inherit", "pipe"],
+        });
+    if (usingBsdtar) {
+      console.log(
+        `[pdim-restore] Using bsdtar (libarchive, atomic extraction) for ${capsuleName}`,
+      );
+    } else {
+      console.log(
+        `[pdim-restore] bsdtar not found — falling back to GNU tar for ${capsuleName}`,
+      );
+    }
+
+    const hash = manifest?.sha256 ? createHash("sha256") : null;
+    const source = createReadStream(capsulePath);
+    let sourceErrored = false;
+
+    source.on("data", (chunk) => {
+      if (hash) hash.update(chunk);
+    });
+    source.on("error", (err) => {
+      sourceErrored = true;
+      clearTimeout(timer);
+      child.kill("SIGKILL");
+      fail(`failed reading ${capsuleName}: ${err.message}`);
+    });
+    source.pipe(child.stdin);
+
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      fail(`tar timed out after 900s extracting ${capsuleName}`);
+    }, 900_000);
+
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      fail(`tar spawn failed: ${err.message}`);
+    });
+
+    child.on("exit", async (code) => {
+      clearTimeout(timer);
+      if (sourceErrored) return;
+
+      if (code === 2 || (code !== 0 && code !== 1)) {
+        return fail(`tar exited with fatal code ${code}`);
+      }
+      if (code === 1) {
+        console.error(
+          `[pdim-restore] WARN: tar exited 1 (warnings only) while extracting ${capsuleName} — ` +
+            `likely the known overlayfs "Directory renamed" kernel race; content is still ` +
+            `written. Continuing; verifying extracted tree below.`,
+        );
+      }
+
+      if (hash) {
+        const actual = hash.digest("hex");
+        if (actual !== manifest.sha256) {
+          return fail(
+            `checksum mismatch for ${capsuleName}\n  expected ${manifest.sha256}\n  actual   ${actual}`,
+          );
+        }
+      }
+
+      let topEntries = [];
+      try {
+        topEntries = readdirSync(scratchDir);
+      } catch (e) {
+        return fail(`could not read extracted tree at ${scratchDir}: ${e.message}`);
+      }
+      if (topEntries.length === 0) {
+        return fail(`extraction produced no files — treating as failed`);
+      }
+
+      // Merge each top-level extracted entry into ROOT. Unlike restoreCapsule
+      // above (one whole directory swapped in atomically), a top-level name
+      // here — e.g. "dist" — can ALREADY exist on disk at boot, containing
+      // exactly the files the pack step deliberately left outside this
+      // capsule (dist/pdim-restore.mjs, dist/.db-indexes-ok). A blind
+      // rm-then-rename of "dist" would delete those survivors — the very
+      // thing the bootstrap-set exclusion exists to prevent. So an existing
+      // DIRECTORY is merged recursively (only the extracted files are moved
+      // in; anything already there and not part of this capsule is left
+      // untouched). A previous process may have stopped partway through this
+      // merge before writing the sentinel, so an existing file or symlink is
+      // reusable only when it is exactly the same archive member. Conflicting
+      // content remains a hard failure; restore must never silently replace it.
+      let reusedExistingEntries = 0;
+      const identicalFileContents = async (leftPath, rightPath) => {
+        const leftStat = lstatSync(leftPath);
+        const rightStat = lstatSync(rightPath);
+        if (
+          !leftStat.isFile() ||
+          !rightStat.isFile() ||
+          leftStat.size !== rightStat.size ||
+          (leftStat.mode & 0o7777) !== (rightStat.mode & 0o7777)
+        ) {
+          return false;
+        }
+        const digestFile = async (filePath) => {
+          const digest = createHash("sha256");
+          for await (const chunk of createReadStream(filePath)) digest.update(chunk);
+          return digest.digest("hex");
+        };
+        const [leftDigest, rightDigest] = await Promise.all([
+          digestFile(leftPath),
+          digestFile(rightPath),
+        ]);
+        return leftDigest === rightDigest;
+      };
+      const mergeInto = async (fromPath, toPath) => {
+        let toStat;
+        try {
+          toStat = lstatSync(toPath);
+        } catch (error) {
+          if (error?.code !== "ENOENT") throw error;
+          mkdirSync(dirname(toPath), { recursive: true });
+          renameSync(fromPath, toPath);
+          return;
+        }
+        const fromStat = lstatSync(fromPath);
+        if (fromStat.isDirectory() && toStat.isDirectory()) {
+          for (const child of readdirSync(fromPath)) {
+            await mergeInto(resolve(fromPath, child), resolve(toPath, child));
+          }
+          rmSync(fromPath, { recursive: true, force: true });
+          return;
+        }
+        if (await identicalFileContents(fromPath, toPath)) {
+          reusedExistingEntries++;
+          return;
+        }
+        if (
+          fromStat.isSymbolicLink() &&
+          toStat.isSymbolicLink() &&
+          readlinkSync(fromPath) === readlinkSync(toPath)
+        ) {
+          reusedExistingEntries++;
+          return;
+        }
+        throw new Error(
+          `refusing to overwrite conflicting pre-existing path during app-remainder merge: ${toPath}`,
+        );
+      };
+
+      try {
+        for (const entry of topEntries) {
+          await mergeInto(resolve(scratchDir, entry), resolve(ROOT, entry));
+        }
+      } catch (e) {
+        return fail(`failed to merge extracted app remainder into ${ROOT}: ${e.message}`);
+      } finally {
+        try {
+          rmSync(scratchDir, { recursive: true, force: true });
+        } catch {}
+      }
+
+      try {
+        writeFileSync(sentinelPath, manifest.sha256);
+      } catch (e) {
+        console.error(
+          `[pdim-restore] WARN: could not write sentinel ${sentinelPath}: ${e.message}`,
+        );
+      }
+
+      console.log(
+        `[pdim-restore] ✅ app remainder restored from ${capsuleName} (${topEntries.length} top-level entries${reusedExistingEntries ? `; reused ${reusedExistingEntries} identical entries from a prior merge` : ""})`,
+      );
+      releaseLock();
+      resolvePromise(true);
+    });
+  });
+}
+
+// node_modules MUST be present before the Node process can import anything,
+// so it is the only capsule that legitimately has to block the app from
+// starting. python_runtime / external/maxcore / external/pdim are consumed
+// lazily by subsystems that already start asynchronously and degrade
+// gracefully when their backing files aren't there yet (Python sidecar warns
+// and falls back, MaxCore's local supervisor reports its probe as
+// degraded/unreachable, external/pdim isn't imported by the running app at
+// all) — so blocking boot on them too only serves to burn through the
+// deployment's startup-probe window for no functional benefit. `critical`
+// mode restores node_modules only; `background` mode restores the rest.
+const CAPSULES = {
+  nodeModules: () =>
+    restoreCapsule(
+      "node_modules.pdim",
+      "node_modules.manifest.json",
+      "node_modules",
+      ".pdim-restored",
+    ),
+  pythonRuntime: () =>
+    restoreCapsule(
+      "python_runtime.pdim",
+      "python_runtime.manifest.json",
+      "python_runtime",
+      ".pdim-restored-py",
+    ),
+  // external/maxcore — internalized MaxCore subsystem (packed by script/build.ts).
+  // Required unless local MaxCore mode is explicitly disabled (MAXCORE_LOCAL=0).
+  maxcore: () =>
+    restoreCapsule(
+      "external_maxcore.pdim",
+      "external_maxcore.manifest.json",
+      "external/maxcore",
+      ".pdim-restored-maxcore",
+    ),
+  // external/pdim — vendored PDIM subsystem (packed by script/build.ts).
+  // Shipped per user directive that the entire project be included; a failed
+  // restore is logged but non-fatal since app runtime does not import it.
+  pdim: () =>
+    restoreCapsule(
+      "external_pdim.pdim",
+      "external_pdim.manifest.json",
+      "external/pdim",
+      ".pdim-restored-pdim",
+    ),
+  // "Everything else" — the rest of the deploy-image payload once the other
+  // three background capsules and node_modules are accounted for (client/,
+  // server/, migrations/, bin/, top-level config, etc; see
+  // script/lib/dockerignoreScan.ts). CRITICAL tier, unlike the other three
+  // background capsules: this capsule contains dist/cluster.mjs,
+  // dist/index.mjs, and dist/gateway.mjs — the exact entrypoints start.sh
+  // execs/spawns synchronously right after the critical restore step, with
+  // no wait on the background restore. It also contains the boosterstate
+  // sidecar binary and the optional legacy Python AI sidecar source, both
+  // started synchronously in step 3, before backgrounding would have
+  // finished. Restoring this one in the background — as an earlier version
+  // of this capsule did — raced start.sh's own synchronous boot sequence:
+  // on a cold boot neither dist/cluster.mjs nor dist/index.mjs exists yet
+  // when start.sh reaches its launch step, so it hits its own "neither
+  // found" FATAL exit. Blocking boot on it (like node_modules already does)
+  // removes that race instead of trying to out-guess start.sh's timing.
+  appRemainder: () =>
+    restoreAppRemainderCapsule(
+      "app_remainder.pdim",
+      "app_remainder.manifest.json",
+      ".pdim-restored-app-remainder",
+    ),
+};
+
+// CLI dispatch — only runs when this file is executed directly (`node
+// dist/pdim-restore.mjs <mode>`), never when it's imported for its exports
+// (see isMainModule above). start.sh invokes this with "critical" then
+// "background"; nothing else in the app imports this file at runtime.
+if (isMainModule) {
+  const restoreStarted = performance.now();
+  const mode = process.argv[2] || "all";
+
+  if (mode === "critical") {
+    // node_modules and the app remainder (which holds dist/cluster.mjs,
+    // dist/index.mjs, dist/gateway.mjs, the boosterstate binary, and the
+    // optional legacy AI sidecar source) both block boot: start.sh execs/
+    // spawns those files synchronously right after this step, with no wait
+    // on the background restore that follows.
+    const [nodeModulesOk, appRemainderOk, pythonOk] = await Promise.all([
+      CAPSULES.nodeModules(),
+      CAPSULES.appRemainder(),
+      CAPSULES.pythonRuntime(),
+    ]);
+    if (!nodeModulesOk || !appRemainderOk || !pythonOk) {
+      console.error(
+        `[pdim-restore] FATAL: critical restore failed (node_modules: ${nodeModulesOk}, app remainder: ${appRemainderOk}, Python: ${pythonOk})`,
+      );
+      process.exit(1);
+    }
+    console.log("[pdim-restore] Critical capsules (node_modules, app remainder, Python) restored.");
+  } else if (mode === "background") {
+    const results = await Promise.all([
+      CAPSULES.maxcore(),
+      CAPSULES.pdim(),
+    ]);
+    if (results.some((ok) => !ok)) {
+      console.error("[pdim-restore] Background capsule restoration failed");
+      process.exit(1);
+    }
+    console.log("[pdim-restore] Background capsules processed.");
+  } else {
+    // Legacy/dev path: restore everything up front and block on it.
+    const [nodeModulesOk, pythonOk, maxcoreOk, pdimOk, appRemainderOk] = await Promise.all([
+      CAPSULES.nodeModules(),
+      CAPSULES.pythonRuntime(),
+      CAPSULES.maxcore(),
+      CAPSULES.pdim(),
+      CAPSULES.appRemainder(),
+    ]);
+
+    let ok = nodeModulesOk && pythonOk && pdimOk && appRemainderOk;
+    if (process.env.MAXCORE_LOCAL !== "0") ok = maxcoreOk && ok;
+
+    if (!ok) {
+      console.error(
+        "[pdim-restore] FATAL: a required capsule restore failed — server will crash",
+      );
+      process.exit(1);
+    }
+
+    console.log("[pdim-restore] All capsules processed.");
+  }
+  console.log(`[deployment-timing] restore-${mode}: ${((performance.now() - restoreStarted) / 1000).toFixed(3)}s`);
+}

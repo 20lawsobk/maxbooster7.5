@@ -1,0 +1,2 @@
+Tue, 27 Oct 2026 04:48:54 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+JUNIT report written to /workspace/onboarding-results/final-unit-contract-rechecks.xml

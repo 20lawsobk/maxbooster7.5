@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus" time="1.173583" disabled="0" errors="0" tests="9" failures="0" skipped="0" hostname="af966a6fd55d">
+		<testcase name="390px actual accessibility name: Open navigation menu" time="0.006444" classname="test"/>
+		<testcase name="390px actual accessibility name: Settings" time="0.006202" classname="test"/>
+		<testcase name="390px actual accessibility name: Sign Out" time="0.006160" classname="test"/>
+		<testcase name="Settings is one link without nested button or link descendants" time="0.003689" classname="test"/>
+		<testcase name="Closed mobile drawer cannot receive sequential keyboard focus" time="0.028789" classname="test"/>
+		<testcase name="Menu control references existing drawer and exposes closed state" time="0.002267" classname="test"/>
+		<testcase name="Opening with Enter moves focus into named mobile drawer" time="0.006277" classname="test"/>
+		<testcase name="Escape closes drawer and restores opener focus and body scrolling" time="0.003041" classname="test"/>
+		<testcase name="Desktop resize exposes real navigation and releases mobile inert state" time="0.011993" classname="test"/>
+	</testsuite>
+	<!-- tests 10 -->
+	<!-- suites 0 -->
+	<!-- pass 10 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 1281.365176 -->
+</testsuites>

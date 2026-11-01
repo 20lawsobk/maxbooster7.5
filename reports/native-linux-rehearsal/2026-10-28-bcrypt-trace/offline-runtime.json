@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/usr/local/bin/docker",
+    "--host=unix:///var/run/docker.sock",
+    "start",
+    "--attach",
+    "maxbooster-linux-u3f69z18-bcrypt-runtime"
+  ],
+  "startedAt": "2026-10-28T09:05:10.492642+00:00",
+  "durationSeconds": 15.461,
+  "exitCode": 0,
+  "log": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/offline-runtime.txt",
+  "logSha256": "8cfaa2c5e80f199c2ba121ca310bd0bb164109659f5c173964959567180e4281"
+}

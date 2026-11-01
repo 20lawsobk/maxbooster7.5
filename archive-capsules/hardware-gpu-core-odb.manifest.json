@@ -1,0 +1,11 @@
+{
+  "compression": "gzip-9",
+  "sha256": "429cfb8311555a0af1484df3fffc64d8a584820b7e9375642e8111ac2c2ecfb4",
+  "paths": [
+    "hardware/digital_gpu_core/flow/gpu_core_cts.odb",
+    "hardware/digital_gpu_core/flow/gpu_core_globalroute.odb",
+    "hardware/digital_gpu_core/flow/gpu_core_placed.odb"
+  ],
+  "restoreAtBoot": false,
+  "note": "Archival only, not part of the deploy/runtime capsule system in script/build.ts. These are OpenROAD place/CTS/global-route checkpoint databases for the digital_gpu_core chip flow. Nothing in server/ or client/ reads them at runtime. Restore with scripts/restore-archive-capsule.sh before resuming the hardware flow (03_floorplan_place.tcl / 04_cts.tcl / 05_route.tcl expect them in place)."
+}

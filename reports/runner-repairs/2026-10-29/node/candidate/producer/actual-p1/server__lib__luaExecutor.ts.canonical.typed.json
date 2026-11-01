@@ -1,0 +1,1566 @@
+{
+  "version": "maxbooster-coverage-coordinate-v1",
+  "sentinels": [
+    {
+      "path": "statementMap.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.2.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.3.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.4.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.5.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.6.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.7.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.8.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.9.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.10.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.11.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.12.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.13.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.14.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.15.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.16.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.17.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.18.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.19.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.20.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.21.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.22.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.23.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.24.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.25.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.26.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.27.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.28.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.29.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.30.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.31.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.32.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.33.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.34.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.35.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.36.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.37.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.38.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.39.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.40.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.41.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.42.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.43.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.44.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.45.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.46.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.47.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.48.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.49.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.50.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.51.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.52.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.53.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.54.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.55.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.56.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.57.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.58.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.59.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.60.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.61.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.63.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.64.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.66.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.67.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.68.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.69.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.71.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.72.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.73.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.74.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.75.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.76.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.77.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.78.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.79.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.80.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.81.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.82.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.83.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.84.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.85.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.86.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.87.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.88.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.89.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.90.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.91.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.92.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.93.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.94.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.95.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.96.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.97.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.98.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.99.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.100.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.101.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.102.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.103.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.104.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.105.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.106.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.107.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.108.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.109.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.110.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.111.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.112.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.113.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.114.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.115.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.116.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.117.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.118.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.119.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.120.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.121.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.122.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.123.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.124.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.125.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.126.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.127.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.128.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.129.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.130.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.131.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.133.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.134.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.135.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.136.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.137.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.138.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.139.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.140.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.141.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.142.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.143.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.144.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.145.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.146.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.147.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.148.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.149.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.150.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.151.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.152.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.153.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.154.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.155.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.156.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.157.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.158.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.159.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.160.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.161.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.162.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.163.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.164.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.165.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.166.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.167.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.168.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.169.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.170.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.171.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.172.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.173.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.174.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.175.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.176.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.177.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.178.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.179.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.180.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.182.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.183.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.184.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.185.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.186.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.187.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.188.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.189.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.190.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.191.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.192.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "statementMap.193.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.0.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.1.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.2.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.3.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.6.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.7.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.8.decl.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.8.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.9.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.10.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.11.decl.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.11.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.17.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.27.decl.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "fnMap.27.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.0.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.0.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.0.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.0.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.0.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.0.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.1.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.1.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.1.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.1.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.1.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.1.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.2.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.2.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.2.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.2.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.2.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.2.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.3.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.3.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.3.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.3.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.3.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.3.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.4.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.4.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.4.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.5.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.5.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.5.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.5.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.5.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.5.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.6.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.6.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.7.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.7.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.7.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.7.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.7.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.7.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.9.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.9.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.9.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.9.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.9.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.9.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.11.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.11.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.12.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.12.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.12.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.12.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.12.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.12.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.13.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.13.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.13.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.13.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.13.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.13.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.14.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.14.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.14.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.14.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.14.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.14.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.15.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.15.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.15.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.15.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.15.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.15.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.16.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.16.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.16.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.16.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.16.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.16.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.17.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.17.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.17.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.17.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.17.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.17.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.18.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.18.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.18.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.19.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.19.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.19.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.19.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.19.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.19.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.21.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.21.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.21.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.21.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.21.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.21.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.22.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.22.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.22.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.22.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.22.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.22.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.24.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.24.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.24.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.24.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.24.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.24.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.25.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.25.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.25.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.25.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.25.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.25.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.26.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.26.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.26.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.26.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.26.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.26.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.27.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.27.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.27.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.28.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.28.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.28.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.29.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.29.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.29.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.29.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.29.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.29.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.30.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.30.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.30.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.30.locations.2.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.30.locations.3.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.33.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.33.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.33.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.34.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.34.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.34.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.34.locations.2.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.34.locations.3.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.34.locations.4.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.34.locations.5.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.34.locations.6.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.34.locations.7.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.35.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.35.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.35.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.36.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.36.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.36.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.36.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.36.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.36.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.38.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.38.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.39.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.39.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.39.locations.1.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.41.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.41.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.41.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.41.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.41.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.41.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.42.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.42.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.42.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.42.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.42.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.42.locations.1.end.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.43.loc.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.43.locations.0.end.column",
+      "type": "positive-infinity"
+    },
+    {
+      "path": "branchMap.43.locations.1.start.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.43.locations.1.start.column",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.43.locations.1.end.line",
+      "type": "undefined"
+    },
+    {
+      "path": "branchMap.43.locations.1.end.column",
+      "type": "undefined"
+    }
+  ],
+  "sourceSha256": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00",
+  "contractSha256": "19d319e1ec60d9b846dcb3f1b25e29e89ad9cbba1d66b7d1d3e113f9814ce499",
+  "rawTypedSha256": "c9def6649d4152223f6045461c828e6e1b74578ff209d2e52434b71bbfb9133a",
+  "wireSha256": "fa4c15b7ffa7de793c436b4a35f76c8d0c8b9a1118a9f78691a8fa83665dfc64",
+  "provenanceKind": "actual-public-Istanbul-pre-JSON-sidecar"
+}

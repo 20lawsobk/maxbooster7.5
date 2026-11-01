@@ -1,0 +1,14 @@
+{
+  "createdAt": "2026-10-29T08:54:03.340846+00:00",
+  "subject": "/workspace/onboarding-results/case-identity-repairs/python/subject/scripts/testing/junit_evidence.py",
+  "subjectSha256": "2f628127157479063886c0810b6d85dae3b3d1f6b826c43a92a8075c25ec7efb",
+  "scope": "Independent helper review; no current-source feature acceptance or full master claim",
+  "checks": {
+    "distinctClassesQualifiedAndSameClassDuplicatePreserved": true,
+    "allPassFailureSkipOccurrencesRetained": true,
+    "producerOwnedDefaultFileRetained": true,
+    "nestedAndRootSuiteMetadataRetained": true,
+    "nonPythonRawIdentityUnchanged": true
+  },
+  "passed": true
+}

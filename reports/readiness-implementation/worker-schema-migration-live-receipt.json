@@ -1,0 +1,86 @@
+{
+  "reportVersion": 1,
+  "startedAt": "2026-09-23T15:34:10.744Z",
+  "completedAt": "2026-09-23T15:34:12.679Z",
+  "status": "pass",
+  "databaseEffect": "committed",
+  "exactApprovedFiles": [
+    {
+      "filename": "0021_integrations_catalog_jobs.sql",
+      "sha256": "cf5b14c1d725049048da1b518154a87ca558a98348991629fecba889b82146c8"
+    },
+    {
+      "filename": "0090_data_runtime.sql",
+      "sha256": "6b0ec5f9aa0695efa31fc9c9ba39ac19922c4287f38ffc4d107e5484191dae04"
+    },
+    {
+      "filename": "0092_growth_fan_delivery.sql",
+      "sha256": "fa619283ac16ac150097388c3aac61ff9ac22c49f1d61b9ed50e4cf9f363e546"
+    }
+  ],
+  "backup": {
+    "reportCompletedAt": "2026-09-23T15:19:20.522Z",
+    "dumpSha256": "ed904938c6c661132fcbe45bf6af13133eb732c9b4c6c851d1a9f8acea31c4f6",
+    "dumpGeneration": "1790176753074258",
+    "manifestGeneration": "1790176753238982",
+    "sourceSchemaFingerprint": "3ff3148f2b151dfb74684463507bed43979505b66207b068373625333f7f63dd",
+    "sourceRevision": "7c3ffa434314c22fcfd7aee39502444bc3bff5df",
+    "currentSourceHash": "617750ea33753f39254bb0c3ac70e3f9ef1fe6f23172364512d9896842c34c06",
+    "restoreVerified": true
+  },
+  "preflight": {
+    "schemaFingerprint": "3ff3148f2b151dfb74684463507bed43979505b66207b068373625333f7f63dd",
+    "hashesVerified": true,
+    "collisionSet": [
+      "public:pg_sessions:r",
+      "public:pg_sessions_expire_idx:i"
+    ],
+    "pgSessionsExact": true,
+    "commerceTables": [
+      "commerce_allocations",
+      "commerce_draws",
+      "commerce_entries",
+      "commerce_journals",
+      "commerce_operations",
+      "commerce_schedules",
+      "commerce_sources",
+      "commerce_statements",
+      "commerce_webhook_inbox",
+      "commerce_webhook_receipts"
+    ]
+  },
+  "postconditions": {
+    "allAssertWorkerSchemaColumns": true,
+    "pgSessionsUnchanged": true,
+    "commerceTablesPresent": [
+      "commerce_allocations",
+      "commerce_draws",
+      "commerce_entries",
+      "commerce_journals",
+      "commerce_operations",
+      "commerce_schedules",
+      "commerce_sources",
+      "commerce_statements",
+      "commerce_webhook_inbox",
+      "commerce_webhook_receipts"
+    ],
+    "newRelations": [
+      "integration_catalog_jobs",
+      "integration_catalog_transfers",
+      "runtime_backup_catalog",
+      "runtime_backup_runs",
+      "growth_fan_permissions",
+      "growth_fan_commands",
+      "growth_fan_recipients",
+      "growth_fan_provider_events"
+    ]
+  },
+  "externalReceipt": {
+    "name": "private-worker-schema-migration-receipts/2026-09-23T15-34-12-223Z-765bf6116231571d4cdc92b5d65456f3d57e092d1ccf0ccc9f48eeec532a3543.json",
+    "generation": "1790177652544249",
+    "sha256": "765bf6116231571d4cdc92b5d65456f3d57e092d1ccf0ccc9f48eeec532a3543",
+    "size": "1833",
+    "bucketBinding": "705915ec895518cca0f9df40e89a791bbd4377f9bc1d32653002c198b14e04e9"
+  },
+  "failures": []
+}

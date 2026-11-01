@@ -1,0 +1,17 @@
+{
+  "command": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "start",
+    "--attach",
+    "maxbooster-linux-u3f69z18-verified-runtime"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T02:17:58.452088+00:00",
+  "durationSeconds": 11.302,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/native-linux-rehearsal/2026-10-27/verified-offline-runtime.txt",
+  "logSha256": "40821d28aa5af04168e1683109944f8d8a2b3af4068376aa201f9fef08f96a1e"
+}

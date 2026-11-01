@@ -1,0 +1,6 @@
+Error: Coverage admission: canonical source inventory is stale
+    at requireTrue (file:///workspace/onboarding-results/c5-admission-prototype/candidate/admit-node-coverage.mjs:10:55)
+    at same (file:///workspace/onboarding-results/c5-admission-prototype/candidate/admit-node-coverage.mjs:12:31)
+    at assertCanonicalEvidence (file:///workspace/onboarding-results/c5-admission-prototype/candidate/admit-node-coverage.mjs:19:2)
+    at dryRunAdmission (file:///workspace/onboarding-results/c5-admission-prototype/candidate/admit-node-coverage.mjs:86:23)
+    at async file:///workspace/onboarding-results/c5-admission-prototype/candidate/admit-node-coverage.mjs:111:33

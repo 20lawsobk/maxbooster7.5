@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.22153868">
+    <testsuite name="tests/unit/production-auth-rate-limit.test.ts" timestamp="2026-10-26T18:34:14.596Z" hostname="2fc971e77ddd" tests="5" failures="0" errors="0" skipped="0" time="0.22153868">
+        <testcase classname="tests/unit/production-auth-rate-limit.test.ts" name="Production authentication admission through internal proxies &gt; enforces login and registration limits for loopback and private client addresses" time="0.034270093">
+        </testcase>
+        <testcase classname="tests/unit/production-auth-rate-limit.test.ts" name="Production authentication admission through internal proxies &gt; atomically admits at most ten simultaneous requests for one login authority" time="0.004678958">
+        </testcase>
+        <testcase classname="tests/unit/production-auth-rate-limit.test.ts" name="Production authentication admission through internal proxies &gt; enforces the production limit when Replit sets deployment mode" time="0.002992574">
+        </testcase>
+        <testcase classname="tests/unit/production-auth-rate-limit.test.ts" name="Production authentication admission through internal proxies &gt; enforces the actual per-user billing threshold and isolates another user" time="0.007381174">
+        </testcase>
+        <testcase classname="tests/unit/production-auth-rate-limit.test.ts" name="Production authentication admission through internal proxies &gt; runs the same atomic limiter on the canonical embedded PDIM engine" time="0.085206968">
+        </testcase>
+    </testsuite>
+</testsuites>

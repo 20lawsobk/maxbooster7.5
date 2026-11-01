@@ -1,0 +1,1 @@
+PASS: platform parser preserves page bindings, distinct controls/events, router mounts and unresolved paths without executing source

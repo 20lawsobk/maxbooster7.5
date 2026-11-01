@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: AuthProvider preserves verified identity and avoids false sign-out during session throttling
+ok 1 - AuthProvider preserves verified identity and avoids false sign-out during session throttling
+  ---
+  duration_ms: 2920.958819
+  type: 'test'
+  ...
+# Subtest: Explicit media renderers show errors, retry and preview delivered artifacts in the browser
+ok 2 - Explicit media renderers show errors, retry and preview delivered artifacts in the browser
+  ---
+  duration_ms: 914.660951
+  type: 'test'
+  ...
+# Subtest: Storefront keeps hook order across pending, missing and loaded public/owner states
+ok 3 - Storefront keeps hook order across pending, missing and loaded public/owner states
+  ---
+  duration_ms: 892.975699
+  type: 'test'
+  ...
+# Subtest: Studio never saves an unread project and permits an empty project only after a successful load
+ok 4 - Studio never saves an unread project and permits an empty project only after a successful load
+  ---
+  duration_ms: 1052.566659
+  type: 'test'
+  ...
+# Subtest: Studio playback processes saved inserts, edits, bypass, ordering and removal in real Chromium
+ok 5 - Studio playback processes saved inserts, edits, bypass, ordering and removal in real Chromium
+  ---
+  duration_ms: 1444.789549
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7774.875472

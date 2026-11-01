@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.067631729">
+    <testsuite name="tests/unit/production-simulation-copy.test.ts" timestamp="2026-10-27T09:54:48.728Z" hostname="2fc971e77ddd" tests="3" failures="0" errors="0" skipped="0" time="0.067631729">
+        <testcase classname="tests/unit/production-simulation-copy.test.ts" name="production simulation filtered copy &gt; filters sensitive/generated paths before copying and retains runtime source" time="0.050508838">
+        </testcase>
+        <testcase classname="tests/unit/production-simulation-copy.test.ts" name="production simulation filtered copy &gt; ignores changing restore/test scratch in release identity while binding runtime changes" time="0.009077208">
+        </testcase>
+        <testcase classname="tests/unit/production-simulation-copy.test.ts" name="production deployment candidate preflight &gt; refuses a candidate-only selection whose run artifacts are excluded" time="0.006295413">
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "vulnerabilities": {
+      "critical": 4,
+      "high": 77,
+      "info": 0,
+      "low": 12,
+      "moderate": 67
+    }
+  },
+  "assignedFindingCount": 194,
+  "assignedAdvisoryCount": 155,
+  "remainingAssignedAdvisories": [],
+  "otherScannerFindings": 160
+}

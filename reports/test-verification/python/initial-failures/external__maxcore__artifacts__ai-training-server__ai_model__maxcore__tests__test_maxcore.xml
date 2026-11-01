@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="31" time="1.725" timestamp="2026-10-25T15:20:27.849293+00:00" hostname="2fc971e77ddd"><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_ir_build_validate_hash" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_ir_rejects_undefined_input" time="0.000" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_compiler_fuses_gemm_add_relu" time="0.008" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_compiler_cache_hit" time="0.000" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_gemm_matches_numpy" time="0.043" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_attention_matches_reference" time="0.988" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_conv2d_matches_naive" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_reduce_ops" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_softmax_is_numerically_stable" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_text_to_mlp_end_to_end" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_deterministic_run_repeatable" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_registry_and_future_backends_are_honest" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_gpu_backend_is_real_but_honest_without_hardware" time="0.003" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_gpu_backend_reduce_parity_with_digital_gpu" time="0.005" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pdim_dedup_cache_hit" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pdim_single_flight_collapses_concurrent" time="0.402" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pdim_durable_queue_roundtrip" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pdim_preview_policy_pluggable" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_batched_gemm_is_engine_served" time="0.002"><failure message="ValueError: pocket matmul expects A[..., M, K] and B[K, N]; got (3, 5, 7) x (3, 7, 4)">def test_batched_gemm_is_engine_served():
+        dg = DigitalGPU()
+        rng = np.random.default_rng(11)
+        A = rng.standard_normal((3, 5, 7)).astype(np.float32)    # [B, M, K]
+        W = rng.standard_normal((7, 4)).astype(np.float32)       # [K, N]    (shared)
+        Bb = rng.standard_normal((3, 7, 4)).astype(np.float32)   # [B, K, N] (batched)
+        n0, f0 = _counter("dgpu.gemm.numpy"), _counter("dgpu.gemm.engine_fallback")
+        o1 = dg.gemm(A, W).numpy()
+&gt;       o2 = dg.gemm(A, Bb).numpy()
+             ^^^^^^^^^^^^^^
+
+ai_model/maxcore/tests/test_maxcore.py:409: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/maxcore/api.py:90: in gemm
+    result = self._pool().matmul(a, b)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+ai_model/maxcore/pdim/replica_scaler.py:117: in matmul
+    envelope = replica.matmul(A, B)
+               ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;ai_model.maxcore.pdim.pocket_multiply.PocketDimension object at 0x7ff455cf8c50&gt;
+A = array([[[ 0.03419277,  1.3597475 ,  1.2247211 , -0.5103071 ,
+         -0.29796952, -0.5273842 ,  0.56972635],
+        ... [-0.0166192 , -0.20374072, -0.7344711 ,  0.38725975,
+          0.30787963, -0.09298413, -0.22168794]]], dtype=float32)
+B = array([[[-0.5901494 ,  0.5799149 ,  0.5423443 ,  1.3222789 ],
+        [ 0.8118591 ,  1.0169914 , -0.11167133, -0.69828...18057 , -0.94138414,  0.79176325],
+        [-0.50530154, -1.0906534 ,  0.36524895,  1.6929555 ]]],
+      dtype=float32)
+
+    def matmul(self, A: np.ndarray, B: np.ndarray) -&gt; dict:
+        """Multiply A @ B inside this pocket.
+    
+        Identical (A, B) pairs in the same pocket are computed once on the
+        DigitalGPU backend; repeats and concurrent duplicates share that one
+        result. Returns ``{"result": ndarray, "source": ..., "pocket": ...,
+        "compression": {...}}`` where source is compute | cache | coalesced.
+        """
+        A = np.asarray(A, dtype=np.float32)
+        B = np.asarray(B, dtype=np.float32)
+        if A.ndim &lt; 2 or B.ndim != 2:
+&gt;           raise ValueError(
+                f"pocket matmul expects A[..., M, K] and B[K, N]; got {A.shape} x {B.shape}")
+E           ValueError: pocket matmul expects A[..., M, K] and B[K, N]; got (3, 5, 7) x (3, 7, 4)
+
+ai_model/maxcore/pdim/pocket_multiply.py:165: ValueError</failure></testcase><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_softmax_any_axis_is_engine_served" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_masked_multihead_attention_is_engine_served" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pocket_matmul_correct_and_deduped_inside_one_pocket" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pocket_nesting_pockets_inside_one_pocket_are_isolated" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pocket_matmul_batched_and_shape_errors" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pocket_accelerator_hit_serves_repeat_at_hash_cost" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pocket_accelerator_miss_result_mutation_cannot_poison_cache" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pocket_accelerator_adaptive_gating" time="0.007" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pocket_accelerator_exposes_measured_admission_costs" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pocket_bucket_admission_uses_measured_breakeven_not_just_hit_rate" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_pocket_bucket_copy_cost_never_zerodivides_breakeven" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_maxcore" name="test_digital_gpu_gemm_served_from_pocket_on_repeat" time="0.006"><failure message="AssertionError: assert 4 &gt;= (4 + 1)&#10; +  where 4 = _counter('pocket_accel.hit')">def test_digital_gpu_gemm_served_from_pocket_on_repeat():
+        dg = DigitalGPU()
+        rng = np.random.default_rng(33)
+        A = rng.standard_normal((128, 96)).astype(np.float32)
+        B = rng.standard_normal((96, 128)).astype(np.float32)
+        h0 = _counter("pocket_accel.hit")
+        o1 = dg.gemm(A, B).numpy()
+        o2 = dg.gemm(A, B).numpy()                   # identical repeat
+        assert np.allclose(o1, A @ B, atol=TOL)
+        assert np.allclose(o2, o1, atol=0.0)         # bit-identical: pocket-served
+&gt;       assert _counter("pocket_accel.hit") &gt;= h0 + 1
+E       AssertionError: assert 4 &gt;= (4 + 1)
+E        +  where 4 = _counter('pocket_accel.hit')
+
+ai_model/maxcore/tests/test_maxcore.py:721: AssertionError</failure></testcase></testsuite></testsuites>

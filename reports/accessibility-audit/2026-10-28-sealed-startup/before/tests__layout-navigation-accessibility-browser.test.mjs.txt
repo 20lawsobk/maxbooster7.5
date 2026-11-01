@@ -1,0 +1,71 @@
+TAP version 13
+# Subtest: Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus
+    # Subtest: 390px actual accessibility name: Open navigation menu
+    ok 1 - 390px actual accessibility name: Open navigation menu
+      ---
+      duration_ms: 7.462094
+      type: 'test'
+      ...
+    # Subtest: 390px actual accessibility name: Settings
+    ok 2 - 390px actual accessibility name: Settings
+      ---
+      duration_ms: 5.510953
+      type: 'test'
+      ...
+    # Subtest: 390px actual accessibility name: Sign Out
+    ok 3 - 390px actual accessibility name: Sign Out
+      ---
+      duration_ms: 24.009512
+      type: 'test'
+      ...
+    # Subtest: Settings is one link without nested button or link descendants
+    ok 4 - Settings is one link without nested button or link descendants
+      ---
+      duration_ms: 3.479843
+      type: 'test'
+      ...
+    # Subtest: Closed mobile drawer cannot receive sequential keyboard focus
+    ok 5 - Closed mobile drawer cannot receive sequential keyboard focus
+      ---
+      duration_ms: 44.784271
+      type: 'test'
+      ...
+    # Subtest: Menu control references existing drawer and exposes closed state
+    ok 6 - Menu control references existing drawer and exposes closed state
+      ---
+      duration_ms: 3.890167
+      type: 'test'
+      ...
+    # Subtest: Opening with Enter moves focus into named mobile drawer
+    ok 7 - Opening with Enter moves focus into named mobile drawer
+      ---
+      duration_ms: 8.419919
+      type: 'test'
+      ...
+    # Subtest: Escape closes drawer and restores opener focus and body scrolling
+    ok 8 - Escape closes drawer and restores opener focus and body scrolling
+      ---
+      duration_ms: 3.808204
+      type: 'test'
+      ...
+    # Subtest: Desktop resize exposes real navigation and releases mobile inert state
+    ok 9 - Desktop resize exposes real navigation and releases mobile inert state
+      ---
+      duration_ms: 11.267264
+      type: 'test'
+      ...
+    1..9
+ok 1 - Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus
+  ---
+  duration_ms: 1386.228837
+  type: 'test'
+  ...
+1..1
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1571.766492

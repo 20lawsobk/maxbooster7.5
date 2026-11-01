@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 1,
+  "scope": "Budgeted map-only tsconfig-aware Vite transform + SSR + installed Vitest provider; no actual subject execution",
+  "comparisonContract": "Raw strict equality uses isDeepStrictEqual; persisted JSON-map equality is diagnostic only, never policy normalization.",
+  "baseline": "Historical exact selected a160 entries",
+  "controls": [
+    {
+      "file": "server/config/ports.ts",
+      "sourceSha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d",
+      "options": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "codeSha256": "fa1289d1fc15a06b43f1022aa769b2408806833f5692c2f2a4b24f2943f2e90a",
+      "mapSha256": "a2277658dd3f6f8e18f16820b8a7f80c5b547769f1b9b1acf20ab382be70c250",
+      "durationMs": 47.838779999999986,
+      "comparison": {
+        "statementMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 21,
+          "controlEntries": 21
+        },
+        "fnMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 3,
+          "controlEntries": 3
+        },
+        "branchMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 6,
+          "controlEntries": 6
+        }
+      },
+      "allCountersZero": true,
+      "executed": false
+    },
+    {
+      "file": "server/logger.ts",
+      "sourceSha256": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5",
+      "options": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "codeSha256": "0f1f23dfec95b865204ac09d12da63c67c88b8f3e69dc6f34cb87a0b4a76618f",
+      "mapSha256": "aab9aba4626a0805858d9d3621f105f9f0d74dcebe4d0f094b61f88574e95748",
+      "durationMs": 11.967687000000012,
+      "comparison": {
+        "statementMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 21,
+          "controlEntries": 21
+        },
+        "fnMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 7,
+          "controlEntries": 7
+        },
+        "branchMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 7,
+          "controlEntries": 7
+        }
+      },
+      "allCountersZero": true,
+      "executed": false
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "sourceSha256": "f012622e80390701551ab38f7eda478daf9f7ee4a692e63a71ebaa856a145fb5",
+      "options": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "codeSha256": "3c71f83dfbfccd32e382392b9a243968c739904b80455a2da2946afb956a35e1",
+      "mapSha256": "40e42739da8f4480fe1e9e5e089856d84afbccbf5441d04044f50a6d9ae0a794",
+      "durationMs": 11.958663000000001,
+      "comparison": {
+        "statementMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 44,
+          "controlEntries": 44
+        },
+        "fnMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 5,
+          "controlEntries": 5
+        },
+        "branchMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 22,
+          "controlEntries": 22
+        }
+      },
+      "allCountersZero": true,
+      "executed": false
+    },
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "sourceSha256": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76",
+      "options": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "codeSha256": "1d5edf787246d982d39c2dd278a340121f04bb08365ee3d503c3bab5d70c223d",
+      "mapSha256": "ac4b2a740115a4fb19c0e4ec02e87dd9f2fa73c2dedf16037927260c37d5d776",
+      "durationMs": 13.206695999999965,
+      "comparison": {
+        "statementMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 64,
+          "controlEntries": 64
+        },
+        "fnMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 11,
+          "controlEntries": 11
+        },
+        "branchMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 15,
+          "controlEntries": 15
+        }
+      },
+      "allCountersZero": true,
+      "executed": false
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "sourceSha256": "c545aafe8452eea8124923cee34c2e1ffde8c578299b9268793096c736eb6e3f",
+      "options": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "codeSha256": "682667ae5f55742aa5b3a785ede4cc7e4e722e90249a646b0afba4d98f88fd81",
+      "mapSha256": "58410b3bdf781a75a3d259dcef7dbdf1e48314a7cdb74fe1dca1e09189347eef",
+      "durationMs": 24.772365999999977,
+      "comparison": {
+        "statementMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 67,
+          "controlEntries": 67
+        },
+        "fnMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 15,
+          "controlEntries": 15
+        },
+        "branchMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 12,
+          "controlEntries": 12
+        }
+      },
+      "allCountersZero": true,
+      "executed": false
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "sourceSha256": "beb5d21a1bf9d41affb5edcff3a1cfdc5dd8102c5eef27fbb41d7aaa0e0b65f4",
+      "options": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "codeSha256": "ed690fc910409bc6861b3d913aba380167b9a31bd8e3f77f83ead1aea16c2dcc",
+      "mapSha256": "f17f6f251e0480a7c75f65a0a35519b578a8503c6c05d2635a73f9a5e303ecc5",
+      "durationMs": 13.522813000000042,
+      "comparison": {
+        "statementMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 106,
+          "controlEntries": 106
+        },
+        "fnMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 11,
+          "controlEntries": 11
+        },
+        "branchMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 35,
+          "controlEntries": 35
+        }
+      },
+      "allCountersZero": true,
+      "executed": false
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "sourceSha256": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00",
+      "options": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "codeSha256": "9c4c99d337fe7b144082ce80d008a6cc433b61ef11046abab611239789bb6a43",
+      "mapSha256": "7c3cfc7db475c07502917c63eab1d0bc5305497ea523c990c66abc97ddfebee4",
+      "durationMs": 28.084713999999963,
+      "comparison": {
+        "statementMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 194,
+          "controlEntries": 194
+        },
+        "fnMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 29,
+          "controlEntries": 29
+        },
+        "branchMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 45,
+          "controlEntries": 45
+        }
+      },
+      "allCountersZero": true,
+      "executed": false
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "sourceSha256": "eef5afab18d6b5697efd49b0eb6c840f27d0b10759b65b8a11542a558d8fb1a9",
+      "options": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "codeSha256": "91f97aae46a1eb65269dbab6fb0087eb21333fe3f7b4dd00e388549c31a8300f",
+      "mapSha256": "a55d636a4daa6e52c98fa42a2d9256fc833d622a1f1fec4af96cc745adb0c0a5",
+      "durationMs": 85.54437999999993,
+      "comparison": {
+        "statementMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 954,
+          "controlEntries": 954
+        },
+        "fnMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 278,
+          "controlEntries": 278
+        },
+        "branchMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 193,
+          "controlEntries": 193
+        }
+      },
+      "allCountersZero": true,
+      "executed": false
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "sourceSha256": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770",
+      "options": {
+        "target": "esnext",
+        "minify": false,
+        "minifyIdentifiers": false,
+        "minifySyntax": false,
+        "minifyWhitespace": false,
+        "treeShaking": false,
+        "keepNames": false,
+        "supported": {
+          "dynamic-import": true,
+          "import-meta": true
+        }
+      },
+      "codeSha256": "01b6e8092ad66d429709a5133265fc59ee6f71c99591214525b9f2918bfa60fb",
+      "mapSha256": "58932f3fdc2b0fcdc6616c5e6845caada84bf6d2644180300b644a1353d293ad",
+      "durationMs": 210.141393,
+      "comparison": {
+        "statementMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 3004,
+          "controlEntries": 3004
+        },
+        "fnMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 339,
+          "controlEntries": 339
+        },
+        "branchMap": {
+          "rawEqual": false,
+          "serializedArtifactEqual": true,
+          "baselineEntries": 1033,
+          "controlEntries": 1033
+        }
+      },
+      "allCountersZero": true,
+      "executed": false
+    }
+  ],
+  "notRun": [],
+  "durationMs": 449.70823300000006,
+  "privateApiWarning": "Private Vite ht and provider method used only for this version-pinned diagnostic, not shipped integration.",
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "completedAt": "2026-10-27T22:23:40.048Z",
+  "sourceRevision": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "scope": "Controlled writer-drained current-format PostgreSQL + disk-backed canonical PDIM recovery in fresh processes; no offsite, private Neon, Replit, migration or global capacity claim",
+  "source": {
+    "writersDrained": true,
+    "pinnedSnapshot": true,
+    "snapshotBytes": 3429,
+    "snapshotSha256": "70103e352e93cf930a62198a64d02a998f1ecfb402253f51dc6361e2cdac4f25",
+    "activeFiles": 3,
+    "pendingUploads": 1,
+    "pendingDeletes": 1,
+    "mediaJobs": 2,
+    "migrationIntents": 1,
+    "permanentReplicaTombstones": 1,
+    "checkpoint": "synchronous-event-loop-linearized"
+  },
+  "pairedBundle": {
+    "sqlBytes": 17730,
+    "sqlSha256": "35395504b4c1e02cb6a984b4173d809cff21391311823e6d2e2e15d18f956873",
+    "pdimBytes": 3429,
+    "pdimSha256": "70103e352e93cf930a62198a64d02a998f1ecfb402253f51dc6361e2cdac4f25"
+  },
+  "admissionRejections": 4,
+  "protectedTargetsUnchanged": true,
+  "originalSourceDestroyed": true,
+  "privateArtifactModes": "0600",
+  "privatePayloadsRetainedInReports": false,
+  "actualTools": {
+    "pgDump": true,
+    "psql": true
+  },
+  "sourceHashes": {
+    "tests/current-storage-joint-recovery.test.mjs": "a0ca05260214819d8fab2802b256902e843e7a8e687b8045ae2c85fed935807d",
+    "tests/contracts/helpers-current-storage-joint-worker.ts": "5f7845044acc1db1b4d98e53e3484e0f86a171c46f0669b552e69881059d146b",
+    "server/lib/localPdimServer.ts": "9fa5bbb63afe569ea0dca115b0e1960c7732595f812f76dc4ccea89a82784c42",
+    "server/services/hybridStorageService.ts": "5da055881ccc603d59c48ee885d90fca3b86d1687898a5a77d4710c2d04b80f3",
+    "server/services/hybridStorageRepository.ts": "918447d774bd0ff161abfcc47463268c39a9f7a7590126fc77b031bdf425f931",
+    "server/services/hybridImmutableByteStore.ts": "c5b2027e3375b98d7369719add567d1a719776afa53731b3bd030ae743a2fbd8",
+    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts": "da97fef3794c8282f11208e16689f717ebf12adf39f01eebe56b8a8069572323",
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76"
+  },
+  "status": "failed",
+  "failureFamily": "Fixture validation needed fully qualified public schema after pg_dump resets search_path; corrected before passing rerun"
+}

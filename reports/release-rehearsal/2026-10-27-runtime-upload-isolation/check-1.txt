@@ -1,0 +1,13 @@
+
+/workspace/maxbooster7.5/script/lib/capsulePack.ts
+  235:5   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  255:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  288:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  310:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  313:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  414:29  warning  Unnecessary escape character: \/                                                   no-useless-escape
+  418:5   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  495:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+✖ 8 problems (0 errors, 8 warnings)
+

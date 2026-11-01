@@ -1,0 +1,475 @@
+{
+  "counter_deltas": {
+    "/api/gpu/digest-cache/stats": {
+      "counters": {
+        "digest_cache": {
+          "cached_arrays": 2
+        }
+      },
+      "http_status": 0
+    },
+    "/api/gpu/gen-cache/stats": {
+      "counters": {
+        "gen_cache": {
+          "capacity": 0,
+          "hit_rate": 0.0,
+          "hits": 0,
+          "size": 0,
+          "total": 0,
+          "ttl_s": 0.0
+        }
+      },
+      "http_status": 0
+    },
+    "/api/gpu/prefix-kv/stats": {
+      "counters": {
+        "prefix_kv": {
+          "cache_size": 10,
+          "evictions": 0,
+          "hit_rate": 0.0,
+          "hits": 0,
+          "max_entries": 0,
+          "misses": 9,
+          "ttl_seconds": 0.0
+        }
+      },
+      "http_status": 0
+    },
+    "/api/gpu/replica-pool/stats": {
+      "counters": {
+        "replica_pool": {
+          "hit_rate": 0.0,
+          "replica_count": 0,
+          "replicas_spawned": 0,
+          "round_robin_position": 0,
+          "seed_log_depth": 0,
+          "total_calls": 0,
+          "total_hits": 0
+        }
+      },
+      "http_status": 0
+    },
+    "/api/maxcore/pocket-accelerator/stats": {
+      "counters": {
+        "stats": {
+          "admission_overhead_seconds_total": 14.967808,
+          "budget_bytes": 0,
+          "bypass_adaptive_muted": 7454,
+          "bypass_small": 132560,
+          "bytes_held": 10970784,
+          "compute_seconds_saved": 0.0,
+          "copy_seconds_total": 0.0,
+          "entries": 630,
+          "evictions": 0,
+          "hash_seconds_total": 12.010145999999999,
+          "hit_rate": 0.0,
+          "hit_serving_seconds": 0.0,
+          "hits": 0,
+          "lookup_seconds_total": 0.008839999999999999,
+          "misses": 663,
+          "pockets": 22,
+          "pockets_muted": 20,
+          "shards": 0,
+          "store_seconds_total": 2.9488209999999997
+        }
+      },
+      "http_status": 0
+    },
+    "/gpu/hyper/status": {
+      "counters": {
+        "default_backend": {
+          "lanes": 0,
+          "memory_pool": {
+            "active_allocations": 0,
+            "current_mb": 0.0,
+            "peak_mb": 0.0,
+            "pool_size_mb": 0.0,
+            "reuse_count": 0,
+            "total_allocs": 0
+          },
+          "tensor_cores": 0,
+          "total_compute_ms": 0.0,
+          "total_ops": 0,
+          "total_tensor_core_tflops": 0.0,
+          "uptime_s": 227.0,
+          "vram": {
+            "handles": 0,
+            "peak_mb": 0.0,
+            "used_mb": 0.0
+          }
+        },
+        "lanes": 0,
+        "pool": {
+          "pool_active_compute_ms": -115.01526832580566,
+          "pool_active_kernel_ops": -194,
+          "pool_alive": -1,
+          "pool_avg_life_ms": 4062.2,
+          "pool_retired_compute_ms": 14837.103843688965,
+          "pool_retired_kernel_ops": 167508,
+          "pool_storage_errors": 0,
+          "pool_total_born": 72,
+          "pool_total_compute_ms": 14722.08857536316,
+          "pool_total_dead": 73,
+          "pool_total_kernel_ops": 167314
+        },
+        "tensor_cores": 0,
+        "total_compute_ms": 14722.08857536316,
+        "total_ops": 167314,
+        "uptime_s": 227.0
+      },
+      "http_status": 0
+    },
+    "/gpu/status": {
+      "counters": {
+        "lanes": 0,
+        "pool_active_compute_ms": -115.01526832580566,
+        "pool_active_kernel_ops": -194,
+        "pool_alive": -1,
+        "pool_avg_life_ms": 4062.2,
+        "pool_retired_compute_ms": 14837.103843688965,
+        "pool_retired_kernel_ops": 167508,
+        "pool_storage_errors": 0,
+        "pool_total_born": 72,
+        "pool_total_compute_ms": 14722.08857536316,
+        "pool_total_dead": 73,
+        "pool_total_kernel_ops": 167314,
+        "vram_bytes": 0,
+        "vram_handles": 0,
+        "vram_mb": 0.0
+      },
+      "http_status": 0
+    }
+  },
+  "exit_code": 1,
+  "hashes_after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+    "tests/test_awareness_and_quality.py": "27a40d4752068758f73152b0a5885da4fe30fc7ae41a603cd9ba1d2d1c27cf6c",
+    "tests/test_w6_90m.py": "f52db0346d5f20ef8a4ef5b20039100e521b16f453cb709c4248f01f7a7664fb"
+  },
+  "hashes_before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+    "tests/test_awareness_and_quality.py": "27a40d4752068758f73152b0a5885da4fe30fc7ae41a603cd9ba1d2d1c27cf6c",
+    "tests/test_w6_90m.py": "f52db0346d5f20ef8a4ef5b20039100e521b16f453cb709c4248f01f7a7664fb"
+  },
+  "hashes_unchanged": true,
+  "mode": "original quality only (no throughput/training)",
+  "model_port": 9878,
+  "proxy_port": 8090,
+  "snapshots": {
+    "after": {
+      "/api/gpu/digest-cache/stats": {
+        "counters": {
+          "digest_cache": {
+            "cached_arrays": 2
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/gen-cache/stats": {
+        "counters": {
+          "gen_cache": {
+            "capacity": 512,
+            "hit_rate": 0.0,
+            "hits": 0,
+            "size": 0,
+            "total": 0,
+            "ttl_s": 120.0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/prefix-kv/stats": {
+        "counters": {
+          "prefix_kv": {
+            "cache_size": 10,
+            "evictions": 0,
+            "hit_rate": 0.0,
+            "hits": 0,
+            "max_entries": 32,
+            "misses": 10,
+            "ttl_seconds": 600.0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/replica-pool/stats": {
+        "counters": {
+          "replica_pool": {
+            "hit_rate": 0.0,
+            "replica_count": 4,
+            "replicas_spawned": 4,
+            "round_robin_position": 0,
+            "seed_log_depth": 0,
+            "total_calls": 0,
+            "total_hits": 0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/maxcore/pocket-accelerator/stats": {
+        "counters": {
+          "stats": {
+            "admission_overhead_seconds_total": 15.128912,
+            "budget_bytes": 250560921,
+            "bypass_adaptive_muted": 7454,
+            "bypass_small": 132713,
+            "bytes_held": 12293120,
+            "compute_seconds_saved": 0.0,
+            "copy_seconds_total": 0.0,
+            "enabled": true,
+            "entries": 671,
+            "evictions": 0,
+            "hash_seconds_total": 12.169998,
+            "hit_rate": 0.0,
+            "hit_serving_seconds": 0.0,
+            "hits": 0,
+            "lookup_seconds_total": 0.009215,
+            "misses": 704,
+            "pockets": 29,
+            "pockets_muted": 25,
+            "shards": 256,
+            "store_seconds_total": 2.949699
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/gpu/hyper/status": {
+        "counters": {
+          "available": true,
+          "default_backend": {
+            "lanes": 128,
+            "memory_pool": {
+              "active_allocations": 0,
+              "current_mb": 0.0,
+              "peak_mb": 0.0,
+              "pool_size_mb": 512.0,
+              "reuse_count": 0,
+              "total_allocs": 0
+            },
+            "tensor_cores": 2,
+            "total_compute_ms": 90.77,
+            "total_ops": 32,
+            "total_tensor_core_tflops": 0.000411,
+            "uptime_s": 232.3,
+            "vram": {
+              "handles": 0,
+              "peak_mb": 0.0,
+              "used_mb": 0.0
+            }
+          },
+          "lanes": 128,
+          "pool": {
+            "pool_active_compute_ms": 0,
+            "pool_active_kernel_ops": 0,
+            "pool_alive": 0,
+            "pool_avg_life_ms": 4062.2,
+            "pool_retired_compute_ms": 14837.103843688965,
+            "pool_retired_kernel_ops": 167508,
+            "pool_storage_errors": 0,
+            "pool_total_born": 73,
+            "pool_total_compute_ms": 14837.103843688965,
+            "pool_total_dead": 73,
+            "pool_total_kernel_ops": 167508
+          },
+          "tensor_cores": 2,
+          "total_compute_ms": 14837.103843688965,
+          "total_ops": 167508,
+          "uptime_s": 232.3
+        },
+        "http_status": 200
+      },
+      "/gpu/status": {
+        "counters": {
+          "available": true,
+          "lanes": 32,
+          "pool_active_compute_ms": 0,
+          "pool_active_kernel_ops": 0,
+          "pool_alive": 0,
+          "pool_avg_life_ms": 4062.2,
+          "pool_retired_compute_ms": 14837.103843688965,
+          "pool_retired_kernel_ops": 167508,
+          "pool_storage_errors": 0,
+          "pool_total_born": 73,
+          "pool_total_compute_ms": 14837.103843688965,
+          "pool_total_dead": 73,
+          "pool_total_kernel_ops": 167508,
+          "vram_bytes": 0,
+          "vram_handles": 0,
+          "vram_mb": 0.0
+        },
+        "http_status": 200
+      }
+    },
+    "before": {
+      "/api/gpu/digest-cache/stats": {
+        "counters": {
+          "digest_cache": {
+            "cached_arrays": 0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/gen-cache/stats": {
+        "counters": {
+          "gen_cache": {
+            "capacity": 512,
+            "hit_rate": 0.0,
+            "hits": 0,
+            "size": 0,
+            "total": 0,
+            "ttl_s": 120.0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/prefix-kv/stats": {
+        "counters": {
+          "prefix_kv": {
+            "cache_size": 0,
+            "evictions": 0,
+            "hit_rate": 0.0,
+            "hits": 0,
+            "max_entries": 32,
+            "misses": 1,
+            "ttl_seconds": 600.0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/gpu/replica-pool/stats": {
+        "counters": {
+          "replica_pool": {
+            "hit_rate": 0.0,
+            "replica_count": 4,
+            "replicas_spawned": 4,
+            "round_robin_position": 0,
+            "seed_log_depth": 0,
+            "total_calls": 0,
+            "total_hits": 0
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/api/maxcore/pocket-accelerator/stats": {
+        "counters": {
+          "stats": {
+            "admission_overhead_seconds_total": 0.161104,
+            "budget_bytes": 250560921,
+            "bypass_adaptive_muted": 0,
+            "bypass_small": 153,
+            "bytes_held": 1322336,
+            "compute_seconds_saved": 0.0,
+            "copy_seconds_total": 0.0,
+            "enabled": true,
+            "entries": 41,
+            "evictions": 0,
+            "hash_seconds_total": 0.159852,
+            "hit_rate": 0.0,
+            "hit_serving_seconds": 0.0,
+            "hits": 0,
+            "lookup_seconds_total": 0.000375,
+            "misses": 41,
+            "pockets": 7,
+            "pockets_muted": 5,
+            "shards": 256,
+            "store_seconds_total": 0.000878
+          },
+          "success": true
+        },
+        "http_status": 200
+      },
+      "/gpu/hyper/status": {
+        "counters": {
+          "available": true,
+          "default_backend": {
+            "lanes": 128,
+            "memory_pool": {
+              "active_allocations": 0,
+              "current_mb": 0.0,
+              "peak_mb": 0.0,
+              "pool_size_mb": 512.0,
+              "reuse_count": 0,
+              "total_allocs": 0
+            },
+            "tensor_cores": 2,
+            "total_compute_ms": 90.77,
+            "total_ops": 32,
+            "total_tensor_core_tflops": 0.000411,
+            "uptime_s": 5.3,
+            "vram": {
+              "handles": 0,
+              "peak_mb": 0.0,
+              "used_mb": 0.0
+            }
+          },
+          "lanes": 128,
+          "pool": {
+            "pool_active_compute_ms": 115.01526832580566,
+            "pool_active_kernel_ops": 194,
+            "pool_alive": 1,
+            "pool_avg_life_ms": 0.0,
+            "pool_retired_compute_ms": 0.0,
+            "pool_retired_kernel_ops": 0,
+            "pool_storage_errors": 0,
+            "pool_total_born": 1,
+            "pool_total_compute_ms": 115.01526832580566,
+            "pool_total_dead": 0,
+            "pool_total_kernel_ops": 194
+          },
+          "tensor_cores": 2,
+          "total_compute_ms": 115.01526832580566,
+          "total_ops": 194,
+          "uptime_s": 5.3
+        },
+        "http_status": 200
+      },
+      "/gpu/status": {
+        "counters": {
+          "available": true,
+          "lanes": 32,
+          "pool_active_compute_ms": 115.01526832580566,
+          "pool_active_kernel_ops": 194,
+          "pool_alive": 1,
+          "pool_avg_life_ms": 0.0,
+          "pool_retired_compute_ms": 0.0,
+          "pool_retired_kernel_ops": 0,
+          "pool_storage_errors": 0,
+          "pool_total_born": 1,
+          "pool_total_compute_ms": 115.01526832580566,
+          "pool_total_dead": 0,
+          "pool_total_kernel_ops": 194,
+          "vram_bytes": 0,
+          "vram_handles": 0,
+          "vram_mb": 0.0
+        },
+        "http_status": 200
+      }
+    }
+  },
+  "suites": {
+    "awareness_original": {
+      "elapsed_seconds": 187.823,
+      "exit_code": 1,
+      "log": "awareness_original.log",
+      "timed_out": false
+    },
+    "w6_original": {
+      "elapsed_seconds": 39.149,
+      "exit_code": 1,
+      "log": "w6_original.log",
+      "timed_out": false
+    }
+  },
+  "timestamp_utc": "20260925T003155.022474Z"
+}

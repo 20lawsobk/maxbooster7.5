@@ -1,0 +1,216 @@
+server/custom-ai-engine.ts(488,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(489,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(490,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(491,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(492,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(493,7): error TS2322: Type 'string[]' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'string[]'.
+server/custom-ai-engine.ts(494,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(495,7): error TS2322: Type 'never[]' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'never[]'.
+server/custom-ai-engine.ts(499,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(500,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(501,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(502,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(503,7): error TS2322: Type 'boolean' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(504,7): error TS2322: Type 'never[]' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'never[]'.
+server/custom-ai-engine.ts(508,7): error TS2322: Type 'number[]' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'number[]'.
+server/custom-ai-engine.ts(509,7): error TS2322: Type 'number' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(511,7): error TS2322: Type 'string[]' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'string[]'.
+server/custom-ai-engine.ts(513,7): error TS2322: Type 'boolean' is not assignable to type 'Record<string, unknown>'.
+server/custom-ai-engine.ts(903,41): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'string[]'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'string[]': length, pop, push, concat, and 35 more.
+server/custom-ai-engine.ts(906,9): error TS2365: Operator '+' cannot be applied to types 'Record<string, unknown>' and 'number'.
+server/custom-ai-engine.ts(907,38): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/custom-ai-engine.ts(970,9): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ video: number; image: number; text: number; }'.
+  Type 'Record<string, unknown>' is missing the following properties from type '{ video: number; image: number; text: number; }': video, image, text
+server/image-generation.ts(87,7): error TS2741: Property 'content' is missing in type 'Record<string, unknown>' but required in type '{ image?: string | undefined; video?: string | undefined; audio?: string | undefined; content: Record<string, unknown>; }'.
+server/image-generation.ts(91,9): error TS2322: Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/image-generation.ts(136,9): error TS2322: Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/image-generation.ts(137,9): error TS2322: Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/image-generation.ts(628,9): error TS2322: Type '{}' is not assignable to type 'ContentTone'.
+server/image-generation.ts(630,9): error TS2322: Type '{}' is not assignable to type 'string'.
+server/image-generation.ts(631,9): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/image-generation.ts(632,9): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/image-generation.ts(681,9): error TS2322: Type '{}' is not assignable to type 'ContentTone'.
+server/image-generation.ts(683,9): error TS2322: Type '{}' is not assignable to type 'string'.
+server/image-generation.ts(684,9): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/image-generation.ts(685,9): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/image-generation.ts(686,9): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/image-generation.ts(687,9): error TS2322: Type '{}' is not assignable to type '"engagement" | "release" | "behind-the-scenes" | "promotional" | "announcement" | undefined'.
+server/lib/pdimClient.ts(857,5): error TS2322: Type 'unknown' is not assignable to type 'T'.
+  'T' could be instantiated with an arbitrary type which could be unrelated to 'unknown'.
+server/lib/pdimClient.ts(1373,62): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1457,59): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1480,44): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1495,43): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1495,52): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1524,45): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1527,45): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1556,44): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1559,44): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1582,44): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1585,44): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1602,61): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1610,64): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1618,65): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1626,68): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1713,51): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1721,55): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1734,57): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1743,60): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1747,46): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1764,53): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1774,75): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1792,7): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1801,54): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1809,45): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1818,59): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/lib/pdimClient.ts(1865,48): error TS2322: Type 'unknown' is not assignable to type 'string | number | null'.
+server/services/distributionDataTransferService.ts(419,20): error TS2554: Expected 2-3 arguments, but got 1.
+server/services/distributionDataTransferService.ts(951,12): error TS2339: Property 'toLowerCase' does not exist on type '{}'.
+server/services/distributionDataTransferService.ts(1147,11): error TS2322: Type 'unknown' is not assignable to type 'string'.
+server/services/distributionDataTransferService.ts(1148,11): error TS2322: Type '{}' is not assignable to type 'string'.
+server/services/distributionDataTransferService.ts(1149,11): error TS2322: Type 'unknown' is not assignable to type 'string'.
+server/services/distributionDataTransferService.ts(1150,11): error TS2322: Type '{}' is not assignable to type 'boolean'.
+server/services/distributionDataTransferService.ts(1151,11): error TS2322: Type 'unknown' is not assignable to type 'number | undefined'.
+server/services/distributionDataTransferService.ts(1152,11): error TS2322: Type 'unknown' is not assignable to type 'number | undefined'.
+server/services/distributionDataTransferService.ts(1153,11): error TS2322: Type 'unknown' is not assignable to type 'number | undefined'.
+server/services/distributionDataTransferService.ts(1154,11): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/distributionDataTransferService.ts(1155,11): error TS2322: Type 'unknown' is not assignable to type '"success" | "partial" | "failed" | undefined'.
+server/services/distributionDataTransferService.ts(1156,11): error TS2322: Type 'unknown' is not assignable to type '"manual" | "auto" | "api" | undefined'.
+server/services/distributionDataTransferService.ts(1157,11): error TS2322: Type '{}' is not assignable to type 'number'.
+server/services/distributionDataTransferService.ts(1158,11): error TS2322: Type '{}' is not assignable to type 'number'.
+server/services/distributionDataTransferService.ts(1167,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[DataTransfer] Failed to hydrate profiles from storage:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[DataTransfer] Failed to hydrate profiles from storage:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/distributionDataTransferService.ts(1237,7): error TS2322: Type '"manual" | "api" | "proxy" | "scrape"' is not assignable to type '"manual" | "auto" | "api" | undefined'.
+  Type '"proxy"' is not assignable to type '"manual" | "auto" | "api" | undefined'.
+server/services/distributionDataTransferService.ts(1250,7): error TS2322: Type '"manual" | "api" | "proxy" | "scrape"' is not assignable to type '"manual" | "auto" | "api" | undefined'.
+  Type '"proxy"' is not assignable to type '"manual" | "auto" | "api" | undefined'.
+server/services/distributionDataTransferService.ts(1511,9): error TS2322: Type 'unknown' is not assignable to type 'string'.
+server/services/distributionDataTransferService.ts(1514,7): error TS2322: Type 'unknown' is not assignable to type 'string | null'.
+server/services/distributionDataTransferService.ts(1555,9): error TS2322: Type '{ title: unknown; streams: number; isrc: any; }[]' is not assignable to type '{ title: string; streams: number; isrc?: string | undefined; }[]'.
+  Type '{ title: unknown; streams: number; isrc: any; }' is not assignable to type '{ title: string; streams: number; isrc?: string | undefined; }'.
+    Types of property 'title' are incompatible.
+      Type 'unknown' is not assignable to type 'string'.
+server/services/distributionDataTransferService.ts(1557,16): error TS2345: Argument of type '(t: Record<string, unknown>) => { title: unknown; streams: number; isrc: any; }' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => { title: unknown; streams: number; isrc: any; }'.
+  Types of parameters 't' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/services/distributionDataTransferService.ts(1743,14): error TS2352: Conversion of type '{ artistName: string | undefined; bio: string | undefined; imageUrl: string | undefined; followers: number; profileUrl: string; lastSyncMethod: "scraping"; verified: true; }' to type 'Partial<StreamingProfileData>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'lastSyncMethod' are incompatible.
+    Type '"scraping"' is not comparable to type '"manual" | "auto" | "api" | undefined'.
+server/services/distributionDataTransferService.ts(1790,9): error TS2322: Type '{ title: unknown; streams: {}; }[]' is not assignable to type '{ title: string; streams: number; isrc?: string | undefined; }[]'.
+  Type '{ title: unknown; streams: {}; }' is not assignable to type '{ title: string; streams: number; isrc?: string | undefined; }'.
+    Types of property 'title' are incompatible.
+      Type 'unknown' is not assignable to type 'string'.
+server/services/distributionDataTransferService.ts(1792,16): error TS2345: Argument of type '(t: Record<string, unknown>) => { title: unknown; streams: {}; }' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => { title: unknown; streams: {}; }'.
+  Types of parameters 't' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/services/distributionDataTransferService.ts(1925,14): error TS2352: Conversion of type '{ artistName: string; bio: string | undefined; imageUrl: string | undefined; profileUrl: string; lastSyncMethod: "scraping"; verified: true; }' to type 'Partial<StreamingProfileData>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'lastSyncMethod' are incompatible.
+    Type '"scraping"' is not comparable to type '"manual" | "auto" | "api" | undefined'.
+server/services/distributionDataTransferService.ts(2008,14): error TS2352: Conversion of type '{ artistName: string | undefined; bio: string | undefined; imageUrl: string | undefined; profileUrl: string; lastSyncMethod: "scraping"; verified: true; }' to type 'Partial<StreamingProfileData>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'lastSyncMethod' are incompatible.
+    Type '"scraping"' is not comparable to type '"manual" | "auto" | "api" | undefined'.
+server/services/distributionDataTransferService.ts(2302,11): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/distributionDataTransferService.ts(2432,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/distributionDataTransferService.ts(2660,23): error TS18046: 'item.trackCount' is of type 'unknown'.
+server/services/distributionDataTransferService.ts(2662,13): error TS18046: 'item.trackCount' is of type 'unknown'.
+server/services/distributionDataTransferService.ts(2698,23): error TS18046: 'item.nb_tracks' is of type 'unknown'.
+server/services/distributionDataTransferService.ts(2700,13): error TS18046: 'item.nb_tracks' is of type 'unknown'.
+server/services/distributionDataTransferService.ts(2737,13): error TS2740: Type '{}' is missing the following properties from type 'Record<string, unknown>[]': length, pop, push, concat, and 35 more.
+server/services/distributionDataTransferService.ts(2767,23): error TS18046: 'item.nb_tracks' is of type 'unknown'.
+server/services/distributionDataTransferService.ts(2769,13): error TS18046: 'item.nb_tracks' is of type 'unknown'.
+server/services/distributionDataTransferService.ts(2816,26): error TS2488: Type '{}' must have a '[Symbol.iterator]()' method that returns an iterator.
+server/services/distributionDataTransferService.ts(2950,22): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/services/distributionDataTransferService.ts(3090,36): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+server/services/distributionDataTransferService.ts(3205,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hns/HnsAuction.ts(222,9): error TS2322: Type 'string' is not assignable to type 'AuctionState'.
+server/services/hns/HnsAuction.ts(285,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+server/services/hns/HnsAuction.ts(286,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+server/services/hns/HnsAuction.ts(287,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+server/services/hns/HnsAuction.ts(288,7): error TS2322: Type 'unknown' is not assignable to type 'number'.
+server/services/hns/HnsAuction.ts(289,7): error TS2322: Type 'unknown' is not assignable to type 'number'.
+server/services/hns/HnsAuction.ts(291,7): error TS2322: Type '{} | undefined' is not assignable to type 'string | undefined'.
+  Type '{}' is not assignable to type 'string'.
+server/services/hns/HnsAuction.ts(292,7): error TS2322: Type '{} | undefined' is not assignable to type 'string | undefined'.
+  Type '{}' is not assignable to type 'string'.
+server/services/hns/HnsAuction.ts(293,7): error TS2322: Type '{} | undefined' is not assignable to type 'string | undefined'.
+  Type '{}' is not assignable to type 'string'.
+server/services/hns/HnsAuction.ts(294,7): error TS2322: Type 'unknown' is not assignable to type 'Date'.
+server/services/hns/HnsAuction.ts(295,7): error TS2322: Type 'unknown' is not assignable to type 'Date'.
+server/services/hns/HnsClient.ts(165,5): error TS2322: Type 'unknown' is not assignable to type 'Record<string, unknown> | null'.
+server/services/hns/HnsClient.ts(170,5): error TS2322: Type 'unknown' is not assignable to type 'number'.
+server/services/hns/HnsClient.ts(191,7): error TS2322: Type 'unknown' is not assignable to type 'string | null'.
+server/services/hns/HnsClient.ts(253,5): error TS2322: Type 'unknown' is not assignable to type '{ confirmed: number; unconfirmed: number; }'.
+server/services/hns/HnsClient.ts(262,5): error TS2322: Type 'unknown' is not assignable to type 'HnsBid[]'.
+server/services/hns/HnsClient.ts(266,5): error TS2322: Type 'unknown' is not assignable to type 'any[]'.
+server/services/hns/HnsClient.ts(270,5): error TS2322: Type 'unknown' is not assignable to type 'HnsNameInfo[]'.
+server/services/hns/HnsClient.ts(280,5): error TS2322: Type 'unknown' is not assignable to type 'HnsTx'.
+server/services/hns/HnsClient.ts(294,5): error TS2322: Type 'unknown' is not assignable to type 'HnsTx'.
+server/services/hns/HnsClient.ts(301,5): error TS2322: Type 'unknown' is not assignable to type 'HnsTx'.
+server/services/hns/HnsClient.ts(308,5): error TS2322: Type 'unknown' is not assignable to type 'HnsTx'.
+server/services/hns/HnsClient.ts(317,5): error TS2322: Type 'unknown' is not assignable to type 'HnsTx'.
+server/services/hns/HnsClient.ts(324,5): error TS2322: Type 'unknown' is not assignable to type 'HnsTx'.
+server/services/hns/HnsClient.ts(331,5): error TS2322: Type 'unknown' is not assignable to type 'HnsTx'.
+server/services/hns/HnsClient.ts(338,5): error TS2322: Type 'unknown' is not assignable to type 'HnsTx'.
+server/services/hns/HnsClient.ts(346,5): error TS2322: Type 'unknown' is not assignable to type 'HnsTx'.
+server/services/plugins/mbCatalog.ts(399,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(12995,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13089,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13183,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13277,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13371,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13465,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13559,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13653,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13747,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13841,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(13935,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(14029,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(14123,5): error TS2322: Type '"filter"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(20834,5): error TS2322: Type 'Record<string, unknown>' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(26960,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27046,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27132,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27218,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27304,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27390,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27476,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27562,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27648,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27734,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27820,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27906,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(27992,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(28078,5): error TS2322: Type '"restore"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(30698,5): error TS2322: Type 'Record<string, unknown>' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(35694,5): error TS2322: Type 'Record<string, unknown>' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(35965,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36045,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36125,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36205,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36285,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36365,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36445,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36526,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36606,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36686,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36766,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36846,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.
+server/services/plugins/mbCatalog.ts(36926,5): error TS2322: Type '"utility"' is not assignable to type '"dimension" | "piano" | "strings" | "drums" | "bass" | "pad" | "synth" | "analog" | "fm" | "wavetable" | "sampler" | "brass" | "woodwind" | "guitar" | "organ" | "vocal" | "ethnic" | ... 36 more ... | "formant"'.

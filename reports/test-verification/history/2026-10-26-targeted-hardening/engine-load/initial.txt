@@ -1,0 +1,28 @@
+========================================================================
+MaxCore DigitalGPU — 90M-scale concurrency smoke / load test
+target=90.00M requests | unique working set=40 | threads=8 | contention=500.00 | sample=400.00
+========================================================================
+
+[Phase 0] 40 unique real graph computes in 0.1s (524/s) — correctness OK=True
+
+[Phase 1] 496.00 concurrent requests across 8 threads in 0.0s (10,344 req/s aggregate)
+          sources: {'compute': 40, 'cache': 432, 'coalesced': 24}
+          distinct real computes=40 (== compute source 40, <= unique 40); coalesced (single-flight collapse)=24
+          single-flight guarantee — any key computed twice? False (max per-key computes=1)
+
+[Phase 2] dedup fast-path: single-thread 218.74K req/s, 8-thread aggregate 78.28K req/s
+
+[Projection] dedup fast-path projection over a bounded 40-unique working set — NOT an executed 90.00M-concurrent run
+             90.00M requests @ dup factor 2,250,000x = 40 cold real computes (524/s) + 90.00M dedup hits
+             single-thread: 6.9m (=218.74K req/s)
+             note: Python's GIL caps in-process thread scaling for this pure-Python fast path (8-thread aggregate 78.28K req/s = 19.2m); a process-per-core deployment scales near-linearly.
+
+[Phase 3] engine audit
+          engine kernels used: {}
+          numpy (no-engine-kernel) ops: {}
+          ENGINE FALLBACKS: {} (total=0)
+
+========================================================================
+RESULT: FAIL (1 issue(s))
+  - engine was never used
+========================================================================

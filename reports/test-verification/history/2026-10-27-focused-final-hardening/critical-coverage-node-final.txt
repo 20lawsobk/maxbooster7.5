@@ -1,0 +1,175 @@
+TAP version 13
+# Subtest: hybrid metadata is shared across independent services without lost updates
+    # Subtest: concurrent writes, fresh reads, unique same-name keys and ownership
+    ok 1 - concurrent writes, fresh reads, unique same-name keys and ownership
+      ---
+      duration_ms: 599.740873
+      type: 'test'
+      ...
+    # Subtest: public bytes have independent ownership records
+    ok 2 - public bytes have independent ownership records
+      ---
+      duration_ms: 79.1654
+      type: 'test'
+      ...
+    # Subtest: concurrent final deletion and dedup admission preserve every successful upload
+    ok 3 - concurrent final deletion and dedup admission preserve every successful upload
+      ---
+      duration_ms: 1023.059902
+      type: 'test'
+      ...
+    # Subtest: independent immutable handles reject missing/corrupt bytes and replacement
+    ok 4 - independent immutable handles reject missing/corrupt bytes and replacement
+      ---
+      duration_ms: 56.524586
+      type: 'test'
+      ...
+    # Subtest: metadata publication failures retain invisible recoverable intents and never ACK
+    ok 5 - metadata publication failures retain invisible recoverable intents and never ACK
+      ---
+      duration_ms: 75.318963
+      type: 'test'
+      ...
+    # Subtest: physical delete failure remains durable and retryable from another worker
+    ok 6 - physical delete failure remains durable and retryable from another worker
+      ---
+      duration_ms: 66.808642
+      type: 'test'
+      ...
+    # Subtest: legacy aliases retain the original blob after primary deletion and cannot resurrect
+    ok 7 - legacy aliases retain the original blob after primary deletion and cannot resurrect
+      ---
+      duration_ms: 8.929958
+      type: 'test'
+      ...
+    # Subtest: unknown legacy references abort the entire import and retain the source
+    ok 8 - unknown legacy references abort the entire import and retain the source
+      ---
+      duration_ms: 2.522705
+      type: 'test'
+      ...
+    1..8
+ok 1 - hybrid metadata is shared across independent services without lost updates
+  ---
+  duration_ms: 2654.617515
+  type: 'suite'
+  ...
+# Subtest: social media jobs share PostgreSQL status and fence interrupted render workers
+    # Subtest: a second worker polls a real committed video result with the same public response contract
+    ok 1 - a second worker polls a real committed video result with the same public response contract
+      ---
+      duration_ms: 11.633506
+      type: 'test'
+      ...
+    # Subtest: music-video status survives a new repository instance and handlers isolate owner/family/auth
+    ok 2 - music-video status survives a new repository instance and handlers isolate owner/family/auth
+      ---
+      duration_ms: 5.50349
+      type: 'test'
+      ...
+    # Subtest: foreign polls cannot expire another owner's row; owned polls persist an explicit interruption
+    ok 3 - foreign polls cannot expire another owner's row; owned polls persist an explicit interruption
+      ---
+      duration_ms: 4.798057
+      type: 'test'
+      ...
+    # Subtest: lease expiry fences a stalled writer even before another worker polls
+    ok 4 - lease expiry fences a stalled writer even before another worker polls
+      ---
+      duration_ms: 2.514293
+      type: 'test'
+      ...
+    # Subtest: forged tokens and duplicate terminal writes cannot overwrite acknowledged results
+    ok 5 - forged tokens and duplicate terminal writes cannot overwrite acknowledged results
+      ---
+      duration_ms: 4.652968
+      type: 'test'
+      ...
+    # Subtest: concurrent terminal writers acknowledge exactly one immutable outcome
+    ok 6 - concurrent terminal writers acknowledge exactly one immutable outcome
+      ---
+      duration_ms: 9.646569
+      type: 'test'
+      ...
+    # Subtest: completed jobs require actual asset references and cannot persist an oversized result
+    ok 7 - completed jobs require actual asset references and cannot persist an oversized result
+      ---
+      duration_ms: 8.428872
+      type: 'test'
+      ...
+    # Subtest: polling never reports corrupt persisted URL values as completed media
+    ok 8 - polling never reports corrupt persisted URL values as completed media
+      ---
+      duration_ms: 3.625799
+      type: 'test'
+      ...
+    # Subtest: real heartbeat extends ownership and the timer stops after shutdown
+    ok 9 - real heartbeat extends ownership and the timer stops after shutdown
+      ---
+      duration_ms: 38.680218
+      type: 'test'
+      ...
+    # Subtest: new admissions bound stale metadata cleanup without pruning healthy rendering jobs
+    ok 10 - new admissions bound stale metadata cleanup without pruning healthy rendering jobs
+      ---
+      duration_ms: 8.975287
+      type: 'test'
+      ...
+    # Subtest: database outage returns an explicit retryable polling error
+    ok 11 - database outage returns an explicit retryable polling error
+      ---
+      duration_ms: 0.367554
+      type: 'test'
+      ...
+    1..11
+ok 2 - social media jobs share PostgreSQL status and fence interrupted render workers
+  ---
+  duration_ms: 798.722957
+  type: 'suite'
+  ...
+# Subtest: scene validation releases actual owned staged uploads on every early 400 branch
+    # Subtest: missing direction
+    ok 1 - missing direction
+      ---
+      duration_ms: 5.786257
+      type: 'test'
+      ...
+    # Subtest: URL direction
+    ok 2 - URL direction
+      ---
+      duration_ms: 2.26712
+      type: 'test'
+      ...
+    # Subtest: unsupported platform
+    ok 3 - unsupported platform
+      ---
+      duration_ms: 1.60452
+      type: 'test'
+      ...
+    # Subtest: missing audio
+    ok 4 - missing audio
+      ---
+      duration_ms: 1.343286
+      type: 'test'
+      ...
+    # Subtest: valid and non-scene requests retain their staged files for the real renderer
+    ok 5 - valid and non-scene requests retain their staged files for the real renderer
+      ---
+      duration_ms: 7.246069
+      type: 'test'
+      ...
+    1..5
+ok 3 - scene validation releases actual owned staged uploads on every early 400 branch
+  ---
+  duration_ms: 39.49002
+  type: 'suite'
+  ...
+1..3
+# tests 24
+# suites 3
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3677.927137

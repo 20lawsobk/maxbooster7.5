@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="1.768" timestamp="2026-10-25T15:20:54.294557+00:00" hostname="2fc971e77ddd"><testcase classname="ai_model.rta.test_render_contracts" name="test_image_bytes_identical_across_processes" time="0.164"><failure message="RuntimeError: render subprocess (PYTHONHASHSEED=0) failed:&#10;Traceback (most recent call last):&#10;  File &quot;&lt;string&gt;&quot;, line 1, in &lt;module&gt;&#10;  File &quot;&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/ai_model/rta/api.py&quot;, line 62, in render_image&#10;    raise ValueError(&quot;RTA image scene requires the original subject prompt; mood and seed cannot encode it&quot;)&#10;ValueError: RTA image scene requires the original subject prompt; mood and seed cannot encode it">def test_image_bytes_identical_across_processes() -&gt; None:
+        """Same inputs → byte-identical image across processes with different hash seeds."""
+&gt;       h0 = _render_hash_in_subprocess("0")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/rta/test_render_contracts.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+hash_seed = '0'
+
+    def _render_hash_in_subprocess(hash_seed: str) -&gt; str:
+        """Render in a fresh interpreter with an explicit PYTHONHASHSEED."""
+        env = dict(os.environ)
+        env["PYTHONHASHSEED"] = hash_seed
+        # Run from the package root so ``ai_model`` imports resolve, regardless of
+        # the caller's CWD.
+        pkg_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..")
+        )
+        proc = subprocess.run(
+            [sys.executable, "-c", _RENDER_SNIPPET],
+            env=env,
+            cwd=pkg_root,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+        if proc.returncode != 0:
+&gt;           raise RuntimeError(
+                f"render subprocess (PYTHONHASHSEED={hash_seed}) failed:\n{proc.stderr}"
+            )
+E           RuntimeError: render subprocess (PYTHONHASHSEED=0) failed:
+E           Traceback (most recent call last):
+E             File "&lt;string&gt;", line 1, in &lt;module&gt;
+E             File "&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/ai_model/rta/api.py", line 62, in render_image
+E               raise ValueError("RTA image scene requires the original subject prompt; mood and seed cannot encode it")
+E           ValueError: RTA image scene requires the original subject prompt; mood and seed cannot encode it
+
+ai_model/rta/test_render_contracts.py:76: RuntimeError</failure></testcase><testcase classname="ai_model.rta.test_render_contracts" name="test_spectral_tail_reconstruction_non_hop_aligned" time="1.416" /><testcase classname="ai_model.rta.test_render_contracts" name="test_fabric_self_test_all_mediums_and_gpu" time="0.090" /></testsuite></testsuites>

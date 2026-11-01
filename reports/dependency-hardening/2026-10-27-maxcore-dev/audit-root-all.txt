@@ -1,0 +1,112 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@sendgrid/client": {
+      "name": "@sendgrid/client",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        "@sendgrid/helpers"
+      ],
+      "effects": [],
+      "range": ">=6.5.3",
+      "nodes": [
+        "node_modules/@sendgrid/client"
+      ],
+      "fixAvailable": true
+    },
+    "@sendgrid/helpers": {
+      "name": "@sendgrid/helpers",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        "deepmerge"
+      ],
+      "effects": [
+        "@sendgrid/client",
+        "@sendgrid/mail"
+      ],
+      "range": ">=6.5.3",
+      "nodes": [
+        "node_modules/@sendgrid/helpers"
+      ],
+      "fixAvailable": {
+        "name": "@sendgrid/mail",
+        "version": "6.5.2",
+        "isSemVerMajor": true
+      }
+    },
+    "@sendgrid/mail": {
+      "name": "@sendgrid/mail",
+      "severity": "low",
+      "isDirect": true,
+      "via": [
+        "@sendgrid/client",
+        "@sendgrid/helpers"
+      ],
+      "effects": [],
+      "range": ">=6.5.3",
+      "nodes": [
+        "node_modules/@sendgrid/mail"
+      ],
+      "fixAvailable": {
+        "name": "@sendgrid/mail",
+        "version": "6.5.2",
+        "isSemVerMajor": true
+      }
+    },
+    "deepmerge": {
+      "name": "deepmerge",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1243505,
+          "name": "deepmerge",
+          "dependency": "deepmerge",
+          "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+          "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+          "severity": "low",
+          "cwe": [
+            "CWE-1321"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": ">=4.2.0 <=4.3.1"
+        }
+      ],
+      "effects": [
+        "@sendgrid/helpers"
+      ],
+      "range": ">=4.2.0",
+      "nodes": [
+        "node_modules/deepmerge"
+      ],
+      "fixAvailable": {
+        "name": "@sendgrid/mail",
+        "version": "6.5.2",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 4,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 4
+    },
+    "dependencies": {
+      "prod": 1032,
+      "dev": 315,
+      "optional": 140,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 1479
+    }
+  }
+}

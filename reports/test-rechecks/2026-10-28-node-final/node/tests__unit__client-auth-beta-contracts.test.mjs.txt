@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: beta MFA enrollment/replacement and disable use exact proof fields
+ok 1 - beta MFA enrollment/replacement and disable use exact proof fields
+  ---
+  duration_ms: 22.331325
+  type: 'test'
+  ...
+# Subtest: beta reauthentication/replayed-code failures stay explicit, no automatic replay
+ok 2 - beta reauthentication/replayed-code failures stay explicit, no automatic replay
+  ---
+  duration_ms: 0.408957
+  type: 'test'
+  ...
+# Subtest: beta erasure requires 202 accepted/not-erased; OAuth may omit password
+ok 3 - beta erasure requires 202 accepted/not-erased; OAuth may omit password
+  ---
+  duration_ms: 2.009491
+  type: 'test'
+  ...
+# Subtest: beta status/cancel contracts distinguish missing, queued, unavailable and rejected
+ok 4 - beta status/cancel contracts distinguish missing, queued, unavailable and rejected
+  ---
+  duration_ms: 1.141302
+  type: 'test'
+  ...
+# Subtest: owned consumers parse and retain Settings wiring, expiry and account fences
+ok 5 - owned consumers parse and retain Settings wiring, expiry and account fences
+  ---
+  duration_ms: 37.254947
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 201.462189

@@ -1,0 +1,409 @@
+{
+  "startedAt": "2026-10-27T22:06:46.414217+00:00",
+  "status": "passed",
+  "productionReady": false,
+  "scope": "Four actual public adapters -> actual canonical disposable PDIM publication -> fresh follower/context; no generation/provider/deployment proof",
+  "checkpointRequired": false,
+  "sourceNames": [
+    "apple_charts",
+    "mastodon_trending",
+    "marketing_dive",
+    "guardian_culture"
+  ],
+  "refreshConcurrency": 1,
+  "sourceBodiesRetainedInReports": false,
+  "phase": "verified",
+  "externalContentMethods": [
+    "GET"
+  ],
+  "maximumValidatedRedirectsPerFeed": 3,
+  "transportPublicDnsValidation": true,
+  "ownerCommand": [
+    "/workspace/.cloud-tools/node_modules/node/bin/node",
+    "--import",
+    "/workspace/maxbooster7.5/node_modules/tsx/dist/loader.mjs",
+    "/workspace/maxbooster7.5/reports/live-awareness-acceptance/2026-10-27/canonical-pdim-owner.mjs",
+    "/workspace/maxbooster7.5"
+  ],
+  "ownerEnvironmentNames": [
+    "HOME",
+    "LANG",
+    "LD_LIBRARY_PATH",
+    "LOCAL_PDIM_PORT",
+    "LOCAL_PDIM_STORE_FILE",
+    "LOG_LEVEL",
+    "NODE_ENV",
+    "PATH",
+    "PDIM_LOCAL_CHANNEL_TOKEN",
+    "PDIM_PERSISTENCE",
+    "TMPDIR",
+    "TSX_DISABLE_CACHE"
+  ],
+  "ownerPid": 34176,
+  "pythonEnvironmentNames": [
+    "HOME",
+    "HTTPS_PROXY",
+    "HTTP_PROXY",
+    "LANG",
+    "LD_LIBRARY_PATH",
+    "MAXCORE_AWARENESS_USE_PROXY",
+    "MKL_NUM_THREADS",
+    "NO_PROXY",
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "PATH",
+    "PDIM_FORCE_REMOTE",
+    "PDIM_LOCAL_CHANNEL_TOKEN",
+    "PYTHONDONTWRITEBYTECODE",
+    "SSL_CERT_FILE",
+    "STORAGE_HTTP_URL",
+    "TMPDIR"
+  ],
+  "publicFetches": [
+    {
+      "source": "apple_charts",
+      "urlSha256": "65860c2f43b6922dc795b172e1c33f2700d7ecfd1248499d02b00ecb02152e53",
+      "bodySha256": "5ef13ce172e98843d77ae37b13143f6fd62b9f0787fc4a1ce69cee1c19199765",
+      "bodyBytes": 31817,
+      "httpHops": 2,
+      "redirects": 1,
+      "finalHost": "rss.marketingtools.apple.com"
+    },
+    {
+      "source": "guardian_culture",
+      "urlSha256": "9107de080f6e22b1f31e7affa4cb6da22c7891d28d6c8720c279d85f2e2fe8a4",
+      "bodySha256": "a468112e857c63d0b785275487dbf26f6247d29b7187b6d17a82ebbe2f663c57",
+      "bodyBytes": 94623,
+      "httpHops": 2,
+      "redirects": 1,
+      "finalHost": "www.theguardian.com"
+    },
+    {
+      "source": "marketing_dive",
+      "urlSha256": "8d96a2c456b6de0a5e4ad36f0654130d7eb102092cd0bc63f18a4f6491404fe5",
+      "bodySha256": "633a21a7a4b11cacba9808992237808cc3f0a155598021625f875c4e81edd986",
+      "bodyBytes": 8628,
+      "httpHops": 1,
+      "redirects": 0,
+      "finalHost": "www.marketingdive.com"
+    },
+    {
+      "source": "mastodon_trending",
+      "urlSha256": "9bdf2576db5307338538ea1d8709f1ae20c86754456b9f2f123e9657fead757b",
+      "bodySha256": "0207bf5e3107c3c0c0f4fd7c4fdc01e6dee3052ad654440bdcf29cda27d5610b",
+      "bodyBytes": 97170,
+      "httpHops": 1,
+      "redirects": 0,
+      "finalHost": "mastodon.social"
+    }
+  ],
+  "publicHttpHops": [
+    {
+      "host": "rss.applemarketingtools.com",
+      "method": "GET",
+      "status": 301,
+      "urlSha256": "025341358d672c441f39994ab84e16378d7cd688cb42349307fcfec21efe1a2a",
+      "redirectDestinationHost": "rss.marketingtools.apple.com",
+      "redirectDestinationUrlSha256": "09419144b187a5418094f7437c60a134e1e5e68c59842c746b54014001b504d7"
+    },
+    {
+      "host": "rss.marketingtools.apple.com",
+      "method": "GET",
+      "status": 200,
+      "urlSha256": "f0da9c40f61d7f348e87aa72a76380ff7452457a7d35d40db80fe88980baf757",
+      "redirectDestinationHost": null,
+      "redirectDestinationUrlSha256": null
+    },
+    {
+      "host": "www.theguardian.com",
+      "method": "GET",
+      "status": 302,
+      "urlSha256": "b024781a3bafb4e1905a71c708de1f87b2d1f7ed9c72476269e371b1dcbae70d",
+      "redirectDestinationHost": "www.theguardian.com",
+      "redirectDestinationUrlSha256": "a236429eb65b6d755b3ac51387a012711fd22122dd9ac9bd37dd467a0bd3a9e6"
+    },
+    {
+      "host": "www.theguardian.com",
+      "method": "GET",
+      "status": 200,
+      "urlSha256": "2d7a4d3dc6e181b5888eb52ab146b6580d66132925b95f540075618dbd4f226f",
+      "redirectDestinationHost": null,
+      "redirectDestinationUrlSha256": null
+    },
+    {
+      "host": "www.marketingdive.com",
+      "method": "GET",
+      "status": 200,
+      "urlSha256": "b2d30da58e5ca2ae1ef1731b2de9106d4aea6867d03d5f6ea87207fc9e33bcab",
+      "redirectDestinationHost": null,
+      "redirectDestinationUrlSha256": null
+    },
+    {
+      "host": "mastodon.social",
+      "method": "GET",
+      "status": 200,
+      "urlSha256": "fbd23ca82fc375e25fcd4cf2e430f359f676456264ffbf43a9042e44e6511fc0",
+      "redirectDestinationHost": null,
+      "redirectDestinationUrlSha256": null
+    }
+  ],
+  "snapshotId": "66f0e7fb1e81bc347c1bd5283bc10a897270bba275f32c37ec177e602ee0c4e1",
+  "createdAt": 1793138811.6808372,
+  "expiresAt": 1793142409.976746,
+  "remainingFreshnessSeconds": 3598.2682580947876,
+  "snapshotSha256": "2418627671f46387ff833999c75d5fde4a4f2648cf4095100abcafbfe9ab536b",
+  "pointerSha256": "5f706ed98313e4c0599e294a5949c9ff7595975a3538f909e1e75613f7ab3d05",
+  "sourceLedgers": [
+    {
+      "source": "apple_charts",
+      "domain": "music",
+      "documentId": "3d71a34e703df2f6f47212e0bb4e8a509a039d59cd058d03a7dd95de2ebdb169",
+      "records": 50,
+      "ttlSeconds": 3599,
+      "updatedAt": 1793138809.9794056,
+      "recordIds": [
+        "0191381e5d5a58ad6ec260423dae2334e0042de35a9e1d2b0c40696f1ba573db",
+        "132221a4c58d1368a69dd1e1a551f6675c62a01e89256499c0a884209aeb97ef",
+        "1588b0d41ce3b7d05a5ca6cba67d12a45e310213c092a68e672610be4851018a",
+        "19d664ce0b8734a39406b70a628e0d1e903341891f8daa77f09646ed941d24e7",
+        "1d5c8eb80ef2cc6a6a51c31a63b6de87dc7171289171c6ccbbadf391de704b64",
+        "1dbed3f5a70b8b6eb852e1635639e4e69d015bcda914fe14cd3d3dcbc66f164b",
+        "2161169d13da52406ac6c1f97fdbedced562bd916e9b8d7b003a36d6a7fd8443",
+        "22cb55051d5123614c3d914adc533a21499b4410bd0e2064234403d619470af2",
+        "2f44723fec59df7f2ac32b88d0533c0840a5c4e8b96f69bf25bb96d4ea2ea3be",
+        "384d4f099a12dcfeab9744ec73649179f358a3644485af74543d88e70c98ae8e",
+        "38893937ad49a1178a6eb10e8bbe78522367270e5afb3e7b9165af503a84e883",
+        "3d11014d27233222441990ececdb3b2cb929abc67807f7de4c0163ba43425c11",
+        "405162d8c37671b10820e99318a1c1e8a70ca2258a7d90900c9651cbc26e6073",
+        "45514dc0ecc70b1b1c658b04cd62b52c4ca165beeb124136fdb0137a5933d680",
+        "490f0981c881d75aea3bb512080a78cbe59d6e6c1d8d025de6aa96fbe42e6202",
+        "4c0aad13d093866f2f5d182a1dffd1140e36f134c8273a6d87496e32ed33e169",
+        "4d42c16ecdde3d4945dbfb6e80061e786e9ea6c42fa344926fc0de9966f617db",
+        "549714f26ebd162097d9681c7cdd8a0ccdf39f1cd2ef6bb7e4376a77edf80a99",
+        "574b3b3dbdde92ec1b31ba98d90cfa5a58cc2618b60d0c5d54d4e2e3151f601d",
+        "5e8d756b99d436476a445c2f3e24c09f97ec6b30aa522494d973f43492dc4897",
+        "5f1550ace090a4cdcafc99401fb78fcc7c713b32b0fb950aabed701662b66c12",
+        "6338488221812b774fd4cc515c21c128b581160543a447bc406cb03004cfda93",
+        "6bbb4493ea88facb3825da2c40c4d93b0187e40333d7b10dc0c0be6e25cbaf60",
+        "6e7562b1a36402b978042f948fda960aacde92fb430d75edc1019c2a5f48ad23",
+        "734d7b022fddebb2ca1b16d7800890570a5b60010f201b5baa678f787ec7f732",
+        "7750d258be03034cac55d0f3a6de383f88e4b9408e793b54e4777c75e93155a8",
+        "7e82120594e35fc205b6cf8ed24d5c58a4218f2ab8b267c5f9fd3a08fe037061",
+        "7f32ee64e9858e65ef48bc587b69b7304a0d5b8bc426ab3a7abf73188e3611e8",
+        "862716a5066502e34bcd1375318c5a6386cf2bdbf2522c91274be4de16aefc85",
+        "8d0ab611f7bce4dbe0ad636fe51a48eed49829a41cd75f8be5c3b9daaefacc88",
+        "8fbe4e4704e56c9fd4a3e4c4461a782fe9321f35e9fe3aad0245cb0f14c91b20",
+        "90ac68ebdf6070c00c0d2794b26b9acfcbafe7078d218d5af7fb6b432e37e0fc",
+        "937cc0685fe158b6f25272403aaadacddfe11e2255816fde84c3879b5b004d26",
+        "98a8e9cf4ecdd1516d7222cf28bf3a9f9aa692dd496df183af7246528d3c63fb",
+        "9e9db58ad941977b9e95dcf829dd37af2c3bf46fb7ba7bb8287a898f23c6b589",
+        "ac7d43d13e1a20fbe4e4dc1fae2c3135b9be54bb4f64440486b5cc5aaa61ac5b",
+        "c57411cba77ab288225fae019f76b3134961958747044194fc054787cc6879e5",
+        "cec4d4c0bf3d17abbdb052a1f5f162520a3e428c9cf0801ad0969535acc4287c",
+        "d089d841e0615d8e31bc41b9fae014764a35e63a5acbda9a09b4cb0a938dbdf0",
+        "d2d8fd3588972061d7701dc7d593045fa137978cc4e536d84e294a2910550fd4",
+        "d46234268f38cb080f2d4b34d57f6d83b6eb9e94a94a70e1dc61f01f0109d4ac",
+        "db9a8354b6d8d59d13b3adb9329c222789549bc8b0ef4860181f7bc8d6f82f6c",
+        "de7bb50e28840bfab720c579b6156cec8b95bacdf1b4461fc95ff0e3b896d080",
+        "e4016518e698c2543a14f6da029dc082b8b45a6b2570547f1260d4fde1157f5e",
+        "e7dd3db0127490f9b5c4bdd44d17d0522341334f11115be354e1d213330a9d54",
+        "ecc22997fe9a81eecd8f85704cd7df28ac4c8d60e9df263d0319319500b5b436",
+        "ed2a3fd9650c34f183d97b21726bd617dff096e8f002ea03a8f5d98b7df437c2",
+        "f030d57938da61c2b157961fb0d77714ea1a9ec1fb27d6fca04141bf121966f1",
+        "f1e6399999621aa824d3cc4c10cadf16f83ef905442b601442e3d31ee3ce832d",
+        "f7fe80d02d2710cc09e7725633b66f04747472834bc7d55ad225ba546ad92c9c"
+      ],
+      "metrics": {
+        "chart_position": 50
+      },
+      "documentSha256": "e840024829c210960ce0ba293edac2e1ad0d22736bdfdade533c40eef63ba114"
+    },
+    {
+      "source": "mastodon_trending",
+      "domain": "social",
+      "documentId": "892a1eadffccaac00ffea6d7e1c3d7cb2f129ffa0cb55e85c1da14405adba31c",
+      "records": 19,
+      "ttlSeconds": 3600,
+      "updatedAt": 1793138811.6560519,
+      "recordIds": [
+        "15818d54254f1b7680cefc37db7041103355d0c0956a4d2c6eaa01069b39f006",
+        "1786a31045d7514d0af4965b7ce19d434a309693d4c1cf01562595b062ea3c52",
+        "1b7924d1260736a073adfcf9e9f04c6c5ea721a06f382bf9c3884b3fbfbe6547",
+        "2291c312c8f8c5f4fba380bf93f809b55a0d1b1983e4cec14f70d527cf5afb4c",
+        "3894b3f547022bd2e22f025c6dbb1546d614e0ebd62f04a11acd8a91825b1eaf",
+        "42a2237d47e426530cf85ad6210a8a0d8b85ea6317088ab24a214250c3ba17e5",
+        "4b6b62e2445089fb3969ad6aa960545b0030125e480fb524d13d2e7430571646",
+        "529e2c928faf0a6a2e47510d9eb18d5152e8f9eb280b88dc4aac3758379c7cb4",
+        "5e7e8db44e13b9e243ebae27c9551f5c28ac980890e05ac965beeb9c56d2aef9",
+        "7356c346f547c9d5fb781809593cbd15f0cf147ac3b97a9c0f9bf5c427d72a22",
+        "7c9ed3100393c24ada029f8209ddd847688921dc3323a0e5e932d107e4d4b5f8",
+        "7f980a0b762dfa08f04cd38603260e97c99665b427a13697d67680f865b16c5c",
+        "93da013f595522159e6b4d9948a51ca4234fd063c1ab27efbb2c2db5ad62778c",
+        "95ff7695458cf148f4d4b1e0d6cfc57c26695538a5fba25e861c1c7474cb1ad4",
+        "a7cc67580037788de206d72807f1d7ce320c207bc20776baeab7ec4277074a71",
+        "b19adb5654bc8cd940be0588eb0eac17d945d6b1b612913e4bed5295f20a13dd",
+        "b585f972df2d3b4783d4ef1b4aed46627dae1013e5feff09dbdef53dcd785be5",
+        "ce7521c86aeedbad8b10c40c5e9a8c542cd7b462b92ae8ab4d5926e90df48f3c",
+        "fb5b05299b45d63c7f84d47c163b2d48d4624c21eff1ce895ba7f99df7ad8fd3"
+      ],
+      "metrics": {
+        "mastodon_reblogs_plus_favourites": 19
+      },
+      "documentSha256": "f37a8264cd0fc68cea35ba9faaa6faab84d7bb9b4ae738c9240f1cf626e9121d"
+    },
+    {
+      "source": "marketing_dive",
+      "domain": "advertising",
+      "documentId": "4a89634725244b2a1b790cc7679fcac865955dd34587b7ad23734e7615940efd",
+      "records": 10,
+      "ttlSeconds": 3599,
+      "updatedAt": 1793138810.6982913,
+      "recordIds": [
+        "52cf3c712ea95843c0bcbd0ff6ddb6156a985b9cf1f7a132b1d9e26438327fa0",
+        "6b3285b9f91777d802fd1075460392a1d173669939d1e5bcfecceec285fd7230",
+        "6d8ff85f7574caf5bef1dc320f72fce31d95f5127b129e5c1396c3fa76fada81",
+        "76f4962fcd4afa5bde9e462a6324bf7dffa999dbe870f4d92ce28bc85b684038",
+        "9b3d2330d03f543e3547b33809c327356b9c1931073a30ae40e14a8be02aef26",
+        "a007b8e3b5fc61f7e293fcef83eb3a1433edadd90699f1e14a93c792031a24fd",
+        "a066fd4bb6a0c41020b324b232956938a451dce46378c95889d0b128878d7433",
+        "a5cd732e4ebd7d240c76b7fbbf7e2ffff62cba30240f0e251c89985cb99b673c",
+        "b0cce18c31e42c452463a5dc202c6629162086888f9fa45c34c2556f1faca7f8",
+        "f05ab038d1b7f9a1a7d5e8a36ce9ce31f6d13b569124eaab6651adb9e8449573"
+      ],
+      "metrics": {
+        "editorial_feed_presence": 10
+      },
+      "documentSha256": "7f19f6e9f16c63ab643d68e73e87e4a1fcf6f70a1254950cf1bbfba7f790b18f"
+    },
+    {
+      "source": "guardian_culture",
+      "domain": "culture",
+      "documentId": "8cd8f0cb8176bf0b348756e911edf6044ff668637eb4b592b1957c54b087b649",
+      "records": 26,
+      "ttlSeconds": 3599,
+      "updatedAt": 1793138810.488845,
+      "recordIds": [
+        "00ef13b2cfc9f96ccb140deff360a7eb3a2c06d0142e2a5812e23afc310a5056",
+        "03526bc522011a91507fd34e32af0790d03435239553de518b12713905a46b38",
+        "099e67edb44f0ed57f1ac8b9c157c241213d1ea8dfac11ede590de97273b314f",
+        "1157a64cbc63a018edaeb7b284d764056a2ac4e1190ffedd7a899b8a5f0558e9",
+        "3460a9e4c3fa0f6bec8a946eaff63b4bf554935cfef1187bbe9b5a457a2a97bd",
+        "4d5f7c07ab0b59b7e2c6d02abdb05534b1067dac45a9e09e339b2758280a418b",
+        "4f477eeb0bf4dc6921f128c4e2ecb4fd5bd6068f8b8cad7c7819e433e37cef45",
+        "4fdb6f42659ee9e5f2e0c8740f8693d9110435df4122b43116e70e62188fe5f3",
+        "65a724dd6c4068c27703152da744d2ef106edbba5e416cc1a5b150443f4277e5",
+        "6901159f46fa41309d2330f2a576e639c4f1458b234b997ba5e02c3fd90df126",
+        "698bd4c62d6812b4665110afb289dc063ead561cf0d31a21c124579c09f6f663",
+        "71acaa2702ec14156ca7ba095437150b206b394b6ebe5075f1ee644c056d4ea4",
+        "7378800b1963ef40daaaa26480a6d7d78de48ca607c607c054b47b21999fd74d",
+        "7384b1281bd35c20e2355c6d3166b1689ba0dfc204ab9bd6775c1858d3ae3d80",
+        "840cce0c8d143c6e59732b2aef3875835ef2ce528cf6ddd6b6ef4109dbf1af94",
+        "885b6d3bbf1ef279f869fa8d9ff8acffb3ccdabcd4827c481ec0d95086126679",
+        "8982fa1fe0a6f010f2eaaaf27ee0c2712bbfb9aa6c578fae5c16581a298dc607",
+        "8cb4bab0775c3dd015667e305eb7e64298c38bebe47158c2df2966209827e756",
+        "8d59d3a8c4b7ebcff54d0f981c8ad80fb07c31aa015983fe8c28f17fd5db862c",
+        "a29c50a740343ffe270a60e4867d56781977e12605d09fe5c8dfd2a940c8ad71",
+        "b3da1ec682f53193d8766ca8716ae057b26f8630fcd6f5f72c0620007bcd0dca",
+        "c332ccbbbcf16cdf2c0e41d5052e3d206effa3dcfcfe3a2e350eac7a36a40240",
+        "e9691bed31cda45d379b5a015a0747e7c548f769aa58d8a2f9fb3c8694ac325e",
+        "eb7d755c03ff2913019d141fe3cf17151832d6690423a68b432484a58d1db264",
+        "eefde7f59fd0ee95c88322188b730476889c2ff8908c34fecd3ed9b111a4ccd7",
+        "f762c21dc7de00feb5a0a71bbdefc32ad64de4c11335cc53a4fa247447cabfd1"
+      ],
+      "metrics": {
+        "editorial_feed_presence": 26
+      },
+      "documentSha256": "e86a934275627975647e74db95d0dd3eb33492629c3fd70a687927361168ac08"
+    }
+  ],
+  "domainCounts": {
+    "advertising": 10,
+    "culture": 26,
+    "music": 50,
+    "social": 19
+  },
+  "follower": {
+    "ready": true,
+    "running": false,
+    "ingestOwner": false,
+    "sameSnapshot": true,
+    "additionalContentFetches": 0
+  },
+  "context": {
+    "sha256": "8fbf44314690b3eb5d1a4635ea8a4d417b87abf84b79a08fcda5a347ff612f5f",
+    "bytes": 9690,
+    "sameSnapshot": true,
+    "untrustedDataLabel": true,
+    "domainCounts": {
+      "advertising": 6,
+      "culture": 6,
+      "music": 6,
+      "social": 6
+    }
+  },
+  "expirationRejected": true,
+  "leaseReleased": true,
+  "diskFallbackUsed": false,
+  "snapshotPointerBlobExpireByValidation": true,
+  "engineStopped": true,
+  "ownedGroupBeforeStop": [
+    {
+      "pid": 34176,
+      "state": "S",
+      "startTicks": "863928"
+    },
+    {
+      "pid": 34184,
+      "state": "S",
+      "startTicks": "863940"
+    }
+  ],
+  "ownerExitCode": 0,
+  "ownerStopped": true,
+  "ownedGroupAfterStop": [
+    {
+      "pid": 34184,
+      "state": "Z",
+      "startTicks": "863940"
+    }
+  ],
+  "activeOwnedProcessesRemaining": [],
+  "defunctOwnedProcesses": [
+    {
+      "pid": 34184,
+      "state": "Z",
+      "startTicks": "863940"
+    }
+  ],
+  "durableScratchFiles": [
+    {
+      "name": "pdim.json",
+      "bytes": 91644,
+      "sha256": "24483224f7d800ae106ef681a49396d49540740515fa719e910b368761cbd1e8"
+    },
+    {
+      "name": "pdim.json.aof.jsonl",
+      "bytes": 116367,
+      "sha256": "47d7476e79a5361f41957f9da5d80687517be746ace38f026f26552ce3a89228"
+    }
+  ],
+  "scratchRemoved": true,
+  "sourceInputsUnchanged": true,
+  "sourceInputs": {
+    "reports/live-awareness-acceptance/2026-10-27/canonical-public-pipeline.py": "3a88e12f0601db02d6e380056a93e818e9437f1e9030856eeeb89bf17e2c3c6a",
+    "reports/live-awareness-acceptance/2026-10-27/canonical-pdim-owner.mjs": "f0ba3a4fe2675cb2828b80f05af521d8d11cad7cdc302de35c8116ccdee95ca1",
+    "server/lib/localPdimServer.ts": "9fa5bbb63afe569ea0dca115b0e1960c7732595f812f76dc4ccea89a82784c42",
+    "external/pdim/artifacts/api-server/src/redis/store.ts": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/engine.py": "ebdb3164c24b07aa823b48c4c99a356fde9ce2f8007e56b8a50bbe785b855d49",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py": "50ef05704a303fe4e844986ddd0d37d6ad10b90f1984a2194745b5f849dcdba7",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/lease.py": "7686781c67fdd8687bb259cbffa058555fce452e755700aac5423690a36b9ebd",
+    "external/maxcore/artifacts/ai-training-server/storage_client.py": "0f7ce80659d75b055f4fde9faacc996d3a418b4c5f4ce22c81620b5860dd2bc5",
+    "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/safe_http.py": "8fed9f38535b45614031491ecbb4b3c16668b2dece991f972558e399b3e9488d"
+  },
+  "durationSeconds": 5.376,
+  "finishedAt": "2026-10-27T22:06:51.790703+00:00",
+  "exitCode": 0,
+  "canonicalPdimLogSha256": "149521875f38b61ed467809c7cb9d5939be088cd02fbdd79d59c29c6c8a8e64f",
+  "nodeVersion": "v22.23.3",
+  "pythonVersion": "3.12.14"
+}
