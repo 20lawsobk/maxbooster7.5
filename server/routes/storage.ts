@@ -806,88 +806,33 @@ router.get("/quota", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// These endpoints previously acknowledged successful mutations without changing
+// metadata or bytes. Never claim a file operation succeeded until a durable,
+// owner-scoped implementation is available.
 router.post("/rename", requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { fileId, newName } = req.body;
-    const userId = req.user!.id;
-
-    if (!fileId || !newName) {
-      return res.status(400).json({ error: "fileId and newName are required" });
-    }
-
-    logger.info(`File renamed: ${fileId} to ${newName} by user ${userId}`);
-
-    res.json({
-      success: true,
-      file: {
-        id: fileId,
-        name: newName,
-      },
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "File rename failed:");
-    res.status(500).json({
-      error: error instanceof Error ? error?.message : "Rename failed",
-    });
+  const { fileId, newName } = req.body ?? {};
+  if (typeof fileId !== "string" || !fileId.trim() ||
+      typeof newName !== "string" || !newName.trim()) {
+    return res.status(400).json({ error: "fileId and newName are required" });
   }
+  return res.status(501).json({ error: "File rename is unavailable; no changes were made" });
 });
 
 router.post("/move", requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { fileId, folderId } = req.body;
-    const userId = req.user!.id;
-
-    if (!fileId || !folderId) {
-      return res
-        .status(400)
-        .json({ error: "fileId and folderId are required" });
-    }
-
-    logger.info(
-      `File moved: ${fileId} to folder ${folderId} by user ${userId}`,
-    );
-
-    res.json({
-      success: true,
-      file: {
-        id: fileId,
-        folderId,
-      },
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "File move failed:");
-    res.status(500).json({
-      error: error instanceof Error ? error?.message : "Move failed",
-    });
+  const { fileId, folderId } = req.body ?? {};
+  if (typeof fileId !== "string" || !fileId.trim() ||
+      typeof folderId !== "string" || !folderId.trim()) {
+    return res.status(400).json({ error: "fileId and folderId are required" });
   }
+  return res.status(501).json({ error: "File move is unavailable; no changes were made" });
 });
 
 router.post("/duplicate", requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { fileId } = req.body;
-    const userId = req.user!.id;
-
-    if (!fileId) {
-      return res.status(400).json({ error: "fileId is required" });
-    }
-
-    const newFileId = randomUUID();
-
-    logger.info(`File duplicated: ${fileId} to ${newFileId} by user ${userId}`);
-
-    res.json({
-      success: true,
-      file: {
-        id: newFileId,
-        originalId: fileId,
-      },
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "File duplicate failed:");
-    res.status(500).json({
-      error: error instanceof Error ? error?.message : "Duplicate failed",
-    });
+  const { fileId } = req.body ?? {};
+  if (typeof fileId !== "string" || !fileId.trim()) {
+    return res.status(400).json({ error: "fileId is required" });
   }
+  return res.status(501).json({ error: "File duplication is unavailable; no changes were made" });
 });
 
 router.post("/validate", async (req: Request, res: Response) => {
