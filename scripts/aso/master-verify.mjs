@@ -5,10 +5,9 @@
  * checks. It does NOT imply that every file or external provider is certified.
  * Never calls deploy, db:push, real provider mutation, or production endpoints.
  */
-import fs from "node:fs";
 import path from "node:path";
 import {ROOT, DEFAULT_OUTPUT, inventory, execute, writeJson, sha, git,
-        option, externalEvidence, readJson} from "./common.mjs";
+        option, externalEvidence} from "./common.mjs";
 
 const argv = process.argv.slice(2);
 const mode = option(argv, "--mode", "full");
@@ -30,10 +29,13 @@ const jobs = {
     ["security", ["npm", "run", "security:audit"], 15 * 60_000],
     // run-all discovers Node, Python, external services, page coverage, and
     // operations; no --stripe-test-api opt-in is given.
-    ["exhaustive-test-register", ["npm", "run", "test:master"], 100 * 60_000],
+    ["exhaustive-test-register", ["python3", "scripts/testing/run-all.py", "--output", path.join(out, "full-test-verification")], 100 * 60_000],
     ["build", ["npm", "run", "build"], 35 * 60_000],
     ["readiness-gauge", ["npm", "run", "readiness-gauge", "--", "--profile", "media", "--release-gate"], 50 * 60_000],
-    ["page-and-feature-launch", ["python3", "scripts/testing/launch-readiness-audit.py", "--require-green"], 10 * 60_000],
+    ["page-and-feature-launch", ["python3", "scripts/testing/launch-readiness-audit.py",
+      "--register", path.join(out, "full-test-verification", "platform-register.json"),
+      "--plan", path.join(out, "full-test-verification", "completion-plan.json"),
+      "--output", path.join(out, "launch-readiness"), "--require-green"], 10 * 60_000],
   ],
 };
 const scope = inventory();
