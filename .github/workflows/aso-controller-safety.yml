@@ -1,0 +1,48 @@
+name: ASO Controller Safety
+
+on:
+  pull_request:
+    paths:
+      - "scripts/aso/**"
+      - "tests/aso-controllers.test.mjs"
+      - "docs/ASO_AUTONOMOUS_ORGANIZATION.md"
+      - ".github/workflows/aso-controller-safety.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controller-regressions:
+    name: Read-only ASO syntax and safety contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout entire tracked project
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+      - name: Check controller syntax
+        run: |
+          node --check scripts/aso/common.mjs
+          node --check scripts/aso/master-verify.mjs
+          node --check scripts/aso/master-repair.mjs
+          node --check scripts/aso/supervisor.mjs
+      - name: Test safety and whole-repository inventory
+        run: node --test tests/aso-controllers.test.mjs
+      - name: Produce full Git index inventory without repairs
+        run: node scripts/aso/master-verify.mjs --mode inventory
+      - name: Upload diagnostic artifacts on success or failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aso-inventory
+          path: |
+            reports/aso/inventory.json
+            reports/aso/report.json
+          if-no-files-found: ignore
+          retention-days: 7
