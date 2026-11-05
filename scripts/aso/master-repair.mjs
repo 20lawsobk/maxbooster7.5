@@ -13,11 +13,13 @@ const args = process.argv.slice(2);
 const out = path.resolve(option(args, "--output", DEFAULT_OUTPUT));
 if (!out.startsWith(ROOT + path.sep)) throw new Error("Output must be under this checkout");
 const autoCommit = args.includes("--auto-commit");
+const strategy = option(args, "--strategy", "verified-handlers");
+if (!["verified-handlers", "eslint-only"].includes(strategy)) throw new Error("Unknown safe strategy");
 const baselinePath = path.join(out, "report.json");
 const baseline = readJson(baselinePath);
 const receiptPath = path.join(out, "repair.json");
 const receipt = {schemaVersion: 1, startedAt: new Date().toISOString(),
-  action: "deployment-autofix", accepted: false, committed: false,
+  action: strategy, accepted: false, committed: false,
   errors: [], changed: [], baseline: baseline?.failureFingerprint ?? null,
   branch: null, revisionBefore: null, verify: null};
 try {
@@ -30,7 +32,10 @@ try {
   }
   if (baseline.gatesPassed) throw new Error("No failing quick gate to repair; run the full suite instead");
   const fix = await execute("apply-official-handlers",
-    ["node", "scripts/deployment-autofix.mjs"], path.join(out, "repair-logs"), 25 * 60_000);
+    strategy === "eslint-only"
+      ? ["npx", "eslint", ".", "--fix"]
+      : ["node", "scripts/deployment-autofix.mjs"],
+    path.join(out, "repair-logs"), 25 * 60_000);
   receipt.apply = fix;
   const changedRaw = execFileSync("git", ["diff", "--name-only", "-z"], {cwd: ROOT}).toString("utf8");
   receipt.changed = changedRaw.split("\0").filter(Boolean);
@@ -63,14 +68,15 @@ try {
     // automatic promotion with failed verification.
     throw new Error("Fresh quick verifier did not pass all gates");
   }
-  receipt.accepted = true;
   if (autoCommit) {
     // Only tracked edits that passed independent verification are committed.
     execFileSync("git", ["add", "-u", "--", ...receipt.changed], {cwd: ROOT, stdio: "pipe"});
     execFileSync("git", ["commit", "-m", "fix(aso): verified mechanical repair"], {cwd: ROOT, stdio: "pipe"});
     receipt.committed = true;
     receipt.revisionAfter = revision();
-  } else {
+  }
+  receipt.accepted = true;
+  if (!autoCommit) {
     receipt.errors.push("Verified changes remain uncommitted for review; rerunning a repair requires a clean worktree");
   }
 } catch (error) {
@@ -79,7 +85,7 @@ try {
   // repair may never leave partial source modifications behind.
   if (receipt.branch && !receipt.accepted) {
     try {
-      execFileSync("git", ["restore", "--worktree", "--", ":/"], {cwd: ROOT, stdio: "pipe"});
+      execFileSync("git", ["restore", "--staged", "--worktree", "--", ":/"], {cwd: ROOT, stdio: "pipe"});
       receipt.rolledBack = true;
     } catch (rollbackError) {
       receipt.errors.push("ROLLBACK FAILED: " + rollbackError.message);
