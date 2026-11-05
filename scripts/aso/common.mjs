@@ -107,7 +107,7 @@ export async function execute(id, argv, out, timeoutMs, env = {}) {
     catch (error) { if (error.code !== "ESRCH") capture(Buffer.from(error.message)); }
   };
   let timer, killer;
-  const result = await new Promise(resolve => {
+  await new Promise(resolve => {
     child.on("error", error => { spawnError = error.code ?? String(error); });
     child.on("close", (exitCode, exitSignal) => {
       code = exitCode; signal = exitSignal;
