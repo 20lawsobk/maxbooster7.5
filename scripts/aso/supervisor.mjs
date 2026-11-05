@@ -55,7 +55,14 @@ function chooseStrategy(failures) {
   // Adapt: a single lint error is best addressed with the cheaper official
   // ESLint fixer; types require the existing position-verified handlers.
   const lintOnly = ids.size === 1 && ids.has("lint");
-  return lintOnly ? "eslint-only" : "verified-handlers";
+  if (lintOnly) {
+    const history = policy.strategyHistory["eslint-only"];
+    // Learn from a failed narrow attempt on a prior cycle/session: try the
+    // repo\u0027s verified handlers next instead of repeating the same fix.
+    if (history && history.attempts > history.successes) return "verified-handlers";
+    return "eslint-only";
+  }
+  return "verified-handlers";
 }
 try {
   let cycleNumber = 0;
@@ -98,7 +105,9 @@ try {
         policy.noProgress = 0;
       } else {
         policy.failedRepairs++;
-        state.stopReason = "repair-rejected-or-rolled-back";
+        // A rejected lint-only attempt can safely be retried with the
+        // alternate reviewed handler set on the next clean cycle.
+        if (strategy !== "eslint-only") state.stopReason = "repair-rejected-or-rolled-back";
       }
       writeJson(policyFile, policy);
       writeJson(stateFile, state);
