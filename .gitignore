@@ -204,3 +204,6 @@ public/generated-content/
 external/maxcore/artifacts/ai-training-server/ai_model/training/candidate_runs/live-*/
 external/maxcore/artifacts/ai-training-server/ai_model/training/live_candidate_admissions/live-*/
 external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning_runs/live-*/
+
+# ASO runtime logs and untrusted local verification artifacts
+/reports/aso/
