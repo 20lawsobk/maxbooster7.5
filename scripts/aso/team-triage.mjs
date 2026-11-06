@@ -6,7 +6,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import {ROOT,DEFAULT_OUTPUT,option,readJson,writeJson,sha,inventory,revision} from "./common.mjs";
+import {ROOT,DEFAULT_OUTPUT,option,readJson,writeJson,sha,inventory,revision,requiredReleaseEvidence} from "./common.mjs";
 import {ROLE_BY_ID,assignment,FILE_STAGES} from "./team-catalog.mjs";
 
 const args=process.argv.slice(2);
@@ -107,7 +107,10 @@ for(const row of report.executed) {
     });
   }
 }
-for(const missing of report.releaseEvidence?.missing??[]) {
+const missingReceipts=report.releaseEvidence?.valid ? [] :
+  (report.releaseEvidence?.missing?.length ? report.releaseEvidence.missing :
+    requiredReleaseEvidence(report.releaseProfile??"public"));
+for(const missing of missingReceipts) {
   const isAdmin=report.releaseProfile==="admin";
   const map={
     "admin-ai-qualified-model-output":"ai-ml-engineer",
