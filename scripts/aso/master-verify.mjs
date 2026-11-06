@@ -40,6 +40,13 @@ const jobs = {
       "--output", path.join(out, "launch-readiness"), "--require-green"], 10 * 60_000],
   ],
 };
+if (releaseProfile === "admin" && mode === "full") {
+  // The all-80-public-page launch verdict is NOT an administrator-only gate.
+  // Generate its exact matrix but require proof of all administrator journeys
+  // through separately validated profile-specific acceptance receipts.
+  const pages=jobs.full.find(job=>job[0]==="page-and-feature-launch");
+  pages[1]=pages[1].filter(arg=>arg!=="--require-green");
+}
 if (releaseProfile === "admin" && mode !== "inventory") {
   jobs[mode].push(["admin-governance-contract", ["node", "--test", "tests/aso-admin-only-contract.test.cjs"], 5 * 60_000]);
 }
@@ -62,6 +69,7 @@ const result = {
     "Desktop/mobile files inventoried; their separate release workflow status is not a web/API launch gate.",
     "Real customer-facing provider checks and load/soak require separate disposable/staging evidence.",
     "Passing checks do not establish SOC 2 or other legal certification.",
+    releaseProfile === "admin" ? "The public 80-page launch matrix is generated but does not by itself approve the admin rollout; full independent admin workflow receipts remain mandatory." : "Public feature and scale acceptance remains required for a public rollout.",
   ],
 };
 try {
