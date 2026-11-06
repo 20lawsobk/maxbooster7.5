@@ -47,7 +47,9 @@ const ownership=assignment({path:file});
 if (incident.owner!==ownership.owner) throw new Error("Role assignment changed; regenerate triage");
 const role=ROLE_BY_ID[incident.owner];
 const blockedPath=/(?:^|\/)(?:\.env(?:\..*)?|.*(?:secret|credential|token|keyring|password).*(?:\.json|\.ts|\.js)|package-lock\.json)$/i;
-const reviewRequired=ownership.risk==="critical" || /^(tests?\/|scripts\/aso\/|\.github\/|migrations\/|docs\/|server\/init-admin)/.test(file) ||
+// A full-release report requires a clean committed tree; never attempt to
+// convince that gate to pass on a speculative uncommitted model patch.
+const reviewRequired=report.mode==="full" || ownership.risk==="critical" || /^(tests?\/|scripts\/aso\/|\.github\/|migrations\/|docs\/|server\/init-admin)/.test(file) ||
   blockedPath.test(file);
 if (blockedPath.test(file) || !/\.(?:tsx?|jsx?|mjs|cjs|py)$/i.test(file)) throw new Error("Model worker cannot read this path");
 const stat=fs.lstatSync(absolute);
