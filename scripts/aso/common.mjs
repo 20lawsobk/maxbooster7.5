@@ -12,6 +12,24 @@ export const REQUIRED_EXTERNAL = [
   "deployment-startup", "monitoring-alerts", "accessibility", "owner-release-approval",
 ];
 
+export const REQUIRED_ADMIN_EXTERNAL = [
+  "admin-login-mfa", "admin-session-recovery", "admin-registration-closed",
+  "admin-nonadmin-denied", "admin-all-pages-and-workflows",
+  "admin-artist-fan-project-management", "admin-daw-real-audio",
+  "admin-ai-qualified-model-output", "admin-distribution-and-marketing",
+  "admin-collaboration-and-marketplace", "admin-billing-and-revenue",
+  "admin-integrations-and-permissions", "admin-data-integrity-and-backup",
+  "admin-recovery-drill", "admin-production-build-start-ready",
+  "admin-observability-and-incident-recovery", "admin-security-negative-tests",
+  "admin-operator-release-approval",
+];
+
+export function requiredReleaseEvidence(profile = "public") {
+  if (profile === "admin") return REQUIRED_ADMIN_EXTERNAL;
+  if (profile === "public") return REQUIRED_EXTERNAL;
+  throw new Error("Unknown release profile: " + profile);
+}
+
 export function option(argv, name, fallback) {
   const i = argv.indexOf(name);
   return i < 0 ? fallback : argv[i + 1];
@@ -127,15 +145,17 @@ export async function execute(id, argv, out, timeoutMs, env = {}) {
     log: path.relative(ROOT, logfile), truncated,
   };
 }
-export function externalEvidence(file, currentRevision) {
+export function externalEvidence(file, currentRevision, profile = "public") {
+  const required = requiredReleaseEvidence(profile);
   if (!file) return {valid: false, reason: "External release evidence not supplied"};
   try {
     const location = path.resolve(file);
     if (location.startsWith(ROOT + path.sep)) return {valid: false, reason: "Release approval must be supplied outside the repository"};
     const document = readJson(location);
     if (document?.commit !== currentRevision) return {valid: false, reason: "Release evidence does not match HEAD"};
+    if (profile === "admin" && document.profile !== "admin") return {valid: false, reason: "Release evidence is not explicitly scoped to admin-only rollout"};
     const absent = [];
-    for (const id of REQUIRED_EXTERNAL) {
+    for (const id of required) {
       const row = document.checks?.[id];
       if (!row || row.status !== "pass" || typeof row.receipt !== "string" || !row.receipt.trim()) absent.push(id);
     }
