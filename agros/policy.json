@@ -136,5 +136,18 @@
     "--input-type=module",
     "-e",
     "import { validateBuild } from './scripts/start-production.mjs'; validateBuild(process.cwd());"
-  ]
+  ],
+  "team": {
+    "enabled": true,
+    "executors": {},
+    "reviewers": {},
+    "checks": {},
+    "task_timeout": 900,
+    "review_timeout": 300,
+    "max_tasks": 24,
+    "max_seconds": 3600
+  },
+  "active_release": "admin-private",
+  "admin_release_argv": null,
+  "admin_release_timeout": 1800
 }

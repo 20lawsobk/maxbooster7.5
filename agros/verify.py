@@ -76,6 +76,18 @@ def digest(path):
             value.update(block)
     return value.hexdigest()
 
+def controller_identity():
+    """Pin trusted coordination code even when it is outside the checkout."""
+    directory = Path(__file__).resolve().parent
+    result = {}
+    for name in ('verify.py', 'repair.py', 'team.py', 'team_catalog.json', 'admin_release.py', 'admin_release.json'):
+        path = directory / name
+        try:
+            result[name] = digest(path) if path.is_file() and not path.is_symlink() else None
+        except OSError:
+            result[name] = None
+    return result
+
 def git(root, *args):
     return subprocess.check_output(['git', '-C', str(root), *args], text=True).strip()
 
@@ -115,6 +127,15 @@ def finite_number(value):
 def validate(config):
     if not isinstance(config, dict):
         raise ValueError('Policy must be an object')
+    if config.get('active_release', 'full-platform') not in ('full-platform', 'admin-private'):
+        raise ValueError('Unknown active release target')
+    if config.get('admin_release_argv') is not None:
+        command = config['admin_release_argv']
+        if not valid_argv(command) or not all(any(token in item for item in command) for token in ('{request}', '{evidence}')):
+            raise ValueError('admin_release_argv requires argv with {request} and {evidence}')
+    admin_timeout = config.get('admin_release_timeout', 1800)
+    if not finite_number(admin_timeout) or not 1 <= admin_timeout <= 3600:
+        raise ValueError('Admin acceptance timeout must be 1..3600')
     gates = config.get('gates')
     if not isinstance(gates, dict) or set(gates) != REQUIRED:
         raise ValueError('Policy must define exactly all required gates')
@@ -154,6 +175,12 @@ def validate(config):
     timeout = config.get('repair_timeout', 1800)
     if not finite_number(timeout) or not 1 <= timeout <= 3600:
         raise ValueError('Repair timeout must be 1..3600 seconds')
+    if 'team' in config:
+        # Imported lazily: the team scheduler uses the runner's process and
+        # source-identity primitives, and policy validation must not form a
+        # module-import cycle.
+        from team import validate_settings
+        validate_settings(config['team'])
 
 def snapshot(root):
     # Avoid strip()/line parsing: Git paths can contain spaces and newlines.
@@ -178,6 +205,7 @@ def source_identity(root):
 
 def observe(root, policy, state, memory):
     pinned_policy = digest(policy)
+    pinned_controller = controller_identity()
     config = read(policy)
     validate(config)
     # An interrupted scan must not leave a previous ready report usable.
@@ -231,6 +259,10 @@ def observe(root, policy, state, memory):
         old['runs'] += 1
         old['failures'] += result['status'] != 'PASS'
         old['seconds'] = result.get('seconds', old['seconds'])
+    admin_acceptance = None
+    if config.get('active_release') == 'admin-private':
+        from admin_release import collect
+        admin_acceptance = collect(root, session, config, head, before)
     artifact_contract = {'status': 'UNVERIFIED', 'reason': 'No artifact contract validator configured'}
     if config.get('artifact_contract_argv'):
         log = session / 'artifact-contract.log'
@@ -241,17 +273,28 @@ def observe(root, policy, state, memory):
         if contract.is_file():
             artifact_contract['manifest_sha256'] = digest(contract)
     unchanged = (head == git(root, 'rev-parse', 'HEAD') and before == source_identity(root)
-                 and pinned_policy == digest(policy))
+                 and pinned_policy == digest(policy) and pinned_controller == controller_identity())
     score = round(100 * sum(x['status'] == 'PASS' for x in results.values()) / len(REQUIRED), 2)
     report = {'schema': 1, 'state': 'COMPLETED', 'head': head, 'policy_sha256': pinned_policy, 'source_sha256': before, 'created': time.time(),
+              'controller_identity': pinned_controller,
               'root': str(root), 'unchanged': unchanged, 'gates': results, 'score': score,
               'source_scope': 'Git-visible inputs excluding explicit generated output/dependency prefixes; fixtures retained',
               'artifact_contract': artifact_contract,
               'ready': unchanged and artifact_contract['status'] == 'PASS' and all(x['status'] == 'PASS' for x in results.values()) and score >= config.get('target', 98)}
+    if admin_acceptance is not None:
+        from admin_release import finalize
+        report['active_release'] = finalize(admin_acceptance, report)
+    from team import build_plan
+    team_plan = build_plan(root, report)
+    write(session / 'team-plan.json', team_plan)
+    write(state / 'team-plan.json', team_plan)
+    report['team_plan'] = str(session / 'team-plan.json')
     write(session / 'report.json', report)
     write(state / 'latest.json', report)
     write(state / 'learning.json', memory)
-    print(json.dumps({'report': str(session / 'report.json'), 'score': score, 'ready': report['ready']}), flush=True)
+    print(json.dumps({'report': str(session / 'report.json'), 'score': score,
+                      'ready': target_ready(report), 'public_release_ready': report['ready'],
+                      'active_release': report.get('active_release', {}).get('id', 'full-platform')}), flush=True)
     return report
 
 def main():
@@ -272,7 +315,7 @@ def main():
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         memory = read(state / 'learning.json') if (state / 'learning.json').exists() else {}
         report = observe(root, policy, state, memory)
-        if report['ready']:
+        if target_ready(report):
             return 0
         if args.repair and args.cycles > 1:
             # The repair coordinator owns the bounded candidate loop. Never turn
@@ -285,6 +328,9 @@ def main():
 
 def cancel(signum, frame):
     raise KeyboardInterrupt('Cancelled by signal ' + str(signum))
+
+def target_ready(report):
+    return report.get('active_release', {}).get('ready', report.get('ready', False))
 
 if __name__ == '__main__':
     signal.signal(signal.SIGTERM, cancel)

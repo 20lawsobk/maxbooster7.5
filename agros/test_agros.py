@@ -294,7 +294,7 @@ class RunnerTests(unittest.TestCase):
         self.assertFalse(read(self.state / 'latest.json')['ready'])
         with self.assertRaises(ProcessLookupError): os.kill(child_pid, 0)
     def test_repair_unconfigured(self):
-        write(self.state/'latest.json',{'gates':{'build':{'status':'FAIL'}}})
+        observe(self.root, self.policy, self.state, {})
         result=subprocess.run([sys.executable,str(Path(__file__).with_name('repair.py')),
             '--root',str(self.root),'--policy',str(self.policy),'--state',str(self.state)])
         self.assertEqual(result.returncode,3)
