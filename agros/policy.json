@@ -67,11 +67,7 @@
       "timeout": 1800
     },
     "start": {
-      "argv": [
-        "npm",
-        "run",
-        "simulate:production"
-      ],
+      "argv": null,
       "timeout": 1800
     },
     "coverage": {
@@ -79,16 +75,20 @@
       "timeout": 600,
       "limits": {
         "lines": {
-          "min": 95
+          "min": 100,
+          "max": 100
         },
         "branches": {
-          "min": 95
+          "min": 100,
+          "max": 100
         },
         "functions": {
-          "min": 95
+          "min": 100,
+          "max": 100
         },
         "statements": {
-          "min": 95
+          "min": 100,
+          "max": 100
         }
       }
     },
@@ -97,6 +97,7 @@
       "timeout": 600,
       "limits": {
         "violations": {
+          "min": 0,
           "max": 0
         }
       }
@@ -106,9 +107,11 @@
       "timeout": 600,
       "limits": {
         "api_p95_ms": {
+          "min": 0,
           "max": 250
         },
         "page_load_seconds": {
+          "min": 0,
           "max": 2
         }
       }
@@ -127,5 +130,11 @@
     }
   },
   "repair_argv": null,
-  "repair_timeout": 1800
+  "repair_timeout": 1800,
+  "artifact_contract_argv": [
+    "node",
+    "--input-type=module",
+    "-e",
+    "import { validateBuild } from './scripts/start-production.mjs'; validateBuild(process.cwd());"
+  ]
 }
