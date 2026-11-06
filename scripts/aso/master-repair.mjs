@@ -14,6 +14,8 @@ const out = path.resolve(option(args, "--output", DEFAULT_OUTPUT));
 if (!out.startsWith(ROOT + path.sep)) throw new Error("Output must be under this checkout");
 const autoCommit = args.includes("--auto-commit");
 const strategy = option(args, "--strategy", "verified-handlers");
+const releaseProfile = option(args, "--release-profile", "public");
+if (!["public","admin"].includes(releaseProfile)) throw new Error("Invalid release profile");
 if (!["verified-handlers", "eslint-only"].includes(strategy)) throw new Error("Unknown safe strategy");
 const baselinePath = path.join(out, "report.json");
 const baseline = readJson(baselinePath);
@@ -26,7 +28,7 @@ try {
   ensureRepairBranch();
   receipt.branch = branch();
   receipt.revisionBefore = revision();
-  if (!baseline || baseline.mode !== "quick" || baseline.revision !== receipt.revisionBefore ||
+  if (!baseline || baseline.mode !== "quick" || baseline.releaseProfile !== releaseProfile || baseline.revision !== receipt.revisionBefore ||
       baseline.sourceUnchanged !== true || baseline.sourceCleanAfter !== true) {
     throw new Error("A fresh, clean, quick ASO verification report is required before repairs");
   }
@@ -47,7 +49,8 @@ try {
   if (!receipt.changed.length) throw new Error("Approved repair handlers made no tracked edits");
   // The verifier's fresh output must come from this actual checkout.
   const verification = await execute("quick-reverify",
-    ["node", "scripts/aso/master-verify.mjs", "--mode", "quick", "--output", out],
+    ["node", "scripts/aso/master-verify.mjs", "--mode", "quick", "--output", out,
+      "--release-profile", releaseProfile],
     path.join(out, "repair-logs"), 70 * 60_000);
   receipt.verify = verification;
   const after = readJson(baselinePath);
