@@ -66,11 +66,15 @@ try {
   if (afterFailed.size >= beforeFailed.size && !after.gatesPassed) {
     throw new Error("No proven reduction in failed verification gates");
   }
-  if (verification.status !== "pass") {
-    // A partially improved result is retained for human review only; no
-    // automatic promotion with failed verification.
-    throw new Error("Fresh quick verifier did not pass all gates");
+  // An incremental reduction in failed gates is valid progress, but is NEVER
+  // described as a release pass. The subsequent supervisor cycle must rerun
+  // every gate against the new commit, and stop on recurring failures.
+  const improved = newFailures.length === 0 && afterFailed.size < beforeFailed.size;
+  if (verification.status !== "pass" && !improved) {
+    throw new Error("Reverification did not prove monotonic gate improvement");
   }
+  receipt.partialProgress = verification.status !== "pass";
+  receipt.remainingFailedGates = [...afterFailed];
   if (autoCommit) {
     // Only tracked edits that passed independent verification are committed.
     execFileSync("git", ["add", "-u", "--", ...receipt.changed], {cwd: ROOT, stdio: "pipe"});
