@@ -55,7 +55,7 @@ try {
         stage:stage.key,title:stage.title,owner,risk:"critical",
         priority:0,dependsOn:prior?[prior]:[],
         instructions:stage.instruction,
-        roleChecklist:ROLE_BY_ID[owner].work,
+        roleChecklistRef:"scripts/aso/team-catalog.mjs#"+owner,
         expectedEvidence:stage.output,
         completionPolicy:"Exact-commit runtime proof; synthetic/UI presence is not acceptable"
       });
@@ -69,7 +69,7 @@ try {
         title:"Independent "+ROLE_BY_ID[role].title+" acceptance",owner:role,
         risk:"critical",priority:0,dependsOn:[prior],
         instructions:"Independently execute all role-specific work below and return actual reproducible proof, including denied non-admin access, source version and preserved existing behavior.",
-        roleChecklist:ROLE_BY_ID[role].work,
+        roleChecklistRef:"scripts/aso/team-catalog.mjs#"+role,
         expectedEvidence:ROLE_BY_ID[role].acceptance,
         completionPolicy:"Independent observed acceptance and reviewed receipts required"
       });
@@ -106,7 +106,7 @@ try {
         owner:role,risk:assignmentData.risk,
         priority:assignmentData.risk==="critical"?1:3,
         dependsOn:[prior],instructions:"Perform each applicable role-specific checklist item for this exact file and every affected caller. Report blockers explicitly rather than certifying static presence.",
-        roleChecklist:ROLE_BY_ID[role].work,
+        roleChecklistRef:"scripts/aso/team-catalog.mjs#"+role,
         expectedEvidence:ROLE_BY_ID[role].acceptance,
         completionPolicy:"Independent reviewed source/test/recovery receipts"
       });
@@ -121,7 +121,7 @@ try {
     scope:"ALL TRACKED GIT FILES AND ALL REQUIRED ADMIN JOURNEYS",
     scopeInventoryCount:scope.count,enumeratedFiles:fileCoverage.size,
     unassignedFiles:scope.files.filter(x=>!fileCoverage.has(x.path)),
-    teamSize:TEAM.length,roles:TEAM.map(({id,title,acceptance})=>({id,title,acceptance})),
+    teamSize:TEAM.length,roles:TEAM.map(({id,title,work,acceptance})=>({id,title,work,acceptance})),
     requiredJourneys:ledger.length,totalTasks:tasks,countByRole,countByRisk,
     taskFile:path.relative(ROOT,taskPath),adminLedger:path.relative(ROOT,ledgerPath),
     status:"TASKS_PLANNED_NOT_EXECUTED",
