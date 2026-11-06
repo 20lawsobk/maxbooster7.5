@@ -5,6 +5,9 @@ on:
     paths:
       - "scripts/aso/**"
       - "tests/aso-controllers.test.mjs"
+      - "tests/aso-senior-team.test.mjs"
+      - "tests/aso-admin-only-contract.test.cjs"
+      - "server/services/governancePolicyService.ts"
       - "docs/ASO_AUTONOMOUS_ORGANIZATION.md"
       - ".github/workflows/aso-controller-safety.yml"
   workflow_dispatch:
@@ -32,8 +35,18 @@ jobs:
           node --check scripts/aso/master-verify.mjs
           node --check scripts/aso/master-repair.mjs
           node --check scripts/aso/supervisor.mjs
+          node --check scripts/aso/team-catalog.mjs
+          node --check scripts/aso/team-plan.mjs
+          node --check scripts/aso/team-triage.mjs
+          node --check scripts/aso/team-worker.mjs
       - name: Test safety and whole-repository inventory
-        run: node --test tests/aso-controllers.test.mjs
+        run: node --test tests/aso-controllers.test.mjs tests/aso-senior-team.test.mjs
+      - name: Install TypeScript test runtime
+        run: npm ci --no-audit --no-fund --legacy-peer-deps
+      - name: Test admin-only policy without production database
+        run: node --test tests/aso-admin-only-contract.test.cjs
+      - name: Generate exact senior team task ownership for all tracked files
+        run: node scripts/aso/team-plan.mjs
       - name: Produce full Git index inventory without repairs
         run: node scripts/aso/master-verify.mjs --mode inventory
       - name: Upload diagnostic artifacts on success or failure
@@ -44,5 +57,7 @@ jobs:
           path: |
             reports/aso/inventory.json
             reports/aso/report.json
+            reports/aso/team-plan.json
+            reports/aso/admin-journeys.json
           if-no-files-found: ignore
           retention-days: 7
