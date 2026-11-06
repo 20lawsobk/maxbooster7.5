@@ -12,6 +12,7 @@ import {execFileSync} from "node:child_process";
 import {ROOT,DEFAULT_OUTPUT,option,readJson,writeJson,revision,
         branch,clean,execute,sha} from "./common.mjs";
 import {ROLE_BY_ID,assignment} from "./team-catalog.mjs";
+import {selectSpecialistModel} from "./team-policy.mjs";
 
 const args=process.argv.slice(2);
 const out=path.resolve(option(args,"--output",DEFAULT_OUTPUT));
@@ -61,7 +62,7 @@ if (/\-\-\-\-\-BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|sk-p
 const baselineFingerprints=new Set(report.failures.map(x=>String(x).split(":")[0]));
 const mode=report.mode;
 const releaseEvidence=option(args,"--release-evidence","");
-const model=process.env.ASO_ROLE_MODEL || "gpt-6.1-sol";
+const model=selectSpecialistModel(incident);
 const receipt={schemaVersion:1,incidentId,sourceFile:file,role:role.id,revisionBefore:revision(),
   startedAt:new Date().toISOString(),model,status:"NOT_RUN",applied:false,committed:false,
   reviewRequired,scope:"ONE EXISTING SOURCE FILE",errors:[],verification:null};
