@@ -18,6 +18,12 @@ const autoCommit = args.includes("--auto-commit");
 const releaseEvidence = option(args, "--release-evidence", "");
 const releaseProfile = option(args, "--release-profile", "public");
 const seniorTeam = args.includes("--senior-team");
+const modelWorkers = args.includes("--model-workers");
+const remoteSource = args.includes("--allow-remote-source");
+const maxModelCalls = integerOption(args,"--max-model-calls",2,20);
+if (modelWorkers && !(seniorTeam && autoRepair && autoCommit && remoteSource)) {
+  throw new Error("Model workers need explicit --senior-team --auto-repair --auto-commit --allow-remote-source");
+}
 if (!["public","admin"].includes(releaseProfile)) throw new Error("Unknown release profile");
 if (autoCommit && !autoRepair) throw new Error("--auto-commit requires --auto-repair");
 if (autoRepair && (!branch().startsWith("aso/") || !clean())) {
@@ -28,6 +34,7 @@ const stateFile = path.join(out, "supervisor.json");
 const policyFile = path.join(out, "policy.json");
 const state = {schemaVersion: 1, startedAt: new Date().toISOString(),
   initialRevision: revision(), autoRepair, autoCommit, maxCycles, releaseProfile, seniorTeam,
+  modelWorkers,maxModelCalls,actualModelCalls:0,
   budgetMinutes, cycles: [], verdict: "NO_GO", stopReason: null};
 const policy = readJson(policyFile, {
   schemaVersion: 1, failureCounts: {}, strategyHistory: {},
@@ -41,6 +48,43 @@ async function run(id, command, maximumMs) {
   if (remaining() === 0) throw new Error("Session time budget exhausted");
   const actual = Math.min(remaining(), maximumMs);
   return execute(id, command, path.join(out, "supervisor-logs"), actual);
+}
+async function specialistAttempt(cycle,mode) {
+  if (!modelWorkers || state.actualModelCalls>=maxModelCalls) return false;
+  const triage=readJson(path.join(out,"team-incidents.json"));
+  if (!triage || triage.revision!==revision()) return false;
+  const policyFile=path.join(out,"team-learning.json");
+  const learning=readJson(policyFile,{schemaVersion:1,roleOutcomes:{},signatureCounts:{},
+    failureFamilies:{},strategyOutcomes:{},attempts:[],maxConsecutiveNoProgress:2});
+  const eligible=(triage.incidents??[]).filter(row=>row.status==="OPEN_NOT_FIXED" &&
+    row.file && row.risk!=="critical" && !row.blockedByRepetition &&
+    typeof row.owner==="string" && (learning.roleOutcomes?.[row.owner]?.attempts??0)<3);
+  eligible.sort((a,b)=>a.priority-b.priority || a.repetition-b.repetition || a.id.localeCompare(b.id));
+  const selected=eligible[0];
+  if (!selected) return false;
+  state.actualModelCalls++;
+  cycle.specialist={role:selected.owner,incident:selected.id,mode};
+  const command=["node","scripts/aso/team-worker.mjs","--output",out,
+    "--incident",selected.id,"--release-profile",releaseProfile,
+    "--allow-remote-source","--apply","--auto-commit",
+    ...(releaseEvidence?["--release-evidence",releaseEvidence]:[])];
+  const row=await run("specialist-"+cycle.number,command,mode==="full"?190*60_000:100*60_000);
+  cycle.stages.push(row);
+  const receipt=readJson(path.join(out,"role-worker.json"));
+  const role=learning.roleOutcomes[selected.owner]??{attempts:0,successes:0};
+  role.attempts++;
+  const accepted=row.status==="pass" && receipt?.committed && receipt?.revisionAfter===revision();
+  if (accepted) role.successes++;
+  learning.roleOutcomes[selected.owner]=role;
+  (learning.attempts??=[]).push({
+    at:new Date().toISOString(),incident:selected.id,role:selected.owner,
+    before:cycle.startRevision,after:revision(),accepted,
+    reason:receipt?.status??"worker-did-not-complete"
+  });
+  // A bounded rolling window avoids unbounded state growth.
+  learning.attempts=learning.attempts.slice(-1000);
+  writeJson(policyFile,learning);
+  return accepted;
 }
 const failedIds = report => (report?.failures ?? [])
   .map(x => String(x).split(":")[0]).filter(x => x !== "External acceptance/approval evidence missing or invalid");
@@ -104,7 +148,11 @@ try {
       const strategy = chooseStrategy(cycle.failureIds);
       if (!autoRepair) { state.stopReason = "verification-failed-repair-not-authorized"; break; }
       if (!autoCommit) { state.stopReason = "repair-auto-commit-not-authorized"; break; }
-      if (!strategy) { state.stopReason = "unhandled-failure-requires-engineering-review"; break; }
+      if (!strategy) {
+        const advanced=await specialistAttempt(cycle,"quick");
+        if (advanced) {writeJson(stateFile,state);continue;}
+        state.stopReason="unhandled-failure-requires-role-specific-engineering-or-approval";break;
+      }
       if (policy.noProgress >= noProgressLimit) {
         state.stopReason = "no-progress-circuit-breaker"; break;
       }
