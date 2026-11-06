@@ -32,7 +32,7 @@ if (apply && (!branch().startsWith("aso/") || !clean())) {
 const report=readJson(path.join(out,"report.json"));
 const triage=readJson(path.join(out,"team-incidents.json"));
 if (!triage || !report || triage.revision!==revision() || report.revision!==revision() ||
-    report.mode!=="quick" || !report.sourceUnchanged) throw new Error("Fresh quick verification and same-revision triage required");
+    !["quick","full"].includes(report.mode) || !report.sourceUnchanged) throw new Error("Fresh quick verification and same-revision triage required");
 const incident=triage.incidents?.find(row=>row.id===incidentId);
 if (!incident || incident.status!=="OPEN_NOT_FIXED" || !incident.file) {
   throw new Error("Incident must name an exact unresolved source file");
@@ -57,6 +57,8 @@ if (/\-\-\-\-\-BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|sk-p
   throw new Error("Credential-like content detected; source not transmitted");
 }
 const baselineFingerprints=new Set(report.failures.map(x=>String(x).split(":")[0]));
+const mode=report.mode;
+const releaseEvidence=option(args,"--release-evidence","");
 const model=process.env.ASO_ROLE_MODEL || "gpt-6.1-sol";
 const receipt={schemaVersion:1,incidentId,sourceFile:file,role:role.id,revisionBefore:revision(),
   startedAt:new Date().toISOString(),model,status:"NOT_RUN",applied:false,committed:false,
@@ -132,15 +134,16 @@ try {
       throw new Error("Patch changed unexpected paths");
     }
     execFileSync("git",["diff","--check"],{cwd:ROOT});
-    const verify=await execute("role-quick-verify",[
-      "node","scripts/aso/master-verify.mjs","--mode","quick","--output",out,
-      "--release-profile",releaseProfile
-    ],path.join(out,"role-worker-logs"),80*60_000);
+    const verify=await execute("role-independent-reverify",[
+      "node","scripts/aso/master-verify.mjs","--mode",mode,"--output",out,
+      "--release-profile",releaseProfile,
+      ...(releaseEvidence?["--release-evidence",releaseEvidence]:[])
+    ],path.join(out,"role-worker-logs"),mode==="full"?190*60_000:80*60_000);
     receipt.verification=verify;
     const after=readJson(path.join(out,"report.json"));
     const afterFailed=new Set((after?.failures??[]).map(x=>String(x).split(":")[0]));
     const regression=[...afterFailed].filter(id=>!baselineFingerprints.has(id));
-    if(!after || !after.sourceUnchanged || regression.length ||
+    if(!after || after.mode!==mode || !after.sourceUnchanged || regression.length ||
        (afterFailed.size>=baselineFingerprints.size && !after.gatesPassed)) {
       throw new Error("Independent quick verification did not prove monotonic improvement");
     }
