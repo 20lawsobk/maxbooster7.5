@@ -16,6 +16,9 @@ const noProgressLimit = Math.max(1, integerOption(args, "--max-no-progress", 2, 
 const autoRepair = args.includes("--auto-repair");
 const autoCommit = args.includes("--auto-commit");
 const releaseEvidence = option(args, "--release-evidence", "");
+const releaseProfile = option(args, "--release-profile", "public");
+const seniorTeam = args.includes("--senior-team");
+if (!["public","admin"].includes(releaseProfile)) throw new Error("Unknown release profile");
 if (autoCommit && !autoRepair) throw new Error("--auto-commit requires --auto-repair");
 if (autoRepair && (!branch().startsWith("aso/") || !clean())) {
   throw new Error("Autonomous repair requires a clean aso/ branch; never main or dirty worktrees");
@@ -24,7 +27,7 @@ const deadline = budgetMinutes ? Date.now() + budgetMinutes * 60_000 : Number.MA
 const stateFile = path.join(out, "supervisor.json");
 const policyFile = path.join(out, "policy.json");
 const state = {schemaVersion: 1, startedAt: new Date().toISOString(),
-  initialRevision: revision(), autoRepair, autoCommit, maxCycles,
+  initialRevision: revision(), autoRepair, autoCommit, maxCycles, releaseProfile, seniorTeam,
   budgetMinutes, cycles: [], verdict: "NO_GO", stopReason: null};
 const policy = readJson(policyFile, {
   schemaVersion: 1, failureCounts: {}, strategyHistory: {},
@@ -66,21 +69,35 @@ function chooseStrategy(failures) {
 }
 try {
   let cycleNumber = 0;
+  let teamPlannedRevision = null;
   while (!interrupted && (maxCycles === 0 || cycleNumber < maxCycles)) {
     if (remaining() === 0) { state.stopReason = "budget-exhausted"; break; }
     cycleNumber++;
+    if (seniorTeam && teamPlannedRevision !== revision()) {
+      const planned = await run("team-plan-"+cycleNumber,
+        ["node","scripts/aso/team-plan.mjs","--output",out],40*60_000);
+      if (planned.status !== "pass") {state.stopReason="team-inventory-or-planning-failed";break;}
+      teamPlannedRevision=revision();
+    }
     const cycle = {number: cycleNumber, startRevision: revision(),
       startedAt: new Date().toISOString(), stages: [], failureIds: [], action: null};
     state.cycles.push(cycle);
     writeJson(stateFile, state);
     const quick = await run("cycle-" + cycleNumber + "-quick",
-      ["node", "scripts/aso/master-verify.mjs", "--mode", "quick", "--output", out], 90 * 60_000);
+      ["node", "scripts/aso/master-verify.mjs", "--mode", "quick", "--output", out,
+        "--release-profile", releaseProfile], 90 * 60_000);
     cycle.stages.push(quick);
     const initial = readJson(path.join(out, "report.json"));
     if (!initial || initial.mode !== "quick" || initial.revision !== cycle.startRevision) {
       state.stopReason = "missing-or-stale-quick-verification"; break;
     }
     cycle.failureIds = failedIds(initial);
+    if (seniorTeam) {
+      const triage=await run("team-triage-quick-"+cycleNumber,
+        ["node","scripts/aso/team-triage.mjs","--output",out],10*60_000);
+      cycle.stages.push(triage);
+      if (triage.status !== "pass") {state.stopReason="team-triage-failed";break;}
+    }
     updateHistory(cycle.failureIds);
     writeJson(policyFile, policy);
     if (quick.status !== "pass" || !initial.gatesPassed) {
@@ -94,7 +111,7 @@ try {
       cycle.action = strategy;
       const repair = await run("cycle-" + cycleNumber + "-repair",
         ["node", "scripts/aso/master-repair.mjs", "--output", out,
-          "--strategy", strategy, "--auto-commit"], 90 * 60_000);
+          "--strategy", strategy, "--release-profile", releaseProfile, "--auto-commit"], 90 * 60_000);
       cycle.stages.push(repair);
       const receipt = readJson(path.join(out, "repair.json"));
       policy.strategyHistory[strategy] ??= {attempts: 0, successes: 0};
@@ -117,6 +134,7 @@ try {
     // No short-circuit: a quick pass cannot imply full launch readiness.
     const full = await run("cycle-" + cycleNumber + "-full",
       ["node", "scripts/aso/master-verify.mjs", "--mode", "full", "--output", out,
+        "--release-profile", releaseProfile,
         ...(releaseEvidence ? ["--release-evidence", releaseEvidence] : [])],
       180 * 60_000);
     cycle.stages.push(full);
@@ -125,8 +143,15 @@ try {
       state.stopReason = "missing-or-stale-full-verification"; break;
     }
     cycle.failureIds = failedIds(report);
+    if (seniorTeam) {
+      const triage=await run("team-triage-full-"+cycleNumber,
+        ["node","scripts/aso/team-triage.mjs","--output",out],10*60_000);
+      cycle.stages.push(triage);
+      if (triage.status !== "pass") {state.stopReason="team-triage-failed";break;}
+    }
     if (full.status === "pass" && report.releaseReady) {
-      state.verdict = "LOCALLY_GATED_WITH_OPERATOR_EVIDENCE";
+      state.verdict = releaseProfile==="admin"
+        ? "LOCALLY_GATED_ADMIN_WITH_OPERATOR_EVIDENCE":"LOCALLY_GATED_WITH_OPERATOR_EVIDENCE";
       state.stopReason = "all-release-gates-and-operator-receipts-satisfied";
     } else if (report.gatesPassed && !report.releaseEvidence.valid) {
       state.stopReason = "independent-production-evidence-or-approval-required";
@@ -148,4 +173,4 @@ try {
     cycles: state.cycles.length, trackedProject: "entire git index",
     receipt: path.relative(ROOT, stateFile)}));
 }
-process.exitCode = state.verdict === "LOCALLY_GATED_WITH_OPERATOR_EVIDENCE" ? 0 : 1;
+process.exitCode = state.verdict.startsWith("LOCALLY_GATED_") ? 0 : 1;
