@@ -129,7 +129,6 @@ const interactionSchema = z.object({
       "play",
       "like",
       "share",
-      "purchase",
       "preview",
       "skip",
       "repeat",
@@ -1117,15 +1116,10 @@ router.post("/purchase", async (req: Request, res: Response) => {
       licenseType,
     );
 
-    await discoveryAlgorithmService.recordInteraction({
-      userId: req.user!.id,
-      beatId,
-      interactionType: "purchase",
-      source: "checkout",
-    });
-
     res.json(result);
 
+    // A checkout session is not a paid purchase. Client-supplied interactions
+    // and checkout initiation must not increment paid discovery signals.
     // NOTE: beat_sold / beat_purchased notifications are sent by
     // marketplaceService.processPayment() after Stripe payment confirmation,
     // NOT here at initiation time (which fires before payment succeeds).
