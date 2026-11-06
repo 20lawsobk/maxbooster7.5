@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {ROOT, option, integerOption, sha, inventory, execute,
-  externalEvidence, REQUIRED_EXTERNAL, readJson, writeJson} from "../scripts/aso/common.mjs";
+  externalEvidence, REQUIRED_EXTERNAL, REQUIRED_ADMIN_EXTERNAL, requiredReleaseEvidence, readJson, writeJson} from "../scripts/aso/common.mjs";
 
 test("CLI options reject dangerous/unbounded invalid integers", () => {
   assert.equal(option(["--mode", "full"], "--mode", "quick"), "full");
@@ -57,4 +57,22 @@ test("child failures, timeouts and logs are recorded rather than silently passed
     assert.equal(timedOut.timedOut, true);
     assert.equal(sha(Buffer.from("abc")), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
   } finally { fs.rmSync(folder, {recursive: true, force: true}); }
+});
+
+
+test("admin release requires every administrator capability, closed signup and exact-scope receipts", () => {
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), "aso-admin-evidence-"));
+  try {
+    const file = path.join(folder, "admin-release.json");
+    const checks = Object.fromEntries(REQUIRED_ADMIN_EXTERNAL.map(id => [id, {status:"pass",receipt:"real-evidence-to-verify-out-of-band"}]));
+    assert.ok(requiredReleaseEvidence("admin").includes("admin-registration-closed"));
+    assert.ok(!requiredReleaseEvidence("public").includes("admin-registration-closed"));
+    writeJson(file,{profile:"admin",commit:"abc",approvedBy:"operator",approvedAt:new Date().toISOString(),releaseId:"admin-1",checks});
+    assert.equal(externalEvidence(file,"abc","public").valid,false);
+    assert.equal(externalEvidence(file,"abc","admin").valid,true);
+    const data=readJson(file);
+    delete data.checks["admin-daw-real-audio"];
+    writeJson(file,data);
+    assert.equal(externalEvidence(file,"abc","admin").valid,false);
+  } finally {fs.rmSync(folder,{recursive:true,force:true});}
 });
