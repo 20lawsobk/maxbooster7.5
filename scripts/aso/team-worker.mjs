@@ -141,7 +141,8 @@ try {
       "node","scripts/aso/master-verify.mjs","--mode",mode,"--output",out,
       "--release-profile",releaseProfile,
       ...(releaseEvidence?["--release-evidence",releaseEvidence]:[])
-    ],path.join(out,"role-worker-logs"),mode==="full"?190*60_000:80*60_000);
+    ],path.join(out,"role-worker-logs"),mode==="full"?190*60_000:80*60_000,
+      {OPENAI_API_KEY:""});
     receipt.verification=verify;
     const after=readJson(path.join(out,"report.json"));
     const afterFailed=new Set((after?.failures??[]).map(x=>String(x).split(":")[0]));
