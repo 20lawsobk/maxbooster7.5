@@ -13,6 +13,14 @@ export class RegistrationDisabledError extends Error {
   constructor() { super("New registrations are disabled"); }
 }
 
+/**
+ * Operator-scoped admin-only rollout. This flag narrows access; it never
+ * creates an impersonation role, weakens MFA or bypasses authorization.
+ */
+export function isAdminOnlyMode(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.MAXBOOSTER_ADMIN_ONLY_MODE?.trim().toLowerCase() === "true";
+}
+
 async function readStoredGovernancePolicy() {
   const keys = ["maintenanceMode", "userRegistrationEnabled", "apiRateLimit"];
   const rows = await db.select().from(systemSettings)
@@ -44,6 +52,9 @@ export const enforceMaintenance: RequestHandler = async (req, res, next) => {
   try {
     const policy = await readGovernancePolicy();
     // Recovery access requires authenticated admin, never a client header.
+    if (isAdminOnlyMode() && req.user?.role !== "admin") {
+      return res.status(403).json({ error: "Administrator access only" });
+    }
     if (policy.maintenanceMode && req.user?.role !== "admin") {
       res.setHeader("Retry-After", "60");
       return res.status(503).json({ error: "Platform maintenance in progress" });
@@ -55,7 +66,7 @@ export const enforceMaintenance: RequestHandler = async (req, res, next) => {
 };
 
 export async function assertRegistrationEnabled() {
-  if (!(await readGovernancePolicy()).userRegistrationEnabled) {
+  if (isAdminOnlyMode() || !(await readGovernancePolicy()).userRegistrationEnabled) {
     throw new RegistrationDisabledError();
   }
 }
