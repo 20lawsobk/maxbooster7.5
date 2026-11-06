@@ -11,6 +11,8 @@ import {ROOT, DEFAULT_OUTPUT, inventory, execute, writeJson, sha, git,
 
 const argv = process.argv.slice(2);
 const mode = option(argv, "--mode", "full");
+const releaseProfile = option(argv, "--release-profile", "public");
+if (!["admin", "public"].includes(releaseProfile)) throw new Error("Unknown release profile");
 if (!["inventory", "quick", "full"].includes(mode)) throw new Error("Expected --mode inventory|quick|full");
 const out = path.resolve(option(argv, "--output", DEFAULT_OUTPUT));
 if (!out.startsWith(ROOT + path.sep)) throw new Error("Output must be inside the repository (normally ignored reports/aso)");
@@ -38,13 +40,16 @@ const jobs = {
       "--output", path.join(out, "launch-readiness"), "--require-green"], 10 * 60_000],
   ],
 };
+if (releaseProfile === "admin" && mode !== "inventory") {
+  jobs[mode].push(["admin-governance-contract", ["node", "--test", "tests/aso-admin-only-contract.test.cjs"], 5 * 60_000]);
+}
 const scope = inventory();
 const beforeStatus = git(["status", "--porcelain", "--untracked-files=normal"]);
 writeJson(path.join(out, "inventory.json"), {
   ...scope, disclaimer: "All tracked files are inventoried. Inventory is not proof of individual review or functional coverage.",
 });
 const result = {
-  schemaVersion: 1, mode, createdAt: new Date().toISOString(), revision: scope.revision,
+  schemaVersion: 1, mode, releaseProfile, createdAt: new Date().toISOString(), revision: scope.revision,
   inventoryCount: scope.count, inventoryGroups: scope.counts,
   inventorySha256: sha(scope.files.map(x => x.path + "\0" + x.mode + "\0" + x.blob).join("\n")),
   missingTrackedPaths: scope.missing, specialIndexEntries: scope.special,
@@ -60,6 +65,9 @@ const result = {
   ],
 };
 try {
+  if (releaseProfile === "admin" && mode === "full" && process.env.MAXBOOSTER_ADMIN_ONLY_MODE?.trim().toLowerCase() !== "true") {
+    result.failures.push("Admin-only production runtime flag is not confirmed in this verifier environment");
+  }
   if (scope.missing.length) result.failures.push("Some tracked files are absent from this checkout");
   if (scope.special.some(x => x.mode === "160000")) result.failures.push("Git submodules require separately verified checkouts");
   if (mode !== "inventory") {
@@ -78,7 +86,7 @@ try {
   result.sourceCleanAfter = afterStatus === "";
   if (!result.sourceUnchanged) result.failures.push("Tracked/untracked source state changed during verification");
   if (mode === "full" && !result.sourceCleanAfter) result.failures.push("Final release verification needs a clean worktree");
-  result.releaseEvidence = externalEvidence(evidence, afterRev);
+  result.releaseEvidence = externalEvidence(evidence, afterRev, releaseProfile);
   if (mode === "full" && !result.releaseEvidence.valid) {
     result.failures.push("External acceptance/approval evidence missing or invalid");
   }
@@ -87,7 +95,8 @@ try {
     !scope.special.some(x => x.mode === "160000") && result.sourceUnchanged;
   result.releaseReady = mode === "full" && result.gatesPassed && result.sourceCleanAfter &&
     result.releaseEvidence.valid && result.failures.length === 0;
-  result.status = result.releaseReady ? "LOCALLY_GATED_WITH_OPERATOR_EVIDENCE" :
+  result.status = result.releaseReady ?
+    (releaseProfile === "admin" ? "LOCALLY_GATED_ADMIN_WITH_OPERATOR_EVIDENCE" : "LOCALLY_GATED_WITH_OPERATOR_EVIDENCE") :
     result.gatesPassed ? "CHECKS_PASSED_NOT_RELEASE_APPROVED" : "NO_GO";
   result.failureFingerprint = sha(result.failures.slice().sort().join("\n"));
 } catch (error) {
@@ -97,7 +106,7 @@ try {
 } finally {
   result.finishedAt = new Date().toISOString();
   writeJson(path.join(out, "report.json"), result);
-  console.log(JSON.stringify({status: result.status, mode, revision: result.revision,
+  console.log(JSON.stringify({status: result.status, mode, releaseProfile, revision: result.revision,
     trackedFiles: result.inventoryCount, failedGates: result.failures,
     report: path.relative(ROOT, path.join(out, "report.json"))}));
 }
