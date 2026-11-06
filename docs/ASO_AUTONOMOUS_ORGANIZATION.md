@@ -132,3 +132,27 @@ verify the native builds or remove them from the engineering review scope.
 The connected Replit project should import the reviewed ASO branch through
 its existing Git integration only after its precise repository mapping is
 confirmed. Existing Replit application work must not be overwritten blindly.
+
+
+## Administrator-first senior team extension
+
+The updated release target is a fully usable real administrator account,
+not general-public availability. The new senior engineering infrastructure
+is specified in docs/ASO_SENIOR_TEAM_ADMIN_ROLLOUT.md.
+
+The branch now includes 21 specialist role specifications, 10 sequential
+tasks plus independent peer reviews for every tracked file, 14 administrator
+acceptance journeys, a fail-closed registration/access policy, adaptive
+incident routing, per-role model escalation, and an optional single-file
+model proposal worker. This is a verifiable task engine, not yet 21
+independent always-on agents. Running the full source inventory, locally
+executing tests, qualified model inference, live provider receipts and
+actual Replit administrator acceptance still require observed evidence.
+
+The admin profile generates the public page matrix for transparency but
+does not require a full public launch verdict. It requires its own
+independent actual administrator end-to-end receipts for all features,
+MFA, access denial, database recovery, AI quality, real audio, provider
+operations, billing, startup and monitoring. The admin environment must
+set MAXBOOSTER_ADMIN_ONLY_MODE=true. No automatic public deployment,
+release merge, real charge, external post or migration is authorized.
