@@ -6,6 +6,7 @@ on:
       - "scripts/aso/**"
       - "tests/aso-controllers.test.mjs"
       - "tests/aso-senior-team.test.mjs"
+      - "tests/aso-adaptive-team.test.mjs"
       - "tests/aso-admin-only-contract.test.cjs"
       - "server/services/governancePolicyService.ts"
       - "docs/ASO_AUTONOMOUS_ORGANIZATION.md"
@@ -36,11 +37,12 @@ jobs:
           node --check scripts/aso/master-repair.mjs
           node --check scripts/aso/supervisor.mjs
           node --check scripts/aso/team-catalog.mjs
+          node --check scripts/aso/team-policy.mjs
           node --check scripts/aso/team-plan.mjs
           node --check scripts/aso/team-triage.mjs
           node --check scripts/aso/team-worker.mjs
       - name: Test safety and whole-repository inventory
-        run: node --test tests/aso-controllers.test.mjs tests/aso-senior-team.test.mjs
+        run: node --test tests/aso-controllers.test.mjs tests/aso-senior-team.test.mjs tests/aso-adaptive-team.test.mjs
       - name: Install TypeScript test runtime
         run: npm ci --no-audit --no-fund --legacy-peer-deps
       - name: Test admin-only policy without production database
