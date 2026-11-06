@@ -191,8 +191,11 @@ export function assignment(entry) {
   const isAsset = /\.(?:png|jpe?g|webp|gif|svg|mp3|wav|mp4|pdf|onnx|pt|safetensors|bin)$/i.test(file);
   let owner="principal-architect";
   if (/^(tests?\/|evaluations\/)/.test(file)) owner="qa-engineer";
+  else if (/\.(?:wav|mp3|flac|ogg|aiff|m4a)$/i.test(file)) owner="audio-dsp-engineer";
+  else if (/\.(?:png|jpe?g|webp|gif|svg)$/i.test(file)) owner="ux-product-designer";
+  else if (/\.(?:md|rst|pdf|txt)$/i.test(file)) owner="technical-writer";
   else if (/(payment|billing|royalt|stripe|invoice|payout|refund|disput)/.test(file)) owner="billing-engineer";
-  else if (/(authorization|authentication|auth|session|mfa|csrf|secret|security|admin)/.test(file)) owner="security-engineer";
+  else if (/(authorization|authentication|auth|session|mfa|csrf|secret|security|admin|governance|policy)/.test(file)) owner="security-engineer";
   else if (/(migration|database|drizzle|schema|postgres|pdim|redis|storage)/.test(file)) owner="database-engineer";
   else if (/(ai[-_/]|maxcore|model|inference|training|agents?|sophia|prompt)/.test(file)) owner="ai-ml-engineer";
   else if (/(audio|studio|daw|vst|render|stem|beat|track)/.test(file)) owner="audio-dsp-engineer";
@@ -209,7 +212,7 @@ export function assignment(entry) {
   if (/^(scripts?\/|\.github\/|docker|infra\/|external\/)/.test(file)) reviewers.add("sre-devops-engineer");
   if (isAsset) reviewers.add("technical-writer");
   reviewers.delete(owner);
-  const risk = /(?:auth|payment|billing|secret|migrations|database|admin|security|refund|payout)/.test(file) ? "critical" :
+  const risk = /(?:auth|payment|billing|secret|migrations|database|admin|security|governance|policy|refund|payout)/.test(file) ? "critical" :
     isCode ? "standard" : isAsset ? "asset" : "configuration";
   return {owner,reviewers:[...reviewers],risk,isCode,isAsset};
 }
