@@ -4,6 +4,7 @@
  * or budget exhausted. Not a production deployer.
  */
 import path from "node:path";
+import {chooseSpecialistIncidents,updateRoleOutcome} from "./team-policy.mjs";
 import {ROOT, DEFAULT_OUTPUT, option, integerOption, execute, writeJson,
         readJson, revision, branch, clean} from "./common.mjs";
 
@@ -56,10 +57,7 @@ async function specialistAttempt(cycle,mode) {
   const policyFile=path.join(out,"team-learning.json");
   const learning=readJson(policyFile,{schemaVersion:1,roleOutcomes:{},signatureCounts:{},
     failureFamilies:{},strategyOutcomes:{},attempts:[],maxConsecutiveNoProgress:2});
-  const eligible=(triage.incidents??[]).filter(row=>row.status==="OPEN_NOT_FIXED" &&
-    row.file && row.risk!=="critical" && !row.blockedByRepetition &&
-    typeof row.owner==="string" && (learning.roleOutcomes?.[row.owner]?.attempts??0)<3);
-  eligible.sort((a,b)=>a.priority-b.priority || a.repetition-b.repetition || a.id.localeCompare(b.id));
+  const eligible=chooseSpecialistIncidents(triage.incidents??[],learning.roleOutcomes??{},3);
   const selected=eligible[0];
   if (!selected) return false;
   state.actualModelCalls++;
@@ -71,11 +69,9 @@ async function specialistAttempt(cycle,mode) {
   const row=await run("specialist-"+cycle.number,command,mode==="full"?190*60_000:100*60_000);
   cycle.stages.push(row);
   const receipt=readJson(path.join(out,"role-worker.json"));
-  const role=learning.roleOutcomes[selected.owner]??{attempts:0,successes:0};
-  role.attempts++;
   const accepted=row.status==="pass" && receipt?.committed && receipt?.revisionAfter===revision();
-  if (accepted) role.successes++;
-  learning.roleOutcomes[selected.owner]=role;
+  learning.roleOutcomes[selected.owner]=updateRoleOutcome(learning.roleOutcomes[selected.owner],
+    {accepted,durationMs:row.durationMs});
   (learning.attempts??=[]).push({
     at:new Date().toISOString(),incident:selected.id,role:selected.owner,
     before:cycle.startRevision,after:revision(),accepted,
