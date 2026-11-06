@@ -1,0 +1,131 @@
+{
+  "schema": 1,
+  "target": 98,
+  "gates": {
+    "build": {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "timeout": 1800
+    },
+    "types": {
+      "argv": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "timeout": 1800
+    },
+    "lint": {
+      "argv": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "timeout": 1800
+    },
+    "unit": {
+      "argv": [
+        "npm",
+        "run",
+        "test:unit"
+      ],
+      "timeout": 1800
+    },
+    "integration": {
+      "argv": [
+        "npm",
+        "run",
+        "test:integration:isolated"
+      ],
+      "timeout": 1800
+    },
+    "e2e": {
+      "argv": [
+        "npm",
+        "run",
+        "test:pages:isolated"
+      ],
+      "timeout": 1800
+    },
+    "regression": {
+      "argv": [
+        "npm",
+        "run",
+        "test:runtime-contracts"
+      ],
+      "timeout": 1800
+    },
+    "security": {
+      "argv": [
+        "npm",
+        "run",
+        "security:audit"
+      ],
+      "timeout": 1800
+    },
+    "start": {
+      "argv": [
+        "npm",
+        "run",
+        "simulate:production"
+      ],
+      "timeout": 1800
+    },
+    "coverage": {
+      "argv": null,
+      "timeout": 600,
+      "limits": {
+        "lines": {
+          "min": 95
+        },
+        "branches": {
+          "min": 95
+        },
+        "functions": {
+          "min": 95
+        },
+        "statements": {
+          "min": 95
+        }
+      }
+    },
+    "accessibility": {
+      "argv": null,
+      "timeout": 600,
+      "limits": {
+        "violations": {
+          "max": 0
+        }
+      }
+    },
+    "performance": {
+      "argv": null,
+      "timeout": 600,
+      "limits": {
+        "api_p95_ms": {
+          "max": 250
+        },
+        "page_load_seconds": {
+          "max": 2
+        }
+      }
+    },
+    "features": {
+      "argv": null,
+      "timeout": 600
+    },
+    "operations": {
+      "argv": null,
+      "timeout": 600
+    },
+    "documentation": {
+      "argv": null,
+      "timeout": 600
+    }
+  },
+  "repair_argv": null,
+  "repair_timeout": 1800
+}
