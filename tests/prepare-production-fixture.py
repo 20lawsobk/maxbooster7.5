@@ -29,6 +29,7 @@ try:
     for name in set(manifest["inputs"]) | set(manifest["files"]):
         copy_file(name)
     copy_file("dist/build-complete.json")
+    copy_file("build.sh")
     for name in ("external/maxcore", "external/pdim", "python_runtime"):
         shutil.copytree(source / name, root / name, dirs_exist_ok=True,
                         ignore=excluded, symlinks=False)

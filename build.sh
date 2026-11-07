@@ -543,11 +543,47 @@ phase_remainder() {
   done
 }
 
-# ─── Pre-compressed asset cleanup ────────────────────────────────────────────
+# ─── Pre-compressed asset finalization ──────────────────────────────────────
 phase_assets() {
-echo "==> Removing pre-compressed assets (.gz/.br) from dist/public/..."
-find dist/public -type f \( -name '*.gz' -o -name '*.br' \) -delete 2>/dev/null || true
-echo "   Done."
+echo "==> Finalizing public assets under the strict build contract..."
+node --input-type=module <<'NODE'
+import fs from "node:fs";
+import path from "node:path";
+import { validateBuild, writeBuildContract } from "./scripts/start-production.mjs";
+
+const root = process.cwd();
+const contractPath = path.join(root, "dist/build-complete.json");
+const original = JSON.parse(fs.readFileSync(contractPath, "utf8"));
+if (!original.inputs || typeof original.inputs !== "object" || Array.isArray(original.inputs)) {
+  throw new Error("Build contract is missing its source-input hashes");
+}
+
+// First prove that the pre-finalization artifact is complete and untampered.
+validateBuild(root);
+
+let removed = 0;
+function removeCompressedVariants(directory) {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      removeCompressedVariants(file);
+    } else if (entry.isFile() && /\.(?:br|gz)$/i.test(entry.name)) {
+      fs.unlinkSync(file);
+      removed++;
+    } else if (!entry.isFile()) {
+      throw new Error(`Unsupported public build asset: ${path.relative(root, file)}`);
+    }
+  }
+}
+removeCompressedVariants(path.join(root, "dist/public"));
+
+// Keep the original source hashes: any source change since compilation is a
+// hard failure. Re-hash the deliberate final public tree; do not exempt files
+// from the manifest or relax validation.
+writeBuildContract(root, original.inputs);
+validateBuild(root);
+console.log(`   Verified strict manifest after removing ${removed} compressed variants.`);
+NODE
 }
 
 # ─── Non-UTF-8 filename cleanup ──────────────────────────────────────────────

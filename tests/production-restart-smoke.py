@@ -16,6 +16,10 @@ smoke = Path(__file__).with_name("npm-start-isolated-smoke.py")
 results = []
 root = Path(sys.argv[1]).resolve()
 pg = Path(sys.argv[2]).resolve()
+asset_phase = subprocess.run(
+    ["bash", "build.sh", "--executive-task", "assets"],
+    cwd=root, text=True, capture_output=True, timeout=120, check=False,
+)
 manifest = json.loads((root / "dist/build-complete.json").read_text())
 manifest_bytes = (root / "dist/build-complete.json").read_bytes()
 expected = {
@@ -78,6 +82,10 @@ report = {
     "capturedAt": datetime.now(timezone.utc).isoformat(),
     "sourceRevision": revision,
     "buildContractSha256": hashlib.sha256(manifest_bytes).hexdigest(),
+    "deploymentAssetPhase": {
+        "exitCode": asset_phase.returncode,
+        "passed": asset_phase.returncode == 0,
+    },
     "scope": "Disposable PostgreSQL and production artifact copy; application external TCP/TLS and UDP denied",
     "networkNamespaceIsolated": True,
     "readinessGatePreserved": True,
@@ -100,10 +108,10 @@ report = {
         for cycle in cycles
     ),
     "cycles": cycles,
-    "status": "passed" if results == [0, 0] else "failed",
+    "status": "passed" if asset_phase.returncode == 0 and results == [0, 0] else "failed",
 }
 report_path = source / "reports/admin-gap-audit/packaged-restart.json"
 report_path.parent.mkdir(parents=True, exist_ok=True)
 report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
 print(f"Redacted restart evidence: {report_path.relative_to(source)}", flush=True)
-raise SystemExit(0 if results == [0, 0] else 1)
+raise SystemExit(0 if asset_phase.returncode == 0 and results == [0, 0] else 1)
