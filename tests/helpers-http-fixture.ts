@@ -83,7 +83,7 @@ export async function withFixtureAccountPolicyState<T>(
         `UPDATE users SET subscription_status=$1, subscription_tier='monthly',
                 trial_ends_at=$2, subscription_ends_at=$3, two_factor_enabled=$4
          WHERE id=$5 AND email=$6 RETURNING id`,
-        [state === "suspended" || state === "banned" ? state : "active",
+        [state === "suspended" || state === "banned" ? state : state === "trial-expired" ? "trialing" : "active",
           state === "trial-expired" ? expired : null,
           state === "subscription-expired" ? expired : null,
           state === "mfa-required", saved.id, email],

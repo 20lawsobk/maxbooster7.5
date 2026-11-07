@@ -51,7 +51,7 @@ import {
   invalidateCacheOnMutation,
 } from "./middleware/apiCache.js";
 import { blockDemoWrite } from "./auth.js";
-import { requireAuth, requireAdmin, require2FA } from "./middleware/auth.js";
+import { requireAuth, requireAdmin, require2FA, hasPaidFeatureAccess } from "./middleware/auth.js";
 import { AIUnavailableError } from "./lib/aiSource.js";
 import { generateSocialDirect } from "./services/maxcoreDomainAdapter.js";
 
@@ -7016,11 +7016,7 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        if (
-          !req.user?.subscriptionTier ||
-          req.user.subscriptionTier === "free" ||
-          req.user.subscriptionTier === "trial"
-        ) {
+        if (!req.user || !hasPaidFeatureAccess(req.user)) {
           return res.status(403).json({
             message:
               "AI content optimization requires an active paid subscription",
