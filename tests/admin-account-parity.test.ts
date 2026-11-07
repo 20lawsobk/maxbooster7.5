@@ -1,6 +1,6 @@
 /** Real HTTP/session/SQL boundaries. Only the owned disposable runner may run this suite. */
 import { beforeAll, describe, expect, it } from "vitest";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { withFixtureDatabase, withFixtureAccountPolicyState } from "./helpers-http-fixture";
 
 const base = process.env.TEST_BASE_URL!;
@@ -115,6 +115,83 @@ describe("admin and regular accounts share real feature handlers", () => {
     expect(response.status).toBe(400);
     expect((response.data as Json).message).toContain("Content is required");
   });
+
+  for (const [tier, rateLimit] of [["pro", 1000], ["enterprise", 5000]] as const) {
+    it(`admin creates, lists and revokes an owned ${tier} API key without a public plan`, async () => {
+      const created = await admin.api("POST", "/api/developer/keys/create", {
+        keyName: `Admin ${tier}`, tier, userId: other.id,
+      });
+      expect(created.status).toBe(201);
+      const key = (created.data as Json).apiKey as Json;
+      expect(key.tier).toBe(tier);
+      expect(key.rateLimit).toBe(rateLimit);
+      expect(typeof key.apiKey).toBe("string");
+      const plaintext = key.apiKey as string;
+      expect(plaintext).toMatch(/^mb_live_[a-f0-9]{64}$/);
+      await withFixtureDatabase(admin.email, async client => {
+        const stored = await client.query("SELECT user_id,key_hash,rate_limit,is_active FROM api_keys WHERE id=$1", [key.id]);
+        expect(stored.rows).toEqual([{
+          user_id: admin.id, key_hash: createHash("sha256").update(plaintext).digest("hex"),
+          rate_limit: rateLimit, is_active: true,
+        }]);
+      });
+      const listed = await admin.api("GET", "/api/developer/keys");
+      expect(listed.status).toBe(200);
+      const item = ((listed.data as Json).apiKeys as Json[]).find(row => row.id === key.id);
+      expect(item).toBeDefined();
+      expect(item!.tier).toBe(tier);
+      expect(item).not.toHaveProperty("apiKey");
+      expect(item).not.toHaveProperty("keyHash");
+      expect(JSON.stringify(listed.data).includes(plaintext)).toBe(false);
+      const foreign = await other.api("GET", "/api/developer/keys");
+      expect(foreign.status).toBe(200);
+      expect(((foreign.data as Json).apiKeys as Json[]).some(row => row.id === key.id)).toBe(false);
+      expect((await other.api("DELETE", `/api/developer/keys/${key.id}`)).status).toBe(404);
+      await withFixtureDatabase(admin.email, async client => {
+        const unchanged = await client.query("SELECT is_active FROM api_keys WHERE id=$1", [key.id]);
+        expect(unchanged.rows).toEqual([{ is_active: true }]);
+      });
+      expect((await admin.api("DELETE", `/api/developer/keys/${key.id}`)).status).toBe(200);
+      await withFixtureDatabase(admin.email, async client => {
+        const revoked = await client.query("SELECT is_active FROM api_keys WHERE id=$1", [key.id]);
+        expect(revoked.rows).toEqual([{ is_active: false }]);
+      });
+    });
+  }
+
+  it("API key capacity cannot be obtained through forged admin fields or ordinary paid status", async () => {
+    for (const user of [free, paid]) {
+      for (const tier of ["pro", "enterprise"]) {
+        const response = await user.api("POST", "/api/developer/keys/create", {
+          keyName: "Forged capacity", tier, role: "admin", subscriptionTier: "enterprise", subscriptionStatus: "active",
+        });
+        expect(response.status).toBe(403);
+      }
+      await withFixtureDatabase(user.email, async client => {
+        const stored = await client.query("SELECT id FROM api_keys WHERE user_id=$1", [user.id]);
+        expect(stored.rowCount).toBe(0);
+      });
+    }
+  });
+
+  for (const state of ["mfa-required", "suspended", "banned"] as const) {
+    it(`admin API key creation remains denied when ${state}`, async () => {
+      await withFixtureDatabase(admin.email, async client => {
+        const original = await client.query("SELECT subscription_status,two_factor_enabled FROM users WHERE id=$1", [admin.id]);
+        try {
+          await client.query("UPDATE users SET subscription_status=$1,two_factor_enabled=$2 WHERE id=$3",
+            [state === "mfa-required" ? "none" : state, state === "mfa-required", admin.id]);
+          const response = await admin.api("POST", "/api/developer/keys/create", { keyName: "Policy denied", tier: "enterprise" });
+          expect(response.status).toBe(401);
+          const stored = await client.query("SELECT id FROM api_keys WHERE user_id=$1 AND name='Policy denied'", [admin.id]);
+          expect(stored.rowCount).toBe(0);
+        } finally {
+          await client.query("UPDATE users SET subscription_status=$1,two_factor_enabled=$2 WHERE id=$3",
+            [original.rows[0].subscription_status, original.rows[0].two_factor_enabled, admin.id]);
+        }
+      });
+    });
+  }
 
   it("paid conversion supersedes an old trial date without bypassing subscription expiration", async () => {
     await withFixtureDatabase(paid.email, async client => {

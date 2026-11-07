@@ -136,11 +136,21 @@ test("owned PostgreSQL: real dump bytes restore schema, data, sequence and a pin
   await t.test("schema constraints, exact Unicode/JSON/null/numeric/bytea values and identity sequence survive actual restore", async () => {
     assert.deepEqual(await fingerprint(databases.restored_fixture), await fingerprint(source));
     const restored = databases.restored_fixture;
-    const constraints = await restored.query("SELECT contype FROM pg_constraint WHERE conrelid='recovery_fixture.entries'::regclass ORDER BY contype");
-    assert.deepEqual(constraints.rows.map(row => row.contype), ["c", "f", "p"]);
+    // PostgreSQL 18 also represents NOT NULL constraints in pg_constraint.
+    // Compare the actual restored definitions with the source instead of
+    // assuming the older catalog's three constraint kinds are exhaustive.
+    const constraintSql = `SELECT conname, contype, pg_get_constraintdef(oid) AS definition
+      FROM pg_constraint WHERE conrelid='recovery_fixture.entries'::regclass
+      ORDER BY contype, conname`;
+    const constraints = await restored.query(constraintSql);
+    assert.deepEqual(constraints.rows, (await source.query(constraintSql)).rows);
+    for (const kind of ["c", "f", "p"]) {
+      assert.ok(constraints.rows.some(row => row.contype === kind), `Missing ${kind} constraint`);
+    }
     assert.equal((await restored.query("SELECT to_regclass('recovery_fixture.entries_owner_idx')::text AS name")).rows[0].name, "recovery_fixture.entries_owner_idx");
     await assert.rejects(restored.query("INSERT INTO recovery_fixture.entries(owner_id,amount) VALUES($1,-1)", [owner]), error => error.code === "23514");
     await assert.rejects(restored.query("INSERT INTO recovery_fixture.entries(owner_id,amount) VALUES(99999999,1)"), error => error.code === "23503");
+    await assert.rejects(restored.query("UPDATE recovery_fixture.entries SET owner_id=NULL WHERE id=1"), error => error.code === "23502");
     const next = (await restored.query("INSERT INTO recovery_fixture.entries(owner_id,amount) VALUES($1,2) RETURNING id::text,metadata,state::text,created_at", [owner])).rows[0];
     // Failed constrained inserts consume serial values, too: three inserts
     // after the original id=2 must advance to id=5 rather than reusing a key.

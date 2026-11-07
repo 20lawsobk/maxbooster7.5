@@ -54,6 +54,28 @@ describe("Developer API page backend (real loopback HTTP, isolated service)", ()
     expect((await create({ keyName: "  automation  ", tier: "pro" })).status).toBe(201);
     expect(service.generateApiKey).toHaveBeenCalledExactlyOnceWith("owner", "automation", "pro");
   });
+  it.each(["free", "pro", "enterprise"])("lets an administrator issue a %s key without a public subscription", async tier => {
+    user = { id: "admin-owner", role: "admin", subscriptionTier: "free", subscriptionStatus: "none" };
+    expect((await create({ keyName: "  admin automation  ", tier, userId: "another-user" })).status).toBe(201);
+    expect(service.generateApiKey).toHaveBeenCalledExactlyOnceWith("admin-owner", "admin automation", tier);
+  });
+  it.each(["suspended", "banned"])("does not let an administrator bypass %s account restrictions", async status => {
+    user = { id: "admin-owner", role: "admin", subscriptionTier: "free", subscriptionStatus: status };
+    for (const tier of ["free", "pro", "enterprise"]) {
+      expect((await create({ keyName: "admin automation", tier })).status).toBe(403);
+    }
+    expect(service.generateApiKey).not.toHaveBeenCalled();
+  });
+  it("does not trust a claimed administrator role or paid tier in the request body", async () => {
+    user = { id: "owner", role: "user", subscriptionTier: "free", subscriptionStatus: "none" };
+    expect((await create({ keyName: "test", tier: "enterprise", role: "admin", subscriptionTier: "enterprise", subscriptionStatus: "active" })).status).toBe(403);
+    expect(service.generateApiKey).not.toHaveBeenCalled();
+  });
+  it("preserves enterprise access for a current enterprise subscriber", async () => {
+    user.subscriptionTier = "enterprise";
+    expect((await create({ keyName: "enterprise automation", tier: "enterprise" })).status).toBe(201);
+    expect(service.generateApiKey).toHaveBeenCalledExactlyOnceWith("owner", "enterprise automation", "enterprise");
+  });
   it("rejects blank key names and unavailable tier escalation", async () => {
     expect((await create({ keyName: "   ", tier: "free" })).status).toBe(400);
     expect((await create({ keyName: "test", tier: "enterprise" })).status).toBe(403);
