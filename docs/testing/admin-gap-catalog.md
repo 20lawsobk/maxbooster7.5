@@ -59,11 +59,25 @@ The initial HTTP attempt stopped on Python 3.11 versus installed 3.12 packages;
 the successful runs explicitly selected the matching test interpreter, without
 changing the serving runtime or bypassing dependency checks.
 
+## Private-admin domain journeys
+
+The newer bounded domain run is recorded in
+[`admin-domain-acceptance.md`](admin-domain-acceptance.md), with the source action
+map in [`admin-domain-action-inventory.md`](admin-domain-action-inventory.md).
+The private-admin source-app fixture passed **18 tests** in disposable
+PostgreSQL: representative saved journeys for all twelve domains, logout and
+fresh-login project reload, durable SQL ownership checks, and ordinary plus
+anonymous denial on one representative route per domain. Distribution reported
+no connected provider; no submit was attempted. AI generation, external
+delivery, payments, asset storage, authenticated browser rendering, and the
+remaining operations were not claimed as passes.
+
 ## Domain comparison
 
-All domains retain UNVERIFIED end-to-end acceptance until the listed outcomes
-have fresh source-bound execution evidence. Global boundary fixes apply across
-these domains; they do not substitute for the domain journeys.
+All domains retain UNVERIFIED complete end-to-end acceptance. The newer receipt
+proves only the bounded journeys it names; it does not close the remaining
+actions in the inventory. Global boundary fixes apply across these domains; they
+do not substitute for full UI and data-flow acceptance.
 
 | Domain | Existing capability/evidence | Difference still requiring acceptance | Owner / reviewer |
 |---|---|---|---|

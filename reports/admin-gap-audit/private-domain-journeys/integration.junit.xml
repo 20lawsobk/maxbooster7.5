@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="18" failures="0" errors="0" time="3.754956339">
+    <testsuite name="tests/private-admin-http.test.ts" timestamp="2026-11-07T01:48:50.249Z" hostname="repl" tests="18" failures="0" errors="0" skipped="0" time="3.754956339">
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; admits a real admin bearer token without cookies and rejects a non-admin token" time="0.062852067">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; publishes the private policy in the authoritative session" time="0.026133975">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; rejects registration even with a forged administrator role" time="0.051974907">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; denies ordinary-account and anonymous access before domain dispatch" time="0.645779782">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; saves and reloads the admin-owned artist press kit" time="0.085068231">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; creates, updates, reloads and deletes an admin-owned fan subscriber" time="0.142476845">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; saves a fan campaign draft and reloads it without sending" time="0.161969903">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; saves an admin-owned project without a public subscription" time="0.041546981">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; preserves the project through logout and a fresh login" time="0.370033193">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; creates and reloads an admin-owned studio project" time="0.234266058">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; creates, edits, reloads and removes an undispatched distribution draft" time="0.18346338">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; creates and reloads an unsent playlist-pitch marketing draft" time="0.119004406">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; loads revenue reports and assistant history for the admin session" time="0.228071602">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; creates and reloads a private collaboration project" time="0.073191151">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; creates, updates, reloads and deletes an admin-owned marketplace merch item" time="0.140353035">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; loads subscription choices and current admin entitlement without checkout" time="0.087245374">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; loads administrator operations without mutating platform settings" time="0.11016622">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; creates an Enterprise API key for the admin rather than the submitted owner" time="0.102226566">
+        </testcase>
+    </testsuite>
+</testsuites>
