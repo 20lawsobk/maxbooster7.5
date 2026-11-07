@@ -56,6 +56,7 @@ localPort = 9880
 
 [nix]
 channel = "stable-25_05"
+packages = ["freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "pkg-config", "tcl", "tk", "xsimd", "zlib"]
 
 [workflows]
 runButton = "Project"
