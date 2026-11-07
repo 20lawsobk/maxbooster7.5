@@ -43,11 +43,18 @@ not a working feature. Relative paths and dynamic registration require tracing.
   dependency locks. Initial failure and offline-cache miss were not suppressed.
 - Authenticated rendered UI: **not verified**. The primary preview refused the
   connection; the configured service was not restarted against live settings.
+- Packaged startup rehearsal: **failed, not passed**. In an isolated network
+  namespace, cycle 1 served `/` and `/api/health` with HTTP 200 but `/api/ready`
+  returned 503. Cycle 2 could not start because the first cycle left Brotli/gzip
+  files outside the build manifest. The exact failed output is retained at
+  `reports/admin-gap-audit/packaged-restart.json`; neither cycle is acceptance.
 - HTTP receipts: `reports/admin-gap-audit/http-final/` and
   `reports/admin-gap-audit/private-http-final/`. Both retained fixture ownership
   checks, external-network denial and process/database cleanup.
 
 These are scoped passes, not full-domain or production certification.
+The disposable runtime database must use the current generated schema as its
+baseline; replaying overlapping historic table-creation migrations is invalid.
 The initial HTTP attempt stopped on Python 3.11 versus installed 3.12 packages;
 the successful runs explicitly selected the matching test interpreter, without
 changing the serving runtime or bypassing dependency checks.
