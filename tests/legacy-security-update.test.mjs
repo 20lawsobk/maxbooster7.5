@@ -72,6 +72,17 @@ test("guarded additions refuse existing custom files and symlinks", t => {
   fs.symlinkSync("package.json", path.join(root, custom.path));
   assert.throws(() => applyLegacyUpdate(root, bundle(custom), { apply: true }), /Symlink/);
 });
+test("an empty uninitialized submodule directory is absent only when optional", t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "legacy-empty-submodule-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, "maxbooster7.5"));
+  assert.deepEqual(applyLegacyUpdate(root, bundle(entry()), { ifPresent: true }), {
+    present: false, pending: [], applied: [],
+  });
+  assert.throws(() => applyLegacyUpdate(root, bundle(entry())), /incomplete/);
+  fs.writeFileSync(path.join(root, "maxbooster7.5/partial.txt"), "partial checkout");
+  assert.throws(() => applyLegacyUpdate(root, bundle(entry()), { ifPresent: true }), /incomplete/);
+});
 test("preflight rejects custom edits before changing another file", t => {
   const root = fixture(t);
   fs.writeFileSync(path.join(root, "maxbooster7.5/custom.json"), "custom changes");

@@ -15,6 +15,19 @@ export function applyLegacyUpdate(root, bundle, { apply = false, ifPresent = fal
     if (ifPresent) return { present: false, pending: [], applied: [] };
     throw new Error("Legacy copy is not present");
   }
+  const legacyStat = fs.lstatSync(legacy);
+  if (legacyStat.isSymbolicLink() || !legacyStat.isDirectory()) {
+    throw new Error("Legacy copy path is not a regular directory");
+  }
+  // Git leaves an empty directory at an uninitialized submodule path. Treat
+  // only that exact state as absent; a partially checked-out tree must fail
+  // closed rather than silently skipping the verified update bundle.
+  if (!fs.existsSync(path.join(legacy, "package.json"))) {
+    if (ifPresent && fs.readdirSync(legacy).length === 0) {
+      return { present: false, pending: [], applied: [] };
+    }
+    throw new Error("Legacy copy is incomplete: package.json is missing");
+  }
   if (bundle.schemaVersion !== 1 || !Array.isArray(bundle.files) || !bundle.files.length) {
     throw new Error("Invalid legacy security update bundle");
   }
