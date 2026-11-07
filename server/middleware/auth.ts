@@ -100,8 +100,18 @@ export const requireAuth = async (
   }
 
   const now = new Date();
+  // A paid conversion supersedes its historical trial, but not account
+  // assurance or the paid subscription's own expiration below. Billing
+  // updates may retain trialEndsAt for history after activating a paid plan.
+  const hasActivePaidSubscription =
+    user?.subscriptionStatus === "active" &&
+    Boolean(
+      user?.subscriptionTier &&
+        user.subscriptionTier !== "free" &&
+        user.subscriptionTier !== "trial",
+    );
 
-  if (user?.trialEndsAt) {
+  if (user?.trialEndsAt && !hasActivePaidSubscription) {
     if (now > user?.trialEndsAt) {
       res.status(403).json({
         error:

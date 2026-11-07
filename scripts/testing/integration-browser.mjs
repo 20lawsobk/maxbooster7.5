@@ -120,6 +120,7 @@ try {
     sourceSha256: Object.fromEntries(['tests/contracts/helpers-account-analytics-server.py',
       'external/maxcore/artifacts/ai-training-server/ai_model/analytics.py'].map(file =>
         [file, createHash('sha256').update(fs.readFileSync(file)).digest('hex')])) };
+  const pdimChannelToken = randomBytes(32).toString('hex');
   const common = { ...env, DATABASE_URL: databaseUrl, SESSION_SECRET: randomBytes(48).toString('hex'),
     READINESS_ISOLATED_PG: '1', READINESS_EGRESS_GUARD: '1', READINESS_LOCAL_CODECS: '1', MAXCORE_LOCAL: '0', TEST_EXPECT_MAXCORE_UNAVAILABLE: '1',
     STRIPE_WEBHOOK_SECRET: `whsec_${randomBytes(32).toString('hex')}`,
@@ -129,6 +130,7 @@ try {
     MAXCORE_PRIVATE_STATE_DIR: path.join(temporary, 'maxcore-state'),
     ...(process.env.MAXBOOSTER_PYTHON ? { MAXBOOSTER_PYTHON: process.env.MAXBOOSTER_PYTHON } : {}),
     LOCAL_PDIM_PORT: String(pdimPort), LOCAL_PDIM_STORE_FILE: path.join(temporary, 'pdim.json'),
+    PDIM_LOCAL_CHANNEL_TOKEN: pdimChannelToken, PDIM_EXEC_TOKEN: pdimChannelToken, PDIM_BEARER_TOKEN: pdimChannelToken,
     ENABLE_BACKUPS: 'false', ENABLE_FAN_DELIVERY_WORKER: 'false', ACME_ENABLED: 'false', DNS_NODE_LOCAL: '0',
     DISABLE_CLUSTER: 'true', DB_POOL_SIZE: '2', DB_CONNECTION_TIMEOUT: '2000',
     PORT: String(appPort), APP_PORT: String(appPort), APP_URL: `http://localhost:${appPort}`, PUBLIC_APP_URL: `http://localhost:${appPort}` };

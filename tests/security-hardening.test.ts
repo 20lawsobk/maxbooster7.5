@@ -3,6 +3,7 @@
  * Requires running server at localhost:5000.
  */
 import { describe, it, expect, vi } from "vitest";
+import { loopbackUrl, runtimePorts } from "../server/config/ports.js";
 import type { SlidingWindowRedis } from "../server/middleware/scalableRateLimiter.js";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
@@ -392,7 +393,7 @@ if (process.env.PDIM_FORCE_REMOTE !== "1") {
   // Integration workers do not share that mutated process.env, so mirror the
   // same non-remote endpoint before constructing the real client.
   const localPdimExecUrl =
-    "http://127.0.0.1:5556/api/redis/instances/local/exec";
+    `${loopbackUrl(runtimePorts.localPdim)}/api/redis/instances/local/exec`;
   process.env.PDIM_EXEC_URL = localPdimExecUrl;
   process.env.PDIM_HTTP_EXEC_URL = localPdimExecUrl;
 }
@@ -428,7 +429,11 @@ describe("Sliding-Window — Real PDIM Integration", () => {
   it.skipIf(!_pdimConfigured)(
     "allows limit requests, blocks limit+1th, recovers after window expires",
     async (ctx) => {
-      if (!(await _pdimReachable())) return ctx.skip();
+      const reachable = await _pdimReachable();
+      if (process.env.MAXBOOSTER_ISOLATED_FIXTURE_TOKEN) {
+        expect(reachable, "Owned fixture must supply its real PDIM authority").toBe(true);
+      }
+      if (!reachable) return ctx.skip();
       const { DistributedRateLimiter } =
         await import("../server/middleware/scalableRateLimiter.js");
       const { getRedisClient } = await import("../server/lib/redisClient.js");
@@ -474,7 +479,11 @@ describe("Sliding-Window — Real PDIM Integration", () => {
   it.skipIf(!_pdimConfigured)(
     "boundary-burst: burst fired before window expiry is blocked; request after expiry passes",
     async (ctx) => {
-      if (!(await _pdimReachable())) return ctx.skip();
+      const reachable = await _pdimReachable();
+      if (process.env.MAXBOOSTER_ISOLATED_FIXTURE_TOKEN) {
+        expect(reachable, "Owned fixture must supply its real PDIM authority").toBe(true);
+      }
+      if (!reachable) return ctx.skip();
       // Anchors all timing to t0 so the test stays correct regardless of how long
       // each PDIM round-trip takes.  PDIM's fallback path uses ZREMRANGEBYSCORE +
       // ZCARD (or ZCOUNT when ZREMRANGEBYSCORE is unsupported) — 2-3 calls per

@@ -14,7 +14,7 @@ import {
   contentAnalysisService,
   normalizeOwnedAudioAsset,
 } from "../services/contentAnalysisService";
-import { requireAuth } from "../middleware/auth";
+import { requireAuth, hasPaidFeatureAccess } from "../middleware/auth";
 import { logger } from "../logger";
 import rateLimit from "express-rate-limit";
 import { db } from "../db";
@@ -173,13 +173,9 @@ const requirePremium = async (
       return (res.status as any)(404).json({ error: "User not found" });
     }
 
-    // Only paid subscribers (monthly/yearly/lifetime) and admins can access
-    const paidTiers = ["monthly", "yearly", "lifetime"];
-    if (
-      (user?.subscriptionTier && paidTiers?.includes(user?.subscriptionTier)) ||
-      user?.role === "admin" ||
-      (user as any)?.isAdmin
-    ) {
+    // Use the same current entitlement policy as studio and other paid APIs.
+    // A historical tier name alone must not admit an inactive subscription.
+    if (hasPaidFeatureAccess(user)) {
       return next();
     }
 

@@ -47,12 +47,16 @@ router.post("/keys/create", async (req: Request, res: Response) => {
     if (["suspended", "banned"].includes(req.user.subscriptionStatus ?? "")) {
       return res.status(403).json({ error: "Forbidden", message: "This account cannot create API keys" });
     }
-    if (tier !== "free" && !["active", "trialing"].includes(req.user.subscriptionStatus ?? "")) {
+    // req.user is hydrated by the shared session authority. Administrators
+    // can operate every key tier without purchasing a public subscription.
+    const isAdmin = req.user.role === "admin";
+    if (!isAdmin && tier !== "free" && !["active", "trialing"].includes(req.user.subscriptionStatus ?? "")) {
       return res.status(403).json({ error: "Forbidden", message: "Premium API keys require a current active or trialing subscription" });
     }
 
     // Check subscription tier for premium API keys
     if (
+      !isAdmin &&
       tier === "pro" &&
       req.user.subscriptionTier !== "premium" &&
       req.user.subscriptionTier !== "pro"
@@ -63,7 +67,7 @@ router.post("/keys/create", async (req: Request, res: Response) => {
       });
     }
 
-    if (tier === "enterprise" && req.user.subscriptionTier !== "enterprise") {
+    if (!isAdmin && tier === "enterprise" && req.user.subscriptionTier !== "enterprise") {
       return res.status(403).json({
         error: "Forbidden",
         message: "Enterprise API keys require an Enterprise subscription",
