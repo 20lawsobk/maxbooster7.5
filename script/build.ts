@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { publishCapsule } from "./publish-capsules.js";
+import { precompressPublicAssets } from "./lib/precompress-public-assets.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -45,6 +46,10 @@ async function main() {
   console.log("==> Building frontend with Vite...");
   execSync("node node_modules/vite/bin/vite.js build", { cwd: root, stdio: "inherit" });
   console.log("   ✅ Vite build complete → dist/public/");
+
+  console.log("==> Precompressing immutable public assets...");
+  const compression = await precompressPublicAssets(root);
+  console.log(`   ✅ Verified ${compression.sourceFiles} source assets; wrote ${compression.filesWritten} variants`);
 
   console.log("==> Bundling all runtime entries (server, cluster, gateway, sizing, recovery)...");
   await buildServerBundles(root);
