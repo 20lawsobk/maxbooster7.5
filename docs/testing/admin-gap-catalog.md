@@ -43,11 +43,22 @@ not a working feature. Relative paths and dynamic registration require tracing.
   dependency locks. Initial failure and offline-cache miss were not suppressed.
 - Authenticated rendered UI: **not verified**. The primary preview refused the
   connection; the configured service was not restarted against live settings.
-- Packaged startup rehearsal: **failed, not passed**. In an isolated network
-  namespace, cycle 1 served `/` and `/api/health` with HTTP 200 but `/api/ready`
-  returned 503. Cycle 2 could not start because the first cycle left Brotli/gzip
-  files outside the build manifest. The exact failed output is retained at
-  `reports/admin-gap-audit/packaged-restart.json`; neither cycle is acceptance.
+- Packaged restart rehearsal: the **startup/shutdown and artifact-integrity
+  portions passed in both cycles**, but overall acceptance remains **failed**
+  because `/api/ready` returned 503 twice. Both cycles served `/` and
+  `/api/health` with HTTP 200, shut down with exit code 0 after SIGTERM, released
+  all checked ports, and required no forced kill. Each cycle had zero public
+  asset additions, missing assets, or hash mismatches. The readiness failure
+  was `maxcore=degraded/model_not_ready` plus unified awareness with 28 configured
+  sources and no fresh snapshot. The test intentionally denied external
+  TCP/TLS/UDP, so it cannot prove a live-source snapshot. Evidence is retained
+  at `reports/admin-gap-audit/packaged-restart.json`.
+- The earlier second-start integrity rejection was caused by
+  `server/cluster.ts` generating `.br` and `.gz` siblings in `dist/public/assets`
+  after the build contract was written. The prior failure showed 270 additional
+  sidecars (135 Brotli and 135 gzip); its retained receipt did not preserve the
+  individual path list. Compression now runs in the build before the unchanged
+  strict contract hashes all outputs; runtime startup no longer mutates them.
 - HTTP receipts: `reports/admin-gap-audit/http-final/` and
   `reports/admin-gap-audit/private-http-final/`. Both retained fixture ownership
   checks, external-network denial and process/database cleanup.

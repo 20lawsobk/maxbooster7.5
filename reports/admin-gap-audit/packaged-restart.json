@@ -1,6 +1,143 @@
-{"responses": {"/": {"status": 200, "type": "text/html; charset=utf-8"}, "/api/ready": {"status": 503, "type": "application/json; charset=utf-8"}, "/api/health": {"status": 200, "type": "application/json; charset=utf-8"}}, "exit": null}
-Application readiness was not established
-Production start/shutdown cycle 1: exit=1
-{"responses": {"/": {"error": "URLError"}, "/api/ready": {"error": "URLError"}, "/api/health": {"error": "URLError"}}, "exit": 1}
-Built application did not serve its homepage
-Production start/shutdown cycle 2: exit=1
+{
+  "artifactIntegrityPassedEveryCycle": true,
+  "buildContractSha256": "557f5ecf5d2dfc645e1ee78e1ab7093277a510d33aa1b00604a46f3576d97ac6",
+  "buildIntegrityGatePreserved": true,
+  "capturedAt": "2026-11-07T20:53:15.104921+00:00",
+  "cycles": [
+    {
+      "cycle": 1,
+      "exitCode": 1,
+      "publicAssetState": {
+        "added": [],
+        "hashMismatches": [],
+        "missing": []
+      },
+      "readiness": {
+        "cycle": 1,
+        "httpStatus": 503,
+        "overallStatus": "degraded",
+        "shutdown": {
+          "forcedKill": false,
+          "portsReleased": true,
+          "processExitCode": 0,
+          "signalRequested": "SIGTERM"
+        },
+        "subsystems": [
+          {
+            "failureClass": null,
+            "name": "database",
+            "status": "ok"
+          },
+          {
+            "failureClass": null,
+            "name": "redis",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "routes",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "audit",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "automation",
+            "status": "ok"
+          },
+          {
+            "failureClass": "model_not_ready",
+            "name": "maxcore",
+            "status": "degraded"
+          }
+        ],
+        "topLevelFailureClass": null,
+        "unifiedAwareness": {
+          "collectorRunning": true,
+          "configuredSourceCount": 28,
+          "failureClass": "fresh_snapshot_missing",
+          "ingestOwner": true,
+          "ready": false,
+          "snapshotPresent": false,
+          "sourceHealthStatusCounts": {},
+          "status": null
+        }
+      },
+      "startupFailureClass": null
+    },
+    {
+      "cycle": 2,
+      "exitCode": 1,
+      "publicAssetState": {
+        "added": [],
+        "hashMismatches": [],
+        "missing": []
+      },
+      "readiness": {
+        "cycle": 2,
+        "httpStatus": 503,
+        "overallStatus": "degraded",
+        "shutdown": {
+          "forcedKill": false,
+          "portsReleased": true,
+          "processExitCode": 0,
+          "signalRequested": "SIGTERM"
+        },
+        "subsystems": [
+          {
+            "failureClass": null,
+            "name": "database",
+            "status": "ok"
+          },
+          {
+            "failureClass": null,
+            "name": "redis",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "routes",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "audit",
+            "status": "ok"
+          },
+          {
+            "failureClass": "other",
+            "name": "automation",
+            "status": "ok"
+          },
+          {
+            "failureClass": "model_not_ready",
+            "name": "maxcore",
+            "status": "degraded"
+          }
+        ],
+        "topLevelFailureClass": null,
+        "unifiedAwareness": {
+          "collectorRunning": true,
+          "configuredSourceCount": 28,
+          "failureClass": "fresh_snapshot_missing",
+          "ingestOwner": true,
+          "ready": false,
+          "snapshotPresent": false,
+          "sourceHealthStatusCounts": {},
+          "status": null
+        }
+      },
+      "startupFailureClass": null
+    }
+  ],
+  "networkNamespaceIsolated": true,
+  "readinessGatePreserved": true,
+  "readinessPassedEveryCycle": false,
+  "scope": "Disposable PostgreSQL and production artifact copy; application external TCP/TLS and UDP denied",
+  "shutdownCompletedEveryCycle": true,
+  "sourceRevision": "441cff89fc29a1729fe9f4e56ed1310e80feca79",
+  "status": "failed"
+}
