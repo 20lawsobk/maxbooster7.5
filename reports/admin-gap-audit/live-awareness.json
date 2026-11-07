@@ -1,0 +1,57 @@
+{
+  "capturedAt": "2026-11-07T21:48:11.583624+00:00",
+  "configuredRemoteMaxcore": {
+    "awareness": {
+      "configuredSourceCount": null,
+      "failedSourceCount": 0,
+      "healthySourceCount": 0,
+      "httpStatus": 404,
+      "ready": false,
+      "running": false,
+      "snapshotPresent": false
+    },
+    "configuredEndpointAvailable": true,
+    "health": {
+      "httpStatus": 404,
+      "modelLoaded": false,
+      "status": null
+    }
+  },
+  "deploymentAssetPhasePassed": true,
+  "localApp": {
+    "awareness": {
+      "collectorRunning": false,
+      "configuredSourceCount": null,
+      "failedSourceCount": 0,
+      "healthySourceCount": 0,
+      "ingestOwner": false,
+      "maxcoreFailureClass": null,
+      "maxcoreStatus": "unknown",
+      "ready": false,
+      "snapshotPresent": false
+    },
+    "awarenessHttpStatus": null,
+    "diagnosticLogRetained": true,
+    "forcedKill": false,
+    "healthHttpStatus": null,
+    "homepageHttpStatus": null,
+    "maxcoreHealthHttpStatus": null,
+    "maxcoreHealthStatus": null,
+    "maxcoreModelLoaded": false,
+    "pingHttpStatus": null,
+    "portsReleased": true,
+    "processExitCode": 1,
+    "readinessHttpStatus": null,
+    "sentryDsnConfiguredForTest": false,
+    "sentrySdkInitialized": true,
+    "startupFailureClass": "application_exited_before_http",
+    "stoppedGracefully": true
+  },
+  "paymentProviderCredentialsSupplied": false,
+  "productionDatabaseUsed": false,
+  "proxyAvailable": false,
+  "scope": "Disposable app and PostgreSQL; anonymous public awareness sources only; no payment, social, marketing, or generation credentials",
+  "sourceRefreshObserved": false,
+  "sourceRevision": "663f87a903f45edf1736ee89c9a69554428e8401",
+  "status": "failed"
+}

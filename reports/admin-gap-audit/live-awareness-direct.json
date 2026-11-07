@@ -1,0 +1,46 @@
+{
+  "awareness": {
+    "configuredSourceCount": 28,
+    "failedSourceCategories": {
+      "access_denied": 1,
+      "unclassified": 9
+    },
+    "failedSourceCount": 10,
+    "failedSourceFieldNames": [
+      "error",
+      "ok"
+    ],
+    "failureClass": null,
+    "healthySourceCount": 18,
+    "httpStatus": 200,
+    "ingestOwner": true,
+    "phase": "collecting_sources",
+    "ready": true,
+    "running": true,
+    "snapshotPresent": true,
+    "snapshotRecoveredFromPriorStore": true,
+    "sourceHealthRecordCount": 28
+  },
+  "capturedAt": "2026-11-07T22:23:52.471027+00:00",
+  "forcedKill": false,
+  "health": {
+    "httpStatus": 200,
+    "status": "healthy"
+  },
+  "localPdimBackendStarted": true,
+  "localPdimShutdownGraceful": true,
+  "modelLoaded": false,
+  "paymentOrDistributionCredentialsSupplied": false,
+  "pdimForcedKill": false,
+  "portsReleased": true,
+  "priorPdimStorePresent": true,
+  "processExitCode": 0,
+  "productionDatabaseUsed": false,
+  "redactedLogRetained": true,
+  "refreshObserved": true,
+  "scope": "Local MaxCore health and awareness GETs; fixed public-source adapters only; disposable PostgreSQL",
+  "sentryDsnConfiguredForTest": false,
+  "sourceRevision": "663f87a903f45edf1736ee89c9a69554428e8401",
+  "startupFailureClass": "dependency_connection_refused",
+  "status": "passed"
+}

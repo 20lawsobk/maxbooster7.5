@@ -56,6 +56,26 @@ not a working feature. Relative paths and dynamic registration require tracing.
   existing `.br`/`.gz` packaging policy, then regenerated and revalidated the
   manifest against the final public tree while requiring the original source
   hashes. Evidence is retained at `reports/admin-gap-audit/packaged-restart.json`.
+- Isolated live MaxCore/awareness check (2026-11-07): the actual local MaxCore
+  API returned HTTP 200 for `/api/health` (`healthy`) and
+  `/api/awareness/unified/status` (`ready=true`) with no model loaded. A fresh
+  process recovered a ready snapshot from the same disposable local PDIM store;
+  28 source records were present (18 healthy, 10 failed: one access denied,
+  nine unclassified). The observation phase was still `collecting_sources`, so
+  this does not establish a fully completed refresh or 28/28 source success.
+  The local MaxCore and PDIM processes exited cleanly and released all checked
+  ports. Only fixed public-source adapters and disposable PostgreSQL/PDIM state
+  were used; no production data, generation, payments, distribution or social
+  publishing was involved. The first post-PDIM harness attempt was discarded
+  because it probed PDIM's port instead of MaxCore's; the retained report uses
+  the distinct service ports. Evidence:
+  `reports/admin-gap-audit/live-awareness-direct.json`.
+- Separate configured-remote probes returned HTTP 404 for both MaxCore health
+  and awareness paths. The disposable full-app startup smoke exited before
+  receiving local HTTP responses. Neither the configured app workflow nor
+  production was restarted. These results are retained in
+  `reports/admin-gap-audit/live-awareness.json`; local awareness success does
+  not establish full-app readiness, which still depends on model readiness.
 - The earlier second-start integrity rejection was caused by
   `server/cluster.ts` generating `.br` and `.gz` siblings in `dist/public/assets`
   after the build contract was written. The prior failure showed 270 additional
