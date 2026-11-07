@@ -1,0 +1,6 @@
+{"responses": {"/": {"status": 200, "type": "text/html; charset=utf-8"}, "/api/ready": {"status": 503, "type": "application/json; charset=utf-8"}, "/api/health": {"status": 200, "type": "application/json; charset=utf-8"}}, "exit": null}
+Application readiness was not established
+Production start/shutdown cycle 1: exit=1
+{"responses": {"/": {"error": "URLError"}, "/api/ready": {"error": "URLError"}, "/api/health": {"error": "URLError"}}, "exit": 1}
+Built application did not serve its homepage
+Production start/shutdown cycle 2: exit=1
