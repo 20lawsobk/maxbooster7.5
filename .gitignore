@@ -204,3 +204,19 @@ public/generated-content/
 external/maxcore/artifacts/ai-training-server/ai_model/training/candidate_runs/live-*/
 external/maxcore/artifacts/ai-training-server/ai_model/training/live_candidate_admissions/live-*/
 external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning_runs/live-*/
+
+# Regenerable verification output and downloaded test toolchains.
+/reports/aso/isolated-full-20261106T233139Z/toolchains/rust-1.93.1/lib/libLLVM.so.21.1-rust-1.93.1-stable
+/reports/aso/isolated-full-20261106T233139Z/toolchains/rust-1.93.1/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-ff399efebbfa82b0.rlib
+/reports/test-verification/final-map-refresh/toolchains/rust-1.93.1/lib/libLLVM.so.21.1-rust-1.93.1-stable
+/reports/test-verification/final-map-refresh/toolchains/rust-1.93.1/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-ff399efebbfa82b0.rlib
+/reports/test-verification/final-plan-fix/toolchains/rust-1.93.1/lib/libLLVM.so.21.1-rust-1.93.1-stable
+/reports/test-verification/final-plan-fix/toolchains/rust-1.93.1/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-ff399efebbfa82b0.rlib
+/reports/test-verification/full-current/toolchains/rust-1.93.1/lib/libLLVM.so.21.1-rust-1.93.1-stable
+/reports/test-verification/full-current/toolchains/rust-1.93.1/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-ff399efebbfa82b0.rlib
+/reports/test-verification/toolchains/rust-1.93.1/lib/libLLVM.so.21.1-rust-1.93.1-stable
+/reports/test-verification/toolchains/rust-1.93.1/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-ff399efebbfa82b0.rlib
+/reports/aso/isolated-full-20261106T233139Z/completion-plan.json
+/reports/test-verification/plan-probe-v2/completion-plan.json
+/reports/test-verification/final-plan-fix/completion-plan.json
+/reports/test-verification/current-coverage/coverage/coverage-final.json

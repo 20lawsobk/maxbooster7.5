@@ -31,31 +31,24 @@ externalPort = 80
 
 [[ports]]
 localPort = 5556
-exposeLocalhost = false
 
 [[ports]]
 localPort = 8008
-exposeLocalhost = false
 
 [[ports]]
 localPort = 8090
-exposeLocalhost = false
 
 [[ports]]
 localPort = 9877
-exposeLocalhost = false
 
 [[ports]]
 localPort = 9878
-exposeLocalhost = false
 
 [[ports]]
 localPort = 9879
-exposeLocalhost = false
 
 [[ports]]
 localPort = 9880
-exposeLocalhost = false
 
 [nix]
 channel = "stable-25_05"
