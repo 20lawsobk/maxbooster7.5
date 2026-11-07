@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: admin settings route retains authentication and MFA guards
+ok 1 - admin settings route retains authentication and MFA guards
+  ---
+  duration_ms: 95.887085
+  type: 'test'
+  ...
+# Subtest: admin cannot reopen ordinary registration through the general settings API
+ok 2 - admin cannot reopen ordinary registration through the general settings API
+  ---
+  duration_ms: 24.690522
+  type: 'test'
+  ...
+# Subtest: registration can be changed only after explicit public-launch policy opens
+ok 3 - registration can be changed only after explicit public-launch policy opens
+  ---
+  duration_ms: 25.437732
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 786.468321

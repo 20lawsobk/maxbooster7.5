@@ -1,0 +1,18 @@
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting tests/test_awareness_conditioner.py _____________
+ImportError while importing test module '<repo>/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+tests/test_awareness_conditioner.py:21: in <module>
+    import torch
+../../../../.pythonlibs/lib/python3.12/site-packages/torch/__init__.py:505: in <module>
+    from torch._C import *  # noqa: F403
+    ^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+=========================== short test summary info ============================
+ERROR tests/test_awareness_conditioner.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.31s
+<repo>/.pythonlibs/lib/python3.12/site-packages/coverage/control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-no-data-collected
+  self._warn("No data was collected.", slug="no-data-collected")

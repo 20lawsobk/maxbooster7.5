@@ -1,0 +1,143 @@
+TAP version 13
+# Subtest: all settlement consumers use current dispute accounting under the source lock
+    # Subtest: marketplace: historical charge.disputed=true with current won
+    ok 1 - marketplace: historical charge.disputed=true with current won
+      ---
+      duration_ms: 66.281793
+      type: 'test'
+      ...
+    # Subtest: marketplace: historical charge.disputed=true with current needs_response
+    ok 2 - marketplace: historical charge.disputed=true with current needs_response
+      ---
+      duration_ms: 24.607965
+      type: 'test'
+      ...
+    # Subtest: marketplace: historical charge.disputed=true with current provider_failure
+    ok 3 - marketplace: historical charge.disputed=true with current provider_failure
+      ---
+      duration_ms: 28.526576
+      type: 'test'
+      ...
+    # Subtest: marketplace: historical charge.disputed=true with current missing_accounting
+    ok 4 - marketplace: historical charge.disputed=true with current missing_accounting
+      ---
+      duration_ms: 29.920343
+      type: 'test'
+      ...
+    # Subtest: marketplace: historical charge.disputed=true with current pending_created
+    ok 5 - marketplace: historical charge.disputed=true with current pending_created
+      ---
+      duration_ms: 22.994228
+      type: 'test'
+      ...
+    # Subtest: marketplace: historical charge.disputed=true with current pending_succeeded
+    ok 6 - marketplace: historical charge.disputed=true with current pending_succeeded
+      ---
+      duration_ms: 20.511666
+      type: 'test'
+      ...
+    # Subtest: merchant: historical charge.disputed=true with current won
+    ok 7 - merchant: historical charge.disputed=true with current won
+      ---
+      duration_ms: 28.213284
+      type: 'test'
+      ...
+    # Subtest: merchant: historical charge.disputed=true with current needs_response
+    ok 8 - merchant: historical charge.disputed=true with current needs_response
+      ---
+      duration_ms: 19.760238
+      type: 'test'
+      ...
+    # Subtest: merchant: historical charge.disputed=true with current provider_failure
+    ok 9 - merchant: historical charge.disputed=true with current provider_failure
+      ---
+      duration_ms: 27.889542
+      type: 'test'
+      ...
+    # Subtest: merchant: historical charge.disputed=true with current missing_accounting
+    ok 10 - merchant: historical charge.disputed=true with current missing_accounting
+      ---
+      duration_ms: 26.735386
+      type: 'test'
+      ...
+    # Subtest: merchant: historical charge.disputed=true with current pending_created
+    ok 11 - merchant: historical charge.disputed=true with current pending_created
+      ---
+      duration_ms: 17.65347
+      type: 'test'
+      ...
+    # Subtest: merchant: historical charge.disputed=true with current pending_succeeded
+    ok 12 - merchant: historical charge.disputed=true with current pending_succeeded
+      ---
+      duration_ms: 13.228895
+      type: 'test'
+      ...
+    # Subtest: growth: historical charge.disputed=true with current won
+    ok 13 - growth: historical charge.disputed=true with current won
+      ---
+      duration_ms: 21.778408
+      type: 'test'
+      ...
+    # Subtest: growth: historical charge.disputed=true with current needs_response
+    ok 14 - growth: historical charge.disputed=true with current needs_response
+      ---
+      duration_ms: 13.561369
+      type: 'test'
+      ...
+    # Subtest: growth: historical charge.disputed=true with current provider_failure
+    ok 15 - growth: historical charge.disputed=true with current provider_failure
+      ---
+      duration_ms: 16.339966
+      type: 'test'
+      ...
+    # Subtest: growth: historical charge.disputed=true with current missing_accounting
+    ok 16 - growth: historical charge.disputed=true with current missing_accounting
+      ---
+      duration_ms: 16.157607
+      type: 'test'
+      ...
+    # Subtest: growth: historical charge.disputed=true with current pending_created
+    ok 17 - growth: historical charge.disputed=true with current pending_created
+      ---
+      duration_ms: 12.146006
+      type: 'test'
+      ...
+    # Subtest: growth: historical charge.disputed=true with current pending_succeeded
+    ok 18 - growth: historical charge.disputed=true with current pending_succeeded
+      ---
+      duration_ms: 17.576581
+      type: 'test'
+      ...
+    # Subtest: stale initial snapshot replay never queues recovery against an already drawn won allocation
+    ok 19 - stale initial snapshot replay never queues recovery against an already drawn won allocation
+      ---
+      duration_ms: 9.230089
+      type: 'test'
+      ...
+    # Subtest: invalid initial compensation rolls back booking, allocations and journals
+    ok 20 - invalid initial compensation rolls back booking, allocations and journals
+      ---
+      duration_ms: 4.73933
+      type: 'test'
+      ...
+    # Subtest: real refund engine/provider refresh pending state inside the source transaction
+    ok 21 - real refund engine/provider refresh pending state inside the source transaction
+      ---
+      duration_ms: 28.936826
+      type: 'test'
+      ...
+    1..21
+ok 1 - all settlement consumers use current dispute accounting under the source lock
+  ---
+  duration_ms: 1689.133916
+  type: 'test'
+  ...
+1..1
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1794.176127

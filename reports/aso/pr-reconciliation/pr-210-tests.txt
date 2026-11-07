@@ -1,0 +1,56 @@
+test_admin_policy_contract_rejects_missing_binding_placeholder (test_admin_release.AdminReleaseTests.test_admin_policy_contract_rejects_missing_binding_placeholder) ... ok
+test_full_coordinator_reports_admin_and_public_decisions_separately (test_admin_release.AdminReleaseTests.test_full_coordinator_reports_admin_and_public_decisions_separately) ... {"report": "/tmp/tmpdodlnf1z/observed/run-5cdbc280b5064a78a53cd514a855ba06/report.json", "score": 93.33, "ready": true, "public_release_ready": false, "active_release": "admin-private"}
+{"report": "/tmp/tmpdodlnf1z/observed/run-20a1e75aef9a4b6fa7313b5cb75ca9ae/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "admin-private"}
+ok
+test_missing_stale_skipped_invalid_and_failed_evidence_never_pass (test_admin_release.AdminReleaseTests.test_missing_stale_skipped_invalid_and_failed_evidence_never_pass) ... ok
+test_private_readiness_separate_from_public_coverage (test_admin_release.AdminReleaseTests.test_private_readiness_separate_from_public_coverage) ... ok
+test_public_success_cannot_override_failed_admin_acceptance (test_admin_release.AdminReleaseTests.test_public_success_cannot_override_failed_admin_acceptance) ... ok
+test_security_start_and_artifact_failures_still_block_admin (test_admin_release.AdminReleaseTests.test_security_start_and_artifact_failures_still_block_admin) ... ok
+test_unconfigured_acceptance_remains_unverified (test_admin_release.AdminReleaseTests.test_unconfigured_acceptance_remains_unverified) ... ok
+test_adapter_commit_is_rejected (test_agros.RunnerTests.test_adapter_commit_is_rejected) ... {"report": "/tmp/tmpr08hhdr_/state/run-4d04964fdfe5441fa32aaf7a9a75765d/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-07f3cb81448f')
+ok
+test_all_pass (test_agros.RunnerTests.test_all_pass) ... {"report": "/tmp/tmprugzl2ye/state/run-f4f9c4b6b00a455fb6d1895a42b65c80/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+ok
+test_artifact_contract_regression_stops_repair (test_agros.RunnerTests.test_artifact_contract_regression_stops_repair) ... {"report": "/tmp/tmpg3g2tt4t/state/run-ff3e3b270bac4fcda17bdcbcd82c2470/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-1bbc9fd76bef')
+{"report": "/tmp/tmpg3g2tt4t/state/agros-candidate-1bbc9fd76bef-evidence/run-590fe74ead20417caf7fd26f6635b1db/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_boolean_metric_rejected (test_agros.RunnerTests.test_boolean_metric_rejected) ... {"report": "/tmp/tmpk22tv8q1/state/run-38f969e373b84386b3a2a0527c7efa77/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_evidence_cannot_override_failed_prerequisite (test_agros.RunnerTests.test_evidence_cannot_override_failed_prerequisite) ... {"report": "/tmp/tmpdj14t_8o/state/run-0e8e0ec3039844a8b7f032383a58af46/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_failed_command_blocks (test_agros.RunnerTests.test_failed_command_blocks) ... {"report": "/tmp/tmplg3flh2q/state/run-251de357cfa4497eafa52ff9aa15a7f7/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_failed_or_unconfigured_artifact_contract_blocks_readiness (test_agros.RunnerTests.test_failed_or_unconfigured_artifact_contract_blocks_readiness) ... {"report": "/tmp/tmpau21i8f5/state/run-b60176a792b4484db37de8af4b57a4e7/report.json", "score": 100.0, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+{"report": "/tmp/tmpau21i8f5/state/run-3aaf42d776124348bc174d3a2c9466de/report.json", "score": 100.0, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_fixed_metric_limits_cannot_be_removed_or_weakened (test_agros.RunnerTests.test_fixed_metric_limits_cannot_be_removed_or_weakened) ... ok
+test_fixture_dist_and_unknown_dist_remain_source (test_agros.RunnerTests.test_fixture_dist_and_unknown_dist_remain_source) ... {"report": "/tmp/tmp50wcoxbi/state/run-19e453f6b6034a22be00292eabfb66ee/report.json", "score": 100.0, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_gate_evidence_destinations_are_outside_checkout (test_agros.RunnerTests.test_gate_evidence_destinations_are_outside_checkout) ... {"report": "/tmp/tmp6toqpsya/state/run-1ddad1bfc3714f61a0e70ad6efb7a894/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+ok
+test_generated_build_outputs_do_not_invalidate_source (test_agros.RunnerTests.test_generated_build_outputs_do_not_invalidate_source) ... {"report": "/tmp/tmp6r1qllu2/state/run-dd0004ae271e4e2fbc4543be5680991d/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+ok
+test_generated_cache_exclusions_are_explicit (test_agros.RunnerTests.test_generated_cache_exclusions_are_explicit) ... ok
+test_generated_dirty_checkout_still_allows_source_repair (test_agros.RunnerTests.test_generated_dirty_checkout_still_allows_source_repair) ... {"report": "/tmp/tmp5m48gbzj/state/run-428b3eb3a8a64fd09f34956272273f09/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-77abb7a1a3ba')
+{"report": "/tmp/tmp5m48gbzj/state/agros-candidate-77abb7a1a3ba-evidence/run-4dad19de987745fc92561363c06cc309/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+ok
+test_missing_evidence_blocks (test_agros.RunnerTests.test_missing_evidence_blocks) ... {"validated_candidate": "/tmp/tmp5m48gbzj/state/agros-candidate-77abb7a1a3ba", "branch": "agros/candidate-77abb7a1a3ba", "source_modified": false, "deployed": false}
+{"report": "/tmp/tmpgc52g27c/state/run-f8785b68570042e8befe95ff4342aae3/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_missing_executable (test_agros.RunnerTests.test_missing_executable) ... ok
+test_missing_gates_rejected (test_agros.RunnerTests.test_missing_gates_rejected) ... ok
+test_mutation_invalidates_evidence (test_agros.RunnerTests.test_mutation_invalidates_evidence) ... {"report": "/tmp/tmpg819n4eg/state/run-f33df3428ba241cab9780242d2dee33f/report.json", "score": 100.0, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_newly_passing_gate_cannot_regress_on_next_attempt (test_agros.RunnerTests.test_newly_passing_gate_cannot_regress_on_next_attempt) ... {"report": "/tmp/tmphmidi57j/state/run-4e71e67f75a24d1883e8cbf634b8e49a/report.json", "score": 86.67, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-bab53b68e218')
+{"report": "/tmp/tmphmidi57j/state/agros-candidate-bab53b68e218-evidence/run-0ee21774be6b44059279de644e9067e7/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+{"report": "/tmp/tmphmidi57j/state/agros-candidate-bab53b68e218-evidence/run-17ccd1b9e0d345398b9b99075635c4f9/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_numeric_policy_validation (test_agros.RunnerTests.test_numeric_policy_validation) ... ok
+test_numeric_threshold (test_agros.RunnerTests.test_numeric_threshold) ... {"report": "/tmp/tmpo8_k6o5r/state/run-344fdd88179b46b2a96c193fbc9abadf/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+ok
+test_only_exact_generated_endpoint_reports_are_excluded (test_agros.RunnerTests.test_only_exact_generated_endpoint_reports_are_excluded) ... ok
+test_policy_mutation_invalidates_and_preserves_used_digest (test_agros.RunnerTests.test_policy_mutation_invalidates_and_preserves_used_digest) ... 

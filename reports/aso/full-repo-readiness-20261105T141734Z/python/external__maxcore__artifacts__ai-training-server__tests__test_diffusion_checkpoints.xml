@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.427" timestamp="2026-11-05T14:37:26.681948+00:00" hostname="repl"><testcase classname="" name="tests.test_diffusion_checkpoints" time="0.000"><error message="collection failure">ImportError while importing test module '&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_checkpoints.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+tests/test_diffusion_checkpoints.py:8: in &lt;module&gt;
+    import torch
+../../../../.pythonlibs/lib/python3.12/site-packages/torch/__init__.py:505: in &lt;module&gt;
+    from torch._C import *  # noqa: F403
+    ^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory</error></testcase></testsuite></testsuites>

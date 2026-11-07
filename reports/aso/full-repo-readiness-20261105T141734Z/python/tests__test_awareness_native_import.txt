@@ -1,0 +1,48 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ AwarenessImportTests.test_real_native_writer_does_not_initialize_model_runtime _
+
+self = <tests.test_awareness_native_import.AwarenessImportTests testMethod=test_real_native_writer_does_not_initialize_model_runtime>
+
+        def test_real_native_writer_does_not_initialize_model_runtime(self):
+            result = subprocess.run(
+                [sys.executable, "-c", """
+    import sys
+    from ai_model.agents.awareness_native_writer import generate_script
+    from ai_model.agents import (
+        ScriptAgent, ScriptRequest, ScriptResponse,
+        VisualSpecAgent, DistributionAgent, OptimizationAgent,
+    )
+    assert callable(generate_script)
+    assert ScriptRequest("new release", "instagram", "streams", "authentic").idea == "new release"
+    assert "torch" not in sys.modules, "awareness import initialized Torch"
+    assert "ai_model.model.creative_model" not in sys.modules, "awareness import initialized model implementation"
+    for cls in (ScriptAgent, VisualSpecAgent, DistributionAgent, OptimizationAgent):
+        supplied = object()
+        agent = cls(supplied)
+        assert agent.model is supplied, "model-backed agents must retain their supplied model"
+    """],
+                cwd=ROOT,
+                env={**os.environ, "PYTHONPATH": str(SERVICE)},
+                text=True, capture_output=True, timeout=15,
+            )
+>           self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+E           AssertionError: 1 != 0 : Traceback (most recent call last):
+E             File "<string>", line 3, in <module>
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/agents/__init__.py", line 2, in <module>
+E               from .script_agent import ScriptAgent, ScriptRequest, ScriptResponse  # noqa: F401
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py", line 9, in <module>
+E               from ai_model.generation.awareness import generation_guard
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/generation/__init__.py", line 18, in <module>
+E               from .technique import TechniqueProfile, extract_technique
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/generation/technique.py", line 31, in <module>
+E               import numpy as np
+E           ModuleNotFoundError: No module named 'numpy'
+
+tests/test_awareness_native_import.py:35: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_awareness_native_import.py::AwarenessImportTests::test_real_native_writer_does_not_initialize_model_runtime
+1 failed in 0.13s
+<repo>/.pythonlibs/lib/python3.12/site-packages/coverage/control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.17.0/messages.html#warning-no-data-collected
+  self._warn("No data was collected.", slug="no-data-collected")

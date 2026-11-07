@@ -1,0 +1,955 @@
+
+> max-booster@3.0.0 test:ci
+> npm run test:runtime-contracts && npm run test:sharp-security && npm run test:payment-preferences && npm run test:storage-recovery && vitest run --config vitest.config.ts --reporter=junit --outputFile=test-results.xml
+
+
+> max-booster@3.0.0 test:runtime-contracts
+> node --test tests/npm-build-start-contract.test.mjs tests/storefront-canonical-links.test.mjs tests/neon-schema-contract.test.mjs tests/deployment-contracts.cjs tests/runtime-artifact-gates.test.mjs tests/audio-metadata-security.test.mjs tests/request-validation-security.test.mjs tests/dependency-transport-teardown.test.mjs tests/web-ci-scope.test.mjs tests/marketplace-purchase-signal.test.mjs
+
+TAP version 13
+# Subtest: audio parser lock resolves reproducibly from the public registry
+ok 1 - audio parser lock resolves reproducibly from the public registry
+  ---
+  duration_ms: 31.183253
+  type: 'test'
+  ...
+# Subtest: audio metadata retains valid WAV parsing
+ok 2 - audio metadata retains valid WAV parsing
+  ---
+  duration_ms: 21.586534
+  type: 'test'
+  ...
+# Subtest: truncated ID3 length cannot allocate its claimed 256 MiB payload
+ok 3 - truncated ID3 length cannot allocate its claimed 256 MiB payload
+  ---
+  duration_ms: 14.41932
+  type: 'test'
+  ...
+# Subtest: .: pending asynchronous upload filter cannot reopen an aborted request
+ok 4 - .: pending asynchronous upload filter cannot reopen an aborted request
+  ---
+  duration_ms: 286.943958
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: pending asynchronous upload filter cannot reopen an aborted request
+ok 5 - external/pdim/artifacts/api-server: pending asynchronous upload filter cannot reopen an aborted request
+  ---
+  duration_ms: 360.275681
+  type: 'test'
+  ...
+# Subtest: .: fetch refuses excessive response encodings and remains usable
+ok 6 - .: fetch refuses excessive response encodings and remains usable
+  ---
+  duration_ms: 657.21026
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: fetch refuses excessive response encodings and remains usable
+ok 7 - external/maxcore/artifacts/api-server: fetch refuses excessive response encodings and remains usable
+  ---
+  duration_ms: 475.476132
+  type: 'test'
+  ...
+# Subtest: cgroup quotas bound physical CPU/RAM and override cannot bypass bounds
+ok 8 - cgroup quotas bound physical CPU/RAM and override cannot bypass bounds
+  ---
+  duration_ms: 198.011283
+  type: 'test'
+  ...
+# Subtest: disjoint pools fit under capacity; invalid overrides and impossible machines reject
+ok 9 - disjoint pools fit under capacity; invalid overrides and impossible machines reject
+  ---
+  duration_ms: 43.397133
+  type: 'test'
+  ...
+# Subtest: 4 effective CPUs / 8 GiB admit app, MaxCore and Python without overlap
+ok 10 - 4 effective CPUs / 8 GiB admit app, MaxCore and Python without overlap
+  ---
+  duration_ms: 14.16598
+  type: 'test'
+  ...
+# Subtest: role-specific minima are validated and small feasible CPU shares time-share
+ok 11 - role-specific minima are validated and small feasible CPU shares time-share
+  ---
+  duration_ms: 43.507692
+  type: 'test'
+  ...
+# Subtest: readiness publishes atomically, single-flights refreshes, expires and recovers
+ok 12 - readiness publishes atomically, single-flights refreshes, expires and recovers
+  ---
+  duration_ms: 12.446999
+  type: 'test'
+  ...
+# Subtest: Sentry repeated never-successful sends cross 24h; success resets silence age
+ok 13 - Sentry repeated never-successful sends cross 24h; success resets silence age
+  ---
+  duration_ms: 22.86007
+  type: 'test'
+  ...
+# Subtest: Python respects the interpreter selected at the critical restore barrier
+ok 14 - Python respects the interpreter selected at the critical restore barrier
+  ---
+  duration_ms: 4.69489
+  type: 'test'
+  ...
+# [pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/maxbooster-test-sb4ygt3h/deployment-contract-mY0UKo/.pdim-scratch-fixture-46275/ (staging for fixture/) ...
+# [pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim
+# [pdim-restore] ✅ fixture/ restored from fixture.pdim
+# [pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/maxbooster-test-sb4ygt3h/deployment-contract-mY0UKo/.pdim-scratch-fixture-46275/ (staging for fixture/) ...
+# [pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim
+# [pdim-restore] ✅ fixture/ restored from fixture.pdim
+# [pdim-restore] Checksum mismatch for fixture.pdim
+# [pdim-restore] Extracting fixture.pdim (xz-9e) → /tmp/maxbooster-test-sb4ygt3h/deployment-contract-mY0UKo/.pdim-scratch-fixture-46275/ (staging for fixture/) ...
+# [pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim
+# [pdim-restore] ✅ fixture/ restored from fixture.pdim
+# [pdim-restore] Extracting fixture.pdim (xz-6) → /tmp/maxbooster-test-sb4ygt3h/deployment-contract-mY0UKo/.pdim-scratch-fixture-46275/ (staging for fixture/) ...
+# [pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim
+# [pdim-restore] ✅ fixture/ restored from fixture.pdim
+# [pdim-restore] Checksum mismatch for fixture.pdim
+# Subtest: capsule restoration reuses only the matching generation and rejects corruption
+ok 15 - capsule restoration reuses only the matching generation and rejects corruption
+  ---
+  duration_ms: 1585.050911
+  type: 'test'
+  ...
+# Subtest: build verifies dependencies without fetching package managers; explicit synchronization is offline
+ok 16 - build verifies dependencies without fetching package managers; explicit synchronization is offline
+  ---
+  duration_ms: 0.791519
+  type: 'test'
+  ...
+# Fri, 06 Nov 2026 23:32:36 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+# Subtest: clients cannot fabricate a paid purchase signal
+ok 17 - clients cannot fabricate a paid purchase signal
+  ---
+  duration_ms: 257.744218
+  type: 'test'
+  ...
+# Subtest: ordinary unpaid interactions retain authenticated user identity
+ok 18 - ordinary unpaid interactions retain authenticated user identity
+  ---
+  duration_ms: 97.982359
+  type: 'test'
+  ...
+# Subtest: checkout initiation returns the provider session without claiming a paid purchase
+ok 19 - checkout initiation returns the provider session without claiming a paid purchase
+  ---
+  duration_ms: 58.795936
+  type: 'test'
+  ...
+# Subtest: an analytics outage cannot strand an already-created checkout session
+ok 20 - an analytics outage cannot strand an already-created checkout session
+  ---
+  duration_ms: 39.008574
+  type: 'test'
+  ...
+# Subtest: failed checkout initiation does not emit a purchase signal
+ok 21 - failed checkout initiation does not emit a purchase signal
+  ---
+  duration_ms: 41.102699
+  type: 'test'
+  ...
+# Subtest: unauthenticated interaction and purchase attempts cannot mutate signals or create sessions
+ok 22 - unauthenticated interaction and purchase attempts cannot mutate signals or create sessions
+  ---
+  duration_ms: 29.819923
+  type: 'test'
+  ...
+# Subtest: schema gate distinguishes a missing table from missing columns
+ok 23 - schema gate distinguishes a missing table from missing columns
+  ---
+  duration_ms: 12.997101
+  type: 'test'
+  ...
+# Subtest: same-named tables in another schema cannot satisfy the contract
+ok 24 - same-named tables in another schema cannot satisfy the contract
+  ---
+  duration_ms: 1.122551
+  type: 'test'
+  ...
+# Subtest: additional historical columns are preserved, not reported as removals
+ok 25 - additional historical columns are preserved, not reported as removals
+  ---
+  duration_ms: 0.592508
+  type: 'test'
+  ...
+# Subtest: missing Neon configuration fails instead of targeting the managed DB
+ok 26 - missing Neon configuration fails instead of targeting the managed DB
+  ---
+  duration_ms: 22.839978
+  type: 'test'
+  ...
+# Subtest: prelaunch checks the selected app database schema, not just SELECT 1
+ok 27 - prelaunch checks the selected app database schema, not just SELECT 1
+  ---
+  duration_ms: 10.711199
+  type: 'test'
+  ...
+# Subtest: the required schema includes the complete durable replica-migration journal
+ok 28 - the required schema includes the complete durable replica-migration journal
+  ---
+  duration_ms: 670.385818
+  type: 'test'
+  ...
+# Subtest: production build aliases do not invoke missing fixers or prune the workspace
+ok 29 - production build aliases do not invoke missing fixers or prune the workspace
+  ---
+  duration_ms: 1.592439
+  type: 'test'
+  ...
+# Subtest: release CI preserves PostgreSQL fixtures, builds through npm, and validates restored hashes
+ok 30 - release CI preserves PostgreSQL fixtures, builds through npm, and validates restored hashes
+  ---
+  duration_ms: 2.534213
+  type: 'test'
+  ...
+# Subtest: a late build failure invalidates its completion marker
+ok 31 - a late build failure invalidates its completion marker
+  ---
+  duration_ms: 3.336885
+  type: 'test'
+  ...
+# Subtest: Python provisioning fails closed without deleting the existing runtime
+ok 32 - Python provisioning fails closed without deleting the existing runtime
+  ---
+  duration_ms: 117.232268
+  type: 'test'
+  ...
+# Subtest: DNS shutdown immediately signals its owned process group and cancels restart
+ok 33 - DNS shutdown immediately signals its owned process group and cancels restart
+  ---
+  duration_ms: 5.984449
+  type: 'test'
+  ...
+# Subtest: DNS production startup uses a compiled entry, not tsx
+ok 34 - DNS production startup uses a compiled entry, not tsx
+  ---
+  duration_ms: 0.756039
+  type: 'test'
+  ...
+# Subtest: embedded production MaxCore has a compiled entry and excludes the dashboard
+ok 35 - embedded production MaxCore has a compiled entry and excludes the dashboard
+  ---
+  duration_ms: 1.006692
+  type: 'test'
+  ...
+# Subtest: production startup rejects missing, altered and stale build output
+ok 36 - production startup rejects missing, altered and stale build output
+  ---
+  duration_ms: 41.543648
+  type: 'test'
+  ...
+# Subtest: build input identity ignores nested dependency caches but tracks imported source
+ok 37 - build input identity ignores nested dependency caches but tracks imported source
+  ---
+  duration_ms: 8.212108
+  type: 'test'
+  ...
+# Subtest: startup sidecar reuse probes the configured health listener
+ok 38 - startup sidecar reuse probes the configured health listener
+  ---
+  duration_ms: 367.934592
+  type: 'test'
+  ...
+# Subtest: oversized Zod collections reject before producing an issue per member
+ok 39 - oversized Zod collections reject before producing an issue per member
+  ---
+  duration_ms: 6.924305
+  type: 'test'
+  ...
+# Subtest: compressed JSON with trailing bytes cannot crash the HTTP parser process
+ok 40 - compressed JSON with trailing bytes cannot crash the HTTP parser process
+  ---
+  duration_ms: 534.549188
+  type: 'test'
+  ...
+# Subtest: release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy
+ok 41 - release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy
+  ---
+  duration_ms: 84.767495
+  type: 'test'
+  ...
+# Subtest: installed stale nested copy fails despite patched top-level package and lock
+ok 42 - installed stale nested copy fails despite patched top-level package and lock
+  ---
+  duration_ms: 5.413596
+  type: 'test'
+  ...
+# Subtest: unpatched node-forge is rejected even when only a nested consumer installs it
+ok 43 - unpatched node-forge is rejected even when only a nested consumer installs it
+  ---
+  duration_ms: 3.503022
+  type: 'test'
+  ...
+# Subtest: missing workspace, prerelease version and escaping installed symlink fail closed
+ok 44 - missing workspace, prerelease version and escaping installed symlink fail closed
+  ---
+  duration_ms: 4.48402
+  type: 'test'
+  ...
+# Subtest: fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x
+ok 45 - fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x
+  ---
+  duration_ms: 6.310598
+  type: 'test'
+  ...
+# Subtest: all security families reject stale nested copies and accept explicitly validated branches
+ok 46 - all security families reject stale nested copies and accept explicitly validated branches
+  ---
+  duration_ms: 212.022408
+  type: 'test'
+  ...
+# Subtest: unpatched brace walkers, merge helpers and shared HTTP cache policies cannot be reintroduced
+ok 47 - unpatched brace walkers, merge helpers and shared HTTP cache policies cannot be reintroduced
+  ---
+  duration_ms: 5.317971
+  type: 'test'
+  ...
+# Subtest: capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules
+ok 48 - capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules
+  ---
+  duration_ms: 16.144419
+  type: 'test'
+  ...
+# Subtest: restored output gate rejects absent artifacts and invalid JS without executing it
+ok 49 - restored output gate rejects absent artifacts and invalid JS without executing it
+  ---
+  duration_ms: 84.45627
+  type: 'test'
+  ...
+# Subtest: restored Node provenance admits the provisioned pin and rejects stale or malformed records
+ok 50 - restored Node provenance admits the provisioned pin and rejects stale or malformed records
+  ---
+  duration_ms: 1.635403
+  type: 'test'
+  ...
+# Subtest: builder canonical links ignore legacy/custom public URLs and encode the slug
+ok 51 - builder canonical links ignore legacy/custom public URLs and encode the slug
+  ---
+  duration_ms: 142.901367
+  type: 'test'
+  ...
+# Subtest: backend and DNS management links cannot resurrect legacy subdomains
+ok 52 - backend and DNS management links cannot resurrect legacy subdomains
+  ---
+  duration_ms: 1.286758
+  type: 'test'
+  ...
+# Subtest: web/API CI runs runtime contracts without desktop/mobile packaging gates
+ok 53 - web/API CI runs runtime contracts without desktop/mobile packaging gates
+  ---
+  duration_ms: 3.46664
+  type: 'test'
+  ...
+1..53
+# tests 53
+# suites 0
+# pass 53
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2149.098366
+
+> max-booster@3.0.0 test:sharp-security
+> node --import tsx --test tests/sharp-security.test.mjs
+
+TAP version 13
+# Subtest: GHSA-wq5f-xc86-pv6w: manifest, lock, gate and every Sharp consumer require patched binaries
+ok 1 - GHSA-wq5f-xc86-pv6w: manifest, lock, gate and every Sharp consumer require patched binaries
+  ---
+  duration_ms: 51.259689
+  type: 'test'
+  ...
+# Subtest: patched librsvg still decodes SVG, composites overlays and encodes image formats
+ok 2 - patched librsvg still decodes SVG, composites overlays and encodes image formats
+  ---
+  duration_ms: 82.179372
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1049.162059
+
+> max-booster@3.0.0 test:payment-preferences
+> node --import tsx --test tests/payment-processing/provider-only-preferences.test.mjs
+
+TAP version 13
+# Subtest: registered generic preference routes reject bank writes and redact historical credentials
+ok 1 - registered generic preference routes reject bank writes and redact historical credentials
+  ---
+  duration_ms: 682.769901
+  type: 'test'
+  ...
+# Subtest: legacy payout routes fail closed and historical bank records are never treated as verified
+ok 2 - legacy payout routes fail closed and historical bank records are never treated as verified
+  ---
+  duration_ms: 120.704445
+  type: 'test'
+  ...
+# Subtest: paid and administrator dashboard account responses redact banking and verification secrets
+ok 3 - paid and administrator dashboard account responses redact banking and verification secrets
+  ---
+  duration_ms: 27.040081
+  type: 'test'
+  ...
+# Subtest: generic preference privacy preserves settings without exposing historical banking fields
+ok 4 - generic preference privacy preserves settings without exposing historical banking fields
+  ---
+  duration_ms: 1.120447
+  type: 'test'
+  ...
+# Subtest: payment preferences reject bank credentials before persistence and preserve provider settings
+ok 5 - payment preferences reject bank credentials before persistence and preserve provider settings
+  ---
+  duration_ms: 50.167068
+  type: 'test'
+  ...
+# Subtest: royalty split acceptance rejects bank credentials without storage writes and preserves provider identity
+ok 6 - royalty split acceptance rejects bank credentials without storage writes and preserves provider identity
+  ---
+  duration_ms: 50.94593
+  type: 'test'
+  ...
+# Subtest: generic preference guard rejects common bank credential key spellings
+ok 7 - generic preference guard rejects common bank credential key spellings
+  ---
+  duration_ms: 0.514363
+  type: 'test'
+  ...
+# Subtest: routine preference responses redact key variants without mutating stored JSON
+ok 8 - routine preference responses redact key variants without mutating stored JSON
+  ---
+  duration_ms: 0.302933
+  type: 'test'
+  ...
+# Subtest: authenticated user preference routes reject nested banking fields and redact historical values
+ok 9 - authenticated user preference routes reject nested banking fields and redact historical values
+  ---
+  duration_ms: 12.356638
+  type: 'test'
+  ...
+# Subtest: security alert preference responses redact legacy banking fields on reads and updates
+ok 10 - security alert preference responses redact legacy banking fields on reads and updates
+  ---
+  duration_ms: 16.573449
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2224.858727
+
+> max-booster@3.0.0 test:storage-recovery
+> node --test tests/recovery-snapshot-integrity.test.mjs tests/pdim-acknowledged-crash-capacity.test.mjs
+
+TAP version 13
+# Subtest: local PDIM preserves every concurrent acknowledged increment after abrupt process loss
+ok 1 - local PDIM preserves every concurrent acknowledged increment after abrupt process loss
+  ---
+  duration_ms: 2549.388965
+  type: 'test'
+  ...
+# {"scope":"actual local PDIM HTTP/canonical RedisStore/AOF with disposable local state","concurrency":8,"acknowledgedMutations":256,"recoveredCounter":256,"retries":0,"wallMs":434,"p50Ms":5.03,"p95Ms":15.72,"p99Ms":34.29,"peakObservedRssKiB":125956,"productionDataTouched":false,"limitations":"bounded local probe, not worldwide capacity, saturation/soak, power loss, remote bucket or application/inference load"}
+# Subtest: recovery publishes the exact verified bytes when the source changes before publication
+ok 2 - recovery publishes the exact verified bytes when the source changes before publication
+  ---
+  duration_ms: 22.049601
+  type: 'test'
+  ...
+# Subtest: recovery rejects changed bytes before creating a destination
+ok 3 - recovery rejects changed bytes before creating a destination
+  ---
+  duration_ms: 5.296527
+  type: 'test'
+  ...
+# Subtest: recovery retains exclusive destination protection
+ok 4 - recovery retains exclusive destination protection
+  ---
+  duration_ms: 9.613217
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2649.83968
+[23:32:46.846] INFO (47621): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:32:46.860] INFO (47621): [LocalPDIM] Local PDIM exec server started on port 15556 (local fsynced AOF and snapshots)
+[23:32:46.875] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:46.900] INFO (47621): [PDIM] First successful response after 56ms — entering 10s settling window
+[23:32:47.062] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:47.117] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:47.157] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:47.188] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:47.189] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:47.239] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:47.239] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:48.286] INFO (47621): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:32:48.286] INFO (47621): [Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor
+[23:32:48.291] INFO (47621): [Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor
+[23:32:48.304] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:48.305] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:48.305] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:48.305] INFO (47621): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:32:48.311] INFO (47621): [PDIM] First successful response after 24ms — entering 10s settling window
+[23:34:16.472] WARN (55343): Failed to record registration consents
+    userId: "ce85df9a-7c1b-469f-9c1f-65b0eb9ed312"
+    err: {
+      "type": "Error",
+      "message": "Failed query: \n      INSERT INTO consent_logs (\n        user_id,\n        consent_type,\n        action,\n        version,\n        ip_address,\n        user_agent,\n        metadata,\n        created_at\n      )\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $[REDACTED]jsonb,\n        NOW()\n      )\n    \nparams: ce85df9a-7c1b-469f-9c1f-65b0eb9ed312,privacy,accepted,1.0.0,[REDACTED],fixture-agent,{\"source\":\"registration\"}: new row for relation \"consent_logs\" violates check constraint \"fail_first_privacy_write\"",
+      "stack":
+          [ACCESSOR]
+          caused by: [ACCESSOR]
+      "query": "\n      INSERT INTO consent_logs (\n        user_id,\n        consent_type,\n        action,\n        version,\n        ip_address,\n        user_agent,\n        metadata,\n        created_at\n      )\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $[REDACTED]jsonb,\n        NOW()\n      )\n    ",
+      "params": [
+        "ce85df9a-7c1b-469f-9c1f-65b0eb9ed312",
+        "privacy",
+        "accepted",
+        "1.0.0",
+        "[REDACTED]",
+        "fixture-agent",
+        "{\"source\":\"registration\"}"
+      ]
+    }
+[23:34:16.492] INFO (55343): Registration consents recorded for user 83ad4da7-00fd-4928-ad31-f1ddd566bae9, age: 36
+[23:34:17.591] INFO (57537): 🔧 Action registered: Send Email
+[23:34:17.591] INFO (57537): 🔧 Action registered: Post to Social Media
+[23:34:17.591] INFO (57537): 🔧 Action registered: Distribute Music
+[23:34:17.591] INFO (57537): 🔧 Action registered: Generate Analytics Report
+[23:34:17.591] INFO (57537): 🔧 Action registered: AI Mix Track
+[23:34:17.591] INFO (57537): 🔧 Action registered: AI Master Track
+[23:34:17.591] INFO (57537): 🔧 Action registered: Upload Beat to Marketplace
+[23:34:17.591] INFO (57537): 🔧 Action registered: Process Payment
+[23:34:17.592] INFO (57537): 🔧 Action registered: Send Notification
+[23:34:17.592] INFO (57537): 🔧 Action registered: Backup Data
+[23:34:17.592] INFO (57537): 🔧 Action registered: Create Promotional Video
+[23:34:17.592] INFO (57537): 🔧 Action registered: Create Social Media Video
+[23:34:17.592] INFO (57537): 🔧 Action registered: Create Lyric Video
+[23:34:17.592] INFO (57537): 🔧 Action registered: Create Audio Visualizer Video
+[23:34:17.592] INFO (57537): 🔍 Condition registered: Time Based
+[23:34:17.592] INFO (57537): 🔍 Condition registered: User Activity
+[23:34:17.592] INFO (57537): 🔍 Condition registered: Performance Threshold
+[23:34:17.592] INFO (57537): 🔍 Condition registered: Revenue Threshold
+[23:34:17.592] INFO (57537): 🔍 Condition registered: Stream Threshold
+[23:34:17.593] INFO (57537): 🎯 Trigger registered: Schedule
+[23:34:17.593] INFO (57537): 🎯 Trigger registered: Event
+[23:34:17.593] INFO (57537): 🎯 Trigger registered: Webhook
+[23:34:17.593] INFO (57537): 📂 Loading workflows from storage...
+[23:34:17.595] INFO (57537): 🚀 Automation engine started
+[23:34:17.595] INFO (57537): 🤖 Automation system initialized
+[23:34:17.600] INFO (57537): 📊 Generating analytics report (full) for user undefined
+[23:34:17.608] WARN (57537): generate-analytics-report action failed
+    err: {
+      "type": "Error",
+      "message": "generate-analytics-report requires a userId",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:17.611] INFO (57537): 🎛️ Auto-mixing project undefined
+[23:34:17.611] WARN (57537): ai-mix-track action failed
+    err: {
+      "type": "Error",
+      "message": "ai-mix-track requires trackId (studio project id)",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:17.612] INFO (57537): 🎚️ Mastering project undefined
+[23:34:17.613] WARN (57537): ai-master-track action failed
+    err: {
+      "type": "Error",
+      "message": "ai-master-track requires trackId (studio project id)",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:17.615] WARN (57537): 🎶 upload-beat action invoked but is not implemented — no beat was uploaded or listed
+[23:34:17.616] WARN (57537): 💳 process-payment action invoked for undefined undefined but is not implemented — no payment was processed
+[23:34:17.617] INFO (57537): 🎬 Rendering promo video for tiktok
+[23:34:18.073] INFO (57537): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:34:18.128] INFO (57537): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:34:19.206] INFO (57537): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:34:20.033] WARN (57537): create-promo-video action failed
+    err: {
+      "type": "Error",
+      "message": "A target platform is required for video generation",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:20.034] INFO (57537): 📹 Rendering social video for: 
+[23:34:20.034] WARN (57537): create-social-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-social-video requires at least one platform",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:20.035] INFO (57537): 🎤 Rendering lyric video (default)
+[23:34:20.035] WARN (57537): create-lyric-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-lyric-video requires audioUrl",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:20.036] INFO (57537): 🌊 Rendering visualizer video (default)
+[23:34:20.036] WARN (57537): create-visualizer-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-visualizer-video requires audioUrl",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:22.079] INFO (57537): 🔔 Sending notification: t
+[23:34:22.187] WARN (57537): VAPID keys not configured - Web Push disabled
+[23:34:22.372] WARN (68290): [MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout
+[23:34:22.410] WARN (68290): [MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: stripe
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: sendgrid
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: socialApi
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: twitter
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: facebook
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: instagram
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: linkedin
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: tiktok
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: tiktok_sandbox
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: youtube
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: threads
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: googlebusiness
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: aiService
+[23:34:22.792] INFO (57537): 🔌 Circuit breaker initialized: labelGrid
+[23:34:22.793] INFO (57537): 🔌 Circuit breaker initialized: dsp
+[23:34:22.793] INFO (57537): 🔌 External service circuit breakers initialized
+[23:34:22.799] WARN (57537): ⚠️  Resend API key not configured. Email features will be disabled.
+[23:34:22.801] INFO (57537): 📧 Sending email to undefined: s
+[23:34:22.801] WARN (57537): send-email action failed
+    err: {
+      "type": "Error",
+      "message": "no userId resolvable for email",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:22.802] INFO (57537): 📊 Generating analytics report (full) for user undefined
+[23:34:22.802] WARN (57537): generate-analytics-report action failed
+    err: {
+      "type": "Error",
+      "message": "generate-analytics-report requires a userId",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:22.802] INFO (57537): 🎛️ Auto-mixing project undefined
+[23:34:22.802] WARN (57537): ai-mix-track action failed
+    err: {
+      "type": "Error",
+      "message": "ai-mix-track requires trackId (studio project id)",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:22.802] INFO (57537): 🎚️ Mastering project undefined
+[23:34:22.802] WARN (57537): ai-master-track action failed
+    err: {
+      "type": "Error",
+      "message": "ai-master-track requires trackId (studio project id)",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:22.803] WARN (57537): 🎶 upload-beat action invoked but is not implemented — no beat was uploaded or listed
+[23:34:22.803] WARN (57537): 💳 process-payment action invoked for undefined undefined but is not implemented — no payment was processed
+[23:34:22.803] INFO (57537): 🎬 Rendering promo video for tiktok
+[23:34:22.803] WARN (57537): create-promo-video action failed
+    err: {
+      "type": "Error",
+      "message": "A target platform is required for video generation",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:22.803] INFO (57537): 📹 Rendering social video for: 
+[23:34:22.804] WARN (57537): create-social-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-social-video requires at least one platform",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:22.804] INFO (57537): 🎤 Rendering lyric video (default)
+[23:34:22.804] WARN (57537): create-lyric-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-lyric-video requires audioUrl",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:22.804] INFO (57537): 🌊 Rendering visualizer video (default)
+[23:34:22.804] WARN (57537): create-visualizer-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-visualizer-video requires audioUrl",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:31.239] INFO (69092): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-sb4ygt3h/nondestructive-release-hoH5Yz/verify-LsNGgv/.pdim-scratch-example-69764/ (staging for example/) ...
+[pdim-restore] Using bsdtar (libarchive, atomic extraction) for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[pdim-restore] Extracting members.pdim (zstd-19) → /tmp/maxbooster-test-sb4ygt3h/nondestructive-release-hoH5Yz/verify-f48Xc6/.pdim-scratch-example-69947/ (staging for example/) ...
+[pdim-restore] Using bsdtar (libarchive, atomic extraction) for members.pdim
+[pdim-restore] ✅ example/ restored from members.pdim
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-sb4ygt3h/release-cache-source-change-DTnP4L/verify-pCxPxe/.pdim-scratch-example-70273/ (staging for example/) ...
+[pdim-restore] Using bsdtar (libarchive, atomic extraction) for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-sb4ygt3h/release-cache-xoA4VF/verify-cIpvoK/.pdim-scratch-example-70464/ (staging for example/) ...
+[pdim-restore] Using bsdtar (libarchive, atomic extraction) for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-sb4ygt3h/release-cache-xoA4VF/verify-XU7dDA/.pdim-scratch-example-70647/ (staging for example/) ...
+[pdim-restore] Using bsdtar (libarchive, atomic extraction) for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[23:34:37.570] INFO (70457): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:34:37.760] INFO (70784): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:34:38.002] INFO (70784): [LocalPDIM] Local PDIM exec server started on port 40339 (local fsynced AOF and snapshots)
+[23:34:38.033] INFO (70784): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:34:38.057] INFO (70784): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:34:38.079] INFO (70784): [PDIM] First successful response after 47ms — entering 10s settling window
+[23:34:38.098] INFO (70784): 📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)
+[23:34:38.515] INFO (70784): 📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)
+[23:34:38.524] WARN (70784): [Storage] PDIM write failed for key=missing-token.wav — suppressing repeats for 30 s
+    err: {
+      "type": "Error",
+      "message": "Canonical local PDIM endpoint requires the inherited private channel token",
+      "stack":
+          [ACCESSOR]
+    }
+[23:34:38.527] INFO (70784): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:34:49.697] INFO (72526): [ParallelBlockCompressor] 2 worker(s) ready for CPU-core-parallel block compression
+[23:34:51.113] INFO (72951): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:34:56.216] INFO (73686): 📱 Social media queues initialized (boosterstate-backed)
+[23:34:59.629] INFO (74212): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:34:59.630] INFO (74212): 🔌 Circuit breaker initialized: stripe
+[23:34:59.630] INFO (74212): 🔌 Circuit breaker initialized: sendgrid
+[23:34:59.630] INFO (74212): 🔌 Circuit breaker initialized: socialApi
+[23:34:59.630] INFO (74212): 🔌 Circuit breaker initialized: twitter
+[23:34:59.630] INFO (74212): 🔌 Circuit breaker initialized: facebook
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: instagram
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: linkedin
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: tiktok
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: tiktok_sandbox
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: youtube
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: threads
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: googlebusiness
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: aiService
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: labelGrid
+[23:34:59.631] INFO (74212): 🔌 Circuit breaker initialized: dsp
+[23:34:59.632] INFO (74212): 🔌 External service circuit breakers initialized
+[23:34:59.633] INFO (74212): ✅ Resend EmailService initialized
+[23:34:59.633] INFO (74212): ✅ Resend initialized for email notifications
+[23:34:59.635] WARN (74212): Resend rejected the email:
+    err: {
+      "type": "validation_error",
+      "message": "Invalid `from` field",
+      "stack":
+          
+      "name": "validation_error"
+    }
+[23:34:59.636] INFO (74212): ✅ Notification sent to user user-1: Test
+[23:34:59.638] INFO (74212): 📧 Email sent to [REDACTED]
+[23:34:59.638] INFO (74212): ✅ Notification sent to user user-2: Test
+[23:35:00.025] INFO (74414): 🔐 Token refresh monitor started (checking every minute)
+[23:35:00.026] WARN (74414): [SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect.
+Fri, 06 Nov 2026 23:35:10 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+[23:35:13.340] INFO (77148): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:35:13.829] INFO (77184): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:35:15.749] ERROR (77378): [MaxCoreLocal] Failed to ensure maxcore schema: ECONNREFUSED
+Fri, 06 Nov 2026 23:35:17 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+[23:35:18.581] INFO (77413): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:35:18.649] WARN (77413): VAPID keys not configured - Web Push disabled
+[23:35:18.758] INFO (77413): 🔌 Circuit breaker initialized: stripe
+[23:35:18.758] INFO (77413): 🔌 Circuit breaker initialized: sendgrid
+[23:35:18.758] INFO (77413): 🔌 Circuit breaker initialized: socialApi
+[23:35:18.759] INFO (77413): 🔌 Circuit breaker initialized: twitter
+[23:35:18.759] INFO (77413): 🔌 Circuit breaker initialized: facebook
+[23:35:18.760] INFO (77413): 🔌 Circuit breaker initialized: instagram
+[23:35:18.761] INFO (77413): 🔌 Circuit breaker initialized: linkedin
+[23:35:18.761] INFO (77413): 🔌 Circuit breaker initialized: tiktok
+[23:35:18.761] INFO (77413): 🔌 Circuit breaker initialized: tiktok_sandbox
+[23:35:18.761] INFO (77413): 🔌 Circuit breaker initialized: youtube
+[23:35:18.762] INFO (77413): 🔌 Circuit breaker initialized: threads
+[23:35:18.762] INFO (77413): 🔌 Circuit breaker initialized: googlebusiness
+[23:35:18.762] INFO (77413): 🔌 Circuit breaker initialized: aiService
+[23:35:18.762] INFO (77413): 🔌 Circuit breaker initialized: labelGrid
+[23:35:18.762] INFO (77413): 🔌 Circuit breaker initialized: dsp
+[23:35:18.762] INFO (77413): 🔌 External service circuit breakers initialized
+[23:35:18.764] WARN (77413): ⚠️  Resend API key not configured. Email features will be disabled.
+[23:35:18.788] INFO (77413): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:35:18.793] INFO (77413): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:35:18.998] INFO (77413): Sharp module loaded for image processing
+Fri, 06 Nov 2026 23:35:20 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+Fri, 06 Nov 2026 23:35:21 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+Fri, 06 Nov 2026 23:35:25 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+[23:35:31.825] WARN (78605): Mobile token remove error:
+    err: {
+      "type": "Error",
+      "message": "database unavailable",
+      "stack":
+          [ACCESSOR]
+    }
+[23:35:31.845] WARN (78605): Push unsubscribe error:
+    err: {
+      "type": "Error",
+      "message": "database unavailable",
+      "stack":
+          [ACCESSOR]
+    }
+[23:35:36.704] WARN (78759): [ARIntelligence] /catalog-gap failed
+    err: {
+      "type": "Error",
+      "message": "offline",
+      "stack":
+          [ACCESSOR]
+      "status": 503
+    }
+[23:35:38.402] INFO (78818): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:35:38.454] INFO (78818): [PDIM] First successful response after 53ms — entering 10s settling window
+[23:35:38.455] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:38.467] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:38.476] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:38.482] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:38.494] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:38.494] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:38.494] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:38.495] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:38.495] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:38.507] INFO (78818): ✅ [PDIM] Connected via HTTP exec endpoint
+[23:35:39.397] INFO (78833): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:35:41.884] INFO (79049): Fetching career coach recommendations for user owner
+[23:35:41.885] WARN (79049): Error fetching career coach recommendations: private upstream configuration
+[23:35:42.513] INFO (79062): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:35:43.304] INFO (79106): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:35:44.112] WARN (79106): [RateLimiter] PDIM not configured — global rate limiter disabled (dev mode)
+[23:35:44.113] WARN (79106): [RateLimiter] PDIM not configured — api rate limiter disabled (dev mode)
+[23:35:44.113] WARN (79106): [RateLimiter] PDIM not configured — ai rate limiter disabled (dev mode)
+[23:35:44.113] WARN (79106): [RateLimiter] PDIM not configured — auth rate limiter disabled (dev mode)
+[23:35:44.648] INFO (79126): [MaxCoreAI] Configured — local subsystem: http://stub-maxcore | MaxCore is the only AI source
+[23:35:49.247] INFO (79299): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:35:50.284] INFO (79329): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:35:50.314] INFO (79329): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:35:50.411] INFO (79329): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:35:50.439] INFO (79329): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[23:35:50.440] INFO (79329): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:35:50.440] INFO (79329): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[23:35:50.441] INFO (79329): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion posted in 2ms — next in 60 min
+[23:35:50.444] INFO (79329): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={"genre":"afrobeats","mood":"uplifting"}
+[23:35:50.444] INFO (79329): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:35:50.444] INFO (79329): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[23:35:50.444] INFO (79329): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion posted in 0ms — next in 60 min
+[23:35:50.445] INFO (79329): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[23:35:50.445] INFO (79329): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:35:50.445] INFO (79329): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[23:35:50.446] INFO (79329): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion not posted: No connected social accounts in 1ms — next in 60 min
+[23:35:50.446] INFO (79329): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[23:35:50.446] INFO (79329): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:35:50.453] WARN (79329): [BeatMoneyLoop] ❌ Cycle test-cycle-id failed after 1ms: Generation rejected
+    err: {
+      "type": "Error",
+      "message": "Generation rejected",
+      "stack":
+          [ACCESSOR]
+    }
+[23:35:50.456] INFO (79329): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[23:35:50.457] INFO (79329): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[23:35:50.457] INFO (79329): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[23:35:50.457] WARN (79329): [BeatMoneyLoop] test-cycle-id promotion step failed
+    err: {
+      "type": "Error",
+      "message": "Promotion rejected",
+      "stack":
+          [ACCESSOR]
+    }
+[23:35:50.457] INFO (79329): [BeatMoneyLoop] Cycle test-cycle-id sold; social promotion not posted: Promotion rejected in 1ms — next in 60 min
+[23:35:50.459] INFO (79329): [BeatMoneyLoop] campaign test-cycle-id posted to instagram, tiktok (2 posts)
+[23:35:50.460] WARN (79329): [BeatMoneyLoop] campaign test-cycle-id was not posted: No social posts were created: Campaign activated! Posted 0 times.
+[23:35:53.468] INFO (79457): 📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)
+[23:35:53.682] INFO (79457): 📱 Social media queues initialized (boosterstate-backed)
+[23:35:53.713] WARN (79457): Error checking backoff state:
+    err: {
+      "type": "Error",
+      "message": "storage offline",
+      "stack":
+          [ACCESSOR]
+    }
+[23:35:54.648] INFO (79476): [DataTransfer] Distribution data transfer service initialized
+[23:35:54.650] INFO (79476): 🔌 Circuit breaker initialized: streaming-spotify
+[23:35:54.650] INFO (79476): 🔌 Circuit breaker initialized: streaming-apple_music
+[23:35:54.650] INFO (79476): 🔌 Circuit breaker initialized: streaming-youtube_music
+[23:35:54.650] INFO (79476): 🔌 Circuit breaker initialized: streaming-deezer
+[23:35:54.651] INFO (79476): 🔌 Circuit breaker initialized: streaming-soundcloud
+[23:35:54.651] INFO (79476): 🔌 Circuit breaker initialized: streaming-tidal
+[23:35:54.651] INFO (79476): 🔌 Circuit breaker initialized: streaming-bandcamp
+[23:35:54.651] INFO (79476): 🔌 Circuit breaker initialized: streaming-audiomack
+[23:35:54.667] INFO (79476): [DataTransfer] Created import job transfer_1794008154665_e28b0f3 for user user-1 from spotify_profile_scan
+[23:35:54.669] INFO (79476): [DataTransfer] Imported release from spotify profile: First Light
+[23:35:54.669] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154665_e28b0f3: 1 imported, 0 failed
+[23:35:54.669] INFO (79476): [DataTransfer] Created import job transfer_1794008154669_e33a5bb for user user-1 from deezer_profile_scan
+[23:35:54.670] INFO (79476): [DataTransfer] Merged existing release from deezer: First Light
+[23:35:54.670] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154669_e33a5bb: 1 imported, 0 failed
+[23:35:54.674] INFO (79476): [DataTransfer] Created import job transfer_1794008154674_5e495bf for user user-1 from spotify_profile_scan
+[23:35:54.674] INFO (79476): [DataTransfer] Imported release from spotify profile: First Light
+[23:35:54.675] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154674_5e495bf: 1 imported, 0 failed
+[23:35:54.675] INFO (79476): [DataTransfer] Created import job transfer_1794008154675_16775af for user user-1 from spotify_profile_scan
+[23:35:54.675] INFO (79476): [DataTransfer] Merged existing release from spotify: First Light
+[23:35:54.675] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154675_16775af: 1 imported, 0 failed
+[23:35:54.678] INFO (79476): [DataTransfer] Created import job transfer_1794008154678_f0981d1 for user user-1 from spotify_profile_scan
+[23:35:54.678] INFO (79476): [DataTransfer] Imported release from spotify profile: First Light
+[23:35:54.678] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154678_f0981d1: 1 imported, 0 failed
+[23:35:54.679] INFO (79476): [DataTransfer] Created import job transfer_1794008154678_f0981d1 for user user-1 from apple_music_profile_scan
+[23:35:54.679] INFO (79476): [DataTransfer] Merged existing release from apple_music: First Light
+[23:35:54.679] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154678_f0981d1: 1 imported, 0 failed
+[23:35:54.681] INFO (79476): [DataTransfer] Created import job transfer_1794008154681_44f9268 for user user-1 from spotify_profile_scan
+[23:35:54.681] INFO (79476): [DataTransfer] Created import job transfer_1794008154681_44f9268 for user user-1 from apple_music_profile_scan
+[23:35:54.682] INFO (79476): [DataTransfer] Imported release from spotify profile: First Light
+[23:35:54.682] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154681_44f9268: 1 imported, 0 failed
+[23:35:54.682] INFO (79476): [DataTransfer] Merged existing release from apple_music: First Light
+[23:35:54.682] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154681_44f9268: 1 imported, 0 failed
+[23:35:54.682] WARN (79476): [DataTransfer] Skipping release "First Light" from non-canonical artist "Different Artist"
+[23:35:54.682] INFO (79476): [DataTransfer] Created import job transfer_1794008154682_da4c1ec for user user-1 from spotify_profile_scan
+[23:35:54.683] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154682_da4c1ec: 0 imported, 0 failed
+[23:35:54.685] INFO (79476): [DataTransfer] Created import job transfer_1794008154685_bedef85 for user user-1 from spotify_profile_scan
+[23:35:54.686] INFO (79476): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
+[23:35:54.686] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154685_bedef85: 1 imported, 0 failed
+[23:35:54.686] INFO (79476): [DataTransfer] Created import job transfer_1794008154686_5a61762 for user user-1 from spotify_profile_scan
+[23:35:54.687] INFO (79476): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
+[23:35:54.687] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154686_5a61762: 1 imported, 0 failed
+[23:35:54.688] INFO (79476): [DataTransfer] Created import job transfer_1794008154688_94646b3 for user user-1 from spotify_profile_scan
+[23:35:54.688] INFO (79476): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
+[23:35:54.688] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154688_94646b3: 1 imported, 0 failed
+[23:35:54.689] INFO (79476): [DataTransfer] Created import job transfer_1794008154689_1aa3987 for user user-1 from spotify_profile_scan
+[23:35:54.690] INFO (79476): [DataTransfer] Imported release from spotify profile: First Light
+[23:35:54.690] INFO (79476): [DataTransfer] Profile catalog import transfer_1794008154689_1aa3987: 1 imported, 0 failed
+[23:35:59.384] INFO (79619): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:36:02.877] INFO (79738): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:36:02.878] INFO (79738): ✅ Sharp Image Service initialized - production-ready image generation available
+[23:36:03.204] INFO (79764): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:36:03.596] INFO (79771): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:36:03.793] INFO (79764): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:36:03.833] INFO (79764): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:36:06.491] INFO (79862): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:36:08.044] INFO (79902): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:36:08.061] INFO (79902): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[23:36:11.208] INFO (80015): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:36:16.579] INFO (80189): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:36:22.449] INFO (80384): [PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms
+[23:36:22.470] INFO (80384): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[23:36:22.511] INFO (80384): Sharp module loaded for image processing
+[23:36:23.759] INFO (80384): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+JUNIT report written to /home/runner/workspace/test-results.xml

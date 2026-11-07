@@ -1,0 +1,1 @@
+{"status": "needs_work", "unresolvedTasks": 3639, "countsByKind": {"command_failure": 3, "blocked_check": 20, "skipped_case": 26, "coverage_gap": 2534, "coverage_scope_gap": 169, "missing_execution": 33, "feature_acceptance_gap": 834, "mapping_gap": 20}}

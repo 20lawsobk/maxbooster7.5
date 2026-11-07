@@ -1,0 +1,103 @@
+{
+  "sourceRevision": "2b33ccd242213157f2478619224246620415b992",
+  "scope": "Bounded, disposable recovery and read-only retained-evidence verification.",
+  "runs": [
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/platform-register.py",
+        "--self-test"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:46:30.851851+00:00",
+      "durationSeconds": 1.574,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/operations/platform-register.py.txt",
+      "logSha256": "2aa94c04b915cd2c6af508146bdba20cb9ef93945d2cb92ea8e660fc07989a91",
+      "file": "scripts/testing/platform-register.py"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/run-engine-load.py",
+        "--python",
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "--output",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/operations/engine-load"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:46:32.432755+00:00",
+      "durationSeconds": 0.618,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/operations/load_test.py.txt",
+      "logSha256": "d360e97bcc5fa01f50d99dee5da9b7db1fea9a0bde28abd18d2703fc85764734",
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
+      "operationalProfile": "bounded-legacy-digital-gpu-numeric-dedup-v1",
+      "evidence": "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/operations/engine-load/results.json"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "evaluations/maxcore-quality/verify_types.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:46:33.059461+00:00",
+      "durationSeconds": 0.97,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/operations/verify_types.py.txt",
+      "logSha256": "691363e9eab1755dbdd5c05f8f6cdeef85e7c640e0f745e9bd96037266ff67d4",
+      "file": "evaluations/maxcore-quality/verify_types.py"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "evaluations/maxcore-quality/verify_evidence.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:46:34.035862+00:00",
+      "durationSeconds": 0.115,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/operations/verify_evidence.py.txt",
+      "logSha256": "a0f71bf11dda59c66151378bcdc0d7ce48f61c7c6134e3e3594d6808a9337be5",
+      "file": "evaluations/maxcore-quality/verify_evidence.py"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/maxcore-isolated-recovery-acceptance.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:46:34.158112+00:00",
+      "durationSeconds": 1.22,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/operations/maxcore-isolated-recovery-acceptance.py.txt",
+      "logSha256": "f3d42c6f52182740b3842c0e7e44813797af85ba169cf5a34febe73d67f2714f",
+      "file": "scripts/maxcore-isolated-recovery-acceptance.py"
+    },
+    {
+      "command": [
+        "node",
+        "tests/payment-processing/run.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:46:35.385795+00:00",
+      "durationSeconds": 15.998,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/operations/run.mjs.txt",
+      "logSha256": "8a391f4090943207a6b43f28ecd2d1c8722e80a72a1e6e4ac11816c706a10360",
+      "file": "tests/payment-processing/run.mjs"
+    }
+  ]
+}

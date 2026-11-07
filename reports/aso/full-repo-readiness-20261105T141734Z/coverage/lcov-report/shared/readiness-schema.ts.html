@@ -1,0 +1,757 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for shared/readiness-schema.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">shared</a> readiness-schema.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">98.36% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>60/61</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">96.42% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>27/28</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">98.3% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>58/59</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2850x</span>
+<span class="cline-any cline-yes">1311x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Structural parity with readiness migrations &gt;=0020. Custom commerce functions
+// and triggers remain migration-only: schema push is NOT a migration substitute.
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, timestamp, integer, boolean, jsonb, bigint, uuid, index, uniqueIndex, unique, primaryKey, foreignKey, check } from "drizzle-orm/pg-core";
+import { users, artistProfiles } from "./schema";
+&nbsp;
+const tz = (name: string) =&gt; timestamp(name, { withTimezone: true });
+const money = (name: string) =&gt; bigint(name, { mode: "bigint" });
+&nbsp;
+export const authSessionEpochs = pgTable("auth_session_epochs", {
+  userId: varchar("user_id").primaryKey(),
+  generation: money("generation").notNull().default(sql`1`),
+  lastTotpStep: money("last_totp_step"),
+  lastTotpSecretHash: text("last_totp_secret_hash"),
+}, t =&gt; [check("auth_session_epochs_generation_check", sql`${t.generation} &gt; 0`),
+  foreignKey({ columns: [t.userId], foreignColumns: [users.id], name: "auth_session_epochs_user_id_fkey" }).onDelete("cascade")]);
+&nbsp;
+export const accountErasureRequests = pgTable("account_erasure_requests", {
+  userId: varchar("user_id").primaryKey(),
+  requestId: uuid("request_id").notNull().defaultRandom(),
+  requestedAt: tz("requested_at").notNull().defaultNow(),
+  notBefore: tz("not_before").notNull().default(sql`now() + interval '30 days'`),
+  status: text("status").notNull().default("pending_policy"),
+  policyVersion: text("policy_version"), completedAt: tz("completed_at"),
+}, t =&gt; [check("account_erasure_requests_status_check", sql`${t.status} IN ('pending_policy','cancelled','processing','completed')`),
+  uniqueIndex("account_erasure_request_id_idx").on(t.requestId)]);
+&nbsp;
+// Evidence survives cancellation/reopening and eventual users-row removal.
+export const accountErasureSteps = pgTable("account_erasure_steps", {
+  requestId: uuid("request_id").notNull(), systemId: text("system_id").notNull(),
+  inventoryVersion: text("inventory_version").notNull(), policyVersion: text("policy_version").notNull(),
+  approvalRef: text("approval_ref").notNull(), approvedBy: text("approved_by").notNull(),
+  createdAt: tz("created_at").notNull().defaultNow(),
+  status: text("status").notNull().default("pending"), attempts: integer("attempts").notNull().default(0),
+  leaseId: uuid("lease_id"), leaseUntil: tz("lease_until"), retryAt: tz("retry_at"),
+  receiptRef: text("receipt_ref"), acknowledgedAt: tz("acknowledged_at"),
+}, t =&gt; [
+  primaryKey({ columns: [t.requestId, t.systemId], name: "account_erasure_steps_pkey" }),
+  check("account_erasure_steps_status_check", sql`${t.status} IN ('pending','running','retry','acknowledged')`),
+  check("account_erasure_steps_check", sql`${t.status} &lt;&gt; 'acknowledged' OR (${t.receiptRef} IS NOT NULL AND ${t.acknowledgedAt} IS NOT NULL)`),
+  index("account_erasure_steps_retry_idx").on(t.status, t.retryAt, t.leaseUntil),
+]);
+&nbsp;
+export const integrationNotificationDigest = pgTable("integration_notification_digest", {
+  id: uuid("id").primaryKey(), userId: varchar("user_id").notNull(),
+  type: text("type").notNull(), title: text("title").notNull(), message: text("message").notNull(),
+  link: text("link"), frequency: text("frequency").notNull(), dueAt: tz("due_at").notNull(),
+  state: text("state").notNull(), owner: uuid("owner"), providerId: text("provider_id"), error: text("error"),
+  createdAt: tz("created_at").notNull().defaultNow(), updatedAt: tz("updated_at").notNull().defaultNow(),
+}, t =&gt; [
+  foreignKey({ columns: [t.userId], foreignColumns: [users.id], name: "integration_notification_digest_user_id_fkey" }).onDelete("cascade"),
+  check("integration_notification_digest_frequency_check", sql`${t.frequency} IN ('daily','weekly')`),
+  check("integration_notification_digest_state_check", sql`${t.state} IN ('pending','started','accepted','rejected','unknown','suppressed')`),
+  index("integration_notification_digest_due").on(t.dueAt, t.id).where(sql`${t.state} = 'pending'`),
+  index("integration_notification_digest_owner").on(t.owner).where(sql`${t.owner} IS NOT NULL`),
+  index("integration_notification_digest_user_due").on(t.userId, t.dueAt).where(sql`${t.state} = 'pending'`),
+]);
+&nbsp;
+export const integrationCatalogJobs = pgTable("integration_catalog_jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  profileId: varchar("profile_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  state: text("state").notNull().default("pending"), attempts: integer("attempts").notNull().default(0),
+  leaseOwner: uuid("lease_owner"), leaseUntil: tz("lease_until"),
+  availableAt: tz("available_at").notNull().defaultNow(), createdAt: tz("created_at").notNull().defaultNow(),
+  updatedAt: tz("updated_at").notNull().defaultNow(), result: jsonb("result"), error: text("error"),
+}, t =&gt; [unique("integration_catalog_jobs_profile_id_key").on(t.profileId),
+  foreignKey({ columns: [t.profileId], foreignColumns: [artistProfiles.id], name: "integration_catalog_jobs_profile_id_fkey" }).onDelete("cascade"),
+  foreignKey({ columns: [t.userId], foreignColumns: [users.id], name: "integration_catalog_jobs_user_id_fkey" }).onDelete("cascade"),
+  check("integration_catalog_jobs_state_check", sql`${t.state} IN ('pending','running','completed','failed')`),
+  index("integration_catalog_jobs_claim_idx").on(t.state, t.availableAt, t.leaseUntil)]);
+&nbsp;
+export const integrationCatalogTransfers = pgTable("integration_catalog_transfers", {
+  id: text("id").primaryKey(), userId: varchar("user_id").notNull(),
+  progress: jsonb("progress").notNull(), updatedAt: tz("updated_at").notNull().defaultNow(),
+}, t =&gt; [index("integration_catalog_transfers_user_idx").on(t.userId, t.updatedAt.desc().nullsFirst()),
+  foreignKey({ columns: [t.userId], foreignColumns: [users.id], name: "integration_catalog_transfers_user_id_fkey" }).onDelete("cascade")]);
+&nbsp;
+export const commerceWebhookReceipts = pgTable("commerce_webhook_receipts", {
+  eventId: text("event_id").primaryKey(), eventType: text("event_type").notNull(), completedAt: tz("completed_at").notNull().defaultNow(),
+});
+export const commerceWebhookInbox = pgTable("commerce_webhook_inbox", {
+  eventId: text("event_id").primaryKey(), eventType: text("event_type").notNull(), payload: jsonb("payload").notNull(),
+  state: text("state").notNull().default("pending"), leaseUntil: tz("lease_until"), leaseToken: text("lease_token"),
+  attempts: integer("attempts").notNull().default(0), error: text("error"), receivedAt: tz("received_at").notNull().defaultNow(),
+});
+export const integrationDistributionSubmissions = pgTable("integration_distribution_submissions", {
+  provider: text("provider").notNull(), userId: varchar("user_id").notNull(),
+  releaseId: varchar("release_id").notNull(), payloadHash: text("payload_hash").notNull(),
+  owner: uuid("owner").notNull().unique("integration_distribution_submissions_owner_key"),
+  state: text("state").notNull(), checkpoint: jsonb("checkpoint").notNull().default(sql`'{}'::jsonb`),
+  result: jsonb("result"), error: text("error"), createdAt: tz("created_at").notNull().defaultNow(), updatedAt: tz("updated_at").notNull().defaultNow(),
+}, t =&gt; [primaryKey({ columns: [t.provider, t.userId, t.releaseId], name: "integration_distribution_submissions_pkey" }),
+  foreignKey({ columns: [t.userId], foreignColumns: [users.id], name: "integration_distribution_submissions_user_id_fkey" }).onDelete("cascade"),
+  check("integration_distribution_submissions_provider_check", sql`${t.provider} IN ('labelgrid','toolost')`),
+  check("integration_distribution_submissions_state_check", sql`${t.state} IN ('started','completed','unknown')`)]);
+&nbsp;
+export const commerceJournals = pgTable("commerce_journals", {
+  id: text("id").primaryKey(), currency: text("currency").notNull(), source: text("source").notNull(), createdAt: tz("created_at").notNull().defaultNow(),
+});
+export const commerceEntries = pgTable("commerce_entries", {
+  journalId: text("journal_id").notNull(),
+  line: integer("line").notNull(), account: text("account").notNull(), userId: text("user_id"), amountCents: money("amount_cents").notNull(),
+}, t =&gt; [primaryKey({ columns: [t.journalId, t.line], name: "commerce_entries_pkey" }), index("commerce_entries_account").on(t.userId, t.account),
+  foreignKey({ columns: [t.journalId], foreignColumns: [commerceJournals.id], name: "commerce_entries_journal_id_fkey" })]);
+export const commerceAllocations = pgTable("commerce_allocations", {
+  id: text("id").primaryKey(), sourceId: text("source_id").notNull(), userId: text("user_id").notNull(),
+  currency: text("currency").notNull(), amountCents: money("amount_cents").notNull(),
+  reversedCents: money("reversed_cents").notNull().default(sql`0`), drawnCents: money("drawn_cents").notNull().default(sql`0`),
+  createdAt: tz("created_at").notNull().defaultNow(),
+}, t =&gt; [unique("commerce_allocations_source_id_user_id_key").on(t.sourceId, t.userId),
+  check("commerce_allocations_amount_cents_check", sql`${t.amountCents} &gt;= 0`),
+  check("commerce_allocations_check", sql`${t.reversedCents} &gt;= 0 AND ${t.reversedCents} &lt;= ${t.amountCents}`),
+  check("commerce_allocations_check1", sql`${t.drawnCents} &gt;= 0 AND ${t.drawnCents} &lt;= ${t.amountCents}`)]);
+export const commerceOperations = pgTable("commerce_operations", {
+  id: text("id").primaryKey(), kind: text("kind").notNull(), userId: text("user_id").notNull(), currency: text("currency").notNull(),
+  amountCents: money("amount_cents").notNull(), state: text("state").notNull().default("pending"), payload: jsonb("payload").notNull(),
+  transferId: text("transfer_id"), providerId: text("provider_id"), leaseUntil: tz("lease_until"), leaseToken: text("lease_token"),
+  attempts: integer("attempts").notNull().default(0), error: text("error"),
+  createdAt: tz("created_at").notNull().defaultNow(), updatedAt: tz("updated_at").notNull().defaultNow(),
+}, t =&gt; [check("commerce_operations_amount_cents_check", sql`${t.amountCents} &gt; 0`), index("commerce_operations_pending").on(t.state, t.leaseUntil)]);
+export const commerceDraws = pgTable("commerce_draws", {
+  operationId: text("operation_id").notNull(),
+  allocationId: text("allocation_id").notNull(),
+  amountCents: money("amount_cents").notNull(), compensatedCentsAtDraw: money("compensated_cents_at_draw").notNull().default(sql`0`),
+}, t =&gt; [primaryKey({ columns: [t.operationId, t.allocationId], name: "commerce_draws_pkey" }), check("commerce_draws_amount_cents_check", sql`${t.amountCents} &gt; 0`),
+  foreignKey({ columns: [t.operationId], foreignColumns: [commerceOperations.id], name: "commerce_draws_operation_id_fkey" }),
+  foreignKey({ columns: [t.allocationId], foreignColumns: [commerceAllocations.id], name: "commerce_draws_allocation_id_fkey" })]);
+export const commerceSources = pgTable("commerce_sources", {
+  id: text("id").primaryKey(), kind: text("kind").notNull(), paymentIntent: text("payment_intent").unique("commerce_sources_payment_intent_key"),
+  currency: text("currency").notNull(), grossCents: money("gross_cents").notNull(), feeCents: money("fee_cents").notNull(),
+  taxCents: money("tax_cents").notNull().default(sql`0`), compensatedTaxCents: money("compensated_tax_cents").notNull().default(sql`0`),
+  refundedCents: money("refunded_cents").notNull().default(sql`0`), disputedCents: money("disputed_cents").notNull().default(sql`0`),
+  pendingRefundCents: money("pending_refund_cents").notNull().default(sql`0`), compensatedCents: money("compensated_cents").notNull().default(sql`0`),
+  metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`), createdAt: tz("created_at").notNull().defaultNow(),
+}, t =&gt; [check("commerce_sources_gross_cents_check", sql`${t.grossCents} &gt; 0`),
+  check("commerce_sources_fee_cents_check", sql`${t.feeCents} &gt;= 0`), check("commerce_sources_tax_cents_check", sql`${t.taxCents} &gt;= 0`)]);
+export const commerceStatements = pgTable("commerce_statements", {
+  statementId: text("statement_id").primaryKey(), userId: text("user_id").notNull(), currency: text("currency").notNull(),
+  payableCents: money("payable_cents").notNull(), funded: boolean("funded").notNull().default(false),
+  details: jsonb("details").notNull(), fundingRef: text("funding_ref").unique("commerce_statements_funding_ref_key"),
+  createdAt: tz("created_at").notNull().defaultNow(),
+});
+export const commerceSchedules = pgTable("commerce_schedules", {
+  userId: text("user_id").primaryKey(), nextDue: tz("next_due").notNull(),
+});
+export const genericExportJobs = pgTable("generic_export_jobs", {
+  id: varchar("id").primaryKey(), userId: varchar("user_id").notNull(), name: text("name").notNull(),
+  type: text("type").notNull(), format: text("format").notNull(), projectId: varchar("project_id"), settings: jsonb("settings").notNull(),
+  status: text("status").notNull().default("queued"), progress: integer("progress").notNull().default(0),
+  artifact: jsonb("artifact"), error: text("error"), retryCount: integer("retry_count").notNull().default(0),
+  createdAt: tz("created_at").notNull().defaultNow(), updatedAt: tz("updated_at").notNull().defaultNow(), completedAt: tz("completed_at"),
+}, t =&gt; [index("generic_export_jobs_user_created_idx").on(t.userId, t.createdAt.desc().nullsFirst()), index("generic_export_jobs_status_idx").on(t.status, t.updatedAt)]);
+export const integrationSmsAttempts = pgTable("integration_sms_attempts", {
+  operationKey: text("operation_key").primaryKey(), userId: varchar("user_id").notNull(),
+  state: text("state").notNull(), providerId: text("provider_id").unique("integration_sms_attempts_provider_id_key"),
+  providerStatus: text("provider_status"), error: text("error"), createdAt: tz("created_at").notNull().defaultNow(), updatedAt: tz("updated_at").notNull().defaultNow(),
+}, t =&gt; [check("integration_sms_attempts_state_check", sql`${t.state} IN ('started','accepted','delivered','failed','unknown')`),
+  foreignKey({ columns: [t.userId], foreignColumns: [users.id], name: "integration_sms_attempts_user_id_fkey" }).onDelete("cascade")]);
+export const runtimeBackupCatalog = pgTable("runtime_backup_catalog", {
+  key: text("key").primaryKey(), name: text("name").notNull(), createdAt: tz("created_at").notNull().defaultNow(),
+  size: money("size").notNull(), checksum: text("checksum").notNull(), state: text("state").notNull(),
+}, t =&gt; [check("runtime_backup_catalog_size_check", sql`${t.size} &gt;= 0`),
+  check("runtime_backup_catalog_state_check", sql`${t.state} IN ('pending','verified','deleting')`)]);
+export const runtimeBackupRuns = pgTable("runtime_backup_runs", {
+  day: text("day").primaryKey(), owner: text("owner").notNull(), targetIdentity: text("target_identity").notNull(), state: text("state").notNull(),
+  startedAt: tz("started_at").notNull().defaultNow(), leaseUntil: tz("lease_until").notNull().default(sql`now() + interval '5 minutes'`), finishedAt: tz("finished_at"),
+}, t =&gt; [check("runtime_backup_runs_state_check", sql`${t.state} IN ('running','complete','failed')`)]);
+export const pgSessions = pgTable("pg_sessions", {
+  sid: text("sid").primaryKey(), sess: text("sess").notNull(), expire: money("expire").notNull(),
+}, <span class="fstat-no" title="function not covered" >t =&gt; <span class="cstat-no" title="statement not covered" >[</span>index("pg_sessions_expire_idx").on(t.expire)])</span>;
+export const growthSplitRevisions = pgTable("growth_split_revisions", {
+  sheetId: text("sheet_id").notNull(), revision: integer("revision").notNull(), content: jsonb("content").notNull(),
+  contentHash: text("content_hash").notNull(), createdAt: tz("created_at").notNull().defaultNow(),
+}, t =&gt; [primaryKey({ columns: [t.sheetId, t.revision], name: "growth_split_revisions_pkey" }),
+  check("growth_split_revisions_revision_check", sql`${t.revision} &gt; 0`)]);
+export const growthSplitAssents = pgTable("growth_split_assents", {
+  sheetId: text("sheet_id").notNull(), revision: integer("revision").notNull(), userId: text("user_id").notNull(),
+  signatureHash: text("signature_hash").notNull(), signedAt: tz("signed_at").notNull().defaultNow(),
+}, t =&gt; [primaryKey({ columns: [t.sheetId, t.revision, t.userId], name: "growth_split_assents_pkey" }),
+  foreignKey({ columns: [t.sheetId, t.revision], foreignColumns: [growthSplitRevisions.sheetId, growthSplitRevisions.revision], name: "growth_split_assents_sheet_id_revision_fkey" })]);
+export const growthFanPermissions = pgTable("growth_fan_permissions", {
+  artistId: text("artist_id").notNull(), email: text("email").notNull(), state: text("state").notNull(),
+  tokenHash: text("token_hash"), tokenExpiresAt: tz("token_expires_at"), consentAt: tz("consent_at"), suppressedAt: tz("suppressed_at"),
+}, t =&gt; [primaryKey({ columns: [t.artistId, t.email], name: "growth_fan_permissions_pkey" }),
+  check("growth_fan_permissions_state_check", sql`${t.state} IN ('pending','consented','suppressed')`),
+  uniqueIndex("growth_fan_token_idx").on(t.tokenHash)]);
+export const growthFanCommands = pgTable("growth_fan_commands", {
+  id: text("id").primaryKey(), artistId: text("artist_id").notNull(), commandKey: text("command_key").notNull(),
+  subject: text("subject").notNull(), body: text("body").notNull(), createdAt: tz("created_at").notNull().defaultNow(),
+}, t =&gt; [unique("growth_fan_commands_artist_id_command_key_key").on(t.artistId, t.commandKey)]);
+export const growthFanRecipients = pgTable("growth_fan_recipients", {
+  commandId: text("command_id").notNull(), email: text("email").notNull(),
+  state: text("state").notNull().default("pending"),
+  unsubscribeHash: text("unsubscribe_hash").notNull().unique("growth_fan_recipients_unsubscribe_hash_key"), unsubscribeToken: text("unsubscribe_token").notNull(),
+  attemptedAt: tz("attempted_at"), completedAt: tz("completed_at"), providerMessageId: text("provider_message_id"), outcomeReason: text("outcome_reason"),
+}, t =&gt; [primaryKey({ columns: [t.commandId, t.email], name: "growth_fan_recipients_pkey" }),
+  foreignKey({ columns: [t.commandId], foreignColumns: [growthFanCommands.id], name: "growth_fan_recipients_command_id_fkey" }),
+  check("growth_fan_recipients_state_check", sql`${t.state} IN ('pending','sending','accepted','unknown','suppressed','delivered','bounced','complained')`),
+  index("growth_fan_pending_idx").on(t.commandId, t.state), index("growth_fan_receipt_idx").on(t.providerMessageId)]);
+export const growthFanProviderEvents = pgTable("growth_fan_provider_events", {
+  eventId: text("event_id").primaryKey(), providerMessageId: text("provider_message_id").notNull(), eventType: text("event_type").notNull(),
+  occurredAt: tz("occurred_at").notNull(), receivedAt: tz("received_at").notNull().defaultNow(),
+}, t =&gt; [index("growth_fan_event_receipt_idx").on(t.providerMessageId)]);
+export const growthMerchPayments = pgTable("growth_merch_payments", {
+  orderId: text("order_id").primaryKey(), buyerId: text("buyer_id").notNull(), commandKey: text("command_key").notNull(),
+  currency: text("currency").notNull(), subtotalCents: money("subtotal_cents").notNull(),
+  collectedCents: money("collected_cents").notNull().default(sql`0`), refundedCents: money("refunded_cents").notNull().default(sql`0`),
+  checkoutId: text("checkout_id").unique("growth_merch_payments_checkout_id_key"), checkoutUrl: text("checkout_url"),
+  state: text("state").notNull(), createdAt: tz("created_at").notNull().defaultNow(),
+}, t =&gt; [unique("growth_merch_payments_buyer_id_command_key_key").on(t.buyerId, t.commandKey),
+  check("growth_merch_payments_currency_check", sql`${t.currency} = 'usd'`),
+  check("growth_merch_payments_subtotal_cents_check", sql`${t.subtotalCents} &gt;= 0`),
+  check("growth_merch_payments_collected_cents_check", sql`${t.collectedCents} &gt;= 0`),
+  check("growth_merch_payments_check", sql`${t.refundedCents} &gt;= 0 AND ${t.refundedCents} &lt;= ${t.collectedCents}`),
+  check("growth_merch_payments_state_check", sql`${t.state} IN ('reserved','checkout','paid','expired','refunded')`)]);
+export const growthMerchPaymentEvents = pgTable("growth_merch_payment_events", {
+  eventId: text("event_id").primaryKey(), orderId: text("order_id").notNull(),
+  eventType: text("event_type").notNull(), receivedAt: tz("received_at").notNull().defaultNow(),
+}, t =&gt; [foreignKey({ columns: [t.orderId], foreignColumns: [growthMerchPayments.orderId], name: "growth_merch_payment_events_order_id_fkey" })]);
+export const clientSyncReceipts = pgTable("client_sync_receipts", {
+  ownerId: varchar("owner_id").notNull(), operationId: varchar("operation_id", { length: 160 }).notNull(),
+  payloadHash: varchar("payload_hash", { length: 64 }).notNull(), receipt: jsonb("receipt").notNull(), createdAt: tz("created_at").notNull().defaultNow(),
+}, t =&gt; [primaryKey({ columns: [t.ownerId, t.operationId], name: "client_sync_receipts_pkey" }),
+  foreignKey({ columns: [t.ownerId], foreignColumns: [users.id], name: "client_sync_receipts_owner_id_fkey" })]);</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-05T14:31:30.173Z
+            </div>
+        <script src="../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
+    </body>
+</html>
+    

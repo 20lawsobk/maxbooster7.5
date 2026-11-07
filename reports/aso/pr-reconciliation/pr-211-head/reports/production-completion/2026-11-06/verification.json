@@ -1,0 +1,371 @@
+{
+  "schema": 1,
+  "createdAt": "2026-11-06T03:39:27.444636+00:00",
+  "decision": "NO-GO",
+  "productionReady": false,
+  "repository": "20lawsobk/maxbooster7.5",
+  "baseCommit": "89e8b6c8e65d1fad757743a1027b0ea32708efac",
+  "verifiedSourceCommit": "8e6b4fbcc24932d0962ab925d8df0ac2e09e9520",
+  "sourceBinding": "Local base checkout plus exactly the five listed code/config overlays; GitHub contents were checked against local contents. Generated dist and endpoint audit outputs are separate.",
+  "changedSourceSha256": {
+    "package.json": "74866dd59d2ae0dd5ff60141939c97146c0dcd7a05e3f4a5fff9d15c9707e8ee",
+    "server/routes/marketplace.ts": "ce1e3420e86b8c93197e7db2730f56eb704d85065e47a25c409c3f4c583c4024",
+    "tests/marketplace-purchase-signal.test.mjs": "f5b6f9dc90b455a5f31858fee454a94bbfe0f60ff96549b70994007e88d1c0da",
+    "scripts/testing/integration-browser.mjs": "0e0160ba471686d3ef0a8fddf05db1087f5037b7a37718dbad7d92ca88ebd2dd",
+    "tests/security-hardening.test.ts": "940d94e94ac8cbbbf66f05d667d2cf29ef034f5f569c01d7f9dfe95b57e61e62"
+  },
+  "runtime": {
+    "node": "22.23.4",
+    "npm": "10.9.4",
+    "pnpm": "10.26.1",
+    "python": "3.12.14",
+    "fixturePostgreSQL": "18.6",
+    "fixtureRedis": "7.0.15",
+    "fixtureTorch": "2.15.0+cpu"
+  },
+  "changes": [
+    "Reject client-supplied purchase signals and stop counting checkout initiation as paid conversion.",
+    "Allow checkout session delivery independently of unearned discovery analytics.",
+    "Run both full TypeScript projects with a 4096 MiB heap; no project includes or diagnostics removed.",
+    "Register six marketplace HTTP regressions in the runtime contract CI command.",
+    "Use the owned ephemeral PDIM port and shared private token in isolated security acceptance; fail rather than skip if that owned authority is missing."
+  ],
+  "checks": {
+    "build": {
+      "status": "PASS",
+      "command": "npm run build",
+      "log": {
+        "retainedLocalPath": "/tmp/maxbooster-build-verified.log",
+        "bytes": 21447,
+        "sha256": "c67ff44d68584a417325a9a138c0b6d61f8bb629aa5c5d39fd69a86c6edf8c5f"
+      }
+    },
+    "artifactIdentity": {
+      "status": "PASS",
+      "command": "Existing validateBuild(process.cwd()) from scripts/start-production.mjs",
+      "manifestSha256": "709a3651201aa17f38facb23c14c4cdf4619b41bcb453891954f2d1a00b38e72"
+    },
+    "typecheck": {
+      "status": "PASS",
+      "command": "npm run check",
+      "sessionNodeOptionsRequired": false,
+      "log": {
+        "retainedLocalPath": "/tmp/maxbooster-typecheck-fixed.log",
+        "bytes": 207,
+        "sha256": "eaa3c2f7e8dd8818ea6a01f255a27a62fbf8480a449f74685fd86974a944d9cb"
+      }
+    },
+    "lint": {
+      "status": "PASS",
+      "commands": [
+        "npm run lint",
+        "Targeted ESLint for subsequently modified integration harness and security suite"
+      ],
+      "logs": [
+        {
+          "retainedLocalPath": "/tmp/maxbooster-lint.log",
+          "bytes": 46,
+          "sha256": "06da543667ff102b992477b32f1825628ff2dfc482d6132e417c6e1e0c4501cb"
+        },
+        {
+          "retainedLocalPath": "/tmp/maxbooster-verification-lint.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    "dependencyAudit": {
+      "status": "PASS",
+      "command": "npm audit --omit=dev --audit-level=high --json",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    "unitAndRuntimeCI": {
+      "status": "PASS",
+      "command": "npm run test:ci",
+      "unit": {
+        "reportedTests": 2875,
+        "executedPasses": 2875,
+        "failures": 0,
+        "skipped": 0,
+        "skippedCases": [],
+        "reportedFailures": 0,
+        "seconds": 364.512736435,
+        "rawSha256": "d6e78a8216ecce3f33af1d1ae1b9ce04f053e0e63f4fd7db43dae6c85b9483cf"
+      },
+      "scope": "Runtime contracts, sharp security, payment preferences, storage recovery, then full unit suite; counts are not summed.",
+      "log": {
+        "retainedLocalPath": "/tmp/maxbooster-test-ci-final.log",
+        "bytes": 779170,
+        "sha256": "1a6808d2cc43ac6cfb5c59d6dd8aec3d43c7a38b2d87a8b5976c4ddc330a97c3"
+      }
+    },
+    "marketplaceRegression": {
+      "status": "PASS",
+      "currentCases": 6,
+      "currentFailures": 0,
+      "baselineCases": 6,
+      "baselineExpectedFailures": 3,
+      "baselinePasses": 3,
+      "scope": "Actual committed schemas and handlers over loopback HTTP with controlled dependencies; not live provider/payment completion.",
+      "logs": [
+        {
+          "retainedLocalPath": "/tmp/maxbooster-marketplace-tests.log",
+          "bytes": 1537,
+          "sha256": "dd09d053125af110325384a8cd28c352b3644505ebfb2ad606c5fac30401cce6"
+        },
+        {
+          "retainedLocalPath": "/tmp/maxbooster-marketplace-baseline-executed.tap",
+          "bytes": 3492,
+          "sha256": "cd545a1365a50a8c38b019e6931f67048f3ae017ff994d2b616b76445f0eafae"
+        }
+      ]
+    },
+    "isolatedHTTP": {
+      "status": "PASS_WITH_SKIPS",
+      "command": "Sealed integration-browser runner with disposable PostgreSQL/PDIM and prepared Python",
+      "reportedTests": 508,
+      "executedPasses": 501,
+      "failures": 0,
+      "skipped": 7,
+      "skippedCases": [
+        "Critical Path Tests - Production Readiness > 3. Distribution - Core Paid Feature > should list live distribution platforms through a connected Too Lost account",
+        "Critical Path Tests - Production Readiness > 3. Distribution - Core Paid Feature > should get provider-confirmed earnings for an owned distributor connection",
+        "Critical Path Tests - Production Readiness > 4. Social Media Management > should get hashtags from available MaxCore generation",
+        "PAID USER END-TO-END INTEGRATION TESTS > Phase 3: Billing & Stripe Payment Infrastructure > should create real Stripe checkout session with checkout URL",
+        "PAID USER END-TO-END INTEGRATION TESTS > Phase 3: Billing & Stripe Payment Infrastructure > should create checkout sessions for all plan types",
+        "PAID USER END-TO-END INTEGRATION TESTS > Phase 5: Distribution - Core Paid Feature > should list live distribution platforms from a connected Too Lost account",
+        "PAID USER END-TO-END INTEGRATION TESTS > Phase 6: Social Media Management > should get generated hashtags without fabricated provider metrics"
+      ],
+      "reportedFailures": 0,
+      "seconds": 219.859297462,
+      "rawSha256": "2f6ed96d08d19738226ddfddb659250c6e2127c616abb9ea94cd33398e8fa822",
+      "summarySha256": "b0c22f9a78a2dd6e0ddf10a25442f5bb5e35f1366533773ae74e33664994cf59"
+    },
+    "realPDIMSecurity": {
+      "status": "PASS",
+      "reportedTests": 24,
+      "executedPasses": 24,
+      "failures": 0,
+      "skipped": 0,
+      "skippedCases": [],
+      "reportedFailures": 0,
+      "seconds": 16.62826941,
+      "rawSha256": "76b0521f21555cce8bef18d237c01a81a81e66d0395e52789782b313cefd11e5"
+    },
+    "pageRoutes": {
+      "status": "PASS_WITH_UNTESTED_CATEGORIES",
+      "failures": [],
+      "routeCounts": {
+        "authenticated": 42,
+        "administrator": 11,
+        "public": 27
+      },
+      "scope": "sealed non-ML source application acceptance; not full-stack or packed acceptance",
+      "untested": [
+        "authenticated business journeys beyond login/session/logout, project CRUD, preferences persistence, workspace ownership/list rendering, and press-kit form/publish/cache/unpublish checks",
+        "provider sandbox delivery, OAuth, webhooks, messaging, push, email, social posting, and DSP contracts",
+        "real-money payment, payout, refund, royalty, and financial reconciliation",
+        "production-source restore/upgrade/rollback and durable backup recovery",
+        "local MaxCore inference/model behavior (the only MaxCore implementation; intentionally not started in this bounded non-ML drill)",
+        "Redis/PDIM loss recovery, load/soak, multi-worker clustering, DNS/TLS, and packed cold-image startup"
+      ],
+      "readiness": {
+        "scope": "sealed non-ML authentication, projects, and frontend acceptance",
+        "fullStackReadiness": "NOT_PROVEN: separate real imported MaxCore/model acceptance required",
+        "expectedDegradedReadinessAsserted": true,
+        "unifiedAwarenessReady": false,
+        "status": 503,
+        "aggregate": "degraded",
+        "subsystems": {
+          "database": {
+            "status": "ok"
+          },
+          "redis": {
+            "status": "ok"
+          },
+          "routes": {
+            "status": "ok",
+            "detail": "critical routes registered; route loading complete"
+          },
+          "audit": {
+            "status": "unknown",
+            "detail": "initializing"
+          },
+          "automation": {
+            "status": "ok",
+            "detail": "workflows=0"
+          },
+          "maxcore": {
+            "status": "unknown",
+            "detail": "MaxCore not configured (no URL/key)"
+          }
+        }
+      },
+      "rawSha256": "2d43044cef6a2e0b5966b66907a703be50409f9481810c39b8105f5169485d15"
+    },
+    "coverage": {
+      "status": "FAIL",
+      "required": {
+        "lines": 100,
+        "statements": 100,
+        "functions": 100,
+        "branches": 100
+      },
+      "measured": {
+        "lines": {
+          "total": 224470,
+          "covered": 29667,
+          "skipped": 0,
+          "pct": 13.21
+        },
+        "statements": {
+          "total": 240931,
+          "covered": 31610,
+          "skipped": 0,
+          "pct": 13.11
+        },
+        "functions": {
+          "total": 48018,
+          "covered": 4247,
+          "skipped": 0,
+          "pct": 8.84
+        },
+        "branches": {
+          "total": 159115,
+          "covered": 14229,
+          "skipped": 0,
+          "pct": 8.94
+        },
+        "branchesTrue": {
+          "total": 0,
+          "covered": 0,
+          "skipped": 0,
+          "pct": 100
+        }
+      },
+      "sourceInputsUnchanged": true,
+      "sourceInputsSha256": "fced9b3b4c5a5cb018cb6bc82ea27d7bcf6632cea219c8e9bf8a51c538de5234",
+      "commandOutcome": [
+        {
+          "id": "coverage",
+          "exitCode": 1,
+          "status": "failed",
+          "coverageParseExclusions": [],
+          "evidenceStatus": "bound",
+          "validForAdmission": true,
+          "counts": {
+            "total": 2918,
+            "passed": 2918,
+            "failed": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        }
+      ],
+      "instrumentedTests": {
+        "reportedTests": 2918,
+        "executedPasses": 2918,
+        "failures": 0,
+        "skipped": 0,
+        "skippedCases": [],
+        "reportedFailures": 0,
+        "seconds": 351.033590047,
+        "rawSha256": "141ebf1a07731461752bf96b2f81dd161723a8414da72ed568d847bd41847a56"
+      },
+      "postprocessing": [
+        {
+          "id": "summary",
+          "exitCode": 0
+        },
+        {
+          "id": "platform",
+          "exitCode": 0
+        },
+        {
+          "id": "remediation",
+          "exitCode": 0
+        },
+        {
+          "id": "completion-plan",
+          "exitCode": 1
+        },
+        {
+          "id": "final-summary",
+          "exitCode": 0
+        }
+      ],
+      "scope": "Canonical whole-platform JS/TS instrumented profile; provider/native/other-language acceptance remains separate."
+    },
+    "AGROS": {
+      "status": "PASS_SCOPED",
+      "tests": 33,
+      "failures": 0,
+      "commit": "d9d5f7969a71d0a0ed31e3572af99b46fd70437f",
+      "log": {
+        "retainedLocalPath": "/tmp/agros-independent-final.log",
+        "bytes": 4430,
+        "sha256": "f7c6733ad330eca6f50ef5c2ca83e84ca62658468c2982d84e1bae3515a84ec3"
+      },
+      "scope": "Runner unit tests only, no production readiness certification."
+    }
+  },
+  "initialFailuresPreserved": [
+    {
+      "scope": "initial npm check",
+      "result": "Default Node heap exhausted; both full project invocations now use 4096 MiB and pass."
+    },
+    {
+      "scope": "initial unit run",
+      "reportedTests": 2876,
+      "failures": 1,
+      "skipped": 6,
+      "reason": "Missing Redis fixture executable; provisioned; focused six cases and full suite rerun pass."
+    },
+    {
+      "scope": "initial HTTP run",
+      "reportedTests": 508,
+      "failures": 1,
+      "reason": "Missing PyTorch in owned MaxCore subprocess; provisioned; focused and full rechecks pass their stated scopes."
+    },
+    {
+      "scope": "previous HTTP recheck",
+      "reportedTests": 508,
+      "failures": 0,
+      "skipped": 9,
+      "reason": "Two real PDIM security cases skipped because fixture port/token were not shared; corrected and executed with current-source evidence."
+    }
+  ],
+  "remainingReleaseBlockers": [
+    "Measured whole-platform coverage fails the unchanged thresholds; passing assertions do not close this gap.",
+    "The completion-plan producer fails on stale/missing page-analysis mappings; existing work IDs and source bindings must be reconciled without dropping requirements.",
+    "Seven enabled-provider/generation journeys remain skipped in the sealed HTTP fixture; actual configured sandbox evidence remains required.",
+    "Complete feature/accessibility/output-quality acceptance for all registered page sections remains unverified beyond these bounded observations.",
+    "Actual Replit deployment, runtime/source identity, production schema/migrations, backup restoration, provider delivery, capacity and final release acceptance remain unverified.",
+    "GitHub Actions jobs cannot start because GitHub explicitly reports an account billing lock.",
+    "AGROS still requires a trusted repair executor and real missing evidence producers; the automation is not a substitute for passing product gates."
+  ],
+  "replit": {
+    "replId": "a28d7898-bbab-4e83-93d1-b2a6ecd20030",
+    "userConfirmedTarget": "MaxBooster 7.5",
+    "completionTaskAccepted": true,
+    "phaseAtSubmission": "updating",
+    "publicationStatusAtInspection": {
+      "found": false
+    },
+    "publishedByThisTask": false
+  },
+  "safety": {
+    "scope": "Local execution only; the delegated Replit task reports its own external actions separately",
+    "externalProvidersCalled": false,
+    "productionDataMutated": false,
+    "mainMerged": false,
+    "published": false
+  }
+}

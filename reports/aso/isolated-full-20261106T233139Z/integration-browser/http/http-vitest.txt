@@ -1,0 +1,1733 @@
+
+[globalSetup] Server ready at http://127.0.0.1:33563 ✅  (0s elapsed)
+[00:02:39.749] [32mINFO[39m (167214): [36m[LocalPDIM] Local PDIM exec server started on port 41561 (local fsynced AOF and snapshots)[39m
+[00:02:39.824] [32mINFO[39m (167214): [36m[MaxCoreLocal] Starting MaxCore api-server (port 38523, model port 40831)…[39m
+[00:02:42.649] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Cluster] Primary 167394 — forking 2 workers on port 38523[39m
+[00:02:42.651] [32mINFO[39m (167214): [36m[MaxCoreLocal] [WarmService] Polling /api/warm/status until deep-warm completes…[39m
+[00:02:43.304] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Cluster] Worker 167449 listening on port 38523[39m
+[00:02:43.359] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Cluster] Worker 167450 listening on port 38523[39m
+[00:02:43.870] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (5ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:43.871] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:45.886] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:45.887] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:47.896] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:47.897] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:48.702] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:02:49.903] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (3ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:49.904] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:50.829] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>
+[Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:02:50.849] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #1 in 2000ms…[39m
+[00:02:51.910] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:51.910] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[CircuitBreaker] Opened after 5 consecutive failures — half-open probe in 1500ms[39m
+[00:02:52.850] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:02:53.127] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>[39m
+[00:02:53.127] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:02:53.148] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #2 in 4000ms…[39m
+[00:02:53.915] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:53.915] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:55.923] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (3ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:55.923] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:57.147] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:02:57.413] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>[39m
+[00:02:57.413] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:02:57.435] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #3 in 8000ms…[39m
+[00:02:57.929] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:59.937] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:02:59.937] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:01.943] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:01.944] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:03.948] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:03.948] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:05.436] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:03:05.955] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:06.007] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>[39m
+[00:03:06.007] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:03:06.026] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #4 in 16000ms…[39m
+[00:03:07.960] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:07.960] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:09.966] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:09.967] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:11.971] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:11.972] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:13.979] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:15.983] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:15.984] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:17.989] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:19.996] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (4ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:22.000] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:22.026] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:03:22.687] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>[39m
+[00:03:22.687] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:03:22.706] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #5 in 30000ms…[39m
+[00:03:24.004] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:24.004] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:26.009] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:28.014] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:28.014] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:30.019] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:32.024] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:32.024] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:33.798] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Warning: server did not respond in time — requests will be retried by proxy.[39m
+[00:03:34.031] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:34.031] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:36.035] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:36.035] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:38.039] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:40.044] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:42.048] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:42.048] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:44.071] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (4ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:44.078] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:46.092] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:46.092] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:48.097] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:50.100] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:52.105] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:52.105] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:52.708] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:03:53.037] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>
+[Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:03:53.060] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #6 in 30000ms…[39m
+[00:03:54.111] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:54.111] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:56.123] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (3ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:56.123] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:03:58.140] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (3ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:00.160] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (12ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:02.168] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:02.168] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:04.172] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:06.176] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:08.181] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:08.181] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:10.185] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:10.185] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:12.196] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (3ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:12.196] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:14.204] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:14.204] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:16.208] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:16.209] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:18.212] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:20.217] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:22.221] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:23.061] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:04:23.425] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>[39m
+[00:04:23.426] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python]     import psycopg2
+[Python] ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:04:23.459] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #7 in 30000ms…[39m
+[00:04:24.225] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:26.229] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:26.229] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:28.234] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:28.234] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:30.239] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:32.243] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:32.243] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:34.248] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:34.248] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:36.252] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:36.252] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:38.256] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:40.260] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:42.264] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:42.265] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:44.268] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:44.269] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:46.272] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:46.272] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:48.277] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:48.277] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:50.281] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:52.285] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:52.285] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:53.459] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:04:53.740] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>[39m
+[00:04:53.740] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:04:53.759] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #8 in 30000ms…[39m
+[00:04:54.290] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:54.290] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:56.294] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:04:58.298] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:00.303] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:00.305] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:02.309] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:02.309] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:04.316] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:04.316] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:06.320] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:06.320] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:08.324] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:08.324] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:10.353] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:12.364] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (4ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:14.379] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:16.388] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:16.388] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:18.407] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (6ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:18.407] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:20.417] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:20.418] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:22.422] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:22.422] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:23.760] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:05:24.022] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>[39m
+[00:05:24.022] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:05:24.041] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #9 in 30000ms…[39m
+[00:05:24.426] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:24.426] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:26.430] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:28.434] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (0ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:28.434] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:30.438] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:32.442] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:32.443] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:34.449] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:34.450] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:36.455] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:38.460] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:38.460] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:40.464] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:40.464] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:42.467] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:42.468] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:42.953] [32mINFO[39m (167214): [36m[MaxCoreLocal] [WarmService] Deep-warm settled: timeout[39m
+[00:05:44.471] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:44.471] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:46.475] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:48.478] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:48.478] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:50.482] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:50.482] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:52.486] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:52.486] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:54.043] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Starting AI training server (port 40831)...[39m
+[00:05:54.304] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py", line 74, in <module>[39m
+[00:05:54.304] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[00:05:54.323] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #10 in 30000ms…[39m
+[00:05:54.489] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:56.494] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:05:58.500] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (3ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:06:00.504] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:06:02.507] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:06:04.511] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:06:06.514] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:06:08.520] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (2ms): Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}
+[Proxy] Network error proxying to /health: Error: connect ECONNREFUSED [REDACTED]:40831
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '[REDACTED]',
+  port: 40831
+}[39m
+[00:06:10.542] [32mINFO[39m (167214): [36m[MaxCoreLocal] Stopping MaxCore api-server…[39m
+[00:06:10.550] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Cluster] Primary shutting down…
+[Keepalive] Stopped[39m
+[00:06:10.556] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Cluster] Worker 167449 died (code=0, signal=none) — respawning…[39m
+[00:06:10.558] [32mINFO[39m (167214): [36m[MaxCoreLocal] [Cluster] Worker 167450 died (code=0, signal=none) — respawning…[39m
+[00:06:14.396] [32mINFO[39m (169352): [36m[PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms[39m
+[00:06:16.025] [32mINFO[39m (169352): [36m[Redis] PDIM active — routing Redis operations through PDIM[39m
+[00:06:16.030] [32mINFO[39m (169352): [36m✅ [PDIM] Connected via HTTP exec endpoint[39m
+[00:06:16.290] [32mINFO[39m (169352): [36m[PDIM] First successful response after 1896ms — entering 10s settling window[39m
+(node:170725) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+JUNIT report written to /home/runner/workspace/reports/aso/isolated-full-20261106T233139Z/integration-browser/http/integration.junit.xml
+[globalTeardown] Removing 16 test user(s)...
+[globalTeardown] Cleanup complete — removed 16 test user(s)

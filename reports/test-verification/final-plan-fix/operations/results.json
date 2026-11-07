@@ -1,0 +1,103 @@
+{
+  "sourceRevision": "7059b2373ef3d38df320f3918291cd8f2aabd473",
+  "scope": "Bounded, disposable recovery and read-only retained-evidence verification.",
+  "runs": [
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/platform-register.py",
+        "--self-test"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-06T11:56:47.674016+00:00",
+      "durationSeconds": 0.527,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/final-plan-fix/operations/platform-register.py.txt",
+      "logSha256": "2aa94c04b915cd2c6af508146bdba20cb9ef93945d2cb92ea8e660fc07989a91",
+      "file": "scripts/testing/platform-register.py"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/run-engine-load.py",
+        "--python",
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "--output",
+        "/home/runner/workspace/reports/test-verification/final-plan-fix/operations/engine-load"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-06T11:56:48.205231+00:00",
+      "durationSeconds": 0.867,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/final-plan-fix/operations/load_test.py.txt",
+      "logSha256": "92bd7628d63d7d84a124ed10a67103d840713164f3c2a7670b532ff18c26444c",
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
+      "operationalProfile": "bounded-legacy-digital-gpu-numeric-dedup-v1",
+      "evidence": "/home/runner/workspace/reports/test-verification/final-plan-fix/operations/engine-load/results.json"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "evaluations/maxcore-quality/verify_types.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-06T11:56:49.076825+00:00",
+      "durationSeconds": 0.817,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/final-plan-fix/operations/verify_types.py.txt",
+      "logSha256": "691363e9eab1755dbdd5c05f8f6cdeef85e7c640e0f745e9bd96037266ff67d4",
+      "file": "evaluations/maxcore-quality/verify_types.py"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "evaluations/maxcore-quality/verify_evidence.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-06T11:56:49.898483+00:00",
+      "durationSeconds": 0.065,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/final-plan-fix/operations/verify_evidence.py.txt",
+      "logSha256": "a0f71bf11dda59c66151378bcdc0d7ce48f61c7c6134e3e3594d6808a9337be5",
+      "file": "evaluations/maxcore-quality/verify_evidence.py"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/maxcore-isolated-recovery-acceptance.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-06T11:56:49.967416+00:00",
+      "durationSeconds": 14.445,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/final-plan-fix/operations/maxcore-isolated-recovery-acceptance.py.txt",
+      "logSha256": "8859c7aa883c61c14ec220d4d5c9e205f900391af208b5e872879c27c5960525",
+      "file": "scripts/maxcore-isolated-recovery-acceptance.py"
+    },
+    {
+      "command": [
+        "node",
+        "tests/payment-processing/run.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-06T11:57:04.418416+00:00",
+      "durationSeconds": 14.005,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/final-plan-fix/operations/run.mjs.txt",
+      "logSha256": "c39e7fb5590b3edbbe19dcdc22c5a4aa8cda5b25014ee98671584d8b82cf2d66",
+      "file": "tests/payment-processing/run.mjs"
+    }
+  ]
+}

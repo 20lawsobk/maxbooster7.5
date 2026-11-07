@@ -1,0 +1,1 @@
+PASSED: /home/runner/workspace/reports/maxcore-acceptance/isolated-recovery-load.json

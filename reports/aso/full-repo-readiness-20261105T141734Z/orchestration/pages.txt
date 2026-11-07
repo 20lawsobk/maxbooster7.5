@@ -1,0 +1,117 @@
+{
+  "decision": "FAIL",
+  "evidence": {
+    "capacityAdmission": "not_run",
+    "schemaGeneration": "pass",
+    "postgres": "pass",
+    "appProcess": "pass",
+    "health": {
+      "status": 200,
+      "contentType": "application/json; charset=utf-8"
+    },
+    "readiness": {
+      "scope": "sealed non-ML authentication, projects, and frontend acceptance",
+      "fullStackReadiness": "NOT_PROVEN: separate real imported MaxCore/model acceptance required",
+      "expectedDegradedReadinessAsserted": true,
+      "unifiedAwarenessReady": false,
+      "status": 503,
+      "aggregate": "degraded",
+      "subsystems": {
+        "database": {
+          "status": "ok"
+        },
+        "redis": {
+          "status": "ok"
+        },
+        "routes": {
+          "status": "ok",
+          "detail": "critical routes registered; route loading complete"
+        },
+        "audit": {
+          "status": "unknown",
+          "detail": "initializing"
+        },
+        "automation": {
+          "status": "ok",
+          "detail": "workflows=0"
+        },
+        "maxcore": {
+          "status": "unknown",
+          "detail": "MaxCore not configured (no URL/key)"
+        }
+      }
+    },
+    "frontend": {
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 16213,
+      "sha256": "e11a78d002aa95c3612334aa495806bf15110a7c96acbc0e94680d7321fa3ac0"
+    },
+    "authHttp": {
+      "csrfCookieHeaderBinding": "pass",
+      "register": "pass",
+      "registrationSession": "pass",
+      "login": "pass",
+      "sessionPersistence": "pass",
+      "logoutInvalidation": "pass",
+      "syntheticUserRemovedWithDatabase": true
+    },
+    "httpLoad": "not_requested",
+    "browser": {
+      "engine": "Chromium CDP",
+      "hydrated": true,
+      "screenshot": "reports/readiness-implementation/assembled-acceptance-login.png",
+      "formLogin": "fail",
+      "failure": "Chromium page CDP endpoint did not become ready",
+      "prerequisite": "Investigate the recorded browser login failure against the current built asset."
+    },
+    "egressGuard": "pass (external net.connect, direct Socket.connect, UDP, and child processes denied in preflight)",
+    "cleanup": "pass",
+    "syntheticEntitlement": "paid entitlement provisioned only in disposable local database; no provider or payment bypass in application",
+    "projectCrud": {
+      "create": true,
+      "read": true,
+      "update": true,
+      "delete": true,
+      "missingVersion428": true,
+      "staleVersion409": true,
+      "crossOwnerReadUpdateDelete404": true,
+      "deletedRead404": true
+    },
+    "lastReadinessObservation": {
+      "status": 503,
+      "aggregate": "degraded",
+      "unifiedAwarenessReady": false,
+      "subsystems": [
+        {
+          "name": "database",
+          "status": "ok"
+        },
+        {
+          "name": "redis",
+          "status": "ok"
+        },
+        {
+          "name": "routes",
+          "status": "ok"
+        },
+        {
+          "name": "audit",
+          "status": "unknown"
+        },
+        {
+          "name": "automation",
+          "status": "ok"
+        },
+        {
+          "name": "maxcore",
+          "status": "unknown"
+        }
+      ],
+      "routeRegistrationDetail": "critical routes registered; route loading complete"
+    }
+  },
+  "failures": [
+    "browser login acceptance failed: Investigate the recorded browser login failure against the current built asset."
+  ]
+}

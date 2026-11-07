@@ -1,0 +1,262 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for server/services/royaltySplitOwnership.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">server/services</a> royaltySplitOwnership.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/36</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/36</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/10</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/30</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { db } from "../db";
+import { royaltySplits } from "@shared/schema";
+import { and, eq, sql } from "drizzle-orm";
+&nbsp;
+export class RoyaltySplitError extends Error {
+<span class="fstat-no" title="function not covered" >  constructor(public <span class="cstat-no" title="statement not covered" >s</span>tatus: number, m</span>essage: string) { <span class="cstat-no" title="statement not covered" >super(message); }</span>
+}
+type RoyaltyTransaction = Parameters&lt;Parameters&lt;typeof db.transaction&gt;[0]&gt;[0];
+async function <span class="fstat-no" title="function not covered" >authorize(t</span>x: RoyaltyTransaction, userId: string, releaseId: string) {
+<span class="cstat-no" title="statement not covered" >  if (typeof releaseId !== "string" || !releaseId)</span>
+<span class="cstat-no" title="statement not covered" >    throw new RoyaltySplitError(400, "A resource ID is required");</span>
+<span class="cstat-no" title="statement not covered" >  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`royalty:${releaseId === "general" ? userId : releaseId}`}))`);</span>
+<span class="cstat-no" title="statement not covered" >  if (releaseId === "general") <span class="cstat-no" title="statement not covered" >return; // Personal unassigned templates, never sale terms.</span></span>
+  const result = <span class="cstat-no" title="statement not covered" >await tx.execute&lt;{user_id: string}&gt;(sql`</span>
+    SELECT user_id FROM listings WHERE id=${releaseId}
+    UNION ALL SELECT user_id FROM beats WHERE id=${releaseId}
+    UNION ALL SELECT user_id FROM releases WHERE id=${releaseId}
+    UNION ALL SELECT user_id FROM projects WHERE id=${releaseId}`);
+  const owners = <span class="cstat-no" title="statement not covered" >result.rows ?? result;</span>
+<span class="cstat-no" title="statement not covered" >  if (!owners.length || owners.some(<span class="fstat-no" title="function not covered" >row =&gt; <span class="cstat-no" title="statement not covered" >r</span>ow.user_id !== userId)</span>)</span>
+<span class="cstat-no" title="statement not covered" >    throw new RoyaltySplitError(403, "You do not own this royalty resource");</span>
+}
+async function <span class="fstat-no" title="function not covered" >enforceCap(t</span>x: RoyaltyTransaction, userId: string, releaseId: string, percentage: number, exclude = <span class="branch-0 cbranch-no" title="branch not covered" >"") {</span>
+<span class="cstat-no" title="statement not covered" >  if (!Number.isFinite(percentage) || percentage &lt;= 0 || percentage &gt; 100)</span>
+<span class="cstat-no" title="statement not covered" >    throw new RoyaltySplitError(400, "Percentage must be between 1 and 100");</span>
+  const rows = <span class="cstat-no" title="statement not covered" >await tx.select().from(royaltySplits).where(eq(royaltySplits.releaseId, releaseId));</span>
+  // Ignore unauthorized pending legacy rows, but count approved beneficiaries.
+  const total = <span class="cstat-no" title="statement not covered" >rows.filter(<span class="fstat-no" title="function not covered" >row =&gt; <span class="cstat-no" title="statement not covered" >r</span>ow.id !== exclude &amp;&amp;</span></span>
+    (row.userId === userId || (releaseId !== "general" &amp;&amp; ["active","verified"].includes(row.status ?? ""))))
+    .reduce(<span class="fstat-no" title="function not covered" >(s</span>um, row) =&gt; <span class="cstat-no" title="statement not covered" >sum + Number(row.percentage), 0</span>);
+<span class="cstat-no" title="statement not covered" >  if (!Number.isFinite(total) || total + percentage &gt; 100.000001)</span>
+<span class="cstat-no" title="statement not covered" >    throw new RoyaltySplitError(400, "Royalty splits cannot exceed 100%");</span>
+}
+export async function <span class="fstat-no" title="function not covered" >createOwnedRoyaltySplit(u</span>serId: string, values: {
+  releaseId: string; collaboratorEmail: string; collaboratorName: string; role: string; percentage: number;
+}) {
+<span class="cstat-no" title="statement not covered" >  return db.transaction(<span class="fstat-no" title="function not covered" >async t</span>x =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    await authorize(tx, userId, values.releaseId);</span>
+<span class="cstat-no" title="statement not covered" >    await enforceCap(tx, userId, values.releaseId, values.percentage);</span>
+    const [split] = <span class="cstat-no" title="statement not covered" >await tx.insert(royaltySplits).values({...values,userId,status:"pending"}).returning();</span>
+<span class="cstat-no" title="statement not covered" >    return split;</span>
+  });
+}
+export async function <span class="fstat-no" title="function not covered" >updateOwnedRoyaltySplit(u</span>serId: string, id: string, values: {
+  collaboratorName?: string; collaboratorEmail?: string; role?: string; percentage?: number;
+}) {
+<span class="cstat-no" title="statement not covered" >  return db.transaction(<span class="fstat-no" title="function not covered" >async t</span>x =&gt; {</span>
+    const [initial] = <span class="cstat-no" title="statement not covered" >await tx.select().from(royaltySplits)</span>
+      .where(and(eq(royaltySplits.id,id),eq(royaltySplits.userId,userId)));
+<span class="cstat-no" title="statement not covered" >    if (!initial) <span class="cstat-no" title="statement not covered" >throw new RoyaltySplitError(404,"Royalty split not found");</span></span>
+<span class="cstat-no" title="statement not covered" >    await authorize(tx,userId,initial.releaseId);</span>
+    const [current] = <span class="cstat-no" title="statement not covered" >await tx.select().from(royaltySplits)</span>
+      .where(and(eq(royaltySplits.id,id),eq(royaltySplits.userId,userId)));
+<span class="cstat-no" title="statement not covered" >    if (!current) <span class="cstat-no" title="statement not covered" >throw new RoyaltySplitError(404,"Royalty split not found");</span></span>
+<span class="cstat-no" title="statement not covered" >    await enforceCap(tx,userId,current.releaseId,values.percentage ?? current.percentage,id);</span>
+    const [split] = <span class="cstat-no" title="statement not covered" >await tx.update(royaltySplits).set({...values,updatedAt:new Date()})</span>
+      .where(and(eq(royaltySplits.id,id),eq(royaltySplits.userId,userId))).returning();
+<span class="cstat-no" title="statement not covered" >    return split;</span>
+  });
+}</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-05T14:31:30.173Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    

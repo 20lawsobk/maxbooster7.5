@@ -1,0 +1,176 @@
+
+> max-booster@3.0.0 build
+> node scripts/build-production.mjs
+
+Both subsystem dependency trees passed the runtime dependency gate.
+==> Building embedded MaxCore production API (no desktop/dashboard packaging)...
+building server...
+
+  dist/index.mjs  1005.2kb
+
+⚡ Done in 184ms
+==> Building frontend with Vite...
+vite v7.3.7 building client environment for production...
+transforming...
+node_modules/zod/v4/core/regexes.js (74:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+✓ 5062 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /home/runner/workspace/client/src/i18n/locales/en.json is dynamically imported by /home/runner/workspace/client/src/i18n/config.ts but also statically imported by /home/runner/workspace/client/src/i18n/config.ts, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) /home/runner/workspace/client/src/lib/queryClient.ts is dynamically imported by /home/runner/workspace/client/src/lib/errorService.ts but also statically imported by /home/runner/workspace/client/src/components/achievements/AchievementNotification.tsx, /home/runner/workspace/client/src/components/achievements/StreakCounter.tsx, /home/runner/workspace/client/src/components/advertising/CreativeVariantGenerator.tsx, /home/runner/workspace/client/src/components/auth/AuthProvider.tsx, /home/runner/workspace/client/src/components/auth/InactivityManager.tsx, /home/runner/workspace/client/src/components/auth/TokenRefreshHandler.tsx, /home/runner/workspace/client/src/components/automations/CustomWorkflowBuilder.tsx, /home/runner/workspace/client/src/components/autonomous/autonomous-dashboard.tsx, /home/runner/workspace/client/src/components/autopilot/AutopilotKnowledgeBase.tsx, /home/runner/workspace/client/src/components/autopilot/AutopilotPreferences.tsx, /home/runner/workspace/client/src/components/autopilot/autopilot-dashboard.tsx, /home/runner/workspace/client/src/components/collaboration/CollaboratorCard.tsx, /home/runner/workspace/client/src/components/content/AIImageGenerator.tsx, /home/runner/workspace/client/src/components/content/ContentAnalyzer.tsx, /home/runner/workspace/client/src/components/content/LocalMediaRenderer.tsx, /home/runner/workspace/client/src/components/content/ProductionWorkbench.tsx, /home/runner/workspace/client/src/components/content/ServerVideoGenerator.tsx, /home/runner/workspace/client/src/components/contracts/ContractBuilder.tsx, /home/runner/workspace/client/src/components/dashboard/AICareerCoach.tsx, /home/runner/workspace/client/src/components/dashboard/LoopHealthScore.tsx, /home/runner/workspace/client/src/components/dashboard/SmartNextActionWidget.tsx, /home/runner/workspace/client/src/components/dialogs/ChangePasswordDialog.tsx, /home/runner/workspace/client/src/components/dialogs/DeleteAccountDialog.tsx, /home/runner/workspace/client/src/components/dialogs/PaymentUpdateDialog.tsx, /home/runner/workspace/client/src/components/dialogs/TwoFactorDisableDialog.tsx, /home/runner/workspace/client/src/components/dialogs/TwoFactorSetupDialog.tsx, /home/runner/workspace/client/src/components/distribution/ArtistProfileManager.tsx, /home/runner/workspace/client/src/components/distribution/AutoArtistSync.tsx, /home/runner/workspace/client/src/components/distribution/AutomatedQC.tsx, /home/runner/workspace/client/src/components/distribution/CatalogMigration.tsx, /home/runner/workspace/client/src/components/distribution/ContentIDManager.tsx, /home/runner/workspace/client/src/components/distribution/DataTransferWizard.tsx, /home/runner/workspace/client/src/components/distribution/EarningsReconciliation.tsx, /home/runner/workspace/client/src/components/distribution/EmbedCodeGenerator.tsx, /home/runner/workspace/client/src/components/distribution/HyperFollowBuilder.tsx, /home/runner/workspace/client/src/components/distribution/ISRCManager.tsx, /home/runner/workspace/client/src/components/distribution/ReleaseWizard.tsx, /home/runner/workspace/client/src/components/distribution/SubmissionStatusTracker.tsx, /home/runner/workspace/client/src/components/distribution/TakedownManager.tsx, /home/runner/workspace/client/src/components/marketplace/BogoPromotionsManager.tsx, /home/runner/workspace/client/src/components/marketplace/ForYouFeed.tsx, /home/runner/workspace/client/src/components/marketplace/PayoutDashboard.tsx, /home/runner/workspace/client/src/components/marketplace/ProducerProfile.tsx, /home/runner/workspace/client/src/components/marketplace/StorefrontBuilder.tsx, /home/runner/workspace/client/src/components/marketplace/StorefrontDnsZoneManager.tsx, /home/runner/workspace/client/src/components/merch/MerchCheckout.tsx, /home/runner/workspace/client/src/components/notifications/NotificationCenter.tsx, /home/runner/workspace/client/src/components/notifications/NotificationPreferences.tsx, /home/runner/workspace/client/src/components/notifications/useNotifications.ts, /home/runner/workspace/client/src/components/offline/AccountPersistenceBoundary.tsx, /home/runner/workspace/client/src/components/onboarding/ContextualFeatureHint.tsx, /home/runner/workspace/client/src/components/onboarding/FirstWeekSuccessPath.tsx, /home/runner/workspace/client/src/components/onboarding/OnboardingWizard.tsx, /home/runner/workspace/client/src/components/onboarding/PowerFeatureSpotlight.tsx, /home/runner/workspace/client/src/components/retention/CancellationModal.tsx, /home/runner/workspace/client/src/components/retention/NPSSurvey.tsx, /home/runner/workspace/client/src/components/royalties/RoyaltySplitManager.tsx, /home/runner/workspace/client/src/components/settings/ApiKeyManagement.tsx, /home/runner/workspace/client/src/components/settings/ConnectedAccountsManager.tsx, /home/runner/workspace/client/src/components/settings/CrossPlatformSync.tsx, /home/runner/workspace/client/src/components/settings/LoginHistory.tsx, /home/runner/workspace/client/src/components/settings/PrivacySettings.tsx, /home/runner/workspace/client/src/components/settings/RecoveryCodes.tsx, /home/runner/workspace/client/src/components/social/UnifiedInbox.tsx, /home/runner/workspace/client/src/components/social/platform-connections.tsx, /home/runner/workspace/client/src/components/studio/AIMusicGenerator.tsx, /home/runner/workspace/client/src/components/studio/FlowStateExport.tsx, /home/runner/workspace/client/src/components/studio/FlowStateImportAudio.tsx, /home/runner/workspace/client/src/components/studio/FlowStatePluginBrowser.tsx, /home/runner/workspace/client/src/components/studio/ProjectSettingsDialog.tsx, /home/runner/workspace/client/src/components/studio/RecordingPanel.tsx, /home/runner/workspace/client/src/components/studio/SaveAsDialog.tsx, /home/runner/workspace/client/src/components/studio/StemExportDialog.tsx, /home/runner/workspace/client/src/components/studio/StudioOneDAW.tsx, /home/runner/workspace/client/src/components/studio/StudioProjectDialog.tsx, /home/runner/workspace/client/src/components/studio/StudioStartHub.tsx, /home/runner/workspace/client/src/components/studio/WarpDialog.tsx, /home/runner/workspace/client/src/components/support/AIAssistantPublic.tsx, /home/runner/workspace/client/src/contexts/ThemeContext.tsx, /home/runner/workspace/client/src/hooks/useAudioRecorder.ts, /home/runner/workspace/client/src/hooks/useOnboardingProgress.ts, /home/runner/workspace/client/src/hooks/useProjectSync.ts, /home/runner/workspace/client/src/lib/daw/AudioRenderEngine.ts, /home/runner/workspace/client/src/lib/daw/ProjectManager.ts, /home/runner/workspace/client/src/lib/imageUpload.ts, /home/runner/workspace/client/src/lib/offline/SyncManager.ts, /home/runner/workspace/client/src/lib/preferenceWrites.ts, /home/runner/workspace/client/src/lib/studioApi.ts, /home/runner/workspace/client/src/main.tsx, /home/runner/workspace/client/src/pages/ARIntelligence.tsx, /home/runner/workspace/client/src/pages/Admin.tsx, /home/runner/workspace/client/src/pages/AdminAutonomy.tsx, /home/runner/workspace/client/src/pages/AdminDashboard.tsx, /home/runner/workspace/client/src/pages/Advertisement.tsx, /home/runner/workspace/client/src/pages/Analytics.tsx, /home/runner/workspace/client/src/pages/Assistant.tsx, /home/runner/workspace/client/src/pages/CareerCoach.tsx, /home/runner/workspace/client/src/pages/Collaborations.tsx, /home/runner/workspace/client/src/pages/Contracts.tsx, /home/runner/workspace/client/src/pages/Dashboard.tsx, /home/runner/workspace/client/src/pages/DeveloperApi.tsx, /home/runner/workspace/client/src/pages/Distribution.tsx, /home/runner/workspace/client/src/pages/FanHub.tsx, /home/runner/workspace/client/src/pages/FanMemberships.tsx, /home/runner/workspace/client/src/pages/Invoices.tsx, /home/runner/workspace/client/src/pages/Landing.tsx, /home/runner/workspace/client/src/pages/Login.tsx, /home/runner/workspace/client/src/pages/Marketplace.tsx, /home/runner/workspace/client/src/pages/MerchStore.tsx, /home/runner/workspace/client/src/pages/MusicWorkflowAutomations.tsx, /home/runner/workspace/client/src/pages/NotificationDetail.tsx, /home/runner/workspace/client/src/pages/Notifications.tsx, /home/runner/workspace/client/src/pages/OutreachCRM.tsx, /home/runner/workspace/client/src/pages/PlaylistPitching.tsx, /home/runner/workspace/client/src/pages/PressKit.tsx, /home/runner/workspace/client/src/pages/ProducerProfilePage.tsx, /home/runner/workspace/client/src/pages/ProjectsPageImpl.tsx, /home/runner/workspace/client/src/pages/Publishing.tsx, /home/runner/workspace/client/src/pages/Register.tsx, /home/runner/workspace/client/src/pages/RegisterPayment.tsx, /home/runner/workspace/client/src/pages/RegisterSuccess.tsx, /home/runner/workspace/client/src/pages/ReleaseCountdown.tsx, /home/runner/workspace/client/src/pages/Royalties.tsx, /home/runner/workspace/client/src/pages/Settings.tsx, /home/runner/workspace/client/src/pages/ShowPage.tsx, /home/runner/workspace/client/src/pages/Shows.tsx, /home/runner/workspace/client/src/pages/SimplifiedDashboard.tsx, /home/runner/workspace/client/src/pages/SocialMedia.tsx, /home/runner/workspace/client/src/pages/Storefront.tsx, /home/runner/workspace/client/src/pages/Subscribe.tsx, /home/runner/workspace/client/src/pages/SupportTicket.tsx, /home/runner/workspace/client/src/pages/SyncLicensing.tsx, /home/runner/workspace/client/src/pages/Verification.tsx, /home/runner/workspace/client/src/pages/Workspaces.tsx, /home/runner/workspace/client/src/pages/admin/AuditLog.tsx, /home/runner/workspace/client/src/pages/admin/ContentSampler.tsx, /home/runner/workspace/client/src/pages/admin/KYCReview.tsx, /home/runner/workspace/client/src/pages/admin/SecurityDashboard.tsx, /home/runner/workspace/client/src/pages/admin/SupportDashboard.tsx, /home/runner/workspace/client/src/pages/admin/SupportTicketDetail.tsx, /home/runner/workspace/client/src/pages/analytics/AIDashboard.tsx, /home/runner/workspace/client/src/pages/analytics/ExportAnalytics.tsx, /home/runner/workspace/client/src/pages/analytics/NaturalLanguageQuery.tsx, dynamic import will not move module into another chunk.
+
+../dist/public/index.html                                    16.21 kB
+../dist/public/assets/index-D44BQVsS.css                    519.47 kB
+../dist/public/assets/collapsible-DOuA_YjY.js                 0.11 kB
+../dist/public/assets/passwordPolicy-DMUNRpM8.js              0.24 kB
+../dist/public/assets/OAuthCallbackHandler-Dx5Z1yeq.js        0.53 kB
+../dist/public/assets/imageUpload-qtFQ2XTE.js                 0.63 kB
+../dist/public/assets/avatar-DaJ8eMjA.js                      0.65 kB
+../dist/public/assets/useRequireAuth-DHctQZ13.js              0.70 kB
+../dist/public/assets/radio-group-DY3LdalR.js                 0.75 kB
+../dist/public/assets/Logo-BTZZSOpg.js                        0.77 kB
+../dist/public/assets/agePolicy-CRHg7bf-.js                   0.83 kB
+../dist/public/assets/DeepLinkHandler-Cthdjdn8.js             0.87 kB
+../dist/public/assets/Studio-DlpKQ95e.js                      0.92 kB
+../dist/public/assets/Onboarding-DittUUHa.js                  1.10 kB
+../dist/public/assets/table-BCy8Kexr.js                       1.53 kB
+../dist/public/assets/useAnalyticsInvalidation-DkN4n4iN.js    1.61 kB
+../dist/public/assets/CookieConsentBanner-D5efniJy.js         1.82 kB
+../dist/public/assets/HandleLink-Dkd_2ihV.js                  1.86 kB
+../dist/public/assets/calendar-DU8280um.js                    1.88 kB
+../dist/public/assets/skeleton-loader-B3UQaLJy.js             2.08 kB
+../dist/public/assets/stat-card-Dc9h7-rD.js                   2.12 kB
+../dist/public/assets/dashboardDataContracts-DHQPZpaY.js      2.24 kB
+../dist/public/assets/sheet-CuMpsYT2.js                       2.33 kB
+../dist/public/assets/useOnboardingProgress-Cbn-KW7y.js       2.35 kB
+../dist/public/assets/SimplifiedDashboard-hHdj3Rq8.js         2.52 kB
+../dist/public/assets/UndoToast-C0145eCB.js                   2.65 kB
+../dist/public/assets/SupportTicket-CyTGHuvr.js               2.66 kB
+../dist/public/assets/blogPosts-C7wB18Hj.js                   2.70 kB
+../dist/public/assets/InstallBanner-DQZpfptq.js               3.32 kB
+../dist/public/assets/empty-state-Byq-dWvO.js                 3.43 kB
+../dist/public/assets/vendor-forms-BoeeqBoa.js                3.43 kB
+../dist/public/assets/chart-card-yO7FmzEW.js                  3.72 kB
+../dist/public/assets/NPSSurvey-Cl7B8RQL.js                   3.80 kB
+../dist/public/assets/musicVideoJobs-CZNXFMzv.js              4.52 kB
+../dist/public/assets/AIDashboard-7xggoc_V.js                 4.66 kB
+../dist/public/assets/KeyboardShortcutsDialog-6q7LPanH.js     4.83 kB
+../dist/public/assets/Subscribe-Dtr72kIL.js                   4.96 kB
+../dist/public/assets/NotificationDetail-Cg7sqxTV.js          5.02 kB
+../dist/public/assets/SoloFounderStory-BAJCiDfk.js            5.38 kB
+../dist/public/assets/About-CBfp8N-U.js                       5.54 kB
+../dist/public/assets/not-found-Be1o_nN5.js                   5.64 kB
+../dist/public/assets/web-vitals-BhOaL62-.js                  5.87 kB
+../dist/public/assets/AIAssistantPublic-CKT4F6xQ.js           5.88 kB
+../dist/public/assets/BeatCard-mbgEMpUJ.js                    6.08 kB
+../dist/public/assets/ShortcutCustomizer-DaNs2H07.js          6.11 kB
+../dist/public/assets/Blog-dVPL2Z35.js                        6.13 kB
+../dist/public/assets/CommandPalette-qkqv5T5v.js              6.26 kB
+../dist/public/assets/ForgotPassword-CP4s164o.js              6.41 kB
+../dist/public/assets/Documentation-CiTDn-Nu.js               6.42 kB
+../dist/public/assets/API-DOz-4kvs.js                         6.59 kB
+../dist/public/assets/de-BlYFHT9b.js                          6.62 kB
+../dist/public/assets/Notifications-By6jO-PV.js               6.67 kB
+../dist/public/assets/AuditLog-74LbfyDu.js                    6.71 kB
+../dist/public/assets/es-BDfvfL-L.js                          6.85 kB
+../dist/public/assets/SupportTicketDetail-5uLeXj3S.js         6.86 kB
+../dist/public/assets/fr-CHFClsV2.js                          6.98 kB
+../dist/public/assets/DMCA-CvckE5ty.js                        7.07 kB
+../dist/public/assets/PublicPressKit-CovzS6R1.js              7.52 kB
+../dist/public/assets/SecurityPage-DU6WpUbV.js                7.68 kB
+../dist/public/assets/ja-Cmq-SUnS.js                          7.71 kB
+../dist/public/assets/SupportDashboard-DzjTPHCM.js            7.84 kB
+../dist/public/assets/SimplifiedDashboard-tnUj2c5K.js         8.39 kB
+../dist/public/assets/index-CbPgYzMR.js                       8.46 kB
+../dist/public/assets/AppLayout-EkbX48iq.js                   8.74 kB
+../dist/public/assets/ConnectionStatusBar-BTNTFL0g.js         8.85 kB
+../dist/public/assets/Features-DK3KukHY.js                    9.08 kB
+../dist/public/assets/BlogPost-nEmqWcma.js                    9.77 kB
+../dist/public/assets/Assistant-CZjPAt92.js                  10.06 kB
+../dist/public/assets/ARIntelligence-CPakwCdO.js             10.07 kB
+../dist/public/assets/AIAssistantPersonalized-CQcJAY85.js    10.53 kB
+../dist/public/assets/ResetPassword-Dl3UT0r6.js              10.55 kB
+../dist/public/assets/RegisterSuccess-CV_hz1Ew.js            10.99 kB
+../dist/public/assets/RegisterPayment-BCvyXAk3.js            11.44 kB
+../dist/public/assets/ReleaseCountdown-Con2SH7w.js           11.49 kB
+../dist/public/assets/Help-BcU6avmD.js                       11.91 kB
+../dist/public/assets/SyncLicensing-DTUDW8Zw.js              12.74 kB
+../dist/public/assets/Login-DPQNR14b.js                      12.88 kB
+../dist/public/assets/Privacy-FZnm6R0U.js                    12.98 kB
+../dist/public/assets/OutreachCRM-C-3TI1IN.js                13.00 kB
+../dist/public/assets/Collaborations-BAMlNcpn.js             13.74 kB
+../dist/public/assets/KYCReview-BUyXtK4w.js                  14.22 kB
+../dist/public/assets/Pricing-yH-o1gVJ.js                    14.48 kB
+../dist/public/assets/FanMemberships-zl1a2xbs.js             15.38 kB
+../dist/public/assets/Publishing-BzhtLaRR.js                 15.51 kB
+../dist/public/assets/DeveloperApi-4Z1uz2-x.js               15.79 kB
+../dist/public/assets/Invoices-DeZb9bmR.js                   16.34 kB
+../dist/public/assets/PressKit-DxfujKpd.js                   16.70 kB
+../dist/public/assets/PlaylistPitching-B1Sx-RUq.js           17.80 kB
+../dist/public/assets/ProducerProfilePage-CS-PPxxm.js        17.89 kB
+../dist/public/assets/Terms-CC2lkLba.js                      18.09 kB
+../dist/public/assets/SecurityDashboard-B9SmOT_j.js          18.09 kB
+../dist/public/assets/Register-Dld4XVrk.js                   18.40 kB
+../dist/public/assets/DesktopApp-D3rW_gXS.js                 19.88 kB
+../dist/public/assets/TrainingDashboard-bgMbKCPk.js          20.09 kB
+../dist/public/assets/Landing-TptQG0rQ.js                    20.15 kB
+../dist/public/assets/Shows-DjZ1L0AU.js                      21.18 kB
+../dist/public/assets/ContentSampler-GJmVU9fL.js             22.23 kB
+../dist/public/assets/CareerCoach-BSgrPf6W.js                22.49 kB
+../dist/public/assets/ShowPage-jf96UhFO.js                   25.20 kB
+../dist/public/assets/Storefront-B7R0UGhQ.js                 25.20 kB
+../dist/public/assets/MerchStore-Gp8FsD_l.js                 27.02 kB
+../dist/public/assets/OnboardingWizard-CyMcQ9CS.js           27.87 kB
+../dist/public/assets/vendor-ui-CJhzx3WK.js                  29.29 kB
+../dist/public/assets/AdminAutonomy-CbVZN3JY.js              29.58 kB
+../dist/public/assets/purify.es-18JuyMri.js                  30.12 kB
+../dist/public/assets/Verification-SITh29Wc.js               30.42 kB
+../dist/public/assets/jspdf.plugin.autotable-B0IxatYY.js     31.04 kB
+../dist/public/assets/FanHub-wS-muAr_.js                     31.14 kB
+../dist/public/assets/vendor-audio-engine-BnfEh9_-.js        36.14 kB
+../dist/public/assets/MusicWorkflowAutomations-IsUJrlIl.js   36.21 kB
+../dist/public/assets/Contracts-DoUS24av.js                  38.63 kB
+../dist/public/assets/brand-icons-CdAHm4Oj.js                42.46 kB
+../dist/public/assets/TopBar-JUXnhlO6.js                     43.57 kB
+../dist/public/assets/Workspaces-IThwqcVU.js                 44.08 kB
+../dist/public/assets/AdminDashboard-DeVRYwxf.js             46.57 kB
+../dist/public/assets/Projects-CBCWUTc9.js                   49.16 kB
+../dist/public/assets/Admin-CFpOcwGc.js                      56.40 kB
+../dist/public/assets/vendor-state-CVDXLby9.js               66.76 kB
+../dist/public/assets/socialPlatformStatus-CNbLq5uM.js       86.74 kB
+../dist/public/assets/Dashboard-vY4Nr9j3.js                  89.36 kB
+../dist/public/assets/Royalties-DTikFLWe.js                 101.24 kB
+../dist/public/assets/vendor-utils-BK_vLh4y.js              118.74 kB
+../dist/public/assets/vendor-animation-CEX8GGKz.js          132.16 kB
+../dist/public/assets/index-D4f54tV7.js                     138.50 kB
+../dist/public/assets/Settings-ylo4Dpqn.js                  158.20 kB
+../dist/public/assets/index.es-sDxCqmc-.js                  158.62 kB
+../dist/public/assets/Analytics-CP9Wetn0.js                 188.36 kB
+../dist/public/assets/html2canvas.esm-DXEQVQnt.js           201.04 kB
+../dist/public/assets/SocialMedia-iBGvD5Sp.js               243.68 kB
+../dist/public/assets/Advertisement-uZMpf8-N.js             250.09 kB
+../dist/public/assets/Marketplace-BXOObrkJ.js               319.22 kB
+../dist/public/assets/jspdf.es.min-Ycv4tvOL.js              386.25 kB
+../dist/public/assets/Distribution-CUdApe_H.js              430.62 kB
+../dist/public/assets/vendor-charts-B2vy5grH.js             440.45 kB
+../dist/public/assets/vendor-react-nlkzUu0i.js              600.44 kB
+../dist/public/assets/studio-qbmP0Z7y.js                    747.19 kB
+✓ built in 21.97s
+   ✅ Vite build complete → dist/public/
+==> Bundling all runtime entries (server, cluster, gateway, sizing, recovery)...
+   ✅ All runtime entry bundles built from current source
+
+✅ Build complete.

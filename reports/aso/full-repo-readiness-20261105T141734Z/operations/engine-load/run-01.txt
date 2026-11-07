@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py", line 37, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'

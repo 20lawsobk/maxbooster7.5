@@ -1,0 +1,788 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="23" time="5.802" timestamp="2026-11-06T23:52:03.222795+00:00" hostname="repl"><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_pool_alloc_free_accounting" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_pool_bucket_reuse_does_not_grow_reservation" time="0.000" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_pool_oom_is_real_and_raised" time="0.000" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_pool_trim_reclaims_idle_slabs" time="0.000" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_pool_peak_tracking_survives_frees" time="0.000" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_pool_thread_safety_under_concurrent_alloc_free" time="0.051" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_assign_streams_keeps_dependency_chain_together" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_scheduler_produces_correct_results_for_diamond_graph" time="0.003" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_scheduler_achieves_real_wall_clock_overlap" time="0.354" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_scheduler_propagates_error_without_hanging" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_runtime_num_streams_does_not_change_numeric_result" time="0.717"><failure message="RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2, 3] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1, 3: 1})">self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcecfa70&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+&gt;               msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/runtime/process_pool.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;multiprocessing.queues.Queue object at 0x7f5cfcf1cfe0&gt;, block = True
+timeout = 0.49999135799953365
+
+    def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        if block and timeout is None:
+            with self._rlock:
+                res = self._recv_bytes()
+            self._sem.release()
+        else:
+            if block:
+                deadline = time.monotonic() + timeout
+            if not self._rlock.acquire(block, timeout):
+                raise Empty
+            try:
+                if block:
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
+&gt;                       raise Empty
+E                       _queue.Empty
+
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/queues.py:114: Empty
+
+During handling of the above exception, another exception occurred:
+
+    def test_runtime_num_streams_does_not_change_numeric_result():
+        graph = _independent_branches_graph()
+        inputs = _branch_inputs()
+    
+        dg_serial = DigitalGPU(num_streams=1)
+&gt;       dg_parallel = DigitalGPU(num_streams=4)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py:256: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/maxcore/api.py:52: in __init__
+    self.runtime = Runtime(self.backend, num_streams=num_streams,
+ai_model/maxcore/runtime/engine.py:91: in __init__
+    self._process_pool = LaneProcessPool(
+ai_model/maxcore/runtime/process_pool.py:574: in __init__
+    self._await_ready(start_timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcecfa70&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+                msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+            except queue.Empty:
+                dead = [lid for lid in pending if not self._procs[lid].is_alive()]
+                if dead:
+                    codes = {lid: self._procs[lid].exitcode for lid in dead}
+&gt;                   raise RuntimeError(
+                        f"LaneProcessPool: worker process for lane(s) {sorted(dead)} "
+                        f"died before completing backend init (exit codes: {codes})"
+                    )
+E                   RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2, 3] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1, 3: 1})
+
+ai_model/maxcore/runtime/process_pool.py:596: RuntimeError</failure></testcase><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_runtime_frees_intermediate_tensors_but_not_outputs" time="0.516"><failure message="RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2, 3] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1, 3: 1})">self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd2aea0&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+&gt;               msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/runtime/process_pool.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;multiprocessing.queues.Queue object at 0x7f5cfcd2af00&gt;, block = True
+timeout = 0.49999203399966063
+
+    def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        if block and timeout is None:
+            with self._rlock:
+                res = self._recv_bytes()
+            self._sem.release()
+        else:
+            if block:
+                deadline = time.monotonic() + timeout
+            if not self._rlock.acquire(block, timeout):
+                raise Empty
+            try:
+                if block:
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
+&gt;                       raise Empty
+E                       _queue.Empty
+
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/queues.py:114: Empty
+
+During handling of the above exception, another exception occurred:
+
+    def test_runtime_frees_intermediate_tensors_but_not_outputs():
+        graph = _independent_branches_graph()
+        inputs = _branch_inputs()
+    
+&gt;       dg = DigitalGPU(num_streams=4)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py:267: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/maxcore/api.py:52: in __init__
+    self.runtime = Runtime(self.backend, num_streams=num_streams,
+ai_model/maxcore/runtime/engine.py:91: in __init__
+    self._process_pool = LaneProcessPool(
+ai_model/maxcore/runtime/process_pool.py:574: in __init__
+    self._await_ready(start_timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd2aea0&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+                msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+            except queue.Empty:
+                dead = [lid for lid in pending if not self._procs[lid].is_alive()]
+                if dead:
+                    codes = {lid: self._procs[lid].exitcode for lid in dead}
+&gt;                   raise RuntimeError(
+                        f"LaneProcessPool: worker process for lane(s) {sorted(dead)} "
+                        f"died before completing backend init (exit codes: {codes})"
+                    )
+E                   RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2, 3] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1, 3: 1})
+
+ai_model/maxcore/runtime/process_pool.py:596: RuntimeError</failure></testcase><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_runtime_vram_oom_propagates_through_graph_run" time="0.512"><failure message="RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1] died before completing backend init (exit codes: {0: 1, 1: 1})">self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd5a4e0&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+&gt;               msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/runtime/process_pool.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;multiprocessing.queues.Queue object at 0x7f5cfcd5a540&gt;, block = True
+timeout = 0.49999274099991453
+
+    def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        if block and timeout is None:
+            with self._rlock:
+                res = self._recv_bytes()
+            self._sem.release()
+        else:
+            if block:
+                deadline = time.monotonic() + timeout
+            if not self._rlock.acquire(block, timeout):
+                raise Empty
+            try:
+                if block:
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
+&gt;                       raise Empty
+E                       _queue.Empty
+
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/queues.py:114: Empty
+
+During handling of the above exception, another exception occurred:
+
+    def test_runtime_vram_oom_propagates_through_graph_run():
+        graph = _independent_branches_graph()
+        inputs = {
+            "x1": _rng.standard_normal((64, 256), dtype=np.float32),
+            "w1": _rng.standard_normal((256, 256), dtype=np.float32),
+            "x2": _rng.standard_normal((64, 256), dtype=np.float32),
+            "w2": _rng.standard_normal((256, 256), dtype=np.float32),
+        }
+&gt;       dg = DigitalGPU(num_streams=2, vram_capacity_bytes=1024)  # far too small
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py:284: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/maxcore/api.py:52: in __init__
+    self.runtime = Runtime(self.backend, num_streams=num_streams,
+ai_model/maxcore/runtime/engine.py:91: in __init__
+    self._process_pool = LaneProcessPool(
+ai_model/maxcore/runtime/process_pool.py:574: in __init__
+    self._await_ready(start_timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd5a4e0&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+                msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+            except queue.Empty:
+                dead = [lid for lid in pending if not self._procs[lid].is_alive()]
+                if dead:
+                    codes = {lid: self._procs[lid].exitcode for lid in dead}
+&gt;                   raise RuntimeError(
+                        f"LaneProcessPool: worker process for lane(s) {sorted(dead)} "
+                        f"died before completing backend init (exit codes: {codes})"
+                    )
+E                   RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1] died before completing backend init (exit codes: {0: 1, 1: 1})
+
+ai_model/maxcore/runtime/process_pool.py:596: RuntimeError</failure></testcase><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_smi_reports_backend_memory_and_streams" time="0.513"><failure message="RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1})">self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd58950&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+&gt;               msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/runtime/process_pool.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;multiprocessing.queues.Queue object at 0x7f5cfcd58da0&gt;, block = True
+timeout = 0.4999909119997028
+
+    def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        if block and timeout is None:
+            with self._rlock:
+                res = self._recv_bytes()
+            self._sem.release()
+        else:
+            if block:
+                deadline = time.monotonic() + timeout
+            if not self._rlock.acquire(block, timeout):
+                raise Empty
+            try:
+                if block:
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
+&gt;                       raise Empty
+E                       _queue.Empty
+
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/queues.py:114: Empty
+
+During handling of the above exception, another exception occurred:
+
+    def test_smi_reports_backend_memory_and_streams():
+        graph = _independent_branches_graph()
+        inputs = _branch_inputs()
+    
+&gt;       dg = DigitalGPU(num_streams=3)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py:296: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/maxcore/api.py:52: in __init__
+    self.runtime = Runtime(self.backend, num_streams=num_streams,
+ai_model/maxcore/runtime/engine.py:91: in __init__
+    self._process_pool = LaneProcessPool(
+ai_model/maxcore/runtime/process_pool.py:574: in __init__
+    self._await_ready(start_timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd58950&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+                msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+            except queue.Empty:
+                dead = [lid for lid in pending if not self._procs[lid].is_alive()]
+                if dead:
+                    codes = {lid: self._procs[lid].exitcode for lid in dead}
+&gt;                   raise RuntimeError(
+                        f"LaneProcessPool: worker process for lane(s) {sorted(dead)} "
+                        f"died before completing backend init (exit codes: {codes})"
+                    )
+E                   RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1})
+
+ai_model/maxcore/runtime/process_pool.py:596: RuntimeError</failure></testcase><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_num_streams_env_var_default" time="0.511"><failure message="RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1] died before completing backend init (exit codes: {0: 1, 1: 1})">self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd41160&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+&gt;               msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/runtime/process_pool.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;multiprocessing.queues.Queue object at 0x7f5cfcd430e0&gt;, block = True
+timeout = 0.49999228100023174
+
+    def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        if block and timeout is None:
+            with self._rlock:
+                res = self._recv_bytes()
+            self._sem.release()
+        else:
+            if block:
+                deadline = time.monotonic() + timeout
+            if not self._rlock.acquire(block, timeout):
+                raise Empty
+            try:
+                if block:
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
+&gt;                       raise Empty
+E                       _queue.Empty
+
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/queues.py:114: Empty
+
+During handling of the above exception, another exception occurred:
+
+    def test_num_streams_env_var_default():
+        old = os.environ.get("MAXCORE_NUM_STREAMS")
+        os.environ["MAXCORE_NUM_STREAMS"] = "2"
+        try:
+&gt;           dg = DigitalGPU()
+                 ^^^^^^^^^^^^
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py:310: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/maxcore/api.py:52: in __init__
+    self.runtime = Runtime(self.backend, num_streams=num_streams,
+ai_model/maxcore/runtime/engine.py:91: in __init__
+    self._process_pool = LaneProcessPool(
+ai_model/maxcore/runtime/process_pool.py:574: in __init__
+    self._await_ready(start_timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd41160&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+                msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+            except queue.Empty:
+                dead = [lid for lid in pending if not self._procs[lid].is_alive()]
+                if dead:
+                    codes = {lid: self._procs[lid].exitcode for lid in dead}
+&gt;                   raise RuntimeError(
+                        f"LaneProcessPool: worker process for lane(s) {sorted(dead)} "
+                        f"died before completing backend init (exit codes: {codes})"
+                    )
+E                   RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1] died before completing backend init (exit codes: {0: 1, 1: 1})
+
+ai_model/maxcore/runtime/process_pool.py:596: RuntimeError</failure></testcase><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_shm_tensor_payload_eligibility" time="0.001" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_shm_put_falls_back_when_not_tensor_or_arena_missing" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_shm_fast_path_used_and_correct_for_large_tensors" time="0.524"><failure message="RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2, 3] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1, 3: 1})">self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd43680&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+&gt;               msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/runtime/process_pool.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;multiprocessing.queues.Queue object at 0x7f5cfcd43740&gt;, block = True
+timeout = 0.49999266599934344
+
+    def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        if block and timeout is None:
+            with self._rlock:
+                res = self._recv_bytes()
+            self._sem.release()
+        else:
+            if block:
+                deadline = time.monotonic() + timeout
+            if not self._rlock.acquire(block, timeout):
+                raise Empty
+            try:
+                if block:
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
+&gt;                       raise Empty
+E                       _queue.Empty
+
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/queues.py:114: Empty
+
+During handling of the above exception, another exception occurred:
+
+    def test_shm_fast_path_used_and_correct_for_large_tensors():
+        """A graph run whose values are well above the 1MiB scratch floor must
+        actually exercise the shared-memory arena (not silently fall back the
+        whole time), and must still produce numerically correct results.
+    
+        Two separate checks, deliberately kept apart:
+          * Two parallel runs (same ``num_streams=4`` pool config, computed
+            twice) must be **bit-identical**. This is the check that actually
+            targets the shared-memory mechanism: a race, a stale/uninitialized
+            read, a wrong offset, or a torn write would show up as run-to-run
+            nondeterminism here, since everything else about the computation is
+            held fixed.
+          * Parallel vs. serial (``num_streams=1``) is compared with a loose,
+            explicitly-justified tolerance rather than exact equality: even
+            before shared memory existed in this pool, pinning each worker to a
+            single BLAS thread (see the module docstring's BLAS section) while
+            the serial path uses a multi-threaded BLAS pool means the two sides
+            genuinely can pick different internal tiling/accumulation order for
+            a large-enough GEMM -- float32 addition isn't associative, so this
+            is expected numerical drift from thread-count, not data corruption.
+            Verified empirically at this size: max relative difference is on
+            the order of 1e-3, so `rtol=5e-3` leaves ample margin while still
+            catching a real correctness break (garbage data lands far outside
+            this band, not just past it).
+        """
+        b = GraphBuilder()
+        x1 = b.add_input("x1")
+        w1 = b.add_input("w1")
+        x2 = b.add_input("x2")
+        w2 = b.add_input("w2")
+        h1 = b.relu(b.gemm(x1, w1))
+        h2 = b.relu(b.gemm(x2, w2))
+        out = b.add(h1, h2)
+        graph = b.build(out)
+        inputs = {
+            "x1": _rng.standard_normal((2048, 8), dtype=np.float32),
+            "w1": _rng.standard_normal((8, 2048), dtype=np.float32),
+            "x2": _rng.standard_normal((2048, 8), dtype=np.float32),
+            "w2": _rng.standard_normal((8, 2048), dtype=np.float32),
+        }
+        dg_serial = DigitalGPU(num_streams=1)
+&gt;       dg_parallel = DigitalGPU(num_streams=4)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py:383: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/maxcore/api.py:52: in __init__
+    self.runtime = Runtime(self.backend, num_streams=num_streams,
+ai_model/maxcore/runtime/engine.py:91: in __init__
+    self._process_pool = LaneProcessPool(
+ai_model/maxcore/runtime/process_pool.py:574: in __init__
+    self._await_ready(start_timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd43680&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+                msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+            except queue.Empty:
+                dead = [lid for lid in pending if not self._procs[lid].is_alive()]
+                if dead:
+                    codes = {lid: self._procs[lid].exitcode for lid in dead}
+&gt;                   raise RuntimeError(
+                        f"LaneProcessPool: worker process for lane(s) {sorted(dead)} "
+                        f"died before completing backend init (exit codes: {codes})"
+                    )
+E                   RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2, 3] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1, 3: 1})
+
+ai_model/maxcore/runtime/process_pool.py:596: RuntimeError</failure></testcase><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_shm_arena_grows_across_runs_and_stays_correct" time="0.515"><failure message="RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2, 3] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1, 3: 1})">self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd41ee0&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+&gt;               msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/runtime/process_pool.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;multiprocessing.queues.Queue object at 0x7f5cfcd40bf0&gt;, block = True
+timeout = 0.4999923260002106
+
+    def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        if block and timeout is None:
+            with self._rlock:
+                res = self._recv_bytes()
+            self._sem.release()
+        else:
+            if block:
+                deadline = time.monotonic() + timeout
+            if not self._rlock.acquire(block, timeout):
+                raise Empty
+            try:
+                if block:
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
+&gt;                       raise Empty
+E                       _queue.Empty
+
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/queues.py:114: Empty
+
+During handling of the above exception, another exception occurred:
+
+    def test_shm_arena_grows_across_runs_and_stays_correct():
+        """A pool that first runs a small graph, then a much larger one, must
+        grow its arena rather than staying pinned to the first run's size --
+        and every value must still round-trip correctly across the resize."""
+        def make_graph(size):
+            b = GraphBuilder()
+            x1 = b.add_input("x1")
+            w1 = b.add_input("w1")
+            x2 = b.add_input("x2")
+            w2 = b.add_input("w2")
+            h1 = b.relu(b.gemm(x1, w1))
+            h2 = b.relu(b.gemm(x2, w2))
+            out = b.add(h1, h2)
+            return b.build(out), {
+                "x1": _rng.standard_normal((size, size), dtype=np.float32),
+                "w1": _rng.standard_normal((size, size), dtype=np.float32),
+                "x2": _rng.standard_normal((size, size), dtype=np.float32),
+                "w2": _rng.standard_normal((size, size), dtype=np.float32),
+            }
+    
+&gt;       dg = DigitalGPU(num_streams=4)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py:431: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/maxcore/api.py:52: in __init__
+    self.runtime = Runtime(self.backend, num_streams=num_streams,
+ai_model/maxcore/runtime/engine.py:91: in __init__
+    self._process_pool = LaneProcessPool(
+ai_model/maxcore/runtime/process_pool.py:574: in __init__
+    self._await_ready(start_timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd41ee0&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+                msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+            except queue.Empty:
+                dead = [lid for lid in pending if not self._procs[lid].is_alive()]
+                if dead:
+                    codes = {lid: self._procs[lid].exitcode for lid in dead}
+&gt;                   raise RuntimeError(
+                        f"LaneProcessPool: worker process for lane(s) {sorted(dead)} "
+                        f"died before completing backend init (exit codes: {codes})"
+                    )
+E                   RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1, 2, 3] died before completing backend init (exit codes: {0: 1, 1: 1, 2: 1, 3: 1})
+
+ai_model/maxcore/runtime/process_pool.py:596: RuntimeError</failure></testcase><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_shm_shutdown_unlinks_arena_no_leak" time="0.515"><failure message="RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1] died before completing backend init (exit codes: {0: 1, 1: 1})">self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd2abd0&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+&gt;               msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/runtime/process_pool.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;multiprocessing.queues.Queue object at 0x7f5cfcd2b590&gt;, block = True
+timeout = 0.49999106300037965
+
+    def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        if block and timeout is None:
+            with self._rlock:
+                res = self._recv_bytes()
+            self._sem.release()
+        else:
+            if block:
+                deadline = time.monotonic() + timeout
+            if not self._rlock.acquire(block, timeout):
+                raise Empty
+            try:
+                if block:
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
+&gt;                       raise Empty
+E                       _queue.Empty
+
+/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/queues.py:114: Empty
+
+During handling of the above exception, another exception occurred:
+
+    def test_shm_shutdown_unlinks_arena_no_leak():
+        """`shutdown()` must `unlink()` the arena it created -- leaving it behind
+        would leak a real OS-level /dev/shm segment for every pool ever built."""
+        b = GraphBuilder()
+        x1 = b.add_input("x1")
+        w1 = b.add_input("w1")
+        h1 = b.relu(b.gemm(x1, w1))
+        graph = b.build(h1)
+        big_inputs = {
+            "x1": _rng.standard_normal((256, 256), dtype=np.float32),
+            "w1": _rng.standard_normal((256, 256), dtype=np.float32),
+        }
+    
+&gt;       dg = DigitalGPU(num_streams=2)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py:470: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/maxcore/api.py:52: in __init__
+    self.runtime = Runtime(self.backend, num_streams=num_streams,
+ai_model/maxcore/runtime/engine.py:91: in __init__
+    self._process_pool = LaneProcessPool(
+ai_model/maxcore/runtime/process_pool.py:574: in __init__
+    self._await_ready(start_timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;ai_model.maxcore.runtime.process_pool.LaneProcessPool object at 0x7f5cfcd2abd0&gt;
+timeout = 60.0
+
+    def _await_ready(self, timeout: float) -&gt; None:
+        deadline = time.monotonic() + timeout
+        pending = set(self._procs.keys())
+        failures: dict[int, str] = {}
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining &lt;= 0:
+                raise RuntimeError(
+                    f"LaneProcessPool: worker(s) {sorted(pending)} for backend "
+                    f"'{self.backend_name}' did not become ready within {timeout}s"
+                )
+            try:
+                msg = self._outbox.get(timeout=min(_LIVENESS_POLL_S, remaining))
+            except queue.Empty:
+                dead = [lid for lid in pending if not self._procs[lid].is_alive()]
+                if dead:
+                    codes = {lid: self._procs[lid].exitcode for lid in dead}
+&gt;                   raise RuntimeError(
+                        f"LaneProcessPool: worker process for lane(s) {sorted(dead)} "
+                        f"died before completing backend init (exit codes: {codes})"
+                    )
+E                   RuntimeError: LaneProcessPool: worker process for lane(s) [0, 1] died before completing backend init (exit codes: {0: 1, 1: 1})
+
+ai_model/maxcore/runtime/process_pool.py:596: RuntimeError</failure></testcase><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_shm_alloc_bump_and_capacity_boundary" time="0.002" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_shm_put_get_roundtrip_various_shapes_and_dtypes" time="0.003" /><testcase classname="ai_model.maxcore.tests.test_gpu_native_orchestration" name="test_shm_put_falls_back_when_arena_is_full" time="0.001" /></testsuite></testsuites>

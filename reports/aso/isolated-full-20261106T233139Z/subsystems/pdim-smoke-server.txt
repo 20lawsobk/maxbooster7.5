@@ -1,0 +1,24 @@
+[2026-11-07T00:00:20.006Z] INFO [FabricRebalancer] Background rebalancer started
+[2026-11-07T00:00:20.063Z] INFO [PocketFabric] Seeded node 0: fabric-cluster-0 (id=96bc4dd8-df91-4415-b013-d468bab80024, domain=domain-0)
+[2026-11-07T00:00:20.065Z] INFO [PocketFabric] Seeded node 1: fabric-cluster-1 (id=4bd236f1-ecb1-4927-8a41-75d54e781a2c, domain=domain-1)
+[2026-11-07T00:00:20.066Z] INFO [PocketFabric] Seeded node 2: fabric-cluster-2 (id=63c7898a-246c-456c-8917-e753e3e11106, domain=domain-2)
+[2026-11-07T00:00:20.092Z] INFO [AutoCluster] Started — min=3 max=Infinity up≥70% down≤40% ema_alpha=0.3 maxSpawn=5 spawnCooldown=10min drainCooldown=30min
+[2026-11-07T00:00:20.092Z] INFO [PocketFabric] Auto-cluster manager started
+[2026-11-07T00:00:20.092Z] INFO [FabricScrub] Background scrubber started (interval 60m)
+[2026-11-07T00:00:20.092Z] INFO [PocketFabric] Local node self-heartbeat started (60s)
+[2026-11-07T00:00:20.221Z] INFO [PocketFabric] Stored __snapshot__:4a24d3bb-4fca-4a1c-903d-aec6ac2a93e7 (195 B → 166 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:20.315Z] INFO [PocketFabric] Stored __aof__ (151 B → 134 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:20.722Z] INFO [PocketFabric] Stored __recovery_manifest__ (341 B → 256 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:20.869Z] INFO [PocketFabric] Stored __snapshot__:456103e5-a68a-4750-9b94-448e4f16a7cc (195 B → 166 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:20.942Z] INFO [PocketFabric] Stored __aof__ (151 B → 134 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:21.022Z] INFO [PocketFabric] Stored __recovery_manifest__ (341 B → 253 B zstd) erasure-coded → 3 chunk(s)
+[RedisManager] System instances bootstrapped.
+[RedisManager] Warmed up 2 instance(s).
+[2026-11-07T00:00:21.676Z] INFO [PocketFabric] Stored __snapshot__:892409b8-33b5-44a0-ac9c-68e8dd2b2e6e (195 B → 165 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:22.179Z] INFO [PocketFabric] Stored __aof__ (151 B → 134 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:22.617Z] INFO [PocketFabric] Stored __recovery_manifest__ (341 B → 254 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:24.390Z] INFO [PocketFabric] Stored __aof__ (645934 B → 12546 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:25.195Z] INFO [PocketFabric] Stored __aof__ (668126 B → 13791 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:25.432Z] INFO [PocketFabric] Stored __snapshot__:38994602-7e52-40c2-a031-895ec1fe7da5 (85768 B → 2512 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:25.938Z] INFO [PocketFabric] Stored __aof__ (672914 B → 14052 B zstd) erasure-coded → 3 chunk(s)
+[2026-11-07T00:00:26.174Z] INFO [PocketFabric] Stored __recovery_manifest__ (394 B → 275 B zstd) erasure-coded → 3 chunk(s)

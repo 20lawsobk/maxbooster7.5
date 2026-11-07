@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "mission": "Verify admin and ordinary-account shared paths and permission, entitlement and ownership boundaries",
+  "scope": "Real disposable source application, PostgreSQL, session routes and HTTP guards. External TCP/TLS/UDP denied; no real provider spending or production writes.",
+  "source": {
+    "main_base": "89e8b6c8e65d1fad757743a1027b0ea32708efac",
+    "prior_product_branch": "7c2ae4cbc751047822c42ceeddcec73c74e30c87",
+    "note": "Checkout is base main plus exact PR211 source overlays; hashes identify tested files.",
+    "sha256": {
+      "server/middleware/auth.ts": "9e06792d026d428ab15b8c51db43be84a9a9d451160131901b4912f7d55b53c9",
+      "server/routes.ts": "598ec15749f049c6539d2f0277a6c89665a5a908919ce0dd4ab5e473bbe60fe7",
+      "server/routes/content-analysis.ts": "3ef8819a39a0e456d70b22a529d2647fe5b03e5aad6de8bd5c5b59cfa8f19509",
+      "tests/admin-account-parity.test.ts": "6f45e37f39751c46f066beeaff3db87ba0eab43a6c9530fbc19b0697e9e49c2c",
+      "tests/content-analysis-entitlement.test.ts": "9876fcc3dcc516eb47d40374926460502d2a93130d46d17b00bc3d109ff74bfc",
+      "tests/unit/paid-entitlement-expiry.test.ts": "6dceeba5d60b7e4af5f507598f9f8255c991355a6126acc00e89da1d0d70b944",
+      "tests/helpers-http-fixture.ts": "b41fd5b4f02d8d7864be78c6fc3771622765a600068ae237cf083f7a47162418",
+      "vitest.integration.config.ts": "6bb59f0d7a85c721c3ecc9cbf92aeefea1db7f8a0ba60ace26d0365a90b1fef1",
+      "package.json": "74866dd59d2ae0dd5ff60141939c97146c0dcd7a05e3f4a5fff9d15c9707e8ee",
+      "server/routes/marketplace.ts": "ce1e3420e86b8c93197e7db2730f56eb704d85065e47a25c409c3f4c583c4024",
+      "scripts/testing/integration-browser.mjs": "0e0160ba471686d3ef0a8fddf05db1087f5037b7a37718dbad7d92ca88ebd2dd",
+      "tests/security-hardening.test.ts": "940d94e94ac8cbbbf66f05d667d2cf29ef034f5f569c01d7f9dfe95b57e61e62",
+      "tests/marketplace-purchase-signal.test.mjs": "f5b6f9dc90b455a5f31858fee454a94bbfe0f60ff96549b70994007e88d1c0da"
+    }
+  },
+  "findings": [
+    {
+      "id": "trial-conversion",
+      "before": "Active paid subscriptions retaining a historical trial date were denied; admins bypassed the defect.",
+      "after": "Active paid conversion supersedes historical trial expiry; actual subscription expiry, MFA and account suspension still block.",
+      "baseline": "Original middleware failed 6 of the 17 regression cases.",
+      "status": "FIXED_AND_VERIFIED"
+    },
+    {
+      "id": "admin-ai-entitlement",
+      "before": "An admin without a public paid plan received403 from AI content optimization.",
+      "after": "The shared entitlement policy admits admin to ordinary input validation.",
+      "baseline": {
+        "reported_cases": 16,
+        "failures": 1,
+        "errors": 0,
+        "skips": 0,
+        "artifact_sha256": "527f91cfed9370912f569078c6841bf56215294910cb21c0ee20e976c110fe7d"
+      },
+      "limit": "The400 validation response proves admission, not live AI generation.",
+      "status": "FIXED_AND_VERIFIED"
+    },
+    {
+      "id": "content-analysis-entitlement",
+      "before": "Inactive/canceled/past-due paid tier names were admitted, while active Pro was denied.",
+      "after": "Content analysis uses the shared current-entitlement policy.",
+      "baseline": {
+        "reported_cases": 6,
+        "failures": 4,
+        "errors": 0,
+        "skips": 0,
+        "artifact_sha256": "7359177e901b07d9bf197f410fda87a36f7ec0d310d8b9833bf11b82f5806b36"
+      },
+      "limit": "Invalid asset requests fail before provider calls.",
+      "status": "FIXED_AND_VERIFIED"
+    }
+  ],
+  "validation": {
+    "http": {
+      "reported_cases": 106,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "artifact_sha256": "06f3e7bbd5f4304afdfb4107eb036543e878813e64aefbed85f966e86676733f"
+    },
+    "focused_unit": {
+      "reported_cases": 40,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "artifact_sha256": "ee0d71dba29a8b2b161d0efea45098e5732e02f3279a3a1a6a0701006f6068ef"
+    },
+    "content_contract_unit": {
+      "reported_cases": 25,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "artifact_sha256": "a517fda530b63b0a51cc14e4a534161b04f9877769017cc118691fd12c2067cb"
+    },
+    "access_and_subscription_database_contracts": {
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0,
+      "provider": "Controlled SDK, real disposable PostgreSQL",
+      "log_sha256": "43731e1fe117d70cf7ceb79044694ae1b0cc075b6c6fb4fea7369fb32a75e8fc"
+    },
+    "typecheck": {
+      "status": "PASS",
+      "command": "npm run check",
+      "log_sha256": "eaa3c2f7e8dd8818ea6a01f255a27a62fbf8480a449f74685fd86974a944d9cb"
+    },
+    "lint": {
+      "status": "PASS",
+      "scope": "All eight changed implementation/test/config files",
+      "log_sha256": "fc7cb8310fb5431226223cd4dadadcdaec8ff4d9a11f3848db0306c1d9c17eb9"
+    },
+    "build": {
+      "status": "PASS",
+      "command": "npm run build",
+      "log_sha256": "6517727a194dbb0c1943881255b7c1b7eacc749fea6c8339ff73935c121b5424"
+    },
+    "artifact_contract": {
+      "status": "PASS",
+      "command": "production launcher validateBuild(process.cwd())",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "manifest_sha256": "22f2045680f9eb888be8a938a78c8eda929a7699e22e00271d7edf8ee50254bb"
+    }
+  },
+  "verified_workflows": [
+    "Real registration cannot self-assign admin/lifetime entitlements",
+    "Admin and paid user create, persist and read projects through shared routes",
+    "Submitted owner IDs do not change the authenticated owner",
+    "Listings do not cross account boundaries",
+    "Another user and admin cannot read/update/delete foreign projects through ordinary feature routes",
+    "Paid users cannot enter admin dashboard; anonymous studio requests deny",
+    "Admin can use paid studio and reach AI input validation without buying a public plan",
+    "Free accounts cannot forge paid access",
+    "Active subscription after trial conversion succeeds; expired paid periods/unconverted trials fail",
+    "Concurrent project edits produce one acceptance and one conflict",
+    "Project data survives logout and real reauthentication",
+    "Admin privilege cannot bypass an unverified MFA challenge",
+    "Inactive content-analysis subscriptions deny and active Pro is admitted"
+  ],
+  "limits": [
+    "Not an acceptance of every feature in all twelve domains",
+    "No live AI, distribution, marketing delivery or external payment settlement verified",
+    "No process-restart persistence, backup restoration or deployment rollback drill in this run",
+    "Two concurrent edits test conflict handling, not public-scale capacity",
+    "Admin-private deployment configuration and deployed revision remain unverified",
+    "Source defaults permit registration and ordinary-account operation; deployed governance settings were unavailable",
+    "Replit status question returned busy/not-submitted and publication status was unavailable",
+    "No merge, publication or production mutation performed"
+  ],
+  "admin_production_ready": false,
+  "public_production_ready": false,
+  "counts_note": "Separate suites and historical evidence are reported by scope; no historical counts are summed."
+}

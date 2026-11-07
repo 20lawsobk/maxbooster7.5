@@ -1,0 +1,76 @@
+.......................                                                  [100%]
+=============================== warnings summary ===============================
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-s41o_p3b' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-yg0g7mb6' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-41hypoi7' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-k9hgx7vu' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-d6mb71o4' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-u71ytng4' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-ugq49w2w' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-gs8aiyjf' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-pzcj6esr' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The shared_memory object '/psm_c643a05a' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-v1kh9yif' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-r2n2jojt' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-nm60fnx9' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-wnsorsly' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-4f9phr71' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-2nehckos' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-zbt_y52n' might leak.
+    warnings.warn(
+
+ai_model/maxcore/tests/test_gpu_native_orchestration.py::test_smi_reports_backend_memory_and_streams
+  /nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/lib/python3.12/multiprocessing/resource_tracker.py:213: UserWarning: ResourceTracker called reentrantly for resource cleanup, which is unsupported. The semaphore object '/mp-hoxw4c7s' might leak.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+23 passed, 18 warnings in 13.70s

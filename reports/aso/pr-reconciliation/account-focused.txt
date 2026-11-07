@@ -1,0 +1,35 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.12 [39m[90m/home/runner/workspace[39m
+
+ [32m✓[39m tests/unit/premium-admin-entitlement.test.ts[2m > [22mstored administrator entitlement and payment boundaries[2m > [22mallows a stored admin without a subscription or working bypass service[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/premium-admin-entitlement.test.ts[2m > [22mstored administrator entitlement and payment boundaries[2m > [22mrejects a missing stored account even with global bypass enabled[32m 2[2mms[22m[39m
+ [32m✓[39m tests/unit/premium-admin-entitlement.test.ts[2m > [22mstored administrator entitlement and payment boundaries[2m > [22mdoes not trust an admin role from a stale request[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/premium-admin-entitlement.test.ts[2m > [22mstored administrator entitlement and payment boundaries[2m > [22mrejects anonymous requests without reading subscription settings[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/premium-admin-entitlement.test.ts[2m > [22mstored administrator entitlement and payment boundaries[2m > [22mpreserves bypass for a verified existing non-admin account[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/premium-admin-entitlement.test.ts[2m > [22mstored administrator entitlement and payment boundaries[2m > [22mfails closed when stored account verification fails[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/premium-admin-entitlement.test.ts[2m > [22mstored administrator entitlement and payment boundaries[2m > [22mpreserves active subscriber entitlement without bypass[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man active monthly subscriber is not locked out by the old trial end[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man active yearly subscriber is not locked out by the old trial end[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man active pro subscriber is not locked out by the old trial end[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man active lifetime subscriber is not locked out by the old trial end[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man unconverted expired trial remains denied: {"subscriptionStatus":"trialing"}[32m 3[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man unconverted expired trial remains denied: {"subscriptionStatus":"inactive"}[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man unconverted expired trial remains denied: {"subscriptionTier":"free"}[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man unconverted expired trial remains denied: {"subscriptionTier":"trial"}[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man unconverted expired trial remains denied: {"subscriptionTier":null}[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22ma paid period ending still blocks access even if status has not reconciled[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22munverified MFA still blocks the user role[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22munverified MFA still blocks the admin role[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22mverified MFA permits the converted paid account[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man admin account marked suspended remains denied[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man admin account marked banned remains denied[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22mthe authenticated admin keeps intended subscription-independent access[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/paid-entitlement-expiry.test.ts[2m > [22mpaid access after a trial conversion[2m > [22man unauthenticated account is still denied[32m 0[2mms[22m[39m
+ [32m✓[39m tests/unit/content-generation-gap-contract.test.ts[2m > [22mDashboard MaxCore content optimization[2m > [22mgenerates and persists an unpublished draft from explicit user content[32m 3[2mms[22m[39m
+ [32m✓[39m tests/unit/content-generation-gap-contract.test.ts[2m > [22mUltimateDAW asynchronous text generation[2m > [22mwaits for the generated job and inserts returned audio or MIDI into the timeline[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m26 passed[39m[22m[90m (26)[39m
+[2m   Start at [22m 00:25:04
+[2m   Duration [22m 1.33s[2m (transform 350ms, setup 120ms, import 384ms, tests 34ms, environment 0ms)[22m
+

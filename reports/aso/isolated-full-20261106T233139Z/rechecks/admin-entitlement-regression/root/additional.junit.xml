@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="18" failures="0" errors="0" time="0.021819825">
+    <testsuite name="server/simulations/__tests__/verifyKPIs.test.ts" timestamp="2026-11-07T00:21:28.028Z" hostname="repl" tests="15" failures="0" errors="0" skipped="0" time="0.016407192">
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Autonomous Upgrade System &gt; meets ≥95% success rate" time="0.002498312">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Autonomous Upgrade System &gt; meets ≥100% quality threshold vs manual baseline" time="0.001338876">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Autonomous Upgrade System &gt; achieves zero downtime deployments" time="0.000431915">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Autonomous Upgrade System &gt; maintains or gains competitive advantage" time="0.000995457">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Autonomous Upgrade System &gt; meets detection speed SLA compliance" time="0.000291113">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Autonomous Upgrade System &gt; produces deterministic results (reproducible)" time="0.001537903">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Autonomous Upgrade System &gt; long-term simulation meets ≥95% success rate" time="0.002030175">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Autonomous Upgrade System &gt; long-term simulation maintains continuous adaptation" time="0.000482483">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Ad Booster System &gt; meets ≥2.0x amplification factor (100%+ boost)" time="0.001150271">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Ad Booster System &gt; comprehensive simulation - all scenarios pass" time="0.000901673">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Ad Booster System &gt; produces deterministic results (reproducible)" time="0.00031993">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Ad Booster System &gt; achieves zero cost organic amplification" time="0.000211545">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Integration Tests &gt; all critical KPIs pass together" time="0.000626403">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Reproducibility Verification &gt; running simulations multiple times produces identical results" time="0.000826809">
+        </testcase>
+        <testcase classname="server/simulations/__tests__/verifyKPIs.test.ts" name="AI System KPI Verification &gt; Reproducibility Verification &gt; different seeds produce different results" time="0.000394333">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/example.test.ts" timestamp="2026-11-07T00:21:28.036Z" hostname="repl" tests="3" failures="0" errors="0" skipped="0" time="0.005412633">
+        <testcase classname="tests/unit/example.test.ts" name="Unit Test Suite Example &gt; Example Function Tests &gt; should pass this example test" time="0.002058173">
+        </testcase>
+        <testcase classname="tests/unit/example.test.ts" name="Unit Test Suite Example &gt; Example Function Tests &gt; should handle error cases" time="0.001126838">
+        </testcase>
+        <testcase classname="tests/unit/example.test.ts" name="Unit Test Suite Example &gt; Example Function Tests &gt; should work with async functions" time="0.000421389">
+        </testcase>
+    </testsuite>
+</testsuites>

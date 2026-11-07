@@ -1,0 +1,45 @@
+.{"report": "/tmp/tmpcpr8oata/observed/run-686aff6445474e539f5cb6be55585861/report.json", "score": 93.33, "ready": true, "public_release_ready": false, "active_release": "admin-private"}
+{"report": "/tmp/tmpcpr8oata/observed/run-8c27d7d6ac684ef6991dcd91ed08cf78/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "admin-private"}
+......{"report": "/tmp/tmp9lyaoiqd/state/run-1dec90a5d3454a41be7ecb6b7fc0e0b4/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-ec5daec37386')
+.{"report": "/tmp/tmpwegh9uc4/state/run-d5aee02706b543a48e12dc25222a1dff/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+.{"report": "/tmp/tmpt0_2p8rl/state/run-f44fe5e797014a2f892d881be7538241/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-d108950a1aae')
+{"report": "/tmp/tmpt0_2p8rl/state/agros-candidate-d108950a1aae-evidence/run-92d2695173bb4a439d99ed833026a807/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+.{"report": "/tmp/tmp5qgnlsja/state/run-359a95d95a5a42dd9415a208bbf050f5/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+.{"report": "/tmp/tmpeqe0tqg1/state/run-fc23b299349142daa96970f029ba1207/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+.{"report": "/tmp/tmpr6v9tmy3/state/run-e4559c15eb234b288d7b7963536f1a13/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+.{"report": "/tmp/tmpmz2mt16o/state/run-aedd831058d8411e9c95ae283a450c43/report.json", "score": 100.0, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+{"report": "/tmp/tmpmz2mt16o/state/run-57b8f22c36c14c2cb4df1ddd9eaeb196/report.json", "score": 100.0, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+..{"report": "/tmp/tmpvhumdn47/state/run-9e8e2c4f83784c248f76866070a35317/report.json", "score": 100.0, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+.{"report": "/tmp/tmp8ws386tl/state/run-e4c9dfd08b974a5ca6c13f663cfff4bd/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+.{"report": "/tmp/tmpa4wt_w29/state/run-96f217336fe045fb844bd4aac5a90272/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+..{"report": "/tmp/tmp74baylg_/state/run-147acc659166447db8c0775c324b92fd/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-c4a8435100fd')
+{"report": "/tmp/tmp74baylg_/state/agros-candidate-c4a8435100fd-evidence/run-193904ac7bd14bffb02c6488cec699a7/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+.{"validated_candidate": "/tmp/tmp74baylg_/state/agros-candidate-c4a8435100fd", "branch": "agros/candidate-c4a8435100fd", "source_modified": false, "deployed": false}
+{"report": "/tmp/tmpi_4lt4t6/state/run-5740d940f5a245338a91e60f225b330a/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+...{"report": "/tmp/tmpfouw16zc/state/run-0af2fcd38ef14a62bfe5cde2df574225/report.json", "score": 100.0, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+.{"report": "/tmp/tmpnph7n8xf/state/run-7a0181f0fbe04105a34c36eeec40e22e/report.json", "score": 86.67, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-dd7cf40e35bd')
+{"report": "/tmp/tmpnph7n8xf/state/agros-candidate-dd7cf40e35bd-evidence/run-6677a2a2029e4deaa08a1acc74f2c4c1/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+{"report": "/tmp/tmpnph7n8xf/state/agros-candidate-dd7cf40e35bd-evidence/run-a8af576af2d84451932796619b556032/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+..{"report": "/tmp/tmpp58ghitk/state/run-c1fdd6fe468542da8b1f34013c097014/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+..{"report": "/tmp/tmpwx84rq0q/state/run-9d77e55cae094b92a5dd8a48552c21cf/report.json", "score": 100.0, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+.{"report": "/tmp/tmptnz_1j0m/state/run-775cf65973cb46b998d8f23e7bce4da7/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-f03c5c40b594')
+..{"report": "/tmp/tmprkdofcnb/state/run-da99752350074c48b18db64147051aab/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-134208a8be29')
+{"report": "/tmp/tmprkdofcnb/state/agros-candidate-134208a8be29-evidence/run-3927a802caf940b7a15f62c4fce7483f/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+{"validated_candidate": "/tmp/tmprkdofcnb/state/agros-candidate-134208a8be29", "branch": "agros/candidate-134208a8be29", "source_modified": false, "deployed": false}
+.{"report": "/tmp/tmpc6s71p9v/state/run-e0799befdf6c46ab8d7768baae28f831/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+.{"report": "/tmp/tmpmak9mt0p/state/run-b3ddb847632b4d41aed0bbf283b0ea39/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+Preparing worktree (new branch 'agros/candidate-d813173a783f')
+{"report": "/tmp/tmpmak9mt0p/state/agros-candidate-d813173a783f-evidence/run-4b2263f091a048edab07187180e21e96/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+...{"report": "/tmp/tmp8zo67aqg/state/run-9669d434b0e54120ad142bbcb40a6d4e/report.json", "score": 100.0, "ready": true, "public_release_ready": true, "active_release": "full-platform"}
+.{"report": "/tmp/tmp_06xwdfz/state/run-1ed28408d6454234a1827f2357b68f59/report.json", "score": 93.33, "ready": false, "public_release_ready": false, "active_release": "full-platform"}
+........................................
+----------------------------------------------------------------------
+Ran 77 tests in 38.194s
+
+OK

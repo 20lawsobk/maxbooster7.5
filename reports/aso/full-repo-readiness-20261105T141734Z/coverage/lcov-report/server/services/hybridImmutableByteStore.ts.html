@@ -1,0 +1,409 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for server/services/hybridImmutableByteStore.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">server/services</a> hybridImmutableByteStore.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">98.61% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>71/72</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">94.64% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>53/56</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>8/8</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>56/56</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">391x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">417x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">346x</span>
+<span class="cline-any cline-yes">346x</span>
+<span class="cline-any cline-yes">345x</span>
+<span class="cline-any cline-yes">275x</span>
+<span class="cline-any cline-yes">275x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">266x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">272x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">71x</span>
+<span class="cline-any cline-yes">71x</span>
+<span class="cline-any cline-yes">71x</span>
+<span class="cline-any cline-yes">71x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">67x</span>
+<span class="cline-any cline-yes">67x</span>
+<span class="cline-any cline-yes">67x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">67x</span>
+<span class="cline-any cline-yes">67x</span>
+<span class="cline-any cline-yes">67x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">137x</span>
+<span class="cline-any cline-yes">133x</span>
+<span class="cline-any cline-yes">132x</span>
+<span class="cline-any cline-yes">132x</span>
+<span class="cline-any cline-yes">128x</span>
+<span class="cline-any cline-yes">128x</span>
+<span class="cline-any cline-yes">127x</span>
+<span class="cline-any cline-yes">127x</span>
+<span class="cline-any cline-yes">126x</span>
+<span class="cline-any cline-yes">126x</span>
+<span class="cline-any cline-yes">124x</span>
+<span class="cline-any cline-yes">124x</span>
+<span class="cline-any cline-yes">123x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">127x</span>
+<span class="cline-any cline-yes">127x</span>
+<span class="cline-any cline-yes">126x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">71x</span>
+<span class="cline-any cline-yes">71x</span>
+<span class="cline-any cline-yes">70x</span>
+<span class="cline-any cline-yes">69x</span>
+<span class="cline-any cline-yes">69x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { createHash } from "node:crypto";
+import { codecMesh } from "../pocket-dimension/fabric/compression/CodecMesh.js";
+import { decodeContainer, encodeContainer } from "../pocket-dimension/fabric/compression/ContainerFormat.js";
+&nbsp;
+export interface HybridByteAuthority {
+  get(key: string): Promise&lt;string | null&gt;;
+  set(key: string, value: string): Promise&lt;unknown&gt;;
+  setnx(key: string, value: string): Promise&lt;number&gt;;
+  del(...keys: string[]): Promise&lt;unknown&gt;;
+}
+interface Manifest {
+  version: 1;
+  bytes: number;
+  sha256: string;
+  compressedSize: number;
+  chunks: Array&lt;{ hash: string; bytes: number }&gt;;
+}
+const CHUNK_SIZE = 32 * 1024 * 1024;
+const MAX_CHUNKS = 128;
+const digest = (data: Buffer) =&gt; createHash("sha256").update(data).digest("hex");
+&nbsp;
+/** Uses existing lossless codec/container support, with immutable per-file
+ * manifests rather than PocketDimension's process-cached mutable directory.
+ * All chunk keys belong to this file; deletion cannot affect another owner. */
+export class HybridImmutableByteStore {
+  constructor(private readonly authority: HybridByteAuthority) {}
+&nbsp;
+  private validateKey(key: string): void {
+    if (!/^hybrid:v2:[0-9a-f-]{36}$/.test(key)) throw new Error("Invalid immutable hybrid blob key");
+  }
+&nbsp;
+  private async manifest(key: string): Promise&lt;Manifest | undefined&gt; {
+    this.validateKey(key);
+    const raw = await this.authority.get(key);
+    if (raw === null) return undefined;
+    const manifest = JSON.parse(raw) as Manifest;
+    if (manifest.version !== 1 || !Number.isSafeInteger(manifest.bytes) || manifest.bytes &lt; 0 ||
+        manifest.bytes &gt; MAX_CHUNKS * CHUNK_SIZE || !/^[a-f0-9]{64}$/.test(manifest.sha256) ||
+        !Number.isSafeInteger(manifest.compressedSize) || manifest.compressedSize &lt; 0 ||
+        !Array.isArray(manifest.chunks) || manifest.chunks.length &gt; MAX_CHUNKS ||
+        manifest.chunks.length !== Math.ceil(manifest.bytes / CHUNK_SIZE) ||
+        !manifest.chunks.every(chunk =&gt; /^[a-f0-9]{64}$/.test(chunk.hash) &amp;&amp;
+          Number.isSafeInteger(chunk.bytes) &amp;&amp; chunk.bytes &gt; 0 &amp;&amp; chunk.bytes &lt;= CHUNK_SIZE)) {
+      throw new Error("Corrupt immutable hybrid manifest");
+    }
+    return manifest;
+  }
+&nbsp;
+  async write(key: string, data: Buffer): Promise&lt;{ compressedSize: number }&gt; {
+    this.validateKey(key);
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (data.length &gt; MAX_CHUNKS * CHUNK_SIZE) <span class="cstat-no" title="statement not covered" >throw new Error("Hybrid blob exceeds supported chunk count");</span>
+    const hash = digest(data), existing = await this.manifest(key);
+    if (existing) {
+      if (existing.sha256 !== hash || existing.bytes !== data.length) throw new Error("Immutable hybrid blob replacement refused");
+      await this.read(key);
+      return { compressedSize: existing.compressedSize };
+    }
+    const chunks: Manifest["chunks"] = [];
+    let compressedSize = 0;
+    for (let offset = 0; offset &lt; data.length; offset += CHUNK_SIZE) {
+      const bytes = data.subarray(offset, Math.min(offset + CHUNK_SIZE, data.length));
+      const result = await codecMesh.compress(bytes, { contentClass: "unknown" });
+      const encoded = encodeContainer({ profile: "lossless-max-dedup", contentClass: "unknown",
+        codec: result.codec, isDelta: false, originalBytes: bytes.length,
+        ...(result.dictId ? <span class="branch-0 cbranch-no" title="branch not covered" >{ dictId: result.dictId } : {</span>}),
+        ...(result.blockSizes ? <span class="branch-0 cbranch-no" title="branch not covered" >{ blockSizes: result.blockSizes } : {</span>}) }, result.compressed);
+      const chunkHash = digest(encoded);
+      await this.authority.setnx(`${key}:chunk:${chunkHash}`, encoded.toString("base64"));
+      chunks.push({ hash: chunkHash, bytes: bytes.length });
+      compressedSize += encoded.length;
+    }
+    // Publication happens last. A failed/ambiguous write leaves the SQL upload
+    // intent, never a successful file receipt or speculative deletion of bytes.
+    await this.authority.setnx(key, JSON.stringify({ version: 1, bytes: data.length, sha256: hash, compressedSize, chunks }));
+    const committed = await this.manifest(key);
+    if (!committed || committed.sha256 !== hash || committed.bytes !== data.length) throw new Error("Hybrid blob publication was not confirmed");
+    await this.read(key);
+    return { compressedSize: committed.compressedSize };
+  }
+&nbsp;
+  async read(key: string): Promise&lt;Buffer&gt; {
+    const manifest = await this.manifest(key);
+    if (!manifest) throw new Error("Hybrid blob not found");
+    const decoded: Buffer[] = [];
+    for (const chunk of manifest.chunks) {
+      const raw = await this.authority.get(`${key}:chunk:${chunk.hash}`);
+      if (raw === null) throw new Error("Hybrid blob chunk missing");
+      const encoded = Buffer.from(raw, "base64");
+      if (digest(encoded) !== chunk.hash) throw new Error("Hybrid blob chunk checksum mismatch");
+      const { header, payload } = decodeContainer(encoded);
+      if (header.originalBytes !== chunk.bytes || header.isDelta) throw new Error("Hybrid blob chunk header mismatch");
+      const bytes = await codecMesh.decompress(header.codec, payload, { dictId: header.dictId, blockSizes: header.blockSizes });
+      if (bytes.length !== chunk.bytes) throw new Error("Hybrid blob decoded length mismatch");
+      decoded.push(bytes);
+    }
+    const data = Buffer.concat(decoded);
+    if (data.length !== manifest.bytes || digest(data) !== manifest.sha256) throw new Error("Hybrid blob content integrity check failed");
+    return data;
+  }
+&nbsp;
+  async delete(key: string): Promise&lt;boolean&gt; {
+    const manifest = await this.manifest(key);
+    if (!manifest) return false;
+    for (const chunk of manifest.chunks) await this.authority.del(`${key}:chunk:${chunk.hash}`);
+    await this.authority.del(key); // Retain manifest until every deletion ACKs, so retries know all keys.
+    return true;
+  }
+}
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-05T14:31:30.173Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    

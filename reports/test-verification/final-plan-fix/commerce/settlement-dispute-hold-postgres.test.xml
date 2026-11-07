@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="all settlement consumers use current dispute accounting under the source lock" time="1.523903" disabled="0" errors="0" tests="21" failures="0" skipped="0" hostname="repl">
+		<testcase name="marketplace: historical charge.disputed=true with current won" time="0.042521" classname="test"/>
+		<testcase name="marketplace: historical charge.disputed=true with current needs_response" time="0.014553" classname="test"/>
+		<testcase name="marketplace: historical charge.disputed=true with current provider_failure" time="0.015600" classname="test"/>
+		<testcase name="marketplace: historical charge.disputed=true with current missing_accounting" time="0.025628" classname="test"/>
+		<testcase name="marketplace: historical charge.disputed=true with current pending_created" time="0.015514" classname="test"/>
+		<testcase name="marketplace: historical charge.disputed=true with current pending_succeeded" time="0.017524" classname="test"/>
+		<testcase name="merchant: historical charge.disputed=true with current won" time="0.023742" classname="test"/>
+		<testcase name="merchant: historical charge.disputed=true with current needs_response" time="0.015781" classname="test"/>
+		<testcase name="merchant: historical charge.disputed=true with current provider_failure" time="0.014883" classname="test"/>
+		<testcase name="merchant: historical charge.disputed=true with current missing_accounting" time="0.020017" classname="test"/>
+		<testcase name="merchant: historical charge.disputed=true with current pending_created" time="0.011920" classname="test"/>
+		<testcase name="merchant: historical charge.disputed=true with current pending_succeeded" time="0.014251" classname="test"/>
+		<testcase name="growth: historical charge.disputed=true with current won" time="0.025114" classname="test"/>
+		<testcase name="growth: historical charge.disputed=true with current needs_response" time="0.009055" classname="test"/>
+		<testcase name="growth: historical charge.disputed=true with current provider_failure" time="0.019452" classname="test"/>
+		<testcase name="growth: historical charge.disputed=true with current missing_accounting" time="0.042327" classname="test"/>
+		<testcase name="growth: historical charge.disputed=true with current pending_created" time="0.063406" classname="test"/>
+		<testcase name="growth: historical charge.disputed=true with current pending_succeeded" time="0.021719" classname="test"/>
+		<testcase name="stale initial snapshot replay never queues recovery against an already drawn won allocation" time="0.011024" classname="test"/>
+		<testcase name="invalid initial compensation rolls back booking, allocations and journals" time="0.003456" classname="test"/>
+		<testcase name="real refund engine/provider refresh pending state inside the source transaction" time="0.027660" classname="test"/>
+	</testsuite>
+	<!-- tests 22 -->
+	<!-- suites 0 -->
+	<!-- pass 22 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 1615.599251 -->
+</testsuites>

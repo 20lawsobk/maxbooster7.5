@@ -1,0 +1,18 @@
+{
+  "sourceRevision": "2b33ccd242213157f2478619224246620415b992",
+  "files": [
+    "tests/auth-session-transient-browser.test.mjs",
+    "tests/local-media-renderer-browser.test.mjs",
+    "tests/storefront-hook-transition.test.mjs",
+    "tests/studio-load-save-guard.test.mjs",
+    "tests/studio-plugin-audio-browser.test.mjs"
+  ],
+  "exitCode": 0,
+  "counts": {
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+  },
+  "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/browser.txt"
+}

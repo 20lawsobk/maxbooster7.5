@@ -1,0 +1,4651 @@
+{
+  "sourceRevision": "2b33ccd242213157f2478619224246620415b992",
+  "startedAt": "2026-11-05T14:17:39.374975+00:00",
+  "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
+  "requestedGroups": [
+    "all-enabled"
+  ],
+  "selectedGroups": [
+    "browser",
+    "checks",
+    "commerce",
+    "coverage",
+    "http",
+    "load",
+    "node",
+    "operations",
+    "pages",
+    "python",
+    "root",
+    "subsystems"
+  ],
+  "targetedValidation": false,
+  "productionReady": false,
+  "allTestsPassed": false,
+  "status": "failed",
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:18:38.504412+00:00",
+      "durationSeconds": 36.436,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/build.txt",
+      "logSha256": "7b87cb593d9a4b5ceeb98a2db4a227d80f7db4183aae3c5a343a815b42866362",
+      "group": "checks",
+      "id": "build"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:ci"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:19:14.940543+00:00",
+      "durationSeconds": 208.39,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/ci.txt",
+      "logSha256": "7c05e04334a6c497fa5ca1eee9b7c8e37fc9048f744f66f591bac1e811830308",
+      "group": "root",
+      "id": "ci",
+      "unitReportFresh": true
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "vitest.additional.config.ts",
+        "--reporter=verbose",
+        "--reporter=junit",
+        "--outputFile=/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/root/additional.junit.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:22:43.334654+00:00",
+      "durationSeconds": 0.82,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/additional.txt",
+      "logSha256": "b4c146f24d2e3ca0eb6646845893a1ea802abfd57d1ae66145123ccfe9aac428",
+      "group": "root",
+      "id": "additional"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "vitest.platform.config.ts",
+        "--reporter=junit",
+        "--reporter=/home/runner/workspace/scripts/testing/coverage-outcome-reporter.mjs",
+        "--outputFile=/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/root/coverage-unit.junit.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:22:44.155769+00:00",
+      "durationSeconds": 530.54,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/coverage.txt",
+      "logSha256": "4f55db3624868fcf42e1c6c0d6388ef333dc1e79112c862454fb0befa472c02f",
+      "coverageEvidence": {
+        "schemaVersion": 1,
+        "kind": "parent-bound-coverage-command-artifacts",
+        "runId": "b4041550-1a06-4d03-b906-2350182165b0",
+        "parentWindow": {
+          "startedAtNs": "1793888564155749952",
+          "finishedAtNs": "1793889094696511711"
+        },
+        "reporter": {
+          "path": "/home/runner/workspace/scripts/testing/coverage-outcome-reporter.mjs",
+          "sha256": "8f98f6ddf10431532d0972157191c3ae96354758fe19b51a0d4636ed537fd219"
+        },
+        "status": "bound",
+        "validForAdmission": false,
+        "junit": {
+          "path": "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/root/coverage-unit.junit.xml",
+          "sha256": "2917024c58eebbd145e4852092600845e66c65be566b14e2ca5a6b536d8af1e7",
+          "bytes": 967150,
+          "mtimeNs": "1793889082550867127",
+          "fresh": true,
+          "counts": {
+            "total": 3201,
+            "passed": 3200,
+            "failed": 1,
+            "errors": 0,
+            "skipped": 0
+          }
+        },
+        "outcome": {
+          "path": "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/coverage/command-outcomes/b4041550-1a06-4d03-b906-2350182165b0.json",
+          "sha256": "d2f48a3a145eb51a82b0aac8baf4b8aad2d7fd8554704f6426a3739c45a1fabe",
+          "bytes": 99345,
+          "mtimeNs": "1793889081809104477",
+          "fresh": true,
+          "data": {
+            "schemaVersion": 1,
+            "kind": "actual-public-Vitest-onTestRunEnd",
+            "runId": "b4041550-1a06-4d03-b906-2350182165b0",
+            "repositoryRoot": "/home/runner/workspace",
+            "runtime": {
+              "node": "22.23.4",
+              "v8": "12.4.254.21-node.57"
+            },
+            "reporterSha256": "8f98f6ddf10431532d0972157191c3ae96354758fe19b51a0d4636ed537fd219",
+            "initializedAt": "2026-11-05T14:22:45.289Z",
+            "startedAt": "2026-11-05T14:22:45.328Z",
+            "finishedAt": "2026-11-05T14:31:21.793Z",
+            "reason": "failed",
+            "unhandledErrorCount": 0,
+            "testCaseCounts": {
+              "total": 3201,
+              "passed": 3200,
+              "failed": 1,
+              "skipped": 0,
+              "pending": 0
+            },
+            "testModuleCount": 313,
+            "moduleStates": {
+              "passed": 312,
+              "failed": 1,
+              "skipped": 0,
+              "pending": 0,
+              "queued": 0
+            },
+            "moduleErrorCount": 0,
+            "testCaseErrorCount": 2,
+            "selectedModules": [
+              "server/pocket-dimension/__tests__/index.test.ts",
+              "server/routes/__tests__/autopilotMaxCore.test.ts",
+              "server/routes/__tests__/maxcoreProxy.test.ts",
+              "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
+              "server/routes/__tests__/studioGenerationMidi.test.ts",
+              "server/routes/__tests__/trainingDtos.test.ts",
+              "server/services/__tests__/accessControl.test.ts",
+              "server/services/__tests__/advancedSocialAIService.test.ts",
+              "server/services/__tests__/aiAudioGeneratorService.test.ts",
+              "server/services/__tests__/aiModelManager.test.ts",
+              "server/services/__tests__/aiServiceImport.test.ts",
+              "server/services/__tests__/autopilotLearningService.test.ts",
+              "server/services/__tests__/contentAnalysisService.test.ts",
+              "server/services/__tests__/creativeModelMaxCore.test.ts",
+              "server/services/__tests__/diffusionBackgroundTrainer.test.ts",
+              "server/services/__tests__/firstPartySocialSource.test.ts",
+              "server/services/__tests__/generatedArtifactValidation.test.ts",
+              "server/services/__tests__/imageToVideoMaxCore.test.ts",
+              "server/services/__tests__/maxcoreAssetTransport.test.ts",
+              "server/services/__tests__/maxcoreClientStrictPoll.test.ts",
+              "server/services/__tests__/maxcoreControlTransport.test.ts",
+              "server/services/__tests__/maxcoreDomainAdapter.test.ts",
+              "server/services/__tests__/maxcoreOwnerContext.test.ts",
+              "server/services/__tests__/platformAwarenessOptimization.test.ts",
+              "server/services/__tests__/pythonAIAudioTransfer.test.ts",
+              "server/services/__tests__/pythonAIHealthContract.test.ts",
+              "server/services/__tests__/storageGeneratedMedia.test.ts",
+              "server/services/__tests__/storageProviderLocal.test.ts",
+              "server/services/__tests__/unifiedAwarenessContext.test.ts",
+              "server/services/backup/__tests__/databaseDump.test.ts",
+              "server/services/backup/__tests__/databaseRestore.test.ts",
+              "server/services/backup/__tests__/postgresTools.test.ts",
+              "tests/coverage/api-route-registration-http.test.ts",
+              "tests/coverage/client-offline-status.test.ts",
+              "tests/coverage/client-page-render.test.ts",
+              "tests/coverage/csrf-http-boundaries.test.ts",
+              "tests/coverage/error-handling-behavior.test.ts",
+              "tests/coverage/hybrid-storage-live-repository.test.ts",
+              "tests/coverage/pdim-circuit-breaker-behavior.test.ts",
+              "tests/coverage/social-media-jobs-live-repository.test.ts",
+              "tests/coverage/upload-size-http.test.ts",
+              "tests/unit/account-analytics-proxy.test.ts",
+              "tests/unit/acmeClientLifecycle.test.ts",
+              "tests/unit/acmeCrypto.test.ts",
+              "tests/unit/admin-dashboard-contracts.test.ts",
+              "tests/unit/admin-platform-fixer-revert-route.test.ts",
+              "tests/unit/advertisement-generation-contract.test.ts",
+              "tests/unit/advertising-maxcore-contract.test.ts",
+              "tests/unit/ai-content-dependency-status.test.ts",
+              "tests/unit/analytics-dashboard-response.test.ts",
+              "tests/unit/analytics-pending-render.test.ts",
+              "tests/unit/analytics-tabs-render.test.ts",
+              "tests/unit/ar-awareness-facade.test.ts",
+              "tests/unit/audio-generation-service-contract.test.ts",
+              "tests/unit/audit-endpoints.test.ts",
+              "tests/unit/auth-page-age-policy.test.ts",
+              "tests/unit/auth-page-contracts.test.ts",
+              "tests/unit/authentication-boundary.test.ts",
+              "tests/unit/auto-posting-recovery.test.ts",
+              "tests/unit/auto-updates-status.test.ts",
+              "tests/unit/autofix-simulation.test.ts",
+              "tests/unit/automation-honesty.test.ts",
+              "tests/unit/autonomous-dispatch-state.test.ts",
+              "tests/unit/autopilot-knowledge-base.test.ts",
+              "tests/unit/autopilot-publish-queue.test.ts",
+              "tests/unit/awareness-proxy-independence.test.ts",
+              "tests/unit/awareness-readiness.test.ts",
+              "tests/unit/bcrypt-cost.test.ts",
+              "tests/unit/beat-audio-generation-owner.test.ts",
+              "tests/unit/beat-money-loop-audio-access.test.ts",
+              "tests/unit/beat-money-loop-observation.test.ts",
+              "tests/unit/beatAudioContext.test.ts",
+              "tests/unit/bootstrap-account-authority.test.ts",
+              "tests/unit/build-du-argv.test.ts",
+              "tests/unit/build-preparation.test.ts",
+              "tests/unit/build-shell-python-runtime.test.ts",
+              "tests/unit/cache-cross-pod.test.ts",
+              "tests/unit/capsule-builder-excludes-secrets.test.ts",
+              "tests/unit/capsule-cross-process-restore.test.ts",
+              "tests/unit/capsule-pack-restore-roundtrip.test.ts",
+              "tests/unit/caption-repurpose-workflow.test.ts",
+              "tests/unit/career-coach-unavailable.test.ts",
+              "tests/unit/catalog-import-dedup.test.ts",
+              "tests/unit/change-compare.test.ts",
+              "tests/unit/checkout-subscription-page-contracts.test.ts",
+              "tests/unit/ci-required-gates.test.ts",
+              "tests/unit/compute-sizing-cpu-share.test.ts",
+              "tests/unit/content-dispatch-health.test.ts",
+              "tests/unit/content-generation-gap-contract.test.ts",
+              "tests/unit/contentAnalyzerAudioContract.test.ts",
+              "tests/unit/contract-template-catalog.test.ts",
+              "tests/unit/coverage-gaps.test.ts",
+              "tests/unit/csrf-cache-isolation.test.ts",
+              "tests/unit/dashboard-countdown-cache.test.ts",
+              "tests/unit/dashboard-onboarding-analytics-contracts.test.ts",
+              "tests/unit/dashboard-projects-page-regressions.test.ts",
+              "tests/unit/dashboardPageContracts.test.ts",
+              "tests/unit/delta-engine-integrity.test.ts",
+              "tests/unit/deployment-capsule-cache.test.ts",
+              "tests/unit/deployment-execution.test.ts",
+              "tests/unit/deployment-pack-reentry.test.ts",
+              "tests/unit/deployment-small-file-codec.test.ts",
+              "tests/unit/desktopDownloadsContracts.test.ts",
+              "tests/unit/developer-api-page-backend.test.ts",
+              "tests/unit/developer-api-page-frontend.test.ts",
+              "tests/unit/directive-executor.test.ts",
+              "tests/unit/dispute-stats-route.test.ts",
+              "tests/unit/distributed-sched-lock.test.ts",
+              "tests/unit/distribution-completion-contracts.test.ts",
+              "tests/unit/distribution-dispatch-serialization.test.ts",
+              "tests/unit/distribution-draft-flow.test.ts",
+              "tests/unit/distribution-platform-service.test.ts",
+              "tests/unit/distribution-provider-contract.test.ts",
+              "tests/unit/distribution-qc-routes.test.ts",
+              "tests/unit/distribution-tabs.test.ts",
+              "tests/unit/distribution-toolost-submission.test.ts",
+              "tests/unit/dmca-rules.test.ts",
+              "tests/unit/dmca-schema-contract.test.ts",
+              "tests/unit/dns-server-config.test.ts",
+              "tests/unit/dockerignore-scan-sensitive-paths.test.ts",
+              "tests/unit/dsp-production-contracts.test.ts",
+              "tests/unit/dunning-service-honesty.test.ts",
+              "tests/unit/elite-reference-profile.test.ts",
+              "tests/unit/email-provider-ack.test.ts",
+              "tests/unit/env-helpers.test.ts",
+              "tests/unit/env-validation.test.ts",
+              "tests/unit/error-handling.test.ts",
+              "tests/unit/evolution-registry.test.ts",
+              "tests/unit/fabricMediaTranscoder.test.ts",
+              "tests/unit/fileid-cap.test.ts",
+              "tests/unit/final-component-render-regressions.test.ts",
+              "tests/unit/frontend-batch-response-contracts.test.ts",
+              "tests/unit/generated-image-delivery.test.ts",
+              "tests/unit/generation-awareness-wiring.test.ts",
+              "tests/unit/geodns-config.test.ts",
+              "tests/unit/governance-dev-resources.test.ts",
+              "tests/unit/growth-rights-fan-ledger.test.ts",
+              "tests/unit/growth-rights-splits.test.ts",
+              "tests/unit/growth-rights.test.ts",
+              "tests/unit/hybrid-storage-index-recovery.test.ts",
+              "tests/unit/imported-awareness-facade.test.ts",
+              "tests/unit/input-validation.test.ts",
+              "tests/unit/instant-payout-webhook-honesty.test.ts",
+              "tests/unit/jwt-refresh-row-validation.test.ts",
+              "tests/unit/legacy-labelgrid-royalty-sync.test.ts",
+              "tests/unit/local-media-renderer-contract.test.ts",
+              "tests/unit/local-pdim-aof-journal.test.ts",
+              "tests/unit/local-pdim-capsule-journal.test.ts",
+              "tests/unit/local-pdim-protocol.test.ts",
+              "tests/unit/local-pdim-recursive-capsules.test.ts",
+              "tests/unit/logger-redaction.test.ts",
+              "tests/unit/main-generation-awareness-http.test.ts",
+              "tests/unit/marketplace-storage-read-failures.test.ts",
+              "tests/unit/marketplace-storefront-page-contracts.test.ts",
+              "tests/unit/marketplace-storefront-page-service-reads.test.ts",
+              "tests/unit/marketplaceCart.test.ts",
+              "tests/unit/mastering-corrections.test.ts",
+              "tests/unit/mastering-lufs.test.ts",
+              "tests/unit/max-persona.test.ts",
+              "tests/unit/maxcore-audio-job-owner.test.ts",
+              "tests/unit/maxcore-client-thin-transport.test.ts",
+              "tests/unit/maxcore-cluster-ownership.test.ts",
+              "tests/unit/maxcore-connector-contract.test.ts",
+              "tests/unit/maxcore-live-status.test.ts",
+              "tests/unit/maxcore-local-channel-forwarding.test.ts",
+              "tests/unit/maxcore-local-supervisor.test.ts",
+              "tests/unit/maxcore-media-proxy.test.ts",
+              "tests/unit/maxcore-node-readiness.test.ts",
+              "tests/unit/maxcore-node-routes.test.ts",
+              "tests/unit/maxcore-owned-single-flight.test.ts",
+              "tests/unit/maxcore-planned-generation-policy.test.ts",
+              "tests/unit/maxcore-proxy-contract.test.ts",
+              "tests/unit/maxcore-proxy-lifecycle.test.ts",
+              "tests/unit/maxcore-python-launcher.test.ts",
+              "tests/unit/maxcore-readiness-gate.test.ts",
+              "tests/unit/media-job-deadlines.test.ts",
+              "tests/unit/model-release-manifest.test.ts",
+              "tests/unit/model-release-mode.test.ts",
+              "tests/unit/multimodal-awareness-pipeline.test.ts",
+              "tests/unit/multimodal-generation-contract.test.ts",
+              "tests/unit/multimodal-media-workers.test.ts",
+              "tests/unit/multimodal-route-contract.test.ts",
+              "tests/unit/music-video-job-delivery.test.ts",
+              "tests/unit/neon-postgres-bridge.test.ts",
+              "tests/unit/no-division-by-zero.test.ts",
+              "tests/unit/non-destructive-release.test.ts",
+              "tests/unit/notification-action.test.ts",
+              "tests/unit/notification-email-honesty.test.ts",
+              "tests/unit/notification-list-route.test.ts",
+              "tests/unit/notification-query-isolation.test.ts",
+              "tests/unit/notification-unsubscribe-ownership.test.ts",
+              "tests/unit/onboarding-completion-refresh.test.ts",
+              "tests/unit/onboarding-update-validation.test.ts",
+              "tests/unit/page-access-policy.test.ts",
+              "tests/unit/page-read-failure-render.test.ts",
+              "tests/unit/pagination-guards.test.ts",
+              "tests/unit/paid-registration-transaction-postgres.test.ts",
+              "tests/unit/param-validation.test.ts",
+              "tests/unit/password-policy.test.ts",
+              "tests/unit/payout-safety.test.ts",
+              "tests/unit/pdim-bucket-command-batcher.test.ts",
+              "tests/unit/pdim-bucket-journal.test.ts",
+              "tests/unit/pdim-bucket-persistence.test.ts",
+              "tests/unit/pdim-bucket-recovery.test.ts",
+              "tests/unit/pdim-canonical-owner.test.ts",
+              "tests/unit/pdim-command-contract.test.ts",
+              "tests/unit/pdim-direct-prober.test.ts",
+              "tests/unit/pdim-named-deletion.test.ts",
+              "tests/unit/pdim-recovery-cluster-integration.test.ts",
+              "tests/unit/pdim-recovery-operator.test.ts",
+              "tests/unit/pdim-snapshot-json.test.ts",
+              "tests/unit/pdim-snapshot-writer.test.ts",
+              "tests/unit/pocket-fabric-compression-roundtrip.test.ts",
+              "tests/unit/port-contract-regression.test.ts",
+              "tests/unit/portable-python-install.test.ts",
+              "tests/unit/posting-optimization-direct.test.ts",
+              "tests/unit/posting-optimization-unified.test.ts",
+              "tests/unit/pre-launch-check.test.ts",
+              "tests/unit/prepared-release.test.ts",
+              "tests/unit/pricing-policy-page-render.test.ts",
+              "tests/unit/production-auth-rate-limit.test.ts",
+              "tests/unit/production-simulation-copy.test.ts",
+              "tests/unit/production-workbench-model.test.ts",
+              "tests/unit/project-backend-client-contracts.test.ts",
+              "tests/unit/project-backend-mutations.test.ts",
+              "tests/unit/projectsPageContracts.test.ts",
+              "tests/unit/publishing-payload-cleanup.test.ts",
+              "tests/unit/push-service-owner-filter.test.ts",
+              "tests/unit/rate-limiter-store.test.ts",
+              "tests/unit/readiness-gauge.test.ts",
+              "tests/unit/refund-request-persistence.test.ts",
+              "tests/unit/refundPolicyConsistency.test.ts",
+              "tests/unit/registrationCheckout.test.ts",
+              "tests/unit/registrationCheckoutBoundary.test.ts",
+              "tests/unit/registrationCompletion.test.ts",
+              "tests/unit/registrationCompletionBoundary.test.ts",
+              "tests/unit/registrationConsentSchema.test.ts",
+              "tests/unit/release-bootstrap.test.ts",
+              "tests/unit/release-countdown-workflow.test.ts",
+              "tests/unit/release-identity.test.ts",
+              "tests/unit/release-scheduler-honesty.test.ts",
+              "tests/unit/release-workflow-honesty.test.ts",
+              "tests/unit/required-awareness-dependency.test.ts",
+              "tests/unit/response-log-serialization.test.ts",
+              "tests/unit/retained-pdim-recovery-simulation.test.ts",
+              "tests/unit/route-registration-readiness.test.ts",
+              "tests/unit/royalty-and-project-settings.test.ts",
+              "tests/unit/safe-fetch-dns-binding.test.ts",
+              "tests/unit/safe-fetch-transport.test.ts",
+              "tests/unit/safe-url-fetch.test.ts",
+              "tests/unit/safeCalculations.test.ts",
+              "tests/unit/schedule-post-dialog.test.ts",
+              "tests/unit/schema-validators.test.ts",
+              "tests/unit/security-config.test.ts",
+              "tests/unit/security-containment.test.ts",
+              "tests/unit/security-history-earnings-contracts.test.ts",
+              "tests/unit/security-middleware.test.ts",
+              "tests/unit/self-evolution-simulation.test.ts",
+              "tests/unit/selfHealingSecurityEngine.test.ts",
+              "tests/unit/session-probe-authority.test.ts",
+              "tests/unit/session-throttle-protocol.test.ts",
+              "tests/unit/simplifiedDashboardContracts.test.ts",
+              "tests/unit/social-ad-page-contracts.test.ts",
+              "tests/unit/social-ad-page-dialog.test.ts",
+              "tests/unit/social-batch-publish-route.test.ts",
+              "tests/unit/social-hashtag-availability.test.ts",
+              "tests/unit/social-inbox-provider-service.test.ts",
+              "tests/unit/social-listening-contract.test.ts",
+              "tests/unit/social-oauth-contract.test.ts",
+              "tests/unit/social-platform-status.test.ts",
+              "tests/unit/social-queue-integrity.test.ts",
+              "tests/unit/social-url-maxcore-contract.test.ts",
+              "tests/unit/social-video-proxy-credentials.test.ts",
+              "tests/unit/social-work-statistics-postgres.test.ts",
+              "tests/unit/source-capsule-identity.test.ts",
+              "tests/unit/ssrf-dns-hardening.test.ts",
+              "tests/unit/startup-probes.test.ts",
+              "tests/unit/storage-chunk-sessions.test.ts",
+              "tests/unit/storefront-builder-null-state.test.ts",
+              "tests/unit/storefront-merchant-settlement.test.ts",
+              "tests/unit/storefront-url-policy.test.ts",
+              "tests/unit/stripe-catalog-discovery.test.ts",
+              "tests/unit/stripe-client-transport.test.ts",
+              "tests/unit/stripe-lazy-availability.test.ts",
+              "tests/unit/stripe-public-key.test.ts",
+              "tests/unit/stripe-webhook-honesty.test.ts",
+              "tests/unit/studio-audio-delivery.test.ts",
+              "tests/unit/studio-audio-submit-http.test.ts",
+              "tests/unit/studio-generation-scope-callbacks.test.ts",
+              "tests/unit/studio-generation-scope.test.ts",
+              "tests/unit/studio-generator-component-contracts.test.ts",
+              "tests/unit/studio-hub-failure-render.test.ts",
+              "tests/unit/studio-loader-browser.test.ts",
+              "tests/unit/studioPreferencesHydration.test.ts",
+              "tests/unit/subprocess-safety.test.ts",
+              "tests/unit/subscriptionCheckout.test.ts",
+              "tests/unit/support-ticket-page.test.ts",
+              "tests/unit/support-ticket-routes.test.ts",
+              "tests/unit/support-ticket-validation.test.ts",
+              "tests/unit/sync-inquiries-route.test.ts",
+              "tests/unit/takedown-manager-data.test.ts",
+              "tests/unit/toolost-financial-isolation.test.ts",
+              "tests/unit/toolost-release-transport.test.ts",
+              "tests/unit/toolost-runtime-config.test.ts",
+              "tests/unit/typed-route-audit.test.ts",
+              "tests/unit/upload-auth-before-body.test.ts",
+              "tests/unit/url-parser-additive-shape.test.ts",
+              "tests/unit/video-resume-scope.test.ts",
+              "tests/unit/videoJobPolling.test.ts",
+              "tests/unit/webhook-dispatcher.test.ts",
+              "tests/unit/webhook-secret.test.ts",
+              "tests/unit/worker-shutdown-ownership.test.ts",
+              "tests/unit/workspace-ownership-boundaries.test.ts"
+            ],
+            "missingModules": [],
+            "unexpectedModules": [],
+            "modules": [
+              {
+                "file": "server/pocket-dimension/__tests__/index.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 13,
+                  "passed": 13,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/routes/__tests__/studioGenerationMidi.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/routes/__tests__/trainingDtos.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/accessControl.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/advancedSocialAIService.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/aiAudioGeneratorService.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/aiModelManager.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/aiServiceImport.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/autopilotLearningService.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/contentAnalysisService.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/creativeModelMaxCore.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/diffusionBackgroundTrainer.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/firstPartySocialSource.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/generatedArtifactValidation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/imageToVideoMaxCore.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/maxcoreAssetTransport.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/maxcoreClientStrictPoll.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/maxcoreControlTransport.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/maxcoreDomainAdapter.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/maxcoreOwnerContext.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/platformAwarenessOptimization.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/pythonAIAudioTransfer.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/pythonAIHealthContract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/storageGeneratedMedia.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/storageProviderLocal.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/__tests__/unifiedAwarenessContext.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/backup/__tests__/databaseDump.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/backup/__tests__/databaseRestore.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "server/services/backup/__tests__/postgresTools.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/coverage/api-route-registration-http.test.ts",
+                "state": "failed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 1,
+                  "failed": 1,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/coverage/client-offline-status.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/coverage/client-page-render.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 203,
+                  "passed": 203,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/coverage/csrf-http-boundaries.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 31,
+                  "passed": 31,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/coverage/error-handling-behavior.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 22,
+                  "passed": 22,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/coverage/pdim-circuit-breaker-behavior.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 21,
+                  "passed": 21,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/coverage/upload-size-http.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/account-analytics-proxy.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/acmeClientLifecycle.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/acmeCrypto.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/admin-dashboard-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/admin-platform-fixer-revert-route.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/advertisement-generation-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/advertising-maxcore-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/ai-content-dependency-status.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/analytics-dashboard-response.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/analytics-pending-render.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/analytics-tabs-render.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/ar-awareness-facade.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/audio-generation-service-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/audit-endpoints.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/auth-page-age-policy.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 48,
+                  "passed": 48,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/auth-page-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 34,
+                  "passed": 34,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/authentication-boundary.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/auto-posting-recovery.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 23,
+                  "passed": 23,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/auto-updates-status.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/autofix-simulation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/automation-honesty.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 13,
+                  "passed": 13,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/autonomous-dispatch-state.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/autopilot-knowledge-base.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/autopilot-publish-queue.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/awareness-proxy-independence.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 15,
+                  "passed": 15,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/awareness-readiness.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/bcrypt-cost.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/beat-audio-generation-owner.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/beat-money-loop-audio-access.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/beat-money-loop-observation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 13,
+                  "passed": 13,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/beatAudioContext.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/bootstrap-account-authority.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/build-du-argv.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/build-preparation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/build-shell-python-runtime.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/cache-cross-pod.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/capsule-builder-excludes-secrets.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/capsule-cross-process-restore.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/capsule-pack-restore-roundtrip.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/caption-repurpose-workflow.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/career-coach-unavailable.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/catalog-import-dedup.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/change-compare.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 19,
+                  "passed": 19,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/checkout-subscription-page-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 24,
+                  "passed": 24,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/ci-required-gates.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/compute-sizing-cpu-share.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/content-dispatch-health.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 15,
+                  "passed": 15,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/content-generation-gap-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/contentAnalyzerAudioContract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/contract-template-catalog.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/coverage-gaps.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 22,
+                  "passed": 22,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/csrf-cache-isolation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dashboard-countdown-cache.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dashboard-onboarding-analytics-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dashboard-projects-page-regressions.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 13,
+                  "passed": 13,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dashboardPageContracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 17,
+                  "passed": 17,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/delta-engine-integrity.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 29,
+                  "passed": 29,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/deployment-capsule-cache.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/deployment-execution.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/deployment-pack-reentry.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/deployment-small-file-codec.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/desktopDownloadsContracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/developer-api-page-backend.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 22,
+                  "passed": 22,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/developer-api-page-frontend.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/directive-executor.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dispute-stats-route.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/distributed-sched-lock.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 36,
+                  "passed": 36,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/distribution-completion-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/distribution-dispatch-serialization.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/distribution-draft-flow.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/distribution-platform-service.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/distribution-provider-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/distribution-qc-routes.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/distribution-tabs.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/distribution-toolost-submission.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dmca-rules.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dmca-schema-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dns-server-config.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dockerignore-scan-sensitive-paths.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dsp-production-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 203,
+                  "passed": 203,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/dunning-service-honesty.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/elite-reference-profile.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/email-provider-ack.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 29,
+                  "passed": 29,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/env-helpers.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/env-validation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/error-handling.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/evolution-registry.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 17,
+                  "passed": 17,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/fabricMediaTranscoder.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 16,
+                  "passed": 16,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/fileid-cap.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/final-component-render-regressions.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/frontend-batch-response-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/generated-image-delivery.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 15,
+                  "passed": 15,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/generation-awareness-wiring.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/geodns-config.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/governance-dev-resources.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/growth-rights-fan-ledger.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/growth-rights-splits.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/growth-rights.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 23,
+                  "passed": 23,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/hybrid-storage-index-recovery.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/imported-awareness-facade.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/input-validation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 17,
+                  "passed": 17,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/instant-payout-webhook-honesty.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 21,
+                  "passed": 21,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/jwt-refresh-row-validation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/legacy-labelgrid-royalty-sync.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/local-media-renderer-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 26,
+                  "passed": 26,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/local-pdim-aof-journal.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 14,
+                  "passed": 14,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/local-pdim-capsule-journal.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/local-pdim-protocol.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 17,
+                  "passed": 17,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/local-pdim-recursive-capsules.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/logger-redaction.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/main-generation-awareness-http.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 16,
+                  "passed": 16,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/marketplace-storage-read-failures.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/marketplace-storefront-page-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/marketplace-storefront-page-service-reads.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 25,
+                  "passed": 25,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/marketplaceCart.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/mastering-corrections.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/mastering-lufs.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/max-persona.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 14,
+                  "passed": 14,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-audio-job-owner.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-client-thin-transport.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-cluster-ownership.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-connector-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-live-status.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-local-channel-forwarding.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-local-supervisor.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-media-proxy.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 16,
+                  "passed": 16,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-node-readiness.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-node-routes.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-owned-single-flight.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-planned-generation-policy.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 69,
+                  "passed": 69,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-proxy-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-python-launcher.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/maxcore-readiness-gate.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/media-job-deadlines.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 19,
+                  "passed": 19,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/model-release-manifest.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/model-release-mode.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/multimodal-awareness-pipeline.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/multimodal-generation-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/multimodal-media-workers.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 19,
+                  "passed": 19,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/multimodal-route-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 14,
+                  "passed": 14,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/music-video-job-delivery.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 13,
+                  "passed": 13,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/neon-postgres-bridge.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/no-division-by-zero.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 13,
+                  "passed": 13,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/non-destructive-release.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/notification-action.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/notification-email-honesty.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/notification-list-route.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/notification-query-isolation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/notification-unsubscribe-ownership.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/onboarding-completion-refresh.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/onboarding-update-validation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/page-access-policy.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/page-read-failure-render.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pagination-guards.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 18,
+                  "passed": 18,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/paid-registration-transaction-postgres.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/param-validation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 28,
+                  "passed": 28,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/password-policy.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 13,
+                  "passed": 13,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/payout-safety.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-bucket-command-batcher.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-bucket-journal.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-bucket-persistence.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-bucket-recovery.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-canonical-owner.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-command-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-direct-prober.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-named-deletion.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-recovery-cluster-integration.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-recovery-operator.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-snapshot-json.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pdim-snapshot-writer.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pocket-fabric-compression-roundtrip.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/port-contract-regression.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 14,
+                  "passed": 14,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/portable-python-install.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/posting-optimization-direct.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/posting-optimization-unified.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pre-launch-check.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/prepared-release.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 16,
+                  "passed": 16,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/pricing-policy-page-render.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 13,
+                  "passed": 13,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/production-auth-rate-limit.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/production-simulation-copy.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/production-workbench-model.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/project-backend-client-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 32,
+                  "passed": 32,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/project-backend-mutations.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 27,
+                  "passed": 27,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/projectsPageContracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 33,
+                  "passed": 33,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/publishing-payload-cleanup.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 36,
+                  "passed": 36,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/push-service-owner-filter.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/rate-limiter-store.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/readiness-gauge.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 51,
+                  "passed": 51,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/refund-request-persistence.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/refundPolicyConsistency.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/registrationCheckout.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/registrationCheckoutBoundary.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/registrationCompletion.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/registrationCompletionBoundary.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/registrationConsentSchema.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/release-bootstrap.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/release-countdown-workflow.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/release-identity.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 17,
+                  "passed": 17,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/release-scheduler-honesty.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/release-workflow-honesty.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/required-awareness-dependency.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 55,
+                  "passed": 55,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/response-log-serialization.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/retained-pdim-recovery-simulation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/route-registration-readiness.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/royalty-and-project-settings.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/safe-fetch-dns-binding.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/safe-fetch-transport.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/safe-url-fetch.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 48,
+                  "passed": 48,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/safeCalculations.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 56,
+                  "passed": 56,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/schedule-post-dialog.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/schema-validators.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/security-config.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 15,
+                  "passed": 15,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/security-containment.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/security-history-earnings-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/security-middleware.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 14,
+                  "passed": 14,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/self-evolution-simulation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 47,
+                  "passed": 47,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/session-probe-authority.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/session-throttle-protocol.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/simplifiedDashboardContracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 17,
+                  "passed": 17,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-ad-page-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 21,
+                  "passed": 21,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-ad-page-dialog.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 12,
+                  "passed": 12,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-batch-publish-route.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-hashtag-availability.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-inbox-provider-service.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-listening-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-oauth-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 9,
+                  "passed": 9,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-platform-status.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-queue-integrity.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-url-maxcore-contract.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-video-proxy-credentials.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/social-work-statistics-postgres.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/source-capsule-identity.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/ssrf-dns-hardening.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 22,
+                  "passed": 22,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/startup-probes.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/storage-chunk-sessions.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 11,
+                  "passed": 11,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/storefront-builder-null-state.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/storefront-merchant-settlement.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/storefront-url-policy.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/stripe-catalog-discovery.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/stripe-client-transport.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/stripe-lazy-availability.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/stripe-public-key.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 7,
+                  "passed": 7,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/stripe-webhook-honesty.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 31,
+                  "passed": 31,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/studio-audio-delivery.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/studio-audio-submit-http.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/studio-generation-scope-callbacks.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 22,
+                  "passed": 22,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/studio-generation-scope.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 17,
+                  "passed": 17,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/studio-generator-component-contracts.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/studio-hub-failure-render.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/studio-loader-browser.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/studioPreferencesHydration.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/subprocess-safety.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/subscriptionCheckout.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 15,
+                  "passed": 15,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/support-ticket-page.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/support-ticket-routes.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 6,
+                  "passed": 6,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/support-ticket-validation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 23,
+                  "passed": 23,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/sync-inquiries-route.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/takedown-manager-data.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/toolost-financial-isolation.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 4,
+                  "passed": 4,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/toolost-release-transport.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 24,
+                  "passed": 24,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/toolost-runtime-config.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/typed-route-audit.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 2,
+                  "passed": 2,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/upload-auth-before-body.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/url-parser-additive-shape.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 5,
+                  "passed": 5,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/video-resume-scope.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/videoJobPolling.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 8,
+                  "passed": 8,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/webhook-dispatcher.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 3,
+                  "passed": 3,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/webhook-secret.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 10,
+                  "passed": 10,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/worker-shutdown-ownership.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              },
+              {
+                "file": "tests/unit/workspace-ownership-boundaries.test.ts",
+                "state": "passed",
+                "testCaseCounts": {
+                  "total": 14,
+                  "passed": 14,
+                  "failed": 0,
+                  "skipped": 0,
+                  "pending": 0
+                },
+                "errorCount": 0
+              }
+            ],
+            "scope": "Actual public reporter arguments; counts only, no error messages or private data. Not a coverage threshold or launch decision."
+          }
+        }
+      },
+      "group": "coverage",
+      "id": "coverage",
+      "coverageParseExclusions": []
+    },
+    {
+      "command": [
+        "node",
+        "scripts/patch-electron-builder-transport.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:34.782888+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/desktop-transport-setup.txt",
+      "logSha256": "34e4c21cd6741e6d6f5bf648ac28f51444d3f7b339423e1e8eec658260a43cbc",
+      "group": "node",
+      "id": "desktop-transport-setup"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/run-node-suites.py",
+        "--output",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/node"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:31:35.003316+00:00",
+      "durationSeconds": 260.553,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/node.txt",
+      "logSha256": "176ddabbdbde00b749b2141cb922505b4cea12880884a2d1b186b7d5f0ff9854",
+      "group": "node",
+      "id": "node"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/run-python-suites.py",
+        "--python",
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "--coverage",
+        "--coverage-gate",
+        "--output",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/python",
+        "--docs",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/python/suites.md"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:35:55.621636+00:00",
+      "durationSeconds": 222.048,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/python.txt",
+      "logSha256": "e97d7977542ec33d4950dac879c6d4f9df1c34b0a8223ea7b3401969fb51d113",
+      "group": "python",
+      "id": "python"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/run-commerce.py",
+        "--output",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/commerce"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:39:37.686677+00:00",
+      "durationSeconds": 58.979,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/commerce.txt",
+      "logSha256": "d2f3ffd23001a7fffcad99de9cd980158bef6f9fc694fcc5dbba2a60f857d780",
+      "group": "commerce",
+      "id": "commerce"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/run-subsystems.py",
+        "--output",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/subsystems",
+        "--include-pdim-smoke",
+        "--include-rust-concurrency"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:40:36.670774+00:00",
+      "durationSeconds": 34.597,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/subsystems.txt",
+      "logSha256": "03ab08c8e15cccf713562d992da499e9949886fb8cd851ce16d17f1ac8054784",
+      "group": "subsystems",
+      "id": "subsystems"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/auth-session-transient-browser.test.mjs",
+        "tests/local-media-renderer-browser.test.mjs",
+        "tests/storefront-hook-transition.test.mjs",
+        "tests/studio-load-save-guard.test.mjs",
+        "tests/studio-plugin-audio-browser.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:41:11.278712+00:00",
+      "durationSeconds": 17.688,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/browser.txt",
+      "logSha256": "ef5dc0b4830dfa4b73c4acc9de9d762d5e063a25564ad4f03008a798196d07e0",
+      "group": "browser",
+      "id": "browser"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/integration-browser.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:41:29.004865+00:00",
+      "durationSeconds": 4.497,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/http.txt",
+      "logSha256": "9f3f4e7667e7246a6569e591ab17468f31c74ee0f15370e5f91e5856c10e1140",
+      "group": "http",
+      "id": "http"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/page80-acceptance.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:41:33.510758+00:00",
+      "durationSeconds": 91.405,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/pages.txt",
+      "logSha256": "e230a0b8b46de4d0fc646e7f8d92943f14ee0199054db140390a88cd28cdc0f6",
+      "group": "pages",
+      "id": "pages"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/testing/test_coverage_metrics.py",
+        "tests/testing/test_page_certification_runner.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:43:04.960863+00:00",
+      "durationSeconds": 32.428,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/coverage-metrics-tests.txt",
+      "logSha256": "d61d5e118dc64b7d00a0006648f32e89688951a9d704a6113fccfe8c627b7e8e",
+      "group": "pages",
+      "id": "coverage-metrics-tests"
+    },
+    {
+      "command": [
+        "env",
+        "MAXBOOSTER_PAGE_COVERAGE_DIR=/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/page-coverage",
+        "npm",
+        "run",
+        "test:pages:coverage"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:43:37.406801+00:00",
+      "durationSeconds": 83.952,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/page-line-coverage.txt",
+      "logSha256": "d3dc79a131fe90cd4cab04e672b61ca644fe1a5c0afd4522929554c73e371d41",
+      "group": "pages",
+      "id": "page-line-coverage"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/page80-acceptance.mjs",
+        "--http-load"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:45:02.771411+00:00",
+      "durationSeconds": 85.588,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/bounded-http-load.txt",
+      "logSha256": "e585736155e3f467a8064095ac158dffc020aadca4f614060170404b86f1bb8f",
+      "group": "load",
+      "id": "bounded-http-load"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/run-operations.py",
+        "--python",
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "--output",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/operations"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:46:28.368973+00:00",
+      "durationSeconds": 23.082,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/operations.txt",
+      "logSha256": "24eee764822f1f10a0f1bab75d28d72e06d299bebaf04db5542531512462d14c",
+      "group": "operations",
+      "id": "operations"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:46:51.454879+00:00",
+      "durationSeconds": 60.518,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/types.txt",
+      "logSha256": "2ffa91ca4d46f5e0ba57779604229aa88b9399d80e7e811d7627a6db927afa94",
+      "group": "checks",
+      "id": "types"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:47:51.995558+00:00",
+      "durationSeconds": 66.509,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/lint.txt",
+      "logSha256": "06da543667ff102b992477b32f1825628ff2dfc482d6132e417c6e1e0c4501cb",
+      "group": "checks",
+      "id": "lint"
+    },
+    {
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=high",
+        "--json"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:48:58.510948+00:00",
+      "durationSeconds": 1.176,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/audit.txt",
+      "logSha256": "5c9b55df7f0b92658c7f948aba398954f3aa512fd657480a879baad7e7fa1e4d",
+      "group": "checks",
+      "id": "audit"
+    }
+  ],
+  "postprocessing": [
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/summarize-results.py",
+        "--input",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:49:19.636608+00:00",
+      "durationSeconds": 25.248,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/summary.txt",
+      "logSha256": "5fb56eefa9ea81cbb551fb38a4b715dfa714bd6649bcc37471a69c4de6a0f9cc",
+      "id": "summary"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/platform-register.py",
+        "--input",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z",
+        "--output",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z",
+        "--strict"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:49:44.888358+00:00",
+      "durationSeconds": 50.746,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/platform.txt",
+      "logSha256": "aaef7940b76736130f2bc321b42e8fca67af3240f2a8492042079289695121f8",
+      "id": "platform"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/remediation.py",
+        "--input",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z",
+        "--output",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z",
+        "--strict"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:50:35.644396+00:00",
+      "durationSeconds": 4.354,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/remediation.txt",
+      "logSha256": "ab2f3fd00043b97f7257547075863f5d07c8016d8d6be0d8b760cee2d1923c8e",
+      "id": "remediation"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/generate-platform-plan.py",
+        "--input",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/platform-register.json",
+        "--output",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/completion-plan.json",
+        "--require-page-work"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:50:40.008127+00:00",
+      "durationSeconds": 26.2,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/completion-plan.txt",
+      "logSha256": "bea9c4bfc9ad4b47e9b51b0e92fdf3bab78535facc264af5a1fd573778cd7b17",
+      "id": "completion-plan"
+    },
+    {
+      "command": [
+        "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+        "scripts/testing/summarize-results.py",
+        "--input",
+        "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-05T14:51:06.220018+00:00",
+      "durationSeconds": 14.635,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/final-summary.txt",
+      "logSha256": "395a8a7b6f2e6e5621b8e8598dbd1563c2839fec998ad76b0396034e88b4da77",
+      "id": "final-summary"
+    }
+  ],
+  "sourceInputsSha256": "006a42692260f71a6a3962ec14e65cc26ba1b1e7cd441b4d24ba8c710ab5bff9",
+  "catalog": {
+    "command": [
+      "/nix/store/h097imm3w6dpx10qynrd2sz9fks2wbq8-python3-3.12.11/bin/python3",
+      "scripts/testing/generate-catalog.py",
+      "--inventory",
+      "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/test-inventory.json",
+      "--catalog",
+      "/home/runner/workspace/reports/aso/full-repo-readiness-20261105T141734Z/catalog.md"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-11-05T14:18:18.927446+00:00",
+    "durationSeconds": 19.577,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/aso/full-repo-readiness-20261105T141734Z/orchestration/catalog.txt",
+    "logSha256": "7e6ee1d36772b96cc4ae426c7b79387d9c835da19d7ef9e484a289174e396f54"
+  },
+  "sourceInputsUnchanged": true,
+  "changedSourceInputs": [],
+  "finishedAt": "2026-11-05T14:51:20.866062+00:00"
+}

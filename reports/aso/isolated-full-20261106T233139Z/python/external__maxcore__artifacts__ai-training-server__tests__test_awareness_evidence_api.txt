@@ -1,0 +1,59 @@
+......                                                                   [100%]
+=============================== warnings summary ===============================
+../../../../.pythonlibs/lib/python3.12/site-packages/starlette/testclient.py:53
+  <repo>/.pythonlibs/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/test_awareness_evidence_api.py::test_unified_status_route_returns_engine_status
+  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/director/api.py:77: PydanticDeprecatedSince20: `max_items` is deprecated and will be removed, use `max_length` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    platforms: List[str] = Field(default=["tiktok", "instagram"], max_items=8)
+
+tests/test_awareness_evidence_api.py::test_unified_status_route_returns_engine_status
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:1893: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_awareness_evidence_api.py::test_unified_status_route_returns_engine_status
+tests/test_awareness_evidence_api.py::test_unified_status_route_returns_engine_status
+tests/test_awareness_evidence_api.py::test_unified_status_route_returns_engine_status
+  <repo>/.pythonlibs/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+tests/test_awareness_evidence_api.py::test_unified_status_route_returns_engine_status
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:2642: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+tests/test_awareness_evidence_api.py::test_unified_status_route_returns_engine_status
+  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py:559: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @router.on_event("startup")
+
+tests/test_awareness_evidence_api.py::test_unified_status_route_returns_engine_status
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7765: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+6 passed, 9 warnings in 6.79s

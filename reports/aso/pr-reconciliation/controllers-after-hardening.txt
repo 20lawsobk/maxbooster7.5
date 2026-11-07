@@ -1,0 +1,567 @@
+.E.....EEEEEEE.EEE.EE..EE.E.EE.EEEF.EE.....F..FFFEF..FFF......F...EFF.F.FFF.
+======================================================================
+ERROR: test_full_coordinator_reports_admin_and_public_decisions_separately (test_admin_release.AdminReleaseTests.test_full_coordinator_reports_admin_and_public_decisions_separately)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_admin_release.py", line 108, in test_full_coordinator_reports_admin_and_public_decisions_separately
+    report = observe(root, policy, state, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_adapter_commit_is_rejected (test_agros.RunnerTests.test_adapter_commit_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 150, in test_adapter_commit_is_rejected
+    observe(self.root, self.policy, self.state, {})
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_all_pass (test_agros.RunnerTests.test_all_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 41, in test_all_pass
+    self.assertTrue(observe(self.root,self.policy,self.state,{})['ready'])
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_artifact_contract_regression_stops_repair (test_agros.RunnerTests.test_artifact_contract_regression_stops_repair)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 262, in test_artifact_contract_regression_stops_repair
+    observe(self.root, self.policy, self.state, {})
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_boolean_metric_rejected (test_agros.RunnerTests.test_boolean_metric_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 113, in test_boolean_metric_rejected
+    self.assertEqual(observe(self.root, self.policy, self.state, {})['gates']['performance']['status'], 'FAIL')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_evidence_cannot_override_failed_prerequisite (test_agros.RunnerTests.test_evidence_cannot_override_failed_prerequisite)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 98, in test_evidence_cannot_override_failed_prerequisite
+    report = observe(self.root, self.policy, self.state, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_failed_command_blocks (test_agros.RunnerTests.test_failed_command_blocks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 51, in test_failed_command_blocks
+    self.assertFalse(observe(self.root,self.policy,self.state,{})['ready'])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_failed_or_unconfigured_artifact_contract_blocks_readiness (test_agros.RunnerTests.test_failed_or_unconfigured_artifact_contract_blocks_readiness)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 225, in test_failed_or_unconfigured_artifact_contract_blocks_readiness
+    report = observe(self.root, self.policy, self.state, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_fixture_dist_and_unknown_dist_remain_source (test_agros.RunnerTests.test_fixture_dist_and_unknown_dist_remain_source)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 197, in test_fixture_dist_and_unknown_dist_remain_source
+    self.assertFalse(observe(self.root, self.policy, self.state, {})['unchanged'])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_gate_evidence_destinations_are_outside_checkout (test_agros.RunnerTests.test_gate_evidence_destinations_are_outside_checkout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 273, in test_gate_evidence_destinations_are_outside_checkout
+    report = observe(self.root, self.policy, self.state, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_generated_build_outputs_do_not_invalidate_source (test_agros.RunnerTests.test_generated_build_outputs_do_not_invalidate_source)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 186, in test_generated_build_outputs_do_not_invalidate_source
+    report = observe(self.root, self.policy, self.state, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_generated_dirty_checkout_still_allows_source_repair (test_agros.RunnerTests.test_generated_dirty_checkout_still_allows_source_repair)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 251, in test_generated_dirty_checkout_still_allows_source_repair
+    report = observe(self.root, self.policy, self.state, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_missing_evidence_blocks (test_agros.RunnerTests.test_missing_evidence_blocks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 45, in test_missing_evidence_blocks
+    report=observe(self.root,self.policy,self.state,{})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_mutation_invalidates_evidence (test_agros.RunnerTests.test_mutation_invalidates_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 55, in test_mutation_invalidates_evidence
+    self.assertFalse(observe(self.root,self.policy,self.state,{})['unchanged'])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_newly_passing_gate_cannot_regress_on_next_attempt (test_agros.RunnerTests.test_newly_passing_gate_cannot_regress_on_next_attempt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 162, in test_newly_passing_gate_cannot_regress_on_next_attempt
+    observe(self.root, self.policy, self.state, {})
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_numeric_threshold (test_agros.RunnerTests.test_numeric_threshold)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 60, in test_numeric_threshold
+    self.assertEqual(observe(self.root,self.policy,self.state,{})['gates']['performance']['status'],'FAIL')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_policy_mutation_invalidates_and_preserves_used_digest (test_agros.RunnerTests.test_policy_mutation_invalidates_and_preserves_used_digest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 119, in test_policy_mutation_invalidates_and_preserves_used_digest
+    report = observe(self.root, self.policy, self.state, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_protected_change_is_rejected (test_agros.RunnerTests.test_protected_change_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 81, in test_protected_change_is_rejected
+    observe(self.root,self.policy,self.state,{})
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_repair_candidate_is_verified_and_source_untouched (test_agros.RunnerTests.test_repair_candidate_is_verified_and_source_untouched)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 70, in test_repair_candidate_is_verified_and_source_untouched
+    observe(self.root,self.policy,self.state,{})
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_repair_unconfigured (test_agros.RunnerTests.test_repair_unconfigured)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 297, in test_repair_unconfigured
+    observe(self.root, self.policy, self.state, {})
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_repeated_candidate_stops_before_attempt_budget (test_agros.RunnerTests.test_repeated_candidate_stops_before_attempt_budget)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 172, in test_repeated_candidate_stops_before_attempt_budget
+    observe(self.root, self.policy, self.state, {})
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_stale_foreign_report_is_rejected (test_agros.RunnerTests.test_stale_foreign_report_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 142, in test_stale_foreign_report_is_rejected
+    report = observe(self.root, self.policy, self.state, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_stronger_coverage_requirement_is_preserved (test_agros.RunnerTests.test_stronger_coverage_requirement_is_preserved)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 239, in test_stronger_coverage_requirement_is_preserved
+    report = observe(self.root, self.policy, self.state, {})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 258, in observe
+    detail = run(argv, root, session / (name + '-metrics.log'), gate.get('timeout', 600), evidence_env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 117, in run
+    start_new_session=True, env=child_environment(extra_env))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/agros/verify.py", line 106, in child_environment
+    raise ValueError('Unsupported subprocess environment keys: ' + ', '.join(sorted(unknown)))
+ValueError: Unsupported subprocess environment keys: MAXBOOSTER_TEST_COVERAGE_DIR
+
+======================================================================
+ERROR: test_completed_state_without_evidence_cannot_bypass_workers (test_team.TeamTests.test_completed_state_without_evidence_cannot_bypass_workers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 339, in test_completed_state_without_evidence_cannot_bypass_workers
+    ledger['tasks']['platform/inspect'].pop('evidence')
+KeyError: 'evidence'
+
+======================================================================
+ERROR: test_resume_rejects_tampered_completed_artifact (test_team.TeamTests.test_resume_rejects_tampered_completed_artifact)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 314, in test_resume_rejects_tampered_completed_artifact
+    artifact = next(self.state.glob('tasks/**/evidence.json'))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+======================================================================
+FAIL: test_sigterm_cleans_up_active_command (test_agros.RunnerTests.test_sigterm_cleans_up_active_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_agros.py", line 288, in test_sigterm_cleans_up_active_command
+    self.assertTrue(marker.exists(), 'Gate process did not start')
+AssertionError: False is not true : Gate process did not start
+
+======================================================================
+FAIL: test_analysis_worker_cannot_mutate_source (test_team.TeamTests.test_analysis_worker_cannot_mutate_source)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 241, in test_analysis_worker_cannot_mutate_source
+    self.assert_failed('Analysis worker modified source')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'Analysis worker modified source' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_change_worker_cannot_weaken_protected_tests (test_team.TeamTests.test_change_worker_cannot_weaken_protected_tests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 253, in test_change_worker_cannot_weaken_protected_tests
+    self.assert_failed('protected')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'protected' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_change_worker_must_stay_in_scope (test_team.TeamTests.test_change_worker_must_stay_in_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 247, in test_change_worker_must_stay_in_scope
+    self.assert_failed('outside its scope')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'outside its scope' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_checker_cannot_mutate_source (test_team.TeamTests.test_checker_cannot_mutate_source)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 287, in test_checker_cannot_mutate_source
+    self.assert_failed('Read-only')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'Read-only' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_dependency_handoffs_and_budget_resume (test_team.TeamTests.test_dependency_handoffs_and_budget_resume)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 203, in test_dependency_handoffs_and_budget_resume
+    self.assertEqual(result['status'], 'BUDGET_EXHAUSTED', result)
+AssertionError: 'FAILED' != 'BUDGET_EXHAUSTED'
+- FAILED
++ BUDGET_EXHAUSTED
+ : {'status': 'FAILED', 'reason': 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE', 'plan': '/tmp/tmpyho8t7ee/state/plan.json', 'ledger': '/tmp/tmpyho8t7ee/state/ledger.json', 'completed_this_run': 0, 'counts': {'BLOCKED': 0, 'DONE': 0, 'FAILED': 1, 'PENDING': 1, 'RUNNING': 0}, 'production_ready': False, 'requires_full_verification': True}
+
+======================================================================
+FAIL: test_failed_prerequisite_prevents_dependent_dispatch (test_team.TeamTests.test_failed_prerequisite_prevents_dependent_dispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 216, in test_failed_prerequisite_prevents_dependent_dispatch
+    self.assert_failed('exit 7')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'exit 7' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_independent_checker_failure_blocks_review (test_team.TeamTests.test_independent_checker_failure_blocks_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 281, in test_independent_checker_failure_blocks_review
+    self.assert_failed('exit 9')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'exit 9' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_legitimate_source_change_receipt_pins_before_and_after (test_team.TeamTests.test_legitimate_source_change_receipt_pins_before_and_after)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 260, in test_legitimate_source_change_receipt_pins_before_and_after
+    self.assertEqual(result['status'], 'PASS', result)
+AssertionError: 'FAILED' != 'PASS'
+- FAILED
++ PASS
+ : {'status': 'FAILED', 'reason': 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE', 'plan': '/tmp/tmps7i5o3f9/state/plan.json', 'ledger': '/tmp/tmps7i5o3f9/state/ledger.json', 'completed_this_run': 0, 'counts': {'BLOCKED': 0, 'DONE': 0, 'FAILED': 1, 'PENDING': 0, 'RUNNING': 0}, 'production_ready': False, 'requires_full_verification': True}
+
+======================================================================
+FAIL: test_rejection_blocks_completion (test_team.TeamTests.test_rejection_blocks_completion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 277, in test_rejection_blocks_completion
+    self.assert_failed('did not accept')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'did not accept' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_reviewer_cannot_mutate_artifact (test_team.TeamTests.test_reviewer_cannot_mutate_artifact)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 273, in test_reviewer_cannot_mutate_artifact
+    self.assert_failed('artifact changed')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'artifact changed' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_reviewer_cannot_mutate_source (test_team.TeamTests.test_reviewer_cannot_mutate_source)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 269, in test_reviewer_cannot_mutate_source
+    self.assert_failed('Read-only')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'Read-only' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_stale_nonce_is_failure (test_team.TeamTests.test_stale_nonce_is_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 225, in test_stale_nonce_is_failure
+    self.assert_failed('not bound')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'not bound' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_timeout_bounds_worker (test_team.TeamTests.test_timeout_bounds_worker)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 296, in test_timeout_bounds_worker
+    self.assert_failed('exit 124')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'exit 124' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+======================================================================
+FAIL: test_valid_owner_check_review_generates_bound_receipt (test_team.TeamTests.test_valid_owner_check_review_generates_bound_receipt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 188, in test_valid_owner_check_review_generates_bound_receipt
+    self.assertEqual(result['status'], 'PASS', result)
+AssertionError: 'FAILED' != 'PASS'
+- FAILED
++ PASS
+ : {'status': 'FAILED', 'reason': 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE', 'plan': '/tmp/tmpmq_0_o_s/state/plan.json', 'ledger': '/tmp/tmpmq_0_o_s/state/ledger.json', 'completed_this_run': 0, 'counts': {'BLOCKED': 0, 'DONE': 0, 'FAILED': 1, 'PENDING': 0, 'RUNNING': 0}, 'production_ready': False, 'requires_full_verification': True}
+
+======================================================================
+FAIL: test_worker_cannot_commit (test_team.TeamTests.test_worker_cannot_commit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/workspace/agros/test_team.py", line 291, in test_worker_cannot_commit
+    self.assert_failed('Git HEAD')
+  File "/home/runner/workspace/agros/test_team.py", line 136, in assert_failed
+    self.assertIn(reason, result['reason'])
+AssertionError: 'Git HEAD' not found in 'Unsupported subprocess environment keys: AGROS_TASK_ARTIFACTS, AGROS_TEAM_STATE'
+
+----------------------------------------------------------------------
+Ran 76 tests in 33.493s
+
+FAILED (failures=16, errors=25)

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.216" timestamp="2026-11-05T14:36:50.990241+00:00" hostname="repl"><testcase classname="" name="ai_model.training.test_live_learning" time="0.000"><error message="collection failure">ImportError while importing test module '&lt;repo&gt;/external/maxcore/artifacts/ai-training-server/ai_model/training/test_live_learning.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+ai_model/training/__init__.py:2: in &lt;module&gt;
+    from .dataset import CreativeDataset
+ai_model/training/dataset.py:6: in &lt;module&gt;
+    import torch
+../../../../.pythonlibs/lib/python3.12/site-packages/torch/__init__.py:505: in &lt;module&gt;
+    from torch._C import *  # noqa: F403
+    ^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory</error></testcase></testsuite></testsuites>

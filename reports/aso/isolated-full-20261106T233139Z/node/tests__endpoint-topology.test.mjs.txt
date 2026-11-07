@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: Actual durable exports inherit their canonical nested /api/export mount
+ok 1 - Actual durable exports inherit their canonical nested /api/export mount
+  ---
+  duration_ms: 543.96044
+  type: 'test'
+  ...
+# Subtest: Actual Fan Hub finite template yields all four concrete public method/action paths
+ok 2 - Actual Fan Hub finite template yields all four concrete public method/action paths
+  ---
+  duration_ms: 571.561129
+  type: 'test'
+  ...
+# Subtest: Every source-proven alias of a nested child router is preserved
+ok 3 - Every source-proven alias of a nested child router is preserved
+  ---
+  duration_ms: 481.992873
+  type: 'test'
+  ...
+# Subtest: Identical shared-router paths in separate application processes remain distinct
+ok 4 - Identical shared-router paths in separate application processes remain distinct
+  ---
+  duration_ms: 484.328735
+  type: 'test'
+  ...
+# Subtest: Cycles terminate with an explicit mount diagnostic rather than unlimited invented paths
+ok 5 - Cycles terminate with an explicit mount diagnostic rather than unlimited invented paths
+  ---
+  duration_ms: 431.487869
+  type: 'test'
+  ...
+# Subtest: Unknown runtime templates and shadowed loop names never become literal high-confidence routes
+ok 6 - Unknown runtime templates and shadowed loop names never become literal high-confidence routes
+  ---
+  duration_ms: 476.07942
+  type: 'test'
+  ...
+# Subtest: Unmounted child modules are retained with explicit unresolved topology
+ok 7 - Unmounted child modules are retained with explicit unresolved topology
+  ---
+  duration_ms: 472.530143
+  type: 'test'
+  ...
+# Subtest: Unknown interpolated mount prefixes remain explicit rather than literal complete URLs
+ok 8 - Unknown interpolated mount prefixes remain explicit rather than literal complete URLs
+  ---
+  duration_ms: 460.928506
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4099.854331
