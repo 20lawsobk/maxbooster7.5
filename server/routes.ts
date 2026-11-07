@@ -25,7 +25,7 @@ import { createMfaChallengeRouter } from "./routes/mfaChallenge.js";
 import { factorRepository } from "./services/factorRepository.js";
 import { getApplicationContainment } from "./services/securityContainment.js";
 import { governanceBoundary } from "./middleware/governanceBoundary.js";
-import { assertRegistrationEnabled } from "./services/governancePolicyService.js";
+import { assertRegistrationEnabled, isAdminOnlyMode } from "./services/governancePolicyService.js";
 import { issueAdminApiToken, revokeAdminApiToken } from "./services/adminApiTokenService.js";
 import { consumeTotp } from "./services/totpReplay.js";
 import { requireUUIDParam } from "./middleware/requestValidation.js";
@@ -309,7 +309,11 @@ export async function registerRoutes(
       if (safeUser.email === "demo@maxbooster.ai") {
         (safeUser as any).isDemo = true;
       }
-      return res.json({ ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences) });
+      return res.json({
+        ...safeUser,
+        preferences: publicPaymentPreferences(safeUser.preferences),
+        adminOnlyMode: isAdminOnlyMode(),
+      });
     }
     return res.json(null);
   });

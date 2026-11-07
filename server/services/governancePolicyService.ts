@@ -1,5 +1,7 @@
 import { db } from "../db.js";
 import { systemSettings } from "../../shared/schema.js";
+import { isAdminOnlyMode } from "../../shared/adminAccessPolicy.mjs";
+export { isAdminOnlyMode } from "../../shared/adminAccessPolicy.mjs";
 import { inArray } from "drizzle-orm";
 import type { RequestHandler } from "express";
 
@@ -17,12 +19,12 @@ async function readStoredGovernancePolicy() {
   const keys = ["maintenanceMode", "userRegistrationEnabled", "apiRateLimit"];
   const rows = await db.select().from(systemSettings)
     .where(inArray(systemSettings.key, keys.map(key => `platform.${key}`)));
-  const policy = { maintenanceMode: false, userRegistrationEnabled: true, apiRateLimit: 1000 };
+  const policy = { maintenanceMode: false, userRegistrationEnabled: false, apiRateLimit: 1000 };
   for (const row of rows) {
     const key = row.key.replace("platform.", "") as keyof typeof policy;
-    const value = JSON.parse(row.value as string);
+    const value = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
     if (key === "apiRateLimit") {
-      if (!Number.isInteger(value) || value < 1 || value > 1_000_000) throw new Error("Invalid API rate-limit policy");
+      if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > 1_000_000) throw new Error("Invalid API rate-limit policy");
       policy.apiRateLimit = value;
     } else {
       if (typeof value !== "boolean") throw new Error(`Invalid ${key} policy`);
@@ -41,6 +43,12 @@ export async function readGovernancePolicy(): Promise<{
 }
 
 export const enforceMaintenance: RequestHandler = async (req, res, next) => {
+  if (isAdminOnlyMode() && req.user?.role !== "admin") {
+    return res.status(403).json({
+      error: "Administrator access only",
+      code: "ADMIN_ONLY_MODE",
+    });
+  }
   try {
     const policy = await readGovernancePolicy();
     // Recovery access requires authenticated admin, never a client header.
@@ -55,7 +63,7 @@ export const enforceMaintenance: RequestHandler = async (req, res, next) => {
 };
 
 export async function assertRegistrationEnabled() {
-  if (!(await readGovernancePolicy()).userRegistrationEnabled) {
+  if (isAdminOnlyMode() || !(await readGovernancePolicy()).userRegistrationEnabled) {
     throw new RegistrationDisabledError();
   }
 }

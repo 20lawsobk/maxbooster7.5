@@ -47,7 +47,7 @@ export function isPaidFeatureRequest(
   );
 }
 
-async function resolveJwtUser(req: Request): Promise<void> {
+export async function resolveJwtUser(req: Request): Promise<void> {
   if (
     req.isAuthenticated &&
     req.isAuthenticated() &&

@@ -17,6 +17,8 @@ export default defineConfig({
       "tests/api-guards.test.ts",
       "tests/auth-flows.test.ts",
       "tests/admin-account-parity.test.ts",
+      ...(process.env.MAXBOOSTER_TEST_ACCESS_PROFILE === "private-admin"
+        ? ["tests/private-admin-http.test.ts"] : []),
       "tests/content-analysis-entitlement.test.ts",
       "tests/security-hardening.test.ts",
       "tests/webhook-security.test.ts",

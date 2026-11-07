@@ -14,6 +14,7 @@ import { ShortcutProvider } from "@/contexts/ShortcutContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutoUpdate } from "@/hooks/useAutoUpdate";
 import { isPublicPageRoute, shouldRedirectNativeLanding } from "@/lib/pageAccess";
+import { shouldBlockNonAdminApp } from "@shared/adminAccessPolicy.mjs";
 import { useKeyboardShortcuts, announce } from "@/lib/accessibility";
 import {
   setupLinkPrefetching,
@@ -499,6 +500,26 @@ function NPSSurveyManager() {
 
 function App() {
   useAutoUpdate();
+  const { user, adminOnlyMode, logout } = useAuth();
+  const [logoutError, setLogoutError] = useState("");
+
+  if (shouldBlockNonAdminApp(user, adminOnlyMode)) {
+    return (
+      <main id="main-content" className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 p-6">
+        <h1 className="text-2xl font-semibold">Administrator-only access</h1>
+        <p role={adminOnlyMode === null ? "status" : "alert"}>
+          {adminOnlyMode === null
+            ? "Verifying access policy. The application remains locked until public access is confirmed."
+            : "Public access is not enabled. Sign in with the administrator account to use Max Booster."}
+        </p>
+        <button type="button" onClick={() => {
+          setLogoutError("");
+          void logout().catch(error => setLogoutError((error as Error).message));
+        }}>Sign out</button>
+        {logoutError && <p role="alert">{logoutError}</p>}
+      </main>
+    );
+  }
 
   return (
     /* OfflineProvider lives at the root of the tree (see main.tsx) so that

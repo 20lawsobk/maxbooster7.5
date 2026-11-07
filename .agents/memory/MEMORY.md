@@ -1,2 +1,4 @@
 - [Nix dependency editing](nix-dependency-editing.md) — verify custom dependency expressions actually change; the package remover can report success without removing them.
 - [User-local Nix constraints](user-local-nix.md) — custom stores avoid platform permissions but do not repair Replit's environment loader.
+- [Private-admin release](admin-first-release-policy.md) — admin use comes first; public rollout remains closed and provider outcomes must be genuine.
+- [Workflow side effects](app-workflow-database-side-effects.md) — startup and preview can write shared data; use isolated fixtures when live writes are not authorized.

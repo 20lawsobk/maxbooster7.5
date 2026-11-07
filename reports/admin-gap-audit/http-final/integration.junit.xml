@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="71" failures="0" errors="0" time="107.155810704">
+    <testsuite name="tests/admin-account-parity.test.ts" timestamp="2026-11-07T01:20:49.013Z" hostname="repl" tests="22" failures="0" errors="0" skipped="0" time="10.598715189">
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin creates and reads a durable project through shared routes" time="0.227457343">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; paid user creates and reads a durable project through shared routes" time="0.227878219">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; shared listings keep admin and paid-user projects scoped to their owners" time="0.245319315">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin has paid feature access without a public subscription" time="0.101069342">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; free accounts cannot obtain paid access through forged request fields" time="0.061072132">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; ordinary paid accounts cannot open admin-only endpoints" time="0.14572923">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; anonymous access to private features remains denied" time="0.058924568">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin reaches AI input validation without being forced to buy a plan" time="0.130171997">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin creates, lists and revokes an owned pro API key without a public plan" time="0.463508095">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin creates, lists and revokes an owned enterprise API key without a public plan" time="0.585298976">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; API key capacity cannot be obtained through forged admin fields or ordinary paid status" time="0.474813506">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin API key creation remains denied when mfa-required" time="0.130545423">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin API key creation remains denied when suspended" time="0.094954262">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; admin API key creation remains denied when banned" time="0.107607508">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; paid conversion supersedes an old trial date without bypassing subscription expiration" time="0.203776591">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="admin and regular accounts share real feature handlers &gt; expired trials without active paid conversion remain denied" time="0.114313138">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; another user cannot read or mutate another account&apos;s project" time="0.258153239">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; admin cannot read or mutate another account&apos;s project" time="0.28126425">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; paid user cannot read or mutate another account&apos;s project" time="0.320257963">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; concurrent edits cannot silently overwrite an accepted project change" time="0.264045452">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; saved projects survive logout and fresh real authentication" time="0.630539357">
+        </testcase>
+        <testcase classname="tests/admin-account-parity.test.ts" name="ordinary feature routes preserve isolation even for administrators &gt; admin privilege cannot bypass a required MFA challenge" time="0.103845671">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/auth-2fa.test.ts" timestamp="2026-11-07T01:20:49.058Z" hostname="repl" tests="16" failures="0" errors="0" skipped="0" time="91.184369617">
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 1. registers a new user" time="0.766475344">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 2. logs in with password only (no 2FA yet)" time="1.296290585">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 3. GET /api/auth/2fa/status shows 2FA is disabled" time="0.058970939">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 4. POST /api/auth/2fa/setup returns secret and QR code" time="0.183831526">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 5. POST /api/auth/2fa/verify with a valid TOTP code enables 2FA" time="0.132474378">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 6. POST /api/auth/2fa/verify rejects missing code (400)" time="0.121383456">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 7. GET /api/auth/2fa/status shows 2FA is now enabled" time="0.09074007">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 8. logout succeeds" time="0.12766483">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 9. login with password alone returns requiresTwoFactor:true when 2FA is enabled" time="0.488479095">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 10. login with password + valid TOTP code fully authenticates" time="27.340942495">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 11. GET /api/auth/me confirms full session is active after 2FA login" time="0.068135398">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 16. POST /api/auth/2fa/validate with a valid TOTP code returns { valid: true }" time="29.618405408">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 12. POST /api/auth/2fa/disable with wrong password requires reauthentication" time="0.403150065">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 13. POST /api/auth/2fa/disable with correct password + valid TOTP disables 2FA" time="29.865824542">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 14. GET /api/auth/2fa/status confirms 2FA is disabled" time="0.065996973">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 15. logout and re-login works without 2FA code after disable" time="0.549110685">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/auth-flows.test.ts" timestamp="2026-11-07T01:20:49.086Z" hostname="repl" tests="27" failures="0" errors="0" skipped="0" time="3.371928204">
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 1. registers a new user" time="0.539613447">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 2. rejects duplicate registration" time="0.410330085">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 3. logs in with correct credentials" time="0.44363079">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 4. GET /api/auth/me returns user when authenticated" time="0.078950153">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 5. onboarding status is accessible" time="0.045452178">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 6. profile is accessible when authenticated" time="0.059192674">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 7. sessions list is accessible" time="0.058183793">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 8. login history is accessible" time="0.056027427">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 9. logout succeeds" time="0.06567911">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 10. /api/auth/me returns null or 401 after logout" time="0.061141931">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 11. rejects login with wrong password" time="0.378852737">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 12. GET /api/social/callback/:platform with no state redirects with error" time="0.046763437">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 13. GET /api/social/callback/:platform with tampered/invalid state redirects with invalid_state" time="0.059720933">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 14. GET /api/social/callback/:platform with base64-but-bad-HMAC state redirects with invalid_state" time="0.087115107">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 15. an OAuth provider error without session-bound state is rejected as invalid_state" time="0.054578535">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 16. POST /api/social/connect/:platform without auth returns 401 or 403" time="0.006447443">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 17. POST /api/social/connect/:platform with valid auth returns an authUrl" time="0.048573323">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 18. GET /api/social/platforms returns a platform list" time="0.067911105">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 19. GET /api/social/connections requires authentication" time="0.054855104">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 20. GET /api/auth/google initiates Google OAuth — redirects to Google or error page" time="0.052226226">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 21. GET /api/auth/google/callback?error=access_denied redirects with google_denied" time="0.038065963">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 22. GET /api/auth/google/callback with no state redirects with invalid_state" time="0.044970256">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 24. GET /api/auth/oauth/initiate without auth returns 401" time="0.044739662">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 24b. GET /api/auth/oauth/initiate?platform=google with auth redirects to Google or error page" time="0.444350158">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 25. GET /api/auth/oauth/callback?platform=spotify&amp;error=access_denied redirects with oauth_denied" time="0.03839482">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 26. GET /api/auth/oauth/callback without state redirects with invalid_state" time="0.04448171">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 23. GET /api/auth/google/callback with valid state reaches a different redirect than invalid_state" time="0.036805381">
+            <system-err>
+[AuthTest] GOOGLE_CLIENT_ID not configured — skipping valid-state callback test
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/content-analysis-entitlement.test.ts" timestamp="2026-11-07T01:20:49.140Z" hostname="repl" tests="6" failures="0" errors="0" skipped="0" time="2.000797694">
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;monthly&apos;/&apos;inactive&apos; returns 403 before provider work" time="0.131333873">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;yearly&apos;/&apos;canceled&apos; returns 403 before provider work" time="0.171350401">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;monthly&apos;/&apos;past_due&apos; returns 403 before provider work" time="0.116319413">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;pro&apos;/&apos;active&apos; returns 400 before provider work" time="0.126827819">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;user&apos;/&apos;monthly&apos;/&apos;active&apos; returns 400 before provider work" time="0.126815412">
+        </testcase>
+        <testcase classname="tests/content-analysis-entitlement.test.ts" name="content analysis uses current paid entitlements &gt; &apos;admin&apos;/&apos;free&apos;/&apos;none&apos; returns 400 before provider work" time="0.116904566">
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -8,6 +8,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import pg from 'pg';
 import { createOwnedProcessTracker } from '../../script/deployment/owned-processes.mjs';
+import { resolvePythonRuntime } from './python-runtime-env.mjs';
 
 const forbidden = Object.keys(process.env).filter(key => /DATABASE|PGHOST|PGPORT|PGUSER|PGPASSWORD|NEON|REDIS|STRIPE|RESEND|SENDGRID|TWILIO|AWS|SENTRY|TOKEN|SECRET|KEY|NODE_OPTIONS/i.test(key));
 if (forbidden.length) throw new Error(`Refusing inherited application configuration: ${forbidden.join(', ')}`);
@@ -16,13 +17,27 @@ if (requested.some(file => !/^tests\/[A-Za-z0-9_./-]+\.test\.ts$/.test(file) || 
   throw new Error('Optional arguments must be repository-relative tests/*.test.ts paths');
 }
 const root = process.cwd();
+const accessProfile = process.env.MAXBOOSTER_TEST_ACCESS_PROFILE || 'public';
+if (!['public', 'private-admin'].includes(accessProfile)) throw new Error('Unknown isolated access profile');
+const privateAdmin = accessProfile === 'private-admin';
+const pythonRuntime = resolvePythonRuntime(
+  root,
+  process.env.MAXBOOSTER_TEST_PYTHON || process.env.MAXBOOSTER_PYTHON || 'python3',
+  process.env,
+);
 const reportDirectory = path.resolve(process.env.MAXBOOSTER_TEST_REPORT_DIR || 'reports/test-verification/integration-browser/http');
 fs.mkdirSync(reportDirectory, { recursive: true });
 const temporary = fs.mkdtempSync('/tmp/maxbooster-http-tests-');
 const home = path.join(temporary, 'home');
 fs.mkdirSync(home);
-const env = { PATH: process.env.PATH, HOME: home, LANG: 'C', TZ: 'UTC', ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}) };
-const summary = { startedAt: new Date().toISOString(), scope: 'Disposable PostgreSQL and real source application; all external TCP/TLS and UDP denied', sourceRevision: '', requestedFiles: requested, status: 'running', productionReady: false };
+const env = {
+  PATH: process.env.PATH,
+  HOME: home,
+  LANG: 'C',
+  TZ: 'UTC',
+  PYTHONPATH: pythonRuntime.sitePackages,
+};
+const summary = { startedAt: new Date().toISOString(), scope: 'Disposable PostgreSQL and real source application; all external TCP/TLS and UDP denied', accessProfile, sourceRevision: '', requestedFiles: requested, status: 'running', productionReady: false };
 let client, app, appOwnership, testOwnership, analyticsOwnership, ownershipPoll, pgStarted = false;
 const clean = source => source.replace(/postgres(?:ql)?:\/\/[^\s"'<>]+/gi, 'postgresql://[redacted]')
   .replace(/\b(?:sk|pk)_(?:test|live)_[A-Za-z0-9_]+/g, '[redacted-stripe-key]')
@@ -93,17 +108,23 @@ try {
   const analyticsToken = randomBytes(32).toString('hex');
   const analyticsOrigin = `http://127.0.0.1:${analyticsPort}`;
   const analyticsFd = fs.openSync(path.join(temporary, 'analytics.txt'), 'w');
-  const analytics = spawn(process.env.MAXBOOSTER_PYTHON || path.join(root, 'python_runtime/bin/python3'),
-    ['-I', '-B', path.join(root, 'tests/contracts/helpers-account-analytics-server.py'),
+  const pythonBootstrap = 'import runpy, site, sys; site.addsitedir(sys.argv[1]); sys.argv = sys.argv[2:]; runpy.run_path(sys.argv[0], run_name="__main__")';
+  const analytics = spawn(pythonRuntime.executable,
+    ['-I', '-B', '-c', pythonBootstrap, pythonRuntime.sitePackages,
+      path.join(root, 'tests/contracts/helpers-account-analytics-server.py'),
       path.join(root, 'external/maxcore/artifacts/ai-training-server'), String(analyticsPort)], {
-      cwd: temporary, env: { ...env, OWNED_ANALYTICS_FIXTURE_TOKEN: analyticsToken,
+      cwd: temporary, env: { ...env, LD_LIBRARY_PATH: pythonRuntime.ldLibraryPath,
+        OWNED_ANALYTICS_FIXTURE_TOKEN: analyticsToken,
         OPENBLAS_NUM_THREADS: '1', OMP_NUM_THREADS: '1' }, stdio: ['ignore', analyticsFd, analyticsFd], detached: true,
     });
   fs.closeSync(analyticsFd);
   let analyticsStartupError; analytics.once('error', error => { analyticsStartupError = error; });
   analyticsOwnership = createOwnedProcessTracker(analytics.pid);
   let analyticsStarted = false;
-  for (let attempt = 0; attempt < 100; attempt++) {
+  // This router imports the canonical numerical stack in a fresh interpreter.
+  // Cold package imports can exceed the old 5s polling window on a busy runner;
+  // keep a bounded startup deadline while retaining early process-failure exit.
+  for (let attempt = 0; attempt < 120; attempt++) {
     if (analyticsStartupError || analytics.exitCode !== null || analytics.signalCode !== null) break;
     try {
       const response = await fetch(`${analyticsOrigin}/api/analytics/capability`, {
@@ -112,9 +133,12 @@ try {
       const capability = response.ok ? await response.json() : null;
       if (capability?.available === true && capability.version === 1) { analyticsStarted = true; break; }
     } catch {}
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
-  if (!analyticsStarted) throw new Error('Owned canonical analytics router did not start');
+  if (!analyticsStarted) {
+    const output = fs.readFileSync(path.join(temporary, 'analytics.txt'), 'utf8').slice(-2400);
+    throw new Error(`Owned canonical analytics router did not start within 60s${analyticsStartupError ? ` (${analyticsStartupError.message})` : ''}: ${output || 'no child output'}`);
+  }
   summary.analyticsFixture = { status: 'started', implementation: 'canonical MaxCore ai_model/analytics.py',
     scope: 'private transient numerical analysis only; general model/generation/readiness unavailable; no learning, persistence or public feed ingestion',
     sourceSha256: Object.fromEntries(['tests/contracts/helpers-account-analytics-server.py',
@@ -122,6 +146,9 @@ try {
         [file, createHash('sha256').update(fs.readFileSync(file)).digest('hex')])) };
   const pdimChannelToken = randomBytes(32).toString('hex');
   const common = { ...env, DATABASE_URL: databaseUrl, SESSION_SECRET: randomBytes(48).toString('hex'),
+    MAXBOOSTER_PUBLIC_LAUNCH_ENABLED: privateAdmin ? 'false' : 'true',
+    MAXBOOSTER_ADMIN_ONLY_MODE: privateAdmin ? 'true' : 'false',
+    MAXBOOSTER_TEST_ACCESS_PROFILE: accessProfile,
     READINESS_ISOLATED_PG: '1', READINESS_EGRESS_GUARD: '1', READINESS_LOCAL_CODECS: '1', MAXCORE_LOCAL: '0', TEST_EXPECT_MAXCORE_UNAVAILABLE: '1',
     STRIPE_WEBHOOK_SECRET: `whsec_${randomBytes(32).toString('hex')}`,
     MAXCORE_API_URL: 'http://127.0.0.1:9', MAXCORE_BASE_URL: 'http://127.0.0.1:9',
@@ -144,6 +171,24 @@ try {
   ownershipPoll = setInterval(() => { appOwnership.capture(); testOwnership?.capture(); analyticsOwnership?.capture(); }, 200); ownershipPoll.unref();
   const base = `http://127.0.0.1:${appPort}`;
   await waitForApp(base); summary.applicationRoutes = 'pass';
+  let settingsSeeded = false;
+  const settingsDeadline = Date.now() + 90_000;
+  while (Date.now() < settingsDeadline) {
+    const seededDefaults = await client.query(
+      "SELECT 1 FROM system_settings WHERE key = 'user_registration_enabled'",
+    );
+    if (seededDefaults.rowCount) {
+      settingsSeeded = true;
+      break;
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  if (!settingsSeeded) throw new Error('Disposable app system-setting defaults did not seed before integration tests');
+  await client.query(
+    "INSERT INTO system_settings (key, value, description) VALUES ('platform.userRegistrationEnabled', $1::jsonb, 'Disposable integration access profile') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+    [privateAdmin ? 'false' : 'true'],
+  );
+  summary.registrationPolicyFixture = privateAdmin ? 'private registration disabled in disposable PostgreSQL' : 'public registration explicitly enabled in disposable PostgreSQL';
   // Vitest itself forks workers, and the supervisor integration launches local
   // runtimes. Retain the TCP/TLS/UDP guard while allowing tracked subprocesses.
   const testGuard = path.join(temporary, 'loopback-guard.mjs');
@@ -189,7 +234,18 @@ globalThis.fetch = (input, init) => {
   const testFd = fs.openSync(path.join(temporary, 'vitest.txt'), 'w');
   const test = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--config', vitestConfig,
     '--maxWorkers=1', '--reporter=junit', `--outputFile=${path.join(reportDirectory, 'integration.junit.xml')}`, ...requested], {
-    cwd: root, env: { ...common, NODE_ENV: 'test', TEST_BASE_URL: base, MAXBOOSTER_ISOLATED_FIXTURE_TOKEN: fixtureToken, NODE_OPTIONS: `--import=${testGuard}`, PYTHONPATH: path.join(temporary, 'python-guard') },
+    cwd: root, env: {
+      ...common,
+      NODE_ENV: 'test',
+      TEST_BASE_URL: base,
+      MAXBOOSTER_ISOLATED_FIXTURE_TOKEN: fixtureToken,
+      NODE_OPTIONS: `--import=${testGuard}`,
+      LD_LIBRARY_PATH: pythonRuntime.ldLibraryPath,
+      PYTHONPATH: [
+        path.join(temporary, 'python-guard'),
+        pythonRuntime.sitePackages,
+      ].join(path.delimiter),
+    },
     stdio: ['ignore', testFd, testFd], detached: true,
   });
   fs.closeSync(testFd); testOwnership = createOwnedProcessTracker(test.pid);

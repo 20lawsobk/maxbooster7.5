@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import path from "node:path";
 import { enforceMaintenance } from "../services/governancePolicyService.js";
+import { enforceAssurance } from "./authAssurance.js";
 
 export function isDevDependencyResource(urlPath: string): boolean {
   if (process.env.NODE_ENV === "production") return false;
@@ -72,6 +73,13 @@ export const governanceBoundary: RequestHandler = async (req, res, next) => {
     }
     return next();
   }
+  // Session hydration occurs before this boundary; bearer hydration otherwise
+  // happens only inside route guards, too late for private-launch admission.
+  if (req.headers?.authorization?.startsWith("Bearer ")) {
+    const { resolveJwtUser } = await import("./auth.js");
+    await resolveJwtUser(req);
+  }
+  if (req.user && !enforceAssurance(req, res)) return;
   return enforceMaintenance(req, res, next);
   } catch {
     return res.status(503).json({ error: "Governance verification unavailable" });

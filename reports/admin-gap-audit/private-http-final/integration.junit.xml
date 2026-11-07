@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="2.823581383">
+    <testsuite name="tests/private-admin-http.test.ts" timestamp="2026-11-07T01:14:37.032Z" hostname="repl" tests="7" failures="0" errors="0" skipped="0" time="2.823581383">
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; admits a real admin bearer token without cookies and rejects a non-admin token" time="0.131319091">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; publishes the private policy in the authoritative session" time="0.06912699">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; rejects registration even with a forged administrator role" time="0.111540474">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; denies ordinary-account and anonymous access before domain dispatch" time="0.397388353">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; saves an admin-owned project without a public subscription" time="0.08629131">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; preserves the project through logout and a fresh login" time="0.601393971">
+        </testcase>
+        <testcase classname="tests/private-admin-http.test.ts" name="private administrator real HTTP release boundary &gt; creates an Enterprise API key for the admin rather than the submitted owner" time="0.066671936">
+        </testcase>
+    </testsuite>
+</testsuites>
