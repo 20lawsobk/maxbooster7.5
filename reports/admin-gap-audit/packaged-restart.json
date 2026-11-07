@@ -1,8 +1,8 @@
 {
   "artifactIntegrityPassedEveryCycle": true,
-  "buildContractSha256": "557f5ecf5d2dfc645e1ee78e1ab7093277a510d33aa1b00604a46f3576d97ac6",
+  "buildContractSha256": "b59265772d486cf1b86c4a6b46f4ddbf88182aad359586e79ba30edee17792d3",
   "buildIntegrityGatePreserved": true,
-  "capturedAt": "2026-11-07T20:53:15.104921+00:00",
+  "capturedAt": "2026-11-07T21:11:09.919351+00:00",
   "cycles": [
     {
       "cycle": 1,
@@ -133,11 +133,15 @@
       "startupFailureClass": null
     }
   ],
+  "deploymentAssetPhase": {
+    "exitCode": 0,
+    "passed": true
+  },
   "networkNamespaceIsolated": true,
   "readinessGatePreserved": true,
   "readinessPassedEveryCycle": false,
   "scope": "Disposable PostgreSQL and production artifact copy; application external TCP/TLS and UDP denied",
   "shutdownCompletedEveryCycle": true,
-  "sourceRevision": "441cff89fc29a1729fe9f4e56ed1310e80feca79",
+  "sourceRevision": "172d0b4901de679eed86ee88a8eba2f35356da5f",
   "status": "failed"
 }

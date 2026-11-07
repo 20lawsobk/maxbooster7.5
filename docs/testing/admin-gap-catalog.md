@@ -51,14 +51,18 @@ not a working feature. Relative paths and dynamic registration require tracing.
   asset additions, missing assets, or hash mismatches. The readiness failure
   was `maxcore=degraded/model_not_ready` plus unified awareness with 28 configured
   sources and no fresh snapshot. The test intentionally denied external
-  TCP/TLS/UDP, so it cannot prove a live-source snapshot. Evidence is retained
-  at `reports/admin-gap-audit/packaged-restart.json`.
+  TCP/TLS/UDP, so it cannot prove a live-source snapshot. The deployment asset
+  phase also passed: it verified the pre-finalization manifest, applied the
+  existing `.br`/`.gz` packaging policy, then regenerated and revalidated the
+  manifest against the final public tree while requiring the original source
+  hashes. Evidence is retained at `reports/admin-gap-audit/packaged-restart.json`.
 - The earlier second-start integrity rejection was caused by
   `server/cluster.ts` generating `.br` and `.gz` siblings in `dist/public/assets`
   after the build contract was written. The prior failure showed 270 additional
   sidecars (135 Brotli and 135 gzip); its retained receipt did not preserve the
-  individual path list. Compression now runs in the build before the unchanged
-  strict contract hashes all outputs; runtime startup no longer mutates them.
+  individual path list. The runtime writer was removed. The deployment cleanup
+  now revalidates before removing those packaging-only variants and writes a
+  fresh strict contract for the final tree; both startup checks remain enabled.
 - HTTP receipts: `reports/admin-gap-audit/http-final/` and
   `reports/admin-gap-audit/private-http-final/`. Both retained fixture ownership
   checks, external-network denial and process/database cleanup.
