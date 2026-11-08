@@ -90,6 +90,58 @@ def _safe_failure_code(exc):
     return code if code in _SAFE_FAILURE_CODES else "refresh_or_storage_unavailable"
 
 
+def _source_failure(exc):
+    """Classify a public-source failure without retaining its message or URL."""
+    from ai_model.native_analysis.safe_http import (
+        ResponseTooLarge, SafeHTTPError, UnsupportedContentType,
+    )
+
+    if isinstance(exc, TimeoutError):
+        return "source_timeout", None
+    if isinstance(exc, UnsupportedContentType):
+        return "unsupported_content_type", None
+    if isinstance(exc, ResponseTooLarge):
+        return "response_too_large", None
+    if isinstance(exc, SafeHTTPError):
+        match = re.search(r"\bHTTP (\d{3})\b", str(exc))
+        if match:
+            status = int(match.group(1))
+            if status in (401, 403):
+                return "access_denied", status
+            if status == 404:
+                return "not_found", status
+            if status == 429:
+                return "rate_limited", status
+            if 500 <= status <= 599:
+                return "upstream_error", status
+            if 400 <= status <= 499:
+                return "http_error", status
+        message = str(exc).casefold()
+        if "redirect" in message:
+            return "redirect_rejected", None
+        if "deadline" in message or "timed out" in message or "timeout" in message:
+            return "source_timeout", None
+        if "dns" in message or "hostname" in message or "resolve" in message:
+            return "dns_resolution_failed", None
+        return "network_unavailable", None
+    if isinstance(exc, json.JSONDecodeError):
+        return "invalid_json", None
+    if type(exc).__name__ in ("ParseError", "ExpatError"):
+        return "invalid_feed", None
+    if isinstance(exc, ValueError):
+        safe_feed_errors = {
+            "Feed DTDs and entities are forbidden": "unsafe_feed_markup",
+            "Feed exceeds the XML size limit": "response_too_large",
+            "Feed exceeds the XML structural limit": "feed_structure_limit",
+        }
+        return safe_feed_errors.get(str(exc), "invalid_response"), None
+    if isinstance(exc, (TypeError, KeyError, AttributeError)):
+        return "invalid_response", None
+    if isinstance(exc, RuntimeError) and str(exc) == "search_source_failed":
+        return "upstream_error", None
+    return "source_adapter_error", None
+
+
 def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
                       allow_nan=False)
@@ -608,7 +660,25 @@ class Engine:
         with self._lock:
             s = self._snapshot
             published = s.to_dict() if s else {}
-            return {"ready": bool(s and s.expires_at > self.clock()),
+            scan_phases = {
+                "collecting_sources", "ranking_domain_records",
+                "validating_domain_coverage", "reading_secondary_evidence",
+                "validating_snapshot", "publishing_snapshot",
+            }
+            scan_in_progress = self._phase in scan_phases
+            if scan_in_progress:
+                scan_state = "running"
+            elif self._phase.startswith("failed:"):
+                scan_state = "failed"
+            elif self._phase == "idle" and set(self._health) >= set(self.sources) and self._health:
+                scan_state = "complete"
+            else:
+                scan_state = "not_started"
+            snapshot_ready = bool(s and s.expires_at > self.clock())
+            return {"ready": snapshot_ready,
+                    "snapshot_ready": snapshot_ready,
+                    "source_scan_state": scan_state,
+                    "source_scan_in_progress": scan_in_progress,
                     "snapshot_id": s.id if s else None,
                     "expires_at": s.expires_at if s else None,
                     "running": bool(self._thread and self._thread.is_alive()),
@@ -617,6 +687,7 @@ class Engine:
                     "gpu": telemetry(),
                     "snapshot_gpu": published.get("gpu"),
                     "source_health": published.get("source_health", json.loads(canonical(self._health))),
+                    "snapshot_source_health": published.get("source_health", {}),
                     "latest_scan_health": json.loads(canonical(self._health)),
                     "observation_cache_error": self._observation_cache_error,
                     "last_scan_observation_write_count": self._observation_record_count,
@@ -949,29 +1020,49 @@ class Engine:
                             except Exception as exc:
                                 self._observation_cache_error = _safe_failure_code(exc)
                         else:
-                            self._health[name].update(ok=False, error="no_valid_records")
+                            self._health[name].update(
+                                ok=False, error="no_valid_records",
+                                failure_class="no_valid_records", http_status=None,
+                            )
                     else:
                         failures = self._backoff.get(name, (0, 0))[0] + 1
                         self._backoff[name] = (failures, now + min(3600, 30 * 2 ** min(failures, 7)))
+                        failure_class, http_status = (
+                            _source_failure(error) if isinstance(error, BaseException)
+                            else (error or "source_failed", None)
+                        )
                         self._health[name] = {
                             "ok": False, "domain": self.sources[name][0],
                             "url": citation(self.sources[name][1]),
-                            "error": error, "observed_at": self.clock(),
+                            "error": failure_class, "failure_class": failure_class,
+                            "http_status": http_status, "observed_at": self.clock(),
                         }
                 elif mono - started > self.timeout:
-                    self._health[name] = {"ok": False, "domain": self.sources[name][0],
-                                          "error": "source_timeout"}
+                    self._health[name] = {
+                        "ok": False, "domain": self.sources[name][0],
+                        "error": "source_timeout", "failure_class": "source_timeout",
+                        "http_status": None, "observed_at": self.clock(),
+                    }
             while pending and len(self._active) < self.concurrency:
                 name = pending.pop(0)
-                if name in self._active or self._backoff.get(name, (0, 0))[1] > now:
+                if name in self._active:
+                    continue
+                retry_at = self._backoff.get(name, (0, 0))[1]
+                if retry_at > now:
+                    self._health[name] = {
+                        "ok": False, "domain": self.sources[name][0],
+                        "url": citation(self.sources[name][1]),
+                        "error": "retry_backoff", "failure_class": "retry_backoff",
+                        "http_status": None, "retry_at": retry_at,
+                    }
                     continue
                 output = queue.Queue(maxsize=1)
                 def run(fn=self.sources[name][2], output=output):
                     try:
                         rows = fn()
                         output.put((rows, None if rows else "empty_source"))
-                    except Exception:
-                        output.put(([], "source_failed"))
+                    except Exception as exc:
+                        output.put(([], exc))
                 thread = threading.Thread(target=run, daemon=True, name="awareness-source")
                 self._active[name] = (thread, mono, output)
                 thread.start()

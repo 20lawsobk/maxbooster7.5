@@ -1,27 +1,214 @@
 {
   "awareness": {
     "configuredSourceCount": 28,
-    "failedSourceCategories": {
-      "access_denied": 1,
-      "unclassified": 9
-    },
-    "failedSourceCount": 10,
-    "failedSourceFieldNames": [
-      "error",
-      "ok"
-    ],
     "failureClass": null,
-    "healthySourceCount": 18,
     "httpStatus": 200,
     "ingestOwner": true,
-    "phase": "collecting_sources",
+    "latestScanComplete": true,
+    "latestScanHealth": {
+      "failedCategories": {
+        "access_denied": 5,
+        "dns_resolution_failed": 1,
+        "not_found": 5,
+        "unsafe_feed_markup": 1
+      },
+      "failedCount": 12,
+      "failures": [
+        {
+          "domain": "advertising",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "bluesky_peak_advertising",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "culture",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "bluesky_peak_culture",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "music",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "bluesky_peak_music",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "social",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "bluesky_peak_social",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "music",
+          "failureClass": "dns_resolution_failed",
+          "httpStatus": null,
+          "source": "distrokid",
+          "suggestedAction": "Retry after DNS recovery; do not substitute an unverified endpoint."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "hypebot",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "landr",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        },
+        {
+          "domain": "music",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "music_ally",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "music",
+          "failureClass": "unsafe_feed_markup",
+          "httpStatus": null,
+          "source": "tunecore",
+          "suggestedAction": "Keep DTD/entity rejection; request a safe public feed from the publisher."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "youtube_NoCopyrightSounds",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "youtube_Proximity",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "youtube_TrapNation",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        }
+      ],
+      "healthyCount": 16,
+      "recordCount": 28
+    },
+    "phase": "idle",
     "ready": true,
     "running": true,
     "snapshotPresent": true,
+    "snapshotReady": true,
     "snapshotRecoveredFromPriorStore": true,
-    "sourceHealthRecordCount": 28
+    "snapshotSourceHealth": {
+      "failedCategories": {
+        "access_denied": 5,
+        "dns_resolution_failed": 1,
+        "not_found": 5,
+        "unsafe_feed_markup": 1
+      },
+      "failedCount": 12,
+      "failures": [
+        {
+          "domain": "advertising",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "bluesky_peak_advertising",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "culture",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "bluesky_peak_culture",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "music",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "bluesky_peak_music",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "social",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "bluesky_peak_social",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "music",
+          "failureClass": "dns_resolution_failed",
+          "httpStatus": null,
+          "source": "distrokid",
+          "suggestedAction": "Retry after DNS recovery; do not substitute an unverified endpoint."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "hypebot",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "landr",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        },
+        {
+          "domain": "music",
+          "failureClass": "access_denied",
+          "httpStatus": 403,
+          "source": "music_ally",
+          "suggestedAction": "Respect the source access decision; do not retry with credentials."
+        },
+        {
+          "domain": "music",
+          "failureClass": "unsafe_feed_markup",
+          "httpStatus": null,
+          "source": "tunecore",
+          "suggestedAction": "Keep DTD/entity rejection; request a safe public feed from the publisher."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "youtube_NoCopyrightSounds",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "youtube_Proximity",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        },
+        {
+          "domain": "music",
+          "failureClass": "not_found",
+          "httpStatus": 404,
+          "source": "youtube_TrapNation",
+          "suggestedAction": "Treat this public URL as unavailable; verify a published feed before changing it."
+        }
+      ],
+      "healthyCount": 16,
+      "recordCount": 28
+    },
+    "sourceScanInProgress": false,
+    "sourceScanState": "complete"
   },
-  "capturedAt": "2026-11-07T22:23:52.471027+00:00",
+  "capturedAt": "2026-11-08T00:28:16.701188+00:00",
   "forcedKill": false,
   "health": {
     "httpStatus": 200,
@@ -36,11 +223,16 @@
   "priorPdimStorePresent": true,
   "processExitCode": 0,
   "productionDatabaseUsed": false,
-  "redactedLogRetained": true,
+  "redactedSourceFailureEvidenceRetained": true,
   "refreshObserved": true,
   "scope": "Local MaxCore health and awareness GETs; fixed public-source adapters only; disposable PostgreSQL",
   "sentryDsnConfiguredForTest": false,
-  "sourceRevision": "663f87a903f45edf1736ee89c9a69554428e8401",
+  "sourceInputsSha256": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/engine.py": "b91d219fc0c1ff457341f18bd60337319e66f2fe03edf4a3c3080150aad965e6",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py": "50ef05704a303fe4e844986ddd0d37d6ad10b90f1984a2194745b5f849dcdba7",
+    "tests/live-maxcore-awareness-disposable.py": "913290dc8dfac109613d5bbbd1ac7a2852ee21b3e3fab1317442c5dc3db411ee"
+  },
+  "sourceRevision": "b60484cc5a14235eb2983d1bcb6fb38af961de4b",
   "startupFailureClass": "dependency_connection_refused",
-  "status": "passed"
+  "status": "passed_with_source_failures"
 }

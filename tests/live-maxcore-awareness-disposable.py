@@ -4,6 +4,7 @@ Requires explicit approval because the public source adapters perform outbound
 read-only requests. No model generation or provider-write credentials are passed.
 """
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -164,6 +165,58 @@ def safe_code(value):
         return None
     return value if re.fullmatch(r"[a-zA-Z0-9_:-]{1,80}", value) else "unclassified"
 
+
+def source_summary(source_health):
+    if not isinstance(source_health, dict):
+        source_health = {}
+    healthy = 0
+    failures = []
+    categories = {}
+    actions = {
+        "access_denied": "Respect the source access decision; do not retry with credentials.",
+        "dns_resolution_failed": "Retry after DNS recovery; do not substitute an unverified endpoint.",
+        "not_found": "Treat this public URL as unavailable; verify a published feed before changing it.",
+        "invalid_response": "Review the public feed format and parser; retain no unvalidated content.",
+        "invalid_json": "Review the public JSON contract; retain no unvalidated content.",
+        "invalid_feed": "Review the public feed format; retain no unvalidated content.",
+        "unsafe_feed_markup": "Keep DTD/entity rejection; request a safe public feed from the publisher.",
+        "feed_structure_limit": "Keep XML size and nesting limits; request a bounded public feed.",
+        "rate_limited": "Retry only after the source's rate limit permits.",
+        "upstream_error": "Treat the source service as temporarily unavailable and retry later.",
+        "source_timeout": "Retry the public read in a later scan.",
+        "network_unavailable": "Retry after network recovery; do not weaken URL or TLS validation.",
+    }
+    for source, item in sorted(source_health.items()):
+        if not isinstance(source, str) or not isinstance(item, dict):
+            continue
+        if item.get("ok") is True:
+            healthy += 1
+            continue
+        if item.get("ok") is not False:
+            continue
+        code = safe_code(item.get("failure_class") or item.get("error")) or "unclassified"
+        status = item.get("http_status")
+        if type(status) is not int or not 100 <= status <= 599:
+            status = None
+        categories[code] = categories.get(code, 0) + 1
+        failures.append({
+            "source": safe_code(source) or "unclassified_source",
+            "domain": safe_code(item.get("domain")),
+            "failureClass": code,
+            "httpStatus": status,
+            "suggestedAction": actions.get(
+                code, "Review the source-specific health code; do not retain raw response data."
+            ),
+        })
+    return {
+        "recordCount": len(source_health),
+        "healthyCount": healthy,
+        "failedCount": len(failures),
+        "failedCategories": categories,
+        "failures": failures,
+    }
+
+
 pdim_log_path = pg / "local-pdim-fixture.log"
 pdim_process = None
 pdim_exit_code = None
@@ -204,7 +257,19 @@ with log_path.open("wb") as log:
         awareness_status, awareness_body = get_json("/api/awareness/unified/status")
         if prior_pdim_store_present and awareness_body.get("snapshot_id"):
             snapshot_recovered = True
-        if awareness_status == 200 and awareness_body.get("ready") is True:
+        latest_health = awareness_body.get("latest_scan_health")
+        scan_state = awareness_body.get("source_scan_state")
+        expected_count = (
+            len(awareness_body.get("configured_sources", []))
+            if isinstance(awareness_body.get("configured_sources"), list) else None
+        )
+        terminal_scan = (
+            scan_state in ("complete", "failed")
+            and isinstance(latest_health, dict)
+            and len(latest_health) == expected_count
+        )
+        if (awareness_status == 200 and awareness_body.get("ready") is True
+                and terminal_scan):
             break
         time.sleep(3)
 
@@ -244,63 +309,21 @@ else:
 
 health = health_body if isinstance(health_body, dict) else {}
 awareness = awareness_body if isinstance(awareness_body, dict) else {}
-source_health = awareness.get("source_health")
-if not isinstance(source_health, dict):
-    source_health = {}
-healthy_count = sum(
-    1 for item in source_health.values()
-    if isinstance(item, dict) and (
-        item.get("ok") is True or item.get("status") in ("healthy", "ok", "success")
-    )
+snapshot_source_health = awareness.get("snapshot_source_health")
+if not isinstance(snapshot_source_health, dict):
+    snapshot_source_health = awareness.get("source_health")
+latest_source_health = awareness.get("latest_scan_health")
+snapshot_health_summary = source_summary(snapshot_source_health)
+latest_health_summary = source_summary(latest_source_health)
+source_scan_state = safe_code(awareness.get("source_scan_state"))
+configured_source_count = (
+    len(awareness.get("configured_sources", []))
+    if isinstance(awareness.get("configured_sources"), list) else None
 )
-failed_count = sum(
-    1 for item in source_health.values()
-    if isinstance(item, dict) and (
-        item.get("ok") is False or item.get("status") in ("failed", "error", "unavailable")
-    )
+latest_scan_complete = (
+    source_scan_state == "complete"
+    and latest_health_summary["recordCount"] == configured_source_count
 )
-failure_categories = {}
-failed_source_field_names = set()
-
-def flatten_status_values(value):
-    if isinstance(value, dict):
-        return " ".join(flatten_status_values(child) for child in value.values())
-    if isinstance(value, (list, tuple)):
-        return " ".join(flatten_status_values(child) for child in value)
-    if isinstance(value, (str, int, float)):
-        return str(value).lower()
-    return ""
-
-for item in source_health.values():
-    if not isinstance(item, dict) or not (
-        item.get("ok") is False or item.get("status") in ("failed", "error", "unavailable")
-    ):
-        continue
-    failed_source_field_names.update(
-        key for key in item
-        if key in {
-            "ok", "status", "error", "failure", "last_error", "error_class",
-            "error_code", "http_status", "status_code", "reason", "message", "type",
-        }
-    )
-    detail = flatten_status_values(item)
-    if "timeout" in detail or "timed out" in detail:
-        category = "timeout"
-    elif "429" in detail or "rate limit" in detail:
-        category = "rate_limited"
-    elif "403" in detail or "forbidden" in detail or "denied" in detail:
-        category = "access_denied"
-    elif "404" in detail or "not found" in detail:
-        category = "not_found"
-    elif re.search(r"\b5\d\d\b", detail):
-        category = "upstream_5xx"
-    elif any(word in detail for word in ("network", "connect", "dns", "ssl")):
-        category = "network_error"
-    elif any(word in detail for word in ("invalid", "parse", "schema")):
-        category = "invalid_response"
-    else:
-        category = "unclassified"
-    failure_categories[category] = failure_categories.get(category, 0) + 1
 ports_released = True
 for port in ports:
     with socket.socket() as sock:
@@ -333,6 +356,14 @@ report = {
         ["git", "rev-parse", "HEAD"], cwd=source, text=True,
         capture_output=True, check=True, timeout=5,
     ).stdout.strip(),
+    "sourceInputsSha256": {
+        name: hashlib.sha256((source / name).read_bytes()).hexdigest()
+        for name in (
+            "external/maxcore/artifacts/ai-training-server/ai_model/awareness/engine.py",
+            "external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py",
+            "tests/live-maxcore-awareness-disposable.py",
+        )
+    },
     "scope": "Local MaxCore health and awareness GETs; fixed public-source adapters only; disposable PostgreSQL",
     "modelLoaded": health.get("model_loaded") is True,
     "health": {
@@ -342,24 +373,23 @@ report = {
     "awareness": {
         "httpStatus": awareness_status,
         "ready": awareness.get("ready") is True,
+        "snapshotReady": awareness.get("snapshot_ready", awareness.get("ready")) is True,
         "running": awareness.get("running") is True,
         "ingestOwner": awareness.get("ingest_owner") is True,
         "phase": safe_code(awareness.get("phase")),
+        "sourceScanState": source_scan_state,
+        "sourceScanInProgress": awareness.get("source_scan_in_progress") is True,
         "failureClass": safe_code(awareness.get("error")),
         "snapshotPresent": bool(awareness.get("snapshot_id")),
-        "configuredSourceCount": (
-            len(awareness.get("configured_sources", []))
-            if isinstance(awareness.get("configured_sources"), list) else None
-        ),
-        "sourceHealthRecordCount": len(source_health),
-        "healthySourceCount": healthy_count,
-        "failedSourceCount": failed_count,
-        "failedSourceCategories": failure_categories,
-        "failedSourceFieldNames": sorted(failed_source_field_names),
+        "configuredSourceCount": configured_source_count,
+        "snapshotSourceHealth": snapshot_health_summary,
+        "latestScanHealth": latest_health_summary,
+        "latestScanComplete": latest_scan_complete,
         "snapshotRecoveredFromPriorStore": snapshot_recovered,
     },
     "refreshObserved": bool(
-        awareness.get("snapshot_id") or source_health or awareness.get("phase") == "collecting_sources"
+        awareness.get("snapshot_id") or latest_health_summary["recordCount"]
+        or awareness.get("phase") == "collecting_sources"
     ),
     "sentryDsnConfiguredForTest": False,
     "paymentOrDistributionCredentialsSupplied": False,
@@ -372,13 +402,18 @@ report = {
     "pdimForcedKill": pdim_forced_kill,
     "portsReleased": ports_released,
     "startupFailureClass": startup_failure,
-    "redactedLogRetained": True,
-    "status": "passed" if (
-        health_status == 200 and awareness_status == 200 and
-        awareness.get("ready") is True and awareness.get("snapshot_id") and
-        pdim_ready and not forced_kill and not pdim_forced_kill and
-        pdim_exit_code == 0 and ports_released
-    ) else "failed",
+    "redactedSourceFailureEvidenceRetained": bool(
+        latest_scan_complete and latest_health_summary["recordCount"]
+    ),
+    "status": (
+        "failed" if not (
+            health_status == 200 and awareness_status == 200 and
+            awareness.get("ready") is True and awareness.get("snapshot_id") and
+            latest_scan_complete and pdim_ready and not forced_kill and
+            not pdim_forced_kill and pdim_exit_code == 0 and ports_released
+        ) else "passed_with_source_failures"
+        if latest_health_summary["failedCount"] else "passed"
+    ),
 }
 report_path = source / "reports/admin-gap-audit/live-awareness-direct.json"
 report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -391,10 +426,9 @@ print(json.dumps({
     "awarenessReady": report["awareness"]["ready"],
     "snapshotPresent": report["awareness"]["snapshotPresent"],
     "phase": report["awareness"]["phase"],
-    "sourceHealthRecordCount": len(source_health),
-    "failedSourceCount": failed_count,
-    "failedSourceCategories": failure_categories,
-    "failedSourceFieldNames": sorted(failed_source_field_names),
+    "sourceScanState": source_scan_state,
+    "latestScanHealth": latest_health_summary,
+    "snapshotSourceHealth": snapshot_health_summary,
     "snapshotRecoveredFromPriorStore": report["awareness"]["snapshotRecoveredFromPriorStore"],
     "localPdimBackendStarted": pdim_ready,
     "shutdownForced": forced_kill,
@@ -402,4 +436,4 @@ print(json.dumps({
     "portsReleased": ports_released,
     "report": report_path.relative_to(source).as_posix(),
 }))
-raise SystemExit(0 if report["status"] == "passed" else 1)
+raise SystemExit(0 if report["status"] in ("passed", "passed_with_source_failures") else 1)

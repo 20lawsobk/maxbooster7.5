@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from ai_model.awareness.engine import (
     AwarenessUnavailable, BLOB, DOMAINS, Engine, OBSERVATIONS_PREFIX, PDIM, POINTER, Snapshot,
-    bind, bound_snapshot, canonical, clean, conditioning,
+    _source_failure, bind, bound_snapshot, canonical, clean, conditioning,
 )
 from ai_model import quality_awareness as facade
 
@@ -112,6 +112,75 @@ class AwarenessTests(unittest.TestCase):
         self.assertEqual(observations["domains"], ["social"])
         self.assertEqual([row["source"] for row in observations["records"]], ["social"])
         self.assertEqual(len(observations["records"]), 1)
+
+    def test_ready_snapshot_does_not_claim_latest_scan_completed(self):
+        self.engine._phase = "collecting_sources"
+        self.engine._health = {
+            "new_scan_source": {
+                "ok": False, "domain": "social", "error": "access_denied",
+                "failure_class": "access_denied", "http_status": 403,
+            },
+        }
+        status = self.engine.status()
+        self.assertTrue(status["ready"])
+        self.assertTrue(status["snapshot_ready"])
+        self.assertEqual(status["source_scan_state"], "running")
+        self.assertTrue(status["source_scan_in_progress"])
+        self.assertEqual(status["snapshot_source_health"], status["source_health"])
+        self.assertEqual(set(status["latest_scan_health"]), {"new_scan_source"})
+        self.assertEqual(status["latest_scan_health"]["new_scan_source"]["http_status"], 403)
+
+    def test_public_source_failure_classification_is_actionable_and_redacted(self):
+        from ai_model.native_analysis.safe_http import (
+            ResponseTooLarge, SafeHTTPError, UnsupportedContentType,
+        )
+        from xml.parsers.expat import ExpatError
+
+        cases = (
+            (SafeHTTPError("Remote server returned HTTP 403 for secret URL"),
+             ("access_denied", 403)),
+            (SafeHTTPError("Remote server returned HTTP 404"),
+             ("not_found", 404)),
+            (SafeHTTPError("Remote server returned HTTP 429"),
+             ("rate_limited", 429)),
+            (SafeHTTPError("Remote server returned HTTP 503"),
+             ("upstream_error", 503)),
+            (UnsupportedContentType("private response body"),
+             ("unsupported_content_type", None)),
+            (ResponseTooLarge("private response body"),
+             ("response_too_large", None)),
+            (ExpatError("malformed feed contents"),
+             ("invalid_feed", None)),
+            (ValueError("Feed DTDs and entities are forbidden"),
+             ("unsafe_feed_markup", None)),
+            (ValueError("Feed exceeds the XML structural limit"),
+             ("feed_structure_limit", None)),
+            (ValueError("token=must-not-be-retained"),
+             ("invalid_response", None)),
+        )
+        for error, expected in cases:
+            with self.subTest(error=type(error).__name__, expected=expected):
+                self.assertEqual(_source_failure(error), expected)
+                self.assertNotIn("must-not-be-retained", str(_source_failure(error)))
+
+    def test_scan_retains_source_failure_class_without_exception_details(self):
+        from ai_model.native_analysis.safe_http import SafeHTTPError
+
+        configured = sources()
+        configured["denied_fixture"] = (
+            "social", "https://example.org/private", lambda: (_ for _ in ()).throw(
+                SafeHTTPError("Remote server returned HTTP 403 Bearer token=private")
+            ),
+        )
+        engine = Engine(sources=configured, store=MemoryStore(), timeout=1)
+        engine.refresh()
+        status = engine.status()
+        failure = status["latest_scan_health"]["denied_fixture"]
+        self.assertEqual(failure["failure_class"], "access_denied")
+        self.assertEqual(failure["http_status"], 403)
+        self.assertFalse(failure["ok"])
+        self.assertEqual(status["source_scan_state"], "complete")
+        self.assertNotIn("Bearer token=private", canonical(status))
 
     def test_invalid_snapshot_reports_safe_failure_category(self):
         with self.assertRaises(AwarenessUnavailable) as raised:
