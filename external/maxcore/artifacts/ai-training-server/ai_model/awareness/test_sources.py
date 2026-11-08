@@ -20,6 +20,106 @@ class SourceCoverageTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 youtube("https://www.youtube.com/feeds/videos.xml")
 
+    def test_youtube_profile_candidates_keep_public_evidence_and_missing_factors(self):
+        from datetime import datetime, timezone
+        from ai_model.awareness.sources import youtube_with_profile_candidates
+
+        published = datetime.now(timezone.utc).isoformat()
+        xml = f"""<feed xmlns="http://www.w3.org/2005/Atom"
+        xmlns:media="http://search.yahoo.com/mrss/"><entry>
+        <author><name>Public music channel</name>
+        <uri>https://www.youtube.com/channel/UC123</uri></author>
+        <title>A new original music performance</title>
+        <link href="https://www.youtube.com/watch?v=abcdefghijk"/>
+        <published>{published}</published>
+        <media:group><media:statistics views="1200"/></media:group>
+        </entry></feed>""".encode()
+        with patch("ai_model.awareness.sources._fetch", return_value=xml):
+            rows = youtube_with_profile_candidates(
+                "https://www.youtube.com/feeds/videos.xml?channel_id=UC123",
+                "Public music channel",
+            )
+        candidate = next(row for row in rows if row.get("profile_source"))
+        self.assertEqual(
+            candidate["citation"],
+            "https://www.youtube.com/watch?v=abcdefghijk",
+        )
+        self.assertEqual(candidate["profile_evidence"]["profile_citation"],
+                         "https://www.youtube.com/channel/UC123")
+        self.assertEqual(candidate["profile_evidence"]["public_metrics"]["views"], 1200)
+        self.assertGreaterEqual(candidate["quality_factors"]["freshness"], 99)
+        self.assertNotIn("creativeQuality", candidate["quality_factors"])
+
+    def test_profile_source_status_covers_all_registry_platforms_honestly(self):
+        from ai_model.awareness.sources import profile_source_status
+        from ai_model.platform_optimization import PLATFORMS
+
+        result = profile_source_status()["platforms"]
+        self.assertEqual(set(result), set(PLATFORMS))
+        self.assertEqual(result["youtube"]["status"], "public_feed_configured")
+        for platform in set(PLATFORMS) - {"youtube"}:
+            self.assertEqual(result[platform]["status"], "unsupported")
+            self.assertEqual(
+                result[platform]["reason"],
+                "no_anonymous_public_profile_adapter",
+            )
+        with_failure = profile_source_status({
+            "youtube_NoCopyrightSounds": {
+                "ok": False, "failure_class": "not_found",
+            },
+        })["platforms"]["youtube"]["source_health"]
+        self.assertEqual(with_failure[0]["status"], "failed")
+        self.assertEqual(with_failure[0]["failure"], "not_found")
+
+    def test_profile_snapshot_reports_candidate_citation_and_missing_measurements(self):
+        from datetime import datetime, timezone
+        from ai_model.awareness.engine import Engine
+        from ai_model.awareness.test_engine import MemoryStore
+        from ai_model.awareness.sources import youtube_with_profile_candidates
+
+        published = datetime.now(timezone.utc).isoformat()
+        xml = f"""<feed xmlns="http://www.w3.org/2005/Atom"><entry>
+        <author><name>Public channel</name>
+        <uri>https://www.youtube.com/channel/UC123</uri></author>
+        <title>New music performance</title>
+        <link href="https://www.youtube.com/watch?v=abcdefghijk"/>
+        <published>{published}</published>
+        </entry></feed>""".encode()
+        feed_url = "https://www.youtube.com/feeds/videos.xml?channel_id=UC123"
+        store = MemoryStore()
+        with patch("ai_model.awareness.sources._fetch", return_value=xml):
+            engine = Engine(
+                sources={"youtube_NoCopyrightSounds": (
+                    "music", feed_url,
+                    lambda: youtube_with_profile_candidates(feed_url, "Public channel"),
+                )},
+                store=store,
+                timeout=1,
+            )
+            snapshot = engine.refresh().to_dict()
+
+        health = snapshot["source_health"]["youtube_NoCopyrightSounds"]
+        self.assertEqual(health["profile_candidate_count"], 1)
+        candidate = health["profile_candidates"][0]
+        self.assertEqual(candidate["post_citation"],
+                         "https://www.youtube.com/watch?v=abcdefghijk")
+        self.assertEqual(candidate["profile_citation"],
+                         "https://www.youtube.com/channel/UC123")
+        self.assertEqual(candidate["status"], "insufficient_evidence")
+        self.assertIn("creativeQuality", candidate["missing_metrics"])
+        self.assertIn("platformFit", candidate["missing_metrics"])
+        self.assertEqual(candidate["measured_factors"]["freshness"],
+                         candidate["factor_evidence"]["freshness"]["value"])
+        self.assertIn("music", snapshot["domains"])
+
+        platform_report = engine.status()["profile_sourcing"]["platforms"]["youtube"]
+        self.assertEqual(platform_report["candidate_count"], 1)
+        self.assertEqual(platform_report["eligible_count"], 0)
+        restored = Engine(sources=engine.sources, store=store, timeout=1)
+        restored._load()
+        restored_report = restored.status()["profile_sourcing"]["platforms"]["youtube"]
+        self.assertEqual(restored_report["candidate_count"], 1)
+
     def test_all_ten_original_feeds_are_retained_without_keys(self):
         with patch.dict("os.environ", {}, clear=True):
             configured = configured_sources()

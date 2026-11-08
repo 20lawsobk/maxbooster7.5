@@ -6,6 +6,7 @@ from ai_model.awareness.profile_quality import (
     assess_profile_quality,
 )
 from ai_model.platform_optimization import profile_sourcing_quality_policy
+from ai_model.awareness.test_engine import MemoryStore
 
 
 class ProfileQualityTests(unittest.TestCase):
@@ -121,6 +122,47 @@ class ProfileQualityTests(unittest.TestCase):
         self.assertGreater(ranked[0]["value"], ranked[1]["value"])
         self.assertGreaterEqual(
             normalized[1]["value"], self.policy["minimumEligibleScore"]
+        )
+
+    def test_scored_profile_records_reach_snapshot_and_above_95_remains_eligible(self):
+        low = {
+            "text": "A measured public music post below the quality threshold.",
+            "citation": "https://www.youtube.com/watch?v=abcdefghijk",
+            "profile_source": True,
+            "quality_factors": {factor: 69 for factor in self.policy["weights"]},
+        }
+        high = {
+            "text": "A measured public music profile post with very high match potential.",
+            "citation": "https://www.youtube.com/watch?v=lmnopqrstuv",
+            "profile_source": True,
+            "quality_factors": {factor: 99 for factor in self.policy["weights"]},
+            "profile_evidence": {
+                "platform": "youtube",
+                "profile_citation": "https://www.youtube.com/channel/UC123",
+                "public_metrics": {"views": 1200},
+            },
+        }
+        engine = Engine(
+            sources={"youtube_profile_fixture": (
+                "music", "https://www.youtube.com/feeds/videos.xml",
+                lambda: [low, high],
+            )},
+            store=MemoryStore(),
+            timeout=1,
+        )
+
+        snapshot = engine.refresh().to_dict()
+        records = snapshot["domains"]["music"]
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["citation"], high["citation"])
+        self.assertEqual(records[0]["metric"], PROFILE_MATCH_METRIC)
+        self.assertEqual(records[0]["value"], 99)
+        health = snapshot["source_health"]["youtube_profile_fixture"]
+        self.assertEqual(health["profile_candidate_count"], 2)
+        self.assertEqual(health["profile_eligible_count"], 1)
+        self.assertEqual(
+            {candidate["status"] for candidate in health["profile_candidates"]},
+            {"below_limit", "eligible"},
         )
 
 

@@ -662,8 +662,10 @@ class Engine:
     def status(self):
         from ai_model.gpu.awareness_kernels import telemetry
         from ai_model.platform_optimization import profile_sourcing_quality_policy
+        from .sources import profile_source_status
         with self._lock:
             s = self._snapshot
+            latest_health = json.loads(canonical(self._health))
             published = s.to_dict() if s else {}
             scan_phases = {
                 "collecting_sources", "ranking_available_records",
@@ -680,6 +682,9 @@ class Engine:
             else:
                 scan_state = "not_started"
             snapshot_ready = bool(s and s.expires_at > self.clock())
+            profile_health = latest_health or (
+                published.get("source_health", {}) if snapshot_ready else {}
+            )
             return {"ready": snapshot_ready,
                     "snapshot_ready": snapshot_ready,
                     "source_scan_state": scan_state,
@@ -691,14 +696,15 @@ class Engine:
                     "ingest_owner": bool(self._owner and not self._lease_lost.is_set()),
                     "gpu": telemetry(),
                     "snapshot_gpu": published.get("gpu"),
-                    "source_health": published.get("source_health", json.loads(canonical(self._health))),
+                    "source_health": published.get("source_health", latest_health),
                     "snapshot_source_health": published.get("source_health", {}),
-                    "latest_scan_health": json.loads(canonical(self._health)),
-                     "profile_sourcing_quality": profile_sourcing_quality_policy(),
+                    "latest_scan_health": latest_health,
+                    "profile_sourcing": profile_source_status(profile_health),
+                    "profile_sourcing_quality": profile_sourcing_quality_policy(),
                     "observation_cache_error": self._observation_cache_error,
                     "last_scan_observation_write_count": self._observation_record_count,
-                     "validation_diagnostic": self._validation_diagnostic,
-                     "phase": self._phase,
+                    "validation_diagnostic": self._validation_diagnostic,
+                    "phase": self._phase,
                     "error": self._last_error}
 
     def _load(self):
@@ -712,6 +718,12 @@ class Engine:
 
     def _normalize_source_records(self, name, rows, observed_at, rank_signals):
         normalized = []
+        profile_match_metric = None
+        profile_summaries = []
+        missing_profile_metrics = set()
+        invalid_profile_metrics = set()
+        profile_candidate_count = 0
+        profile_eligible_count = 0
         for raw in rows[:60]:
             if not isinstance(raw, dict):
                 continue
@@ -724,6 +736,63 @@ class Engine:
                     assess_profile_quality,
                 )
                 assessment = assess_profile_quality(raw.get("quality_factors"))
+                profile_match_metric = PROFILE_MATCH_METRIC
+                profile_candidate_count += 1
+                missing_profile_metrics.update(assessment["missingFactors"])
+                invalid_profile_metrics.update(assessment["invalidFactors"])
+                profile_eligible_count += int(assessment["eligible"])
+                evidence = raw.get("profile_evidence")
+                evidence = evidence if isinstance(evidence, dict) else {}
+                factor_values = raw.get("quality_factors")
+                factor_values = factor_values if isinstance(factor_values, dict) else {}
+                measured_factors = {
+                    key: value for key, value in factor_values.items()
+                    if (isinstance(key, str) and type(value) in (int, float)
+                        and math.isfinite(value) and 0 <= value <= 100)
+                }
+                public_metrics = evidence.get("public_metrics")
+                public_metrics = public_metrics if isinstance(public_metrics, dict) else {}
+                public_metrics = {
+                    key: value for key, value in list(public_metrics.items())[:20]
+                    if (isinstance(key, str) and type(value) in (int, float)
+                        and math.isfinite(value) and value >= 0)
+                }
+                provenance = evidence.get("provenance")
+                provenance = provenance if isinstance(provenance, dict) else {}
+                provenance = {
+                    "source_kind": clean(provenance.get("source_kind"), 80),
+                    "feed_citation": citation(provenance.get("feed_citation")),
+                }
+                measured_evidence = evidence.get("measured_factors")
+                measured_evidence = (
+                    measured_evidence if isinstance(measured_evidence, dict) else {}
+                )
+                measured_evidence = {
+                    key: {
+                        "value": item["value"],
+                        "method": clean(item.get("method"), 120),
+                    }
+                    for key, item in measured_evidence.items()
+                    if (isinstance(key, str) and isinstance(item, dict)
+                        and type(item.get("value")) in (int, float)
+                        and math.isfinite(item["value"])
+                        and 0 <= item["value"] <= 100
+                        and clean(item.get("method"), 120))
+                }
+                profile_summaries.append({
+                    "platform": clean(evidence.get("platform"), 40),
+                    "profile_citation": citation(evidence.get("profile_citation")),
+                    "post_citation": cite,
+                    "published_at": clean(evidence.get("published_at"), 64),
+                    "measured_factors": measured_factors,
+                    "factor_evidence": measured_evidence,
+                    "provenance": provenance,
+                    "status": assessment["status"],
+                    "quality_potential_score": assessment["qualityPotentialScore"],
+                    "missing_metrics": assessment["missingFactors"],
+                    "invalid_metrics": assessment["invalidFactors"],
+                    "performance_evidence": public_metrics,
+                })
                 if not assessment["eligible"]:
                     continue
                 value = assessment["qualityPotentialScore"]
@@ -741,6 +810,24 @@ class Engine:
                 "source": name, "text": text, "citation": cite,
                 "value": value, "metric": metric, "observed_at": observed_at,
             })
+        if profile_candidate_count:
+            health = self._health.setdefault(name, {})
+            health.update({
+                "profile_candidate_count": profile_candidate_count,
+                "profile_eligible_count": profile_eligible_count,
+                "profile_missing_metrics": sorted(missing_profile_metrics),
+                "profile_invalid_metrics": sorted(invalid_profile_metrics),
+                "profile_candidates": profile_summaries,
+            })
+        # A video feed produces both a contextual row and a profile candidate.
+        # When a candidate qualifies, retain its scored profile record once.
+        by_id = {}
+        for row in normalized:
+            previous = by_id.get(row["id"])
+            if (previous is None
+                    or row["metric"] == profile_match_metric):
+                by_id[row["id"]] = row
+        normalized = list(by_id.values())
         normalized.sort(key=lambda row: row["id"])
         if not normalized:
             return []
@@ -1039,10 +1126,16 @@ class Engine:
                             except Exception as exc:
                                 self._observation_cache_error = _safe_failure_code(exc)
                         else:
-                            self._health[name].update(
-                                ok=False, error="no_valid_records",
-                                failure_class="no_valid_records", http_status=None,
-                            )
+                            if self._health[name].get("profile_candidate_count"):
+                                self._health[name].update(
+                                    ok=True, error=None,
+                                    profile_source_state="candidates_rejected",
+                                )
+                            else:
+                                self._health[name].update(
+                                    ok=False, error="no_valid_records",
+                                    failure_class="no_valid_records", http_status=None,
+                                )
                     else:
                         failures = self._backoff.get(name, (0, 0))[0] + 1
                         self._backoff[name] = (failures, now + min(3600, 30 * 2 ** min(failures, 7)))

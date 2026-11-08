@@ -10,7 +10,7 @@ import math
 import re
 import time
 from datetime import datetime, timezone
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 from ai_model.safe_feed_xml import parse_feed_xml
 from workers import quality_harvester as legacy
 
@@ -378,8 +378,7 @@ def trends_lines(rows, platform=""):
         return []
 
 
-def youtube(url):
-    root = parse_feed_xml(_fetch(url))
+def _youtube_rows(root):
     atom = "{http://www.w3.org/2005/Atom}"
     media = "{http://search.yahoo.com/mrss/}"
     rows = []
@@ -392,6 +391,160 @@ def youtube(url):
         rows.append(_row(entry.findtext(atom + "title"), link.get("href"), value,
                          "youtube_feed_views" if stats is not None else "curated_feed_presence"))
     return rows
+
+
+def _youtube_profile_rows(root, feed_url, channel_name):
+    """Expose public video citations as candidates without inventing quality scores."""
+    from .engine import MAX_OBSERVATION_TEXT, citation, clean
+
+    atom = "{http://www.w3.org/2005/Atom}"
+    media = "{http://search.yahoo.com/mrss/}"
+    rows = []
+    for entry in root.findall(atom + "entry")[:15]:
+        link = entry.find(atom + "link")
+        profile = entry.find(atom + "author/" + atom + "uri")
+        stats = entry.find(".//" + media + "statistics")
+        if link is None or not link.get("href"):
+            continue
+        post_citation = citation(link.get("href"))
+        profile_citation = citation(profile.text if profile is not None else "")
+        post_url = urlsplit(post_citation)
+        profile_url = urlsplit(profile_citation)
+        post_params = dict(
+            pair.split("=", 1) for pair in post_url.query.split("&") if "=" in pair
+        )
+        title = clean(entry.findtext(atom + "title"), MAX_OBSERVATION_TEXT)
+        if (not title or not post_citation or not profile_citation
+                or post_url.hostname not in ("www.youtube.com", "youtube.com")
+                or post_url.path != "/watch"
+                or not re.fullmatch(r"[A-Za-z0-9_-]{11}", post_params.get("v", ""))
+                or profile_url.hostname not in ("www.youtube.com", "youtube.com")):
+            continue
+
+        # A public feed timestamp measures freshness only; missing creator and
+        # platform-specific quality evidence remains missing for the scorer.
+        published = entry.findtext(atom + "published") or entry.findtext(atom + "updated")
+        factors = {}
+        freshness = _freshness_score(published)
+        if freshness is not None:
+            factors["freshness"] = freshness
+
+        metrics = {}
+        if stats is not None:
+            raw_views = stats.get("views")
+            if raw_views and len(raw_views) <= 18 and raw_views.isdigit():
+                metrics["views"] = int(raw_views)
+        rows.append({
+            "text": title,
+            "citation": post_citation,
+            "profile_source": True,
+            "quality_factors": factors,
+            "profile_evidence": {
+                "platform": "youtube",
+                "profile_citation": profile_citation,
+                "post_citation": post_citation,
+                "channel_name": clean(channel_name, 120),
+                "published_at": published,
+                "public_metrics": metrics,
+                "provenance": {
+                    "source_kind": "public_youtube_atom_feed",
+                    "feed_citation": citation(feed_url),
+                },
+                "measured_factors": {
+                    "freshness": {
+                        "value": freshness,
+                        "method": "linear_age_decay_30_days",
+                    } if freshness is not None else None,
+                },
+            },
+        })
+    return rows
+
+
+def _freshness_score(published_at):
+    """Map a valid publication age to 0–100; unknown dates stay unmeasured."""
+    if not isinstance(published_at, str):
+        return None
+    try:
+        stamp = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+        if stamp.tzinfo is None:
+            return None
+        age_seconds = time.time() - stamp.timestamp()
+        if age_seconds < -300:
+            return None
+        age_days = max(0.0, age_seconds / 86400)
+        return round(max(0.0, 100.0 * (1.0 - age_days / 30.0)), 2)
+    except (ValueError, OverflowError):
+        return None
+
+
+def youtube(url):
+    return _youtube_rows(parse_feed_xml(_fetch(url)))
+
+
+def youtube_with_profile_candidates(url, channel_name):
+    root = parse_feed_xml(_fetch(url))
+    return (_youtube_rows(root)
+            + _youtube_profile_rows(root, url, channel_name))
+
+
+def profile_source_status(source_health=None):
+    """Report real public profile adapters and platforms without one."""
+    from ai_model.platform_optimization import PLATFORMS
+
+    configured = {
+        f"youtube_{feed['name']}": feed for feed in legacy.YOUTUBE_FEEDS
+    }
+    health = source_health if isinstance(source_health, dict) else {}
+    platforms = {}
+    for platform in PLATFORMS:
+        if platform != "youtube":
+            platforms[platform] = {
+                "status": "unsupported",
+                "reason": "no_anonymous_public_profile_adapter",
+                "source_count": 0,
+                "candidate_count": 0,
+                "eligible_count": 0,
+                "missing_metrics": [],
+                "invalid_metrics": [],
+            }
+            continue
+        entries = []
+        source_health_rows = []
+        missing = set()
+        invalid = set()
+        candidates = eligible = 0
+        for name in configured:
+            item = health.get(name, {})
+            item = item if isinstance(item, dict) else {}
+            candidates += item.get("profile_candidate_count", 0)
+            eligible += item.get("profile_eligible_count", 0)
+            missing.update(item.get("profile_missing_metrics", []))
+            invalid.update(item.get("profile_invalid_metrics", []))
+            entries.append(name)
+            failure = item.get("failure_class") or item.get("error")
+            source_health_rows.append({
+                "source": name,
+                "status": (
+                    "not_scanned" if not item else
+                    "failed" if not item.get("ok") else "available"
+                ),
+                "failure": failure,
+                "candidate_count": item.get("profile_candidate_count", 0),
+                "eligible_count": item.get("profile_eligible_count", 0),
+            })
+        platforms[platform] = {
+            "status": "public_feed_configured",
+            "reason": None,
+            "source_count": len(configured),
+            "candidate_count": candidates,
+            "eligible_count": eligible,
+            "missing_metrics": sorted(missing),
+            "invalid_metrics": sorted(invalid),
+            "sources": entries,
+            "source_health": source_health_rows,
+        }
+    return {"platforms": platforms}
 
 
 def configured_sources():
@@ -418,7 +571,9 @@ def configured_sources():
             domain, BLUESKY_SEARCH, functools.partial(bluesky_peak, domain))
     for feed in legacy.YOUTUBE_FEEDS:
         sources["youtube_" + feed["name"]] = (
-            "music", feed["url"], functools.partial(youtube, feed["url"]))
+            "music", feed["url"],
+            functools.partial(youtube_with_profile_candidates, feed["url"],
+                              feed["name"]))
     for name, domain, url in APP_RSS:
         sources[name] = (domain, url, functools.partial(rss, url))
     queries = {
