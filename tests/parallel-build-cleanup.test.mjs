@@ -15,7 +15,7 @@ function fixture(t, fail=false, readonlyCache=false) {
     }
     fs.rmSync(root,{recursive:true,force:true});
   });
-  const targets=[".local",".cache",".agents","node_modules/.vite","node_modules/.cache"];
+  const targets=[".cache",".local",".agents","node_modules/.vite","node_modules/.cache"];
   for(const dir of [...targets,"server","data","uploads"]) {
     fs.mkdirSync(path.join(root,dir),{recursive:true});
     fs.writeFileSync(path.join(root,dir,"keep-or-delete"),"fixture");
@@ -39,11 +39,11 @@ function fixture(t, fail=false, readonlyCache=false) {
 target="\${@: -1}"
 echo "start $target" >> "$EVENTS"
 if [[ "$target" == ".local" && "$FAIL_TEST" == "yes" ]]; then
-  sleep 0.1
+sleep 0.1
   echo "end $target" >> "$EVENTS"
   exit 23
 fi
-sleep 1.5
+  sleep 0.1
 "$REAL_RM" "$@"
 rc=$?
 echo "end $target" >> "$EVENTS"
@@ -55,12 +55,10 @@ exit "$rc"
   return {root,targets,result,events:fs.readFileSync(path.join(root,"events"),"utf8").trim().split("\n")};
 }
 
-test("cleanup overlaps two deletions, removes every cache, and preserves application data", t=>{
+test("cleanup serializes cache and local deletion, removes every cache, and preserves application data", t=>{
   const {root,targets,result,events}=fixture(t);
   assert.equal(result.status,0,result.stderr);
-  let running=0,peak=0;
-  for(const event of events) { running+=event.startsWith("start")?1:-1; peak=Math.max(peak,running); }
-  assert.equal(peak,2); assert.equal(running,0);
+  assert.deepEqual(events,targets.map(target=>[`start ${target}`,`end ${target}`]).flat());
   for(const target of targets) assert.equal(fs.existsSync(path.join(root,target)),false);
   for(const target of ["server","data","uploads"]) assert.equal(fs.existsSync(path.join(root,target,"keep-or-delete")),true);
   assert.match(result.stdout,/\[cleanup\] Complete/);
@@ -74,11 +72,11 @@ test("cleanup removes Go module caches with read-only directories",t=>{
   assert.match(result.stdout,/\[cleanup\] Complete/);
 });
 
-test("failure stops queued deletions, drains active work, and exits unsuccessfully", t=>{
+test("failure prevents later cleanup work from starting and exits unsuccessfully", t=>{
   const {root,result,events}=fixture(t,true);
   assert.notEqual(result.status,0);
   assert.match(result.stderr,/FAILED .local/);
-  assert.deepEqual(events.filter(x=>x.startsWith("start")).sort(),["start .cache","start .local"]);
-  assert.ok(events.includes("end .cache"));
+  assert.deepEqual(events,["start .cache","end .cache","start .local","end .local"]);
+  assert.equal(fs.existsSync(path.join(root,".cache")),false);
   assert.equal(fs.existsSync(path.join(root,".agents/keep-or-delete")),true);
 });
