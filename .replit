@@ -9,6 +9,7 @@ requiredFiles = [".replit", "replit.nix"]
 build = ["bash", "build.sh"]
 run = ["bash", "start.sh"]
 ignorePorts = false
+deploymentTarget = "gce"
 
 [env]
 NODE_ENV = "development"
@@ -26,16 +27,12 @@ MAXCORE_SERVING_RELEASE = "live-awareness"
 STRIPE_ALLOW_CATALOG_PROVISIONING = "0"
 
 [[ports]]
-localPort = 53
-externalPort = 3000
-
-[[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
 localPort = 5353
-externalPort = 3001
+externalPort = 3000
 
 [[ports]]
 localPort = 5556
