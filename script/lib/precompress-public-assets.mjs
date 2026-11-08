@@ -42,9 +42,8 @@ async function writeCompressed(source, target, contents) {
   }
 }
 
-async function ensureVariant(source, suffix, compress, decompress) {
+async function ensureVariant(source, suffix, compress, decompress, original) {
   const target = `${source}${suffix}`;
-  const original = await fs.readFile(source);
   let existing;
   try {
     existing = await fs.readFile(target);
@@ -91,6 +90,9 @@ export async function precompressPublicAssets(root, { concurrency = 4 } = {}) {
   async function worker() {
     while (cursor < assets.length) {
       const source = assets[cursor++];
+      // Read each original once and reuse those bytes for both encoders. The
+      // previous implementation read every large JS/CSS asset twice per build.
+      const original = await fs.readFile(source);
       const [brotliWritten, gzipWritten] = await Promise.all([
         ensureVariant(
           source,
@@ -99,12 +101,14 @@ export async function precompressPublicAssets(root, { concurrency = 4 } = {}) {
             params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 6 },
           }),
           brotliDecompressAsync,
+          original,
         ),
         ensureVariant(
           source,
           ".gz",
           (input) => gzipAsync(input, { level: 9 }),
           gunzipAsync,
+          original,
         ),
       ]);
       filesWritten += Number(brotliWritten) + Number(gzipWritten);

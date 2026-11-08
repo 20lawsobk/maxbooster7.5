@@ -1961,19 +1961,39 @@ export class PdimRedisClient extends EventEmitter {
     if (!Number.isFinite(timeout) || timeout < 0) {
       throw new TypeError("BZPOPMIN timeout must be a finite non-negative number");
     }
-    const result = await this.exec<unknown>(
-      ["BZPOPMIN", key, String(timeout)],
-      {
-        blocking: true,
-        requestTimeoutMs:
-          timeout === 0 ? null : timeout * 1000 + PDIM_EXEC_TIMEOUT_MS,
-      },
-    );
-    if (result === null) return null;
-    if (!Array.isArray(result) || result.length !== 3) {
-      throw new Error("PDIM BZPOPMIN returned an invalid Redis response");
+    // Undici's fetch response-header deadline is five minutes even when the
+    // AbortSignal is unbounded. A Redis timeout=0 over HTTP therefore failed
+    // every five minutes with UND_ERR_HEADERS_TIMEOUT. Keep Redis's indefinite
+    // blocking semantics by issuing bounded 240-second server waits and
+    // transparently renewing them before that transport deadline.
+    const deadline = timeout === 0 ? null : performance.now() + timeout * 1000;
+    while (true) {
+      const remainingSeconds = deadline === null
+        ? MAX_HTTP_BZPOP_WAIT_SECONDS
+        : Math.max(0, (deadline - performance.now()) / 1000);
+      if (remainingSeconds <= 0) return null;
+      const serverWaitSeconds = Math.min(MAX_HTTP_BZPOP_WAIT_SECONDS, remainingSeconds);
+      const startedAt = performance.now();
+      const result = await this.exec<unknown>(
+        ["BZPOPMIN", key, String(serverWaitSeconds)],
+        {
+          blocking: true,
+          requestTimeoutMs: Math.ceil(serverWaitSeconds * 1000) + PDIM_EXEC_TIMEOUT_MS,
+        },
+      );
+      if (result !== null) {
+        if (!Array.isArray(result) || result.length !== 3) {
+          throw new Error("PDIM BZPOPMIN returned an invalid Redis response");
+        }
+        return [String(result[0]), String(result[1]), String(result[2])];
+      }
+      if (deadline !== null && performance.now() >= deadline) return null;
+      // A conforming server returns null only after the requested wait. If it
+      // returns early, avoid a hot retry loop while preserving prompt wakeup.
+      if (performance.now() - startedAt < serverWaitSeconds * 1000 - 1_000) {
+        await this.delay(50);
+      }
     }
-    return [String(result[0]), String(result[1]), String(result[2])];
   }
 
   // ── List atomic move ───────────────────────────────────────────────────────
@@ -2356,6 +2376,7 @@ const DIRECT_PROBE_TIMEOUT_MS = 5_000;
 // still keeps the per-lane drain rate at ~2 calls/s (vs 0.5 at 15s) and
 // gives real latency spikes a chance to resolve before the timeout fires.
 const PDIM_EXEC_TIMEOUT_MS = 4_000;
+const MAX_HTTP_BZPOP_WAIT_SECONDS = 240;
 
 let _directProbeTimer: ReturnType<typeof setInterval> | null = null;
 

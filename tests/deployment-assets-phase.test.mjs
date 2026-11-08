@@ -70,7 +70,7 @@ test("deployment asset finalization refreshes strict hashes after deliberate sid
 
   const result = runAssetsPhase(root);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Verified \d+ final public assets; removed \d+ precompressed variants \(\d+ bytes\); build contract refreshed and revalidated\./);
+  assert.match(result.stdout, /Verified \d+ final public assets; removed \d+ precompressed variants \(\d+ bytes\); reused validated hashes for unchanged files\./);
   await assert.rejects(access(brotli), { code: "ENOENT" });
   await assert.rejects(access(gzip), { code: "ENOENT" });
   assert.doesNotThrow(() => validateBuild(root));

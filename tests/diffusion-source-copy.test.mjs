@@ -37,6 +37,45 @@ test("diffusion staging excludes generated shards before copy and preserves the 
   assert.equal(fs.existsSync(path.join(source, "worker/__pycache__/worker.pyc")), true);
 });
 
+test("unchanged diffusion trees skip staging and destination replacement", t => {
+  const { source, destination, root } = fixture(t);
+  const first = spawnSync("python3", [helper, source, destination], {
+    encoding: "utf8",
+    timeout: 15_000,
+  });
+  assert.equal(first.status, 0, first.stderr);
+  const before = fs.statSync(path.join(destination, "worker.py"));
+
+  const second = spawnSync("python3", [helper, source, destination], {
+    encoding: "utf8",
+    timeout: 15_000,
+  });
+  assert.equal(second.status, 0, second.stderr);
+  assert.match(second.stdout, /unchanged.*skipped copy and replacement/i);
+  const after = fs.statSync(path.join(destination, "worker.py"));
+  assert.equal(after.ino, before.ino);
+  assert.equal(after.mtimeMs, before.mtimeMs);
+  assert.equal(fs.readdirSync(root).some(name => name.startsWith(".diffusion-stage-")), false);
+});
+
+test("changed diffusion source replaces only the staged runtime copy", t => {
+  const { source, destination } = fixture(t);
+  const first = spawnSync("python3", [helper, source, destination], {
+    encoding: "utf8",
+    timeout: 15_000,
+  });
+  assert.equal(first.status, 0, first.stderr);
+  fs.writeFileSync(path.join(source, "worker.py"), "print('updated worker')\n");
+
+  const second = spawnSync("python3", [helper, source, destination], {
+    encoding: "utf8",
+    timeout: 15_000,
+  });
+  assert.equal(second.status, 0, second.stderr);
+  assert.match(second.stdout, /Copied \d+ diffusion source files/);
+  assert.equal(fs.readFileSync(path.join(destination, "worker.py"), "utf8"), "print('updated worker')\n");
+});
+
 test("failed diffusion staging leaves the existing runtime copy intact", t => {
   const { source, destination } = fixture(t);
   fs.mkdirSync(destination, { recursive: true });

@@ -64,6 +64,76 @@ export function writeBuildContract(root, expectedInputs) {
     inputs,
   }));
 }
+
+/**
+ * Finalize a public-asset contract after deleting only verified compression
+ * sidecars. The caller must validate the original contract immediately before
+ * removal. Since the only post-validation mutation is unlinking the listed
+ * sidecars, retained file hashes can be reused instead of reading the whole
+ * asset tree a second time. Production startup still runs validateBuild() and
+ * hashes every retained artifact before serving.
+ */
+export function finalizeBuildContractAfterPublicVariantRemoval(root, original, removedPaths) {
+  if (!original || original.version !== 1 || !original.files ||
+      typeof original.files !== "object" || Array.isArray(original.files) ||
+      !original.inputs || typeof original.inputs !== "object" || Array.isArray(original.inputs)) {
+    throw new Error("Cannot finalize an invalid production build contract");
+  }
+  if (!Array.isArray(removedPaths)) {
+    throw new Error("Expected explicit removed public compression sidecars");
+  }
+
+  const current = JSON.parse(fs.readFileSync(path.join(root, "dist/build-complete.json"), "utf8"));
+  if (JSON.stringify(current) !== JSON.stringify(original)) {
+    throw new Error("Build contract changed during public asset finalization");
+  }
+
+  const removed = new Set();
+  for (const file of removedPaths) {
+    if (typeof file !== "string" || path.posix.normalize(file) !== file ||
+        !file.startsWith("dist/public/") || !/\.(?:br|gz)$/i.test(file) ||
+        !Object.hasOwn(original.files, file) || removed.has(file) ||
+        fs.existsSync(path.join(root, file))) {
+      throw new Error(`Refusing to finalize an unexpected public asset removal: ${String(file)}`);
+    }
+    removed.add(file);
+  }
+  if (removed.size === 0) {
+    const expectedPublicFiles = Object.keys(original.files)
+      .filter(file => file.startsWith("dist/public/"))
+      .sort();
+    if (JSON.stringify(publicBuildFiles(root)) !== JSON.stringify(expectedPublicFiles)) {
+      throw new Error("Public build asset list changed without a verified sidecar removal");
+    }
+    return original;
+  }
+
+  const files = Object.fromEntries(
+    Object.entries(original.files).filter(([file]) => !removed.has(file)),
+  );
+  for (const file of required) {
+    if (!Object.hasOwn(files, file)) throw new Error(`Missing artifact after asset finalization: ${file}`);
+  }
+  const expectedPublicFiles = Object.keys(files)
+    .filter(file => file.startsWith("dist/public/"))
+    .sort();
+  if (JSON.stringify(publicBuildFiles(root)) !== JSON.stringify(expectedPublicFiles)) {
+    throw new Error("Public build asset list changed beyond the verified sidecar removals");
+  }
+
+  const finalized = { version: 1, files, inputs: original.inputs };
+  const contractPath = path.join(root, "dist/build-complete.json");
+  const temporaryPath = `${contractPath}.tmp-${process.pid}`;
+  try {
+    fs.writeFileSync(temporaryPath, JSON.stringify(finalized), { flag: "wx" });
+    fs.renameSync(temporaryPath, contractPath);
+  } catch (error) {
+    fs.rmSync(temporaryPath, { force: true });
+    throw error;
+  }
+  return finalized;
+}
+
 export function validateBuild(root) {
   try {
     const contract = JSON.parse(fs.readFileSync(path.join(root, "dist/build-complete.json"), "utf8"));

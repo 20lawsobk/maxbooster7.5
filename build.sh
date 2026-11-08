@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+set -Ee -o pipefail
+trap 'status=$?; printf "ERROR: build.sh failed at line %s (exit %s)\n" "$LINENO" "$status" >&2; exit "$status"' ERR
 cd "$(dirname "${BASH_SOURCE[0]}")"
 phase_cleanup() {
 
@@ -25,7 +26,7 @@ phase_node() {
 # start.sh strategy [a] looks for .node_bin/node first — that is what we produce.
 bash script/deployment/provision-node.sh
 
-echo "==> Build env: node $(node --version 2>/dev/null || echo n/a)  npm $(npm --version 2>/dev/null || echo n/a)"
+echo "==> Build env: node $(node --version)  npm $(npm --version)"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -80,16 +81,10 @@ if [ ! -d client ] && [ ! -d server ] && [ -f "$PREBUILT_FRONTEND" ] && [ -f "$P
   echo "==> FAST PATH: artifact-only input (no application source present)"
   echo "   dist/public/, dist/index.mjs, dist/cluster.mjs ready."
 
-  # ── Binary assets ──────────────────────────────────────────────────────────
-  echo "==> Verifying binary assets in dist/public/..."
-  mkdir -p dist/public/icons dist/public/screenshots 2>/dev/null || true
-  cp client/public/favicon.svg  dist/public/favicon.svg  2>/dev/null || true
-  cp client/public/logo.png     dist/public/logo.png     2>/dev/null || true
-  cp client/public/logo.webp    dist/public/logo.webp    2>/dev/null || true
-  cp -r client/public/icons/.   dist/public/icons/       2>/dev/null || true
-  cp -r client/public/screenshots/. dist/public/screenshots/ 2>/dev/null || true
-  ICON_COUNT=$(ls dist/public/icons/ 2>/dev/null | wc -l || echo 0)
-  echo "   favicon=$([ -f dist/public/favicon.svg ] && echo yes || echo no), icons=${ICON_COUNT}"
+  # Artifact-only builds have no client/ source to copy from. All public assets
+  # must already be in the verified dist tree; do not silently ignore failed
+  # copies from a nonexistent source directory.
+  echo "==> Retaining public assets from the prebuilt dist artifact tree"
 
   # ── Install production dependencies ───────────────────────────────────────
   # Source tree is still present so postinstall.mjs runs normally.
@@ -182,8 +177,7 @@ rm -rf \
   node_modules/builder-util \
   node_modules/builder-util-runtime \
   node_modules/electron-updater \
-  node_modules/7zip-bin \
-  2>/dev/null || true
+  node_modules/7zip-bin
 echo "   Removed: electron / app-builder / 7zip-bin"
 
 # NOTE: @tensorflow/tfjs-backend-webgl is intentionally KEPT.
@@ -192,19 +186,23 @@ echo "   Removed: electron / app-builder / 7zip-bin"
 # any shared/ml model. The WebGL backend gracefully fails to initialise in a headless Node.js
 # environment and TF.js falls back to the CPU backend automatically — no user impact.
 
-rm -rf node_modules/@tensorflow/tfjs-node/dist/kernels 2>/dev/null || true
+rm -rf node_modules/@tensorflow/tfjs-node/dist/kernels
 echo "   Removed: @tensorflow/tfjs-node/dist/kernels (redundant ESM kernels)"
 
-find node_modules/@tensorflow/tfjs/dist -type f \
-  \( -name "tf.js" -o -name "tf.min.js" \
-     -o -name "tf.es2017.js" -o -name "tf.es2017.min.js" \
-     -o -name "tf.fesm.js"  -o -name "tf.fesm.min.js" \) \
-  -delete 2>/dev/null || true
+if [ -d node_modules/@tensorflow/tfjs/dist ]; then
+  find node_modules/@tensorflow/tfjs/dist -type f \
+    \( -name "tf.js" -o -name "tf.min.js" \
+       -o -name "tf.es2017.js" -o -name "tf.es2017.min.js" \
+       -o -name "tf.fesm.js"  -o -name "tf.fesm.min.js" \) \
+    -delete
+fi
 for pkg in tfjs-core tfjs-layers tfjs-converter tfjs-backend-cpu tfjs-data; do
-  find node_modules/@tensorflow/${pkg}/dist -type f \
-    \( -name "*.umd.js" -o -name "*.fesm.js" -o -name "*.es2017.js" \
-       -o -name "*.min.js" \) \
-    -delete 2>/dev/null || true
+  if [ -d "node_modules/@tensorflow/${pkg}/dist" ]; then
+    find "node_modules/@tensorflow/${pkg}/dist" -type f \
+      \( -name "*.umd.js" -o -name "*.fesm.js" -o -name "*.es2017.js" \
+         -o -name "*.min.js" \) \
+      -delete
+  fi
 done
 echo "   Removed: @tensorflow/tfjs browser bundle variants"
 
@@ -215,8 +213,7 @@ rm -rf \
   node_modules/@sentry-internal/browser-utils \
   node_modules/@sentry-internal/replay \
   node_modules/@sentry-internal/replay-canvas \
-  node_modules/@sentry-internal/feedback \
-  2>/dev/null || true
+  node_modules/@sentry-internal/feedback
 echo "   Removed: Sentry browser/replay SDKs"
 echo "   Broad runtime-safe pruning is deferred to one pass after the app capsule."
 }
@@ -413,7 +410,10 @@ echo "==> Finalizing public assets under the strict build contract..."
 node --input-type=module <<'NODE'
 import fs from "node:fs";
 import path from "node:path";
-import { validateBuild, writeBuildContract } from "./scripts/start-production.mjs";
+import {
+  finalizeBuildContractAfterPublicVariantRemoval,
+  validateBuild,
+} from "./scripts/start-production.mjs";
 
 const root = process.cwd();
 const contractPath = path.join(root, "dist/build-complete.json");
@@ -428,14 +428,20 @@ validateBuild(root);
 let removed = 0;
 let removedBytes = 0;
 let sourceAssetCount = 0;
+const removedPaths = [];
 function removeCompressedVariants(directory) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
     if (entry.isDirectory()) {
       removeCompressedVariants(file);
     } else if (entry.isFile() && /\.(?:br|gz)$/i.test(entry.name)) {
+      const relative = path.relative(root, file).split(path.sep).join("/");
+      if (!Object.hasOwn(original.files, relative)) {
+        throw new Error(`Refusing to remove unmanifested compressed public asset: ${relative}`);
+      }
       removedBytes += fs.statSync(file).size;
       fs.unlinkSync(file);
+      removedPaths.push(relative);
       removed++;
     } else if (!entry.isFile()) {
       throw new Error(`Unsupported public build asset: ${path.relative(root, file)}`);
@@ -453,16 +459,16 @@ function countFinalAssets(directory) {
 }
 countFinalAssets(publicRoot);
 
-// Keep the original source hashes: any source change since compilation is a
-// hard failure. Re-hash the deliberate final public tree; do not exempt files
-// from the manifest or relax validation.
-writeBuildContract(root, original.inputs);
-validateBuild(root);
-const finalContract = JSON.parse(fs.readFileSync(contractPath, "utf8"));
-if (Object.keys(finalContract.files).some(file => /\.(?:br|gz)$/i.test(file))) {
+// Reuse hashes from the fully validated original contract for all untouched
+// files; only the explicitly verified public compression sidecars were deleted.
+// The normal production startup gate still rehashes every final artifact.
+const finalContract = finalizeBuildContractAfterPublicVariantRemoval(root, original, removedPaths);
+if (Object.keys(finalContract.files).some(
+  file => file.startsWith("dist/public/") && /\.(?:br|gz)$/i.test(file),
+)) {
   throw new Error("Final asset contract still contains removed compressed variants");
 }
-console.log(`   Verified ${sourceAssetCount} final public assets; removed ${removed} precompressed variants (${removedBytes} bytes); build contract refreshed and revalidated.`);
+console.log(`   Verified ${sourceAssetCount} final public assets; removed ${removed} precompressed variants (${removedBytes} bytes); reused validated hashes for unchanged files.`);
 NODE
 }
 
@@ -474,30 +480,8 @@ rm -rf .deployment-capsule-cache
 # These paths are already explicitly excluded by .dockerignore. Apply that
 # policy inside the disposable historical build, where they were surviving.
 rm -rf maxbooster7.5 .pythonlibs hardware reports .pdim-scratch-*
-echo "==> Removing files with non-UTF-8 filenames from workspace root..."
-python3 - << 'PYEOF' || true
-import os, sys
-workspace = b'.'
-try:
-    entries = os.listdir(workspace)
-    removed = 0
-    for e in entries:
-        eb = e if isinstance(e, bytes) else e.encode('utf-8', errors='surrogateescape')
-        try:
-            eb.decode('utf-8')
-        except UnicodeDecodeError:
-            path = workspace + b'/' + eb
-            try:
-                os.unlink(path)
-                print(f'   Removed non-UTF-8 filename: {eb.hex()}')
-                removed += 1
-            except Exception as ex:
-                print(f'   Warning: could not remove {eb.hex()}: {ex}', file=sys.stderr)
-    if removed == 0:
-        print('   No non-UTF-8 filenames found.')
-except Exception as ex:
-    print(f'   Warning: cleanup scan failed: {ex}', file=sys.stderr)
-PYEOF
+echo "==> Verifying UTF-8-safe filenames without deleting workspace data..."
+python3 script/lib/verify-utf8-root.py "$PWD"
 
 # ─── Final summary ────────────────────────────────────────────────────────────
 FAST_PATH=$(cat "$DEPLOY_STATE_DIR/build-path")

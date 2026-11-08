@@ -7,6 +7,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 import subprocess
 import sys
 
@@ -110,7 +111,14 @@ report = {
     "cycles": cycles,
     "status": "passed" if asset_phase.returncode == 0 and results == [0, 0] else "failed",
 }
-report_path = source / "reports/admin-gap-audit/packaged-restart.json"
+default_report_path = source / "reports/admin-gap-audit/packaged-restart.json"
+report_path = Path(os.environ.get("MAXBOOSTER_RESTART_REPORT", default_report_path))
+if not report_path.is_absolute():
+    report_path = source / report_path
+report_path = report_path.resolve()
+report_root = (source / "reports/admin-gap-audit").resolve()
+if report_root not in report_path.parents:
+    raise SystemExit("Restart evidence output must remain under reports/admin-gap-audit/")
 report_path.parent.mkdir(parents=True, exist_ok=True)
 report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
 print(f"Redacted restart evidence: {report_path.relative_to(source)}", flush=True)

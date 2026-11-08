@@ -5200,7 +5200,7 @@ function startPdimDirectProber() {
   }, DIRECT_PROBE_INTERVAL_MS);
   _directProbeTimer.unref?.();
 }
-var clusterWorkers, cpuCores, autoMultiplier, _PDIM_GAP_FLOOR_BASE_MS, _PDIM_GAP_FLOOR_WORKER_MIN, _PDIM_GAP_FLOOR_MS, _PDIM_GAP_CEIL_MS, _PDIM_GAP_INIT_MS, _PDIM_MULT_429, _PDIM_JITTER_INIT_MS, _pdimGapMs, _pdimQueueDepth, _PDIM_DIRECT_LANES, _pdimDirectChains, _pdimDirectLaneRR, _pdimScriptChain, _directQueueDepth, _scriptQueueDepth, _MAX_DIRECT_WAIT_MS, _fastFailLoggedAt, _last429At, _PASSIVE_DECAY_INTERVAL_MS, _PASSIVE_DECAY_FACTOR, _PASSIVE_DECAY_IDLE_QUIET_MS, _SCRIPT_CALL_GAP_MS, _429_DEDUP_MS, _last429LoggedAt, _suppressed429Count, _EXEC_DEDUP_WINDOW_MS, _lastExecErrorStatus, _lastExecErrorLoggedAt, _suppressedExecErrors, _NET_ERROR_DEDUP_MS, _lastNetErrorMsg, _lastNetErrorLoggedAt, _suppressedNetErrors, L1_MAX_ENTRIES, L1_TTL_MS, _l1, PdimRedisClient, _pdimInstance, DIRECT_PROBE_INTERVAL_MS, DIRECT_PROBE_TIMEOUT_MS, PDIM_EXEC_TIMEOUT_MS, _directProbeTimer;
+var clusterWorkers, cpuCores, autoMultiplier, _PDIM_GAP_FLOOR_BASE_MS, _PDIM_GAP_FLOOR_WORKER_MIN, _PDIM_GAP_FLOOR_MS, _PDIM_GAP_CEIL_MS, _PDIM_GAP_INIT_MS, _PDIM_MULT_429, _PDIM_JITTER_INIT_MS, _pdimGapMs, _pdimQueueDepth, _PDIM_DIRECT_LANES, _pdimDirectChains, _pdimDirectLaneRR, _pdimScriptChain, _directQueueDepth, _scriptQueueDepth, _MAX_DIRECT_WAIT_MS, _fastFailLoggedAt, _last429At, _PASSIVE_DECAY_INTERVAL_MS, _PASSIVE_DECAY_FACTOR, _PASSIVE_DECAY_IDLE_QUIET_MS, _SCRIPT_CALL_GAP_MS, _429_DEDUP_MS, _last429LoggedAt, _suppressed429Count, _EXEC_DEDUP_WINDOW_MS, _lastExecErrorStatus, _lastExecErrorLoggedAt, _suppressedExecErrors, _NET_ERROR_DEDUP_MS, _lastNetErrorMsg, _lastNetErrorLoggedAt, _suppressedNetErrors, L1_MAX_ENTRIES, L1_TTL_MS, _l1, PdimRedisClient, _pdimInstance, DIRECT_PROBE_INTERVAL_MS, DIRECT_PROBE_TIMEOUT_MS, PDIM_EXEC_TIMEOUT_MS, MAX_HTTP_BZPOP_WAIT_SECONDS, _directProbeTimer;
 var init_pdimClient = __esm({
   "server/lib/pdimClient.ts"() {
     "use strict";
@@ -6315,18 +6315,30 @@ var init_pdimClient = __esm({
         if (!Number.isFinite(timeout) || timeout < 0) {
           throw new TypeError("BZPOPMIN timeout must be a finite non-negative number");
         }
-        const result = await this.exec(
-          ["BZPOPMIN", key, String(timeout)],
-          {
-            blocking: true,
-            requestTimeoutMs: timeout === 0 ? null : timeout * 1e3 + PDIM_EXEC_TIMEOUT_MS
+        const deadline = timeout === 0 ? null : performance.now() + timeout * 1e3;
+        while (true) {
+          const remainingSeconds = deadline === null ? MAX_HTTP_BZPOP_WAIT_SECONDS : Math.max(0, (deadline - performance.now()) / 1e3);
+          if (remainingSeconds <= 0) return null;
+          const serverWaitSeconds = Math.min(MAX_HTTP_BZPOP_WAIT_SECONDS, remainingSeconds);
+          const startedAt = performance.now();
+          const result = await this.exec(
+            ["BZPOPMIN", key, String(serverWaitSeconds)],
+            {
+              blocking: true,
+              requestTimeoutMs: Math.ceil(serverWaitSeconds * 1e3) + PDIM_EXEC_TIMEOUT_MS
+            }
+          );
+          if (result !== null) {
+            if (!Array.isArray(result) || result.length !== 3) {
+              throw new Error("PDIM BZPOPMIN returned an invalid Redis response");
+            }
+            return [String(result[0]), String(result[1]), String(result[2])];
           }
-        );
-        if (result === null) return null;
-        if (!Array.isArray(result) || result.length !== 3) {
-          throw new Error("PDIM BZPOPMIN returned an invalid Redis response");
+          if (deadline !== null && performance.now() >= deadline) return null;
+          if (performance.now() - startedAt < serverWaitSeconds * 1e3 - 1e3) {
+            await this.delay(50);
+          }
         }
-        return [String(result[0]), String(result[1]), String(result[2])];
       }
       // ── List atomic move ───────────────────────────────────────────────────────
       async rpoplpush(src, dst) {
@@ -6500,6 +6512,7 @@ var init_pdimClient = __esm({
     DIRECT_PROBE_INTERVAL_MS = 15e3;
     DIRECT_PROBE_TIMEOUT_MS = 5e3;
     PDIM_EXEC_TIMEOUT_MS = 4e3;
+    MAX_HTTP_BZPOP_WAIT_SECONDS = 240;
     _directProbeTimer = null;
   }
 });
