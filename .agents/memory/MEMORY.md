@@ -3,3 +3,4 @@
 - [Private-admin release](admin-first-release-policy.md) — admin use comes first; public rollout remains closed and provider outcomes must be genuine.
 - [Workflow side effects](app-workflow-database-side-effects.md) — startup and preview can write shared data; use isolated fixtures when live writes are not authorized.
 - [Packaged restart fixtures](packaged-restart-fixture.md) — keep generated schema baselines separate from overlapping migrations; require readiness on every restart cycle.
+- [Python scan version attribution](python-scan-version-attribution.md) — resolve reported versions from current constraints before changing pins when scan results disagree.
