@@ -3,13 +3,15 @@ set -e
 cd "$(dirname "${BASH_SOURCE[0]}")"
 phase_cleanup() {
 
-# ─── Purge agent/platform state from the build container ─────────────────────
+# ─── Purge agent state and project-owned build caches ────────────────────────
 # .dockerignore already excludes .local/ (15 GB of Replit agent state) but
 # Replit's repl-layer packager may use different glob semantics than Docker.
 # Deleting here is a belt-and-suspenders guarantee: even if every .dockerignore
-# pattern fails, cleanup prevents agent state from entering the image.
+# pattern fails, cleanup prevents agent state from entering the image. The
+# workspace-root .cache belongs to Replit and is excluded from release payloads;
+# do not delete it while the builder may be repopulating it.
 # Safe: this runs ONLY in the deployment build container, never in dev.
-echo "==> Purging agent state / platform caches from build container..."
+echo "==> Purging agent state / project-owned build caches from build container..."
 bash script/parallel-build-cleanup.sh "$PWD"
 echo "   Done (agent state purged)."
 }
@@ -89,8 +91,8 @@ if [ ! -d client ] && [ ! -d server ] && [ -f "$PREBUILT_FRONTEND" ] && [ -f "$P
   ICON_COUNT=$(ls dist/public/icons/ 2>/dev/null | wc -l || echo 0)
   echo "   favicon=$([ -f dist/public/favicon.svg ] && echo yes || echo no), icons=${ICON_COUNT}"
 
-  # ── Clear build caches only (source kept — PDIM will compress it below) ───
-  rm -rf .cache/ node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
+  # ── Clear project-owned Node caches only (source kept for PDIM) ───────────
+  rm -rf node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
 
   # ── Install production dependencies ───────────────────────────────────────
   # Source tree is still present so postinstall.mjs runs normally.
@@ -140,7 +142,7 @@ else
   npm ci
 
   echo "==> Clearing build caches before compile..."
-  rm -rf .cache/ node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
+  rm -rf node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
 
   # Full build: security-fix → Vite frontend → esbuild server bundle
   # This mirrors the original deployment build command exactly.
@@ -148,7 +150,7 @@ else
   PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build
 
   # Source tree is kept — PDIM will compress it below.
-  rm -rf .cache/ node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
+  rm -rf node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
   echo "   Build complete. dist/: $(du -sh dist/ 2>/dev/null | cut -f1)"
 
   echo "==> Pruning dev dependencies..."

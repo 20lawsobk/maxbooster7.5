@@ -4,27 +4,16 @@ set -eu
 cd "${1:?A disposable build root is required}"
 [[ "$PWD" != "/" ]] || { echo "Refusing filesystem-root cleanup" >&2; exit 1; }
 
-# Cleanup operations are deliberately serialized. In particular, `.local` and
-# `.cache` can share filesystem-backed tooling state during publishing; deleting
-# them concurrently can make both removals contend for the same resources.
-# Never scan first with du.
-targets=(.cache .local .agents node_modules/.vite node_modules/.cache)
+# Cleanup operations are deliberately serialized. The workspace-root `.cache`
+# is Replit-managed and actively repopulated by the builder; it is excluded from
+# the release payload, so never recursively delete it. Remove only project-owned
+# Node caches before local agent state. Never scan first with du.
+targets=(node_modules/.vite node_modules/.cache .local .agents)
 started=$SECONDS
 last_report=$SECONDS
 
 remove_target() {
   local target=$1
-
-  # Go's module cache deliberately marks downloaded module directories
-  # read-only. The publishing copy is disposable, but rm still needs write
-  # permission on every parent directory to unlink those files. Restore only
-  # owner access on this one disposable cache; never chmod source or app data.
-  if [[ "$target" == ".cache" && -d "$target" && ! -L "$target" ]]; then
-    if ! find "$target" -depth -type d -exec chmod u+rwx -- {} +; then
-      echo "[cleanup] Could not make disposable .cache directories removable" >&2
-      return 1
-    fi
-  fi
 
   rm -rf -- "$target"
 }

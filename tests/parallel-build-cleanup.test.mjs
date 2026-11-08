@@ -6,7 +6,7 @@ import path from "node:path";
 import {spawnSync} from "node:child_process";
 
 const script=path.resolve("script/parallel-build-cleanup.sh");
-function fixture(t, fail=false, readonlyCache=false) {
+function fixture(t, fail=false, readonlyCache=false, platformWrites=false) {
   const root=fs.mkdtempSync(path.join(os.tmpdir(),"build-cleanup-"));
   const readonlyDirs=[];
   t.after(()=>{
@@ -15,8 +15,8 @@ function fixture(t, fail=false, readonlyCache=false) {
     }
     fs.rmSync(root,{recursive:true,force:true});
   });
-  const targets=[".cache",".local",".agents","node_modules/.vite","node_modules/.cache"];
-  for(const dir of [...targets,"server","data","uploads"]) {
+  const targets=["node_modules/.vite","node_modules/.cache",".local",".agents"];
+  for(const dir of [...targets,".cache","server","data","uploads"]) {
     fs.mkdirSync(path.join(root,dir),{recursive:true});
     fs.writeFileSync(path.join(root,dir,"keep-or-delete"),"fixture");
   }
@@ -38,6 +38,10 @@ function fixture(t, fail=false, readonlyCache=false) {
   fs.writeFileSync(path.join(root,"bin/rm"),`#!/bin/bash
 target="\${@: -1}"
 echo "start $target" >> "$EVENTS"
+if [[ "$WRITE_PLATFORM_CACHE" == "yes" ]]; then
+  mkdir -p "$WORKSPACE_ROOT/.cache/platform"
+  echo active >> "$WORKSPACE_ROOT/.cache/platform/writes"
+fi
 if [[ "$target" == ".local" && "$FAIL_TEST" == "yes" ]]; then
 sleep 0.1
   echo "end $target" >> "$EVENTS"
@@ -51,23 +55,26 @@ exit "$rc"
 `,{mode:0o755});
   const result=spawnSync("bash",[script,root],{encoding:"utf8",timeout:20000,
     env:{...process.env,PATH:path.join(root,"bin")+":"+process.env.PATH,
-      EVENTS:path.join(root,"events"),REAL_RM:realRm,FAIL_TEST:fail?"yes":"no"}});
+      EVENTS:path.join(root,"events"),REAL_RM:realRm,FAIL_TEST:fail?"yes":"no",
+      WORKSPACE_ROOT:root,WRITE_PLATFORM_CACHE:platformWrites?"yes":"no"}});
   return {root,targets,result,events:fs.readFileSync(path.join(root,"events"),"utf8").trim().split("\n")};
 }
 
-test("cleanup serializes cache and local deletion, removes every cache, and preserves application data", t=>{
-  const {root,targets,result,events}=fixture(t);
+test("cleanup serializes project-cache removal before local cleanup and preserves platform cache", t=>{
+  const {root,targets,result,events}=fixture(t,false,false,true);
   assert.equal(result.status,0,result.stderr);
   assert.deepEqual(events,targets.map(target=>[`start ${target}`,`end ${target}`]).flat());
   for(const target of targets) assert.equal(fs.existsSync(path.join(root,target)),false);
-  for(const target of ["server","data","uploads"]) assert.equal(fs.existsSync(path.join(root,target,"keep-or-delete")),true);
+  for(const target of [".cache","server","data","uploads"]) assert.equal(fs.existsSync(path.join(root,target,"keep-or-delete")),true);
+  assert.equal(fs.readFileSync(path.join(root,".cache/platform/writes"),"utf8").trim().split("\n").length,targets.length);
   assert.match(result.stdout,/\[cleanup\] Complete/);
 });
 
-test("cleanup removes Go module caches with read-only directories",t=>{
+test("cleanup preserves Replit workspace cache and its read-only Go module tree",t=>{
   const {root,targets,result}=fixture(t,false,true);
   assert.equal(result.status,0,result.stderr);
-  assert.equal(fs.existsSync(path.join(root,".cache")),false);
+  assert.equal(fs.existsSync(path.join(root,".cache/testing/subsystems/go/pkg/mod/golang.org/x/sync@v0.24.0/syncmap/map_test.go")),true);
+  assert.equal(fs.statSync(path.join(root,".cache")).mode & 0o777,0o555);
   for(const target of targets) assert.equal(fs.existsSync(path.join(root,target)),false);
   assert.match(result.stdout,/\[cleanup\] Complete/);
 });
@@ -76,7 +83,13 @@ test("failure prevents later cleanup work from starting and exits unsuccessfully
   const {root,result,events}=fixture(t,true);
   assert.notEqual(result.status,0);
   assert.match(result.stderr,/FAILED .local/);
-  assert.deepEqual(events,["start .cache","end .cache","start .local","end .local"]);
-  assert.equal(fs.existsSync(path.join(root,".cache")),false);
+  assert.deepEqual(events,["start node_modules/.vite","end node_modules/.vite","start node_modules/.cache","end node_modules/.cache","start .local","end .local"]);
+  assert.equal(fs.existsSync(path.join(root,".cache/keep-or-delete")),true);
   assert.equal(fs.existsSync(path.join(root,".agents/keep-or-delete")),true);
+});
+
+test("deployment phases do not delete the Replit-managed workspace cache",()=>{
+  const build=fs.readFileSync(path.resolve("build.sh"),"utf8");
+  assert.doesNotMatch(build,/rm -rf \.cache\//);
+  assert.match(build,/rm -rf node_modules\/\.vite\/ node_modules\/\.cache\//);
 });
