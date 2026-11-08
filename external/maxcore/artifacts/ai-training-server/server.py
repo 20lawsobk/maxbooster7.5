@@ -2611,6 +2611,23 @@ async def unified_awareness_status(_key=Depends(require_scope("generate"))):
     return get_engine().status()
 
 
+@app.get("/api/awareness/unified/admin/source-status")
+async def unified_awareness_admin_source_status(_admin=Depends(verify_admin)):
+    """Admin-only, redacted source diagnostics; never returns source snippets."""
+    from ai_model.awareness import get_engine
+    from ai_model.awareness.platform_discovery import provider_state
+
+    status = get_engine().status()
+    return {
+        "ready": status.get("ready") is True,
+        "source_scan_state": status.get("source_scan_state"),
+        "snapshot_id": status.get("snapshot_id"),
+        "snapshot_expires_at": status.get("expires_at"),
+        "provider_policy": provider_state(),
+        "platforms": status.get("profile_sourcing", {}).get("platforms", {}),
+    }
+
+
 # Admin authorization is deliberately stronger than ordinary generation/train
 # access. This isolated route does not relax any serving-write rejection.
 from ai_model.training.live_learning import create_router as _live_learning_router
@@ -2656,7 +2673,7 @@ class UnifiedProfileDiscoverRequest(BaseModel):
 @app.post("/api/awareness/unified/profile-discover")
 async def unified_profile_discover(data: UnifiedProfileDiscoverRequest,
                                    _key=Depends(require_scope("generate"))):
-    """Search MaxCore's persisted public-source index without Exa or gated scraping."""
+    """Search MaxCore's persisted source index without request-time web fetching."""
     from ai_model.awareness import get_engine
     from ai_model.awareness.profile_observatory import search_profile_sources
 
@@ -2669,6 +2686,7 @@ async def unified_profile_discover(data: UnifiedProfileDiscoverRequest,
         or {}
     )
     try:
+        indexed_observations = engine.discovery_observations()
         result = search_profile_sources(
             source_health,
             query=data.query,
@@ -2676,9 +2694,17 @@ async def unified_profile_discover(data: UnifiedProfileDiscoverRequest,
             limit=data.limit,
             benchmark_reference=data.benchmark_reference,
             platform_status=status.get("profile_sourcing", {}).get("platforms", {}),
+            discovery_observations=indexed_observations,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        from ai_model.awareness.engine import AwarenessUnavailable
+        if isinstance(exc, AwarenessUnavailable):
+            raise HTTPException(
+                status_code=503, detail=exc.code,
+            ) from exc
+        raise
     result.update({
         "scan_mode": "scheduled_read_only_source_scan",
         "source_scan_state": status.get("source_scan_state"),

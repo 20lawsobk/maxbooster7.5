@@ -299,6 +299,57 @@ class NativeProfileObservatoryTests(unittest.TestCase):
             result["quality_cohort"]["candidate_observations"], 1
         )
 
+    def test_local_search_includes_first_party_index_rows_not_independent_reports(self):
+        from ai_model.awareness.profile_observatory import search_profile_sources
+
+        result = search_profile_sources(
+            {},
+            query="music artist release",
+            platforms=["instagram"],
+            discovery_observations=[
+                {
+                    "source": "platform_discovery_exa_instagram",
+                    "platform": "instagram",
+                    "text": "Music artist announced a new single and performance",
+                    "citation": "https://www.instagram.com/p/Abc123/",
+                    "observed_at": 1_800_000_000,
+                    "discovery": {
+                        "platform": "instagram",
+                        "retrieval_method": "index_snippet",
+                        "source_type": "platform_origin_search_index",
+                        "original_published_at": None,
+                        "query": "instagram music artist release",
+                        "reuse_rights": "unknown",
+                        "training_eligible": False,
+                    },
+                },
+                {
+                    "source": "platform_discovery_exa_instagram",
+                    "platform": "instagram",
+                    "text": "Independent report about music artist releases",
+                    "citation": "https://news.example.org/music-release-report",
+                    "observed_at": 1_800_000_000,
+                    "discovery": {
+                        "platform": "instagram",
+                        "retrieval_method": "third_party_search",
+                        "source_type": "third_party_search_index",
+                        "original_published_at": None,
+                        "query": "instagram music artist release",
+                        "reuse_rights": "unknown",
+                        "training_eligible": False,
+                    },
+                },
+            ],
+        )
+        self.assertEqual(result["platform_discovery_observation_count"], 1)
+        self.assertEqual(result["matched_observation_count"], 1)
+        self.assertEqual(result["quality_cohort"]["scored_observations"], 0)
+        observation = result["observations"][0]
+        self.assertEqual(observation["platform"], "instagram")
+        self.assertEqual(observation["retrieval_method"], "index_snippet")
+        self.assertFalse(observation["training_eligible"])
+        self.assertIsNone(observation["profile_citation"])
+
 
 if __name__ == "__main__":
     unittest.main()

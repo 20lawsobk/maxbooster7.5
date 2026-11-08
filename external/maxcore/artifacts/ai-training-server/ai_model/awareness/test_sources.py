@@ -14,6 +14,19 @@ class SourceCoverageTests(unittest.TestCase):
         self.assertEqual(rows[0]["value"], 42)
         self.assertEqual(rows[0]["metric"], "youtube_feed_views")
 
+    def test_youtube_feed_omits_stale_items_from_live_awareness(self):
+        from datetime import datetime, timedelta, timezone
+
+        published = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        xml = f"""<feed xmlns="http://www.w3.org/2005/Atom"><entry>
+        <title>Old music item</title>
+        <link href="https://www.youtube.com/watch?v=oldfixture"/>
+        <published>{published}</published>
+        </entry></feed>""".encode()
+        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml):
+            rows = youtube("https://www.youtube.com/feeds/videos.xml")
+        self.assertEqual(rows, [])
+
     def test_youtube_feed_rejects_entity_declarations(self):
         xml = b'<!DOCTYPE feed [<!ENTITY x SYSTEM "file:///etc/passwd">]><feed>&x;</feed>'
         with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml):
@@ -54,19 +67,20 @@ class SourceCoverageTests(unittest.TestCase):
         from ai_model.awareness.sources import profile_source_status
         from ai_model.platform_optimization import PLATFORMS
 
-        result = profile_source_status()["platforms"]
+        with patch.dict("os.environ", {}, clear=True):
+            result = profile_source_status()["platforms"]
         self.assertEqual(set(result), set(PLATFORMS))
         self.assertEqual(result["youtube"]["status"], "public_feed_configured")
         self.assertEqual(result["youtube"]["authorization_mode"], "public_atom_feed")
-        self.assertEqual(result["youtube"]["freshness_state"], "unverified")
+        self.assertEqual(result["youtube"]["freshness_state"], "unavailable")
         self.assertFalse(result["youtube"]["training_eligibility"]["eligible"])
         for platform in set(PLATFORMS) - {"youtube"}:
-            self.assertEqual(result[platform]["status"], "unsupported")
+            self.assertEqual(result[platform]["status"], "unavailable")
             self.assertEqual(
                 result[platform]["reason"],
-                "no_anonymous_public_profile_adapter",
+                "search_provider_not_configured",
             )
-            self.assertEqual(result[platform]["connection_state"], "not_observable_by_maxcore")
+            self.assertEqual(result[platform]["connection_state"], "not_connected")
             self.assertEqual(result[platform]["freshness_state"], "unavailable")
             self.assertFalse(result[platform]["training_eligibility"]["eligible"])
         with_failure = profile_source_status({

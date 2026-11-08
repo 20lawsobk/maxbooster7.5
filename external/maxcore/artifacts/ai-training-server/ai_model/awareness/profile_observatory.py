@@ -10,11 +10,12 @@ from __future__ import annotations
 import re
 from urllib.parse import urlparse, parse_qs
 
-from ai_model.platform_optimization import PLATFORMS
+from ai_model.platform_optimization import PLATFORMS, normalize_platform
 from ai_model.awareness.profile_quality import (
     profile_sourcing_quality_policy,
     summarize_quality_cohort,
 )
+from ai_model.awareness.platform_discovery import platform_hosts
 
 
 DEFAULT_VEO_REFERENCE = {
@@ -25,16 +26,7 @@ DEFAULT_VEO_REFERENCE = {
 
 _TOKENS = re.compile(r"[^\W_]+", re.UNICODE)
 _STOP_WORDS = {"a", "an", "and", "demo", "for", "the", "veo", "video", "with"}
-_PROFILE_HOSTS = {
-    "youtube": {"youtube.com", "youtu.be"},
-    "instagram": {"instagram.com"},
-    "tiktok": {"tiktok.com"},
-    "facebook": {"facebook.com", "fb.com"},
-    "threads": {"threads.net"},
-    "x": {"x.com", "twitter.com"},
-    "linkedin": {"linkedin.com"},
-    "google_business": {"google.com", "business.google.com"},
-}
+_PROFILE_HOSTS = platform_hosts()
 
 
 def _tokens(value: str) -> set[str]:
@@ -109,6 +101,7 @@ def search_profile_sources(
     limit=20,
     benchmark_reference=None,
     platform_status=None,
+    discovery_observations=None,
 ):
     """Search the local public-source index without an external search API."""
     reference = _reference(benchmark_reference)
@@ -136,6 +129,8 @@ def search_profile_sources(
     query_tokens = _tokens(query)
     indexed = []
     matches = []
+    quality_indexed = []
+    quality_matches = []
     observed_keys = set()
     for source_name, source in health.items():
         if not isinstance(source, dict):
@@ -187,8 +182,80 @@ def search_profile_sources(
                 "performance_evidence": row.get("performance_evidence", {}),
             }
             indexed.append(observation)
+            quality_indexed.append(observation)
             if relevance > 0:
                 matches.append(observation)
+                quality_matches.append(observation)
+
+    discovery_count = 0
+    from ai_model.awareness.platform_discovery import classify_result
+    for row in discovery_observations or []:
+        if not isinstance(row, dict):
+            continue
+        discovery = row.get("discovery")
+        if not isinstance(discovery, dict):
+            continue
+        try:
+            platform = normalize_platform(discovery.get("platform"))
+        except ValueError:
+            continue
+        if platform not in requested:
+            continue
+        if (discovery.get("retrieval_method") != "index_snippet"
+                or discovery.get("source_type") != "platform_origin_search_index"):
+            # Unverified third-party results and feed metadata remain in
+            # awareness, but do not masquerade as first-party social content.
+            continue
+        post_url = row.get("citation")
+        if classify_result(platform, post_url) != (
+            "index_snippet", "platform_origin_search_index"
+        ):
+            continue
+        text = row.get("text")
+        text = text.strip()[:500] if isinstance(text, str) else ""
+        if not text:
+            continue
+        dedupe_key = (platform, post_url)
+        if dedupe_key in observed_keys:
+            continue
+        observed_keys.add(dedupe_key)
+        relevance, terms = _query_relevance(text, query_tokens)
+        observation = {
+            "decision_unit": "public_content_observation",
+            "source": row.get("source"),
+            "platform": platform,
+            "text": text,
+            "profile_citation": None,
+            "post_citation": post_url,
+            "published_at": discovery.get("original_published_at"),
+            "observed_at": row.get("observed_at"),
+            "query_relevance_score": relevance,
+            "query_match_terms": terms,
+            "quality_potential_score": None,
+            "quality_status": "insufficient_evidence",
+            "missing_metrics": ["profile_specific_performance_evidence"],
+            "measured_factors": [],
+            "factor_evidence": [],
+            "performance_evidence": {},
+            "retrieval_method": discovery["retrieval_method"],
+            "source_type": discovery["source_type"],
+            "source_query": discovery.get("query"),
+            "search_result_relevance": discovery.get("search_relevance"),
+            "reuse_rights": discovery.get("reuse_rights", "unknown"),
+            "training_eligible": False,
+            "source_attribution_confidence": discovery.get(
+                "source_attribution_confidence"
+            ),
+            "region": discovery.get("region", "unspecified"),
+            "genre": discovery.get("genre", "unclassified"),
+            "content_hash": discovery.get("content_hash"),
+            "expires_at": discovery.get("expires_at"),
+            "redaction_policy": discovery.get("redaction_policy"),
+        }
+        indexed.append(observation)
+        discovery_count += 1
+        if relevance > 0:
+            matches.append(observation)
 
     matches.sort(key=lambda row: (
         row["quality_status"] != "eligible",
@@ -202,14 +269,14 @@ def search_profile_sources(
             "qualityPotentialScore": row["quality_potential_score"],
             "status": row["quality_status"],
         }
-        for row in indexed
+        for row in quality_indexed
     ]
     matched_assessments = [
         {
             "qualityPotentialScore": row["quality_potential_score"],
             "status": row["quality_status"],
         }
-        for row in matches
+        for row in quality_matches
     ]
     supported = {
         platform: (platform_status or {}).get(platform, {}).get("status", "not_scanned")
@@ -235,5 +302,6 @@ def search_profile_sources(
         "indexed_observation_count": len(indexed),
         "matched_observation_count": len(matches),
         "returned_observation_count": len(selected),
+        "platform_discovery_observation_count": discovery_count,
         "observations": selected,
     }
