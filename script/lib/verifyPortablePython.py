@@ -18,6 +18,7 @@ if "--runtime" in sys.argv[2:]:
     modules += [
         "numpy", "PIL", "scipy", "fastapi", "uvicorn", "pydantic",
         "psycopg2", "librosa", "sklearn", "soundfile", "torch", "fsspec",
+        "urllib3",
     ]
 for name in modules:
     module = importlib.import_module(name)
@@ -25,4 +26,6 @@ for name in modules:
         raise RuntimeError(f"Portable Python module {name} escapes the release directory")
     if name == "fsspec" and tuple(map(int, module.__version__.split("."))) < (2026, 6, 0):
         raise RuntimeError("Portable Python fsspec is below the patched security floor")
+    if name == "urllib3" and tuple(map(int, module.__version__.split("."))) < (2, 8, 0):
+        raise RuntimeError("Portable Python urllib3 is below the patched security floor")
 print("Portable Python isolation verified: " + ", ".join(modules))

@@ -15,8 +15,8 @@ function fixture(t, fail=false, readonlyCache=false, platformWrites=false) {
     }
     fs.rmSync(root,{recursive:true,force:true});
   });
-  const targets=["node_modules/.vite","node_modules/.cache",".local",".agents"];
-  for(const dir of [...targets,".cache","server","data","uploads"]) {
+  const targets=[".local",".agents"];
+  for(const dir of [...targets,"node_modules/.vite","node_modules/.cache",".cache","server","data","uploads"]) {
     fs.mkdirSync(path.join(root,dir),{recursive:true});
     fs.writeFileSync(path.join(root,dir,"keep-or-delete"),"fixture");
   }
@@ -60,11 +60,12 @@ exit "$rc"
   return {root,targets,result,events:fs.readFileSync(path.join(root,"events"),"utf8").trim().split("\n")};
 }
 
-test("cleanup serializes project-cache removal before local cleanup and preserves platform cache", t=>{
+test("cleanup serializes agent-state removal and preserves npm and platform caches", t=>{
   const {root,targets,result,events}=fixture(t,false,false,true);
   assert.equal(result.status,0,result.stderr);
   assert.deepEqual(events,targets.map(target=>[`start ${target}`,`end ${target}`]).flat());
   for(const target of targets) assert.equal(fs.existsSync(path.join(root,target)),false);
+  for(const target of ["node_modules/.vite","node_modules/.cache"]) assert.equal(fs.existsSync(path.join(root,target,"keep-or-delete")),true);
   for(const target of [".cache","server","data","uploads"]) assert.equal(fs.existsSync(path.join(root,target,"keep-or-delete")),true);
   assert.equal(fs.readFileSync(path.join(root,".cache/platform/writes"),"utf8").trim().split("\n").length,targets.length);
   assert.match(result.stdout,/\[cleanup\] Complete/);
@@ -83,13 +84,16 @@ test("failure prevents later cleanup work from starting and exits unsuccessfully
   const {root,result,events}=fixture(t,true);
   assert.notEqual(result.status,0);
   assert.match(result.stderr,/FAILED .local/);
-  assert.deepEqual(events,["start node_modules/.vite","end node_modules/.vite","start node_modules/.cache","end node_modules/.cache","start .local","end .local"]);
+  assert.deepEqual(events,["start .local","end .local"]);
   assert.equal(fs.existsSync(path.join(root,".cache/keep-or-delete")),true);
   assert.equal(fs.existsSync(path.join(root,".agents/keep-or-delete")),true);
 });
 
-test("deployment phases do not delete the Replit-managed workspace cache",()=>{
+test("deployment defers npm cache removal until after both build paths",()=>{
   const build=fs.readFileSync(path.resolve("build.sh"),"utf8");
   assert.doesNotMatch(build,/rm -rf \.cache\//);
-  assert.match(build,/rm -rf node_modules\/\.vite\/ node_modules\/\.cache\//);
+  assert.match(build,/rm -rf node_modules\/\.vite node_modules\/\.cache/);
+  const dependencies=build.slice(build.indexOf("phase_dependencies()"),build.indexOf("phase_rust()"));
+  assert.doesNotMatch(dependencies,/rm -rf node_modules\/\.vite/);
+  assert.match(build,/phase_prune\(\)[\s\S]*?_pdim_prune_nm/);
 });

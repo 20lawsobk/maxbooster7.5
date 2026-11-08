@@ -10,8 +10,10 @@ export function buildPlan() {
       ? {elasticCPU:true,maxCPU:id==="app_capsule"?8:2} : {}),
   });
   return [
-    task("cleanup",[],128,1,2),
     task("node",[],128),
+    // Node provisioning can wake platform-backed cache writers. Drain it
+    // before deleting workspace caches so cleanup never races a build task.
+    task("cleanup",["node"],128,1,2),
     task("diffusion",["cleanup"],128),
     task("dependencies",["cleanup","diffusion"],3072,2),
     task("rust",["cleanup"],2048,2),

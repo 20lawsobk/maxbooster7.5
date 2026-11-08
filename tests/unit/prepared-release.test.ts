@@ -39,7 +39,8 @@ it("accepts an unchanged prepared artifact set without invoking a build", async 
   await expect(verifyPreparedRelease(root)).resolves.toHaveProperty("payloadRoot");
 });
 it("installs only the verified payload into an explicitly disposable fixture", async () => {
-  const { root, manifest } = await fixture();
+  const { root, manifest, write } = await fixture();
+  write(".cache/replit/platform-cache", "platform-owned cache");
   const authorization = {
     DEPLOY_PACK: "1",
     PUBLISH_PAYLOAD_CLEANUP: "1",
@@ -54,7 +55,10 @@ it("installs only the verified payload into an explicitly disposable fixture", a
     totalBytes: 1024,
   }));
   expect(fs.existsSync(path.join(root, "server/input.ts"))).toBe(false);
-  expect(await inventory(root)).toEqual(manifest.payload);
+  expect(fs.readFileSync(path.join(root, ".cache/replit/platform-cache"), "utf8"))
+    .toBe("platform-owned cache");
+  expect(await inventory(root, relative =>
+    relative !== ".cache" && !relative.startsWith(".cache/"))).toEqual(manifest.payload);
 }, 60000);
 
 it("refuses oversized and incompletely measured Nix stores before fixture mutation", async () => {

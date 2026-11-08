@@ -3,17 +3,19 @@ set -e
 cd "$(dirname "${BASH_SOURCE[0]}")"
 phase_cleanup() {
 
-# ─── Purge agent state and project-owned build caches ────────────────────────
+# ─── Purge disposable agent state ────────────────────────────────────────────
 # .dockerignore already excludes .local/ (15 GB of Replit agent state) but
 # Replit's repl-layer packager may use different glob semantics than Docker.
 # Deleting here is a belt-and-suspenders guarantee: even if every .dockerignore
 # pattern fails, cleanup prevents agent state from entering the image. The
 # workspace-root .cache belongs to Replit and is excluded from release payloads;
 # do not delete it while the builder may be repopulating it.
-# Safe: this runs ONLY in the deployment build container, never in dev.
-echo "==> Purging agent state / project-owned build caches from build container..."
+# npm ci owns the node_modules lifecycle and replaces that tree itself. Defer
+# removal of compiler caches until after compilation, once, immediately before
+# capsule packing. Safe: this runs ONLY in the deployment build container.
+echo "==> Purging disposable agent state from build container..."
 bash script/parallel-build-cleanup.sh "$PWD"
-echo "   Done (agent state purged)."
+echo "   Done (agent state purged; npm-owned caches are left to npm)."
 }
 
 # ─── Bundle portable Node.js for the deployment container ────────────────────
@@ -29,41 +31,30 @@ echo "==> Build env: node $(node --version 2>/dev/null || echo n/a)  npm $(npm -
 # ─────────────────────────────────────────────────────────────────────────────
 # FAST PATH vs SLOW PATH
 #
-# FAST PATH — all pre-built artifacts are committed to the repl layer:
+# FAST PATH — all pre-built artifacts are present in the build context:
 #   • dist/public/index.html  — Vite frontend bundle (~17 MB)
 #   • dist/index.mjs          — esbuild server bundle (~5 MB)
 #   • dist/cluster.mjs        — esbuild cluster entry (~1 MB)
 #
-#   Compile step is skipped entirely.  Only production deps are installed
-#   (`npm ci --omit=dev`), then security patches are applied to node_modules,
+#   Compile step is skipped entirely. Only production deps are installed
+#   (`npm ci --omit=dev`), then the locked production tree is security-audited,
 #   and the source tree is deleted.  Final image: ~400–550 MB.
 #
 # SLOW PATH — one or more artifacts are missing:
 #   source/ is present in the repl layer (client/, server/, script/ included).
-#   Runs full `npm ci` + security-fix + Vite/esbuild compile + prune.
-#   This matches the behaviour of the original `npm run build` deploy command,
-#   giving full security scanning on every build.
+#   Runs full `npm ci` + Vite/esbuild compile + production prune, then applies
+#   the same fail-closed security audit and installed-tree verification.
 #   Final image: ~1.2–1.5 GB.
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ─── Copy Python diffusion server (before server/ may be deleted) ────────────
 phase_diffusion() {
 echo "==> Preserving Python diffusion server files in services/diffusion/..."
-mkdir -p services/diffusion
 if [ -d "server/services/diffusion" ]; then
-  cp -r server/services/diffusion/. services/diffusion/
-  # advanced_memory/ contains runtime-generated model shards (.npz) produced by the
-  # diffusion API during training sessions.  These are NOT source code — they belong
-  # in the PDIM storage layer (HybridStorage), not as loose deployment artifacts.
-  # The Python API regenerates them at runtime.  Excluding saves ~158 MB from the
-  # deployment image and eliminates a double-count (they would otherwise also land
-  # inside source.pdim via the server/ tree pack below).
-  rm -rf services/diffusion/advanced_memory/ services/diffusion/__pycache__/ 2>/dev/null || true
-  # Mirror the exclusion in the source tree so source.pdim doesn't double-pack them.
-  rm -rf server/services/diffusion/advanced_memory/ server/services/diffusion/__pycache__/ 2>/dev/null || true
-  echo "   Copied $(ls services/diffusion | wc -l | tr -d ' ') source files → services/diffusion/ (shards excluded)"
+  python3 script/lib/copy-diffusion-source.py server/services/diffusion services/diffusion
 else
-  echo "   WARNING: server/services/diffusion/ not found — Python server unavailable in production"
+  echo "ERROR: server/services/diffusion/ is required for the production Python services" >&2
+  exit 1
 fi
 
 PREBUILT_FRONTEND="dist/public/index.html"
@@ -100,13 +91,10 @@ if [ ! -d client ] && [ ! -d server ] && [ -f "$PREBUILT_FRONTEND" ] && [ -f "$P
   ICON_COUNT=$(ls dist/public/icons/ 2>/dev/null | wc -l || echo 0)
   echo "   favicon=$([ -f dist/public/favicon.svg ] && echo yes || echo no), icons=${ICON_COUNT}"
 
-  # ── Clear project-owned Node caches only (source kept for PDIM) ───────────
-  rm -rf node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
-
   # ── Install production dependencies ───────────────────────────────────────
   # Source tree is still present so postinstall.mjs runs normally.
-  echo "==> Installing production dependencies (npm ci --omit=dev)..."
-  npm ci --omit=dev
+  echo "==> Installing production dependencies from the lockfile..."
+  npm ci --omit=dev --no-audit --no-fund
 
   # ── Verify critical runtime packages were installed ───────────────────────
   # Fail the build immediately if a package that the pre-built bundle requires
@@ -119,15 +107,6 @@ if [ ! -d client ] && [ ! -d server ] && [ -f "$PREBUILT_FRONTEND" ] && [ -f "$P
     fi
   done
   echo "   ✅ Critical runtime packages verified: @sentry/node, exceljs, pino, express, drizzle-orm"
-
-  # ── Security fix on freshly-installed node_modules ────────────────────────
-  echo "==> Applying security patches to production node_modules..."
-  if [ -f "script/security-fix.ts" ] && [ -x "node_modules/.bin/tsx" ]; then
-    node_modules/.bin/tsx script/security-fix.ts 2>&1 \
-      || echo "   WARNING: security-fix.ts exited non-zero (non-fatal)"
-  else
-    echo "   INFO: security-fix.ts not available — patches already baked into pre-built dist/"
-  fi
 
   bash script/sync-subsystem-dependencies.sh
   FAST_PATH=1
@@ -147,26 +126,26 @@ else
     exit 1
   fi
 
-  echo "==> Installing all dependencies (dev + prod) for compile step..."
-  npm ci
+  echo "==> Installing all locked dependencies (dev + prod) for compile..."
+  npm ci --no-audit --no-fund
 
-  echo "==> Clearing build caches before compile..."
-  rm -rf node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
-
-  # Full build: security-fix → Vite frontend → esbuild server bundle
-  # This mirrors the original deployment build command exactly.
-  echo "==> Building application (security-fix + Vite frontend + esbuild server bundle)..."
+  # The lockfile overrides and postinstall patch are authoritative. The
+  # production audit and installed-tree verifier below fail the build if the
+  # resulting dependency tree does not satisfy the release security policy.
+  echo "==> Building application (Vite frontend + esbuild server bundle)..."
   PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build
 
-  # Source tree is kept — PDIM will compress it below.
-  rm -rf node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
   echo "   Build complete. Generated dist/ artifacts are ready."
 
   echo "==> Pruning dev dependencies..."
-  npm prune --omit=dev
+  npm prune --omit=dev --no-audit --no-fund
 
   FAST_PATH=0
 fi
+
+echo "==> Verifying final production dependency security..."
+npm run security:audit
+npm run verify:dependency-security
 
 mkdir -p dist/deployment
 cp script/deployment/ffmpeg-path.sh dist/deployment/ffmpeg-path.sh
@@ -244,49 +223,7 @@ echo "   Broad runtime-safe pruning is deferred to one pass after the app capsul
 
 # ─── Portable Python runtime ─────────────────────────────────────────────────
 phase_python() {
-# The run container is a Debian-based VM.  The Nix-installed Python in the
-# build container embeds Nix store paths that don't exist in the run container.
-# We download python-build-standalone which links against standard glibc and
-# runs correctly in both environments.
-_PYRUNTIME="python_runtime"
-_PYVER="3.12.13"
-_PYDATE="20260325"
-_PYURL="https://github.com/astral-sh/python-build-standalone/releases/download/${_PYDATE}/cpython-${_PYVER}%2B${_PYDATE}-x86_64-unknown-linux-gnu-install_only.tar.gz"
-
-if [ -x "${_PYRUNTIME}/bin/python3" ]; then
-  _PY_VER_STR=$("${_PYRUNTIME}/bin/python3" --version 2>&1)
-  if [ "$_PY_VER_STR" != "Python ${_PYVER}" ]; then
-    echo "ERROR: Existing portable Python is ${_PY_VER_STR}; expected Python ${_PYVER}" >&2
-    exit 1
-  fi
-  echo "==> Checking existing portable Python runtime against the MaxCore manifest..."
-  "${_PYRUNTIME}/bin/python3" -I -B script/lib/installPortablePythonDependencies.py "${_PYRUNTIME}"
-  echo "   Verified existing isolated Python ${_PYVER} and declared runtime dependencies"
-  return
-fi
-
-echo "==> Downloading portable Python ${_PYVER} (x86_64-linux-gnu) ..."
-mkdir -p "${_PYRUNTIME}"
-if (set -o pipefail; curl --fail --silent --show-error --location \
-      --retry 2 --connect-timeout 15 --max-time 180 "${_PYURL}" \
-      | tar xz --strip-components=1 -C "${_PYRUNTIME}" python/ 2>/dev/null); then
-  if [ ! -x "${_PYRUNTIME}/bin/python3" ]; then
-    echo "ERROR: Downloaded portable Python binary is not executable." >&2
-    exit 1
-  fi
-  _PY_VER_STR=$("${_PYRUNTIME}/bin/python3" --version 2>&1)
-  if [ "$_PY_VER_STR" != "Python ${_PYVER}" ]; then
-    echo "ERROR: Downloaded portable Python is ${_PY_VER_STR}; expected Python ${_PYVER}" >&2
-    exit 1
-  fi
-  echo "   Portable Python installed: ${_PY_VER_STR}"
-  echo "   Installing only declared MaxCore runtime dependencies..."
-  "${_PYRUNTIME}/bin/python3" -I -B script/lib/installPortablePythonDependencies.py "${_PYRUNTIME}"
-  echo "   ✅ Python runtime ready: ${_PY_VER_STR} → ./${_PYRUNTIME}/"
-else
-  echo "ERROR: Portable Python download or extraction failed; refusing a host-Python fallback." >&2
-  exit 1
-fi
+  node script/lib/provisionPortablePython.mjs "$PWD"
 }
 
 # ─── App deployment capsule (Pocket Dimension engine) ─────────────────────────
@@ -361,31 +298,13 @@ _pdim_tar_create() {
 }
 
 # ── node_modules pre-pruning ─────────────────────────────────────────────────
-# Strip files that are never needed at runtime BEFORE compression.
-# Typical savings: 30-40% reduction → compressor then works on a smaller corpus.
+# Strip package-only material before compression, preserving executable/source
+# runtime files and all legal notices. Compiler caches are removed once here,
+# after both build paths have finished using them.
 _pdim_prune_nm() {
-  echo "   Pruning node_modules with one fail-closed filesystem traversal..."
-  # Keep all broad pruning in one pass. `-prune` prevents descending into
-  # discarded trees; direct rm batches avoid one process per file. Do not use
-  # `-delete` here because it implies depth-first traversal and defeats prune.
-  find node_modules \
-    \( -type d \( \
-      -name 'test' -o -name 'tests' -o -name '__tests__' \
-      -o -name 'spec' -o -name 'specs' -o -name '__spec__' \
-      -o -name 'coverage' \
-      -o -name 'docs' -o -name 'documentation' \
-      -o -name 'examples' -o -name 'example' \
-      -o -name 'benchmark' -o -name 'benchmarks' \
-      -o -name 'man' -o -name '.github' \
-    \) -prune -exec rm -rf -- {} + \) -o \
-    \( -type f \( -name '*.map' -o -name '*.ts' \) \
-      -exec rm -f -- {} + \) -o \
-    \( -maxdepth 3 -type f \( \
-      -name 'CHANGELOG*' -o -name 'CHANGES*' -o -name 'HISTORY*' \
-      -o -name 'CONTRIBUTING*' -o -name 'AUTHORS' -o -name 'NOTICE' \
-      -o -name '*.md' -o -name '*.markdown' -o -name '*.flow' -o -name '*.flow.js' \
-    \) -exec rm -f -- {} + \)
-  echo "   Pruned runtime-safe tests, docs, maps, and source files."
+  echo "   Removing npm-owned compiler caches after build..."
+  rm -rf node_modules/.vite node_modules/.cache
+  node script/lib/pruneRuntimeNodeModules.mjs "$PWD"
 }
 
 # ── Capsule pack function ─────────────────────────────────────────────────────
@@ -446,19 +365,25 @@ for _f in capacitor.config.ts vite.config.ts tailwind.config.ts postcss.config.j
 done
 if [ -n "$_SOURCE_DIRS" ] || [ -n "$_SOURCE_CONFIGS" ]; then
   # shellcheck disable=SC2086
-  _pdim_tar_create source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} || exit $?
-  if [ -f source.pdim ]; then
-    node script/lib/finalize-source-manifest.mjs source.pdim source.manifest.json
-    # shellcheck disable=SC2086
-    rm -rf ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null || true
-    if [ -n "$_RUNTIME_REGISTRY_BACKUP" ]; then
-      mkdir -p shared
-      cp "$_RUNTIME_REGISTRY_BACKUP" shared/social-platform-optimization.json
-    fi
-    echo "   ✅ Source tree: packed → ${_SRC_PACKED} (${_PDIM_FORMAT}, sha256=${_SRC_CKSUM:0:16}...)"
-  else
-    echo "   WARNING: source.pdim not created — source tree left uncompressed"
+  # The source capsule excludes only generated diffusion memory and bytecode.
+  # The original tree stays intact until the capsule checksum and manifest are
+  # verified; archive failures are fatal rather than silently shipping gaps.
+  _pdim_tar_create source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} \
+    '--exclude=server/services/diffusion/**/advanced_memory' \
+    '--exclude=server/services/diffusion/**/__pycache__' \
+    '--exclude=server/services/diffusion/**/*.npz' || exit $?
+  if [ ! -s source.pdim ] || [ ! -s source.manifest.json ]; then
+    echo "ERROR: Source capsule or streamed manifest was not created; source files were preserved" >&2
+    exit 1
   fi
+  node script/lib/finalize-source-manifest.mjs source.pdim source.manifest.json
+  # shellcheck disable=SC2086
+  rm -rf ${_SOURCE_DIRS} ${_SOURCE_CONFIGS}
+  if [ -n "$_RUNTIME_REGISTRY_BACKUP" ]; then
+    mkdir -p shared
+    cp "$_RUNTIME_REGISTRY_BACKUP" shared/social-platform-optimization.json
+  fi
+  echo "   ✅ Verified source.pdim and source.manifest.json; source inputs were removed only after checksum validation."
 else
   echo "   INFO: No source directories found — skipping source capsule"
 fi
@@ -501,12 +426,15 @@ if (!original.inputs || typeof original.inputs !== "object" || Array.isArray(ori
 validateBuild(root);
 
 let removed = 0;
+let removedBytes = 0;
+let sourceAssetCount = 0;
 function removeCompressedVariants(directory) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
     if (entry.isDirectory()) {
       removeCompressedVariants(file);
     } else if (entry.isFile() && /\.(?:br|gz)$/i.test(entry.name)) {
+      removedBytes += fs.statSync(file).size;
       fs.unlinkSync(file);
       removed++;
     } else if (!entry.isFile()) {
@@ -514,14 +442,27 @@ function removeCompressedVariants(directory) {
     }
   }
 }
-removeCompressedVariants(path.join(root, "dist/public"));
+const publicRoot = path.join(root, "dist/public");
+removeCompressedVariants(publicRoot);
+function countFinalAssets(directory) {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) countFinalAssets(file);
+    else if (entry.isFile()) sourceAssetCount++;
+  }
+}
+countFinalAssets(publicRoot);
 
 // Keep the original source hashes: any source change since compilation is a
 // hard failure. Re-hash the deliberate final public tree; do not exempt files
 // from the manifest or relax validation.
 writeBuildContract(root, original.inputs);
 validateBuild(root);
-console.log(`   Verified strict manifest after removing ${removed} compressed variants.`);
+const finalContract = JSON.parse(fs.readFileSync(contractPath, "utf8"));
+if (Object.keys(finalContract.files).some(file => /\.(?:br|gz)$/i.test(file))) {
+  throw new Error("Final asset contract still contains removed compressed variants");
+}
+console.log(`   Verified ${sourceAssetCount} final public assets; removed ${removed} precompressed variants (${removedBytes} bytes); build contract refreshed and revalidated.`);
 NODE
 }
 

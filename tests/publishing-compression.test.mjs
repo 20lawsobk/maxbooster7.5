@@ -80,6 +80,43 @@ test("source-tree packing preserves files until the shell performs cleanup", t =
   assert.equal(summary.autoRestore,false);
 });
 
+test("source capsule excludes generated diffusion shards before archiving and records the exclusions", t => {
+  const {root,run}=setup(t);
+  fs.mkdirSync(path.join(root,"fixture/advanced_memory/nested"),{recursive:true});
+  fs.writeFileSync(path.join(root,"fixture/advanced_memory/nested/shard.bin"),"generated shard");
+  fs.writeFileSync(path.join(root,"fixture/nested-cache.npz"),"generated numpy archive");
+  fs.writeFileSync(path.join(root,"fixture/runtime.py"),"print('runtime source')\n");
+  const result=run("paths","source.pdim","fixture",
+    "--exclude=fixture/**/advanced_memory",
+    "--exclude=fixture/**/*.npz");
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(fs.existsSync(path.join(root,"fixture/advanced_memory/nested/shard.bin")),true);
+  assert.equal(fs.existsSync(path.join(root,"fixture/nested-cache.npz")),true);
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json")));
+  assert.deepEqual(manifest.excludePaths,[
+    "fixture/**/advanced_memory",
+    "fixture/**/*.npz",
+  ]);
+  const listing=spawnSync("tar",["--zstd","-tf","source.pdim"],{cwd:root,encoding:"utf8"});
+  assert.equal(listing.status,0,listing.stderr);
+  assert.match(listing.stdout,/fixture\/runtime\.py/);
+  assert.doesNotMatch(listing.stdout,/advanced_memory|nested-cache\.npz/);
+});
+
+test("source manifest finalization rejects a capsule checksum mismatch", t => {
+  const {root,run}=setup(t);
+  assert.equal(run("paths","source.pdim","fixture").status,0);
+  const original=fs.readFileSync(path.join(root,"source.manifest.json"),"utf8");
+  fs.appendFileSync(path.join(root,"source.pdim"),"tamper");
+  const finalized=spawnSync(process.execPath,[
+    path.resolve("script/lib/finalize-source-manifest.mjs"),"source.pdim","source.manifest.json",
+  ],{cwd:root,encoding:"utf8"});
+  assert.notEqual(finalized.status,0);
+  assert.match(finalized.stderr,/checksum does not match/);
+  assert.equal(fs.readFileSync(path.join(root,"source.manifest.json"),"utf8"),original);
+  assert.equal(fs.existsSync(path.join(root,"fixture/data.txt")),true);
+});
+
 test("build.sh source phase reuses streamed hash and member-size metadata", t => {
   const {root}=setup(t);
   fs.copyFileSync("build.sh",path.join(root,"build.sh"));
@@ -98,8 +135,36 @@ test("build.sh source phase reuses streamed hash and member-size metadata", t =>
   assert.equal(manifest.rawSizeBytes,payload.length+helperBytes);
   assert.equal(manifest.packedSizeBytes,fs.statSync(path.join(root,"source.pdim")).size);
   assert.equal(manifest.memberCount,5);
+  assert.deepEqual(manifest.excludePaths,[
+    "server/services/diffusion/**/advanced_memory",
+    "server/services/diffusion/**/__pycache__",
+    "server/services/diffusion/**/*.npz",
+  ]);
   assert.equal(manifest.sha256,
     createHash("sha256").update(fs.readFileSync(path.join(root,"source.pdim"))).digest("hex"));
+});
+
+test("build.sh preserves source when the source manifest is missing or corrupt", t => {
+  const {root}=setup(t);
+  fs.copyFileSync("build.sh",path.join(root,"build.sh"));
+  fs.mkdirSync(path.join(root,"script/lib"),{recursive:true});
+  fs.copyFileSync("script/lib/finalize-source-manifest.mjs",
+    path.join(root,"script/lib/finalize-source-manifest.mjs"));
+  fs.mkdirSync(path.join(root,"dist"),{recursive:true});
+  fs.writeFileSync(path.join(root,"dist/publish-capsules.mjs"),`
+    import fs from "node:fs";
+    fs.writeFileSync("source.pdim","unverified");
+    fs.writeFileSync("source.manifest.json",JSON.stringify({
+      rawBytes:9,memberCount:1,sha256:"${"0".repeat(64)}",compression:"zstd-19"
+    }));
+  `);
+  fs.mkdirSync(path.join(root,"server"),{recursive:true});
+  fs.writeFileSync(path.join(root,"server/source.ts"),"retained");
+  const result=spawnSync("bash",[path.join(root,"build.sh"),"--executive-task","source"],
+    {cwd:root,encoding:"utf8",timeout:30000});
+  assert.notEqual(result.status,0);
+  assert.match(result.stderr,/checksum does not match/);
+  assert.equal(fs.readFileSync(path.join(root,"server/source.ts"),"utf8"),"retained");
 });
 
 test("compressor failure retains source and the previous archive", t => {

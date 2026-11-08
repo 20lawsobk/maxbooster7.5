@@ -50,7 +50,10 @@ test("a late build failure invalidates its completion marker", () => {
 
 test("Python provisioning fails closed without deleting the existing runtime", () => {
   const source = fs.readFileSync("script/build.ts", "utf8");
-  assert.match(source, /set -o pipefail; curl -fSL --retry 2 --connect-timeout 15/);
+  assert.match(source, /import \{ provisionPortablePython \} from "\.\/lib\/provisionPortablePython\.mjs"/);
+  assert.match(source, /if \(isDeployBuild\) \{\s*try \{\s*provisionPortablePython\(root\);/);
+  assert.ok(source.indexOf("provisionPortablePython(root)") < source.indexOf("const capsuleTargets"));
+  assert.doesNotMatch(source, /curl[^\n]*\|\s*tar/);
   const start = source.indexOf("} catch (e) {") + "} catch (e) {".length;
   const end = source.indexOf("\n    }\n  }", start);
   assert.ok(start > 12 && end > start);

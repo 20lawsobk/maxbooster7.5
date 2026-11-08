@@ -315,17 +315,28 @@ async function phaseTs(config) {
 }
 
 function runTsc(config) {
-  try { fs.rmSync(path.join(ROOT, `.cache/tsbuildinfo.${config}`), { force: true }); } catch {}
-  const res = spawnSync("npx", ["tsc", "-p", `tsconfig.${config}.json`, "--noEmit"], {
-    cwd: ROOT,
-    encoding: "utf8",
-    env: { ...process.env, NODE_OPTIONS: "--max-old-space-size=4096" },
-    // Keep the deployment gate bounded. A split check that cannot settle in
-    // this window is a failed verification, not a reason to hold deployment.
-    timeout: 150_000,
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  return (res.stdout || "") + (res.stderr || "");
+  const buildInfo = path.join(
+    process.env.TMPDIR || "/tmp",
+    `maxbooster-tsbuildinfo-${config}-${process.pid}.tsbuildinfo`,
+  );
+  try {
+    const res = spawnSync("npx", [
+      "tsc", "-p", `tsconfig.${config}.json`, "--noEmit", "--tsBuildInfoFile", buildInfo,
+    ], {
+      cwd: ROOT,
+      encoding: "utf8",
+      env: { ...process.env, NODE_OPTIONS: "--max-old-space-size=4096" },
+      // Keep the deployment gate bounded. A split check that cannot settle in
+      // this window is a failed verification, not a reason to hold deployment.
+      timeout: 150_000,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    return (res.stdout || "") + (res.stderr || "");
+  } finally {
+    // TypeScript's incremental artifact belongs in disposable temp storage,
+    // never the Replit-managed workspace-root .cache.
+    fs.rmSync(buildInfo, { force: true });
+  }
 }
 
 function phaseVerify(config) {

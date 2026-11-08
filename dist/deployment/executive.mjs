@@ -8,6 +8,51 @@ import {liveCapacity} from "./capacity.mjs";
 import {buildPlan,startPlan} from "./plans.mjs";
 import {createOwnedProcessTracker} from "./owned-processes.mjs";
 
+function liveProcessGroupMembers(groupId) {
+  const members = [];
+  for (const name of fs.readdirSync("/proc")) {
+    if (!/^\d+$/.test(name)) continue;
+    try {
+      const match = fs.readFileSync(`/proc/${name}/stat`, "utf8").match(/^\d+ \(.*\) (.*)$/s);
+      if (!match) continue;
+      const fields = match[1].trim().split(/\s+/);
+      if (Number(fields[2]) === groupId && !["Z", "X"].includes(fields[0])) {
+        members.push(Number(name));
+      }
+    } catch (error) {
+      if (!["ENOENT", "ESRCH", "EACCES"].includes(error.code)) throw error;
+    }
+  }
+  return members;
+}
+
+async function terminateFailedTaskGroup(groupId, { graceMs = 250, killWaitMs = 1000 } = {}) {
+  if (!Number.isInteger(groupId) || groupId < 2) return;
+  const signalGroup = signal => {
+    try {
+      process.kill(-groupId, signal);
+    } catch (error) {
+      if (error.code !== "ESRCH") throw error;
+    }
+  };
+  signalGroup("SIGTERM");
+  const graceDeadline = Date.now() + graceMs;
+  while (liveProcessGroupMembers(groupId).length && Date.now() < graceDeadline) {
+    await delay(10);
+  }
+  let remaining = liveProcessGroupMembers(groupId);
+  if (remaining.length) {
+    signalGroup("SIGKILL");
+    const killDeadline = Date.now() + killWaitMs;
+    while ((remaining = liveProcessGroupMembers(groupId)).length && Date.now() < killDeadline) {
+      await delay(10);
+    }
+  }
+  if (remaining.length) {
+    throw new Error(`failed task process group still has live members: ${remaining.join(",")}`);
+  }
+}
+
 export function validatePlan(tasks) {
   const map=new Map(tasks.map(t=>[t.id,t]));
   if(map.size!==tasks.length) throw Error("Duplicate task ID");
@@ -47,7 +92,16 @@ export async function runExecutive(tasks, {
         if(!job.closed && !(ready && job.task.application) && Date.now()-job.started>(job.task.timeoutMs??budgetMs)) failure ??= Error(`Task deadline expired: ${id}`);
         if(!job.closed) continue;
         active.delete(id);
-        if(job.error || job.code!==0) failure ??= job.error ?? Error(`${id} exited ${job.code}`);
+        if(job.error || job.code!==0) {
+          failure ??= job.error ?? Error(`${id} exited ${job.code}`);
+          try {
+            await terminateFailedTaskGroup(job.child.pid);
+          } catch(error) {
+            failure = Error(`${failure.message}; task process group cleanup failed: ${error.message}`, {
+              cause: failure,
+            });
+          }
+        }
         else {
           done.add(id);
           log(`[executive] completed ${id} in ${((Date.now()-job.started)/1000).toFixed(1)}s`);

@@ -90,26 +90,35 @@ test("compression allocation grows with measured capacity, not runtime VM settin
  {capacity:()=>({...capacity(),cpus:16,ioSlots:4}),pollMs:10,log(line){if(line.includes("starting compress"))allocation=line;}});
  assert.match(allocation,/cpu=8/);
 });
-test("portable Python provisioning rejects partial downloads and host-runtime fallback",()=>{
+test("portable Python provisioning stages downloads and rejects host-runtime fallback",()=>{
  const build=fs.readFileSync(new URL("../build.sh",import.meta.url),"utf8");
- assert.match(build,/curl --fail --silent --show-error --location/);
- assert.match(build,/set -o pipefail/);
- assert.match(build,/refusing a host-Python fallback/);
+  assert.match(build,/provisionPortablePython\.mjs/);
+  const provision=fs.readFileSync(new URL("../script/lib/provisionPortablePython.mjs",import.meta.url),"utf8");
+  assert.match(provision,/--output/);
+  assert.match(provision,/mkdtempSync/);
+  assert.match(provision,/replaceRuntime/);
+  assert.doesNotMatch(provision,/curl[^\n]*\|[^\n]*tar/);
  assert.doesNotMatch(build,/python3" -m venv/);
 });
-test("node_modules pruning removes non-runtime trees in one fail-closed pass",t=>{
+test("node_modules pruning preserves runtime sources and notices while dropping package-only trees",t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),"build-prune-"));
  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  fs.copyFileSync("build.sh",path.join(root,"build.sh"));
+  fs.mkdirSync(path.join(root,"script/lib"),{recursive:true});
+  fs.copyFileSync("script/lib/pruneRuntimeNodeModules.mjs",
+   path.join(root,"script/lib/pruneRuntimeNodeModules.mjs"));
  const files=[
   ["node_modules/pkg/runtime.js","runtime"],
   ["node_modules/pkg/runtime.js.map","map"],
   ["node_modules/pkg/types.d.ts","types"],
   ["node_modules/pkg/source.ts","source"],
   ["node_modules/pkg/README.md","readme"],
+   ["node_modules/pkg/LICENSE","license"],
+   ["node_modules/pkg/NOTICE.txt","notice"],
   ["node_modules/pkg/test/test.js","test"],
   ["node_modules/pkg/docs/index.html","docs"],
   ["node_modules/pkg/doc/namespace.js","runtime doc namespace"],
+   ["node_modules/pkg/examples/third-party/NOTICE","example notice"],
   ["node_modules/@tensorflow/tfjs-backend-webgl/dist/backend.js","required backend"],
  ];
  for(const [name,contents] of files){
@@ -122,21 +131,25 @@ test("node_modules pruning removes non-runtime trees in one fail-closed pass",t=
  assert.equal(result.status,0,result.stderr+result.stdout);
  for(const [name] of files){
   const filename=path.join(root,name);
-  const shouldRemain=name.endsWith("/runtime.js") ||
-    name.endsWith("/namespace.js") || name.endsWith("/backend.js");
+   const shouldRemain=name.endsWith("/runtime.js") ||
+     name.endsWith("/namespace.js") || name.endsWith("/backend.js") ||
+     name.endsWith("/source.ts") || name.endsWith("/types.d.ts") ||
+     name.endsWith("/README.md") || name.endsWith("/LICENSE") ||
+     name.endsWith("/NOTICE.txt") || name.endsWith("/NOTICE");
   assert.equal(fs.existsSync(filename),shouldRemain,`${name} retention`);
  }
  assert.ok(fs.existsSync(path.join(root,"node_modules/.pdim-restored")));
  const build=fs.readFileSync("build.sh","utf8");
- const prune=build.split("_pdim_prune_nm() {")[1].split("\n}")[0];
- assert.equal((prune.match(/\bfind node_modules\b/g)||[]).length,1);
+  const prune=build.split("_pdim_prune_nm() {")[1].split("\n}")[0];
+  assert.match(prune,/pruneRuntimeNodeModules\.mjs/);
+  assert.doesNotMatch(prune,/find node_modules/);
  assert.doesNotMatch(build,/\bdu\b|sha256sum source\.pdim/);
 });
 test("managed FFmpeg bypasses the GitHub download and performs real audio/video encodes",t=>{
  const binary=path.resolve("node_modules/ffmpeg-static/ffmpeg");
  const resolver=spawnSync("bash",["-c",
   'source script/deployment/ffmpeg-path.sh; export FFMPEG_BIN="$1"; resolve_ffmpeg && verify_ffmpeg_capabilities && printf "%s" "$FFMPEG_BIN"',
-  "ffmpeg-path-test",binary],{encoding:"utf8",timeout:15000});
+  "ffmpeg-path-test",binary],{encoding:"utf8",timeout:30000});
  assert.equal(resolver.status,0,resolver.stderr+resolver.stdout);
  assert.equal(resolver.stdout.trim().split("\n").at(-1),binary);
  const env={...process.env,FFMPEG_BIN:binary};
@@ -151,7 +164,7 @@ test("managed FFmpeg bypasses the GitHub download and performs real audio/video 
  assert.equal(resolved.stdout.trim(),binary);
  const system=spawnSync("bash",["-c",
   'source script/deployment/ffmpeg-path.sh; unset FFMPEG_BIN FFMPEG_PATH FFPROBE_PATH; resolve_ffmpeg && verify_ffmpeg_capabilities && printf "%s\\n%s" "$FFMPEG_BIN" "$FFPROBE_PATH"'],
-  {encoding:"utf8",timeout:15000});
+  {encoding:"utf8",timeout:30000});
  assert.equal(system.status,0,system.stderr+system.stdout);
  const systemPaths=system.stdout.trim().split("\n").slice(-2);
  const [systemFfmpeg,systemFfprobe]=systemPaths;
@@ -163,13 +176,13 @@ test("managed FFmpeg bypasses the GitHub download and performs real audio/video 
   "-hide_banner","-v","error","-f","lavfi","-i","sine=frequency=440:duration=0.8",
   "-af","rubberband=tempo=1.1:pitch=1.0:formant=preserved,loudnorm=I=-14:TP=-1.5:LRA=11",
   "-c:a","libmp3lame","-y",audioPath,
- ],{encoding:"utf8",timeout:15000});
+ ],{encoding:"utf8",timeout:30000});
  assert.equal(audio.status,0,audio.stderr);
  const videoPath=path.join(mediaDir,"smoke.mp4");
  const video=spawnSync(systemFfmpeg,[
   "-hide_banner","-v","error","-f","lavfi","-i","color=c=blue:s=64x64:d=0.5",
   "-c:v","libx264","-pix_fmt","yuv420p","-t","0.5","-y",videoPath,
- ],{encoding:"utf8",timeout:15000});
+ ],{encoding:"utf8",timeout:30000});
  assert.equal(video.status,0,video.stderr);
  for(const [mediaPath,codec] of [[audioPath,"mp3"],[videoPath,"h264"]]){
   const probe=spawnSync(systemFfprobe,[

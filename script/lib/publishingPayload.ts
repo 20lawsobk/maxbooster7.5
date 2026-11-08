@@ -59,6 +59,11 @@ function isInside(root: string, target: string): boolean {
 
 function scan(root: string, dockerignore: string) {
   const matcher = ignore().add(dockerignore);
+  const rootCache = path.join(root, ".cache");
+  const cacheStat = fs.lstatSync(rootCache, { throwIfNoEntry: false });
+  if (cacheStat && !matcher.ignores(cacheStat.isDirectory() ? ".cache/" : ".cache")) {
+    throw new Error("Replit-managed root .cache must be excluded by .dockerignore; it will not be deleted");
+  }
   const excluded: string[] = [];
   const survivors: Entry[] = [];
   function walk(relative: string) {
@@ -170,8 +175,9 @@ export function assertPublishingPayloadClean(root: string, dockerignore: string)
   root = realRoot(root);
   const { excluded, survivors } = scan(root, dockerignore);
   validateSurvivingLinks(root, survivors, excluded);
-  if (excluded.length) {
-    throw new Error(`Excluded publishing entries appeared after finalization: ${excluded.join(", ")}`);
+  const unexpected = excluded.filter(relative => relative !== ".cache");
+  if (unexpected.length) {
+    throw new Error(`Excluded publishing entries appeared after finalization: ${unexpected.join(", ")}`);
   }
 }
 
@@ -214,29 +220,29 @@ export function cleanPublishingPayload(options: {
     throw new Error("Deployment pack recovery state must be outside the publishing payload before cleanup");
   }
   validateSurvivingLinks(root, survivors, excluded);
-  // Configuration removals can invalidate platform caches. Deleting .cache
-  // first (alphabetical order) allows later .replit/.config removal to recreate
-  // it. Finish input removals before taking the cache-deletion snapshot.
-  const isCacheRoot = (relative: string) => path.posix.basename(relative) === ".cache";
+  // Preserve Replit's root cache. It is excluded from the image and may be
+  // actively written by the build platform. Nested project caches remain
+  // disposable when the explicit ignore policy excludes them.
+  const isNestedCache = (relative: string) =>
+    relative !== ".cache" && path.posix.basename(relative) === ".cache";
   const removedPaths: string[] = [];
-  const inputRemovals = excluded.filter((relative) => !isCacheRoot(relative));
+  const inputRemovals = excluded.filter((relative) => relative !== ".cache" && !isNestedCache(relative));
   // All policy/link/protected-path validation above completes before deletion.
   // One native traversal per tree, without per-file JS syscall overhead.
   removeBuildPaths(inputRemovals.map(relative => path.join(root, relative)));
   removedPaths.push(...inputRemovals);
   const afterInputs = scan(root, options.dockerignore);
   validateSurvivingLinks(root, afterInputs.survivors, afterInputs.excluded);
-  // Only policy-excluded caches are eligible, including caches first created
-  // by input invalidation. This is a single dependency-ordered pass, not a
-  // retry loop: a writer after this phase still fails below.
-  const cacheRemovals = afterInputs.excluded.filter(isCacheRoot);
+  // Only nested project caches are eligible, including caches first created
+  // by input invalidation. The platform-owned root cache is never touched.
+  const cacheRemovals = afterInputs.excluded.filter(isNestedCache);
   removeBuildPaths(cacheRemovals.map(relative => path.join(root, relative)));
   removedPaths.push(...cacheRemovals);
   // Measure and verify the same snapshot, rather than walking every survivor
   // twice. The separate post-journal assertion still detects later writers.
   const final = scan(root, options.dockerignore);
   validateSurvivingLinks(root, final.survivors, final.excluded);
-  const remainingExcluded = final.excluded;
+  const remainingExcluded = final.excluded.filter(relative => relative !== ".cache");
   if (remainingExcluded.length) {
     const details = remainingExcluded.slice(0, 8)
       .map((relative) => describeCleanupSurvivor(root, relative, excluded));

@@ -93,6 +93,8 @@ def main():
     if runtime_is_ready(root, runtime, requirements):
         print("[portable-python] Existing MaxCore runtime is valid; package installation skipped.")
         return
+    if "--verify-only" in sys.argv[2:]:
+        raise RuntimeError("Portable Python runtime does not satisfy the declared dependencies")
 
     torch = [spec for spec in requirements if Requirement(spec).name.lower() == "torch"]
     ordinary = [spec for spec in requirements if spec not in torch]

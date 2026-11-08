@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 
 function formatBytes(bytes) {
   const units = ["B", "K", "M", "G", "T"];
@@ -11,7 +12,13 @@ function formatBytes(bytes) {
   return `${value.toFixed(unit === 0 ? 0 : 1)}${units[unit]}`;
 }
 
-export function finalizeSourceManifest(capsulePath, manifestPath, createdAt = new Date().toISOString()) {
+async function digest(filePath) {
+  const hash = createHash("sha256");
+  for await (const chunk of fs.createReadStream(filePath)) hash.update(chunk);
+  return hash.digest("hex");
+}
+
+export async function finalizeSourceManifest(capsulePath, manifestPath, createdAt = new Date().toISOString()) {
   const packed = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   const packedBytes = fs.statSync(capsulePath).size;
   if (!Number.isSafeInteger(packed.rawBytes) || packed.rawBytes < 0 ||
@@ -19,6 +26,16 @@ export function finalizeSourceManifest(capsulePath, manifestPath, createdAt = ne
       !/^[a-f0-9]{64}$/.test(packed.sha256) ||
       !/^zstd-\d+$/.test(packed.compression) || packedBytes < 1) {
     throw new Error("Source capsule is missing its streamed size/hash evidence");
+  }
+  const actualSha256 = await digest(capsulePath);
+  if (actualSha256 !== packed.sha256) {
+    throw new Error("Source capsule checksum does not match its streamed manifest");
+  }
+  if (packed.excludePaths !== undefined &&
+      (!Array.isArray(packed.excludePaths) ||
+       packed.excludePaths.some(item => typeof item !== "string" || !item || item.startsWith("/") ||
+         item.split(/[\\/]/).some(part => part === "." || part === "..")))) {
+    throw new Error("Source capsule manifest contains invalid exclusion evidence");
   }
 
   const manifest = {
@@ -50,7 +67,7 @@ if (process.argv[1] && process.argv[1].endsWith("/finalize-source-manifest.mjs")
   if (!capsulePath || !manifestPath || process.argv.length !== 4) {
     throw new Error("Usage: finalize-source-manifest.mjs <capsule> <manifest>");
   }
-  const manifest = finalizeSourceManifest(capsulePath, manifestPath);
+  const manifest = await finalizeSourceManifest(capsulePath, manifestPath);
   console.log(
     `   Source capsule: ${manifest.rawSize} payload → ${manifest.packedSize}; sha256=${manifest.sha256.slice(0, 16)}...`,
   );
