@@ -21,11 +21,28 @@ stop() {
 }
 trap stop INT TERM
 
+remove_target() {
+  local target=$1
+
+  # Go's module cache deliberately marks downloaded module directories
+  # read-only. The publishing copy is disposable, but rm still needs write
+  # permission on every parent directory to unlink those files. Restore only
+  # owner access on this one disposable cache; never chmod source or app data.
+  if [[ "$target" == ".cache" && -d "$target" && ! -L "$target" ]]; then
+    if ! find "$target" -depth -type d -exec chmod u+rwx -- {} +; then
+      echo "[cleanup] Could not make disposable .cache directories removable" >&2
+      return 1
+    fi
+  fi
+
+  rm -rf -- "$target"
+}
+
 while (( next < ${#targets[@]} || ${#active[@]} > 0 )); do
   while (( failed == 0 && next < ${#targets[@]} && ${#active[@]} < 2 )); do
     target=${targets[next]}
     echo "[cleanup] Starting ${target} (elapsed $((SECONDS-started))s)"
-    rm -rf -- "$target" &
+    remove_target "$target" &
     active[$!]=$target
     next=$((next+1))
   done

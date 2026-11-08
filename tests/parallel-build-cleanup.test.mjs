@@ -6,13 +6,32 @@ import path from "node:path";
 import {spawnSync} from "node:child_process";
 
 const script=path.resolve("script/parallel-build-cleanup.sh");
-function fixture(t, fail=false) {
+function fixture(t, fail=false, readonlyCache=false) {
   const root=fs.mkdtempSync(path.join(os.tmpdir(),"build-cleanup-"));
-  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const readonlyDirs=[];
+  t.after(()=>{
+    for(const directory of readonlyDirs) {
+      if(fs.existsSync(directory)) fs.chmodSync(directory,0o700);
+    }
+    fs.rmSync(root,{recursive:true,force:true});
+  });
   const targets=[".local",".cache",".agents","node_modules/.vite","node_modules/.cache"];
   for(const dir of [...targets,"server","data","uploads"]) {
     fs.mkdirSync(path.join(root,dir),{recursive:true});
     fs.writeFileSync(path.join(root,dir,"keep-or-delete"),"fixture");
+  }
+  if(readonlyCache) {
+    const module=path.join(root,".cache/testing/subsystems/go/pkg/mod/golang.org/x/sync@v0.24.0/syncmap");
+    fs.mkdirSync(module,{recursive:true});
+    fs.writeFileSync(path.join(module,"map_test.go"),"fixture");
+    function makeReadOnly(directory) {
+      for(const entry of fs.readdirSync(directory,{withFileTypes:true})) {
+        if(entry.isDirectory()) makeReadOnly(path.join(directory,entry.name));
+      }
+      readonlyDirs.push(directory);
+      fs.chmodSync(directory,0o555);
+    }
+    makeReadOnly(path.join(root,".cache"));
   }
   fs.mkdirSync(path.join(root,"bin"));
   const realRm=spawnSync("which",["rm"],{encoding:"utf8"}).stdout.trim();
@@ -44,6 +63,14 @@ test("cleanup overlaps two deletions, removes every cache, and preserves applica
   assert.equal(peak,2); assert.equal(running,0);
   for(const target of targets) assert.equal(fs.existsSync(path.join(root,target)),false);
   for(const target of ["server","data","uploads"]) assert.equal(fs.existsSync(path.join(root,target,"keep-or-delete")),true);
+  assert.match(result.stdout,/\[cleanup\] Complete/);
+});
+
+test("cleanup removes Go module caches with read-only directories",t=>{
+  const {root,targets,result}=fixture(t,false,true);
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(fs.existsSync(path.join(root,".cache")),false);
+  for(const target of targets) assert.equal(fs.existsSync(path.join(root,target)),false);
   assert.match(result.stdout,/\[cleanup\] Complete/);
 });
 
