@@ -65,7 +65,19 @@ test("source-tree packing preserves files until the shell performs cleanup", t =
   const result=run("paths","source.pdim","fixture");
   assert.equal(result.status,0,result.stderr);
   assert.equal(fs.existsSync(path.join(root,"fixture/data.txt")),true);
-  assert.equal(JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json"))).compression,"zstd-19");
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json")));
+  assert.equal(manifest.compression,"zstd-19");
+  assert.equal(manifest.rawBytes,fs.statSync(path.join(root,"fixture/data.txt")).size);
+  assert.equal(manifest.sha256,createHash("sha256").update(fs.readFileSync(path.join(root,"source.pdim"))).digest("hex"));
+  const finalized=spawnSync(process.execPath,[
+    path.resolve("script/lib/finalize-source-manifest.mjs"),"source.pdim","source.manifest.json",
+  ],{cwd:root,encoding:"utf8"});
+  assert.equal(finalized.status,0,finalized.stderr);
+  const summary=JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json")));
+  assert.equal(summary.rawSizeBytes,fs.statSync(path.join(root,"fixture/data.txt")).size);
+  assert.equal(summary.packedSizeBytes,fs.statSync(path.join(root,"source.pdim")).size);
+  assert.equal(summary.sha256,manifest.sha256);
+  assert.equal(summary.autoRestore,false);
 });
 
 test("compressor failure retains source and the previous archive", t => {

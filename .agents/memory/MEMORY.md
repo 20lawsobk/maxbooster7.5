@@ -4,3 +4,4 @@
 - [Workflow side effects](app-workflow-database-side-effects.md) — startup and preview can write shared data; use isolated fixtures when live writes are not authorized.
 - [Packaged restart fixtures](packaged-restart-fixture.md) — keep generated schema baselines separate from overlapping migrations; require readiness on every restart cycle.
 - [Python scan version attribution](python-scan-version-attribution.md) — resolve reported versions from current constraints before changing pins when scan results disagree.
+- [Portable Python publishing](portable-python-build.md) — isolated runtime installs must override builder-level pip user mode and enforce both AI-server and diffusion requirements.

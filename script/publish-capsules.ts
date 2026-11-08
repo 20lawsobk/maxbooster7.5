@@ -41,18 +41,24 @@ export async function publishCapsule(root: string, mode: string, capsule: string
   }
   if (mode !== "paths") throw new Error("Unknown capsule operation");
   const members: string[] = [];
-  function collect(relative: string) {
+  function collect(relative: string, isDirectory?: boolean) {
     if (/[\r\n]/.test(relative)) throw new Error("Archive member contains a newline");
     const absolute = path.join(root, relative);
-    if (fs.lstatSync(absolute).isDirectory()) {
+    const directory = isDirectory ?? fs.lstatSync(absolute).isDirectory();
+    if (directory) {
       // Preserve empty directories and their permissions in the source backup.
       members.push(relative + "/");
-      for (const name of fs.readdirSync(absolute)) collect(path.join(relative, name));
+      for (const entry of fs.readdirSync(absolute, { withFileTypes: true })) {
+        const child = path.join(relative, entry.name);
+        if (entry.isDirectory()) collect(child, true);
+        else if (entry.isFile() || entry.isSymbolicLink()) collect(child, false);
+        else collect(child);
+      }
     } else {
       members.push(relative);
     }
   }
-  inputs.forEach(collect);
+  for (const input of inputs) collect(input);
   if (!members.length) throw new Error("No source files to pack");
   // Historical shell owns source-tree cleanup, after its manifest is written.
   return packCapsuleMembers({ root, members, capsule, threads, preserveSource: true });

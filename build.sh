@@ -217,10 +217,6 @@ for pkg in tfjs-core tfjs-layers tfjs-converter tfjs-backend-cpu tfjs-data; do
 done
 echo "   Removed: @tensorflow/tfjs browser bundle variants"
 
-find node_modules/googleapis -name "*.js.map" -delete 2>/dev/null || true
-find node_modules/google-auth-library -name "*.js.map" -delete 2>/dev/null || true
-echo "   Stripped: googleapis + google-auth-library source maps"
-
 rm -rf \
   node_modules/@sentry/browser \
   node_modules/@sentry/vue \
@@ -231,26 +227,7 @@ rm -rf \
   node_modules/@sentry-internal/feedback \
   2>/dev/null || true
 echo "   Removed: Sentry browser/replay SDKs"
-
-find node_modules -name "*.map" -type f -delete 2>/dev/null || true
-echo "   Removed: *.map source map files"
-
-find node_modules -name "*.d.ts" -type f -delete 2>/dev/null || true
-echo "   Removed: *.d.ts TypeScript declaration files"
-
-find node_modules -type d -name "__tests__" \
-  -not -path "*/.bin/*" \
-  -exec rm -rf {} + 2>/dev/null || true
-echo "   Removed: __tests__ directories inside node_modules"
-
-find node_modules -maxdepth 3 -type f \
-  \( -name "CHANGELOG.md" -o -name "CHANGELOG" -o -name "HISTORY.md" \
-     -o -name "CHANGES.md" -o -name "CONTRIBUTING.md" -o -name "AUTHORS" \
-     -o -name "NOTICE" -o -name "*.md" \) \
-  -delete 2>/dev/null || true
-echo "   Removed: changelog/readme files inside node_modules"
-
-echo "   Final node_modules size: $(du -sh node_modules | cut -f1)"
+echo "   Broad runtime-safe pruning is deferred to one pass after the app capsule."
 }
 
 # ─── Portable Python runtime ─────────────────────────────────────────────────
@@ -264,16 +241,13 @@ _PYVER="3.12.13"
 _PYDATE="20260325"
 _PYURL="https://github.com/astral-sh/python-build-standalone/releases/download/${_PYDATE}/cpython-${_PYVER}%2B${_PYDATE}-x86_64-unknown-linux-gnu-install_only.tar.gz"
 
-if [ -x "${_PYRUNTIME}/bin/python3" ] && "${_PYRUNTIME}/bin/python3" -I -B - <<'PY'
-import pathlib, sys
-import numpy, PIL, fastapi, uvicorn, pydantic
-root = pathlib.Path(sys.executable).resolve().parent.parent
-assert sys.version_info[:3] == (3, 12, 13)
-assert pathlib.Path(sys.prefix).resolve() == root
-for module in (numpy, PIL, fastapi, uvicorn, pydantic):
-    assert pathlib.Path(module.__file__).resolve().is_relative_to(root), module.__name__
-PY
-then
+if [ -x "${_PYRUNTIME}/bin/python3" ]; then
+  _PY_VER_STR=$("${_PYRUNTIME}/bin/python3" --version 2>&1)
+  if [ "$_PY_VER_STR" != "Python ${_PYVER}" ]; then
+    echo "ERROR: Existing portable Python is ${_PY_VER_STR}; expected Python ${_PYVER}" >&2
+    exit 1
+  fi
+  echo "==> Checking existing portable Python runtime against the MaxCore manifest..."
   "${_PYRUNTIME}/bin/python3" -I -B script/lib/installPortablePythonDependencies.py "${_PYRUNTIME}"
   echo "   Verified existing isolated Python ${_PYVER} and declared runtime dependencies"
   return
@@ -281,40 +255,26 @@ fi
 
 echo "==> Downloading portable Python ${_PYVER} (x86_64-linux-gnu) ..."
 mkdir -p "${_PYRUNTIME}"
-_PYENV_OK=0
-if curl -sL --max-time 120 "${_PYURL}" \
-     | tar xz --strip-components=1 -C "${_PYRUNTIME}" python/ 2>/dev/null; then
-  if [ -x "${_PYRUNTIME}/bin/python3" ] && "${_PYRUNTIME}/bin/python3" --version >/dev/null 2>&1; then
-    _PY_VER_STR=$("${_PYRUNTIME}/bin/python3" --version 2>&1)
-    echo "   Portable Python installed: ${_PY_VER_STR}"
-    echo "   Installing numpy, pillow, fastapi, uvicorn, pydantic ..."
-    "${_PYRUNTIME}/bin/python3" -I -B script/lib/installPortablePythonDependencies.py "${_PYRUNTIME}"
-    if "${_PYRUNTIME}/bin/python3" -c "import numpy, PIL, fastapi, uvicorn, pydantic" 2>/dev/null; then
-      echo "   ✅ Python runtime ready: ${_PY_VER_STR} → ./${_PYRUNTIME}/"
-      _PYENV_OK=1
-    else
-      echo "   WARNING: Python package import failed — runtime incomplete"
-    fi
-  else
-    echo "   WARNING: downloaded Python binary not executable"
+if (set -o pipefail; curl --fail --silent --show-error --location \
+      --retry 2 --connect-timeout 15 --max-time 180 "${_PYURL}" \
+      | tar xz --strip-components=1 -C "${_PYRUNTIME}" python/ 2>/dev/null); then
+  if [ ! -x "${_PYRUNTIME}/bin/python3" ]; then
+    echo "ERROR: Downloaded portable Python binary is not executable." >&2
+    exit 1
   fi
+  _PY_VER_STR=$("${_PYRUNTIME}/bin/python3" --version 2>&1)
+  if [ "$_PY_VER_STR" != "Python ${_PYVER}" ]; then
+    echo "ERROR: Downloaded portable Python is ${_PY_VER_STR}; expected Python ${_PYVER}" >&2
+    exit 1
+  fi
+  echo "   Portable Python installed: ${_PY_VER_STR}"
+  echo "   Installing only declared MaxCore runtime dependencies..."
+  "${_PYRUNTIME}/bin/python3" -I -B script/lib/installPortablePythonDependencies.py "${_PYRUNTIME}"
+  echo "   ✅ Python runtime ready: ${_PY_VER_STR} → ./${_PYRUNTIME}/"
 else
-  echo "   WARNING: portable Python download failed — trying system Python fallback..."
-  _PYTHON3=""
-  for _p in /usr/bin/python3 /usr/local/bin/python3 python3; do
-    if [ -x "$_p" ] && "$_p" --version >/dev/null 2>&1; then _PYTHON3="$_p"; break; fi
-  done
-  if [ -n "$_PYTHON3" ]; then
-    "$_PYTHON3" -m venv "${_PYRUNTIME}" 2>&1 || true
-    if [ -x "${_PYRUNTIME}/bin/python3" ]; then
-      "${_PYRUNTIME}/bin/pip3" install --no-cache-dir numpy pillow --quiet 2>&1 || true
-      echo "   System Python venv created (may not survive into run container)"
-      _PYENV_OK=1
-    fi
-  fi
+  echo "ERROR: Portable Python download or extraction failed; refusing a host-Python fallback." >&2
+  exit 1
 fi
-[ "$_PYENV_OK" = "0" ] && echo "   Python runtime unavailable — audio/image analysis disabled in production."
-test "$_PYENV_OK" = "1"
 }
 
 # ─── App deployment capsule (Pocket Dimension engine) ─────────────────────────
@@ -392,45 +352,28 @@ _pdim_tar_create() {
 # Strip files that are never needed at runtime BEFORE compression.
 # Typical savings: 30-40% reduction → compressor then works on a smaller corpus.
 _pdim_prune_nm() {
-  local before
-  before=$(du -sh node_modules 2>/dev/null | cut -f1)
-  echo "   Pre-pruning node_modules (${before})..."
-
-  # Source maps — large, never needed at runtime
-  find node_modules -name '*.map' -delete 2>/dev/null || true
-
-  # Test / spec / coverage directories
-  find node_modules -type d \( \
-    -name 'test' -o -name 'tests' -o -name '__tests__' \
-    -o -name 'spec'  -o -name 'specs' -o -name '__spec__' \
-    -o -name 'coverage' \
-  \) -prune -exec rm -rf {} \; 2>/dev/null || true
-
-  # Documentation, examples, benchmarks
-  # NOTE: 'doc' (singular) is intentionally excluded — some packages (e.g. exceljs)
-  # use 'doc' as a code namespace for runtime modules, not documentation.
-  # 'docs' (plural) is safe to remove and is the conventional documentation dir name.
-  find node_modules -type d \( \
-    -name 'docs' -o -name 'documentation' \
-    -o -name 'examples' -o -name 'example' \
-    -o -name 'benchmark' -o -name 'benchmarks' \
-    -o -name 'man' -o -name '.github' \
-  \) -prune -exec rm -rf {} \; 2>/dev/null || true
-
-  # Changelog / history markdown (redundant in production)
-  find node_modules -maxdepth 3 -type f \( \
-    -name 'CHANGELOG*' -o -name 'CHANGES*' -o -name 'HISTORY*' \
-    -o -name '*.md'    -o -name '*.markdown' \
-    -o -name '*.flow'  -o -name '*.flow.js' \
-  \) -delete 2>/dev/null || true
-
-  # TypeScript source files — keep .d.ts declarations, drop .ts source
-  # (safe: production server runs from pre-compiled dist/, never touches .ts in node_modules)
-  find node_modules -name '*.ts' ! -name '*.d.ts' -delete 2>/dev/null || true
-
-  local after
-  after=$(du -sh node_modules 2>/dev/null | cut -f1)
-  echo "   Pruned: ${before} → ${after}"
+  echo "   Pruning node_modules with one fail-closed filesystem traversal..."
+  # Keep all broad pruning in one pass. `-prune` prevents descending into
+  # discarded trees; direct rm batches avoid one process per file. Do not use
+  # `-delete` here because it implies depth-first traversal and defeats prune.
+  find node_modules \
+    \( -type d \( \
+      -name 'test' -o -name 'tests' -o -name '__tests__' \
+      -o -name 'spec' -o -name 'specs' -o -name '__spec__' \
+      -o -name 'coverage' \
+      -o -name 'docs' -o -name 'documentation' \
+      -o -name 'examples' -o -name 'example' \
+      -o -name 'benchmark' -o -name 'benchmarks' \
+      -o -name 'man' -o -name '.github' \
+    \) -prune -exec rm -rf -- {} + \) -o \
+    \( -type f \( -name '*.map' -o -name '*.ts' \) \
+      -exec rm -f -- {} + \) -o \
+    \( -maxdepth 3 -type f \( \
+      -name 'CHANGELOG*' -o -name 'CHANGES*' -o -name 'HISTORY*' \
+      -o -name 'CONTRIBUTING*' -o -name 'AUTHORS' -o -name 'NOTICE' \
+      -o -name '*.md' -o -name '*.markdown' -o -name '*.flow' -o -name '*.flow.js' \
+    \) -exec rm -f -- {} + \)
+  echo "   Pruned runtime-safe tests, docs, maps, and source files."
 }
 
 # ── Capsule pack function ─────────────────────────────────────────────────────
@@ -491,26 +434,9 @@ for _f in capacitor.config.ts vite.config.ts tailwind.config.ts postcss.config.j
 done
 if [ -n "$_SOURCE_DIRS" ] || [ -n "$_SOURCE_CONFIGS" ]; then
   # shellcheck disable=SC2086
-  _SRC_RAW=$(du -sh ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null | awk '{sum+=$1} END{print sum}' || echo "?")
-  # shellcheck disable=SC2086
   _pdim_tar_create source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} || exit $?
   if [ -f source.pdim ]; then
-    _SRC_PACKED=$(du -sh source.pdim 2>/dev/null | cut -f1)
-    _SRC_CKSUM=$(sha256sum source.pdim 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
-    cat > source.manifest.json << MANIFEST_EOF
-{
-  "capsule": "source.pdim",
-  "label": "Application source tree",
-  "rawSize": "${_SRC_RAW}",
-  "packedSize": "${_SRC_PACKED}",
-  "sha256": "${_SRC_CKSUM}",
-  "compression": "${_PDIM_FORMAT}",
-  "format": "pdim-v2",
-  "autoRestore": false,
-  "note": "Not needed at runtime — restore manually: bsdtar -xf source.pdim, or tar --zstd -xf source.pdim",
-  "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-MANIFEST_EOF
+    node script/lib/finalize-source-manifest.mjs source.pdim source.manifest.json
     # shellcheck disable=SC2086
     rm -rf ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null || true
     if [ -n "$_RUNTIME_REGISTRY_BACKUP" ]; then
@@ -525,7 +451,6 @@ else
   echo "   INFO: No source directories found — skipping source capsule"
 fi
 
-echo "   PDIM image footprint: $(du -sh --exclude=.git --exclude=.local . 2>/dev/null | cut -f1)"
 }
 
 # ─── Application remainder capsule required by startup ────────────────────────
@@ -625,13 +550,7 @@ PYEOF
 FAST_PATH=$(cat "$DEPLOY_STATE_DIR/build-path")
 bash "$(dirname "$0")/dist/deployment/image-size-gate.sh" .
 echo ""
-echo "==> Build image size summary:"
-for _item in dist/ services/ bin/ *.pdim *.manifest.json; do
-  [ -e "$_item" ] && du -sh "$_item" 2>/dev/null \
-    | awk '{printf "   %-30s %s\n", $2, $1}'
-done
-echo "   ─────────────────────────────────────────"
-echo "   Total image: $(du -sh --exclude=.git --exclude=.local . 2>/dev/null | cut -f1)"
+echo "==> Build image size gate passed; exact byte count is reported above."
 if [ "$FAST_PATH" = "1" ]; then
   echo "   Path: FAST (npm ci --omit=dev, no Vite/esbuild compile)"
 else

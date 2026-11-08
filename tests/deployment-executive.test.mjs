@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import {runExecutive,validatePlan} from "../script/deployment/executive.mjs";
 import {buildPlan,startPlan} from "../script/deployment/plans.mjs";
 import {buildSync} from "esbuild";
@@ -88,4 +89,46 @@ test("compression allocation grows with measured capacity, not runtime VM settin
  await runExecutive([{...task("compress"),elasticCPU:true,maxCPU:8}],
  {capacity:()=>({...capacity(),cpus:16,ioSlots:4}),pollMs:10,log(line){if(line.includes("starting compress"))allocation=line;}});
  assert.match(allocation,/cpu=8/);
+});
+test("portable Python provisioning rejects partial downloads and host-runtime fallback",()=>{
+ const build=fs.readFileSync(new URL("../build.sh",import.meta.url),"utf8");
+ assert.match(build,/curl --fail --silent --show-error --location/);
+ assert.match(build,/set -o pipefail/);
+ assert.match(build,/refusing a host-Python fallback/);
+ assert.doesNotMatch(build,/python3" -m venv/);
+});
+test("node_modules pruning removes non-runtime trees in one fail-closed pass",t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),"build-prune-"));
+ t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ fs.copyFileSync("build.sh",path.join(root,"build.sh"));
+ const files=[
+  ["node_modules/pkg/runtime.js","runtime"],
+  ["node_modules/pkg/runtime.js.map","map"],
+  ["node_modules/pkg/types.d.ts","types"],
+  ["node_modules/pkg/source.ts","source"],
+  ["node_modules/pkg/README.md","readme"],
+  ["node_modules/pkg/test/test.js","test"],
+  ["node_modules/pkg/docs/index.html","docs"],
+  ["node_modules/pkg/doc/namespace.js","runtime doc namespace"],
+  ["node_modules/@tensorflow/tfjs-backend-webgl/dist/backend.js","required backend"],
+ ];
+ for(const [name,contents] of files){
+  const filename=path.join(root,name);
+  fs.mkdirSync(path.dirname(filename),{recursive:true});
+  fs.writeFileSync(filename,contents);
+ }
+ const result=spawnSync("bash",[path.join(root,"build.sh"),"--executive-task","prune"],
+  {cwd:root,encoding:"utf8",timeout:10000});
+ assert.equal(result.status,0,result.stderr+result.stdout);
+ for(const [name] of files){
+  const filename=path.join(root,name);
+  const shouldRemain=name.endsWith("/runtime.js") ||
+    name.endsWith("/namespace.js") || name.endsWith("/backend.js");
+  assert.equal(fs.existsSync(filename),shouldRemain,`${name} retention`);
+ }
+ assert.ok(fs.existsSync(path.join(root,"node_modules/.pdim-restored")));
+ const build=fs.readFileSync("build.sh","utf8");
+ const prune=build.split("_pdim_prune_nm() {")[1].split("\n}")[0];
+ assert.equal((prune.match(/\bfind node_modules\b/g)||[]).length,1);
+ assert.doesNotMatch(build,/du -sh node_modules|sha256sum source\.pdim/);
 });

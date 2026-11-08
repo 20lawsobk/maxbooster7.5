@@ -402,9 +402,18 @@ export function packCapsuleMembers({
         `Refusing to capsule deployment control file: ${protectedMember}`,
       ));
     }
-    const existingMembers = members.filter((m) =>
-      fs.existsSync(path.resolve(root, m)),
-    );
+    const existingMembers: string[] = [];
+    let rawBytes = 0;
+    for (const member of members) {
+      try {
+        const entry = fs.lstatSync(path.resolve(root, member));
+        if (entry.isSymbolicLink()) fs.statSync(path.resolve(root, member));
+        existingMembers.push(member);
+        if (!entry.isDirectory()) rawBytes += entry.size;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+    }
     if (existingMembers.length === 0) return resolveOne(null);
 
     const capsulePath = path.resolve(outputRoot, capsule);
@@ -481,6 +490,7 @@ export function packCapsuleMembers({
             sha256,
             dir: "<multiple>",
             memberCount: existingMembers.length,
+            rawBytes,
           },
           null,
           2,
