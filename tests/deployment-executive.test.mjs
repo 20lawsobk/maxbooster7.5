@@ -33,7 +33,10 @@ test("failed prerequisite blocks dependent; invalid graphs rejected before execu
  await assert.rejects(runExecutive([task("fail",[],"process.exit(12)"),task("child",["fail"])],
  {capacity,pollMs:10,log(){}}),/fail exited 12/);
  assert.throws(()=>validatePlan([task("a",["b"]),task("b",["a"])]),/cycle/);
- validatePlan(buildPlan());validatePlan(startPlan(process.execPath));
+ const plan=buildPlan();
+ validatePlan(plan);validatePlan(startPlan(process.execPath));
+ assert.deepEqual(plan.find(t=>t.id==="cleanup").deps,["node"]);
+ assert.deepEqual(plan.find(t=>t.id==="node").deps,[]);
 });
 test("admission adapts when available memory recovers",async()=>{
  let samples=0;
