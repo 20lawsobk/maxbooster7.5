@@ -8,13 +8,15 @@
       "httpStatus": 404,
       "ready": false,
       "running": false,
-      "snapshotPresent": false
+      "snapshotPresent": false,
+      "authenticatedReadOnlyProbeAt": "2026-11-08T00:18:46.735Z"
     },
     "configuredEndpointAvailable": true,
     "health": {
       "httpStatus": 404,
       "modelLoaded": false,
-      "status": null
+      "status": null,
+      "authenticatedReadOnlyProbeAt": "2026-11-08T00:18:46.735Z"
     }
   },
   "deploymentAssetPhasePassed": true,
@@ -53,5 +55,41 @@
   "scope": "Disposable app and PostgreSQL; anonymous public awareness sources only; no payment, social, marketing, or generation credentials",
   "sourceRefreshObserved": false,
   "sourceRevision": "663f87a903f45edf1736ee89c9a69554428e8401",
-  "status": "failed"
+  "status": "failed",
+  "maxcoreRouteContractProbe": {
+    "capturedAt": "2026-11-08T00:18:46.735Z",
+    "method": "GET",
+    "baseSetting": "AI_SERVER_URL",
+    "baseUrlHostRetained": false,
+    "baseUrlSecretValueRetained": false,
+    "pathClassification": "root-origin",
+    "credentialConfigured": true,
+    "authScheme": "Bearer",
+    "apiServerMarkers": {
+      "healthz": {
+        "httpStatus": 404
+      },
+      "apiRoot": {
+        "httpStatus": 404
+      }
+    },
+    "apiServerIdentityConfirmed": false,
+    "health": {
+      "httpStatus": 404
+    },
+    "awareness": {
+      "httpStatus": 404
+    },
+    "otherReadOnlyRoutes": {
+      "healthAlias": {
+        "httpStatus": 404
+      }
+    },
+    "routeContract": {
+      "apiServerBase": "external/maxcore/artifacts/api-server root origin",
+      "health": "GET /api/health",
+      "awareness": "GET /api/awareness/unified/status"
+    },
+    "externalConfigurationRequired": "Set MAXCORE_LOCAL=0 and point MAXCORE_URL (if set) and AI_SERVER_URL to the deployed MaxCore Node API-server root origin; provide the generation Bearer key and deploy this route fix. Do not use the dashboard, parent app, Python port, or an /api path suffix."
+  }
 }

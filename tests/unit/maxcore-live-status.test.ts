@@ -10,7 +10,13 @@ const previousPort = process.env.MODEL_API_PORT;
 beforeAll(async () => {
   upstream = createServer((req, res) => {
     res.setHeader("Content-Type", "application/json");
-    if (req.url !== "/api/training/live/status") {
+    if (req.url === "/api/health" &&
+        req.headers.authorization === "Bearer fixture-generation") {
+      res.end(JSON.stringify({ status: "healthy", model_loaded: true }));
+    } else if (req.url === "/api/awareness/unified/status" &&
+        req.headers.authorization === "Bearer fixture-generation") {
+      res.end(JSON.stringify({ ready: true, snapshot_id: "fixture-snapshot" }));
+    } else if (req.url !== "/api/training/live/status") {
       res.statusCode = 404;
       res.end("{}");
     } else if (req.headers["x-admin-key"] !== "fixture-admin") {
@@ -52,4 +58,26 @@ it("preserves Python admin validation and never substitutes a server credential"
   expect(anonymous.status).toBe(401);
   const generation = await fetch(url, { headers: { "X-Api-Key": "fixture-generation" }, signal: AbortSignal.timeout(3000) });
   expect(generation.status).toBe(403);
+});
+
+it("exposes detailed health at /api/health and retains the generation authorization boundary", async () => {
+  const publicUrl = `http://127.0.0.1:${(gateway.address() as { port: number }).port}`;
+  expect((await fetch(`${publicUrl}/api/health`)).status).toBe(401);
+  const response = await fetch(`${publicUrl}/api/health`, {
+    headers: { Authorization: "Bearer fixture-generation" },
+    signal: AbortSignal.timeout(3000),
+  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ status: "healthy", model_loaded: true });
+});
+
+it("exposes awareness status at /api/awareness/unified/status with generation authorization", async () => {
+  const publicUrl = `http://127.0.0.1:${(gateway.address() as { port: number }).port}`;
+  expect((await fetch(`${publicUrl}/api/awareness/unified/status`)).status).toBe(401);
+  const response = await fetch(`${publicUrl}/api/awareness/unified/status`, {
+    headers: { Authorization: "Bearer fixture-generation" },
+    signal: AbortSignal.timeout(3000),
+  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ ready: true, snapshot_id: "fixture-snapshot" });
 });

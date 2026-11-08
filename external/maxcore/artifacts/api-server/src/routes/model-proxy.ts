@@ -678,11 +678,8 @@ for (const endpoint of ["image", "video", "text", "website"] as const) {
 }
 
 router.get("/health", async (req, res) => {
-  await proxyRequest(req, res, "/health");
-});
-
-// Detailed model + Digital GPU health (Python /api/health)
-router.get("/api/health", async (req, res) => {
+  // This router is mounted at "/api", so this is the public /api/health
+  // contract. Forward the detailed Python endpoint, not the liveness alias.
   await proxyRequest(req, res, "/api/health");
 });
 
