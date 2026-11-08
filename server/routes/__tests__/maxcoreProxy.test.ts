@@ -96,6 +96,7 @@ describe("MaxCore public proxy contract", () => {
     ["post", "/api/optimize/ad"],
     ["post", "/api/audio/mastering-recommendation"],
     ["post", "/api/audio/mixing-recommendation"],
+    ["post", "/api/awareness/unified/profile-discover"],
     ["get", "/api/models/social/state"],
     ["post", "/api/train/feedback"],
     ["get", "/api/training/status"],
@@ -159,6 +160,41 @@ describe("MaxCore public proxy contract", () => {
     );
     expect(res.statusCode).toBe(200);
     expect(res.payload).toEqual({ score: 91, reasoning: ["model"] });
+  });
+
+  it("forwards local profile discovery through the authenticated app proxy", async () => {
+    const payload = {
+      mode: "native_local_profile_observatory",
+      indexed_observation_count: 12,
+    };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const path = "/api/awareness/unified/profile-discover";
+    const res = responseDouble();
+
+    await routeHandler("post", path)({
+      method: "POST",
+      originalUrl: path,
+      path,
+      params: {},
+      body: { query: "classical violinist", platforms: ["youtube"] },
+      user: { id: "admin-7", role: "admin" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      "http://maxcore.internal/api/awareness/unified/profile-discover",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer service" }),
+      }),
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
   });
 
   it("returns an explicit error when MaxCore is unavailable", async () => {

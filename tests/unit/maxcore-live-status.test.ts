@@ -16,6 +16,9 @@ beforeAll(async () => {
     } else if (req.url === "/api/awareness/unified/status" &&
         req.headers.authorization === "Bearer fixture-generation") {
       res.end(JSON.stringify({ ready: true, snapshot_id: "fixture-snapshot" }));
+    } else if (req.url === "/api/awareness/unified/profile-discover" &&
+        req.headers.authorization === "Bearer fixture-generation") {
+      res.end(JSON.stringify({ mode: "native_local_profile_observatory", observations: [] }));
     } else if (req.url !== "/api/training/live/status") {
       res.statusCode = 404;
       res.end("{}");
@@ -80,4 +83,21 @@ it("exposes awareness status at /api/awareness/unified/status with generation au
   });
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ ready: true, snapshot_id: "fixture-snapshot" });
+});
+
+it("exposes local profile discovery through the model proxy with generation authorization", async () => {
+  const publicUrl = `http://127.0.0.1:${(gateway.address() as { port: number }).port}`;
+  expect((await fetch(`${publicUrl}/api/awareness/unified/profile-discover`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+  })).status).toBe(401);
+  const response = await fetch(`${publicUrl}/api/awareness/unified/profile-discover`, {
+    method: "POST",
+    headers: { Authorization: "Bearer fixture-generation", "Content-Type": "application/json" },
+    body: JSON.stringify({ platforms: ["youtube"] }),
+    signal: AbortSignal.timeout(3000),
+  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({
+    mode: "native_local_profile_observatory", observations: [],
+  });
 });

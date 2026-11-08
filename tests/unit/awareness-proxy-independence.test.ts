@@ -8,7 +8,7 @@ vi.mock("../../external/maxcore/artifacts/api-server/src/keepalive.js", () => ({
 import router from "../../external/maxcore/artifacts/api-server/src/routes/model-proxy.js";
 
 afterEach(() => { vi.unstubAllEnvs(); upstream.mockReset(); });
-it.each(["/awareness/unified/status", "/awareness/unified/context"])("serves %s while generation is warming, retaining authentication and deadlines", async path => {
+it.each(["/awareness/unified/status", "/awareness/unified/context", "/awareness/unified/profile-discover"])("serves %s while generation is warming, retaining authentication and deadlines", async path => {
   vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "private-test-token");
   upstream.mockResolvedValue({ statusCode: 200, body: { text: async () => JSON.stringify({ ready: true, snapshot_id: "live" }) } });
   const app = express(); app.use(express.json()); app.use(router);
@@ -16,7 +16,7 @@ it.each(["/awareness/unified/status", "/awareness/unified/context"])("serves %s 
   await new Promise<void>(resolve => server.once("listening", resolve));
   try {
     const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}${path}`;
-    const options = path.endsWith("context") ? { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" } : {};
+    const options = path.endsWith("status") ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" };
     expect((await fetch(url, options)).status).toBe(401);
     expect(upstream).not.toHaveBeenCalled();
     const response = await fetch(url, { ...options, headers: { ...options.headers, Authorization: "Bearer private-test-token" } });

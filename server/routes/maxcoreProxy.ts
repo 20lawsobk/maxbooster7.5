@@ -43,6 +43,7 @@ const router = Router();
 // Existing application authorization and transport credentials remain unchanged.
 router.get("/api/awareness/unified/status", requireAuthOnly, proxyToMaxCore);
 router.post("/api/awareness/unified/context", requireAuthOnly, proxyToMaxCore);
+router.post("/api/awareness/unified/profile-discover", requireAuthOnly, proxyToMaxCore);
 
 export function isPrivateArtifactPeer(req: Request): boolean {
   const secret = process.env.PDIM_LOCAL_CHANNEL_TOKEN;

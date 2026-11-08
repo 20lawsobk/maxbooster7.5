@@ -321,7 +321,8 @@ async function proxyRequest(
   // return a prior authorized response to an unvalidated credential.
   const isGet = req.method === "GET" || req.method === "HEAD";
   const awarenessOnly = path === "/api/awareness/unified/status" ||
-    path === "/api/awareness/unified/context";
+    path === "/api/awareness/unified/context" ||
+    path === "/api/awareness/unified/profile-discover";
   const accountAnalytics = ["/api/analytics/capability", "/api/analytics/predict", "/api/analytics/insights"].includes(path);
   const generationDeadline = plannedGenerationDeadlineMs(path, req.body);
   const diagnosticOnly = ["/health", "/api/health", "/ready", "/api/ready"].includes(path);
@@ -1144,6 +1145,9 @@ router.get("/awareness/unified/status", async (req, res) => {
 });
 router.post("/awareness/unified/context", async (req, res) => {
   await proxyRequest(req, res, "/api/awareness/unified/context");
+});
+router.post("/awareness/unified/profile-discover", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/profile-discover");
 });
 
 // Bounded, model-free statistics contract; never held behind weight recovery.
