@@ -80,6 +80,28 @@ test("source-tree packing preserves files until the shell performs cleanup", t =
   assert.equal(summary.autoRestore,false);
 });
 
+test("build.sh source phase reuses streamed hash and member-size metadata", t => {
+  const {root}=setup(t);
+  fs.copyFileSync("build.sh",path.join(root,"build.sh"));
+  fs.mkdirSync(path.join(root,"script/lib"),{recursive:true});
+  fs.copyFileSync("script/lib/finalize-source-manifest.mjs",
+    path.join(root,"script/lib/finalize-source-manifest.mjs"));
+  const helperBytes=fs.statSync(path.join(root,"script/lib/finalize-source-manifest.mjs")).size;
+  const payload=Buffer.from("source capsule payload\n");
+  fs.mkdirSync(path.join(root,"server"),{recursive:true});
+  fs.writeFileSync(path.join(root,"server/source.ts"),payload);
+  const result=spawnSync("bash",[path.join(root,"build.sh"),"--executive-task","source"],
+    {cwd:root,encoding:"utf8",timeout:30000});
+  assert.equal(result.status,0,result.stderr+result.stdout);
+  assert.equal(fs.existsSync(path.join(root,"server")),false);
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json")));
+  assert.equal(manifest.rawSizeBytes,payload.length+helperBytes);
+  assert.equal(manifest.packedSizeBytes,fs.statSync(path.join(root,"source.pdim")).size);
+  assert.equal(manifest.memberCount,5);
+  assert.equal(manifest.sha256,
+    createHash("sha256").update(fs.readFileSync(path.join(root,"source.pdim"))).digest("hex"));
+});
+
 test("compressor failure retains source and the previous archive", t => {
   const {root}=setup(t);
   fs.writeFileSync(path.join(root,"fixture.pdim"),"previous");

@@ -151,7 +151,7 @@ else
 
   # Source tree is kept — PDIM will compress it below.
   rm -rf node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
-  echo "   Build complete. dist/: $(du -sh dist/ 2>/dev/null | cut -f1)"
+  echo "   Build complete. Generated dist/ artifacts are ready."
 
   echo "==> Pruning dev dependencies..."
   npm prune --omit=dev
@@ -292,7 +292,7 @@ echo "==> App capsule: building portable Pocket Dimension snapshot of app source
 if [ -f "script/build-capsule.ts" ] && [ -x "node_modules/.bin/tsx" ]; then
   _APP_CAPSULE_VERSION="${REPLIT_DEPLOYMENT_ID:-$(date -u +%Y%m%d%H%M%S)}"
   if node_modules/.bin/tsx script/build-capsule.ts "$_APP_CAPSULE_VERSION"; then
-    echo "   ✅ App capsule built → deploy-capsule/ ($(du -sh deploy-capsule 2>/dev/null | cut -f1))"
+    echo "   ✅ App capsule built → deploy-capsule/"
   else
     echo "   ERROR: adaptive app capsule build failed; refusing incomplete publishing output" >&2
     exit 1

@@ -130,5 +130,5 @@ test("node_modules pruning removes non-runtime trees in one fail-closed pass",t=
  const build=fs.readFileSync("build.sh","utf8");
  const prune=build.split("_pdim_prune_nm() {")[1].split("\n}")[0];
  assert.equal((prune.match(/\bfind node_modules\b/g)||[]).length,1);
- assert.doesNotMatch(build,/du -sh node_modules|sha256sum source\.pdim/);
+ assert.doesNotMatch(build,/\bdu\b|sha256sum source\.pdim/);
 });
