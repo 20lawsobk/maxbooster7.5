@@ -44,12 +44,26 @@ const PYTHON_SCRIPT = (() => {
   return path.resolve(process.cwd(), "artifacts/ai-training-server/server.py");
 })();
 
+/**
+ * The API-server child runs with cwd=external/maxcore/artifacts/api-server,
+ * while the packaged Python environment is rooted at the workspace. Derive
+ * that root from the resolved AI-server script instead of inheriting the
+ * child's nested working directory.
+ */
+export function resolvePythonProjectRoot(
+  pythonScript = PYTHON_SCRIPT,
+): string {
+  return path.resolve(path.dirname(pythonScript), "../../../../");
+}
+
+const PYTHON_PROJECT_ROOT = resolvePythonProjectRoot();
+
 /** Resolve the interpreter that production startup restored and validated.
- * Production must never depend on uv (a build-time package manager) or silently
- * fall back to whatever `python3` happens to be on PATH. */
+ * Always resolve the packaged runtime from the workspace root; production must
+ * never depend on uv or silently use a different PATH interpreter. */
 export function resolvePythonExecutable(
   env: NodeJS.ProcessEnv = process.env,
-  cwd = process.cwd(),
+  cwd = PYTHON_PROJECT_ROOT,
   exists: (candidate: string) => boolean = fs.existsSync,
 ): string {
   const explicit = env.MAXBOOSTER_PYTHON;
@@ -78,7 +92,7 @@ export function resolvePythonExecutable(
 
 export function pythonSpawnSpec(
   env: NodeJS.ProcessEnv = process.env,
-  cwd = process.cwd(),
+  cwd = PYTHON_PROJECT_ROOT,
   exists: (candidate: string) => boolean = fs.existsSync,
 ): { command: string; args: string[] } {
   return {
