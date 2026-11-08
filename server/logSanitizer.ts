@@ -9,6 +9,10 @@ const sensitiveKey = /^(?:.*(?:password|secret|token|apikey|privatekey|authoriza
 export function sanitizeLogText(text: string): string {
   return text
     .replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9+/_.=~:-]+/gi, REDACTED)
+    // Stripe secret/restricted keys and webhook signing secrets are opaque
+    // credentials even when an upstream error embeds them without a key label.
+    .replace(/\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{8,}\b/gi, REDACTED)
+    .replace(/\bwhsec_[A-Za-z0-9]{8,}\b/gi, REDACTED)
     .replace(/((?:password|secret|access[_-]?token|refresh[_-]?token|api[_-]?key)\s*[=:]\s*)[^\s,;&]+/gi, `$1${REDACTED}`)
     .replace(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, REDACTED)
     .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, value => isIP(value) ? REDACTED : value)

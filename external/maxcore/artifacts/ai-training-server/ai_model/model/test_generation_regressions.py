@@ -136,6 +136,31 @@ class AttentionShapeTests(unittest.TestCase):
 
 
 class GenerationContractTests(unittest.TestCase):
+    def test_unavailable_live_model_remains_an_error_without_repeated_tracebacks(self):
+        from ai_model.generation.live_serving import LiveModelUnavailable, LiveServingModel
+
+        agent = ScriptAgent(LiveServingModel())
+        request = ScriptRequest(
+            idea="A new independent music release",
+            platform="instagram",
+            goal="growth",
+            tone="warm",
+        )
+        from ai_model.generation.plan import GenerationPlan, active_plan
+        plan_token = active_plan.set(GenerationPlan.from_request(vars(request), "text"))
+        try:
+            with patch("ai_model.generation.awareness.ensure_context_once", return_value=""):
+                with self.assertLogs("script_agent", level="WARNING") as captured:
+                    for _ in range(2):
+                        with self.assertRaises(LiveModelUnavailable):
+                            agent.run(request)
+        finally:
+            active_plan.reset(plan_token)
+
+        self.assertEqual(len(captured.records), 1)
+        self.assertIsNone(captured.records[0].exc_info)
+        self.assertIn("no compatible certified model", captured.output[0])
+
     def test_released_word_vocab_is_not_encoded_as_untrained_bpe(self):
         legacy = SimpleTokenizer()
         expected = legacy.encode("music beat the song").ids

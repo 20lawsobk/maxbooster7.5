@@ -1518,7 +1518,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         `   Monthly: ${priceIds.monthly} | Yearly: ${priceIds.yearly} | Lifetime: ${priceIds.lifetime}`,
       );
     } catch (e) {
-      logger.warn(`❌ Failed to initialize Stripe prices: ${(e as Error).message}`);
+      // The Stripe SDK message may contain credential fragments or request data.
+      logger.warn("Stripe price initialization failed; see sanitized provider diagnostics");
     }
 
     // 0b. Admin account seeding — idempotent, safe to run after listen

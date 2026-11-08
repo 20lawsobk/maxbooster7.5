@@ -2,10 +2,12 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 from ..model.creative_model import CreativeModel
 from ai_model.generation.awareness import generation_guard
+from ai_model.generation.live_serving import LiveModelUnavailable
 
 logger = logging.getLogger("script_agent")
 
@@ -967,6 +969,8 @@ class ScriptAgent:
     def __init__(self, model: CreativeModel):
         self.model = model
         self._garble_probe_done = False
+        self._live_model_unavailable_logged = False
+        self._live_model_unavailable_log_lock = threading.Lock()
 
     @generation_guard
     def run(self, req: ScriptRequest) -> ScriptResponse:
@@ -1067,7 +1071,23 @@ class ScriptAgent:
                 response.hook = enforce(response.hook)
                 response.body = enforce(response.body)
                 response.cta = enforce(response.cta)
+                with self._live_model_unavailable_log_lock:
+                    self._live_model_unavailable_logged = False
                 return response
+        except LiveModelUnavailable:
+            # Readiness already exposes the unavailable serving release. Emit one
+            # concise event per unavailable interval rather than a traceback on
+            # every rejected generation request; keep the failure explicit.
+            should_log = False
+            with self._live_model_unavailable_log_lock:
+                if not self._live_model_unavailable_logged:
+                    self._live_model_unavailable_logged = True
+                    should_log = True
+            if should_log:
+                logger.warning(
+                    "ScriptAgent generation unavailable: no compatible certified model release is selected"
+                )
+            raise
         except Exception:
             logger.exception("ScriptAgent checkpoint generation failed")
             raise

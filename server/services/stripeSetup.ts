@@ -146,8 +146,19 @@ export async function ensureStripeProductsAndPrices(
 
     return cachedPriceIds;
   } catch (error: unknown) {
-    const message = error instanceof Error ? error?.message : String(error);
-    logger.warn({ value: message }, "❌ Error setting up Stripe products/prices:");
+    // Provider messages can contain credential fragments or request metadata.
+    // Keep the operational category, but never write the raw upstream message.
+    const errorType =
+      error instanceof Error && error.name === "StripeAuthenticationError"
+        ? "StripeAuthenticationError"
+        : error instanceof Error && error.name === "StripeRateLimitError"
+          ? "StripeRateLimitError"
+          : error instanceof Error && error.name === "StripeConnectionError"
+            ? "StripeConnectionError"
+            : error instanceof Error && error.name === "StripeInvalidRequestError"
+              ? "StripeInvalidRequestError"
+              : "ProviderError";
+    logger.warn({ errorType }, "Stripe product and price setup failed");
     // Do NOT cache placeholder IDs here — Stripe is configured but had a transient
     // error. Leaving cachedPriceIds as null forces a retry on the next call and
     // ensures billing routes surface a clear 500 rather than silently using stale IDs.

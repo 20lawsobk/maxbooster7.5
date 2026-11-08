@@ -48,6 +48,19 @@ test("text masks IPv4/IPv6 and credentials, keeps useful nonpersonal diagnostics
   assert.match(text, /HTTP 503/);
 });
 
+test("text masks unlabelled Stripe API and webhook credentials", () => {
+  const keys = [
+    "sk_live_1234567890abcdef",
+    "sk_test_1234567890abcdef",
+    "rk_live_1234567890abcdef",
+    "rk_test_1234567890abcdef",
+    "whsec_1234567890abcdef",
+  ];
+  const clean = sanitizeLogText(`Stripe rejected credentials ${keys.join(" ")}`);
+  for (const key of keys) assert.ok(!clean.includes(key), key);
+  assert.equal((clean.match(/\[REDACTED\]/g) ?? []).length, keys.length);
+});
+
 test("typed event runtime boundary rejects raw personal fields and unknown provider errors", () => {
   assert.throws(() => logPrivacyEvent("oauth.connected", { outcome: "success", email: "person@example.org" } as never), /Unsupported/);
   assert.throws(() => logPrivacyEvent("oauth.exchange.failed", { outcome: "failure", actorId: "person@example.org" }), /opaque IDs/);
