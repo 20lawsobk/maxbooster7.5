@@ -90,6 +90,19 @@ fi
 export PATH="$(dirname "$_NODE_BIN"):$PATH"
 echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 
+# Resolve the Nix-managed media tools before launching the supervisor. This
+# exports the exact FFmpeg path expected by ffmpeg-static and Python callers.
+if [ ! -f "$_SCRIPT_DIR/dist/deployment/ffmpeg-path.sh" ]; then
+  echo "[start.sh] FATAL: packaged FFmpeg resolver is missing" >&2
+  exit 1
+fi
+source "$_SCRIPT_DIR/dist/deployment/ffmpeg-path.sh"
+if ! resolve_ffmpeg; then
+  echo "[start.sh] FATAL: required FFmpeg/ffprobe tools are unavailable" >&2
+  exit 1
+fi
+echo "[start.sh] media tools: ffmpeg=$FFMPEG_BIN ffprobe=$FFPROBE_PATH"
+
 # ── 1a. Validate and export the runtime port contract ─────────────────────────
 # This must happen before the liveness stub or any sidecar starts. A duplicate
 # assignment is a configuration failure, never something to "work around" by

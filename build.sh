@@ -73,6 +73,15 @@ PREBUILT_FRONTEND="dist/public/index.html"
 PREBUILT_SERVER="dist/index.mjs"
 PREBUILT_CLUSTER="dist/cluster.mjs"
 
+# Use the Nix-managed FFmpeg in both npm install paths. ffmpeg-static supports
+# FFMPEG_BIN and exits its install hook when that executable already exists;
+# this avoids a fragile 80 MB GitHub release download during npm ci.
+source script/deployment/ffmpeg-path.sh
+if ! resolve_ffmpeg || ! verify_ffmpeg_capabilities; then
+  echo "ERROR: configured FFmpeg is missing required production capabilities" >&2
+  return 1
+fi
+
 # A checked-in dist/ can predate source fixes. File existence is not evidence
 # of freshness: compile whenever source is available. Keep the historical
 # artifact-only path for images deliberately shipped without source.
@@ -158,6 +167,9 @@ else
 
   FAST_PATH=0
 fi
+
+mkdir -p dist/deployment
+cp script/deployment/ffmpeg-path.sh dist/deployment/ffmpeg-path.sh
 
 # ─── TF native binaries (preserved for production LD_LIBRARY_PATH) ───────────
 printf '%s' "$FAST_PATH" > "$DEPLOY_STATE_DIR/build-path"
