@@ -5,9 +5,13 @@
   "profileSourcingQuality": {
     "benchmark": "google_veo_generated_content",
     "calibrationStatus": "provisional",
+    "decisionUnit": "public_content_observation",
+    "rangeScope": "global_observation_cohort",
+    "profileSpecificThresholds": false,
     "scoreScale": {"min": 0, "max": 100},
     "minimumEligibleScore": 70,
     "preferredScoreRange": {"min": 80, "max": 95},
+    "maximumIsHardLimit": false,
     "minimumEvidenceCoverage": 0.8,
     "exactMatchRequired": false,
     "requiredFactors": ["creativeQuality", "musicRelevance", "platformFit"],
@@ -20,7 +24,7 @@
       "sourceProvenance": 0.05
     },
     "missingEvidencePolicy": "do_not_impute",
-    "scoreMeaning": "Evidence-weighted match potential, not exact content similarity or a guarantee of performance. Scores above the preferred range remain eligible."
+    "scoreMeaning": "Evidence-weighted match potential for public content observations, summarized and ranked as a discovery cohort rather than as a profile grade. It is not exact content similarity or a guarantee of performance. Scores above the preferred range remain eligible."
   },
   "platforms": {
     "facebook": {

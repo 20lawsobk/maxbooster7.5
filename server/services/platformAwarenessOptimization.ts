@@ -52,9 +52,13 @@ export interface PlatformOptimization {
 export interface ProfileSourcingQualityPolicy {
   benchmark: "google_veo_generated_content";
   calibrationStatus: "provisional";
+  decisionUnit: "public_content_observation";
+  rangeScope: "global_observation_cohort";
+  profileSpecificThresholds: false;
   scoreScale: { min: 0; max: 100 };
   minimumEligibleScore: number;
   preferredScoreRange: { min: number; max: number };
+  maximumIsHardLimit: false;
   minimumEvidenceCoverage: number;
   exactMatchRequired: false;
   requiredFactors: Array<
@@ -107,6 +111,10 @@ if (
   registry.revision === undefined ||
   profileQuality?.benchmark !== "google_veo_generated_content" ||
   profileQuality.calibrationStatus !== "provisional" ||
+  profileQuality.decisionUnit !== "public_content_observation" ||
+  profileQuality.rangeScope !== "global_observation_cohort" ||
+  profileQuality.profileSpecificThresholds !== false ||
+  profileQuality.maximumIsHardLimit !== false ||
   profileQuality.scoreScale?.min !== 0 ||
   profileQuality.scoreScale?.max !== 100 ||
   !Number.isFinite(profileQuality.minimumEligibleScore) ||

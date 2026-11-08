@@ -37,6 +37,10 @@ def _load_registry() -> dict[str, Any]:
                 not isinstance(policy, dict)
                 or policy.get("benchmark") != "google_veo_generated_content"
                 or policy.get("calibrationStatus") != "provisional"
+                or policy.get("decisionUnit") != "public_content_observation"
+                or policy.get("rangeScope") != "global_observation_cohort"
+                or policy.get("profileSpecificThresholds") is not False
+                or policy.get("maximumIsHardLimit") is not False
                 or policy.get("scoreScale") != {"min": 0, "max": 100}
                 or policy.get("minimumEligibleScore") != 70
                 or policy.get("preferredScoreRange") != {"min": 80, "max": 95}

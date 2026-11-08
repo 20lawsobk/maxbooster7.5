@@ -71,6 +71,37 @@ class SourceCoverageTests(unittest.TestCase):
         self.assertEqual(with_failure[0]["status"], "failed")
         self.assertEqual(with_failure[0]["failure"], "not_found")
 
+    def test_profile_source_quality_is_reported_as_global_content_cohorts(self):
+        from ai_model.awareness.sources import profile_source_status
+
+        candidate = {
+            "platform": "youtube",
+            "profile_citation": "https://www.youtube.com/channel/UC123",
+            "post_citation": "https://www.youtube.com/watch?v=abcdefghijk",
+            "status": "insufficient_evidence",
+            "quality_potential_score": None,
+        }
+        status = profile_source_status({
+            "youtube_NoCopyrightSounds": {
+                "ok": True,
+                "profile_candidates": [candidate],
+            },
+        })
+        self.assertEqual(
+            status["quality_cohort"]["decision_unit"],
+            "public_content_observation_cohort",
+        )
+        self.assertFalse(status["quality_cohort"]["profile_specific_thresholds"])
+        self.assertEqual(status["quality_cohort"]["candidate_observations"], 1)
+        self.assertEqual(
+            status["platforms"]["youtube"]["quality_cohort"]["candidate_observations"],
+            1,
+        )
+        self.assertEqual(
+            status["platforms"]["youtube"]["quality_cohort"]["counts"]["insufficient_evidence"],
+            1,
+        )
+
     def test_profile_snapshot_reports_candidate_citation_and_missing_measurements(self):
         from datetime import datetime, timezone
         from ai_model.awareness.engine import Engine
@@ -106,6 +137,8 @@ class SourceCoverageTests(unittest.TestCase):
         self.assertEqual(candidate["profile_citation"],
                          "https://www.youtube.com/channel/UC123")
         self.assertEqual(candidate["status"], "insufficient_evidence")
+        self.assertEqual(candidate["decision_unit"], "public_content_observation")
+        self.assertEqual(candidate["text"], "New music performance")
         self.assertIn("creativeQuality", candidate["missing_metrics"])
         self.assertIn("platformFit", candidate["missing_metrics"])
         self.assertEqual(candidate["measured_factors"]["freshness"],
@@ -115,10 +148,16 @@ class SourceCoverageTests(unittest.TestCase):
         platform_report = engine.status()["profile_sourcing"]["platforms"]["youtube"]
         self.assertEqual(platform_report["candidate_count"], 1)
         self.assertEqual(platform_report["eligible_count"], 0)
+        self.assertEqual(
+            platform_report["quality_cohort"]["candidate_observations"], 1
+        )
         restored = Engine(sources=engine.sources, store=store, timeout=1)
         restored._load()
         restored_report = restored.status()["profile_sourcing"]["platforms"]["youtube"]
         self.assertEqual(restored_report["candidate_count"], 1)
+        self.assertEqual(
+            restored_report["quality_cohort"]["candidate_observations"], 1
+        )
 
     def test_all_ten_original_feeds_are_retained_without_keys(self):
         with patch.dict("os.environ", {}, clear=True):

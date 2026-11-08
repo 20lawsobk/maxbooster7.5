@@ -2644,6 +2644,50 @@ async def unified_awareness_context(request: Request, _key=Depends(require_scope
             "ready": True, "awareness": context, "context": context}
 
 
+class UnifiedProfileDiscoverRequest(BaseModel):
+    query: str | None = Field(default=None, min_length=2, max_length=300)
+    platforms: list[str] | None = Field(default=None, min_length=1, max_length=8)
+    limit: int = Field(default=20, ge=1, le=50)
+    benchmark_reference: dict[str, Any] | None = None
+
+    model_config = {"extra": "forbid"}
+
+
+@app.post("/api/awareness/unified/profile-discover")
+async def unified_profile_discover(data: UnifiedProfileDiscoverRequest,
+                                   _key=Depends(require_scope("generate"))):
+    """Search MaxCore's persisted public-source index without Exa or gated scraping."""
+    from ai_model.awareness import get_engine
+    from ai_model.awareness.profile_observatory import search_profile_sources
+
+    engine = get_engine()
+    status = engine.status()
+    source_health = (
+        status.get("latest_scan_health")
+        or status.get("snapshot_source_health")
+        or status.get("source_health")
+        or {}
+    )
+    try:
+        result = search_profile_sources(
+            source_health,
+            query=data.query,
+            platforms=data.platforms,
+            limit=data.limit,
+            benchmark_reference=data.benchmark_reference,
+            platform_status=status.get("profile_sourcing", {}).get("platforms", {}),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    result.update({
+        "scan_mode": "scheduled_read_only_source_scan",
+        "source_scan_state": status.get("source_scan_state"),
+        "snapshot_id": status.get("snapshot_id"),
+        "snapshot_ready": status.get("snapshot_ready") is True,
+    })
+    return result
+
+
 @app.get("/ready")
 @app.get("/api/ready")
 async def generation_readiness():

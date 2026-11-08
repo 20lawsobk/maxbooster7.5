@@ -491,12 +491,14 @@ def youtube_with_profile_candidates(url, channel_name):
 def profile_source_status(source_health=None):
     """Report real public profile adapters and platforms without one."""
     from ai_model.platform_optimization import PLATFORMS
+    from ai_model.awareness.profile_quality import summarize_quality_cohort
 
     configured = {
         f"youtube_{feed['name']}": feed for feed in legacy.YOUTUBE_FEEDS
     }
     health = source_health if isinstance(source_health, dict) else {}
     platforms = {}
+    all_candidates = []
     for platform in PLATFORMS:
         if platform != "youtube":
             platforms[platform] = {
@@ -507,18 +509,23 @@ def profile_source_status(source_health=None):
                 "eligible_count": 0,
                 "missing_metrics": [],
                 "invalid_metrics": [],
+                "quality_cohort": summarize_quality_cohort([]),
             }
             continue
         entries = []
         source_health_rows = []
+        platform_candidates = []
         missing = set()
         invalid = set()
         candidates = eligible = 0
         for name in configured:
             item = health.get(name, {})
             item = item if isinstance(item, dict) else {}
-            candidates += item.get("profile_candidate_count", 0)
-            eligible += item.get("profile_eligible_count", 0)
+            candidate_rows = item.get("profile_candidates", [])
+            if isinstance(candidate_rows, list):
+                platform_candidates.extend(
+                    row for row in candidate_rows if isinstance(row, dict)
+                )
             missing.update(item.get("profile_missing_metrics", []))
             invalid.update(item.get("profile_invalid_metrics", []))
             entries.append(name)
@@ -533,6 +540,12 @@ def profile_source_status(source_health=None):
                 "candidate_count": item.get("profile_candidate_count", 0),
                 "eligible_count": item.get("profile_eligible_count", 0),
             })
+        platform_candidates = _dedupe_profile_observations(platform_candidates)
+        candidates = len(platform_candidates)
+        eligible = sum(
+            row.get("status") == "eligible" for row in platform_candidates
+        )
+        all_candidates.extend(platform_candidates)
         platforms[platform] = {
             "status": "public_feed_configured",
             "reason": None,
@@ -543,8 +556,38 @@ def profile_source_status(source_health=None):
             "invalid_metrics": sorted(invalid),
             "sources": entries,
             "source_health": source_health_rows,
+            "quality_cohort": summarize_quality_cohort(
+                [_profile_assessment(row) for row in platform_candidates]
+            ),
         }
-    return {"platforms": platforms}
+    all_candidates = _dedupe_profile_observations(all_candidates)
+    return {
+        "platforms": platforms,
+        "quality_cohort": summarize_quality_cohort(
+            [_profile_assessment(row) for row in all_candidates]
+        ),
+    }
+
+
+def _profile_assessment(candidate):
+    score = candidate.get("quality_potential_score")
+    status = candidate.get("status")
+    return {
+        "qualityPotentialScore": score,
+        "status": status if isinstance(status, str) else "insufficient_evidence",
+    }
+
+
+def _dedupe_profile_observations(candidates):
+    unique = {}
+    for candidate in candidates:
+        key = (
+            candidate.get("platform"),
+            candidate.get("post_citation"),
+        )
+        if key[1]:
+            unique.setdefault(key, candidate)
+    return list(unique.values())
 
 
 def configured_sources():

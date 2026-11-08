@@ -32,6 +32,59 @@ def _run(coro):
     return asyncio.run(coro)
 
 
+def test_native_profile_discovery_route_reads_local_index_without_external_search(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    candidate = {
+        "source": "youtube_feed",
+        "platform": "youtube",
+        "text": "A classical violin performance",
+        "profile_citation": "https://www.youtube.com/channel/UC123",
+        "post_citation": "https://www.youtube.com/watch?v=abcdefghijk",
+        "status": "insufficient_evidence",
+        "quality_potential_score": None,
+        "missing_metrics": ["creativeQuality"],
+    }
+
+    class Engine:
+        def status(self):
+            return {
+                "latest_scan_health": {
+                    "youtube_feed": {"profile_candidates": [candidate]},
+                },
+                "profile_sourcing": {
+                    "platforms": {"youtube": {"status": "public_feed_configured"}},
+                },
+                "source_scan_state": "complete",
+                "snapshot_id": "scan-snapshot",
+                "snapshot_ready": True,
+            }
+
+    monkeypatch.setattr("ai_model.awareness.get_engine", lambda: Engine())
+    route = next(
+        row for row in server.app.routes
+        if getattr(row, "path", None) == "/api/awareness/unified/profile-discover"
+    )
+    dependency = route.dependant.dependencies[0].call
+    server.app.dependency_overrides[dependency] = lambda: {"scopes": ["generate"]}
+    try:
+        response = TestClient(server.app).post(
+            "/api/awareness/unified/profile-discover",
+            json={"platforms": ["youtube"]},
+        )
+    finally:
+        server.app.dependency_overrides.pop(dependency, None)
+    assert response.status_code == 200
+    result = response.json()
+    assert result["mode"] == "native_local_profile_observatory"
+    assert result["external_search_provider"] is None
+    assert result["source_scan_state"] == "complete"
+    assert result["scan_mode"] == "scheduled_read_only_source_scan"
+    assert result["indexed_observation_count"] == 1
+    assert result["matched_observation_count"] == 1
+    assert result["observations"][0]["quality_potential_score"] is None
+
+
 def test_native_request_models_preserve_structured_and_direction_context():
     ad = server.AdGenerateRequest(
         user_id="artist-1",

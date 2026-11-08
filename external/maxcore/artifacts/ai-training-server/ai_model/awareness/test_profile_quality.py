@@ -4,6 +4,8 @@ from ai_model.awareness.engine import Engine
 from ai_model.awareness.profile_quality import (
     PROFILE_MATCH_METRIC,
     assess_profile_quality,
+    rank_observation_cohort,
+    summarize_quality_cohort,
 )
 from ai_model.platform_optimization import profile_sourcing_quality_policy
 from ai_model.awareness.test_engine import MemoryStore
@@ -26,6 +28,10 @@ class ProfileQualityTests(unittest.TestCase):
         self.assertEqual(self.policy["preferredScoreRange"], {"min": 80, "max": 95})
         self.assertIs(self.policy["exactMatchRequired"], False)
         self.assertEqual(self.policy["calibrationStatus"], "provisional")
+        self.assertEqual(self.policy["decisionUnit"], "public_content_observation")
+        self.assertEqual(self.policy["rangeScope"], "global_observation_cohort")
+        self.assertIs(self.policy["profileSpecificThresholds"], False)
+        self.assertIs(self.policy["maximumIsHardLimit"], False)
 
     def test_quality_assessment_accepts_potential_without_exact_match(self):
         assessment = assess_profile_quality(self.strong, self.policy)
@@ -33,6 +39,7 @@ class ProfileQualityTests(unittest.TestCase):
         self.assertEqual(assessment["qualityBand"], "preferred")
         self.assertFalse(assessment["exactMatchRequired"])
         self.assertEqual(assessment["evidenceCoverage"], 1.0)
+        self.assertEqual(assessment["decisionUnit"], "public_content_observation")
 
     def test_required_benchmark_factors_and_evidence_coverage_are_mandatory(self):
         assessment = assess_profile_quality(
@@ -55,6 +62,57 @@ class ProfileQualityTests(unittest.TestCase):
         self.assertEqual(assessment["evidenceCoverage"], 0.85)
         self.assertEqual(assessment["missingFactors"], ["freshness", "sourceProvenance"])
         self.assertEqual(assessment["status"], "eligible")
+
+    def test_global_cohort_range_reports_distribution_without_profile_thresholds(self):
+        assessments = [
+            assess_profile_quality(
+                {factor: 69 for factor in self.policy["weights"]}, self.policy
+            ),
+            assess_profile_quality(self.strong, self.policy),
+            assess_profile_quality(
+                {factor: 99 for factor in self.policy["weights"]}, self.policy
+            ),
+            assess_profile_quality({"freshness": 90}, self.policy),
+        ]
+        cohort = summarize_quality_cohort(assessments, self.policy)
+        self.assertEqual(
+            cohort["decision_unit"], "public_content_observation_cohort"
+        )
+        self.assertFalse(cohort["profile_specific_thresholds"])
+        self.assertEqual(cohort["candidate_observations"], 4)
+        self.assertEqual(cohort["scored_observations"], 3)
+        self.assertEqual(cohort["counts"]["eligible"], 2)
+        self.assertEqual(cohort["counts"]["preferred"], 1)
+        self.assertEqual(cohort["counts"]["above_preferred"], 1)
+        self.assertEqual(cohort["counts"]["below_range"], 1)
+        self.assertEqual(cohort["counts"]["insufficient_evidence"], 1)
+        self.assertFalse(cohort["quality_range"]["maximum_is_hard_limit"])
+        self.assertIsNotNone(cohort["score_distribution"]["median"])
+
+    def test_observation_cohort_ranking_does_not_grade_profile_identity(self):
+        cohort = rank_observation_cohort([
+            {
+                "profile_citation": "https://example.org/profile/shared",
+                "post_citation": "https://example.org/post/low",
+                "quality_factors": {factor: 69 for factor in self.policy["weights"]},
+                "query_relevance_score": 99,
+            },
+            {
+                "profile_citation": "https://example.org/profile/shared",
+                "post_citation": "https://example.org/post/high",
+                "quality_factors": self.strong,
+                "query_relevance_score": 40,
+            },
+        ], self.policy)
+        self.assertEqual(cohort["quality_cohort"]["candidate_observations"], 2)
+        self.assertEqual(
+            cohort["observations"][0]["post_citation"],
+            "https://example.org/post/high",
+        )
+        self.assertEqual(
+            cohort["observations"][0]["quality_assessment"]["decisionUnit"],
+            "public_content_observation",
+        )
 
     def test_scores_below_floor_are_rejected_and_scores_above_preferred_stay_eligible(self):
         below = {factor: 65 for factor in self.policy["weights"]}
@@ -163,6 +221,82 @@ class ProfileQualityTests(unittest.TestCase):
         self.assertEqual(
             {candidate["status"] for candidate in health["profile_candidates"]},
             {"below_limit", "eligible"},
+        )
+
+
+class NativeProfileObservatoryTests(unittest.TestCase):
+    def test_searches_local_public_index_and_returns_global_quality_cohort(self):
+        from ai_model.awareness.profile_observatory import search_profile_sources
+
+        result = search_profile_sources(
+            {
+                "youtube_feed": {
+                    "profile_candidates": [{
+                        "source": "youtube_feed",
+                        "platform": "youtube",
+                        "text": "A classical violin performance",
+                        "profile_citation": "https://www.youtube.com/channel/UC123",
+                        "post_citation": "https://www.youtube.com/watch?v=abcdefghijk",
+                        "status": "insufficient_evidence",
+                        "quality_potential_score": None,
+                        "missing_metrics": ["creativeQuality", "musicRelevance"],
+                    }],
+                },
+            },
+            query="classical violinist",
+            platforms=["youtube"],
+            platform_status={"youtube": {"status": "public_feed_configured"}},
+        )
+        self.assertEqual(result["mode"], "native_local_profile_observatory")
+        self.assertIsNone(result["external_search_provider"])
+        self.assertTrue(result["preview"])
+        self.assertEqual(result["benchmark_reference"]["provider"], "Google DeepMind")
+        self.assertTrue(result["benchmark_reference"]["metadata_verified"])
+        self.assertEqual(result["indexed_observation_count"], 1)
+        self.assertEqual(result["matched_observation_count"], 1)
+        self.assertEqual(result["quality_cohort"]["scored_observations"], 0)
+        observation = result["observations"][0]
+        self.assertEqual(observation["decision_unit"], "public_content_observation")
+        self.assertEqual(observation["query_relevance_score"], 50)
+        self.assertIsNone(observation["quality_potential_score"])
+
+    def test_custom_benchmark_must_be_a_public_youtube_video(self):
+        from ai_model.awareness.profile_observatory import search_profile_sources
+
+        with self.assertRaisesRegex(ValueError, "public HTTPS YouTube URL"):
+            search_profile_sources(
+                {},
+                benchmark_reference={
+                    "title": "Veo music sample",
+                    "url": "https://example.org/video",
+                },
+            )
+
+    def test_lexically_unrelated_items_are_not_reported_as_matches(self):
+        from ai_model.awareness.profile_observatory import search_profile_sources
+
+        result = search_profile_sources(
+            {
+                "youtube_feed": {
+                    "profile_candidates": [{
+                        "platform": "youtube",
+                        "text": "Electronic dance remix",
+                        "profile_citation": "https://www.youtube.com/channel/UC123",
+                        "post_citation": "https://www.youtube.com/watch?v=abcdefghijk",
+                        "status": "insufficient_evidence",
+                        "quality_potential_score": None,
+                    }],
+                },
+            },
+            query="classical violinist",
+            platforms=["youtube"],
+        )
+        self.assertEqual(result["status"], "no_text_match")
+        self.assertEqual(result["indexed_observation_count"], 1)
+        self.assertEqual(result["matched_observation_count"], 0)
+        self.assertEqual(result["returned_observation_count"], 0)
+        self.assertEqual(
+            result["quality_cohort"]["candidate_observations"], 1
         )
 
 

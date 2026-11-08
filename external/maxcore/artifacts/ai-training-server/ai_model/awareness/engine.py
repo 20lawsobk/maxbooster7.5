@@ -780,7 +780,10 @@ class Engine:
                         and clean(item.get("method"), 120))
                 }
                 profile_summaries.append({
+                    "decision_unit": "public_content_observation",
+                    "source": name,
                     "platform": clean(evidence.get("platform"), 40),
+                    "text": clean(text, 500),
                     "profile_citation": citation(evidence.get("profile_citation")),
                     "post_citation": cite,
                     "published_at": clean(evidence.get("published_at"), 64),
