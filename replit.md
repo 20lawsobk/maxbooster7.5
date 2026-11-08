@@ -154,7 +154,7 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 |---|---|
 | Preview blank / not loading | Restart "Start application" workflow; confirm port 5000 opened; check `server.allowedHosts: true` in `vite.config.ts` |
 | `node_modules/.bin` missing | Run the inline Node script that reads each package's `bin` field and recreates symlinks manually (see Startup Note below) |
-| Dependency installation fails | Preserve locks. Use root npm 10.9.4 and the independent imported pnpm locks; verify registry/policy errors. The tar stub and lock-deletion workaround are obsolete. |
+| Dependency installation fails | Preserve locks. Use root npm 10.9.9 and the independent imported pnpm locks; verify registry/policy errors. The tar stub and lock-deletion workaround are obsolete. |
 | Typecheck OOMs (`tsc` killed) | Never run monolithic `tsc`; use `npm run check` (split server/client configs); also clear `.cache/tsbuildinfo.*` before re-measuring |
 | AI features return 503 | Inspect the actual reason: boot/crash, connectivity, awareness freshness or no qualified candidate. Restarting cannot establish missing model capability. |
 | Login / CSRF failures in curl | Pass the `csrf-token` cookie value as `X-CSRF-Token` header (double-submit pattern) |
@@ -214,7 +214,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full diagram and requ
 
 ## User Preferences
 
-- Root dependencies use pinned npm 10.9.4 and package-lock.json; imported MaxCore/PDIM use independent pinned pnpm locks.
+- Root dependencies use pinned npm 10.9.9 and package-lock.json; imported MaxCore/PDIM use independent pinned pnpm locks.
 - Run heavy installs via a Replit workflow, not ShellExec (detached bash gets reaped)
 - Diagnose missing tool binaries through the lock-consistent installation and dependency gates (see Startup Note above).
 - Never run monolithic `tsc` — always use `npm run check` (split server/client configs)

@@ -23,7 +23,7 @@ npm run dev
 ```
 
 Important install rules:
-- Root tooling uses npm 10.9.4 on Node 22; preserve `package-lock.json`.
+- Root tooling uses npm 10.9.9 on Node 22; preserve `package-lock.json`.
 - Imported MaxCore and PDIM are independent pnpm 10.26.1 workspaces. Provision their frozen locks with lifecycle scripts disabled; see `docs/npm-build-start.md`.
 - Do not replace real packages with tar stubs, delete locks, or mix package managers in the same dependency tree.
 - Production-only dependency installation is not a complete local validation environment.

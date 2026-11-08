@@ -6,7 +6,7 @@ it does not establish the state of a running deployment.
 
 ## Development and ordinary production compilation
 
-Use Node 22 (at least 22.12) and the pinned npm 10.9.4 for the root checkout:
+Use Node 22 (at least 22.12) and the pinned npm 10.9.9 for the root checkout:
 
 ```sh
 npm ci

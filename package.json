@@ -9,7 +9,7 @@
   },
   "type": "module",
   "license": "MIT",
-  "packageManager": "npm@10.9.4",
+  "packageManager": "npm@10.9.9",
   "main": "electron/main.js",
   "scripts": {
     "dev": "bash scripts/start-dev.sh",
