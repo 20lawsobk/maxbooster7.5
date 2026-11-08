@@ -208,46 +208,14 @@ def _approved_text_training_rights(records):
 
 
 def require_peak_training_rights(records, *, allow_public_live=False):
-    """Apply the existing live-observation policy at the trusted engine boundary.
+    """Require exact, evidence-backed grants for every source-authored text.
 
-    Direct callers remain grant-only. An explicitly configured grant policy
-    always takes precedence, including incomplete or invalid configuration.
-    Live admission is provenance validation, not a license or rights attestation.
+    ``allow_public_live`` remains accepted for compatibility with older
+    internal callers, but public accessibility and scanner provenance never
+    grant training rights. A license label supplied by a record is also not a
+    rights receipt; every record must match the pinned operator manifest and
+    its separately fingerprinted evidence.
     """
-    grant_configured = any(os.environ.get(key) for key in (
-        "MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST", "MAXCORE_TEXT_TRAINING_RIGHTS_SHA256"))
-    if allow_public_live and not grant_configured:
-        valid = bool(records) and all(
-            _valid_live_awareness_record(record)
-            and record.get("provenance_type") == "maxcore_live_awareness_observation"
-            and record.get("private") is False
-            and record.get("purpose") == "training"
-            and "training_rights" not in record
-            and "learning_admission" not in record
-            for record in records
-        )
-        if valid and len({record["live_provenance"]["observation_set_id"]
-                          for record in records}) == 1:
-            for record in records:
-                provenance = record["live_provenance"]
-                record["learning_admission"] = {
-                    "schema": 1, "policy": "validated-public-live-observations-v1",
-                    "observation_set_id": provenance["observation_set_id"],
-                    "record_id": provenance["record_id"],
-                    "text_sha256": provenance["text_sha256"],
-                    "license_asserted": False,
-                }
-            return
-    if records and all(
-        isinstance(record, dict)
-        and record.get("license") in LICENSES
-        and record.get("private") is False
-        and isinstance(record.get("author"), str) and record["author"].strip()
-        and record["author"] != "unattributed live observation"
-        and record.get("source") and record.get("purpose") == "training"
-        for record in records
-    ):
-        return
     try:
         if not records:
             raise ValueError("No source observations")
@@ -259,6 +227,16 @@ def require_peak_training_rights(records, *, allow_public_live=False):
     # Validate the complete set before attaching anything to audited inputs.
     for record, receipt in zip(records, receipts):
         record["training_rights"] = receipt
+
+
+def require_live_training_eligibility(records):
+    """Fail closed until this controller has both rights and a frozen holdout."""
+    require_peak_training_rights(records)
+    raise Blocked(
+        "blocked_holdout",
+        "Live text training requires a separately frozen, rights-cleared holdout",
+        409,
+    )
 
 
 def write_new(path, raw):
@@ -444,21 +422,20 @@ def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
         else:
             observation_set = engine.training_observations()
         records, excluded = eligible_records(observation_set)
-        # Non-peak collection includes the same raw social posts. A caller
-        # cannot turn their source-authored text into bare facts by changing mode.
-        raw_post_text = any(
-            source == "mastodon_trending" or (isinstance(source, str) and
-                                              source.startswith(("mastodon_peak_", "bluesky_peak_")))
-            for source in (record["live_provenance"]["source"] for record in records)
+        # Every row from this collector is source-authored awareness text,
+        # regardless of domain, metric, or caller-selected curriculum.
+        has_live_text = any(
+            record.get("provenance_type") == "maxcore_live_awareness_observation"
+            for record in records
         )
-        if peak_content or raw_post_text:
+        if peak_content or has_live_text:
             # Records were collected from our engine and integrity-checked above,
-            # not accepted from an HTTP request. Honor the corpus builder's
-            # existing live policy without fabricating per-post rights grants.
-            require_peak_training_rights(records, allow_public_live=True)
+            # not accepted from an HTTP request. Collection provenance is not
+            # a training grant, even when the source is public and validated.
+            require_live_training_eligibility(records)
         try:
             manifest = build_manifest(
-                records, [], smoke_only=False, allow_live_without_holdout=True,
+                records, [], smoke_only=False, allow_live_without_holdout=False,
             )
             if any(r["reason"] != "duplicate" for r in manifest["rejected"]):
                 raise ValueError("Live corpus failed privacy or sensitive-data screening")

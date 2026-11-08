@@ -504,6 +504,15 @@ def profile_source_status(source_health=None):
             platforms[platform] = {
                 "status": "unsupported",
                 "reason": "no_anonymous_public_profile_adapter",
+                "authorization_mode": "authorized_app_api_not_integrated",
+                "connection_state": "not_observable_by_maxcore",
+                "freshness_state": "unavailable",
+                "observation_count": 0,
+                "last_observed_at": None,
+                "training_eligibility": {
+                    "eligible": False,
+                    "reason": "source_specific_training_rights_not_verified",
+                },
                 "source_count": 0,
                 "candidate_count": 0,
                 "eligible_count": 0,
@@ -540,6 +549,11 @@ def profile_source_status(source_health=None):
                 "candidate_count": item.get("profile_candidate_count", 0),
                 "eligible_count": item.get("profile_eligible_count", 0),
             })
+        ingestion_state = (
+            "available" if any(row["status"] == "available" for row in source_health_rows)
+            else "failed" if any(row["status"] == "failed" for row in source_health_rows)
+            else "not_scanned"
+        )
         platform_candidates = _dedupe_profile_observations(platform_candidates)
         candidates = len(platform_candidates)
         eligible = sum(
@@ -549,6 +563,16 @@ def profile_source_status(source_health=None):
         platforms[platform] = {
             "status": "public_feed_configured",
             "reason": None,
+            "authorization_mode": "public_atom_feed",
+            "connection_state": "not_applicable_public_feed",
+            "ingestion_state": ingestion_state,
+            "freshness_state": "unverified",
+            "observation_count": None,
+            "last_observed_at": None,
+            "training_eligibility": {
+                "eligible": False,
+                "reason": "source_specific_training_rights_not_verified",
+            },
             "source_count": len(configured),
             "candidate_count": candidates,
             "eligible_count": eligible,

@@ -57,12 +57,18 @@ class SourceCoverageTests(unittest.TestCase):
         result = profile_source_status()["platforms"]
         self.assertEqual(set(result), set(PLATFORMS))
         self.assertEqual(result["youtube"]["status"], "public_feed_configured")
+        self.assertEqual(result["youtube"]["authorization_mode"], "public_atom_feed")
+        self.assertEqual(result["youtube"]["freshness_state"], "unverified")
+        self.assertFalse(result["youtube"]["training_eligibility"]["eligible"])
         for platform in set(PLATFORMS) - {"youtube"}:
             self.assertEqual(result[platform]["status"], "unsupported")
             self.assertEqual(
                 result[platform]["reason"],
                 "no_anonymous_public_profile_adapter",
             )
+            self.assertEqual(result[platform]["connection_state"], "not_observable_by_maxcore")
+            self.assertEqual(result[platform]["freshness_state"], "unavailable")
+            self.assertFalse(result[platform]["training_eligibility"]["eligible"])
         with_failure = profile_source_status({
             "youtube_NoCopyrightSounds": {
                 "ok": False, "failure_class": "not_found",

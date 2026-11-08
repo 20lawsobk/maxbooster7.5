@@ -292,8 +292,9 @@ def _public_selection(learning_policy=None):
 def auto_select(*, learning_policy=None):
     if os.environ.get("MAXCORE_AUTO_SELECT", "1") != "1":
         return {"state": "disabled"}
-    # Public candidates are discovered from the certified trainer output itself;
-    # neither an operator submission nor a human signature is needed.
+    # Keep the public candidate scan for compatibility, but registry admission
+    # now fails closed unless source rights and independent signed review exist.
+    # The reviewed queue is the only path that may select an eligible candidate.
     result = _public_selection(learning_policy=learning_policy)
     if result is not None:
         return result

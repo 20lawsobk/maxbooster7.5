@@ -1,5 +1,6 @@
 """Contract tests cover rolling live-source admission and candidate isolation."""
 import ast
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -7,14 +8,82 @@ import subprocess
 import tempfile
 import time
 import unittest
+from urllib.parse import urlsplit
 from unittest.mock import patch
 
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.testclient import TestClient
 
 from ai_model.awareness.engine import Engine
 from ai_model.awareness.test_engine import MemoryStore, sources
 from ai_model.training import live_learning as live
+
+
+class _Response:
+    def __init__(self, status_code, body):
+        self.status_code = status_code
+        self.body = body
+
+    def json(self):
+        return json.loads(self.body.decode("utf-8"))
+
+
+class TestClient:
+    """Tiny standard-library ASGI client for isolated tests; no httpx extra."""
+
+    def __init__(self, app):
+        self.app = app
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def request(self, method, url, *, json_body=None, headers=None):
+        parsed = urlsplit(url)
+        body = b"" if json_body is None else json.dumps(json_body).encode("utf-8")
+        header_pairs = [(key.lower().encode("latin-1"), value.encode("latin-1"))
+                        for key, value in (headers or {}).items()]
+        if json_body is not None:
+            header_pairs.append((b"content-type", b"application/json"))
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": method.upper(),
+            "scheme": "http",
+            "path": parsed.path,
+            "raw_path": parsed.path.encode("utf-8"),
+            "query_string": parsed.query.encode("ascii"),
+            "root_path": "",
+            "headers": header_pairs,
+            "client": ("127.0.0.1", 12345),
+            "server": ("127.0.0.1", 80),
+        }
+        messages = []
+        received = False
+
+        async def receive():
+            nonlocal received
+            if not received:
+                received = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return {"type": "http.disconnect"}
+
+        async def send(message):
+            messages.append(message)
+
+        asyncio.run(self.app(scope, receive, send))
+        start = next(message for message in messages if message["type"] == "http.response.start")
+        payload = b"".join(message.get("body", b"") for message in messages
+                           if message["type"] == "http.response.body")
+        return _Response(start["status"], payload)
+
+    def get(self, url, *, headers=None):
+        return self.request("GET", url, headers=headers)
+
+    def post(self, url, *, json=None, headers=None):
+        return self.request("POST", url, json_body=json, headers=headers)
 
 
 class LiveLearningTests(unittest.TestCase):
@@ -34,9 +103,12 @@ class LiveLearningTests(unittest.TestCase):
         self.admission_patch.start()
         self.env = patch.dict(os.environ, {}, clear=False)
         self.env.start()
+        self.execution_policy_patches = []
 
     def tearDown(self):
         self.assertEqual(self.snapshot._json, self.original)
+        for policy_patch in reversed(self.execution_policy_patches):
+            policy_patch.stop()
         self.jobs_patch.stop()
         self.candidate_patch.stop()
         self.admission_patch.stop()
@@ -44,7 +116,20 @@ class LiveLearningTests(unittest.TestCase):
         self.temp.cleanup()
 
     def inputs(self):
-        pass
+        # These cases exercise worker/recovery internals after the separately
+        # tested rights gate. They use only local test fixtures and replace
+        # corpus admission so they cannot imply a production-eligible corpus.
+        for policy_patch in (
+            patch.object(live, "require_live_training_eligibility", return_value=None),
+            patch.object(
+                live, "build_manifest",
+                side_effect=lambda records, *_args, **_kwargs: {
+                    "records": records, "rejected": [],
+                },
+            ),
+        ):
+            self.execution_policy_patches.append(policy_patch)
+            policy_patch.start()
 
     def client(self):
         def admin(x_admin_key: str = Header(None)):
@@ -63,13 +148,11 @@ class LiveLearningTests(unittest.TestCase):
             headers = {"x-admin-key": "test-admin"}
             for body in ({"steps": True}, {"steps": 65}, {"records": []}, {"steps": "1"}):
                 self.assertEqual(client.post("/api/training/candidates/live", json=body, headers=headers).status_code, 422)
-            with patch.object(live.subprocess, "run",
-                              return_value=subprocess.CompletedProcess([], 1)):
-                response = client.post("/api/training/candidates/live", json={"steps": 1}, headers=headers)
+            response = client.post("/api/training/candidates/live", json={"steps": 1}, headers=headers)
             self.assertEqual(response.status_code, 409)
-            self.assertEqual(response.json()["status"], "failed_training")
+            self.assertEqual(response.json()["status"], "blocked_training_rights")
 
-    def test_live_observations_need_no_rights_file_and_do_not_claim_license(self):
+    def test_public_observations_are_awareness_only_without_exact_rights(self):
         records, excluded = live.eligible_records(self.engine.training_observations())
         self.assertGreater(len(records), 0)
         self.assertEqual(excluded, 0)
@@ -79,23 +162,28 @@ class LiveLearningTests(unittest.TestCase):
             r["provenance_type"] == "maxcore_live_awareness_observation"
             for r in records
         ))
+        for allow_public_live in (False, True):
+            with self.subTest(allow_public_live=allow_public_live):
+                with self.assertRaises(live.Blocked) as error:
+                    live.require_peak_training_rights(
+                        records, allow_public_live=allow_public_live,
+                    )
+                self.assertEqual(error.exception.code, "blocked_training_rights")
+        self.assertTrue(all("learning_admission" not in row for row in records))
+        self.assertTrue(all("training_rights" not in row for row in records))
 
-    def test_live_observation_set_trains_every_selected_record(self):
-        observation_set = self.engine.training_observations()
-        records, excluded = live.eligible_records(observation_set)
-        manifest = live.build_manifest(
-            records, [], smoke_only=False, allow_live_without_holdout=True,
-        )
-        observation_ids = {row["id"] for row in observation_set["records"]}
-        trained_ids = {row["live_provenance"]["record_id"] for row in manifest["records"]}
-        self.assertEqual(excluded, 0)
-        self.assertEqual(trained_ids, observation_ids)
-        self.assertEqual(manifest["holdout_sha256"], [])
-        self.assertEqual(manifest["rejected"], [])
-        self.assertEqual(
-            {row["live_provenance"]["observation_set_id"] for row in manifest["records"]},
-            {observation_set["id"]},
-        )
+    def test_live_observation_set_never_reaches_trainer_without_rights(self):
+        with self.assertRaises(live.Blocked) as error:
+            live.execute(self.engine, 1, peak_content=False)
+        self.assertEqual(error.exception.code, "blocked_training_rights")
+        self.assertFalse(any(path.name.startswith("live-") for path in live.JOBS.iterdir()))
+
+    def test_candidate_registry_rechecks_operator_rights_manifest(self):
+        from ai_model.training.candidate_registry import _verify_live_training_rights
+
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(ValueError, "Pinned operator rights manifest required"):
+                _verify_live_training_rights([{"live_provenance": {}}])
 
     def test_empty_observation_cache_blocks_without_starting_training(self):
         empty_engine = Engine(sources=sources(), store=MemoryStore(), timeout=1)
@@ -236,45 +324,27 @@ class LiveLearningTests(unittest.TestCase):
             observed = {row["text"] for row in observation_set["records"]}
             self.assertEqual({row["text"] for row in corpus["records"]}, observed)
 
-    def test_real_worker_contract_and_digital_training(self):
-        # Real isolated trainer, one step, temporary artifact root via subprocess
-        # harness. No inference call or native backend substitution.
-        self.inputs()
-        actual_run = subprocess.run
-        harness = (
-            "from pathlib import Path; import sys; "
-            "from ai_model.training import candidate_lifecycle as c; "
-            "c.CANDIDATES=Path(sys.argv.pop(1)); "
-            "from ai_model.training.candidate_manifest_train import main; main()"
-        )
-        candidates = self.root / "candidates"
-        def isolated(command, **kwargs):
-            arguments = list(command[5:])
-            deadline = arguments.index("--worker-timeout")
-            del arguments[deadline:deadline + 2]
-            return actual_run([command[0], "-c", harness, str(candidates), *arguments], **kwargs)
-        # Service report lookup uses ROOT; only artifact lookup is redirected.
-        original_root = live.ROOT
-        def redirected(command, **kwargs):
-            kwargs["cwd"] = original_root
-            return isolated(command, **kwargs)
-        with patch.object(live, "ROOT", self.root), patch.object(live.subprocess, "run", side_effect=redirected):
-            # Match the service's fixed candidate artifact layout in the temp root.
-            candidates = self.root / "ai_model/training/candidate_runs"
-            result = live.execute(self.engine, 1, peak_content=False)
-        self.assertEqual(result["status"], "candidate_trained_unreviewed")
-        report = json.loads((candidates / result["run_id"] / "report.json").read_text())
-        self.assertTrue(report["backend_exclusive"])
-        self.assertGreater(report["gemm_backward_calls"], 0)
-        self.assertFalse(report["promotion"]["eligible"])
+    def test_real_smoke_training_measures_updates_but_is_not_live_eligible(self):
+        from ai_model.training.candidate_corpus import build_manifest, smoke_records
+        from ai_model.training import candidate_lifecycle
         from ai_model.training.candidate_registry import verify_bundle
-        self.assertTrue(verify_bundle(candidates / result["run_id"])[0]["runtime_eligible"])
-        # Crash window between success-result publication and final certification.
-        (live.admission_path(result["run_id"]) / "certified.json").unlink()
-        with self.assertRaisesRegex(ValueError, "pending or uncertified"):
-            verify_bundle(candidates / result["run_id"])
-        self.assertEqual(live.list_runs()[0]["status"], "failed_interrupted")
-        self.assertTrue((candidates / result["run_id"] / "FAILED").exists())
+
+        candidates = self.root / "candidates"
+        with patch.object(candidate_lifecycle, "CANDIDATES", candidates):
+            result = candidate_lifecycle.train_validated(
+                "smoke-rights-boundary-test", 1, 1729, "transformer",
+                build_manifest(smoke_records(), [], smoke_only=True),
+                manual_backward=True, context_tokens=128,
+            )
+        run = candidates / "smoke-rights-boundary-test"
+        report = json.loads((run / "report.json").read_text())
+        self.assertGreater(report["gemm_backward_calls"], 0)
+        self.assertTrue(report["changed_parameters"])
+        self.assertFalse(result["promotion"]["eligible"])
+        verified, _, manifest = verify_bundle(run)
+        self.assertTrue(verified["runtime_eligible"])
+        self.assertTrue(manifest["smoke_only"])
+        self.assertFalse(verified["quality_eligible"])
 
     def test_worker_has_independent_timeout_and_inherits_global_lock(self):
         with patch.object(live.subprocess, "run", side_effect=subprocess.TimeoutExpired("trainer", 110)) as run:

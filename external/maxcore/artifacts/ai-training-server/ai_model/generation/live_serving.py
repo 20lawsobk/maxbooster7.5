@@ -42,7 +42,7 @@ class LiveServingModel:
             "requested": "live-awareness", "active": None,
             "candidate_quality": "awaiting_operational_public_live_candidate",
             "unavailable_reason": "no_operationally_capable_certified_public_live_candidate",
-            "review_required": False,
+            "review_required": True,
             "backend_exclusive": "not_verified",
         }
 
@@ -117,9 +117,21 @@ class LiveLearningLoop:
     def status(self):
         return {**self._status, "interval_seconds": self.interval,
                 "reload_seconds": self.poll, "steps": self.steps,
-                "context_tokens": self.context_tokens, "review_required": False,
+                "context_tokens": self.context_tokens, "review_required": True,
                 "learning_policy": "public-peak-shortform-v1" if self.peak_content else "legacy-context-v1",
                 "model_config": self.model_config,
+                "training_admission": {
+                    "policy": "source-specific-rights-v1",
+                    "public_visibility_authorizes_training": False,
+                    "rights_manifest_state": (
+                        "configured_unverified"
+                        if os.environ.get("MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST")
+                        and os.environ.get("MAXCORE_TEXT_TRAINING_RIGHTS_SHA256")
+                        else "missing_or_incomplete"
+                    ),
+                    "independent_review_required": True,
+                    "signature_free_live_promotion": False,
+                },
                 "bootstrap_steps": self.bootstrap_steps,
                 "bootstrap_cooldown_seconds": self.bootstrap_cooldown,
                 "bootstrap_window_seconds": self.bootstrap_window,

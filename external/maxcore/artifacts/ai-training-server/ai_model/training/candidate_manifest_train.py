@@ -72,6 +72,15 @@ def train_from_manifest(corpus, corpus_sha256, holdout=None, holdout_sha256=None
     if any(r.get("purpose") not in ("training", "smoke-only", "runtime-validation")
            for r in records):
         raise ValueError("Explicit corpus purpose required")
+    live_records = [r for r in records
+                    if isinstance(r, dict) and "live_provenance" in r]
+    if live_records:
+        if len(live_records) != len(records):
+            raise ValueError("Mixed live and offline text corpora are not eligible")
+        from ai_model.training.live_learning import require_peak_training_rights
+        require_peak_training_rights(records)
+        if holdout is None:
+            raise ValueError("Live text training requires a separately frozen, rights-cleared holdout")
     known_smoke = {digest(r["text"]) for r in smoke_records()}
     smoke = any(r["purpose"] != "training" or digest(r["text"]) in known_smoke
                 for r in records)

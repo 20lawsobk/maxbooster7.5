@@ -19,9 +19,10 @@ signature covers the exact JSON bytes. Private keys never enter this codebase.
 No real trust policy, review, acceptance score or signature is supplied here.
 The default scope checks both inference and training; no policy weakening is
 needed for manual-digital-v1 training plus manual transformer inference.
-Certified public scanner observations have a separate signature-free numerical
-serving policy (public_live_eligibility); this does not certify general quality.
-An inference-only policy must explicitly declare scope "inference"; it does not
+Public scanner observations are not training grants and have no signature-free
+promotion path. Live candidates must carry current source-specific rights,
+independent holdout evaluation, and signed review before serving. An
+inference-only policy must explicitly declare scope "inference"; it does not
 retroactively claim older torch-autograd training was exclusive.
 """
 import argparse
@@ -43,6 +44,29 @@ from ai_model.training.candidate_lifecycle import ROOT, CANDIDATES, sha256
 from ai_model.training.public_curriculum import PEAK_ARCHITECTURE, PEAK_POLICY, peak_stream, validate_peak_record
 
 REGISTRY = CANDIDATES.parent / "candidate_registry"
+
+
+def _verify_live_training_rights(records):
+    """Revalidate source-specific rights before a live candidate can register.
+
+    Candidate files are not authoritative for rights: the operator-pinned
+    manifest and evidence are re-read on every verification/selection. This
+    also invalidates candidates when a grant is removed, expires, or changes.
+    """
+    from ai_model.training.live_learning import _approved_text_training_rights
+
+    receipts = _approved_text_training_rights(records)
+    if len(receipts) != len(records):
+        raise ValueError("Live candidate rights evidence is incomplete")
+    for record, expected in zip(records, receipts):
+        stored = record.get("training_rights")
+        if (not isinstance(stored, dict)
+                or stored.get("schema") != 1
+                or stored.get("status") != "operator_attested"
+                or not isinstance(stored.get("admitted_at"), str)
+                or stored.get("manifest_sha256") != expected["manifest_sha256"]
+                or stored.get("grant") != expected["grant"]):
+            raise ValueError("Live candidate lacks current source-specific rights evidence")
 
 
 def safe_registry():
@@ -119,6 +143,9 @@ def verify_bundle(run):
     fingerprint = canonical_hash({k: v for k, v in manifest.items() if k != "sha256"})
     if fingerprint != manifest.get("sha256") or fingerprint != report.get("manifest_sha256"):
         raise ValueError("Corpus manifest fingerprint mismatch")
+    if (run.name.startswith("live-")
+            or any("live_provenance" in record for record in manifest.get("records", []))):
+        _verify_live_training_rights(manifest["records"])
     checkpoint = run / "candidate.pt"
     if sha256(checkpoint) != report.get("checkpoint_sha256"):
         raise ValueError("Checkpoint fingerprint mismatch")
@@ -513,11 +540,7 @@ def _bounded_public_ancestry(function):
 
 @_bounded_public_ancestry
 def public_live_eligibility(run):
-    """Scanner-certified public observations need no human review signature.
-
-    This is numerical/provenance validation, never a general quality score.
-    Traditional, mixed, private and smoke corpora cannot enter this path.
-    """
+    """Reject signature-free promotion; live evidence is not a quality review."""
     reasons, fingerprints = [], {}
     try:
         fingerprints, report, manifest = verify_bundle(run)
@@ -556,10 +579,15 @@ def public_live_eligibility(run):
             fingerprints.update(learning_policy=report["learning_stream"]["policy"],
                                 model_config=report["model_config"],
                                 learning_generation=report.get("learning_generation", 0))
+        # Numerical training evidence is not independent holdout evaluation.
+        # Live candidates must use the ordinary signed-review policy before
+        # becoming selectable by the serving process.
+        raise ValueError("Independent holdout evaluation and signed review are required")
     except (ValueError, KeyError, TypeError, OSError, RuntimeError) as exc:
         reasons.append(str(exc))
     return {"eligible": not reasons, "reasons": reasons, "fingerprints": fingerprints,
-            "promotion_performed": False, "quality_claim": "not_evaluated"}
+            "promotion_performed": False,
+            "quality_claim": "not_evaluated" if reasons else "independently_reviewed"}
 
 
 def selected_eligibility(pointer):
