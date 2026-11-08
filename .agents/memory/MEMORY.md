@@ -5,3 +5,4 @@
 - [Packaged restart fixtures](packaged-restart-fixture.md) — keep generated schema baselines separate from overlapping migrations; require readiness on every restart cycle.
 - [Python scan version attribution](python-scan-version-attribution.md) — resolve reported versions from current constraints before changing pins when scan results disagree.
 - [Portable Python publishing](portable-python-build.md) — isolated runtime installs must override builder-level pip user mode and enforce both AI-server and diffusion requirements.
+- [Awareness profile sources](awareness-profile-sources.md) — collect public music-profile content by platform; topic categories are analysis metadata, not source targets.

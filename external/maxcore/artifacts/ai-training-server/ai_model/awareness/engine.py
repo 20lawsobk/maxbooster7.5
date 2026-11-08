@@ -49,11 +49,12 @@ _SNAPSHOT_FAILURE_CODES = {
     "stale audio features": "snapshot_audio_features_stale",
     "audio freshness extension": "snapshot_audio_freshness_invalid",
     "invalid audio features": "snapshot_audio_features_invalid",
-    "empty domain": "snapshot_domain_empty",
+    "domain schema": "snapshot_domain_schema_invalid",
     "failed provenance": "snapshot_record_provenance_invalid",
     "stale source": "snapshot_source_stale",
     "observation provenance mismatch": "snapshot_observation_mismatch",
     "extended source freshness": "snapshot_source_freshness_extended",
+    "empty snapshot": "snapshot_empty",
     "unsafe text": "snapshot_text_invalid",
     "citation": "snapshot_citation_invalid",
     "measurement": "snapshot_measurement_invalid",
@@ -74,6 +75,7 @@ _SAFE_FAILURE_CODES = frozenset({
     "publication_transport_unavailable",
     "publication_command_failed",
     "snapshot_invalid",
+    "snapshot_empty",
     *_SNAPSHOT_FAILURE_CODES.values(),
     "secondary_storage_unavailable",
     "secondary_legacy_read_unavailable",
@@ -319,8 +321,8 @@ class Snapshot:
                 if safe_features(secondary["music_features"]) != secondary["music_features"]:
                     raise ValueError("invalid audio features")
             for domain, rows in payload["domains"].items():
-                if not isinstance(rows, list) or not 1 <= len(rows) <= 60:
-                    raise ValueError("empty domain")
+                if not isinstance(rows, list) or len(rows) > 60:
+                    raise ValueError("domain schema")
                 for r in rows:
                     source = health[r["source"]]
                     if not source["ok"] or source["domain"] != domain:
@@ -344,6 +346,8 @@ class Snapshot:
                     if r["id"] != hashlib.sha256(canonical(
                             [r["source"], r["citation"], r["text"]]).encode()).hexdigest():
                         raise ValueError("record hash")
+            if not any(payload["domains"].values()):
+                raise ValueError("empty snapshot")
             return cls(ident, expires, canonical(doc))
         except Exception as exc:
             # Snapshot validation can fail on untrusted upstream data. Expose
@@ -661,8 +665,8 @@ class Engine:
             s = self._snapshot
             published = s.to_dict() if s else {}
             scan_phases = {
-                "collecting_sources", "ranking_domain_records",
-                "validating_domain_coverage", "reading_secondary_evidence",
+                "collecting_sources", "ranking_available_records",
+                "reading_secondary_evidence",
                 "validating_snapshot", "publishing_snapshot",
             }
             scan_in_progress = self._phase in scan_phases
@@ -1069,19 +1073,23 @@ class Engine:
             self._stop.wait(.02)
         if self._stop.is_set() or self._lease_lost.is_set():
             raise AwarenessUnavailable("Awareness stopped")
-        self._phase = "ranking_domain_records"
+        self._phase = "ranking_available_records"
         domains = {domain: [] for domain in sorted(DOMAINS)}
         for name, rows in sorted(results.items()):
             domains[self.sources[name][0]].extend(rows)
-        self._phase = "validating_domain_coverage"
-        if not all(domains.values()):
-            raise AwarenessUnavailable("A fresh source is required in every awareness domain")
+        if not any(domains.values()):
+            raise AwarenessUnavailable(
+                "At least one fresh public source record is required",
+                code="snapshot_empty",
+            )
         for domain in domains:
             rows = sorted(domains[domain], key=lambda r: r["id"])
-            _, order = rank_signals([r["score"] for r in rows])
-            domains[domain] = [rows[i] for i in order[:60]]
+            if rows:
+                _, order = rank_signals([r["score"] for r in rows])
+                domains[domain] = [rows[i] for i in order[:60]]
         created = self.clock()
-        expires = min(r["observed_at"] + TTL for rows in domains.values() for r in rows)
+        expires = min(r["observed_at"] + TTL
+                      for rows in domains.values() for r in rows)
         payload = {"schema": 1, "created_at": created, "expires_at": expires,
                    "domains": domains, "source_health": json.loads(canonical(self._health)),
                    "ranking": "digital_gpu_awareness_software:v1;stable-id-ties;seed=0"}

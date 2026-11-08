@@ -98,16 +98,18 @@ class AwarenessTests(unittest.TestCase):
                     pdim.write_source_observations("mastodon_trending", document, "stale-owner")
         self.assertEqual(error.exception.code, "observation_write_fenced")
 
-    def test_partial_source_observations_survive_incomplete_snapshot(self):
+    def test_source_records_do_not_require_every_topic_bucket(self):
         store = MemoryStore()
         engine = Engine(
             sources={"social": sources()["social"]},
             store=store,
             timeout=1,
         )
-        with self.assertRaises(AwarenessUnavailable):
-            engine.refresh()
-        self.assertIsNone(engine.current_snapshot())
+        snapshot = engine.refresh()
+        self.assertIsNotNone(snapshot)
+        self.assertEqual(snapshot.to_dict()["domains"]["music"], [])
+        self.assertEqual(snapshot.to_dict()["domains"]["advertising"], [])
+        self.assertEqual(snapshot.to_dict()["domains"]["culture"], [])
         observations = engine.training_observations()
         self.assertEqual(observations["domains"], ["social"])
         self.assertEqual([row["source"] for row in observations["records"]], ["social"])
@@ -233,7 +235,10 @@ class AwarenessTests(unittest.TestCase):
             another._load()
 
     def test_incomplete_keeps_previous_only_until_ttl(self):
-        self.engine.sources["music"] = ("music", "https://example.org/music", lambda: [])
+        self.engine.sources = {
+            name: (domain, url, lambda: [])
+            for name, (domain, url, _fetch) in self.engine.sources.items()
+        }
         with self.assertRaises(AwarenessUnavailable):
             self.engine.refresh()
         self.assertEqual(self.engine.require_snapshot().id, self.snapshot.id)
@@ -259,7 +264,7 @@ class AwarenessTests(unittest.TestCase):
 
     def test_no_empty_or_all_failed_rehashed_snapshot(self):
         for mutate in (
-            lambda d: d["domains"]["culture"].clear(),
+            lambda d: [rows.clear() for rows in d["domains"].values()],
             lambda d: d["source_health"]["social"].update(ok=False),
             lambda d: d.update(schema=2),
         ):
@@ -291,14 +296,15 @@ class AwarenessTests(unittest.TestCase):
             self.assertTrue(self.engine.stop())
             self.assertTrue(self.engine.stop())
 
-    def test_missing_domain_never_published(self):
+    def test_refresh_publishes_with_partial_topic_coverage(self):
         store = MemoryStore()
         partial = sources()
         partial.pop("culture")
         e = Engine(sources=partial, store=store, timeout=1)
-        with self.assertRaises(AwarenessUnavailable):
-            e.refresh()
-        self.assertIsNone(store.get(POINTER))
+        snapshot = e.refresh()
+        self.assertIsNotNone(snapshot)
+        self.assertEqual(snapshot.to_dict()["domains"]["culture"], [])
+        self.assertEqual(store.get(POINTER), {"id": snapshot.id})
 
     def test_publication_failure_keeps_last_acknowledged_snapshot(self):
         with patch.object(self.store, "publish", side_effect=RuntimeError("token=private")):
@@ -375,8 +381,9 @@ class AwarenessTests(unittest.TestCase):
             threading.Event().wait(1.2)
             return [{"text": "late", "citation": "https://example.org/late",
                      "value": 1, "metric": "fixture"}]
-        configured = sources()
-        configured["culture"] = ("culture", "https://example.org/culture", slow)
+        configured = {
+            "culture": ("culture", "https://example.org/culture", slow),
+        }
         engine = Engine(sources=configured, store=MemoryStore(), timeout=1, concurrency=1)
         with self.assertRaises(AwarenessUnavailable):
             engine.refresh()
