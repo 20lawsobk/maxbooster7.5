@@ -132,3 +132,64 @@ test("node_modules pruning removes non-runtime trees in one fail-closed pass",t=
  assert.equal((prune.match(/\bfind node_modules\b/g)||[]).length,1);
  assert.doesNotMatch(build,/\bdu\b|sha256sum source\.pdim/);
 });
+test("managed FFmpeg bypasses the GitHub download and performs real audio/video encodes",t=>{
+ const binary=path.resolve("node_modules/ffmpeg-static/ffmpeg");
+ const resolver=spawnSync("bash",["-c",
+  'source script/deployment/ffmpeg-path.sh; export FFMPEG_BIN="$1"; resolve_ffmpeg && verify_ffmpeg_capabilities && printf "%s" "$FFMPEG_BIN"',
+  "ffmpeg-path-test",binary],{encoding:"utf8",timeout:15000});
+ assert.equal(resolver.status,0,resolver.stderr+resolver.stdout);
+ assert.equal(resolver.stdout.trim().split("\n").at(-1),binary);
+ const env={...process.env,FFMPEG_BIN:binary};
+ const install=spawnSync(process.execPath,["node_modules/ffmpeg-static/install.js"],
+  {encoding:"utf8",env,timeout:10000});
+ assert.equal(install.status,0,install.stderr);
+ assert.match(install.stdout,/is installed already/);
+ assert.doesNotMatch(install.stdout+install.stderr,/github\.com\/eugeneware/);
+ const resolved=spawnSync(process.execPath,["-p","require('ffmpeg-static')"],
+  {encoding:"utf8",env,timeout:10000});
+ assert.equal(resolved.status,0,resolved.stderr);
+ assert.equal(resolved.stdout.trim(),binary);
+ const system=spawnSync("bash",["-c",
+  'source script/deployment/ffmpeg-path.sh; unset FFMPEG_BIN FFMPEG_PATH FFPROBE_PATH; resolve_ffmpeg && verify_ffmpeg_capabilities && printf "%s\\n%s" "$FFMPEG_BIN" "$FFPROBE_PATH"'],
+  {encoding:"utf8",timeout:15000});
+ assert.equal(system.status,0,system.stderr+system.stdout);
+ const systemPaths=system.stdout.trim().split("\n").slice(-2);
+ const [systemFfmpeg,systemFfprobe]=systemPaths;
+ assert.match(systemFfmpeg,/ffmpeg-full/);
+ const mediaDir=fs.mkdtempSync(path.join(os.tmpdir(),"ffmpeg-system-smoke-"));
+ t.after(()=>fs.rmSync(mediaDir,{recursive:true,force:true}));
+ const audioPath=path.join(mediaDir,"smoke.mp3");
+ const audio=spawnSync(systemFfmpeg,[
+  "-hide_banner","-v","error","-f","lavfi","-i","sine=frequency=440:duration=0.8",
+  "-af","rubberband=tempo=1.1:pitch=1.0:formant=preserved,loudnorm=I=-14:TP=-1.5:LRA=11",
+  "-c:a","libmp3lame","-y",audioPath,
+ ],{encoding:"utf8",timeout:15000});
+ assert.equal(audio.status,0,audio.stderr);
+ const videoPath=path.join(mediaDir,"smoke.mp4");
+ const video=spawnSync(systemFfmpeg,[
+  "-hide_banner","-v","error","-f","lavfi","-i","color=c=blue:s=64x64:d=0.5",
+  "-c:v","libx264","-pix_fmt","yuv420p","-t","0.5","-y",videoPath,
+ ],{encoding:"utf8",timeout:15000});
+ assert.equal(video.status,0,video.stderr);
+ for(const [mediaPath,codec] of [[audioPath,"mp3"],[videoPath,"h264"]]){
+  const probe=spawnSync(systemFfprobe,[
+   "-v","error","-show_entries","stream=codec_name","-of","csv=p=0",mediaPath,
+  ],{encoding:"utf8",timeout:10000});
+  assert.equal(probe.status,0,probe.stderr);
+  assert.equal(probe.stdout.trim(),codec);
+ }
+ const invalid=spawnSync("bash",["-c",
+  'source script/deployment/ffmpeg-path.sh; FFMPEG_BIN=/missing/ffmpeg resolve_ffmpeg'],
+  {encoding:"utf8",timeout:10000});
+ assert.notEqual(invalid.status,0);
+ const build=fs.readFileSync("build.sh","utf8");
+ const start=fs.readFileSync("start.sh","utf8");
+ const nix=fs.readFileSync("replit.nix","utf8");
+ const dependencyPhase=build.slice(build.indexOf("phase_dependencies()"),build.indexOf("phase_rust()"));
+ const resolveIndex=dependencyPhase.indexOf("if ! resolve_ffmpeg");
+ const installIndex=dependencyPhase.search(/^\s*npm ci(?:\s|$)/m);
+ assert.match(nix,/pkgs\.ffmpeg-full/);
+ assert.ok(resolveIndex>=0&&installIndex>=0&&resolveIndex<installIndex);
+ assert.match(build,/cp script\/deployment\/ffmpeg-path\.sh dist\/deployment\/ffmpeg-path\.sh/);
+ assert.match(start,/source "\$_SCRIPT_DIR\/dist\/deployment\/ffmpeg-path\.sh"/);
+});

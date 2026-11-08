@@ -37,9 +37,13 @@ resolve_ffmpeg() {
   local ffprobe_candidate
 
   ffmpeg_candidate="$(_resolve_media_binary "${FFMPEG_BIN:-${FFMPEG_PATH:-}}" ffmpeg)" || return 1
-  ffprobe_candidate="$(_resolve_media_binary "${FFPROBE_PATH:-}" ffprobe)" || {
-    ffprobe_candidate="$(_resolve_media_binary "$(dirname "$ffmpeg_candidate")/ffprobe" ffprobe)" || return 1
-  }
+  if [ -n "${FFPROBE_PATH:-}" ]; then
+    ffprobe_candidate="$(_resolve_media_binary "$FFPROBE_PATH" ffprobe)" || return 1
+  else
+    ffprobe_candidate="$(_resolve_media_binary "" ffprobe)" || {
+      ffprobe_candidate="$(_resolve_media_binary "$(dirname "$ffmpeg_candidate")/ffprobe" ffprobe)" || return 1
+    }
+  fi
 
   export FFMPEG_BIN="$ffmpeg_candidate"
   export FFMPEG_PATH="$ffmpeg_candidate"
