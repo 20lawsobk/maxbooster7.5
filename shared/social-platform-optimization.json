@@ -1,7 +1,27 @@
 {
-  "revision": "2026-09-11.1",
+  "revision": "2026-11-08.1",
   "registryLastResearched": "2026-09-11",
   "researchMethodology": "algorithmSignals and sources are drawn from official platform engineering/policy documentation where available, corroborated by reputable independent reporting; claims that only appear in a single secondary source are phrased as reported/unconfirmed rather than as fact. This is organic/content-ranking research only — paid ad targeting and bidding are out of scope and live in a separate subsystem.",
+  "profileSourcingQuality": {
+    "benchmark": "google_veo_generated_content",
+    "calibrationStatus": "provisional",
+    "scoreScale": {"min": 0, "max": 100},
+    "minimumEligibleScore": 70,
+    "preferredScoreRange": {"min": 80, "max": 95},
+    "minimumEvidenceCoverage": 0.8,
+    "exactMatchRequired": false,
+    "requiredFactors": ["creativeQuality", "musicRelevance", "platformFit"],
+    "weights": {
+      "creativeQuality": 0.30,
+      "musicRelevance": 0.25,
+      "platformFit": 0.15,
+      "measuredPerformance": 0.15,
+      "freshness": 0.10,
+      "sourceProvenance": 0.05
+    },
+    "missingEvidencePolicy": "do_not_impute",
+    "scoreMeaning": "Evidence-weighted match potential, not exact content similarity or a guarantee of performance. Scores above the preferred range remain eligible."
+  },
   "platforms": {
     "facebook": {
       "label": "Facebook",

@@ -661,6 +661,7 @@ class Engine:
 
     def status(self):
         from ai_model.gpu.awareness_kernels import telemetry
+        from ai_model.platform_optimization import profile_sourcing_quality_policy
         with self._lock:
             s = self._snapshot
             published = s.to_dict() if s else {}
@@ -693,6 +694,7 @@ class Engine:
                     "source_health": published.get("source_health", json.loads(canonical(self._health))),
                     "snapshot_source_health": published.get("source_health", {}),
                     "latest_scan_health": json.loads(canonical(self._health)),
+                     "profile_sourcing_quality": profile_sourcing_quality_policy(),
                     "observation_cache_error": self._observation_cache_error,
                     "last_scan_observation_write_count": self._observation_record_count,
                      "validation_diagnostic": self._validation_diagnostic,
@@ -714,13 +716,26 @@ class Engine:
             if not isinstance(raw, dict):
                 continue
             text, cite = clean(raw.get("text"), MAX_OBSERVATION_TEXT), citation(raw.get("citation"))
-            value = raw.get("value")
-            if (not text or not cite or type(value) not in (float, int)
-                    or not math.isfinite(value) or value < 0):
+            if not text or not cite:
                 continue
-            metric = clean(raw.get("metric"), 80)
-            if not metric:
-                continue
+            if raw.get("profile_source") is True:
+                from .profile_quality import (
+                    PROFILE_MATCH_METRIC,
+                    assess_profile_quality,
+                )
+                assessment = assess_profile_quality(raw.get("quality_factors"))
+                if not assessment["eligible"]:
+                    continue
+                value = assessment["qualityPotentialScore"]
+                metric = PROFILE_MATCH_METRIC
+            else:
+                value = raw.get("value")
+                if (type(value) not in (float, int)
+                        or not math.isfinite(value) or value < 0):
+                    continue
+                metric = clean(raw.get("metric"), 80)
+                if not metric:
+                    continue
             normalized.append({
                 "id": hashlib.sha256(canonical([name, cite, text]).encode()).hexdigest(),
                 "source": name, "text": text, "citation": cite,

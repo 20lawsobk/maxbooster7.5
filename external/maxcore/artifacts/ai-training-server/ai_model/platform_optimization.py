@@ -30,8 +30,40 @@ def _load_registry() -> dict[str, Any]:
             profiles = data.get("platforms")
             if set(profiles or {}) != set(PLATFORMS):
                 raise RuntimeError("Invalid social awareness optimization registry")
+            policy = data.get("profileSourcingQuality")
+            weights = policy.get("weights") if isinstance(policy, dict) else None
+            required = policy.get("requiredFactors") if isinstance(policy, dict) else None
+            if (
+                not isinstance(policy, dict)
+                or policy.get("benchmark") != "google_veo_generated_content"
+                or policy.get("calibrationStatus") != "provisional"
+                or policy.get("scoreScale") != {"min": 0, "max": 100}
+                or policy.get("minimumEligibleScore") != 70
+                or policy.get("preferredScoreRange") != {"min": 80, "max": 95}
+                or policy.get("exactMatchRequired") is not False
+                or policy.get("missingEvidencePolicy") != "do_not_impute"
+                or type(policy.get("minimumEvidenceCoverage")) not in (int, float)
+                or not 0 < policy["minimumEvidenceCoverage"] <= 1
+                or not isinstance(weights, dict)
+                or set(weights) != {
+                    "creativeQuality", "musicRelevance", "platformFit",
+                    "measuredPerformance", "freshness", "sourceProvenance",
+                }
+                or any(type(weight) not in (int, float) or weight < 0 for weight in weights.values())
+                or abs(sum(weights.values()) - 1.0) > 0.001
+                or not isinstance(required, list)
+                or not {"creativeQuality", "musicRelevance", "platformFit"}.issubset(required)
+                or any(factor not in weights for factor in required)
+            ):
+                raise RuntimeError("Invalid profile sourcing quality policy")
             return data
     raise FileNotFoundError("shared/social-platform-optimization.json")
+
+
+def profile_sourcing_quality_policy() -> dict[str, Any]:
+    """Return a copy of the validated, provisional Veo match-potential policy."""
+    registry = _load_registry()
+    return json.loads(json.dumps(registry["profileSourcingQuality"]))
 
 
 def normalize_platform(value: Any) -> str:

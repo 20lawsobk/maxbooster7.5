@@ -49,18 +49,86 @@ export interface PlatformOptimization {
   researchedAt: string;
 }
 
+export interface ProfileSourcingQualityPolicy {
+  benchmark: "google_veo_generated_content";
+  calibrationStatus: "provisional";
+  scoreScale: { min: 0; max: 100 };
+  minimumEligibleScore: number;
+  preferredScoreRange: { min: number; max: number };
+  minimumEvidenceCoverage: number;
+  exactMatchRequired: false;
+  requiredFactors: Array<
+    | "creativeQuality"
+    | "musicRelevance"
+    | "platformFit"
+    | "measuredPerformance"
+    | "freshness"
+    | "sourceProvenance"
+  >;
+  weights: Record<
+    | "creativeQuality"
+    | "musicRelevance"
+    | "platformFit"
+    | "measuredPerformance"
+    | "freshness"
+    | "sourceProvenance",
+    number
+  >;
+  missingEvidencePolicy: "do_not_impute";
+  scoreMeaning: string;
+}
+
 interface RegistryFile {
   revision: string;
   registryLastResearched?: string;
   researchMethodology?: string;
+  profileSourcingQuality: ProfileSourcingQualityPolicy;
   platforms: Record<SocialAwarenessPlatform, PlatformOptimization>;
 }
 
 const registryPath = path.resolve(process.cwd(), "shared/social-platform-optimization.json");
 const registry = JSON.parse(fs.readFileSync(registryPath, "utf8")) as RegistryFile;
+const profileQuality = registry.profileSourcingQuality;
+const profileQualityWeights = Object.values(profileQuality?.weights ?? {});
+const profileQualityWeightTotal = profileQualityWeights.reduce(
+  (total, weight) => total + weight,
+  0,
+);
+const profileQualityFactorNames = [
+  "creativeQuality",
+  "musicRelevance",
+  "platformFit",
+  "measuredPerformance",
+  "freshness",
+  "sourceProvenance",
+];
 
 if (
   registry.revision === undefined ||
+  profileQuality?.benchmark !== "google_veo_generated_content" ||
+  profileQuality.calibrationStatus !== "provisional" ||
+  profileQuality.scoreScale?.min !== 0 ||
+  profileQuality.scoreScale?.max !== 100 ||
+  !Number.isFinite(profileQuality.minimumEligibleScore) ||
+  !Number.isFinite(profileQuality.preferredScoreRange?.min) ||
+  !Number.isFinite(profileQuality.preferredScoreRange?.max) ||
+  profileQuality.minimumEligibleScore < profileQuality.scoreScale.min ||
+  profileQuality.minimumEligibleScore > profileQuality.preferredScoreRange.min ||
+  profileQuality.preferredScoreRange.max > profileQuality.scoreScale.max ||
+  profileQuality.preferredScoreRange.min > profileQuality.preferredScoreRange.max ||
+  !Number.isFinite(profileQuality.minimumEvidenceCoverage) ||
+  profileQuality.minimumEvidenceCoverage < 0 ||
+  profileQuality.minimumEvidenceCoverage > 1 ||
+  profileQuality.exactMatchRequired !== false ||
+  profileQuality.missingEvidencePolicy !== "do_not_impute" ||
+  Math.abs(profileQualityWeightTotal - 1) > 0.001 ||
+  profileQualityWeights.some((weight) => !Number.isFinite(weight) || weight < 0) ||
+  Object.keys(profileQuality.weights ?? {}).sort().join(",") !==
+    [...profileQualityFactorNames].sort().join(",") ||
+  !Array.isArray(profileQuality.requiredFactors) ||
+  !profileQuality.requiredFactors.every(
+    (factor) => Object.hasOwn(profileQuality.weights, factor),
+  ) ||
   SOCIAL_AWARENESS_PLATFORMS.some((platform) => !registry.platforms[platform]) ||
   Object.keys(registry.platforms).some(
     (platform) => !SOCIAL_AWARENESS_PLATFORMS.includes(platform as SocialAwarenessPlatform),
@@ -79,6 +147,10 @@ if (
   throw new Error(
     "Invalid social awareness optimization registry: every platform needs non-empty algorithmSignals, sources, and researchedAt",
   );
+}
+
+export function getProfileSourcingQualityPolicy(): ProfileSourcingQualityPolicy {
+  return JSON.parse(JSON.stringify(profileQuality)) as ProfileSourcingQualityPolicy;
 }
 
 const ALIASES: Record<string, SocialAwarenessPlatform> = {
