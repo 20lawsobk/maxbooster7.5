@@ -7021,6 +7021,9 @@ export async function registerRoutes(
   const { default: trainingRouter } = await import("./routes/training.js");
   app.use("/api/training", trainingRouter);
 
+  const { default: maxcoreCognitiveRouter } = await import("./routes/maxcoreCognitive.js");
+  app.use("/api/maxcore/cognitive", maxcoreCognitiveRouter);
+
   const { default: maxcoreRouter } = await import("./routes/maxcore.js");
   app.use("/api/maxcore", maxcoreRouter);
   app.use("/api/paid", paidRouter);

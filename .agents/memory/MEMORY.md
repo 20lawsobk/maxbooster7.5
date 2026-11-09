@@ -8,4 +8,4 @@
 - [Local PDIM AOF recovery](local-pdim-aof-conflicting-sequences.md) — verify checksums, discard only snapshot-covered frames, require contiguous newer records, and fence every local writer with one lease.
 - [Awareness profile sources](awareness-profile-sources.md) — collect public music-profile content by platform; topic categories are analysis metadata, not source targets.
 - [Provider error logging](provider-error-logging.md) — do not log raw provider messages; they can embed unlabelled credentials that generic redaction cannot reliably identify.
-- [Whole-product acceptance](whole-product-acceptance.md) — Max Booster readiness covers every role and cross-module journey; MaxCore and admin are components, not proof of the whole product.
+- [Whole-product acceptance](whole-product-acceptance.md) — cover every role and journey; MaxCore also has owner-defined memory, graph, agent, tool, expansion, and data-model requirements.

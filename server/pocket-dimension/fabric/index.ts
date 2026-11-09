@@ -9,6 +9,7 @@ import { Rebalancer } from "./control/Rebalancer.js";
 import {
   AutoClusterManager,
   DEFAULT_RULES,
+  resolveMaxNodes,
 } from "./control/AutoClusterManager.js";
 import { PocketDimensionChunkStore } from "./storage/PocketDimensionChunkStore.js";
 import type { ChunkStore } from "./storage/ChunkStore.js";
@@ -104,7 +105,10 @@ export const autoClusterManager = new AutoClusterManager(
   {
     ...DEFAULT_RULES,
     minNodes: 3,
-    maxNodes: Number.POSITIVE_INFINITY,
+    maxNodes: resolveMaxNodes(
+      process.env.POCKET_FABRIC_MAX_NODES,
+      SEED_CLUSTER_SIZE,
+    ),
     utilizationHighWatermark: 0.7,
     utilizationPerNodeHighWatermark: 0.8,
     cooldownMs: 10 * 60 * 1000,

@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "kind": "actual-public-Istanbul-pre-JSON-sidecar",
-  "producerId": "833d1208-1999-4e6a-baca-1d682dc9c9e7",
+  "producerId": "74dc75b0-7236-4295-8423-c785155612c4",
   "snapshot": {
-    "id": "833d1208-1999-4e6a-baca-1d682dc9c9e7-report",
-    "capturedAt": "2026-10-29T23:09:00.895Z",
+    "id": "74dc75b0-7236-4295-8423-c785155612c4-report",
+    "capturedAt": "2026-11-09T06:37:09.338Z",
     "semantics": "One completed Vitest provider aggregate, captured by public Istanbul reporter before JSON; no global merge admission"
   },
   "contract": {
     "version": "maxbooster-shared-vite-provider-v1",
-    "repositoryRoot": "/workspace/maxbooster7.5",
+    "repositoryRoot": "/home/runner/workspace",
     "implementations": {
       "vite/dist/node/index.js": "8b142bd1231a46bf2cad4c05b3f76de5b183064ee771b9934fbaffb70b914652",
       "vite/dist/node/chunks/config.js": "2e71344450b7c25a7fe0848d5ee474fb7342614d900ab9168588986150cbb9f9",
@@ -18,7 +18,7 @@
       "typescript/lib/typescript.js": "3ae902c92cc44dace175c0e69e13a4b0899f6983c6121d76b9ab8dd5795e7675"
     },
     "runtime": {
-      "node": "22.23.3",
+      "node": "22.23.4",
       "v8": "12.4.254.21-node.57"
     },
     "versions": {
@@ -73,73 +73,73 @@
       "length": 209
     }
   },
-  "contractSha256": "19d319e1ec60d9b846dcb3f1b25e29e89ad9cbba1d66b7d1d3e113f9814ce499",
+  "contractSha256": "fe94db0cbfbfa5ba6695700de0dd2d71f11184b8d2ecec646f70ee46a7dde774",
   "runtime": {
-    "node": "22.23.3",
+    "node": "22.23.4",
     "v8": "12.4.254.21-node.57"
   },
   "files": [
     {
       "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
       "name": "external__pdim__artifacts__api-server__src__redis__store.ts.v8",
-      "bytes": 710343,
-      "sha256": "f08686d2d6679ca6eeffe0710d5c3ac4960fb64c8df8f3f8ee0e82a4d609f7c9",
+      "bytes": 710338,
+      "sha256": "9922bb098470f711deefc37167cc0833a305952cf384ace9711836c6bf65c9e8",
       "sourceSha256": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770"
     },
     {
       "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
       "name": "external__pdim__artifacts__api-server__src__workers__lua-pool.ts.v8",
-      "bytes": 13106,
-      "sha256": "3073e9adf504dbca29de0d0195ae213ff2c9d0b5607bb30e692ee69294dc19da",
+      "bytes": 13104,
+      "sha256": "f49c09ec996a63251c4536627ab6a1895a907ffa2b639f4fed6008393693d045",
       "sourceSha256": "c545aafe8452eea8124923cee34c2e1ffde8c578299b9268793096c736eb6e3f"
     },
     {
       "file": "server/config/ports.ts",
       "name": "server__config__ports.ts.v8",
-      "bytes": 4619,
-      "sha256": "f4c20d524809869d447f627cf14feac49233e480b04696019aa561261572d561",
+      "bytes": 4617,
+      "sha256": "afc0c9ce90db099a1ddf79d69aaa0072aeaebee8979ce251989937177bd0acae",
       "sourceSha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d"
     },
     {
       "file": "server/lib/luaExecutor.ts",
       "name": "server__lib__luaExecutor.ts.v8",
-      "bytes": 39575,
-      "sha256": "f1a8b095861a929a0279c773badeb1b11045551410c0afc06be218ca0a91c676",
+      "bytes": 39573,
+      "sha256": "6667038bfaa72c6294f62d143cb7a062469970a3bba91176c9a17b272215bbc4",
       "sourceSha256": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00"
     },
     {
       "file": "server/lib/pdimCircuitBreaker.ts",
       "name": "server__lib__pdimCircuitBreaker.ts.v8",
-      "bytes": 23725,
-      "sha256": "6d095b4ae63f8774abc40606bf5e92c3c0ef8db93b974bb51b1f701832c5a245",
+      "bytes": 23723,
+      "sha256": "d0d9ee26b08b3da85af6869b6457bb4b5ab8e21129e120fbb9cda3fcadee0dd8",
       "sourceSha256": "beb5d21a1bf9d41affb5edcff3a1cfdc5dd8102c5eef27fbb41d7aaa0e0b65f4"
     },
     {
       "file": "server/lib/pdimClient.ts",
       "name": "server__lib__pdimClient.ts.v8",
-      "bytes": 213716,
-      "sha256": "36f0ff3a0d5e6f49a4328099d7b6c7dd14daad38f5f9a68c524ba06e20c2988e",
-      "sourceSha256": "eef5afab18d6b5697efd49b0eb6c840f27d0b10759b65b8a11542a558d8fb1a9"
+      "bytes": 216398,
+      "sha256": "a1be9f91478de5f4ce114dfec767505b3d9516ef77e91387a6d90c7f344a6fa5",
+      "sourceSha256": "b49fc0fed27ad79cfab196b19c1bddfdf3e4fb05ed794e10dc66d2140826a039"
     },
     {
       "file": "server/logger.ts",
       "name": "server__logger.ts.v8",
-      "bytes": 5603,
-      "sha256": "af4b41c05a2c5895b23c15715bded4f0b86b51e59d733265dda71e9ba10ee2e2",
+      "bytes": 5601,
+      "sha256": "c22374dc58561f473d6e778c63cabf3960f0eafd43391ed7c410ceef5fe460ad",
       "sourceSha256": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5"
     },
     {
       "file": "server/logSanitizer.ts",
       "name": "server__logSanitizer.ts.v8",
-      "bytes": 11574,
-      "sha256": "8c74ffc2dbaf78bb5f1ab58d7158fa9a84c4f48ae5ce615900eedd7be7403030",
-      "sourceSha256": "f012622e80390701551ab38f7eda478daf9f7ee4a692e63a71ebaa856a145fb5"
+      "bytes": 11576,
+      "sha256": "168e8460d427ecdba09741406aee20440a14d683f04746b40b54f8550625667f",
+      "sourceSha256": "9e6f07f97665a730823ddc7aa2004de6336ed4aa78d40b83efe12979165402e1"
     },
     {
       "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
       "name": "server__pocket-dimension__fabric__storage__PocketDimensionChunkStore.ts.v8",
-      "bytes": 12865,
-      "sha256": "756a611f484a65789fdefba463fc388899b63a7221368096641e6689b1d0b2d3",
+      "bytes": 12863,
+      "sha256": "7c90f7bc14f48b02fe5e7081c63e93271f4427badbb1597dd2c42771d5ffce89",
       "sourceSha256": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76"
     }
   ],

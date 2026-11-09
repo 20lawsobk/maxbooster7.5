@@ -14,6 +14,7 @@ import {
   index,
   unique,
   check,
+  foreignKey,
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -8663,4 +8664,121 @@ export const socialMediaJobs = pgTable(
     byLease: index("social_media_jobs_lease_idx").on(table.status, table.leaseExpiresAt),
     byUpdated: index("social_media_jobs_updated_idx").on(table.updatedAt),
   }),
+);
+
+// MaxCore's durable cognitive registry. Product-owned projects, releases, and
+// billing records remain authoritative in their existing domain tables.
+export const maxcoreCognitiveEntities = pgTable(
+  "maxcore_cognitive_entities",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    ownerId: varchar("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    entityType: text("entity_type").notNull(),
+    payload: jsonb("payload")
+      .$type<Record<string, unknown>>()
+      .notNull(),
+    metadata: jsonb("metadata")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    tags: jsonb("tags")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    searchText: text("search_text").notNull().default(""),
+    schemaVersion: integer("schema_version").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      "maxcore_cognitive_entity_type_check",
+      sql`${table.entityType} IN ('project','goal','task','agent','department','memory','tool','workflow','document','knowledge_node','event')`,
+    ),
+    check(
+      "maxcore_cognitive_schema_version_check",
+      sql`${table.schemaVersion} > 0`,
+    ),
+    index("maxcore_cognitive_owner_type_updated_idx").on(
+      table.ownerId,
+      table.entityType,
+      table.updatedAt,
+    ),
+    unique("maxcore_cognitive_owner_id_id_unique").on(
+      table.ownerId,
+      table.id,
+    ),
+    index("maxcore_cognitive_search_idx").using(
+      "gin",
+      sql`to_tsvector('simple', ${table.searchText})`,
+    ),
+  ],
+);
+
+export const maxcoreCognitiveRelationships = pgTable(
+  "maxcore_cognitive_relationships",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    ownerId: varchar("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sourceId: varchar("source_id").notNull(),
+    targetId: varchar("target_id").notNull(),
+    relationType: text("relation_type").notNull(),
+    metadata: jsonb("metadata")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      name: "maxcore_cognitive_relationship_source_owner_fk",
+      columns: [table.ownerId, table.sourceId],
+      foreignColumns: [
+        maxcoreCognitiveEntities.ownerId,
+        maxcoreCognitiveEntities.id,
+      ],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "maxcore_cognitive_relationship_target_owner_fk",
+      columns: [table.ownerId, table.targetId],
+      foreignColumns: [
+        maxcoreCognitiveEntities.ownerId,
+        maxcoreCognitiveEntities.id,
+      ],
+    }).onDelete("cascade"),
+    check(
+      "maxcore_cognitive_relationship_type_check",
+      sql`${table.relationType} IN ('depends_on','created_by','assigned_to','related_to','improves','blocks','supports','owns','contains')`,
+    ),
+    check(
+      "maxcore_cognitive_relationship_no_self_edge",
+      sql`${table.sourceId} <> ${table.targetId}`,
+    ),
+    unique("maxcore_cognitive_relationship_unique_edge").on(
+      table.ownerId,
+      table.sourceId,
+      table.targetId,
+      table.relationType,
+    ),
+    index("maxcore_cognitive_relationship_source_idx").on(
+      table.ownerId,
+      table.sourceId,
+      table.relationType,
+    ),
+    index("maxcore_cognitive_relationship_target_idx").on(
+      table.ownerId,
+      table.targetId,
+      table.relationType,
+    ),
+  ],
 );

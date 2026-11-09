@@ -8,3 +8,9 @@ Max Booster release acceptance applies to the complete existing product: public 
 **Why:** the owner explicitly corrected the scope from MaxCore/admin-only verification to Max Booster as a whole.
 
 **How to apply:** inventory each existing role and user journey, then collect fresh evidence for each module, cross-module handoff, persistence/recovery behavior, and external dependency. Report blocked or untested items separately; never infer whole-product readiness from a passing subset.
+
+MaxCore's owner-defined MVP also requires persistent project/system memory, project awareness, a knowledge graph, multi-agent runtime, permissioned tools, context retrieval, event-driven operations, bounded auto-expansion, vector search, telemetry, and a canonical cognitive-entity API for users, projects, goals, tasks, agents, departments, memories, knowledge, tools, workflows, events, and relationships. The initial deployment target is 8 CPU, 32 GB RAM, and 500 GB SSD.
+
+**Why:** the owner supplied explicit MaxCore system and API data-model specifications; these are acceptance requirements, not evidence that similar-sounding application modules satisfy them.
+
+**How to apply:** map each requirement to the existing implementation and verify real persistence, authorization, tool execution, agent lifecycle, retrieval, and bounded scaling. Treat the deployment figures as a target, not measured capacity of the current Replit runtime.
