@@ -24,6 +24,7 @@ import { trustedMaxcoreOwner, bindMaxcoreOwner } from "../lib/maxcoreOwnerContex
 import { getMaxcoreOrigin } from "./maxcoreConnector.js";
 import { MaxCoreControlError } from "./maxcoreControlTransport.js";
 import { prepareGenerationAwareness, usesGenerationAwareness } from "./generationAwareness.js";
+import { prepareCognitiveGenerationRequest } from "./cognitiveGenerationContext.js";
 
 // Resolved through the shared connector — the single MaxCore contract boundary.
 const MC_AI_URL = getMaxcoreOrigin();
@@ -37,8 +38,11 @@ function parseCbRetryMs(body: string): number {
 }
 
 export class MaxCoreAIClient {
+  /** Transport reachability only; never use this as model readiness. */
   private static _remoteAvailable: boolean | null = null;
-  private static _lastCheck = 0;
+  /** Strict /api/ready result, cached independently from HTTP liveness. */
+  private static _modelReady: boolean | null = null;
+  private static _lastReadinessCheck = 0;
   /**
    * Optional callback fired once when MaxCore transitions from unreachable
    * back to reachable.  Registered by subsystems (e.g. BeatMoneyLoop) that
@@ -86,35 +90,52 @@ export class MaxCoreAIClient {
     };
   }
 
-  /** Always returns true — MaxCore is always running.
-   *  Availability probe uses the lightweight model-info GET — it must NEVER
-   *  post to a generation endpoint (that queues real AI work on MaxCore). */
+  /** Probe actual model and awareness readiness; liveness alone is insufficient. */
   static async isAvailable(): Promise<boolean> {
-    if (MC_AI_URL && MC_AI_KEY) {
-      const now = Date?.now();
-      if (
-        MaxCoreAIClient._remoteAvailable === null ||
-        now - MaxCoreAIClient._lastCheck >= MaxCoreAIClient.CHECK_TTL
-      ) {
-        fetch(`${MC_AI_URL}/api/platform/model/info`, {
-          method: "GET",
-          headers: MaxCoreAIClient.authHeaders(),
-          // 10 s: matches pingMaxCoreHealth timeout (see note there).
-          signal: AbortSignal.timeout(10_000),
-          redirect: "manual",
-        })
-          .then((r) => {
-            MaxCoreAIClient._remoteAvailable = r?.ok;
-            if (MaxCoreAIClient._remoteAvailable)
-              logger.info("[MaxCoreAI] Remote server is online ✅");
-          })
-          .catch(() => {
-            MaxCoreAIClient._remoteAvailable = false;
-          });
-        MaxCoreAIClient._lastCheck = now;
-      }
+    if (!MC_AI_URL || !MC_AI_KEY) {
+      MaxCoreAIClient._modelReady = false;
+      MaxCoreAIClient._lastReadinessCheck = Date.now();
+      return false;
     }
-    return true;
+
+    const now = Date.now();
+    if (
+      MaxCoreAIClient._modelReady !== null &&
+      now - MaxCoreAIClient._lastReadinessCheck < MaxCoreAIClient.CHECK_TTL
+    ) return MaxCoreAIClient._modelReady;
+
+    try {
+      const response = await fetch(`${MC_AI_URL}/api/ready`, {
+        method: "GET",
+        headers: MaxCoreAIClient.authHeaders(),
+        signal: AbortSignal.timeout(5_000),
+        redirect: "manual",
+      });
+      const contentType = response.headers.get("content-type") ?? "";
+      const data = contentType.includes("json")
+        ? await response.json() as Record<string, unknown>
+        : null;
+      // Any HTTP response proves transport reachability, but only the strict
+      // readiness contract proves a usable model and fresh awareness snapshot.
+      MaxCoreAIClient._remoteAvailable = true;
+      const ready = response.ok &&
+        data?.ready === true &&
+        data?.model_loaded === true &&
+        !!data.awareness &&
+        typeof data.awareness === "object" &&
+        (data.awareness as Record<string, unknown>).ready === true;
+      MaxCoreAIClient._modelReady = ready;
+      MaxCoreAIClient._lastReadinessCheck = now;
+      if (ready) logger.info("[MaxCoreAI] Model and awareness readiness confirmed");
+      else logger.warn("[MaxCoreAI] Liveness responded, but model/awareness readiness is unavailable");
+      return ready;
+    } catch {
+      MaxCoreAIClient._remoteAvailable = false;
+      MaxCoreAIClient._modelReady = false;
+      MaxCoreAIClient._lastReadinessCheck = now;
+      logger.warn("[MaxCoreAI] Readiness probe failed");
+      return false;
+    }
   }
 
   // ── Resilience: bulkhead + circuit breaker ────────────────────────────────
@@ -394,6 +415,9 @@ export class MaxCoreAIClient {
         let conditioned: Record<string, unknown>;
         try {
           conditioned = await prepareGenerationAwareness(path, body);
+          if (usesGenerationAwareness(path)) {
+            conditioned = await prepareCognitiveGenerationRequest(conditioned, owner);
+          }
         } catch (error) {
           MaxCoreAIClient.cbAbortProbe();
           throw error;
@@ -448,7 +472,6 @@ export class MaxCoreAIClient {
         try {
           const data = JSON.parse(text);
           MaxCoreAIClient._remoteAvailable = true;
-          MaxCoreAIClient._lastCheck = Date.now();
           MaxCoreAIClient._endpointSuppressed.delete(path);
           logger.debug(`[MaxCoreAI] generate ${path} → success`);
           return data as T;
@@ -533,6 +556,9 @@ export class MaxCoreAIClient {
         let conditioned: Record<string, unknown>;
         try {
           conditioned = await prepareGenerationAwareness(path, body);
+          if (usesGenerationAwareness(path)) {
+            conditioned = await prepareCognitiveGenerationRequest(conditioned, owner);
+          }
         } catch (error) {
           MaxCoreAIClient.cbAbortProbe();
           throw error;
@@ -682,7 +708,6 @@ export function startMaxCoreLLMWarmth(): void {
         }
         _consecutiveFailures = 0;
         MaxCoreAIClient._remoteAvailable = true;
-        MaxCoreAIClient._lastCheck = Date.now();
         // This is a real, authenticated model-info response with model_ready
         // true (not merely a reachable API process), so it is safe to release
         // a half-open breaker without issuing live inference.
