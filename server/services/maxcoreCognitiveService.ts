@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
+import { logger } from "../logger.js";
 import {
   maxcoreCognitiveEntities,
   maxcoreCognitiveRelationships,
@@ -49,7 +50,11 @@ const percent = z.number().finite().min(0).max(100);
 const score = z.number().finite().min(0).max(1);
 const objectData = z.record(z.string(), z.unknown());
 const RUNTIME_METADATA_KEY = "maxcoreRuntime";
+const EXPANSION_METADATA_KEY = "maxcoreExpansion";
 const AGENT_TASK_LEASE_MS = 11 * 60 * 1_000;
+const TASK_BACKLOG_EXPANSION_RULE = "pending-task-load-v1";
+const TASK_BACKLOG_EXPANSION_THRESHOLD = 50;
+const MAX_AUTO_EXPANSION_AGENTS = 8;
 
 const entityDataSchemas: Record<CognitiveEntityType, z.ZodTypeAny> = {
   project: z.object({
@@ -248,7 +253,10 @@ export function parseCognitiveEntityInput(input: unknown, role: string) {
     throw new CognitiveStoreError("Entity data does not match its declared type.", 400, "INVALID_ENTITY_DATA");
   }
   const typedData = parsedData.data as Record<string, unknown>;
-  if (Object.hasOwn(envelope.data.metadata, RUNTIME_METADATA_KEY)) {
+  if (
+    Object.hasOwn(envelope.data.metadata, RUNTIME_METADATA_KEY) ||
+    Object.hasOwn(envelope.data.metadata, EXPANSION_METADATA_KEY)
+  ) {
     throw new CognitiveStoreError(
       "Runtime-managed metadata cannot be supplied by clients.",
       400,
@@ -275,6 +283,16 @@ export function parseCognitiveEntityInput(input: unknown, role: string) {
     ...envelope.data,
     data: typedData,
   };
+}
+
+export function desiredAutoAgentCount(openTaskCount: number): number {
+  if (!Number.isSafeInteger(openTaskCount) || openTaskCount <= TASK_BACKLOG_EXPANSION_THRESHOLD) {
+    return 0;
+  }
+  return Math.min(
+    MAX_AUTO_EXPANSION_AGENTS,
+    Math.ceil((openTaskCount - TASK_BACKLOG_EXPANSION_THRESHOLD) / TASK_BACKLOG_EXPANSION_THRESHOLD),
+  );
 }
 
 export function buildCognitiveSearchText(
@@ -342,11 +360,21 @@ async function notifyCognitiveEvent(
   eventType: string,
 ): Promise<void> {
   if (!isRealtimePubSubReady()) return;
-  await publishUserNotification(ownerId, {
-    type: "maxcore_cognitive_event",
-    eventId,
-    eventType,
-  });
+  try {
+    await publishUserNotification(ownerId, {
+      type: "maxcore_cognitive_event",
+      eventId,
+      eventType,
+    });
+  } catch (error) {
+    logger.warn(
+      {
+        eventType,
+        errorClass: error instanceof Error ? error.name : "unknown",
+      },
+      "MaxCore event is durable; realtime notification delivery failed",
+    );
+  }
 }
 
 export async function createCognitiveEntity(
@@ -373,9 +401,111 @@ export async function createCognitiveEntity(
       const eventId = await appendEvent(tx, ownerId, eventType, entity.id, undefined, {
         entityType: value.type,
       });
-      return { entity, eventId, eventType };
+      const notifications = [{ eventId, eventType }];
+      let resultEntity = entity;
+
+      if (value.type === "task") {
+        await tx.execute(sql`
+          SELECT pg_advisory_xact_lock(hashtextextended(${`maxcore-expansion:${ownerId}`}, 0))
+        `);
+        const [backlogRow] = await tx
+          .select({ count: sql<number>`count(*)::int` })
+          .from(maxcoreCognitiveEntities)
+          .where(and(
+            eq(maxcoreCognitiveEntities.ownerId, ownerId),
+            eq(maxcoreCognitiveEntities.entityType, "task"),
+            sql`${maxcoreCognitiveEntities.payload}->>'status' IN ('pending', 'blocked')`,
+          ));
+        const backlog = Number(backlogRow?.count ?? 0);
+        const [autoAgents, desiredCount] = await Promise.all([
+          tx
+            .select({ id: maxcoreCognitiveEntities.id })
+            .from(maxcoreCognitiveEntities)
+            .where(and(
+              eq(maxcoreCognitiveEntities.ownerId, ownerId),
+              eq(maxcoreCognitiveEntities.entityType, "agent"),
+              sql`${maxcoreCognitiveEntities.metadata}->'maxcoreExpansion'->>'ruleId' = ${TASK_BACKLOG_EXPANSION_RULE}`,
+            )),
+          Promise.resolve(desiredAutoAgentCount(backlog)),
+        ]);
+        const spawnCount = Math.max(0, desiredCount - autoAgents.length);
+        const spawnedAgentIds: string[] = [];
+        for (let index = 0; index < spawnCount; index += 1) {
+          const ordinal = autoAgents.length + index + 1;
+          const agentPayload = {
+            name: `Task Queue Specialist ${ordinal}`,
+            specialty: "maxcore_task_queue",
+            departmentId: null,
+            status: "offline",
+            tools: [],
+            memoryIds: [],
+            childAgents: [],
+            capabilities: ["maxcore_text_task_execution"],
+            objectives: ["Complete owner-assigned pending MaxCore tasks using verified serving capabilities."],
+          };
+          const agentMetadata = {
+            [EXPANSION_METADATA_KEY]: {
+              ruleId: TASK_BACKLOG_EXPANSION_RULE,
+              ordinal,
+              triggerBacklog: backlog,
+              createdAt: new Date().toISOString(),
+            },
+          };
+          const [agent] = await tx
+            .insert(maxcoreCognitiveEntities)
+            .values({
+              ownerId,
+              entityType: "agent",
+              payload: agentPayload,
+              tags: ["auto-expanded", "task-queue"],
+              metadata: agentMetadata,
+              searchText: buildCognitiveSearchText("agent", agentPayload, ["auto-expanded", "task-queue"]),
+            })
+            .returning({ id: maxcoreCognitiveEntities.id });
+          if (!agent) asUnavailable(new Error("expanded agent insert returned no row"));
+          spawnedAgentIds.push(agent.id);
+          const spawnedEventId = await appendEvent(
+            tx,
+            ownerId,
+            "agent_spawned",
+            entity.id,
+            agent.id,
+            {
+              ruleId: TASK_BACKLOG_EXPANSION_RULE,
+              backlog,
+              ordinal,
+              executionState: "offline",
+            },
+          );
+          notifications.push({ eventId: spawnedEventId, eventType: "agent_spawned" });
+        }
+        if (spawnedAgentIds.length > 0) {
+          const metadata = {
+            ...recordValue(entity.metadata),
+            [EXPANSION_METADATA_KEY]: {
+              ruleId: TASK_BACKLOG_EXPANSION_RULE,
+              backlog,
+              spawnedAgentIds,
+              createdAt: new Date().toISOString(),
+            },
+          };
+          const [updatedTask] = await tx
+            .update(maxcoreCognitiveEntities)
+            .set({ metadata, updatedAt: new Date() })
+            .where(and(
+              eq(maxcoreCognitiveEntities.ownerId, ownerId),
+              eq(maxcoreCognitiveEntities.id, entity.id),
+            ))
+            .returning();
+          if (!updatedTask) asUnavailable(new Error("expanded task metadata update returned no row"));
+          resultEntity = updatedTask;
+        }
+      }
+      return { entity: resultEntity, notifications };
     });
-    await notifyCognitiveEvent(ownerId, created.eventId, created.eventType);
+    for (const notification of created.notifications) {
+      await notifyCognitiveEvent(ownerId, notification.eventId, notification.eventType);
+    }
     return created.entity;
   } catch (error) {
     if (error instanceof CognitiveStoreError) throw error;
@@ -1110,7 +1240,10 @@ export async function updateCognitiveEntity(
       }
       if (
         patch.data.metadata &&
-        Object.hasOwn(patch.data.metadata, RUNTIME_METADATA_KEY)
+        (
+          Object.hasOwn(patch.data.metadata, RUNTIME_METADATA_KEY) ||
+          Object.hasOwn(patch.data.metadata, EXPANSION_METADATA_KEY)
+        )
       ) {
         throw new CognitiveStoreError(
           "Runtime-managed metadata cannot be changed by clients.",
@@ -1408,6 +1541,49 @@ export async function executeCognitiveTool(
   };
 }
 
+export async function getCognitiveExpansionStatus(ownerId: string) {
+  try {
+    const result = await db.execute(sql`
+      SELECT
+        count(*) FILTER (
+          WHERE entity_type = 'task'
+            AND payload->>'status' IN ('pending', 'blocked')
+        )::int AS pending_task_count,
+        count(*) FILTER (
+          WHERE entity_type = 'agent'
+            AND metadata->'maxcoreExpansion'->>'ruleId' = ${TASK_BACKLOG_EXPANSION_RULE}
+        )::int AS auto_agent_count
+      FROM maxcore_cognitive_entities
+      WHERE owner_id = ${ownerId}
+    `);
+    const row = result.rows[0] as {
+      pending_task_count?: number | string;
+      auto_agent_count?: number | string;
+    } | undefined;
+    const openTaskCount = Number(row?.pending_task_count ?? 0);
+    const autoAgentCount = Number(row?.auto_agent_count ?? 0);
+    const desiredCount = desiredAutoAgentCount(openTaskCount);
+    return {
+      status: "available" as const,
+      rule: {
+        id: TASK_BACKLOG_EXPANSION_RULE,
+        triggerType: "task_load" as const,
+        threshold: TASK_BACKLOG_EXPANSION_THRESHOLD,
+        action: "spawn_agent" as const,
+        schedule: "on_task_creation",
+        maximumAgents: MAX_AUTO_EXPANSION_AGENTS,
+      },
+      openTaskCount,
+      autoAgentCount,
+      desiredAutoAgentCount: desiredCount,
+      expansionNeeded: autoAgentCount < desiredCount,
+      executionModel: "offline_agent_records_require_explicit_task_assignment",
+    };
+  } catch (error) {
+    return asUnavailable(error);
+  }
+}
+
 export async function getCognitiveCapabilities() {
   try {
     const result = await db.execute(sql`
@@ -1433,7 +1609,7 @@ export async function getCognitiveCapabilities() {
       agentExecution: storageReady,
       toolExecution: storageReady,
       eventBus: storageReady && isRealtimePubSubReady(),
-      expansionManager: false,
+      expansionManager: storageReady,
       memorySharding: false,
     };
   } catch {

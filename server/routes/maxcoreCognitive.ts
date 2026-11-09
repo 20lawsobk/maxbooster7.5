@@ -33,8 +33,10 @@ import {
   completeAgentTask,
   deleteCognitiveEntity,
   deleteCognitiveRelationship,
+  executeCognitiveTool,
   failAgentTask,
   getCognitiveCapabilities,
+  getCognitiveExpansionStatus,
   getCognitiveEntity,
   listCognitiveEntities,
   listCognitiveRelationships,
@@ -526,6 +528,57 @@ router.get("/events", async (req, res) => {
     });
   } catch (error) {
     sendError(res, error, "list-cognitive-events");
+  }
+});
+
+router.get("/expansion/status", async (req, res) => {
+  try {
+    const status = await getCognitiveExpansionStatus(ownerOf(req));
+    res.json(status);
+  } catch (error) {
+    sendError(res, error, "get-cognitive-expansion-status");
+  }
+});
+
+router.get("/tools/catalog", async (_req, res) => {
+  try {
+    const capabilities = await getCognitiveCapabilities();
+    res.json({
+      tools: [{
+        id: "database",
+        name: "database",
+        category: "owner_scoped_read_only_search",
+        endpoint: "/api/maxcore/cognitive/tools/database/execute",
+        permissions: ["owner.read"],
+        enabled: capabilities.toolExecution,
+        effects: ["read_owner_projects", "read_owner_cognitive_entities"],
+        unavailableTools: [
+          "filesystem",
+          "web_search",
+          "code_execution",
+          "project_editor",
+          "terminal",
+          "document_reader",
+        ],
+      }],
+      capability: capabilities.toolExecution ? "available" : "unavailable",
+    });
+  } catch (error) {
+    sendError(res, error, "list-cognitive-tools");
+  }
+});
+
+router.post("/tools/database/execute", async (req, res) => {
+  const parsed = cognitiveQuerySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid read-only search request.", code: "INVALID_TOOL_INPUT" });
+    return;
+  }
+  try {
+    const result = await executeCognitiveTool(ownerOf(req), "database", parsed.data);
+    res.json(result);
+  } catch (error) {
+    sendError(res, error, "execute-cognitive-tool");
   }
 });
 

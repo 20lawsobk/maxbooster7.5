@@ -1,12 +1,12 @@
 # Static Frontend/Backend API Inventory
 
-Generated 2026-11-09T10:41:13.598Z without live requests.
+Generated 2026-11-09T11:37:51.200Z without live requests.
 
-- Backend route registrations: **2467** (2400 unique method/path pairs).
+- Backend route registrations: **2471** (2404 unique method/path pairs).
 - Mounted router files: **158**.
 - Frontend API call sites: **1200** (934 unique method/path pairs).
 - Matched: **934**; unmatched confirmed: **0**; method-unconfirmed: **0**.
-- Cache/comment/non-API references: **952**; external URL references: **42**; SPA URL references: **258**.
+- Cache/comment/non-API references: **953**; external URL references: **42**; SPA URL references: **258**.
 - Dynamic frontend URLs unresolved: **14**.
 
 ## Confirmed matches
@@ -612,13 +612,13 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/kill-switch/kill/:param` via apiRequest — client/src/pages/AdminAutonomy.tsx:525 → server/routes/killSwitch.ts:132
 - `POST /api/kill-switch/resume/:param` via apiRequest — client/src/pages/AdminAutonomy.tsx:544 → server/routes/killSwitch.ts:171
 - `POST /api/auto-updates/simulation` via apiRequest — client/src/pages/AdminAutonomy.tsx:564 → server/routes/autoUpdates.ts:197
-- `GET /api/admin/users?:param` via fetch — client/src/pages/AdminDashboard.tsx:256 → server/routes/admin.ts:90
-- `POST /api/admin/tokens` via fetch — client/src/pages/AdminDashboard.tsx:1668 → server/routes/admin.ts:63
-- `POST /api/admin/tokens/revoke` via fetch — client/src/pages/AdminDashboard.tsx:1709 → server/routes/admin.ts:72
-- `GET /api/admin/webhooks/dead-letter` via useQuery — client/src/pages/AdminDashboard.tsx:1811 → server/routes/webhooks-admin.ts:20
-- `POST /api/admin/webhooks/:param/retry` via fetch — client/src/pages/AdminDashboard.tsx:1817 → server/routes/webhooks-admin.ts:41
-- `GET /api/logs/query` via useQuery — client/src/pages/AdminDashboard.tsx:1953 → server/routes/logs.ts:23
-- `POST /api/admin/beat-money-loop/:param` via fetch — client/src/pages/AdminDashboard.tsx:2127 → server/routes/admin/beatMoneyLoop.ts:38, server/routes/admin/beatMoneyLoop.ts:48, server/routes/admin/beatMoneyLoop.ts:58
+- `GET /api/admin/users?:param` via fetch — client/src/pages/AdminDashboard.tsx:257 → server/routes/admin.ts:90
+- `POST /api/admin/tokens` via fetch — client/src/pages/AdminDashboard.tsx:1670 → server/routes/admin.ts:63
+- `POST /api/admin/tokens/revoke` via fetch — client/src/pages/AdminDashboard.tsx:1711 → server/routes/admin.ts:72
+- `GET /api/admin/webhooks/dead-letter` via useQuery — client/src/pages/AdminDashboard.tsx:1813 → server/routes/webhooks-admin.ts:20
+- `POST /api/admin/webhooks/:param/retry` via fetch — client/src/pages/AdminDashboard.tsx:1819 → server/routes/webhooks-admin.ts:41
+- `GET /api/logs/query` via useQuery — client/src/pages/AdminDashboard.tsx:1955 → server/routes/logs.ts:23
+- `POST /api/admin/beat-money-loop/:param` via fetch — client/src/pages/AdminDashboard.tsx:2129 → server/routes/admin/beatMoneyLoop.ts:38, server/routes/admin/beatMoneyLoop.ts:48, server/routes/admin/beatMoneyLoop.ts:58
 - `GET /api/social/promotable-content?type=:param` via useQuery — client/src/pages/Advertisement.tsx:242 → server/routes/socialMedia.ts:5108
 - `POST /api/advertising/generate-campaign` via apiRequest — client/src/pages/Advertisement.tsx:250 → server/routes/advertising.ts:2118
 - `GET /api/advertising/audience-segments` via useQuery — client/src/pages/Advertisement.tsx:496 → server/routes/advertising.ts:343
@@ -1010,6 +1010,7 @@ Resolved source traces: **12**; generic/unverified call sites: **8**.
 - `cache-key: /api/achievements/user` — client/src/components/achievements/AchievementNotification.tsx:75
 - `cache-key: /api/achievements/streaks` — client/src/components/achievements/StreakCounter.tsx:74
 - `query-key-custom-fn: /api/awareness/unified/admin/source-status` — client/src/components/admin/MaxCoreAwarenessStatus.tsx:145
+- `not-api-reference: /api/maxcore/cognitive` — client/src/components/admin/MaxCoreCognitiveConsole.tsx:12
 - `query-key-custom-fn: /api/auth/me` — client/src/components/auth/AuthProvider.tsx:54
 - `cache-key: /api/auth/me` — client/src/components/auth/AuthProvider.tsx:104
 - `cache-key: /api/auth/me` — client/src/components/auth/AuthProvider.tsx:127
@@ -1610,14 +1611,14 @@ Resolved source traces: **12**; generic/unverified call sites: **8**.
 - `cache-key: /api/admin/platform-fixer/status` — client/src/pages/AdminAutonomy.tsx:396
 - `cache-key: /api/security/self-healing/status` — client/src/pages/AdminAutonomy.tsx:397
 - `cache-key: /api/security/self-healing/metrics` — client/src/pages/AdminAutonomy.tsx:398
-- `query-key-custom-fn: /api/audit/results` — client/src/pages/AdminDashboard.tsx:179
-- `query-key-custom-fn: /api/testing/results` — client/src/pages/AdminDashboard.tsx:192
-- `query-key-custom-fn: /api/admin/metrics` — client/src/pages/AdminDashboard.tsx:203
-- `query-key-custom-fn: /api/admin/analytics` — client/src/pages/AdminDashboard.tsx:214
-- `query-key-custom-fn: /api/admin/activity` — client/src/pages/AdminDashboard.tsx:225
-- `query-key-custom-fn: /api/admin/system-health` — client/src/pages/AdminDashboard.tsx:234
-- `query-key-custom-fn: /api/admin/users` — client/src/pages/AdminDashboard.tsx:246
-- `not-api-reference: /api/admin/beat-money-loop/status` — client/src/pages/AdminDashboard.tsx:2086
+- `query-key-custom-fn: /api/audit/results` — client/src/pages/AdminDashboard.tsx:180
+- `query-key-custom-fn: /api/testing/results` — client/src/pages/AdminDashboard.tsx:193
+- `query-key-custom-fn: /api/admin/metrics` — client/src/pages/AdminDashboard.tsx:204
+- `query-key-custom-fn: /api/admin/analytics` — client/src/pages/AdminDashboard.tsx:215
+- `query-key-custom-fn: /api/admin/activity` — client/src/pages/AdminDashboard.tsx:226
+- `query-key-custom-fn: /api/admin/system-health` — client/src/pages/AdminDashboard.tsx:235
+- `query-key-custom-fn: /api/admin/users` — client/src/pages/AdminDashboard.tsx:247
+- `not-api-reference: /api/admin/beat-money-loop/status` — client/src/pages/AdminDashboard.tsx:2088
 - `cache-key: /api/advertising/campaigns` — client/src/pages/Advertisement.tsx:288
 - `cache-key: /api/advertising/lookalike-audiences` — client/src/pages/Advertisement.tsx:735
 - `cache-key: /api/advertising/lookalike-audiences` — client/src/pages/Advertisement.tsx:769
@@ -2113,7 +2114,7 @@ External URL references: 42; SPA path references: 258. These are intentionally n
 - `server/routes/hybridStorage.ts` → `/api/hybrid-storage` (server/routes.ts:7909)
 - `server/routes/export.ts` → `/api/export` (server/routes.ts:7916)
 - `server/middleware/selfHealingMiddleware.ts` → `/` (server/safety/mandatoryMiddleware.ts:503)
-- `server/middleware/auth.ts` → `/api/maxcore/cognitive` (server/routes.ts:7025, server/routes/maxcoreCognitive.ts:64, server/routes.ts:7031, server/routes/artistProfiles.ts:54, server/routes.ts:7376, server/routes/analytics-internal.ts:14, server/routes.ts:7386, server/routes/monitoring.ts:13, server/routes/monitoring.ts:14, server/routes.ts:7414, server/routes/payouts.ts:90, server/routes.ts:7423, server/routes/kyc.ts:21, server/routes/kyc.ts:25, server/routes.ts:7508, server/routes/autopilotPreferences.ts:12, server/routes.ts:7513, server/routes/autopilotKnowledge.ts:13, server/routes.ts:7600, server/routes/content-analysis.ts:196, server/routes.ts:7626, server/routes/executiveDashboard.ts:12, server/routes/executiveDashboard.ts:17, server/routes/executiveDashboard.ts:144, server/routes.ts:7631, server/routes/admin/index.ts:22, server/routes.ts:7636, server/routes/admin/metrics.ts:23, server/routes.ts:7641, server/routes/admin/beatMoneyLoop.ts:19, server/routes/admin/beatMoneyLoop.ts:20, server/routes.ts:7646, server/routes/admin/auditLog.ts:20, server/routes.ts:7651, server/routes/admin/contentSampler.ts:16, server/routes.ts:7656, server/routes/audit.ts:26, server/routes.ts:7661, server/routes/testing.ts:71, server/routes.ts:7666, server/routes/webhooks-admin.ts:18, server/routes.ts:7670, server/routes/logs.ts:21, server/routes.ts:7722, server/routes/simulation.ts:24, server/routes.ts:7756, server/routes/security.ts:10, server/routes.ts:7770, server/routes/adaptivePricing.ts:18, server/routes.ts:7801, server/routes/arIntelligence.ts:31, server/routes.ts:7808, server/routes/outreach.ts:27, server/routes.ts:7815, server/routes/apiKeys.ts:16, server/routes.ts:7822, server/routes/recoveryCodes.ts:11, server/routes.ts:7829, server/routes/connectedAccounts.ts:12, server/routes.ts:7839, server/routes/fanHub.ts:36, server/routes.ts:7846, server/routes/fanMemberships.ts:32, server/routes.ts:7860, server/routes/playlistPitching.ts:14, server/routes.ts:7888, server/routes/publishing.ts:59)
+- `server/middleware/auth.ts` → `/api/maxcore/cognitive` (server/routes.ts:7025, server/routes/maxcoreCognitive.ts:66, server/routes.ts:7031, server/routes/artistProfiles.ts:54, server/routes.ts:7376, server/routes/analytics-internal.ts:14, server/routes.ts:7386, server/routes/monitoring.ts:13, server/routes/monitoring.ts:14, server/routes.ts:7414, server/routes/payouts.ts:90, server/routes.ts:7423, server/routes/kyc.ts:21, server/routes/kyc.ts:25, server/routes.ts:7508, server/routes/autopilotPreferences.ts:12, server/routes.ts:7513, server/routes/autopilotKnowledge.ts:13, server/routes.ts:7600, server/routes/content-analysis.ts:196, server/routes.ts:7626, server/routes/executiveDashboard.ts:12, server/routes/executiveDashboard.ts:17, server/routes/executiveDashboard.ts:144, server/routes.ts:7631, server/routes/admin/index.ts:22, server/routes.ts:7636, server/routes/admin/metrics.ts:23, server/routes.ts:7641, server/routes/admin/beatMoneyLoop.ts:19, server/routes/admin/beatMoneyLoop.ts:20, server/routes.ts:7646, server/routes/admin/auditLog.ts:20, server/routes.ts:7651, server/routes/admin/contentSampler.ts:16, server/routes.ts:7656, server/routes/audit.ts:26, server/routes.ts:7661, server/routes/testing.ts:71, server/routes.ts:7666, server/routes/webhooks-admin.ts:18, server/routes.ts:7670, server/routes/logs.ts:21, server/routes.ts:7722, server/routes/simulation.ts:24, server/routes.ts:7756, server/routes/security.ts:10, server/routes.ts:7770, server/routes/adaptivePricing.ts:18, server/routes.ts:7801, server/routes/arIntelligence.ts:31, server/routes.ts:7808, server/routes/outreach.ts:27, server/routes.ts:7815, server/routes/apiKeys.ts:16, server/routes.ts:7822, server/routes/recoveryCodes.ts:11, server/routes.ts:7829, server/routes/connectedAccounts.ts:12, server/routes.ts:7839, server/routes/fanHub.ts:36, server/routes.ts:7846, server/routes/fanMemberships.ts:32, server/routes.ts:7860, server/routes/playlistPitching.ts:14, server/routes.ts:7888, server/routes/publishing.ts:59)
 - `server/middleware/rateLimiter.ts` → `/api/payouts` (server/routes.ts:7414, server/routes/payouts.ts:91, server/routes.ts:7443, server/routes/socialAI.ts:69, server/routes.ts:7790, server/routes/ai.ts:26)
 - `server/routes/durableExports.ts` → `/api/export` (server/routes.ts:7916, server/routes/export.ts:13)
 

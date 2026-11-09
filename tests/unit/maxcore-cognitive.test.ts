@@ -10,6 +10,7 @@ const serviceMocks = vi.hoisted(() => ({
   searchCognitiveGraphContext: vi.fn(),
   searchUserProjects: vi.fn(),
   getCognitiveEntity: vi.fn(),
+  getCognitiveExpansionStatus: vi.fn(),
   updateCognitiveEntity: vi.fn(),
   deleteCognitiveEntity: vi.fn(),
   createCognitiveRelationship: vi.fn(),
@@ -18,6 +19,7 @@ const serviceMocks = vi.hoisted(() => ({
   getCognitiveCapabilities: vi.fn(),
   claimAgentTask: vi.fn(),
   completeAgentTask: vi.fn(),
+  executeCognitiveTool: vi.fn(),
   failAgentTask: vi.fn(),
   maxcoreIsAvailable: vi.fn(),
   maxcoreGenerate: vi.fn(),
@@ -67,6 +69,7 @@ import router from "../../server/routes/maxcoreCognitive.js";
 import {
   assertCognitiveEntityMutationAllowed,
   CognitiveStoreError,
+  desiredAutoAgentCount,
   buildCognitiveSearchText,
   parseCognitiveEntityInput,
 } from "../../server/services/maxcoreCognitiveService.js";
@@ -150,6 +153,24 @@ describe("MaxCore cognitive persistence contract", () => {
       task: { id: "d14c561a-8464-4afc-83bb-4ea0ae797188", status: "complete" },
       completedAt: "2026-11-09T12:00:00.000Z",
     });
+    serviceMocks.executeCognitiveTool.mockResolvedValue({
+      runId: "54e669f6-96f2-467a-a45f-276625e49561",
+      toolId: "database",
+      toolName: "database",
+      operation: "owner_scoped_search",
+      results: [{
+        id: "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+        kind: "memory",
+        summary: "Artist release plan",
+        citation: "maxcore://cognitive/memory/ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+      }],
+      verification: {
+        ownerScoped: true,
+        citationsPresent: true,
+        sideEffects: "none",
+        rollback: "not_applicable_read_only",
+      },
+    });
     serviceMocks.failAgentTask.mockResolvedValue({
       taskId: "d14c561a-8464-4afc-83bb-4ea0ae797188",
       state: "blocked",
@@ -168,6 +189,22 @@ describe("MaxCore cognitive persistence contract", () => {
     });
     serviceMocks.searchUserProjects.mockResolvedValue([]);
     serviceMocks.getCognitiveEntity.mockResolvedValue(null);
+    serviceMocks.getCognitiveExpansionStatus.mockResolvedValue({
+      status: "available",
+      rule: {
+        id: "pending-task-load-v1",
+        triggerType: "task_load",
+        threshold: 50,
+        action: "spawn_agent",
+        schedule: "on_task_creation",
+        maximumAgents: 8,
+      },
+      openTaskCount: 0,
+      autoAgentCount: 0,
+      desiredAutoAgentCount: 0,
+      expansionNeeded: false,
+      executionModel: "offline_agent_records_require_explicit_task_assignment",
+    });
     serviceMocks.updateCognitiveEntity.mockResolvedValue(null);
     serviceMocks.deleteCognitiveEntity.mockResolvedValue(false);
     serviceMocks.createCognitiveRelationship.mockResolvedValue({
@@ -235,6 +272,78 @@ describe("MaxCore cognitive persistence contract", () => {
       expect(response.body.code).toBe("EVENT_SYSTEM_MANAGED");
       expect(serviceMocks.createCognitiveEntity).not.toHaveBeenCalled();
     });
+  });
+
+  it("exposes only the implemented read-only database tool", async () => {
+    await withServer(async (origin) => {
+      const response = await send(origin, "/api/maxcore/cognitive/tools/catalog", {
+        userId: "account-a",
+      });
+      expect(response.status).toBe(200);
+      expect(response.body.tools).toEqual([expect.objectContaining({
+        id: "database",
+        endpoint: "/api/maxcore/cognitive/tools/database/execute",
+        enabled: false,
+        permissions: ["owner.read"],
+      })]);
+      expect(response.body.capability).toBe("unavailable");
+      expect(response.body.tools[0].unavailableTools).toContain("terminal");
+    });
+  });
+
+  it("executes the database tool only under the authenticated owner", async () => {
+    await withServer(async (origin) => {
+      const response = await send(
+        origin,
+        "/api/maxcore/cognitive/tools/database/execute",
+        {
+          userId: "account-a",
+          body: { query: "release plan", limit: 4 },
+        },
+      );
+      expect(response.status).toBe(200);
+      expect(response.body.verification).toMatchObject({
+        ownerScoped: true,
+        citationsPresent: true,
+        sideEffects: "none",
+        rollback: "not_applicable_read_only",
+      });
+      expect(serviceMocks.executeCognitiveTool).toHaveBeenCalledWith(
+        "account-a",
+        "database",
+        { query: "release plan", limit: 4 },
+      );
+    });
+  });
+
+  it("reports owner-scoped bounded task expansion status", async () => {
+    await withServer(async (origin) => {
+      const response = await send(origin, "/api/maxcore/cognitive/expansion/status", {
+        userId: "account-a",
+      });
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        status: "available",
+        rule: {
+          id: "pending-task-load-v1",
+          threshold: 50,
+          maximumAgents: 8,
+        },
+        executionModel: "offline_agent_records_require_explicit_task_assignment",
+      });
+      expect(serviceMocks.getCognitiveExpansionStatus).toHaveBeenCalledWith("account-a");
+    });
+  });
+
+  it("bounds task-load agent expansion at configured thresholds", () => {
+    expect(desiredAutoAgentCount(0)).toBe(0);
+    expect(desiredAutoAgentCount(50)).toBe(0);
+    expect(desiredAutoAgentCount(51)).toBe(1);
+    expect(desiredAutoAgentCount(100)).toBe(1);
+    expect(desiredAutoAgentCount(101)).toBe(2);
+    expect(desiredAutoAgentCount(10_000)).toBe(8);
+    expect(desiredAutoAgentCount(-1)).toBe(0);
+    expect(desiredAutoAgentCount(1.5)).toBe(0);
   });
 
   it("uses the authenticated owner, not client-supplied ownership", async () => {
@@ -669,6 +778,11 @@ describe("MaxCore cognitive persistence contract", () => {
       type: "memory",
       data: memoryBody.data,
       metadata: { maxcoreRuntime: { state: "complete" } },
+    }, "user")).toThrowError(CognitiveStoreError);
+    expect(() => parseCognitiveEntityInput({
+      type: "task",
+      data: { title: "Forged expansion task", status: "pending" },
+      metadata: { maxcoreExpansion: { spawnedAgentIds: ["forged"] } },
     }, "user")).toThrowError(CognitiveStoreError);
   });
 
