@@ -2,7 +2,7 @@
 
 ## Checkout and scope
 
-- Base checkout: `review/pr-211` at `3b7d3be30dfb8e38076b226a602a062090a73a9d`.
+- Starting checkout: `review/pr-211` at `3b7d3be30dfb8e38076b226a602a062090a73a9d`.
 - This is evidence for the current local working tree, not a production-release certification.
 - No merge to `main`, production publish, provider delivery, or live payment was performed.
 
@@ -25,6 +25,22 @@
 - `git diff --check`: passed.
 - The AOF recovery reproduction operated on a temporary copy; the source snapshot and journal were not altered by that fixture test.
 
+Reproduction commands:
+
+```sh
+PYTHONPATH=external/maxcore/artifacts/ai-training-server \
+  python_runtime/bin/python3.12 -m unittest \
+  ai_model.awareness.test_public_access \
+  ai_model.awareness.test_sources \
+  ai_model.awareness.test_platform_discovery \
+  ai_model.awareness.test_engine
+npx vitest run tests/unit/local-pdim-aof-journal.test.ts \
+  server/routes/__tests__/maxcoreProxy.test.ts --maxWorkers=1
+node --test server/services/securityJwtChain.test.mjs
+npm run typecheck
+npm run build
+```
+
 ## Running-system evidence
 
 The configured `Start application` workflow was restarted three times after the recovery changes. Each start restored local disk state without the previous AOF sequence-discontinuity crash:
@@ -41,7 +57,7 @@ At the final live probe:
 
 - App `/`: **200**.
 - App `/api/ready`: **503**, status `degraded`; database, Redis, route, audit, and automation probes were `ok`; MaxCore was degraded.
-- App unified awareness readiness: `ready=true`, `snapshot_ready=true`, `source_scan_state=complete`, with 283 observation writes reported for the scan. This is an aggregate count, not a verified per-platform count.
+- App unified awareness readiness: `ready=true`, `snapshot_ready=true`, `source_scan_state=complete`, with 234 observation writes reported for the scan. This is an aggregate count, not a verified per-platform count.
 - MaxCore `/api/health`: **200**, `model_loaded=false`.
 - MaxCore `/api/ready`: **503**, `ready=false`, error `no_operationally_capable_certified_public_live_candidate`.
 - Anonymous request to the admin source-status route: **403**, as expected.
