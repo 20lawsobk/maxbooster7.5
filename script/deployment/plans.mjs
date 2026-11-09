@@ -8,6 +8,11 @@ export function buildPlan() {
     id,deps,memoryMB,cpu,io,timeoutMs:deadlines[id]*1000,command:"bash",args:["build.sh","--executive-task",id],
     ...(["app_capsule","pack_node","pack_python","pack_maxcore","pack_pdim","source","remainder"].includes(id)
       ? {elasticCPU:true,maxCPU:id==="app_capsule"?8:2} : {}),
+    // These output stages are idempotent and commit capsules atomically. Retry
+    // only a child-level transient termination; executor-level SIGINT/SIGTERM
+    // remains a stop request so the Publishing Cancel action is never ignored.
+    ...(["pack_node","pack_python","pack_maxcore","pack_pdim"].includes(id)
+      ? {maxRetries:1,retryOnSignals:["SIGTERM","SIGHUP"],retryBackoffMs:1500} : {}),
   });
   return [
     task("node",[],128),

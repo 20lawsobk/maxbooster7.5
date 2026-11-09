@@ -30,6 +30,35 @@ test("deadline kills hung task instead of admitting its dependent",async()=>{
  {capacity,pollMs:10,budgetMs:150,log(line){if(line.includes("starting dependent"))launched=true;}}),/deadline/);
  assert.equal(launched,false);
 });
+test("capsule tasks retry a child-only transient signal after cleanup",async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-retry-"));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const attemptsFile=path.join(root,"attempts");
+  const code=`const fs=require('node:fs');let n=0;try{n=Number(fs.readFileSync(process.argv[1],'utf8'))}catch{};fs.writeFileSync(process.argv[1],String(n+1));if(n===0)process.kill(process.pid,'SIGTERM');`;
+  const logs=[];
+  await runExecutive([{
+    ...task("pack",[],code),maxRetries:1,retryOnSignals:["SIGTERM"],retryBackoffMs:5,
+  }],{cwd:root,capacity,pollMs:5,budgetMs:3000,log:line=>logs.push(line)});
+  assert.equal(fs.readFileSync(attemptsFile,"utf8"),"2");
+  assert.ok(logs.some(line=>line.includes("interrupted by SIGTERM; retry 1/1")));
+  assert.ok(logs.some(line=>line.includes("completed pack")));
+});
+test("executor cancellation stops promptly and is never retried",async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-cancel-"));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const attemptsFile=path.join(root,"attempts");
+  const code=`const fs=require('node:fs');fs.appendFileSync(process.argv[1],'started\\n');setInterval(()=>{},1000);`;
+  const controller=new AbortController();
+  const running=runExecutive([{
+    ...task("pack",[],code),maxRetries:2,retryOnSignals:["SIGTERM","SIGHUP"],retryBackoffMs:5,
+  }],{cwd:root,capacity,pollMs:5,budgetMs:5000,signal:controller.signal,log(){}});
+  const deadline=Date.now()+2000;
+  while(!fs.existsSync(attemptsFile)&&Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,10));
+  assert.equal(fs.existsSync(attemptsFile),true,"task should have started before cancellation");
+  controller.abort(Error("Publish cancelled by user"));
+  await assert.rejects(running,/Publish cancelled by user/);
+  assert.equal(fs.readFileSync(attemptsFile,"utf8").trim().split("\n").length,1);
+});
 test("failed prerequisite blocks dependent; invalid graphs rejected before execution",async()=>{
  await assert.rejects(runExecutive([task("fail",[],"process.exit(12)"),task("child",["fail"])],
  {capacity,pollMs:10,log(){}}),/fail exited 12/);

@@ -210,8 +210,12 @@ async function main(mode) {
   validatePlan(tasks);
   const state=fs.mkdtempSync(path.join(os.tmpdir(),"deployment-executive-"));
   const controller=new AbortController();
-  const stop=()=>controller.abort();
-  process.on("SIGTERM",stop);process.on("SIGINT",stop);
+  const stop=signalName=>{
+    if(controller.signal.aborted) return;
+    controller.abort(Error(`Executive interrupted by ${signalName}`));
+  };
+  const stopTerm=()=>stop("SIGTERM"),stopInt=()=>stop("SIGINT");
+  process.on("SIGTERM",stopTerm);process.on("SIGINT",stopInt);
   const budget=Number(mode==="build" ? process.env.DEPLOY_BUILD_BUDGET_SECONDS??1800 : process.env.DEPLOY_START_BUDGET_SECONDS??900);
   const bootstrapElapsed=mode==="build" && process.env.DEPLOY_EXECUTIVE_STARTED_SECONDS
     ? Date.now()-Number(process.env.DEPLOY_EXECUTIVE_STARTED_SECONDS)*1000 : 0;
@@ -225,8 +229,15 @@ async function main(mode) {
           return response.status===200 && body.status==="ok" && body.unifiedAwareness?.ready===true;
         } catch { return false; }
       }}:{})});
+  } catch(error) {
+    console.error("[executive] Task checkpoint:", JSON.stringify({
+      completed: error.completedTasks ?? [],
+      interrupted: error.runningTasks ?? [],
+      waiting: error.waitingTasks ?? [],
+    }));
+    throw error;
   } finally {
-    process.off("SIGTERM",stop);process.off("SIGINT",stop);
+    process.off("SIGTERM",stopTerm);process.off("SIGINT",stopInt);
     fs.rmSync(state,{recursive:true,force:true});
     if(mode==="build" && /^\/tmp\/deployment-tools\.[a-zA-Z0-9]+$/.test(process.env.DEPLOY_BOOTSTRAP_DIR??"")) {
       fs.rmSync(process.env.DEPLOY_BOOTSTRAP_DIR,{recursive:true,force:true});
