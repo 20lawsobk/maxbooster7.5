@@ -78,16 +78,19 @@ def test_emitted_work_validator_detects_lost_details_and_missing_tasks():
         MODULE.validate_plan(registry, damaged)
 
 
-def test_business_sections_bind_exact_pages_and_reject_invented_references():
+def test_business_sections_bind_exact_pages_and_mark_invented_references_incomplete():
     registry = fixture()
     supplemental = {"schemaVersion": 1, "pages": [{"id": "page-a", "path": "/one", "businessSections": [{"name": "Editor", "interactionIds": ["ui-a"], "frontendWork": "Operate Save and reload persisted value"}]}]}
-    with pytest.raises(ValueError, match="Missing business-section page supplements"):
-        MODULE.build_plan(registry, [supplemental], expected_pages=2, require_page_work=True)
+    incomplete = MODULE.build_plan(registry, [supplemental], expected_pages=2, require_page_work=True)
+    assert incomplete["planningCompleteness"]["status"] == "INCOMPLETE"
+    assert incomplete["planningCompleteness"]["missingBusinessSectionPageIds"] == ["page-alias"]
     plan = MODULE.build_plan(registry, [supplemental], expected_pages=2)
     assert plan["businessPageWork"]["page-a"]["businessSections"][0]["frontendWork"].startswith("Operate Save")
     supplemental["pages"][0]["businessSections"][0]["interactionIds"] = ["ui-invented"]
-    with pytest.raises(ValueError, match="missing ui-invented"):
-        MODULE.build_plan(registry, [supplemental], expected_pages=2)
+    incomplete = MODULE.build_plan(registry, [supplemental], expected_pages=2)
+    assert incomplete["planningCompleteness"]["status"] == "INCOMPLETE"
+    assert incomplete["planningCompleteness"]["missingReferences"][0]["referenceId"] == "ui-invented"
+    assert incomplete["businessPageWork"]["page-a"]["referenceResolution"]["status"] == "INCOMPLETE"
 
 
 def test_human_output_contains_all_aliases_controls_contracts_and_global_unknowns():
@@ -131,9 +134,11 @@ def test_both_supplement_source_inventory_schemas_detect_stale_analysis():
     for field in ("inspectedJsxSourceFiles", "inspectedSourceFiles", "inspectedFiles"):
         supplemental = {"pages": [{"id": p["id"], "path": p["path"], "businessSections": [{"name": "Form", "frontendWork": "Submit"}],
                                   "coverageOfSource": {field: [{"file": "one.tsx", "sha256": "old"}]}} for p in registry["pages"]]}
-        with pytest.raises(ValueError, match="Stale business analysis source"):
-            MODULE.build_plan(registry, [supplemental], files, expected_pages=2, require_page_work=True)
+        incomplete = MODULE.build_plan(registry, [supplemental], files, expected_pages=2, require_page_work=True)
+        assert incomplete["planningCompleteness"]["status"] == "INCOMPLETE"
+        assert incomplete["businessPageWork"]["page-a"]["analysisSourceFreshness"]["status"] == "STALE"
         for page in supplemental["pages"]:
             page["coverageOfSource"][field][0]["sha256"] = "current"
         plan = MODULE.build_plan(registry, [supplemental], files, expected_pages=2, require_page_work=True)
+        assert plan["planningCompleteness"]["status"] == "PASS"
         assert all(p["analysisSourceFreshness"]["status"] == "SOURCE_HASHES_MATCH" for p in plan["businessPageWork"].values())

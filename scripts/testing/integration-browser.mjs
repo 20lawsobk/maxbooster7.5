@@ -22,7 +22,7 @@ if (!['public', 'private-admin'].includes(accessProfile)) throw new Error('Unkno
 const privateAdmin = accessProfile === 'private-admin';
 const pythonRuntime = resolvePythonRuntime(
   root,
-  process.env.MAXBOOSTER_TEST_PYTHON || process.env.MAXBOOSTER_PYTHON || 'python3',
+  process.env.MAXBOOSTER_TEST_PYTHON || process.env.MAXBOOSTER_PYTHON,
   process.env,
 );
 const reportDirectory = path.resolve(process.env.MAXBOOSTER_TEST_REPORT_DIR || 'reports/test-verification/integration-browser/http');
@@ -96,7 +96,11 @@ try {
   for (const file of baselineMigrations) {
     await client.query(fs.readFileSync(path.join(temporary, 'generated', file), 'utf8'));
   }
-  for (const file of fs.readdirSync('migrations').filter(file => /^\d+.*\.sql$/.test(file) && Number(file.split('_')[0]) >= 20).sort()) {
+  // This fixture starts from the current Drizzle schema, which includes 0100.
+  // The migration itself is validated against an empty disposable database.
+  for (const file of fs.readdirSync('migrations').filter(file =>
+    /^\d+.*\.sql$/.test(file) && Number(file.split('_')[0]) >= 20
+    && file !== '0100_maxcore_cognitive_registry.sql').sort()) {
     await client.query(fs.readFileSync(path.join(root, 'migrations', file), 'utf8'));
   }
   const fixtureToken = randomBytes(32).toString('hex');

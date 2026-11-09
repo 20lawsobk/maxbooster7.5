@@ -770,6 +770,45 @@ class Engine:
                     "phase": self._phase,
                     "error": self._last_error}
 
+    def readiness_status(self):
+        """Return the bounded in-memory fields required by the readiness probe.
+
+        The complete status report performs source-policy, GPU telemetry, and
+        profile aggregation. Readiness must not run that diagnostic work inline
+        on the API event loop or make liveness depend on optional diagnostics.
+        """
+        now = self.clock()
+        with self._lock:
+            snapshot = self._snapshot
+            phase = self._phase
+            thread = self._thread
+            health = self._health
+            scan_phases = {
+                "collecting_sources", "ranking_available_records",
+                "reading_secondary_evidence",
+                "validating_snapshot", "publishing_snapshot",
+            }
+            scan_in_progress = phase in scan_phases
+            if scan_in_progress:
+                scan_state = "running"
+            elif phase.startswith("failed:"):
+                scan_state = "failed"
+            elif phase == "idle" and set(health) >= set(self.sources) and health:
+                scan_state = "complete"
+            else:
+                scan_state = "not_started"
+            snapshot_ready = bool(snapshot and snapshot.expires_at > now)
+            return {
+                "ready": snapshot_ready,
+                "snapshot_ready": snapshot_ready,
+                "source_scan_state": scan_state,
+                "source_scan_in_progress": scan_in_progress,
+                "snapshot_id": snapshot.id if snapshot else None,
+                "expires_at": snapshot.expires_at if snapshot else None,
+                "running": bool(thread and thread.is_alive()),
+                "phase": phase,
+            }
+
     def discovery_observations(self, limit=500):
         """Read the fresh persisted awareness index for the native observatory."""
         if type(limit) is not int or not 1 <= limit <= 1000:

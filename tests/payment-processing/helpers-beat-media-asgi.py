@@ -78,7 +78,7 @@ def main():
         async def fixture_health():
             return {"fixture": True, "status": "healthy", "model_loaded": False, "snapshot_id": snapshot.id}
 
-        uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning", access_log=False)
+        uvicorn.run(app, host="127.0.0.1", port=port, log_level="info", access_log=False)
 
 
 if __name__ == "__main__":

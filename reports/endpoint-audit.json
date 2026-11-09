@@ -1,8 +1,8 @@
 {
   "meta": {
     "mode": "static",
-    "backendCount": 2471,
-    "uniqueBackendCount": 2404,
+    "backendCount": 2472,
+    "uniqueBackendCount": 2405,
     "frontendCallCount": 1200,
     "uniqueFrontendCount": 934,
     "matchedCount": 934,
@@ -14,7 +14,7 @@
     "unresolvedDynamicCount": 14,
     "dynamicFrontendResolvedCount": 12,
     "dynamicFrontendUnverifiedCount": 8,
-    "mountedRouterCount": 158
+    "mountedRouterCount": 159
   },
   "findings": [
     {
@@ -114,7 +114,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     }
   ],
-  "generatedAt": "2026-11-09T11:37:51.184Z",
+  "generatedAt": "2026-11-09T18:52:21.544Z",
   "baseUrl": null,
   "backendRoutes": [
     {
@@ -20496,7 +20496,7 @@
       "method": "GET",
       "rawPath": "/status",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 160,
+      "line": 162,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20514,7 +20514,7 @@
       "method": "GET",
       "rawPath": "/identity",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 182,
+      "line": 184,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20532,7 +20532,7 @@
       "method": "GET",
       "rawPath": "/organization",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 201,
+      "line": 203,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20550,7 +20550,7 @@
       "method": "POST",
       "rawPath": "/entities",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 329,
+      "line": 331,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20568,7 +20568,7 @@
       "method": "POST",
       "rawPath": "/memory",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 344,
+      "line": 346,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20586,7 +20586,7 @@
       "method": "POST",
       "rawPath": "/project",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 345,
+      "line": 347,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20604,7 +20604,7 @@
       "method": "POST",
       "rawPath": "/goal",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 353,
+      "line": 355,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20622,7 +20622,7 @@
       "method": "POST",
       "rawPath": "/task",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 354,
+      "line": 356,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20640,7 +20640,7 @@
       "method": "POST",
       "rawPath": "/agent",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 355,
+      "line": 357,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20658,7 +20658,7 @@
       "method": "POST",
       "rawPath": "/department",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 356,
+      "line": 358,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20676,7 +20676,7 @@
       "method": "POST",
       "rawPath": "/tool",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 357,
+      "line": 359,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20694,7 +20694,7 @@
       "method": "POST",
       "rawPath": "/workflow",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 358,
+      "line": 360,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20712,7 +20712,7 @@
       "method": "POST",
       "rawPath": "/document",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 359,
+      "line": 361,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20730,7 +20730,7 @@
       "method": "POST",
       "rawPath": "/knowledge-node",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 360,
+      "line": 362,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20748,7 +20748,7 @@
       "method": "POST",
       "rawPath": "/event",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 361,
+      "line": 363,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20766,7 +20766,7 @@
       "method": "POST",
       "rawPath": "/tasks/:id/execute",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 393,
+      "line": 395,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20784,7 +20784,7 @@
       "method": "GET",
       "rawPath": "/events",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 512,
+      "line": 514,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20802,7 +20802,7 @@
       "method": "GET",
       "rawPath": "/expansion/status",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 534,
+      "line": 536,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20820,7 +20820,7 @@
       "method": "GET",
       "rawPath": "/tools/catalog",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 543,
+      "line": 545,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20838,7 +20838,7 @@
       "method": "POST",
       "rawPath": "/tools/database/execute",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 571,
+      "line": 573,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20856,7 +20856,7 @@
       "method": "GET",
       "rawPath": "/entities",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 585,
+      "line": 587,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20874,7 +20874,7 @@
       "method": "GET",
       "rawPath": "/entities/:id",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 603,
+      "line": 605,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20892,7 +20892,7 @@
       "method": "PATCH",
       "rawPath": "/entities/:id",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 620,
+      "line": 622,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20910,7 +20910,7 @@
       "method": "DELETE",
       "rawPath": "/entities/:id",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 637,
+      "line": 639,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20928,7 +20928,7 @@
       "method": "POST",
       "rawPath": "/relationships",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 654,
+      "line": 656,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20946,7 +20946,7 @@
       "method": "GET",
       "rawPath": "/relationships",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 663,
+      "line": 665,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20964,7 +20964,7 @@
       "method": "DELETE",
       "rawPath": "/relationships/:id",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 677,
+      "line": 679,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -20982,7 +20982,7 @@
       "method": "GET",
       "rawPath": "/context",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 870,
+      "line": 872,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -21000,7 +21000,7 @@
       "method": "POST",
       "rawPath": "/context",
       "file": "server/routes/maxcoreCognitive.ts",
-      "line": 871,
+      "line": 873,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -21011,6 +21011,25 @@
       "confidence": "high",
       "mountedFrom": [
         "server/routes.ts:7025"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "POST",
+      "rawPath": "/",
+      "file": "server/routes/maxcoreCognitiveGraphql.ts",
+      "line": 570,
+      "resolvedVia": "literal",
+      "registeredOn": "router",
+      "hasAuthMarker": false,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/maxcore/cognitive/graphql/",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7025",
+        "server/routes/maxcoreCognitive.ts:68"
       ],
       "processScope": "main-app"
     },
@@ -46449,7 +46468,7 @@
       "prefix": "/api/maxcore/cognitive",
       "mountedFrom": [
         "server/routes.ts:7025",
-        "server/routes/maxcoreCognitive.ts:66",
+        "server/routes/maxcoreCognitive.ts:67",
         "server/routes.ts:7031",
         "server/routes/artistProfiles.ts:54",
         "server/routes.ts:7376",
@@ -46514,7 +46533,9 @@
         "server/routes.ts:7860",
         "server/routes/playlistPitching.ts:14",
         "server/routes.ts:7888",
-        "server/routes/publishing.ts:59"
+        "server/routes/publishing.ts:59",
+        "server/routes/maxcoreCognitive.ts:68",
+        "server/routes/maxcoreCognitiveGraphql.ts:568"
       ],
       "contexts": [
         {
@@ -46522,7 +46543,7 @@
           "processScope": "main-app",
           "mountedFrom": [
             "server/routes.ts:7025",
-            "server/routes/maxcoreCognitive.ts:66"
+            "server/routes/maxcoreCognitive.ts:67"
           ]
         },
         {
@@ -46775,6 +46796,33 @@
           "mountedFrom": [
             "server/routes.ts:7888",
             "server/routes/publishing.ts:59"
+          ]
+        },
+        {
+          "prefix": "/api/maxcore/cognitive/graphql",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7025",
+            "server/routes/maxcoreCognitive.ts:68",
+            "server/routes/maxcoreCognitiveGraphql.ts:568"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "server/routes/maxcoreCognitiveGraphql.ts",
+      "prefix": "/api/maxcore/cognitive/graphql",
+      "mountedFrom": [
+        "server/routes.ts:7025",
+        "server/routes/maxcoreCognitive.ts:68"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/maxcore/cognitive/graphql",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7025",
+            "server/routes/maxcoreCognitive.ts:68"
           ]
         }
       ]

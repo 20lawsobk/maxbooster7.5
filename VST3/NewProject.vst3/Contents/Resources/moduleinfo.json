@@ -2,21 +2,21 @@
   "Name": "Max Booster",
   "Version": "1.0.0",
   "Factory Info": {
-    "Vendor": "yourcompany",
-    "URL": "www.yourcompany.com",
+    "Vendor": "Max Booster",
+    "URL": "",
     "E-Mail": "",
     "Flags": {
       "Unicode": true,
       "Classes Discardable": false,
-      "Component Non Discardable": false,
-    },
+      "Component Non Discardable": false
+    }
   },
   "Classes": [
     {
       "CID": "565354556B6B776D617820626F6F7374",
       "Category": "Audio Module Class",
       "Name": "Max Booster",
-      "Vendor": "yourcompany",
+      "Vendor": "Max Booster",
       "Version": "1.0.0",
       "SDKVersion": "VST 3.8.0",
       "Sub Categories": [
@@ -35,18 +35,18 @@
         "Modulation",
         "Mono",
         "Network",
-        "NoOfflinePr",
+        "NoOfflineProcess"
       ],
       "Class Flags": 2,
       "Cardinality": 2147483647,
       "Snapshots": [
-      ],
+      ]
     },
     {
       "CID": "565345556B6B776D617820626F6F7374",
       "Category": "Component Controller Class",
       "Name": "Max Booster",
-      "Vendor": "yourcompany",
+      "Vendor": "Max Booster",
       "Version": "1.0.0",
       "SDKVersion": "VST 3.8.0",
       "Sub Categories": [
@@ -65,12 +65,12 @@
         "Modulation",
         "Mono",
         "Network",
-        "NoOfflinePr",
+        "NoOfflineProcess"
       ],
       "Class Flags": 2,
       "Cardinality": 2147483647,
       "Snapshots": [
-      ],
-    },
-  ],
+      ]
+    }
+  ]
 }

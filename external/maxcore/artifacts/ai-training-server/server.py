@@ -2719,7 +2719,7 @@ async def unified_profile_discover(data: UnifiedProfileDiscoverRequest,
 async def generation_readiness():
     from ai_model.awareness import get_engine
     from fastapi.responses import JSONResponse
-    awareness = get_engine().status()
+    awareness = get_engine().readiness_status()
     ready = bool(_model_ready and awareness.get("ready") is True)
     return JSONResponse(status_code=200 if ready else 503, content={
         "ready": ready, "model_loaded": _model_ready, "awareness": awareness,

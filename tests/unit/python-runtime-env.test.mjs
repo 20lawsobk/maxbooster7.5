@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -33,6 +33,28 @@ test("python test runtime accepts the isolated packaged runtime site directory",
       PATH: process.env.PATH,
       HOME: os.tmpdir(),
       MAXBOOSTER_PYTHON_SITE_PACKAGES: packages,
+    });
+
+    assert.equal(runtime.executable, python);
+    assert.equal(runtime.sitePackages, packages);
+    assert.ok(runtime.ldLibraryPath);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("python test runtime prefers the app's packaged interpreter when no override is set", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "python-runtime-default-"));
+  const python = path.join(root, "python_runtime", "bin", "python3");
+  const packages = path.join(root, "python_runtime", "lib", "python3.12", "site-packages");
+  mkdirSync(path.dirname(python), { recursive: true });
+  mkdirSync(packages, { recursive: true });
+  writeFileSync(python, "#!/bin/sh\nprintf '3.12\\n'\n");
+  chmodSync(python, 0o755);
+  try {
+    const runtime = resolvePythonRuntime(root, undefined, {
+      PATH: process.env.PATH,
+      HOME: os.tmpdir(),
     });
 
     assert.equal(runtime.executable, python);

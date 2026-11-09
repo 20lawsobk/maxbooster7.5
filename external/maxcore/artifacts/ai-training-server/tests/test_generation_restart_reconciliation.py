@@ -131,7 +131,7 @@ class RestartTests(unittest.TestCase):
                                            (True, False, 503), (True, True, 200)):
             self.scope["_model_ready"] = model
             engine = Mock()
-            engine.status.return_value = {"ready": awareness}
+            engine.readiness_status.return_value = {"ready": awareness}
             with patch("ai_model.awareness.get_engine", return_value=engine):
                 response = asyncio.run(self.scope["generation_readiness"]())
             self.assertEqual(response.status_code, expected)

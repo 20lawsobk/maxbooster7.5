@@ -36,7 +36,11 @@ test('Beat Money Loop lifecycle on a disposable PostgreSQL database', { timeout:
   for (const file of generatedFiles) {
     await pg.pool.query(await readFile(path.join(root, 'generated', file), 'utf8'));
   }
-  for (const file of (await readdir('migrations')).filter(f => /^\d+.*\.sql$/.test(f) && Number(f.split('_')[0]) >= 20).sort()) {
+  // The current-schema baseline includes the MaxCore registry introduced by
+  // 0100; replay that DDL separately in its migration-specific test instead.
+  for (const file of (await readdir('migrations')).filter(f =>
+    /^\d+.*\.sql$/.test(f) && Number(f.split('_')[0]) >= 20
+    && f !== '0100_maxcore_cognitive_registry.sql').sort()) {
     await pg.pool.query(await readFile(path.join('migrations', file), 'utf8'));
   }
   const assets = new Map(); const requests = []; let failAudio = false; let postsCreated = 1;
@@ -234,13 +238,15 @@ test('Beat Money Loop lifecycle on a disposable PostgreSQL database', { timeout:
     child.stderr.on('data', chunk => { diagnostics = (diagnostics + chunk).slice(-3000); });
     try {
       const origin = `http://127.0.0.1:${port}`;
-      const deadline = Date.now() + 20000; let ready = false;
+      const deadline = Date.now() + 45000; let ready = false; let spawnFailure = '';
+      child.once('error', error => { spawnFailure = error.message; });
       while (Date.now() < deadline) {
+        if (spawnFailure) throw new Error(`Actual ASGI fixture could not spawn: ${spawnFailure}`);
         if (child.exitCode !== null) throw new Error(`Actual ASGI fixture exited: ${diagnostics}`);
         try { const response = await previous.fetch(`${origin}/_fixture/health`, { signal: AbortSignal.timeout(2000) }); if (response.ok) { assert.equal((await response.json()).model_loaded, false); ready = true; break; } } catch {}
         await new Promise(resolve => setTimeout(resolve, 100));
       }
-      assert(ready, `Actual ASGI fixture did not start: ${diagnostics}`);
+      assert(ready, `Actual ASGI fixture did not start within 45s (pid=${child.pid ?? 'unavailable'}): ${spawnFailure || diagnostics || 'no startup output'}`);
       fixture.actualOrigin = origin; fixture.privateKey = 'isolated-dedicated-media-channel';
       fixture.pythonObjects = path.join(pythonRoot, 'durable'); fixture.actualResults = [];
       failAudio = false; silentAudio = false; postsCreated = 0;

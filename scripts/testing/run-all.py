@@ -226,12 +226,17 @@ def main():
     parser.add_argument('--group', action='append', choices=('root', 'coverage', 'node', 'python', 'commerce', 'subsystems', 'browser', 'http', 'pages', 'load', 'operations', 'checks', 'providers'), help='Repeat to select groups; default runs all enabled groups')
     parser.add_argument('--stripe-test-api', action='store_true', help='Enable dedicated Stripe TEST API journeys, including owned sandbox mutations and cleanup; never uses application Stripe credentials')
     parser.add_argument('--python', default=sys.executable, help='Prepared Python interpreter with testing requirements')
+    parser.add_argument('--runtime-python', help='Prepared application Python runtime for integration and operational checks')
     parser.add_argument('--output', type=Path, default=ROOT / 'reports/test-verification')
     parser.add_argument('--rust-toolchain', type=Path)
     parser.add_argument('--go-path', type=Path)
     parser.add_argument('--go-cache', type=Path)
     parser.add_argument('--plan', action='store_true', help='Print commands without execution')
     args = parser.parse_args()
+    packaged_python = ROOT / 'python_runtime' / 'bin' / 'python3'
+    runtime_python = args.runtime_python or str(
+        packaged_python if packaged_python.is_file() else Path(args.python).resolve()
+    )
     output = args.output.resolve()
     browser = ['tests/auth-session-transient-browser.test.mjs', 'tests/local-media-renderer-browser.test.mjs',
                'tests/storefront-hook-transition.test.mjs', 'tests/studio-load-save-guard.test.mjs', 'tests/studio-plugin-audio-browser.test.mjs']
@@ -247,13 +252,13 @@ def main():
         ('node', 'desktop-transport-setup', ['node', 'scripts/patch-electron-builder-transport.mjs'], 60),
         ('node', 'node', [args.python, 'scripts/testing/run-node-suites.py', '--output', str(output / 'node')], 2400),
         ('python', 'python', [args.python, 'scripts/testing/run-python-suites.py', '--python', args.python, '--coverage', '--output', str(output / 'python'), '--docs', str(output / 'python/suites.md')], 2400),
-        ('commerce', 'commerce', [args.python, 'scripts/testing/run-commerce.py', '--output', str(output / 'commerce')], 900),
+        ('commerce', 'commerce', [args.python, 'scripts/testing/run-commerce.py', '--python', runtime_python, '--output', str(output / 'commerce')], 900),
         ('subsystems', 'subsystems', subsystems, 1200),
         ('browser', 'browser', ['node', '--test', '--test-concurrency=1', '--test-reporter=tap', *browser], 300),
         ('http', 'http', ['node', 'scripts/testing/integration-browser.mjs'], 2400),
         ('pages', 'pages', ['node', 'scripts/testing/page80-acceptance.mjs'], 900),
         ('load', 'bounded-http-load', ['node', 'scripts/testing/page80-acceptance.mjs', '--http-load'], 900),
-        ('operations', 'operations', [args.python, 'scripts/testing/run-operations.py', '--python', args.python, '--output', str(output / 'operations')], 900),
+        ('operations', 'operations', [args.python, 'scripts/testing/run-operations.py', '--python', runtime_python, '--output', str(output / 'operations')], 900),
         ('checks', 'types', ['npm', 'run', 'check'], 900),
         ('checks', 'lint', ['npm', 'run', 'lint'], 900),
         ('checks', 'audit', ['npm', 'audit', '--omit=dev', '--audit-level=high', '--json'], 300),
@@ -288,7 +293,10 @@ def main():
         if group == 'coverage': env['MAXBOOSTER_TEST_COVERAGE_DIR'] = str(output / 'coverage')
         if group in ('http', 'pages', 'load'):
             env['MAXBOOSTER_TEST_REPORT_DIR'] = str(output / 'integration-browser' / {'http': 'http', 'pages': 'page80', 'load': 'http-load'}[group])
-            env['MAXBOOSTER_PYTHON'] = args.python
+            # The disposable app and its media helpers must use the packaged
+            # application runtime; args.python is only the test-runner runtime.
+            env['MAXBOOSTER_TEST_PYTHON'] = args.runtime_python
+            env['MAXBOOSTER_PYTHON'] = args.runtime_python
         if group == 'subsystems' or name == 'audit' or group == 'providers':
             # Dependencies may be fetched through the approved platform proxy.
             for key in ('HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'CARGO_HTTP_CAINFO', 'NODE_EXTRA_CA_CERTS', 'NPM_CONFIG_CAFILE'):
@@ -346,7 +354,7 @@ def main():
         ('summary', [args.python, 'scripts/testing/summarize-results.py', '--input', str(output)]),
         ('platform', [args.python, 'scripts/testing/platform-register.py', '--input', str(output), '--output', str(output)]),
         ('remediation', [args.python, 'scripts/testing/remediation.py', '--input', str(output), '--output', str(output)]),
-        ('completion-plan', [args.python, 'scripts/testing/generate-platform-plan.py', '--input', str(output / 'platform-register.json'), '--output', str(output / 'completion-plan.json'), '--require-page-work']),
+        ('completion-plan', [args.python, 'scripts/testing/generate-platform-plan.py', '--input', str(output / 'platform-register.json'), '--output', str(output / 'completion-plan.json'), '--docs-root', str(output / 'completion-docs'), '--page-work', 'docs/testing/platform-page-work-01-40.json', '--page-work', 'docs/testing/platform-page-work-41-80.json', '--require-page-work']),
         ('final-summary', [args.python, 'scripts/testing/summarize-results.py', '--input', str(output)]),
     ]
     for name, command in post:

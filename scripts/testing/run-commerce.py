@@ -46,6 +46,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=ROOT / 'reports/test-verification/commerce')
     parser.add_argument('--only', help='Select a payment basename, legacy-beat, or provider-report-summary')
+    packaged_python = ROOT / 'python_runtime' / 'bin' / 'python3'
+    parser.add_argument('--python', default=str(packaged_python if packaged_python.is_file() else os.sys.executable),
+                        help='Prepared application Python runtime used by real media fixtures')
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -63,7 +66,7 @@ def main():
               'commands': [], 'blocked': [], 'selection': args.only}
     with tempfile.TemporaryDirectory(prefix='commerce-suite-home-') as home:
         env = {'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'HOME': home, 'LANG': 'C', 'TZ': 'UTC', 'CI': '1',
-               'MAXBOOSTER_TEST_PYTHON': os.sys.executable}
+               'MAXBOOSTER_TEST_PYTHON': args.python}
         if os.environ.get('LD_LIBRARY_PATH'):
             env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
         jobs = [(p.stem, str(p.relative_to(ROOT)), [node, '--test', '--test-concurrency=1',

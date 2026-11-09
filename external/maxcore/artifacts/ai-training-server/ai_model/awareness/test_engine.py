@@ -132,6 +132,17 @@ class AwarenessTests(unittest.TestCase):
         self.assertEqual(set(status["latest_scan_health"]), {"new_scan_source"})
         self.assertEqual(status["latest_scan_health"]["new_scan_source"]["http_status"], 403)
 
+    def test_readiness_status_uses_only_bounded_in_memory_state(self):
+        with patch.object(self.engine, "status", side_effect=AssertionError("full diagnostics called")):
+            result = self.engine.readiness_status()
+
+        self.assertTrue(result["ready"])
+        self.assertTrue(result["snapshot_ready"])
+        self.assertIn(result["source_scan_state"], {"complete", "not_started"})
+        self.assertNotIn("gpu", result)
+        self.assertNotIn("profile_sourcing", result)
+        self.assertEqual(result["snapshot_id"], self.snapshot.id)
+
     def test_public_source_failure_classification_is_actionable_and_redacted(self):
         from ai_model.native_analysis.safe_http import (
             ResponseTooLarge, SafeHTTPError, UnsupportedContentType,

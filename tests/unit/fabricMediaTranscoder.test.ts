@@ -14,15 +14,34 @@ let video: Buffer;
 const marker = `fabric-injection-proof-${randomUUID()}`;
 const temporaryDirectories: string[] = [];
 
+function createSilentWave(): Buffer {
+  const sampleRate = 48_000;
+  const channels = 1;
+  const bitsPerSample = 16;
+  const dataBytes = sampleRate * channels * (bitsPerSample / 8) * 60;
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + dataBytes, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(channels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * channels * (bitsPerSample / 8), 28);
+  header.writeUInt16LE(channels * (bitsPerSample / 8), 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  header.write("data", 36);
+  header.writeUInt32LE(dataBytes, 40);
+  return Buffer.concat([header, Buffer.alloc(dataBytes)]);
+}
+
 beforeAll(async () => {
   fixtures = await fs.mkdtemp(path.join(os.tmpdir(), "fabric-test-"));
-  await run("ffmpeg", ["-nostdin", "-loglevel", "error", "-f", "lavfi",
-    "-i", "anullsrc=r=48000:cl=mono", "-t", "60", "-c:a", "pcm_s16le",
-    path.join(fixtures, "audio.wav")], { shell: false });
+  audio = createSilentWave();
   await run("ffmpeg", ["-nostdin", "-loglevel", "error", "-f", "lavfi",
     "-i", "color=c=black:s=32x32:r=1", "-t", "1", "-c:v", "libx264",
     path.join(fixtures, "video.mp4")], { shell: false });
-  audio = await fs.readFile(path.join(fixtures, "audio.wav"));
   video = await fs.readFile(path.join(fixtures, "video.mp4"));
   const mkdtemp = fs.mkdtemp.bind(fs);
   vi.spyOn(fs, "mkdtemp").mockImplementation(async (...args) => {
@@ -30,7 +49,7 @@ beforeAll(async () => {
     temporaryDirectories.push(directory as string);
     return directory;
   });
-});
+}, 30_000);
 
 afterEach(async () => {
   expect(await fs.access(marker).then(() => true, () => false)).toBe(false);

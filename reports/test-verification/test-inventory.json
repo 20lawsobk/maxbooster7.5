@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "67cb6299384258e6fffb2e5951ed178639e3fb15",
-  "workingTreeInputDigest": "05600ecfa50c8a408d4f524434d23b8ffede31d8c5dd54b85532af62c77aee4f",
+  "sourceRevision": "d56e075bfcc2b6ff9e258a691042d8dae8506f16",
+  "workingTreeInputDigest": "a96b2f92697287aae086b165f2dd4d1a61b22bc25005bdefe25a6253a33e78ef",
   "scope": "Canonical first-party tracked tests, operational acceptance scripts, test support and newly added testing runners; not runtime execution evidence",
   "caseEnumeration": "Literal source labels only, not a count of runtime test cases or coverage percentage",
   "counts": {
-    "canonicalTestFiles": 692,
-    "supportSourceFiles": 88,
+    "canonicalTestFiles": 697,
+    "supportSourceFiles": 89,
     "retainedSnapshotFiles": 220,
     "nonExecutableSupportFiles": 12,
     "byGroup": {
-      "commerce": 21,
+      "commerce": 22,
       "integration-browser": 11,
       "manual-destructive-provider": 37,
       "python": 149,
       "root-node": 139,
-      "root-unit": 330,
-      "runner-support": 88,
+      "root-unit": 334,
+      "runner-support": 89,
       "subsystems": 5
     }
   },
@@ -306,7 +306,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py",
-      "sha256": "a069628d07581277cbb16951937ae864aa97f7245da8897c7679914a403a10c4",
+      "sha256": "495da212f518338ea530b2d04f458651e3df85611a349c1396c7ff6c98502d47",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -324,6 +324,7 @@
         "AwarenessTests.test_source_observation_writes_are_fenced_by_ingest_ownership",
         "AwarenessTests.test_source_records_do_not_require_every_topic_bucket",
         "AwarenessTests.test_ready_snapshot_does_not_claim_latest_scan_completed",
+        "AwarenessTests.test_readiness_status_uses_only_bounded_in_memory_state",
         "AwarenessTests.test_public_source_failure_classification_is_actionable_and_redacted",
         "AwarenessTests.test_scan_retains_source_failure_class_without_exception_details",
         "AwarenessTests.test_invalid_snapshot_reports_safe_failure_category",
@@ -2739,7 +2740,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_generation_restart_reconciliation.py",
-      "sha256": "cd0216d98be0b83465421f0512108a16424d4e9bb322ff9c4132fd65ca9974c4",
+      "sha256": "948d68a9b236aee401ebb1bbbca2fb37153c86d7415a176680ab410dd9b97ff6",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -4172,7 +4173,7 @@
     },
     {
       "path": "scripts/testing/commerce-legacy-fixture.mjs",
-      "sha256": "035f06113c85eeb27f2fcae51719de68ddb5c00512ae3cd774ba68ad093fc6ee",
+      "sha256": "30907a5cc8771b51613691690cfd6dea56e71f89c91ef516994434af21e05935",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4342,7 +4343,7 @@
     },
     {
       "path": "scripts/testing/generate-catalog.py",
-      "sha256": "4499e4e51998ba4ecbc92965909d3f0c66acdc30c6fd47ce565b7d703396d592",
+      "sha256": "4dad9f34020a309b9192e69d38cb60581be56c879f0043ee4ef5b9236fdb68e6",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4361,7 +4362,7 @@
     },
     {
       "path": "scripts/testing/generate-platform-plan.py",
-      "sha256": "1bed33f216575ed782892cb437a9240d1a92e7a29cdfd946ca2f610c75b5bd58",
+      "sha256": "24bdc7b99117d103b52845b04c08795fa02a3d3dc2dac38de236e2b800c3d07e",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4378,7 +4379,7 @@
     },
     {
       "path": "scripts/testing/integration-browser.mjs",
-      "sha256": "43652275cc9529ff1eb8ea7f4f54ba232f66efeffb31584dde975eff29e2a46b",
+      "sha256": "fad0f6685e1f30e4671cf65dbc8e00f082af72421b7e74e94d1cd0369a12ce8a",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4429,7 +4430,7 @@
     },
     {
       "path": "scripts/testing/page80-acceptance.mjs",
-      "sha256": "900864610ffeaab8ba6f1cd67a9a29dfb5d8c42e22266830ec4dfefcd0deb97a",
+      "sha256": "a8f752552ac13be2d294897e4aafa10dca76b713a76cd52113de2c344b236cd1",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4463,7 +4464,7 @@
     },
     {
       "path": "scripts/testing/python-runtime-env.mjs",
-      "sha256": "1d5cc85df3f6bb8959ff40940b44f93b4dda1ae108fef695f982d222196b9df3",
+      "sha256": "8a67a96dec3c1a827d9d08ad941950b9e993fe85eb6a60fb2d2fec57dc5563a7",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4548,7 +4549,7 @@
     },
     {
       "path": "scripts/testing/run-all.py",
-      "sha256": "8748cdfbb36235483af512b4b33450e7760f7043fc6e875f704e118a0d877f73",
+      "sha256": "1f2d0cb6e13737daf0d87bdaa84d9f806634991c950db29570b7e7587433e1a8",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4565,7 +4566,7 @@
     },
     {
       "path": "scripts/testing/run-commerce.py",
-      "sha256": "3f28e1853e0f2b39e3008e801829a267ca7333baeb603871e4147dff319c2479",
+      "sha256": "8f15c366ab32317f7687b33603ee719bb969a8dc5bf762a33d9864456249393c",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4582,7 +4583,7 @@
     },
     {
       "path": "scripts/testing/run-engine-load.py",
-      "sha256": "b9fa8427d9da2565f2d8527f976b4c096f7df0d44341a39795e0c5a17eafb5d6",
+      "sha256": "c4c1072ce239e3bb84c098fcd90a2abb8ffb750aeec4cbf04581a54f5429de46",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4616,7 +4617,7 @@
     },
     {
       "path": "scripts/testing/run-operations.py",
-      "sha256": "425912c00617e46f971e3c1ed1dfe8bfab6fb4dc3c20dce0be420150479f5836",
+      "sha256": "f1d7e1345ee95e526eb1dc3063cea7ce054820ba70c990ae7a17c136391c84a5",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4650,7 +4651,7 @@
     },
     {
       "path": "scripts/testing/run-python-suites.py",
-      "sha256": "f92eade035800b3b7f85ff23cdd245c39dfaf6a1eb541a42a3fa979c9c9df3e8",
+      "sha256": "2c22a2719d4bcd73bda1941041cf99d3efb52d9026a2d262febaa83db7cdf6bd",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -5327,7 +5328,7 @@
     },
     {
       "path": "server/services/__tests__/maxcoreOwnerContext.test.ts",
-      "sha256": "8f40794f8c41fb1514e82e192c5c02fa10e0de126b31d460c19e7056eadb3661",
+      "sha256": "56780edaa96e412ec42769037dd88bcfa5b7b9fe4b8c17bb03f85928b365605b",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -5890,7 +5891,7 @@
     },
     {
       "path": "tests/account-analytics-browser.test.mjs",
-      "sha256": "4fad54e52071fb060a699c319e4b6fead467c67c96d5b21c261b7bd59e2d0dbc",
+      "sha256": "c6e90a38d48b4a21da9bad8f4cb8399ddc81f295a2fcdc24b34a2803c8698fb5",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -5947,7 +5948,7 @@
       "group": "integration-browser",
       "runner": "vitest",
       "cwd": ".",
-      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C MAXBOOSTER_PYTHON=\"${MAXBOOSTER_PYTHON:-python3}\" node scripts/testing/integration-browser.mjs tests/admin-account-parity.test.ts",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C node scripts/testing/integration-browser.mjs tests/admin-account-parity.test.ts",
       "prerequisites": [
         "PostgreSQL server tools and configured MaxCore Python dependencies",
         "The wrapper creates disposable PostgreSQL and a sealed loopback app fixture; see integration-browser.md"
@@ -6082,7 +6083,7 @@
       "group": "integration-browser",
       "runner": "vitest",
       "cwd": ".",
-      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C MAXBOOSTER_PYTHON=\"${MAXBOOSTER_PYTHON:-python3}\" node scripts/testing/integration-browser.mjs tests/api-guards.test.ts",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C node scripts/testing/integration-browser.mjs tests/api-guards.test.ts",
       "prerequisites": [
         "PostgreSQL server tools and configured MaxCore Python dependencies",
         "The wrapper creates disposable PostgreSQL and a sealed loopback app fixture; see integration-browser.md"
@@ -6247,7 +6248,7 @@
       "group": "integration-browser",
       "runner": "vitest",
       "cwd": ".",
-      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C MAXBOOSTER_PYTHON=\"${MAXBOOSTER_PYTHON:-python3}\" node scripts/testing/integration-browser.mjs tests/auth-flows.test.ts",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C node scripts/testing/integration-browser.mjs tests/auth-flows.test.ts",
       "prerequisites": [
         "PostgreSQL server tools and configured MaxCore Python dependencies",
         "The wrapper creates disposable PostgreSQL and a sealed loopback app fixture; see integration-browser.md"
@@ -7138,7 +7139,7 @@
     },
     {
       "path": "tests/dependency-transport-teardown.test.mjs",
-      "sha256": "a8c4b42efbfb063e46b278d5dbf4e295d300d1f0000f1a0aca21a88e6a1fecbb",
+      "sha256": "1c7443324f653c52b43e4e1da05a1552461502711f2a85c6c87c6047b241dc38",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -7342,7 +7343,7 @@
     },
     {
       "path": "tests/deployment-image-size-gate.test.mjs",
-      "sha256": "bafb11243f7ce35cdfe66d4a525217624d3e1b25dbac1bd5f610a48f30f20913",
+      "sha256": "2d1b9410a5ca034d0df2501db2c0800e3840a98c99dd10c5e802cde7da635feb",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -7411,7 +7412,7 @@
     },
     {
       "path": "tests/deployment-rust-phase.test.mjs",
-      "sha256": "ff4a59d97e864bd5a3f8fa8c530d3885f75deb540d2a45efc2d663963eb8f60d",
+      "sha256": "141b3abc4e7a8808fc2b24b1d917de58242237cf3a287d9f43650f9c0f8c6738",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -8512,7 +8513,7 @@
       "group": "integration-browser",
       "runner": "vitest",
       "cwd": ".",
-      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C MAXBOOSTER_PYTHON=\"${MAXBOOSTER_PYTHON:-python3}\" node scripts/testing/integration-browser.mjs tests/health.test.ts",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C node scripts/testing/integration-browser.mjs tests/health.test.ts",
       "prerequisites": [
         "PostgreSQL server tools and configured MaxCore Python dependencies",
         "The wrapper creates disposable PostgreSQL and a sealed loopback app fixture; see integration-browser.md"
@@ -8557,6 +8558,23 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "helpers browser processes",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/helpers-chromium.mjs",
+      "sha256": "88919fb24f4008153cddea67ee24432a8436ecd3c84098e25f9451e27fbbe795",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "helpers chromium",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -8660,7 +8678,7 @@
       "group": "integration-browser",
       "runner": "vitest",
       "cwd": ".",
-      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C MAXBOOSTER_PYTHON=\"${MAXBOOSTER_PYTHON:-python3}\" node scripts/testing/integration-browser.mjs tests/integration/maxcore-local-supervisor.integration.test.ts",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C node scripts/testing/integration-browser.mjs tests/integration/maxcore-local-supervisor.integration.test.ts",
       "prerequisites": [
         "PostgreSQL server tools and configured MaxCore Python dependencies",
         "The wrapper creates disposable PostgreSQL and a sealed loopback app fixture; see integration-browser.md"
@@ -9098,7 +9116,7 @@
     },
     {
       "path": "tests/maxcore-dev-dependency-security.test.mjs",
-      "sha256": "d5397d833c0c1149ef45366e7a8f455fa6ba6e816f2d65768d3c3075e22deb0f",
+      "sha256": "e2771ad8530f2f55d05b98cb7878349b0aa3cc61ca88d06b3c683ac31f78326b",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -9417,7 +9435,7 @@
     },
     {
       "path": "tests/patent-pdf-runtime.test.mjs",
-      "sha256": "0547502f4d30b8644b26bece6033bbaa041c795df8b750d67433c5b5e4f96183",
+      "sha256": "1a864f1be28c29e49c4ca60a1731df85431c1346c3f334cd7f1da443a77bca5d",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -9439,7 +9457,7 @@
     },
     {
       "path": "tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs",
-      "sha256": "8aea6d8eac9b291fdf95c6c85d29b1b9a021eade12c1e8339c20242cf7860b56",
+      "sha256": "2df067564005fae8f58c4ee6e6e9202526e2d04e9d2dbdd03c446d70bcf984f0",
       "category": "test",
       "group": "commerce",
       "runner": "node:test",
@@ -9594,7 +9612,7 @@
     },
     {
       "path": "tests/payment-processing/helpers-beat-media-asgi.py",
-      "sha256": "0dd92c7ecbe53d6558ec6cb6ba2b5d82faa36ba0edbd991f088da819a50e844e",
+      "sha256": "50a6c07e5ccccecaaac2d881733cdc1c28e95ff194bd353363de3521f20f8f7e",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -9842,7 +9860,7 @@
     },
     {
       "path": "tests/payment-processing/inbound-registration.test.mjs",
-      "sha256": "12e5531dc374580874c74515067720a96afa6d67b2e8ce6f74a73c1580d0e690",
+      "sha256": "2a748a0fdea4f1ee123000104615f18381a7ea6a1e9f8e3fb05dddb15d3a9a53",
       "category": "test",
       "group": "commerce",
       "runner": "node:test",
@@ -9879,6 +9897,27 @@
       "purpose": "storefront cart executes auth, ownership, catalog pricing, amount, metadata, and order creation contracts",
       "caseTitles": [
         "storefront cart executes auth, ownership, catalog pricing, amount, metadata, and order creation contracts"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/payment-processing/maxcore-cognitive-registry-migration.test.mjs",
+      "sha256": "bf82e87126d5b58d2f1b6f2c648b450f9a621200227c2dc1ac207e4bfb9a7a4b",
+      "category": "test",
+      "group": "commerce",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-commerce.py --only maxcore-cognitive-registry-migration.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci",
+        "Disposable PostgreSQL where required; see commerce.md"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "MaxCore cognitive registry migration installs owner-isolated graph constraints",
+      "caseTitles": [
+        "MaxCore cognitive registry migration installs owner-isolated graph constraints"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -10363,7 +10402,7 @@
       "group": "integration-browser",
       "runner": "vitest",
       "cwd": ".",
-      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C MAXBOOSTER_PYTHON=\"${MAXBOOSTER_PYTHON:-python3}\" node scripts/testing/integration-browser.mjs tests/private-admin-http.test.ts",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C node scripts/testing/integration-browser.mjs tests/private-admin-http.test.ts",
       "prerequisites": [
         "PostgreSQL server tools and configured MaxCore Python dependencies",
         "The wrapper creates disposable PostgreSQL and a sealed loopback app fixture; see integration-browser.md"
@@ -10493,7 +10532,7 @@
     },
     {
       "path": "tests/publishing-build-entry.test.mjs",
-      "sha256": "2d5821ab7c23772cacea54dd35a2a7d22ce55dfb5602f1d00e0d2772d91f5d28",
+      "sha256": "9d15832daf71badfd2b3549154057e4224f0168a384f963249fd0bd62a0eee65",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -10795,7 +10834,7 @@
     },
     {
       "path": "tests/replit-configuration.test.mjs",
-      "sha256": "1eefc282a4bd669358d1e953a7fbc6897ff78ea12f5af6c0f8f5317e431b4fbb",
+      "sha256": "714df038f1fb29a8afa69cda6c1fe0ca54fc859c78b35c2cce8a2616348b4178",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -10807,16 +10846,17 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "Replit configuration parses as TOML and preserves the production entrypoints and one public port; publishing Node phase ${corrupt ? 'rejects a checksum mismatch without replacing the runtime' : 'installs a checksum-verified runtime'}",
+      "purpose": "Replit configuration parses as TOML and preserves the production entrypoints and one public port; port preflight rejects any extra public mapping, including unknown system ports",
       "caseTitles": [
         "Replit configuration parses as TOML and preserves the production entrypoints and one public port",
+        "port preflight rejects any extra public mapping, including unknown system ports",
         "publishing Node phase ${corrupt ? 'rejects a checksum mismatch without replacing the runtime' : 'installs a checksum-verified runtime'}"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
       "path": "tests/replit-profile.contract.test.mjs",
-      "sha256": "6a39ce8e26a8f20f899ebb7e0f4481f81c981e3c2ff26c06c8083539d86d5fb2",
+      "sha256": "e136032635c7f82b194071059affab6f4583c660ab456893be79e4b58323b596",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -10882,7 +10922,7 @@
     },
     {
       "path": "tests/resume-integration-contracts.cjs",
-      "sha256": "0e1ab9056d2d5abe6005732b4a1366b019897c277a72cef9ca1796df1296413f",
+      "sha256": "27c527a468f6bb6bc8a8739f2252a3bce3cb0571924133a99848a60f792a5233",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -11639,7 +11679,7 @@
     },
     {
       "path": "tests/testing/test_assertion_oracles.py",
-      "sha256": "df12b732f7fb48ef8d7a39bed771ece79d6f0aabeb4c25f7a0c47a5196ac8c8f",
+      "sha256": "872b087c3b36dfbc3cc082639a52e6fbce9524ae5614360cd676d536222ef9bb",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -11869,7 +11909,7 @@
     },
     {
       "path": "tests/testing/test_platform_evidence.py",
-      "sha256": "661ae5f953fc8c84c6e262d255f73b7f73afde2bb57f895435e22a36e2afa84d",
+      "sha256": "e297c28c644438529da91ab5ef46f6c41709305cc49679fc3a8742ccce7fe2f8",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -11920,7 +11960,7 @@
     },
     {
       "path": "tests/testing/test_platform_plan.py",
-      "sha256": "5ee9f4e7f872cc4c20aa69a71ff444e0eedc6d5e80e01c61ae4838f43589a637",
+      "sha256": "a4988caaca4de657f208a224e6f6d1f104f3febb3826b79f37a7675c62b49edb",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -11937,7 +11977,7 @@
         "test_preserves_all_details_aliases_unrouted_entities_and_original_statuses",
         "test_missing_reference_or_template_and_page_deduplication_fail_closed",
         "test_emitted_work_validator_detects_lost_details_and_missing_tasks",
-        "test_business_sections_bind_exact_pages_and_reject_invented_references",
+        "test_business_sections_bind_exact_pages_and_mark_invented_references_incomplete",
         "test_human_output_contains_all_aliases_controls_contracts_and_global_unknowns",
         "test_all_page_sections_and_exact_work_dimensions_become_distinct_actions",
         "test_both_supplement_source_inventory_schemas_detect_stale_analysis"
@@ -11986,7 +12026,7 @@
     },
     {
       "path": "tests/testing/test_python_runner_scheduling.py",
-      "sha256": "e47e24cbf4eaf92675f3f632cceec832725085dd0a295e47a3b87ce52505a8dc",
+      "sha256": "1e82c39605595c1be93fe11db92d74ff871cfe328281b81edfb1f55f3dd9b46a",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -12652,7 +12692,7 @@
     },
     {
       "path": "tests/unit/auth-page-contracts.test.ts",
-      "sha256": "f48edd17d32bc9f23c7c754d97112470503adb2e4b0e7c028db1b12050441883",
+      "sha256": "400b5dfbdf63c54e3e1b9ce51e15448ed62c7bdcdf5923b0f7ae2958392aba11",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -12672,6 +12712,7 @@
         "does not navigate when authoritative session verification fails",
         "releases controls on malformed responses and waits for initial authentication",
         "Login page contract and request lifecycle",
+        "keeps demo and public registration controls hidden in private mode",
         "trims the identifier, handles MFA without caching a user, preserves fresh-code guidance",
         "locks out concurrent login/demo actions and releases controls after a malformed response",
         "keeps a safe internal redirect and delegates bearer/cache completion to the provider",
@@ -13700,6 +13741,35 @@
         "waiting worker activates only after every live client explicitly acknowledges"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/unit/cognitive-generation-context.test.ts",
+      "sha256": "79086a2e34dbe52a9c1fa796eaee93a617b2d6b6e78fffd92ba1271d7fd1a461",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/cognitive-generation-context.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "owner-scoped MaxCore generation context; builds a bounded query only from useful generation fields",
+      "caseTitles": [
+        "owner-scoped MaxCore generation context",
+        "builds a bounded query only from useful generation fields",
+        "retrieves only the trusted owner's stored history and product projects with citations",
+        "does not search without an authenticated owner and never labels stored context live",
+        "adds bounded cited historical context while preserving caller context",
+        "uses available project context and marks partial retrieval degraded when registry retrieval fails",
+        "reports no context without changing the request when all authorized sources are empty"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
     },
     {
       "path": "tests/unit/compute-sizing-cpu-share.test.ts",
@@ -14957,7 +15027,7 @@
     },
     {
       "path": "tests/unit/fabricMediaTranscoder.test.ts",
-      "sha256": "0c1d77d8dcdbb51197e98755b5b6cd3628a4274f30e68b2577805eb703b27f63",
+      "sha256": "b6be538ba943e8f78769700714444498edfb581cef626cebe4ce119eba1e3bcc",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -15950,7 +16020,7 @@
     },
     {
       "path": "tests/unit/maxcore-client-thin-transport.test.ts",
-      "sha256": "d0ef3454ae408064c1030f981801a93f66ef353fd034284c88b10448b2ec81ff",
+      "sha256": "f5a7ee99ff043b333def648076f6e20275a1dd439095eba21d66fc46ea5bd99d",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -15962,9 +16032,11 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "MaxCore client is transport, not another AI processing layer; closes a half-open circuit after authenticated model info proves the local model is ready",
+      "purpose": "MaxCore client is transport, not another AI processing layer; reports unavailable until the authenticated ready endpoint confirms model and awareness readiness",
       "caseTitles": [
         "MaxCore client is transport, not another AI processing layer",
+        "reports unavailable until the authenticated ready endpoint confirms model and awareness readiness",
+        "does not treat a successful generation response as proof of model readiness",
         "closes a half-open circuit after authenticated model info proves the local model is ready",
         "releases the half-open probe reservation when cached health fast-fails before fetch"
       ],
@@ -15993,6 +16065,54 @@
         "selects exactly the primary/standalone process as owner",
         "workers use primary IPC, never spawn or probe an arbitrary loopback process",
         "invalidates worker readiness when the primary authority disconnects"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/maxcore-cognitive.test.ts",
+      "sha256": "5c851d30dc28ebd7ada5dab4d1a24e6694094ce5bcb2095dc6cdd8d391689fba",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/maxcore-cognitive.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "MaxCore cognitive persistence contract; requires authenticated identity before exposing cognitive data",
+      "caseTitles": [
+        "MaxCore cognitive persistence contract",
+        "requires authenticated identity before exposing cognitive data",
+        "serves authenticated GraphQL queries through owner-scoped persistence",
+        "requires authentication for the GraphQL endpoint",
+        "rejects GraphQL field-bomb queries before executing resolvers",
+        "rejects multi-write GraphQL operations before invoking persistence",
+        "routes GraphQL mutations through authenticated owner-scoped memory creation",
+        "lists only the authenticated owner's durable cognitive events",
+        "rejects client-authored event records so the runtime owns the ledger",
+        "exposes only the implemented read-only database tool",
+        "executes the database tool only under the authenticated owner",
+        "reports owner-scoped bounded task expansion status",
+        "bounds task-load agent expansion at configured thresholds",
+        "uses the authenticated owner, not client-supplied ownership",
+        "creates a product project in the existing project source of truth",
+        "scopes listing and context retrieval to the authenticated account",
+        "builds a bounded organization view from owner data and the product project store",
+        "does not report stored agent definitions as spawned agents",
+        "does not claim or mutate a task while MaxCore model readiness is false",
+        "completes an assigned task only from model-provenanced non-echo output",
+        "blocks model output without provenance and does not report task completion",
+        "reports unavailable execution and vector capabilities honestly",
+        "separates implemented task execution from current model readiness",
+        "prevents edits and deletion from invalidating active task leases",
+        "validates typed data and reserves system memory for admins",
+        "builds retrieval text from entity content and tags only"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -16726,7 +16846,7 @@
     },
     {
       "path": "tests/unit/notification-email-honesty.test.ts",
-      "sha256": "ca49e78418edc02c1145605e5c3d424736ff8637d3168a87f74e27dc2ff88fa4",
+      "sha256": "a133c2a231d4a7fc60353a4dc62d3c1761e87811ba86a7b07da58ffd24b1d4bc",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -17248,7 +17368,7 @@
     },
     {
       "path": "tests/unit/pdim-canonical-owner.test.ts",
-      "sha256": "fa9b9ca45054ded762c34a836afd6ddab3ac4bdcdda2e84e8f6a6e45278026f3",
+      "sha256": "1e4d0cfc3042609c8e4615bc5772b22ba762791e61d664338fc542b7b07bdaeb",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -17521,8 +17641,34 @@
       ]
     },
     {
+      "path": "tests/unit/pocket-fabric-node-limits.test.ts",
+      "sha256": "9a5dc0faf7f2042e2b465b791000b64e124314b912a1ef09f5da49c4f5e67e2d",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/pocket-fabric-node-limits.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "PocketFabric autoscaling bounds; uses a finite admin-first default and accepts a deliberate finite override",
+      "caseTitles": [
+        "PocketFabric autoscaling bounds",
+        "uses a finite admin-first default and accepts a deliberate finite override",
+        "rejects non-finite or inconsistent limits passed directly to a manager",
+        "never computes a scale-up count after the configured ceiling is reached"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
       "path": "tests/unit/port-contract-regression.test.ts",
-      "sha256": "d262430848c50fba717eb35c84f0482f180b55e84f14a465c60101d317df6c14",
+      "sha256": "f136d917e3ca1229d04a9879f599337df6d2846f7e5dd81bb1010fdee76eab3c",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -18034,7 +18180,7 @@
     },
     {
       "path": "tests/unit/python-runtime-env.test.mjs",
-      "sha256": "32d3e0153adaaadbfcbc71a529cd1839f8e6c5bdeaf3350f5e62fcc605b02fac",
+      "sha256": "0882a1a0ff00d79ad3790d095cb2a5ad8e6e4b1f79ccd38c9b047d8800cf4bd9",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -18046,9 +18192,10 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "python test runtime accepts the isolated packaged runtime site directory; python test runtime rejects package directories outside approved project roots",
+      "purpose": "python test runtime accepts the isolated packaged runtime site directory; python test runtime prefers the app's packaged interpreter when no override is set",
       "caseTitles": [
         "python test runtime accepts the isolated packaged runtime site directory",
+        "python test runtime prefers the app's packaged interpreter when no override is set",
         "python test runtime rejects package directories outside approved project roots"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
@@ -18513,7 +18660,7 @@
     },
     {
       "path": "tests/unit/required-awareness-dependency.test.ts",
-      "sha256": "273592ffa638e1c87e1e27038263c84e6d08e9c791f3f07e7f91edf2de61513e",
+      "sha256": "b5c53b7654d34d32efc70763adbafa78eead30bbd7994ad4bac1e555d2e629f9",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -19024,7 +19171,7 @@
     },
     {
       "path": "tests/unit/selfHealingSecurityEngine.test.ts",
-      "sha256": "736e61bc439911c6079da4e0ee2c5bc1653e72b1143374ab2c2c92ff3891408b",
+      "sha256": "144d0bdc6e874ecd9d8193aecb566aae6c7bdf2911d7a473267eb5e782e35c31",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -20015,7 +20162,7 @@
     },
     {
       "path": "tests/unit/studio-loader-browser.test.ts",
-      "sha256": "af63e70a0b3657caf24f149da4a71ebba0b6b8d87baf80bbe437d7b7c4c2bf73",
+      "sha256": "d98d6b18e78bde3434b6f09f71a354dc4c44cde6f1949db1be544d0f518db303",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -20500,6 +20647,30 @@
         "video job polling",
         "returns a playable file from a completed job",
         "stops after one non-2xx response reports a terminal job error"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/vst3-moduleinfo.test.ts",
+      "sha256": "f0665b84c58deda8bb9bd24e5cd6b9e4adbfe4dfb4b1816f86eefa1fcf8d051f",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/vst3-moduleinfo.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "VST3 package metadata; is strict JSON with complete, non-template product identity in both bundles",
+      "caseTitles": [
+        "VST3 package metadata",
+        "is strict JSON with complete, non-template product identity in both bundles"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [

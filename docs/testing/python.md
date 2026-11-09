@@ -44,7 +44,7 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `67cb6299384258e6fffb2e5951ed178639e3fb15`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Source baseline: `d56e075bfcc2b6ff9e258a691042d8dae8506f16`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
 - Files: {"blocked": 154, "empty": 0, "failed": 0, "passed": 0, "skipped": 0, "timeout": 0}.
 - JUnit cases: 0; failures: 0; errors: 0; skipped: 0.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.

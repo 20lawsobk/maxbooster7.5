@@ -4,8 +4,10 @@ import { spawnSync } from "node:child_process";
 
 export function resolvePythonRuntime(root, executable, baseEnvironment = process.env) {
   const searchPath = baseEnvironment.PATH || "/usr/bin:/bin";
+  const packagedPython = path.join(root, "python_runtime", "bin", "python3");
   const python = executable || baseEnvironment.MAXBOOSTER_TEST_PYTHON ||
-    baseEnvironment.MAXBOOSTER_PYTHON || "python3";
+    baseEnvironment.MAXBOOSTER_PYTHON ||
+    (existsSync(packagedPython) ? packagedPython : "python3");
   const probe = spawnSync(
     python,
     ["-I", "-c", "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],

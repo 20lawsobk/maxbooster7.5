@@ -142,9 +142,9 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only inbound-registration.test
 ```
 
-Command: **failed**; exit 1.
+Command: **passed**; exit 0.
 
-- FAILED: registration checkout, verification, and account creation execute payment/plan gates before any account write
+- PASSED: registration checkout, verification, and account creation execute payment/plan gates before any account write
 
 ## `tests/payment-processing/inbound-storefront.test.mjs`
 
@@ -155,6 +155,16 @@ python3 scripts/testing/run-commerce.py --only inbound-storefront.test
 Command: **passed**; exit 0.
 
 - PASSED: storefront cart executes auth, ownership, catalog pricing, amount, metadata, and order creation contracts
+
+## `tests/payment-processing/maxcore-cognitive-registry-migration.test.mjs`
+
+```sh
+python3 scripts/testing/run-commerce.py --only maxcore-cognitive-registry-migration.test
+```
+
+Command: **passed**; exit 0.
+
+- PASSED: MaxCore cognitive registry migration installs owner-isolated graph constraints
 
 ## `tests/payment-processing/outbound-commerce.mjs`
 

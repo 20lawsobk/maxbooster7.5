@@ -1048,7 +1048,16 @@ try {
   symlinkSync(join(root, "external"), join(temp, "cwd", "external"), "dir");
   symlinkSync(join(root, "tsconfig.json"), join(temp, "cwd", "tsconfig.json"), "file");
   symlinkSync(join(root, "tsconfig.server.json"), join(temp, "cwd", "tsconfig.server.json"), "file");
-  const baseEnv = { PATH: process.env.PATH, HOME: join(temp, "home"), LANG: "C", TZ: "UTC", ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}) };
+  const baseEnv = {
+    PATH: process.env.PATH,
+    HOME: join(temp, "home"),
+    LANG: "C",
+    TZ: "UTC",
+    ...((process.env.MAXBOOSTER_PYTHON || process.env.MAXBOOSTER_TEST_PYTHON)
+      ? { MAXBOOSTER_PYTHON: process.env.MAXBOOSTER_PYTHON || process.env.MAXBOOSTER_TEST_PYTHON }
+      : {}),
+    ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}),
+  };
 
   const schema = readFileSync(join(root, "shared/schema.ts"), "utf8");
   const readinessExport = 'export * from "./readiness-schema";';
@@ -1079,7 +1088,11 @@ try {
   for (const file of baselineMigrations) {
     await client.query(readFileSync(join(temp, "generated", file), "utf8"));
   }
-  for (const file of readdirSync(join(root, "migrations")).filter((name) => /^\d+.*\.sql$/.test(name) && Number(name.split("_")[0]) >= 20).sort()) {
+  // The current Drizzle baseline already contains the 0100 MaxCore registry.
+  // That migration is validated separately on an empty disposable database.
+  for (const file of readdirSync(join(root, "migrations")).filter((name) =>
+    /^\d+.*\.sql$/.test(name) && Number(name.split("_")[0]) >= 20
+    && name !== "0100_maxcore_cognitive_registry.sql").sort()) {
     await client.query(readFileSync(join(root, "migrations", file), "utf8"));
   }
   evidence.postgres = "pass";
@@ -1088,6 +1101,10 @@ try {
   const appEnv = {
     ...baseEnv,
     NODE_ENV: "production",
+    // This opt-in exists only in the disposable acceptance process and DB.
+    // Production remains private/admin-only by default.
+    MAXBOOSTER_ADMIN_ONLY_MODE: "false",
+    MAXBOOSTER_PUBLIC_LAUNCH_ENABLED: "true",
     PORT: String(appPort),
     DATABASE_URL: `postgresql://acceptance@127.0.0.1:${pgPort}/postgres`,
     SESSION_SECRET: sessionSecret,
@@ -1161,6 +1178,28 @@ try {
   await waitFor("/api/csrf-token", (response) =>
     response.status === 200 && /application\/json/.test(response.contentType) &&
     typeof jsonBody(response).csrfToken === "string", 90_000);
+
+  const registrationSettingsDeadline = Date.now() + 90_000;
+  let registrationDefaultsSeeded = false;
+  while (Date.now() < registrationSettingsDeadline) {
+    const defaults = await client.query(
+      "SELECT 1 FROM system_settings WHERE key = 'user_registration_enabled'",
+    );
+    if (defaults.rowCount) {
+      registrationDefaultsSeeded = true;
+      break;
+    }
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
+  }
+  if (!registrationDefaultsSeeded) {
+    throw new Error("Disposable app registration defaults did not seed before account acceptance");
+  }
+  await client.query(
+    "INSERT INTO system_settings (key, value, description) VALUES ('platform.userRegistrationEnabled', $1::jsonb, 'Disposable public-account acceptance only') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+    ["true"],
+  );
+  evidence.registrationPolicyFixture =
+    "public registration enabled only in disposable PostgreSQL; production configuration is unchanged";
 
   if (httpLoadOnly) {
     evidence.browser = "intentionally skipped only for explicit --http-load mode";
