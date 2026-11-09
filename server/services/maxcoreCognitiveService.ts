@@ -1091,6 +1091,34 @@ export async function searchUserProjects(
   }
 }
 
+export async function getUserProject(ownerId: string, projectId: string) {
+  try {
+    const [project] = await db
+      .select({
+        id: projects.id,
+        title: projects.title,
+        description: projects.description,
+        createdAt: projects.createdAt,
+        genre: projects.genre,
+        bpm: projects.bpm,
+        key: projects.key,
+        status: projects.status,
+        workflowStage: projects.workflowStage,
+        tags: projects.tags,
+        updatedAt: projects.updatedAt,
+      })
+      .from(projects)
+      .where(and(
+        eq(projects.userId, ownerId),
+        eq(projects.id, projectId),
+      ))
+      .limit(1);
+    return project ?? null;
+  } catch (error) {
+    return asUnavailable(error);
+  }
+}
+
 export async function listCognitiveEntities(
   ownerId: string,
   filters: { type?: CognitiveEntityType; query?: string; limit: number },

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { logger } from "../logger.js";
 import { requireAuthOnly } from "../middleware/auth.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import maxcoreCognitiveGraphqlRouter from "./maxcoreCognitiveGraphql.js";
 import type {
   CognitiveAgent,
   CognitiveContextPackage,
@@ -64,6 +65,7 @@ const roleOf = (req: Request) => String(req.user?.role ?? "user");
 const ownerOf = (req: Request) => req.user!.id;
 
 router.use(requireAuthOnly);
+router.use("/graphql", maxcoreCognitiveGraphqlRouter);
 
 type StoredCognitiveRow = {
   id: string;

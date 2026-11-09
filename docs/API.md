@@ -19,6 +19,50 @@ Most endpoints require an authenticated session or JWT Bearer token. See [AUTH.m
 
 ---
 
+## MaxCore Cognitive API
+
+The authenticated cognitive API is part of this application and uses the same
+owner-scoped PostgreSQL registry as its REST endpoints. It does not create a
+second MaxCore store.
+
+`POST /api/maxcore/cognitive/graphql` accepts a JSON body containing `query`
+and optional `variables` / `operationName`. Normal session or Bearer
+authentication applies. Browser mutations also require the standard CSRF
+cookie/header pair above.
+
+Example:
+
+```json
+{
+  "query": "mutation AddMemory($input: AddMemoryInput!) { addMemory(input: $input) { id ownerId content } }",
+  "variables": {
+    "input": {
+      "memoryType": "episodic",
+      "content": "The owner approved the release plan.",
+      "source": "owner_note"
+    }
+  }
+}
+```
+
+Queries include `project`, `memory`, `agent`, `task`, `goal`, `workflow`,
+`department`, and `status`. Mutations include `createProject`, `createGoal`,
+`createTask`, `spawnAgent`, `createDepartment`, `addMemory`, and
+`createWorkflow`. Ownership is taken from the authenticated account; clients
+cannot select a different owner. `metadata` is a JSON scalar. A `spawnAgent`
+mutation registers an **offline agent record**; it does not claim to start an
+independent worker. Task execution remains a separate REST action and is
+reported complete only after verified MaxCore output is persisted.
+
+The endpoint rejects fragments, limits operations to 100 fields and depth 8,
+and allows at most one top-level mutation per request. Existing REST routes
+remain available under `/api/maxcore/cognitive/`. These API definitions do not
+imply that optional vector search, bucket-backed model recovery, or model
+training is available; consult the authenticated status endpoint for current
+capabilities.
+
+---
+
 ## Auth Routes (`/api/auth/`)
 
 | Method | Path | Auth | Description |

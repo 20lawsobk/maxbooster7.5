@@ -8,6 +8,7 @@ const serviceMocks = vi.hoisted(() => ({
   createUserProject: vi.fn(),
   listCognitiveEntities: vi.fn(),
   searchCognitiveGraphContext: vi.fn(),
+  getUserProject: vi.fn(),
   searchUserProjects: vi.fn(),
   getCognitiveEntity: vi.fn(),
   getCognitiveExpansionStatus: vi.fn(),
@@ -188,6 +189,7 @@ describe("MaxCore cognitive persistence contract", () => {
       relatedEntities: [],
     });
     serviceMocks.searchUserProjects.mockResolvedValue([]);
+    serviceMocks.getUserProject.mockResolvedValue(null);
     serviceMocks.getCognitiveEntity.mockResolvedValue(null);
     serviceMocks.getCognitiveExpansionStatus.mockResolvedValue({
       status: "available",
@@ -232,6 +234,139 @@ describe("MaxCore cognitive persistence contract", () => {
       const response = await send(origin, "/api/maxcore/cognitive/entities");
       expect(response.status).toBe(401);
       expect(serviceMocks.listCognitiveEntities).not.toHaveBeenCalled();
+    });
+  });
+
+  it("serves authenticated GraphQL queries through owner-scoped persistence", async () => {
+    serviceMocks.getCognitiveEntity.mockResolvedValue({
+      id: "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+      ownerId: "account-a",
+      entityType: "memory",
+      payload: memoryBody.data,
+      tags: memoryBody.tags,
+      metadata: {},
+      createdAt: new Date("2026-11-09T12:00:00.000Z"),
+      updatedAt: new Date("2026-11-09T12:00:00.000Z"),
+    });
+    serviceMocks.listCognitiveRelationships.mockResolvedValue([]);
+
+    await withServer(async (origin) => {
+      const response = await send(origin, "/api/maxcore/cognitive/graphql", {
+        userId: "account-a",
+        body: {
+          query: `query ReadMemory($id: ID!) {
+            memory(id: $id) { id type ownerId content memoryType source }
+          }`,
+          variables: { id: "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98" },
+        },
+      });
+      expect(response.status).toBe(200);
+      expect(response.body.errors).toBeUndefined();
+      expect(response.body.data.memory).toMatchObject({
+        id: "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+        type: "memory",
+        ownerId: "account-a",
+        content: memoryBody.data.content,
+      });
+      expect(serviceMocks.getCognitiveEntity).toHaveBeenCalledWith(
+        "account-a",
+        "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+      );
+    });
+  });
+
+  it("requires authentication for the GraphQL endpoint", async () => {
+    await withServer(async (origin) => {
+      const response = await send(origin, "/api/maxcore/cognitive/graphql", {
+        body: { query: "{ status { ready } }" },
+      });
+      expect(response.status).toBe(401);
+      expect(serviceMocks.getCognitiveCapabilities).not.toHaveBeenCalled();
+    });
+  });
+
+  it("rejects GraphQL field-bomb queries before executing resolvers", async () => {
+    const query = `query { ${Array.from(
+      { length: 101 },
+      (_, index) => `status${index}: status { ready }`,
+    ).join(" ")} }`;
+    await withServer(async (origin) => {
+      const response = await send(origin, "/api/maxcore/cognitive/graphql", {
+        userId: "account-a",
+        body: { query },
+      });
+      expect(response.status).toBe(400);
+      expect(response.body.errors[0].message).toContain("100-field limit");
+      expect(serviceMocks.getCognitiveCapabilities).not.toHaveBeenCalled();
+    });
+  });
+
+  it("rejects multi-write GraphQL operations before invoking persistence", async () => {
+    await withServer(async (origin) => {
+      const response = await send(origin, "/api/maxcore/cognitive/graphql", {
+        userId: "account-a",
+        body: {
+          query: `mutation {
+            first: addMemory(input: {memoryType: episodic, content: "one", source: "owner"}) { id }
+            second: addMemory(input: {memoryType: episodic, content: "two", source: "owner"}) { id }
+          }`,
+        },
+      });
+      expect(response.status).toBe(400);
+      expect(response.body.errors[0].message).toContain("only one top-level write");
+      expect(serviceMocks.createCognitiveEntity).not.toHaveBeenCalled();
+    });
+  });
+
+  it("routes GraphQL mutations through authenticated owner-scoped memory creation", async () => {
+    serviceMocks.getCognitiveEntity.mockResolvedValue({
+      id: "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+      ownerId: "account-a",
+      entityType: "memory",
+      payload: {
+        ...memoryBody.data,
+        content: "Owner-authorized release note.",
+      },
+      tags: [],
+      metadata: {},
+      createdAt: new Date("2026-11-09T12:00:00.000Z"),
+      updatedAt: new Date("2026-11-09T12:00:00.000Z"),
+    });
+    serviceMocks.listCognitiveRelationships.mockResolvedValue([]);
+    await withServer(async (origin) => {
+      const response = await send(origin, "/api/maxcore/cognitive/graphql", {
+        userId: "account-a",
+        body: {
+          query: `mutation AddMemory($input: AddMemoryInput!) {
+            addMemory(input: $input) { id ownerId content }
+          }`,
+          variables: {
+            input: {
+              memoryType: "episodic",
+              content: "Owner-authorized release note.",
+              source: "owner_note",
+            },
+          },
+        },
+      });
+      expect(response.status).toBe(200);
+      expect(response.body.errors).toBeUndefined();
+      expect(response.body.data.addMemory).toMatchObject({
+        id: "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+        ownerId: "account-a",
+        content: "Owner-authorized release note.",
+      });
+      expect(serviceMocks.createCognitiveEntity).toHaveBeenCalledWith(
+        "account-a",
+        "user",
+        expect.objectContaining({
+          type: "memory",
+          data: expect.objectContaining({
+            memoryType: "episodic",
+            content: "Owner-authorized release note.",
+          }),
+        }),
+      );
     });
   });
 
