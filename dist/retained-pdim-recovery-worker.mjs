@@ -16,7 +16,7 @@ var __export = (target, all) => {
 // server/logSanitizer.ts
 import { isIP } from "node:net";
 function sanitizeLogText(text3) {
-  return text3.replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9+/_.=~:-]+/gi, REDACTED).replace(/((?:password|secret|access[_-]?token|refresh[_-]?token|api[_-]?key)\s*[=:]\s*)[^\s,;&]+/gi, `$1${REDACTED}`).replace(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, REDACTED).replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, (value) => isIP(value) ? REDACTED : value).replace(
+  return text3.replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9+/_.=~:-]+/gi, REDACTED).replace(/\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{8,}\b/gi, REDACTED).replace(/\bwhsec_[A-Za-z0-9]{8,}\b/gi, REDACTED).replace(/((?:password|secret|access[_-]?token|refresh[_-]?token|api[_-]?key)\s*[=:]\s*)[^\s,;&]+/gi, `$1${REDACTED}`).replace(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, REDACTED).replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, (value) => isIP(value) ? REDACTED : value).replace(
     /(?<![a-zA-Z0-9])(?:[a-fA-F0-9]*:){2,}[a-fA-F0-9:.]*(?:%[a-zA-Z0-9]+)?/g,
     (value) => isIP(value) ? REDACTED : value
   );
@@ -8356,7 +8356,23 @@ var init_localPdimCapsuleJournal = __esm({
 // server/lib/localPdimAofJournal.ts
 import fs4 from "node:fs";
 import path6 from "node:path";
+import { createRequire as createRequire2 } from "node:module";
 import { createHash as createHash6, randomUUID as randomUUID3 } from "node:crypto";
+async function acquireLocalPdimAofOwnership(file, onCompromised) {
+  const releaseLock = await properLockfile.lock(file, {
+    realpath: false,
+    retries: 0,
+    stale: 6e4,
+    update: 15e3,
+    onCompromised
+  });
+  let released = false;
+  return async () => {
+    if (released) return;
+    released = true;
+    await releaseLock();
+  };
+}
 async function syncDirectory(directory) {
   const handle = await fs4.promises.open(directory, "r");
   try {
@@ -8415,10 +8431,11 @@ function decode(line) {
   }
   return body;
 }
-var checksum2, LocalPdimAofJournal;
+var properLockfile, checksum2, LocalPdimAofJournal;
 var init_localPdimAofJournal = __esm({
   "server/lib/localPdimAofJournal.ts"() {
     "use strict";
+    properLockfile = createRequire2(import.meta.url)("proper-lockfile");
     checksum2 = (body) => createHash6("sha256").update(body).digest("hex");
     LocalPdimAofJournal = class {
       constructor(file) {
@@ -8439,29 +8456,30 @@ var init_localPdimAofJournal = __esm({
         const bytes = fs4.readFileSync(this.file);
         const end = bytes.lastIndexOf(10) + 1;
         const lines = bytes.subarray(0, end).toString("utf8").split("\n").filter(Boolean);
-        const records = [];
-        let previousFrameEnd = null;
+        const replayBySequence = /* @__PURE__ */ new Map();
+        let maximumFrameSequence = baseline;
         for (const line of lines) {
           const frame = decode(line);
-          const extendsPrevious = previousFrameEnd !== null && frame.from === previousFrameEnd + 1;
-          const beginsAfterSnapshot = previousFrameEnd !== null && previousFrameEnd <= baseline && frame.from === baseline + 1;
-          if (previousFrameEnd !== null && !extendsPrevious && !beginsAfterSnapshot) {
-            throw new Error("Local PDIM AOF frame sequence discontinuity");
+          maximumFrameSequence = Math.max(maximumFrameSequence, frame.through);
+          for (const record of frame.records) {
+            if (record.s <= baseline) continue;
+            const prior = replayBySequence.get(record.s);
+            if (prior && (prior.c !== record.c || prior.a.length !== record.a.length || prior.a.some((argument, index3) => argument !== record.a[index3]))) {
+              throw new Error("Local PDIM AOF has conflicting duplicate sequence");
+            }
+            if (!prior) replayBySequence.set(record.s, record);
           }
-          previousFrameEnd = frame.through;
-          records.push(...frame.records);
         }
         const replay = [];
         let replaySeq = baseline;
-        for (const record of records) {
-          if (record.s <= baseline) continue;
+        for (const record of [...replayBySequence.values()].sort((a, b) => a.s - b.s)) {
           if (record.s !== replaySeq + 1) {
             throw new Error("Local PDIM AOF sequence gap after snapshot watermark");
           }
           replay.push(record);
           replaySeq = record.s;
         }
-        this.publishedSeq = Math.max(baseline, previousFrameEnd ?? 0);
+        this.publishedSeq = maximumFrameSequence;
         if (end !== bytes.length) fs4.truncateSync(this.file, end);
         return replay;
       }
@@ -9509,6 +9527,11 @@ import fs6 from "fs";
 import path7 from "path";
 import { tmpdir } from "node:os";
 import cluster from "node:cluster";
+function assertLocalAofOwnership() {
+  if (!bucketPersistence && (!localAofOwnershipRelease || !localAofOwnershipHealthy)) {
+    throw new Error("Local PDIM persistence ownership is unavailable");
+  }
+}
 function expired(e) {
   return e.expiresAt !== void 0 && Date.now() > e.expiresAt;
 }
@@ -9521,6 +9544,15 @@ function saveStoreAsync() {
       );
       return false;
     });
+  }
+  try {
+    assertLocalAofOwnership();
+  } catch (error) {
+    logger.error(
+      { errorType: error instanceof Error ? error.name : "unknown" },
+      "[LocalPDIM] Snapshot skipped because durable file ownership is unavailable"
+    );
+    return Promise.resolve(false);
   }
   const operation = snapshotTail.then(async () => {
     const publication = snapshotPublication;
@@ -9554,6 +9586,7 @@ function saveStoreAsync() {
       });
       await snapshot.writing;
       if (writeFailure) throw writeFailure;
+      assertLocalAofOwnership();
       if (snapshotPublication !== publication) {
         await fs6.promises.rm(temporaryFile, { force: true });
         return true;
@@ -9583,6 +9616,7 @@ function saveStoreAsync() {
 function saveStore() {
   const temporaryFile = `${PERSIST_FILE}.tmp-${process.pid}`;
   try {
+    assertLocalAofOwnership();
     fs6.mkdirSync(path7.dirname(PERSIST_FILE), { recursive: true });
     const redisBaseline = canonicalStore.getEmbeddedAofSequence();
     const obj = {};
@@ -9924,176 +9958,206 @@ function startLocalPdimServer() {
     return Promise.reject(new Error("Only the cluster primary may own local PDIM"));
   }
   if (_starting) return _starting;
-  _starting = prepareBucketOwner().then(() => new Promise((resolve, reject) => {
+  _starting = prepareBucketOwner().then(async () => {
     if (_server) {
-      resolve();
       return;
     }
     if (!bucketPersistence) {
-      loadStore();
-      const watermark = store.get(CAPSULE_WATERMARK);
-      const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
-      if (!Number.isSafeInteger(capsuleBaseline) || capsuleBaseline < 0) {
-        throw new Error("Invalid capsule journal snapshot watermark");
-      }
-      store.delete(CAPSULE_WATERMARK);
-      capsuleJournal.recover(capsuleBaseline, (changes) => {
-        for (const [key, value] of Object.entries(changes)) {
-          if (value === null) store.delete(key);
-          else store.set(key, { type: "string", value });
-        }
-      });
-      for (const entry of store.values()) {
-        if (entry.type === "stream") {
-          const stream = entry;
-          stream.value = stream.value.map((message) => ({
-            id: message.id,
-            fields: normalizePersistedStreamFields(message.fields)
-          }));
-          stream.groups ??= {};
-        }
-      }
-      const redisAofRecords = redisAofJournal.recover(snapshotAofBaseline);
-      canonicalStore.attachEmbeddedSnapshot(
-        store,
-        {
-          baselineSequence: snapshotAofBaseline,
-          recoveryRecords: redisAofRecords,
-          appendAof: (records) => redisAofJournal.append(records)
+      localAofOwnershipHealthy = true;
+      localAofOwnershipRelease = await acquireLocalPdimAofOwnership(
+        redisAofJournal.file,
+        (error) => {
+          localAofOwnershipHealthy = false;
+          logger.error(
+            { errorType: error.name },
+            "[LocalPDIM] Disk persistence ownership was lost; writes are paused"
+          );
         }
       );
-      canonicalStore.on("durability-error", (error) => {
-        logger.error(
-          { err: error },
-          "[LocalPDIM] Durable Redis journal failed; the owner is unavailable"
+    }
+    return new Promise((resolve, reject) => {
+      if (!bucketPersistence) {
+        loadStore();
+        const watermark = store.get(CAPSULE_WATERMARK);
+        const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
+        if (!Number.isSafeInteger(capsuleBaseline) || capsuleBaseline < 0) {
+          throw new Error("Invalid capsule journal snapshot watermark");
+        }
+        store.delete(CAPSULE_WATERMARK);
+        capsuleJournal.recover(capsuleBaseline, (changes) => {
+          for (const [key, value] of Object.entries(changes)) {
+            if (value === null) store.delete(key);
+            else store.set(key, { type: "string", value });
+          }
+        });
+        for (const entry of store.values()) {
+          if (entry.type === "stream") {
+            const stream = entry;
+            stream.value = stream.value.map((message) => ({
+              id: message.id,
+              fields: normalizePersistedStreamFields(message.fields)
+            }));
+            stream.groups ??= {};
+          }
+        }
+        const redisAofRecords = redisAofJournal.recover(snapshotAofBaseline);
+        canonicalStore.attachEmbeddedSnapshot(
+          store,
+          {
+            baselineSequence: snapshotAofBaseline,
+            recoveryRecords: redisAofRecords,
+            appendAof: (records) => {
+              assertLocalAofOwnership();
+              return redisAofJournal.append(records);
+            }
+          }
         );
+        canonicalStore.on("durability-error", (error) => {
+          logger.error(
+            { err: error },
+            "[LocalPDIM] Durable Redis journal failed; the owner is unavailable"
+          );
+        });
+        if (redisAofRecords.length > 0) {
+          logger.info(
+            `[LocalPDIM] Replayed ${redisAofRecords.length} durable Redis mutation(s)`
+          );
+        }
+      }
+      _server = http.createServer((req, res) => {
+        if (process.env.PDIM_OFFLINE_MIGRATION === "1") {
+          res.writeHead(503, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "PDIM is offline for verified migration" }));
+          return;
+        }
+        const token = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+        if (token && req.headers.authorization !== `Bearer ${token}`) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Unauthorized private PDIM channel" }));
+          return;
+        }
+        if (req.url !== "/api/redis/instances/local/exec") {
+          res.writeHead(404).end();
+          return;
+        }
+        if (req.method !== "POST") {
+          res.writeHead(405, { "Content-Type": "text/plain" });
+          res.end("Method Not Allowed");
+          return;
+        }
+        const requestController = new AbortController();
+        req.on("aborted", () => {
+          requestController.abort(new Error("PDIM HTTP request aborted by client"));
+        });
+        res.on("close", () => {
+          if (!res.writableEnded) {
+            requestController.abort(new Error("PDIM HTTP response closed by client"));
+          }
+        });
+        let body = "";
+        let bytes = 0;
+        req.on("data", (chunk) => {
+          bytes += chunk.length;
+          if (bytes > 50 * 1024 * 1024) {
+            res.writeHead(413).end();
+            req.destroy();
+            return;
+          }
+          body += chunk;
+        });
+        req.on("end", async () => {
+          try {
+            bucketPersistence?.assertHealthy();
+            const {
+              cmd,
+              args = [],
+              stream = false,
+              patterns = []
+            } = JSON.parse(body);
+            if (typeof cmd !== "string" || !Array.isArray(args) || args.some((arg) => arg === null || arg === void 0 || typeof arg === "object")) {
+              throw new TypeError("PDIM requires a command and non-null scalar arguments");
+            }
+            if (stream) {
+              if (cmd.toUpperCase() !== "SUBSCRIBE" || args.some((channel) => typeof channel !== "string") || !Array.isArray(patterns) || patterns.some((pattern) => typeof pattern !== "string")) {
+                throw new TypeError("PDIM Pub/Sub requires string channels and patterns");
+              }
+              const channels = [...new Set(args)];
+              const uniquePatterns = [...new Set(patterns)];
+              if (channels.length + uniquePatterns.length === 0) {
+                throw new TypeError("PDIM Pub/Sub requires at least one subscription");
+              }
+              openLocalPubSubStream(res, requestController, channels, uniquePatterns);
+              return;
+            }
+            const result = bucketBatcher ? await bucketBatcher.exec(cmd, args.map(String), requestController.signal) : cmd.toUpperCase().startsWith("CAPSULE.") ? await capsuleStore.exec(cmd, args.map(String)) : await canonicalStore.exec(cmd, args.map(String), requestController.signal);
+            bucketPersistence?.assertHealthy();
+            if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(result));
+          } catch (err) {
+            if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
+            if (res.headersSent) {
+              res.destroy(err instanceof Error ? err : void 0);
+              return;
+            }
+            const status = ["PDIM_DURABILITY_FAILURE", "PDIM_BACKPRESSURE"].includes(String(err?.code)) ? 503 : 400;
+            res.writeHead(status, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                error: err instanceof Error ? err.message : "Bad Request"
+              })
+            );
+          }
+        });
       });
-      if (redisAofRecords.length > 0) {
+      _server.listen(LOCAL_PORT, "127.0.0.1", () => {
         logger.info(
-          `[LocalPDIM] Replayed ${redisAofRecords.length} durable Redis mutation(s)`
+          `[LocalPDIM] Local PDIM exec server started on port ${LOCAL_PORT} (${bucketPersistence ? "App Storage journal and snapshots" : "local fsynced AOF and snapshots"})`
+        );
+        let periodicSavePending = false;
+        _persistTimer = setInterval(() => {
+          if (periodicSavePending) return;
+          periodicSavePending = true;
+          void saveStoreAsync().finally(() => {
+            periodicSavePending = false;
+          });
+        }, bucketPersistence ? 3e5 : PERSIST_INTERVAL_MS);
+        _persistTimer.unref();
+        const saveOnShutdown = () => {
+          if (!saveStore()) {
+            _finalSaveFailed = true;
+            process.exitCode = 1;
+          }
+        };
+        if (!bucketPersistence) {
+          _saveOnShutdown = saveOnShutdown;
+          process.on("SIGTERM", saveOnShutdown);
+          process.on("SIGINT", saveOnShutdown);
+        }
+        process.on("exit", () => {
+          if (_finalSaveFailed) process.exitCode = 1;
+        });
+        resolve();
+      });
+      _server.on("error", (err) => {
+        _server = null;
+        reject(err);
+      });
+    });
+  }).catch(async (error) => {
+    const releaseAofOwnership = localAofOwnershipRelease;
+    localAofOwnershipRelease = null;
+    localAofOwnershipHealthy = true;
+    if (releaseAofOwnership) {
+      try {
+        await releaseAofOwnership();
+      } catch (releaseError) {
+        logger.error(
+          { errorType: releaseError instanceof Error ? releaseError.name : "unknown" },
+          "[LocalPDIM] Failed-start disk ownership release was not confirmed"
         );
       }
     }
-    _server = http.createServer((req, res) => {
-      if (process.env.PDIM_OFFLINE_MIGRATION === "1") {
-        res.writeHead(503, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "PDIM is offline for verified migration" }));
-        return;
-      }
-      const token = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
-      if (token && req.headers.authorization !== `Bearer ${token}`) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized private PDIM channel" }));
-        return;
-      }
-      if (req.url !== "/api/redis/instances/local/exec") {
-        res.writeHead(404).end();
-        return;
-      }
-      if (req.method !== "POST") {
-        res.writeHead(405, { "Content-Type": "text/plain" });
-        res.end("Method Not Allowed");
-        return;
-      }
-      const requestController = new AbortController();
-      req.on("aborted", () => {
-        requestController.abort(new Error("PDIM HTTP request aborted by client"));
-      });
-      res.on("close", () => {
-        if (!res.writableEnded) {
-          requestController.abort(new Error("PDIM HTTP response closed by client"));
-        }
-      });
-      let body = "";
-      let bytes = 0;
-      req.on("data", (chunk) => {
-        bytes += chunk.length;
-        if (bytes > 50 * 1024 * 1024) {
-          res.writeHead(413).end();
-          req.destroy();
-          return;
-        }
-        body += chunk;
-      });
-      req.on("end", async () => {
-        try {
-          bucketPersistence?.assertHealthy();
-          const {
-            cmd,
-            args = [],
-            stream = false,
-            patterns = []
-          } = JSON.parse(body);
-          if (typeof cmd !== "string" || !Array.isArray(args) || args.some((arg) => arg === null || arg === void 0 || typeof arg === "object")) {
-            throw new TypeError("PDIM requires a command and non-null scalar arguments");
-          }
-          if (stream) {
-            if (cmd.toUpperCase() !== "SUBSCRIBE" || args.some((channel) => typeof channel !== "string") || !Array.isArray(patterns) || patterns.some((pattern) => typeof pattern !== "string")) {
-              throw new TypeError("PDIM Pub/Sub requires string channels and patterns");
-            }
-            const channels = [...new Set(args)];
-            const uniquePatterns = [...new Set(patterns)];
-            if (channels.length + uniquePatterns.length === 0) {
-              throw new TypeError("PDIM Pub/Sub requires at least one subscription");
-            }
-            openLocalPubSubStream(res, requestController, channels, uniquePatterns);
-            return;
-          }
-          const result = bucketBatcher ? await bucketBatcher.exec(cmd, args.map(String), requestController.signal) : cmd.toUpperCase().startsWith("CAPSULE.") ? await capsuleStore.exec(cmd, args.map(String)) : await canonicalStore.exec(cmd, args.map(String), requestController.signal);
-          bucketPersistence?.assertHealthy();
-          if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify(result));
-        } catch (err) {
-          if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
-          if (res.headersSent) {
-            res.destroy(err instanceof Error ? err : void 0);
-            return;
-          }
-          const status = ["PDIM_DURABILITY_FAILURE", "PDIM_BACKPRESSURE"].includes(String(err?.code)) ? 503 : 400;
-          res.writeHead(status, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({
-              error: err instanceof Error ? err.message : "Bad Request"
-            })
-          );
-        }
-      });
-    });
-    _server.listen(LOCAL_PORT, "127.0.0.1", () => {
-      logger.info(
-        `[LocalPDIM] Local PDIM exec server started on port ${LOCAL_PORT} (${bucketPersistence ? "App Storage journal and snapshots" : "local fsynced AOF and snapshots"})`
-      );
-      let periodicSavePending = false;
-      _persistTimer = setInterval(() => {
-        if (periodicSavePending) return;
-        periodicSavePending = true;
-        void saveStoreAsync().finally(() => {
-          periodicSavePending = false;
-        });
-      }, bucketPersistence ? 3e5 : PERSIST_INTERVAL_MS);
-      _persistTimer.unref();
-      const saveOnShutdown = () => {
-        if (!saveStore()) {
-          _finalSaveFailed = true;
-          process.exitCode = 1;
-        }
-      };
-      if (!bucketPersistence) {
-        _saveOnShutdown = saveOnShutdown;
-        process.on("SIGTERM", saveOnShutdown);
-        process.on("SIGINT", saveOnShutdown);
-      }
-      process.on("exit", () => {
-        if (_finalSaveFailed) process.exitCode = 1;
-      });
-      resolve();
-    });
-    _server.on("error", (err) => {
-      _server = null;
-      reject(err);
-    });
-  })).catch(async (error) => {
     if (bucketPersistence) {
       const failedOwner = bucketPersistence;
       bucketPersistence = void 0;
@@ -10133,9 +10197,16 @@ async function stopLocalPdimServer() {
     await closed;
   }
   await snapshotTail;
-  await bucketPersistence?.close();
-  bucketPersistence = void 0;
-  bucketBatcher = void 0;
+  try {
+    await bucketPersistence?.close();
+  } finally {
+    bucketPersistence = void 0;
+    bucketBatcher = void 0;
+    const releaseAofOwnership = localAofOwnershipRelease;
+    localAofOwnershipRelease = null;
+    localAofOwnershipHealthy = true;
+    if (releaseAofOwnership) await releaseAofOwnership();
+  }
 }
 async function prepareBucketOwner() {
   if (_server) return;
@@ -10168,6 +10239,7 @@ async function importOfflinePdimToBucket(namespace) {
   if (process.env.PDIM_OFFLINE_MIGRATION !== "1" || bucketPersistence || !_server?.listening) {
     throw new Error("Migration requires an offline local-only owner");
   }
+  assertLocalAofOwnership();
   const objects = await configuredPdimBucketObjects();
   const journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
   return canonicalStore.captureEmbeddedCheckpoint(async (redisSequence) => {
@@ -10188,7 +10260,7 @@ async function importOfflinePdimToBucket(namespace) {
     };
   });
 }
-var LOCAL_PORT, PERSIST_FILE, PERSIST_INTERVAL_MS, CAPSULE_WATERMARK, REDIS_AOF_WATERMARK, capsuleJournal, redisAofJournal, store, canonicalStore, bucketPersistence, bucketBatcher, snapshotAofBaseline, capsuleStore, snapshotPublication, asyncSnapshotSequence, snapshotTail, _server, _finalSaveFailed, _persistTimer, _saveOnShutdown, _starting;
+var LOCAL_PORT, PERSIST_FILE, PERSIST_INTERVAL_MS, CAPSULE_WATERMARK, REDIS_AOF_WATERMARK, capsuleJournal, redisAofJournal, localAofOwnershipRelease, localAofOwnershipHealthy, store, canonicalStore, bucketPersistence, bucketBatcher, snapshotAofBaseline, capsuleStore, snapshotPublication, asyncSnapshotSequence, snapshotTail, _server, _finalSaveFailed, _persistTimer, _saveOnShutdown, _starting;
 var init_localPdimServer = __esm({
   "server/lib/localPdimServer.ts"() {
     "use strict";
@@ -10215,12 +10287,14 @@ var init_localPdimServer = __esm({
     REDIS_AOF_WATERMARK = "__local_pdim_redis_aof_watermark__";
     capsuleJournal = new LocalPdimCapsuleJournal(`${PERSIST_FILE}.capsules.jsonl`);
     redisAofJournal = new LocalPdimAofJournal(`${PERSIST_FILE}.aof.jsonl`);
+    localAofOwnershipRelease = null;
+    localAofOwnershipHealthy = true;
     store = /* @__PURE__ */ new Map();
     canonicalStore = new RedisStore("local", "Max Booster shared local owner");
     snapshotAofBaseline = 0;
     capsuleStore = new LocalPdimCapsules(
       canonicalStore,
-      (changes, publish) => bucketPersistence ? bucketPersistence.commitCapsule(changes, publish) : capsuleJournal.commit(changes, publish)
+      (changes, publish) => bucketPersistence ? bucketPersistence.commitCapsule(changes, publish) : (assertLocalAofOwnership(), capsuleJournal.commit(changes, publish))
     );
     snapshotPublication = 0;
     asyncSnapshotSequence = 0;

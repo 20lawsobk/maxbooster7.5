@@ -25,7 +25,11 @@ import { createMfaChallengeRouter } from "./routes/mfaChallenge.js";
 import { factorRepository } from "./services/factorRepository.js";
 import { getApplicationContainment } from "./services/securityContainment.js";
 import { governanceBoundary } from "./middleware/governanceBoundary.js";
-import { assertRegistrationEnabled, isAdminOnlyMode } from "./services/governancePolicyService.js";
+import {
+  assertRegistrationEnabled,
+  isAdminOnlyMode,
+  readGovernancePolicy,
+} from "./services/governancePolicyService.js";
 import { issueAdminApiToken, revokeAdminApiToken } from "./services/adminApiTokenService.js";
 import { consumeTotp } from "./services/totpReplay.js";
 import { requireUUIDParam } from "./middleware/requestValidation.js";
@@ -275,6 +279,27 @@ export async function registerRoutes(
   app.get("/api/csrf-token", getCsrfToken);
 
   // Auth: Get current user
+  app.get("/api/auth/public-policy", async (_req: Request, res: Response) => {
+    res.setHeader("Cache-Control", "no-store");
+    const adminOnlyMode = isAdminOnlyMode();
+    if (adminOnlyMode) {
+      return res.json({ adminOnlyMode: true, registrationEnabled: false });
+    }
+
+    try {
+      const policy = await readGovernancePolicy();
+      return res.json({
+        adminOnlyMode: false,
+        registrationEnabled: policy.userRegistrationEnabled,
+      });
+    } catch {
+      return res.status(503).json({
+        adminOnlyMode: false,
+        registrationEnabled: false,
+      });
+    }
+  });
+
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     const isProduction = isProductionEnv();
 

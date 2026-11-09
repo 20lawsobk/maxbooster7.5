@@ -21,9 +21,17 @@ export function resolvePythonRuntime(root, executable, baseEnvironment = process
   }
 
   const version = probe.stdout.trim();
-  const expectedSitePackages = path.resolve(root, ".pythonlibs", "lib", `python${version}`, "site-packages");
-  const sitePackages = path.resolve(baseEnvironment.MAXBOOSTER_PYTHON_SITE_PACKAGES || expectedSitePackages);
-  if (sitePackages !== expectedSitePackages || !existsSync(sitePackages)) {
+  const allowedSitePackages = [
+    path.resolve(root, ".pythonlibs", "lib", `python${version}`, "site-packages"),
+    path.resolve(root, "python_runtime", "lib", `python${version}`, "site-packages"),
+  ];
+  const defaultSitePackages =
+    allowedSitePackages.find((candidate) => existsSync(candidate)) ??
+    allowedSitePackages[0];
+  const sitePackages = path.resolve(
+    baseEnvironment.MAXBOOSTER_PYTHON_SITE_PACKAGES || defaultSitePackages,
+  );
+  if (!allowedSitePackages.includes(sitePackages) || !existsSync(sitePackages)) {
     throw new Error(`Interpreter-matched Python packages are unavailable for Python ${version}`);
   }
 

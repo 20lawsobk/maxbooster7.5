@@ -167,6 +167,7 @@ test("maintenance permits exact recovery and verified webhooks, not header spoof
     return { next, status };
   };
   assert.equal((await check("/api/auth/login", "POST")).next, true);
+  assert.equal((await check("/api/auth/demo", "POST")).next, false);
   assert.equal((await check("/login")).next, true);
   assert.equal((await check("/api/auth/login/evil", "POST")).status, 503);
   assert.equal((await check("/api/projects", "GET", { "x-admin-override": "true" })).status, 503);

@@ -68,6 +68,14 @@ describe("private administrator real HTTP release boundary", () => {
     expect(response.data.role).toBe("admin");
     expect(response.data.adminOnlyMode).toBe(true);
   });
+  it("keeps login-page public registration disabled in private-admin mode", async () => {
+    const response = await visitor.api("GET", "/api/auth/public-policy");
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual({
+      adminOnlyMode: true,
+      registrationEnabled: false,
+    });
+  });
   it("rejects registration even with a forged administrator role", async () => {
     const response = await visitor.api("POST", "/api/auth/register", {
       email: visitor.email, username: `visitor_${suffix}`, password, role: "admin",
@@ -330,10 +338,38 @@ describe("private administrator real HTTP release boundary", () => {
     expect((await admin.api("GET", "/api/billing/subscription")).status).toBe(200);
     // Checkout, cancellation and settlement remain provider-backed and are not simulated here.
   });
-  it("loads administrator operations without mutating platform settings", async () => {
+  it("loads administrator operations and persists truthful platform settings", async () => {
     for (const path of ["/api/admin/dashboard", "/api/admin/users", "/api/admin/system-health"]) {
       expect((await admin.api("GET", path)).status, path).toBe(200);
     }
+    const settings = await admin.api("GET", "/api/admin/settings");
+    expect(settings.status).toBe(200);
+    expect(settings.data.adminOnlyMode).toBe(true);
+    expect(settings.data.effectiveUserRegistrationEnabled).toBe(false);
+    expect(settings.data.userRegistrationEnabled).toBe(false);
+
+    const update = await admin.api("PUT", "/api/admin/settings", {
+      emailNotifications: false,
+      userRegistrationEnabled: true,
+    });
+    expect(update.status).toBe(200);
+    expect(update.data.updated).toEqual([
+      "emailNotifications",
+      "userRegistrationEnabled",
+    ]);
+    const saved = await admin.api("GET", "/api/admin/settings");
+    expect(saved.data.emailNotifications).toBe(false);
+    expect(saved.data.userRegistrationEnabled).toBe(true);
+    expect(saved.data.effectiveUserRegistrationEnabled).toBe(false);
+    expect(
+      (await visitor.api("GET", "/api/auth/public-policy")).data
+        .registrationEnabled,
+    ).toBe(false);
+
+    const invalid = await admin.api("PUT", "/api/admin/settings", {
+      userRegistrationEnabled: "yes",
+    });
+    expect(invalid.status).toBe(400);
   });
   it("creates an Enterprise API key for the admin rather than the submitted owner", async () => {
     const response = await admin.api("POST", "/api/developer/keys/create", {

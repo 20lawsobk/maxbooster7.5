@@ -5,7 +5,8 @@ const vm = require("node:vm");
 const ts = require("typescript");
 const crypto = require("node:crypto");
 
-function load(file, boundaries = {}) {
+function load(file, boundaries = {}, runtimeEnv = {}) {
+  const env = { NODE_ENV: "production", ...runtimeEnv };
   const output = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
     reportDiagnostics: true,
@@ -15,6 +16,17 @@ function load(file, boundaries = {}) {
   const schema = new Proxy({}, { get: (_, table) => new Proxy({ table }, { get: (obj, key) => obj[key] || `${table}.${String(key)}` }) });
   const requireMock = name => {
     if (boundaries[name]) return boundaries[name];
+    if (name === "../../shared/adminAccessPolicy.mjs") {
+      return {
+        isAdminOnlyMode: (source = env) => {
+          const privateMode = source.MAXBOOSTER_ADMIN_ONLY_MODE?.trim().toLowerCase();
+          const publicLaunch = source.MAXBOOSTER_PUBLIC_LAUNCH_ENABLED?.trim().toLowerCase();
+          if (privateMode === "true") return true;
+          if (privateMode !== undefined && privateMode !== "false") return true;
+          return publicLaunch !== "true";
+        },
+      };
+    }
     if (name.includes("schema")) return schema;
     if (name.includes("logger")) return { logger: { info() {}, warn() {} } };
     if (name.includes("emailService")) return { emailService: {} };
@@ -29,7 +41,7 @@ function load(file, boundaries = {}) {
     if (name === "./kycReviewRevision.js") return load("server/services/kycReviewRevision.ts");
     throw new Error(`Unmocked external boundary: ${name}`);
   };
-  vm.runInNewContext(output.outputText, { module, exports: module.exports, require: requireMock, console, Date, Set, process: { env: { NODE_ENV: "production" } } });
+  vm.runInNewContext(output.outputText, { module, exports: module.exports, require: requireMock, console, Date, Set, process: { env } });
   return module.exports;
 }
 
@@ -325,6 +337,9 @@ test("governance policy differentiates disabled registration from unavailable or
   let rows = [{ key: "platform.userRegistrationEnabled", value: "false" }];
   const { assertRegistrationEnabled, readGovernancePolicy } = load("server/services/governancePolicyService.ts", {
     "../db.js": { db: { select: () => ({ from: () => ({ where: async () => rows }) }) } },
+  }, {
+    MAXBOOSTER_ADMIN_ONLY_MODE: "false",
+    MAXBOOSTER_PUBLIC_LAUNCH_ENABLED: "true",
   });
   await assert.rejects(assertRegistrationEnabled(), error => error.statusCode === 403);
   rows = [{ key: "platform.apiRateLimit", value: '"invalid"' }];

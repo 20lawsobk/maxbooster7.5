@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { trainingApiFetch as apiFetch } from "@/lib/trainingApi";
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
   Card,
@@ -95,19 +96,6 @@ interface ScheduleInfo {
     phase_name: string;
     progress_pct: number;
   };
-}
-
-async function apiFetch(url: string, options?: RequestInit) {
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    ...options,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error((err as Record<string, unknown>).error || res.statusText);
-  }
-  return res.json();
 }
 
 function formatDuration(seconds: number): string {

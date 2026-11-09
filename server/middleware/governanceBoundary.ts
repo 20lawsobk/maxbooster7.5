@@ -27,7 +27,7 @@ export function isDevViteDynamicImportHelper(urlPath: string): boolean {
 const recovery = new Set([
   "GET /", "GET /login", "GET /forgot-password", "GET /reset-password", "GET /favicon.ico",
   "GET /health", "GET /ready", "GET /healthz", "GET /api/health", "GET /api/ready",
-  "GET /api/csrf-token", "GET /api/auth/me", "GET /api/auth/google",
+  "GET /api/csrf-token", "GET /api/auth/me", "GET /api/auth/public-policy", "GET /api/auth/google",
   "GET /api/auth/google/callback", "GET /api/auth/2fa/challenge", "GET /api/auth/2fa/status",
   "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/forgot-password",
   "POST /api/auth/reset-password", "POST /api/auth/2fa/challenge", "POST /api/auth/2fa/validate",

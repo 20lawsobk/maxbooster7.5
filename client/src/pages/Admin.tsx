@@ -105,28 +105,36 @@ interface SystemHealth {
       rss: number;
       percentUsed: number;
     };
-    cpu: number;
-    disk: number;
+    cpu: number | null;
+    disk: number | null;
   };
   database: {
     status: string;
     latency: number | null;
     connectionPool: {
-      active: number;
-      idle: number;
-      max: number;
+      active: number | null;
+      idle: number | null;
+      max: number | null;
     };
   };
-  externalApis: Record<string, { status: string; latency: number }>;
+  externalApis: Record<
+    string,
+    { status: string; latency: number | null; httpStatus: number | null }
+  >;
   killSwitch: {
     globalKilled: boolean;
     systemStates: Record<string, boolean>;
     lastAction: string | null;
   };
   errorTracking: {
-    last24h: number;
-    last7d: number;
-    errorRate: string;
+    scope: "current_process";
+    observedSince: string;
+    requests: number;
+    clientErrors: number;
+    serverErrors: number;
+    errorResponses: number;
+    errorRatePercent: number | null;
+    available: boolean;
   };
 }
 
@@ -158,6 +166,8 @@ interface PlatformSettings {
   emailNotifications?: boolean;
   maintenanceMode?: boolean;
   userRegistrationEnabled?: boolean;
+  adminOnlyMode?: boolean;
+  effectiveUserRegistrationEnabled?: boolean;
   apiRateLimit?: number;
   webhookEndpoint?: string | null;
 }
@@ -657,12 +667,10 @@ export default function Admin() {
 
   const getApiStatusColor = (status: string) => {
     switch (status) {
-      case "operational":
-        return "text-green-600";
-      case "degraded":
-        return "text-yellow-600";
-      case "down":
+      case "unreachable":
         return "text-red-600";
+      case "response_received":
+        return "text-blue-600";
       default:
         return "text-gray-600";
     }
@@ -670,12 +678,10 @@ export default function Admin() {
 
   const getApiStatusIcon = (status: string) => {
     switch (status) {
-      case "operational":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "degraded":
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
-      case "down":
+      case "unreachable":
         return <XCircle className="h-4 w-4 text-red-600" />;
+      case "response_received":
+        return <Activity className="h-4 w-4 text-blue-600" />;
       default:
         return <AlertCircle className="h-4 w-4 text-gray-600" />;
     }
@@ -814,29 +820,38 @@ export default function Admin() {
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">CPU Usage</span>
+                  <span className="text-sm">Host CPU (sampled)</span>
                   <span className="text-sm font-medium">
-                    {systemHealth?.server?.cpu || 0}%
+                    {typeof systemHealth?.server?.cpu === "number"
+                      ? `${systemHealth.server.cpu}%`
+                      : "Measuring"}
                   </span>
                 </div>
-                <Progress
-                  value={systemHealth?.server?.cpu || 0}
-                  className="h-2"
-                />
+                {typeof systemHealth?.server?.cpu === "number" && (
+                  <Progress value={systemHealth.server.cpu} className="h-2" />
+                )}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Memory Usage</span>
+                  <span className="text-sm">Node Heap Usage</span>
                   <span className="text-sm font-medium">
-                    {systemHealth?.server?.memory?.percentUsed || 0}%
+                    {typeof systemHealth?.server?.memory?.percentUsed ===
+                    "number"
+                      ? `${systemHealth.server.memory.percentUsed}%`
+                      : "Unavailable"}
                   </span>
                 </div>
-                <Progress
-                  value={systemHealth?.server?.memory?.percentUsed || 0}
-                  className="h-2"
-                />
+                {typeof systemHealth?.server?.memory?.percentUsed ===
+                  "number" && (
+                  <Progress
+                    value={systemHealth.server.memory.percentUsed}
+                    className="h-2"
+                  />
+                )}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Error Rate (24h)</span>
+                  <span className="text-sm">HTTP Error Rate (process)</span>
                   <Badge variant="outline">
-                    {systemHealth?.errorTracking?.errorRate || "0%"}
+                    {typeof systemHealth?.errorTracking?.errorRatePercent === "number"
+                      ? `${systemHealth.errorTracking.errorRatePercent.toFixed(2)}%`
+                      : "Not measured"}
                   </Badge>
                 </div>
               </div>
@@ -1251,14 +1266,15 @@ export default function Admin() {
                 <div className="flex items-center justify-between mb-4">
                   <Cpu className="h-8 w-8 text-blue-600" />
                   <span className="text-2xl font-bold">
-                    {systemHealth?.server?.cpu || 0}%
+                    {typeof systemHealth?.server?.cpu === "number"
+                      ? `${systemHealth.server.cpu}%`
+                      : "Measuring"}
                   </span>
                 </div>
-                <p className="text-sm text-gray-500">CPU Usage</p>
-                <Progress
-                  value={systemHealth?.server?.cpu || 0}
-                  className="mt-2"
-                />
+                <p className="text-sm text-gray-500">Host CPU (sampled)</p>
+                {typeof systemHealth?.server?.cpu === "number" && (
+                  <Progress value={systemHealth.server.cpu} className="mt-2" />
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -1266,14 +1282,20 @@ export default function Admin() {
                 <div className="flex items-center justify-between mb-4">
                   <HardDrive className="h-8 w-8 text-green-600" />
                   <span className="text-2xl font-bold">
-                    {systemHealth?.server?.memory?.percentUsed || 0}%
+                    {typeof systemHealth?.server?.memory?.percentUsed ===
+                    "number"
+                      ? `${systemHealth.server.memory.percentUsed}%`
+                      : "Unavailable"}
                   </span>
                 </div>
-                <p className="text-sm text-gray-500">Memory Usage</p>
-                <Progress
-                  value={systemHealth?.server?.memory?.percentUsed || 0}
-                  className="mt-2"
-                />
+                <p className="text-sm text-gray-500">Node Heap Usage</p>
+                {typeof systemHealth?.server?.memory?.percentUsed ===
+                  "number" && (
+                  <Progress
+                    value={systemHealth.server.memory.percentUsed}
+                    className="mt-2"
+                  />
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -1281,14 +1303,15 @@ export default function Admin() {
                 <div className="flex items-center justify-between mb-4">
                   <Database className="h-8 w-8 text-purple-600" />
                   <span className="text-2xl font-bold">
-                    {systemHealth?.server?.disk || 0}%
+                    {typeof systemHealth?.server?.disk === "number"
+                      ? `${systemHealth.server.disk}%`
+                      : "Unavailable"}
                   </span>
                 </div>
-                <p className="text-sm text-gray-500">Disk Usage</p>
-                <Progress
-                  value={systemHealth?.server?.disk || 0}
-                  className="mt-2"
-                />
+                <p className="text-sm text-gray-500">Runtime filesystem</p>
+                {typeof systemHealth?.server?.disk === "number" && (
+                  <Progress value={systemHealth.server.disk} className="mt-2" />
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -1336,14 +1359,20 @@ export default function Admin() {
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span>Query Latency</span>
                     <span className="font-medium">
-                      {systemHealth?.database?.latency || 0}ms
+                      {typeof systemHealth?.database?.latency === "number"
+                        ? `${systemHealth.database.latency}ms`
+                        : "Unavailable"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span>Connection Pool</span>
                     <span className="font-medium">
-                      {systemHealth?.database?.connectionPool?.active || 0} /{" "}
-                      {systemHealth?.database?.connectionPool?.max || 20}
+                      {typeof systemHealth?.database?.connectionPool?.active ===
+                        "number" &&
+                      typeof systemHealth?.database?.connectionPool?.max ===
+                        "number"
+                        ? `${systemHealth.database.connectionPool.active} / ${systemHealth.database.connectionPool.max}`
+                        : "Unavailable"}
                     </span>
                   </div>
                 </div>
@@ -1353,8 +1382,12 @@ export default function Admin() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5" />
-                  External API Status
+                  External API Reachability
                 </CardTitle>
+                <p className="text-xs text-gray-500">
+                  A HEAD response only confirms network reachability. Provider
+                  authentication and business operations are not verified here.
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -1376,10 +1409,15 @@ export default function Admin() {
                               variant="outline"
                               className={getApiStatusColor(data.status)}
                             >
-                              {data.status}
+                              {data.status.replaceAll("_", " ")}
                             </Badge>
                             <span className="text-sm text-gray-500">
-                              {data.latency}ms
+                              {data.latency === null
+                                ? "—"
+                                : `${data.latency}ms`}
+                              {data.httpStatus === null
+                                ? ""
+                                : ` · HTTP ${data.httpStatus}`}
                             </span>
                           </div>
                         </div>
@@ -1467,24 +1505,38 @@ export default function Admin() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-red-50 rounded-lg">
-                  <p className="text-red-800 text-sm">Last 24 Hours</p>
+                  <p className="text-red-800 text-sm">
+                    Requests since process start
+                  </p>
                   <p className="text-3xl font-bold text-red-900">
-                    {systemHealth?.errorTracking?.last24h || 0}
+                    {systemHealth?.errorTracking?.requests ?? "Unavailable"}
                   </p>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-lg">
-                  <p className="text-orange-800 text-sm">Last 7 Days</p>
+                  <p className="text-orange-800 text-sm">
+                    HTTP 4xx/5xx since start
+                  </p>
                   <p className="text-3xl font-bold text-orange-900">
-                    {systemHealth?.errorTracking?.last7d || 0}
+                    {systemHealth?.errorTracking?.errorResponses ??
+                      "Unavailable"}
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 text-sm">Error Rate</p>
+                  <p className="text-gray-800 text-sm">
+                    HTTP error response rate
+                  </p>
                   <p className="text-3xl font-bold text-gray-900">
-                    {systemHealth?.errorTracking?.errorRate || "0%"}
+                    {typeof systemHealth?.errorTracking?.errorRatePercent ===
+                    "number"
+                      ? `${systemHealth.errorTracking.errorRatePercent.toFixed(2)}%`
+                      : "Not measured"}
                   </p>
                 </div>
               </div>
+              <p className="mt-3 text-xs text-gray-500">
+                In-memory counters cover only this process lifetime. Historical
+                24-hour and 7-day counts are not configured.
+              </p>
             </CardContent>
           </Card>
         </>
@@ -2102,18 +2154,23 @@ export default function Admin() {
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div>
                 <p className="font-medium">User Registration</p>
-                <p className="text-sm text-gray-500">Allow new user signups</p>
+                <p className="text-sm text-gray-500">
+                  Stored signup setting. Private admin mode still blocks public
+                  registration.
+                </p>
               </div>
               <Badge
                 variant={
-                  platformSettings?.userRegistrationEnabled
+                  platformSettings?.effectiveUserRegistrationEnabled
                     ? "default"
                     : "secondary"
                 }
               >
-                {platformSettings?.userRegistrationEnabled
-                  ? "Enabled"
-                  : "Disabled"}
+                {platformSettings?.adminOnlyMode
+                  ? "Closed — private admin mode"
+                  : platformSettings?.effectiveUserRegistrationEnabled
+                    ? "Enabled"
+                    : "Disabled"}
               </Badge>
               <Button
                 size="sm"
@@ -2126,13 +2183,22 @@ export default function Admin() {
                   })
                 }
               >
-                {platformSettings?.userRegistrationEnabled ? "Disable" : "Enable"}
+                {platformSettings?.adminOnlyMode
+                  ? platformSettings?.userRegistrationEnabled
+                    ? "Disable for public launch"
+                    : "Enable for public launch"
+                  : platformSettings?.userRegistrationEnabled
+                    ? "Disable"
+                    : "Enable"}
               </Button>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div>
-                <p className="font-medium">Email Notifications</p>
-                <p className="text-sm text-gray-500">Send system emails</p>
+                <p className="font-medium">Notification Email Alerts</p>
+                <p className="text-sm text-gray-500">
+                  Controls notification-service email alerts. Account-security
+                  and transactional emails are not affected.
+                </p>
               </div>
               <Badge
                 variant={

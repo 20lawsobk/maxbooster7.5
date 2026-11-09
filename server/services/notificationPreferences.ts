@@ -26,6 +26,14 @@ export function notificationCategory(type: string): string {
   return type === "direct_interaction" ? type : "system";
 }
 
+/** Platform email controls must never suppress account-security notices. */
+export function platformEmailNotificationAllowed(
+  enabled: boolean,
+  type: string,
+): boolean {
+  return notificationCategory(type) === "account_security" || enabled;
+}
+
 type Channel = "email" | "push" | "inApp" | "sms";
 type Settings = Record<string, any>;
 const object = (value: unknown): Settings =>
