@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
   maxcoreCognitiveEntities,
@@ -7,6 +8,10 @@ import {
 } from "@shared/schema";
 import { db } from "../db.js";
 import { storage } from "../storage.js";
+import {
+  isReady as isRealtimePubSubReady,
+  publishUserNotification,
+} from "../realtime/redisPubSub.js";
 
 export const COGNITIVE_ENTITY_TYPES = [
   "project",
@@ -43,6 +48,8 @@ const optionalId = z.string().uuid().optional();
 const percent = z.number().finite().min(0).max(100);
 const score = z.number().finite().min(0).max(1);
 const objectData = z.record(z.string(), z.unknown());
+const RUNTIME_METADATA_KEY = "maxcoreRuntime";
+const AGENT_TASK_LEASE_MS = 11 * 60 * 1_000;
 
 const entityDataSchemas: Record<CognitiveEntityType, z.ZodTypeAny> = {
   project: z.object({
@@ -140,11 +147,18 @@ const entityDataSchemas: Record<CognitiveEntityType, z.ZodTypeAny> = {
     eventType: z.enum([
       "memory_created",
       "task_created",
+      "task_execution_started",
+      "task_execution_recovered",
+      "task_execution_completed",
+      "task_execution_failed",
       "goal_completed",
       "agent_spawned",
+      "agent_registered",
       "project_updated",
       "workflow_executed",
       "tool_completed",
+      "cognitive_entity_created",
+      "cognitive_entity_updated",
     ]),
     sourceId: z.string().uuid(),
     targetId: optionalId,
@@ -222,11 +236,32 @@ export function parseCognitiveEntityInput(input: unknown, role: string) {
   if (!envelope.success) {
     throw new CognitiveStoreError("Invalid cognitive entity.", 400, "INVALID_ENTITY");
   }
+  if (envelope.data.type === "event") {
+    throw new CognitiveStoreError(
+      "Event records are emitted by the MaxCore runtime and are not client-writable.",
+      403,
+      "EVENT_SYSTEM_MANAGED",
+    );
+  }
   const parsedData = entityDataSchemas[envelope.data.type].safeParse(envelope.data.data);
   if (!parsedData.success) {
     throw new CognitiveStoreError("Entity data does not match its declared type.", 400, "INVALID_ENTITY_DATA");
   }
   const typedData = parsedData.data as Record<string, unknown>;
+  if (Object.hasOwn(envelope.data.metadata, RUNTIME_METADATA_KEY)) {
+    throw new CognitiveStoreError(
+      "Runtime-managed metadata cannot be supplied by clients.",
+      400,
+      "RESERVED_METADATA",
+    );
+  }
+  if (envelope.data.type === "task" && typedData.status !== "pending") {
+    throw new CognitiveStoreError(
+      "New tasks must start pending; execution status is runtime-managed.",
+      400,
+      "TASK_STATUS_RUNTIME_MANAGED",
+    );
+  }
   if (
     envelope.data.type === "memory" &&
     typedData.memoryType === "system" &&
@@ -285,6 +320,35 @@ function asUnavailable(error: unknown): never {
   );
 }
 
+function lifecycleEventType(entityType: CognitiveEntityType): string {
+  switch (entityType) {
+    case "memory": return "memory_created";
+    case "task": return "task_created";
+    case "agent": return "agent_registered";
+    case "goal": return "goal_created";
+    case "project": return "project_updated";
+    case "workflow": return "workflow_created";
+    case "department": return "department_created";
+    case "tool": return "tool_registered";
+    case "document": return "document_created";
+    case "knowledge_node": return "knowledge_created";
+    case "event": return "event_created";
+  }
+}
+
+async function notifyCognitiveEvent(
+  ownerId: string,
+  eventId: string,
+  eventType: string,
+): Promise<void> {
+  if (!isRealtimePubSubReady()) return;
+  await publishUserNotification(ownerId, {
+    type: "maxcore_cognitive_event",
+    eventId,
+    eventType,
+  });
+}
+
 export async function createCognitiveEntity(
   ownerId: string,
   role: string,
@@ -292,19 +356,530 @@ export async function createCognitiveEntity(
 ) {
   const value = parseCognitiveEntityInput(input, role);
   try {
-    const [entity] = await db
-      .insert(maxcoreCognitiveEntities)
-      .values({
-        ownerId,
+    const created = await db.transaction(async (tx) => {
+      const [entity] = await tx
+        .insert(maxcoreCognitiveEntities)
+        .values({
+          ownerId,
+          entityType: value.type,
+          payload: value.data,
+          tags: value.tags,
+          metadata: value.metadata,
+          searchText: buildCognitiveSearchText(value.type, value.data, value.tags),
+        })
+        .returning();
+      if (!entity) asUnavailable(new Error("insert returned no row"));
+      const eventType = lifecycleEventType(value.type);
+      const eventId = await appendEvent(tx, ownerId, eventType, entity.id, undefined, {
         entityType: value.type,
-        payload: value.data,
-        tags: value.tags,
-        metadata: value.metadata,
-        searchText: buildCognitiveSearchText(value.type, value.data, value.tags),
-      })
-      .returning();
-    if (!entity) asUnavailable(new Error("insert returned no row"));
-    return entity;
+      });
+      return { entity, eventId, eventType };
+    });
+    await notifyCognitiveEvent(ownerId, created.eventId, created.eventType);
+    return created.entity;
+  } catch (error) {
+    if (error instanceof CognitiveStoreError) throw error;
+    return asUnavailable(error);
+  }
+}
+
+type AgentTaskClaim = {
+  runId: string;
+  ownerId: string;
+  taskId: string;
+  agentId: string;
+  title: string;
+  description: string;
+  agentName: string;
+  specialty: string;
+  objectives: string[];
+};
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+export function assertCognitiveEntityMutationAllowed(
+  entityType: CognitiveEntityType,
+  payload: unknown,
+  operation: "update" | "delete",
+  hasActiveTaskAssignments = false,
+): void {
+  const data = recordValue(payload);
+  if (entityType === "event") {
+    throw new CognitiveStoreError("Event records are append-only.", 409, "EVENT_IMMUTABLE");
+  }
+  if (entityType === "task" && data.status === "active") {
+    throw new CognitiveStoreError(
+      operation === "update"
+        ? "Running tasks cannot be changed until execution settles."
+        : "Running tasks cannot be deleted until execution settles.",
+      409,
+      "TASK_EXECUTION_IN_PROGRESS",
+    );
+  }
+  if (
+    entityType === "agent" &&
+    (data.status === "busy" || hasActiveTaskAssignments)
+  ) {
+    throw new CognitiveStoreError(
+      operation === "update"
+        ? "Agents assigned to running tasks cannot be changed."
+        : "Agents assigned to running tasks cannot be deleted.",
+      409,
+      "AGENT_EXECUTION_IN_PROGRESS",
+    );
+  }
+}
+
+async function appendEvent(
+  executor: Pick<typeof db, "insert">,
+  ownerId: string,
+  eventType: string,
+  sourceId: string,
+  targetId: string | undefined,
+  payload: Record<string, unknown>,
+): Promise<string> {
+  const eventData = { eventType, sourceId, ...(targetId ? { targetId } : {}), payload };
+  const [event] = await executor
+    .insert(maxcoreCognitiveEntities)
+    .values({
+      ownerId,
+      entityType: "event",
+      payload: eventData,
+      tags: [],
+      metadata: {},
+      searchText: buildCognitiveSearchText("event", eventData, []),
+    })
+    .returning({ id: maxcoreCognitiveEntities.id });
+  if (!event) asUnavailable(new Error("event insert returned no row"));
+  return event.id;
+}
+
+export async function claimAgentTask(
+  ownerId: string,
+  taskId: string,
+  retryBlocked: boolean,
+): Promise<AgentTaskClaim> {
+  const now = new Date();
+  const runId = randomUUID();
+  const leaseExpiresAt = new Date(now.getTime() + AGENT_TASK_LEASE_MS);
+  try {
+    return await db.transaction(async (tx) => {
+      const [task] = await tx
+        .select()
+        .from(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, ownerId),
+          eq(maxcoreCognitiveEntities.id, taskId),
+          eq(maxcoreCognitiveEntities.entityType, "task"),
+        ))
+        .limit(1)
+        .for("update");
+      if (!task) {
+        throw new CognitiveStoreError("Task not found.", 404, "TASK_NOT_FOUND");
+      }
+      const taskData = recordValue(task.payload);
+      const taskStatus = taskData.status;
+      const currentRuntime = recordValue(recordValue(task.metadata)[RUNTIME_METADATA_KEY]);
+      const currentLease = typeof currentRuntime.leaseExpiresAt === "string"
+        ? Date.parse(currentRuntime.leaseExpiresAt)
+        : Number.NaN;
+      const taskUpdatedAt = task.updatedAt instanceof Date
+        ? task.updatedAt.getTime()
+        : Date.parse(String(task.updatedAt));
+      const expiredActiveRun = taskStatus === "active" &&
+        (
+          (Number.isFinite(currentLease) && currentLease <= now.getTime()) ||
+          (!Number.isFinite(currentLease) && Number.isFinite(taskUpdatedAt) &&
+            taskUpdatedAt + AGENT_TASK_LEASE_MS <= now.getTime())
+        );
+      if (taskStatus === "complete") {
+        throw new CognitiveStoreError("Completed tasks cannot be re-executed.", 409, "TASK_ALREADY_COMPLETE");
+      }
+      if (taskStatus === "active" && !expiredActiveRun) {
+        throw new CognitiveStoreError("Task execution is already in progress.", 409, "TASK_ALREADY_RUNNING");
+      }
+      if (taskStatus === "blocked" && !retryBlocked) {
+        throw new CognitiveStoreError(
+          "Blocked tasks require an explicit retry.",
+          409,
+          "TASK_RETRY_REQUIRED",
+        );
+      }
+      if (taskStatus !== "pending" && taskStatus !== "blocked" && !expiredActiveRun) {
+        throw new CognitiveStoreError("Task is not in an executable state.", 409, "TASK_NOT_EXECUTABLE");
+      }
+
+      const assignedAgent = taskData.assignedAgent;
+      if (typeof assignedAgent !== "string") {
+        throw new CognitiveStoreError("Assign an agent before executing this task.", 409, "TASK_AGENT_REQUIRED");
+      }
+      const [agent] = await tx
+        .select()
+        .from(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, ownerId),
+          eq(maxcoreCognitiveEntities.id, assignedAgent),
+          eq(maxcoreCognitiveEntities.entityType, "agent"),
+        ))
+        .limit(1)
+        .for("update");
+      if (!agent) {
+        throw new CognitiveStoreError("Assigned agent not found.", 409, "TASK_AGENT_NOT_FOUND");
+      }
+
+      const dependencies = Array.isArray(taskData.dependencies)
+        ? taskData.dependencies.filter((id): id is string => typeof id === "string")
+        : [];
+      if (dependencies.length) {
+        const dependencyRows = await tx
+          .select({ id: maxcoreCognitiveEntities.id, payload: maxcoreCognitiveEntities.payload })
+          .from(maxcoreCognitiveEntities)
+          .where(and(
+            eq(maxcoreCognitiveEntities.ownerId, ownerId),
+            eq(maxcoreCognitiveEntities.entityType, "task"),
+            inArray(maxcoreCognitiveEntities.id, dependencies),
+          ));
+        if (dependencyRows.length !== dependencies.length) {
+          throw new CognitiveStoreError(
+            "One or more task dependencies are missing or not owned by this account.",
+            409,
+            "TASK_DEPENDENCY_NOT_FOUND",
+          );
+        }
+        if (dependencyRows.some((row) => recordValue(row.payload).status !== "complete")) {
+          throw new CognitiveStoreError(
+            "All task dependencies must complete before execution.",
+            409,
+            "TASK_DEPENDENCIES_INCOMPLETE",
+          );
+        }
+      }
+
+      if (typeof taskData.parentTask === "string") {
+        const [parent] = await tx
+          .select({ id: maxcoreCognitiveEntities.id })
+          .from(maxcoreCognitiveEntities)
+          .where(and(
+            eq(maxcoreCognitiveEntities.ownerId, ownerId),
+            eq(maxcoreCognitiveEntities.id, taskData.parentTask),
+            eq(maxcoreCognitiveEntities.entityType, "task"),
+          ))
+          .limit(1);
+        if (!parent) {
+          throw new CognitiveStoreError("Parent task not found.", 409, "TASK_PARENT_NOT_FOUND");
+        }
+      }
+
+      const concurrentAgentTasks = await tx
+        .select({ id: maxcoreCognitiveEntities.id })
+        .from(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, ownerId),
+          eq(maxcoreCognitiveEntities.entityType, "task"),
+          sql`${maxcoreCognitiveEntities.payload}->>'assignedAgent' = ${assignedAgent}`,
+          sql`${maxcoreCognitiveEntities.payload}->>'status' = 'active'`,
+          sql`${maxcoreCognitiveEntities.id} <> ${taskId}`,
+        ))
+        .limit(1);
+      if (concurrentAgentTasks.length) {
+        throw new CognitiveStoreError("Assigned agent is busy with another task.", 409, "AGENT_BUSY");
+      }
+
+      const nextTaskPayload = { ...taskData, status: "active" };
+      const attempt = Number(currentRuntime.attempt ?? 0) + 1;
+      const nextTaskMetadata = {
+        ...recordValue(task.metadata),
+        [RUNTIME_METADATA_KEY]: {
+          runId,
+          attempt,
+          startedAt: now.toISOString(),
+          leaseExpiresAt: leaseExpiresAt.toISOString(),
+          state: "running",
+        },
+      };
+      await tx
+        .update(maxcoreCognitiveEntities)
+        .set({
+          payload: nextTaskPayload,
+          metadata: nextTaskMetadata,
+          searchText: buildCognitiveSearchText("task", nextTaskPayload, task.tags ?? []),
+          updatedAt: now,
+        })
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, ownerId),
+          eq(maxcoreCognitiveEntities.id, taskId),
+        ));
+
+      const agentData = { ...recordValue(agent.payload), status: "busy" };
+      await tx
+        .update(maxcoreCognitiveEntities)
+        .set({
+          payload: agentData,
+          searchText: buildCognitiveSearchText("agent", agentData, agent.tags ?? []),
+          updatedAt: now,
+        })
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, ownerId),
+          eq(maxcoreCognitiveEntities.id, agent.id),
+        ));
+
+      await appendEvent(
+        tx,
+        ownerId,
+        expiredActiveRun ? "task_execution_recovered" : "task_execution_started",
+        agent.id,
+        taskId,
+        {
+          runId,
+          attempt,
+          leaseExpiresAt: leaseExpiresAt.toISOString(),
+        },
+      );
+
+      return {
+        runId,
+        ownerId,
+        taskId,
+        agentId: agent.id,
+        title: String(taskData.title ?? ""),
+        description: String(taskData.description ?? ""),
+        agentName: String(recordValue(agent.payload).name ?? ""),
+        specialty: String(recordValue(agent.payload).specialty ?? ""),
+        objectives: Array.isArray(recordValue(agent.payload).objectives)
+          ? (recordValue(agent.payload).objectives as unknown[]).filter(
+              (item): item is string => typeof item === "string",
+            ).slice(0, 20)
+          : [],
+      };
+    });
+  } catch (error) {
+    if (error instanceof CognitiveStoreError) throw error;
+    return asUnavailable(error);
+  }
+}
+
+export async function completeAgentTask(
+  claim: AgentTaskClaim,
+  output: string,
+  modelProvenance: { source: string; generationContract: string },
+) {
+  if (!output.trim() || output.length > 12_000) {
+    throw new CognitiveStoreError("Agent task output is invalid or too large.", 422, "INVALID_AGENT_OUTPUT");
+  }
+  const completedAt = new Date();
+  const outputHash = createHash("sha256").update(output).digest("hex");
+  try {
+    return await db.transaction(async (tx) => {
+      const [task] = await tx
+        .select()
+        .from(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, claim.ownerId),
+          eq(maxcoreCognitiveEntities.id, claim.taskId),
+          eq(maxcoreCognitiveEntities.entityType, "task"),
+        ))
+        .limit(1)
+        .for("update");
+      if (!task) throw new CognitiveStoreError("Task not found.", 404, "TASK_NOT_FOUND");
+      const runtime = recordValue(recordValue(task.metadata)[RUNTIME_METADATA_KEY]);
+      if (runtime.runId !== claim.runId || recordValue(task.payload).status !== "active") {
+        throw new CognitiveStoreError("Task execution lease is no longer current.", 409, "TASK_LEASE_LOST");
+      }
+      const resultPayload = {
+        memoryType: "episodic",
+        content: output,
+        embeddingId: null,
+        confidence: 0.5,
+        importance: 0.5,
+        source: "agent_task_execution",
+      };
+      validateSize(resultPayload, entityPayloadSizeLimit, "Agent result");
+      const resultMetadata = {
+        taskId: claim.taskId,
+        agentId: claim.agentId,
+        runId: claim.runId,
+        model: modelProvenance,
+      };
+      validateSize(resultMetadata, metadataSizeLimit, "Agent result metadata");
+      const [resultMemory] = await tx
+        .insert(maxcoreCognitiveEntities)
+        .values({
+          ownerId: claim.ownerId,
+          entityType: "memory",
+          payload: resultPayload,
+          tags: ["agent-result", "task-execution"],
+          metadata: resultMetadata,
+          searchText: buildCognitiveSearchText("memory", resultPayload, ["agent-result", "task-execution"]),
+        })
+        .returning({ id: maxcoreCognitiveEntities.id });
+      if (!resultMemory) asUnavailable(new Error("agent result insert returned no row"));
+      const taskPayload = { ...recordValue(task.payload), status: "complete" };
+      const taskMetadata = {
+        ...recordValue(task.metadata),
+        [RUNTIME_METADATA_KEY]: {
+          ...runtime,
+          state: "complete",
+          completedAt: completedAt.toISOString(),
+          leaseExpiresAt: null,
+          resultMemoryId: resultMemory.id,
+          outputSha256: outputHash,
+          outputLength: output.length,
+          model: modelProvenance,
+        },
+      };
+      await tx
+        .update(maxcoreCognitiveEntities)
+        .set({
+          payload: taskPayload,
+          metadata: taskMetadata,
+          searchText: buildCognitiveSearchText("task", taskPayload, task.tags ?? []),
+          updatedAt: completedAt,
+        })
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, claim.ownerId),
+          eq(maxcoreCognitiveEntities.id, claim.taskId),
+        ));
+      await tx
+        .insert(maxcoreCognitiveRelationships)
+        .values({
+          ownerId: claim.ownerId,
+          sourceId: resultMemory.id,
+          targetId: claim.taskId,
+          relationType: "supports",
+          metadata: { runId: claim.runId },
+        })
+        .onConflictDoNothing();
+      const [agent] = await tx
+        .select()
+        .from(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, claim.ownerId),
+          eq(maxcoreCognitiveEntities.id, claim.agentId),
+          eq(maxcoreCognitiveEntities.entityType, "agent"),
+        ))
+        .limit(1)
+        .for("update");
+      if (agent) {
+        const agentPayload = { ...recordValue(agent.payload), status: "offline" };
+        await tx
+          .update(maxcoreCognitiveEntities)
+          .set({
+            payload: agentPayload,
+            searchText: buildCognitiveSearchText("agent", agentPayload, agent.tags ?? []),
+            updatedAt: completedAt,
+          })
+          .where(and(
+            eq(maxcoreCognitiveEntities.ownerId, claim.ownerId),
+            eq(maxcoreCognitiveEntities.id, claim.agentId),
+          ));
+      }
+      await appendEvent(
+        tx,
+        claim.ownerId,
+        "task_execution_completed",
+        claim.agentId,
+        claim.taskId,
+        {
+          runId: claim.runId,
+          resultMemoryId: resultMemory.id,
+          outputSha256: outputHash,
+          outputLength: output.length,
+          model: modelProvenance,
+        },
+      );
+      return {
+        task: { ...taskPayload, id: task.id },
+        resultMemoryId: resultMemory.id,
+        completedAt: completedAt.toISOString(),
+      };
+    });
+  } catch (error) {
+    if (error instanceof CognitiveStoreError) throw error;
+    return asUnavailable(error);
+  }
+}
+
+export async function failAgentTask(claim: AgentTaskClaim, errorCode: string) {
+  const failedAt = new Date();
+  const safeErrorCode = /^[A-Z0-9_]{1,64}$/.test(errorCode) ? errorCode : "AGENT_EXECUTION_FAILED";
+  try {
+    return await db.transaction(async (tx) => {
+      const [task] = await tx
+        .select()
+        .from(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, claim.ownerId),
+          eq(maxcoreCognitiveEntities.id, claim.taskId),
+          eq(maxcoreCognitiveEntities.entityType, "task"),
+        ))
+        .limit(1)
+        .for("update");
+      if (!task) throw new CognitiveStoreError("Task not found.", 404, "TASK_NOT_FOUND");
+      const runtime = recordValue(recordValue(task.metadata)[RUNTIME_METADATA_KEY]);
+      if (runtime.runId !== claim.runId || recordValue(task.payload).status !== "active") {
+        throw new CognitiveStoreError("Task execution lease is no longer current.", 409, "TASK_LEASE_LOST");
+      }
+      const taskPayload = { ...recordValue(task.payload), status: "blocked" };
+      const taskMetadata = {
+        ...recordValue(task.metadata),
+        [RUNTIME_METADATA_KEY]: {
+          ...runtime,
+          state: "failed",
+          failedAt: failedAt.toISOString(),
+          leaseExpiresAt: null,
+          errorCode: safeErrorCode,
+        },
+      };
+      await tx
+        .update(maxcoreCognitiveEntities)
+        .set({
+          payload: taskPayload,
+          metadata: taskMetadata,
+          searchText: buildCognitiveSearchText("task", taskPayload, task.tags ?? []),
+          updatedAt: failedAt,
+        })
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, claim.ownerId),
+          eq(maxcoreCognitiveEntities.id, claim.taskId),
+        ));
+      const [agent] = await tx
+        .select()
+        .from(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, claim.ownerId),
+          eq(maxcoreCognitiveEntities.id, claim.agentId),
+          eq(maxcoreCognitiveEntities.entityType, "agent"),
+        ))
+        .limit(1)
+        .for("update");
+      if (agent) {
+        const agentPayload = { ...recordValue(agent.payload), status: "offline" };
+        await tx
+          .update(maxcoreCognitiveEntities)
+          .set({
+            payload: agentPayload,
+            searchText: buildCognitiveSearchText("agent", agentPayload, agent.tags ?? []),
+            updatedAt: failedAt,
+          })
+          .where(and(
+            eq(maxcoreCognitiveEntities.ownerId, claim.ownerId),
+            eq(maxcoreCognitiveEntities.id, claim.agentId),
+          ));
+      }
+      await appendEvent(
+        tx,
+        claim.ownerId,
+        "task_execution_failed",
+        claim.agentId,
+        claim.taskId,
+        { runId: claim.runId, errorCode: safeErrorCode },
+      );
+      return { taskId: claim.taskId, state: "blocked" as const, errorCode: safeErrorCode };
+    });
   } catch (error) {
     if (error instanceof CognitiveStoreError) throw error;
     return asUnavailable(error);
@@ -500,46 +1075,98 @@ export async function updateCognitiveEntity(
     throw new CognitiveStoreError("Invalid cognitive entity update.", 400, "INVALID_ENTITY_UPDATE");
   }
   try {
-    const current = await getCognitiveEntity(ownerId, id);
-    if (!current) return null;
-    if (current.entityType === "event") {
-      throw new CognitiveStoreError("Event records are append-only.", 409, "EVENT_IMMUTABLE");
-    }
-    const data = patch.data.data
-      ? entityDataSchemas[current.entityType as CognitiveEntityType].safeParse(patch.data.data)
-      : { success: true as const, data: current.payload };
-    if (!data.success) {
-      throw new CognitiveStoreError("Entity data does not match its declared type.", 400, "INVALID_ENTITY_DATA");
-    }
-    const typedData = data.data as Record<string, unknown>;
-    if (
-      current.entityType === "memory" &&
-      typedData.memoryType === "system" &&
-      role !== "admin"
-    ) {
-      throw new CognitiveStoreError("System memories require administrator access.", 403, "ADMIN_REQUIRED");
-    }
-    validateSize(typedData, entityPayloadSizeLimit, "Entity data");
-    if (patch.data.metadata) validateSize(patch.data.metadata, metadataSizeLimit, "Metadata");
-    const [updated] = await db
-      .update(maxcoreCognitiveEntities)
-      .set({
-        ...(patch.data.data ? { payload: typedData } : {}),
-        ...(patch.data.tags ? { tags: patch.data.tags } : {}),
-        ...(patch.data.metadata ? { metadata: patch.data.metadata } : {}),
-        searchText: buildCognitiveSearchText(
-          current.entityType as CognitiveEntityType,
-          typedData,
-          patch.data.tags ?? current.tags,
-        ),
-        updatedAt: new Date(),
-      })
-      .where(and(
-        eq(maxcoreCognitiveEntities.ownerId, ownerId),
-        eq(maxcoreCognitiveEntities.id, id),
-      ))
-      .returning();
-    return updated ?? null;
+    const updatedResult = await db.transaction(async (tx) => {
+      const [current] = await tx
+        .select()
+        .from(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, ownerId),
+          eq(maxcoreCognitiveEntities.id, id),
+        ))
+        .limit(1)
+        .for("update");
+      if (!current) return null;
+      assertCognitiveEntityMutationAllowed(
+        current.entityType as CognitiveEntityType,
+        current.payload,
+        "update",
+      );
+      const data = patch.data.data
+        ? entityDataSchemas[current.entityType as CognitiveEntityType].safeParse(patch.data.data)
+        : { success: true as const, data: current.payload };
+      if (!data.success) {
+        throw new CognitiveStoreError("Entity data does not match its declared type.", 400, "INVALID_ENTITY_DATA");
+      }
+      const typedData = data.data as Record<string, unknown>;
+      if (
+        current.entityType === "task" &&
+        typedData.status !== recordValue(current.payload).status
+      ) {
+        throw new CognitiveStoreError(
+          "Task execution status is controlled by the agent runtime.",
+          409,
+          "TASK_STATUS_RUNTIME_MANAGED",
+        );
+      }
+      if (
+        patch.data.metadata &&
+        Object.hasOwn(patch.data.metadata, RUNTIME_METADATA_KEY)
+      ) {
+        throw new CognitiveStoreError(
+          "Runtime-managed metadata cannot be changed by clients.",
+          400,
+          "RESERVED_METADATA",
+        );
+      }
+      if (
+        current.entityType === "memory" &&
+        typedData.memoryType === "system" &&
+        role !== "admin"
+      ) {
+        throw new CognitiveStoreError("System memories require administrator access.", 403, "ADMIN_REQUIRED");
+      }
+      validateSize(typedData, entityPayloadSizeLimit, "Entity data");
+      if (patch.data.metadata) validateSize(patch.data.metadata, metadataSizeLimit, "Metadata");
+      const [updated] = await tx
+        .update(maxcoreCognitiveEntities)
+        .set({
+          ...(patch.data.data ? { payload: typedData } : {}),
+          ...(patch.data.tags ? { tags: patch.data.tags } : {}),
+          ...(patch.data.metadata
+            ? {
+                metadata: {
+                  ...recordValue(current.metadata),
+                  ...patch.data.metadata,
+                  ...(Object.hasOwn(recordValue(current.metadata), RUNTIME_METADATA_KEY)
+                    ? { [RUNTIME_METADATA_KEY]: recordValue(current.metadata)[RUNTIME_METADATA_KEY] }
+                    : {}),
+                },
+              }
+            : {}),
+          searchText: buildCognitiveSearchText(
+            current.entityType as CognitiveEntityType,
+            typedData,
+            patch.data.tags ?? current.tags,
+          ),
+          updatedAt: new Date(),
+        })
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, ownerId),
+          eq(maxcoreCognitiveEntities.id, id),
+        ))
+        .returning();
+      if (!updated) return null;
+      const eventType = current.entityType === "project"
+        ? "project_updated"
+        : "cognitive_entity_updated";
+      const eventId = await appendEvent(tx, ownerId, eventType, id, undefined, {
+        entityType: current.entityType,
+      });
+      return { entity: updated, eventId, eventType };
+    });
+    if (!updatedResult) return null;
+    await notifyCognitiveEvent(ownerId, updatedResult.eventId, updatedResult.eventType);
+    return updatedResult.entity;
   } catch (error) {
     if (error instanceof CognitiveStoreError) throw error;
     return asUnavailable(error);
@@ -548,19 +1175,56 @@ export async function updateCognitiveEntity(
 
 export async function deleteCognitiveEntity(ownerId: string, id: string) {
   try {
-    const current = await getCognitiveEntity(ownerId, id);
-    if (!current) return false;
-    if (current.entityType === "event") {
-      throw new CognitiveStoreError("Event records are append-only.", 409, "EVENT_IMMUTABLE");
-    }
-    const deleted = await db
-      .delete(maxcoreCognitiveEntities)
-      .where(and(
-        eq(maxcoreCognitiveEntities.ownerId, ownerId),
-        eq(maxcoreCognitiveEntities.id, id),
-      ))
-      .returning({ id: maxcoreCognitiveEntities.id });
-    return deleted.length > 0;
+    const deletion = await db.transaction(async (tx) => {
+      const [current] = await tx
+        .select()
+        .from(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, ownerId),
+          eq(maxcoreCognitiveEntities.id, id),
+        ))
+        .limit(1)
+        .for("update");
+      if (!current) return false;
+      const [activeTask] = current.entityType === "agent"
+        ? await tx
+            .select({ id: maxcoreCognitiveEntities.id })
+            .from(maxcoreCognitiveEntities)
+            .where(and(
+              eq(maxcoreCognitiveEntities.ownerId, ownerId),
+              eq(maxcoreCognitiveEntities.entityType, "task"),
+              sql`${maxcoreCognitiveEntities.payload}->>'status' = 'active'`,
+              sql`${maxcoreCognitiveEntities.payload}->>'assignedAgent' = ${id}`,
+            ))
+            .limit(1)
+        : [];
+      assertCognitiveEntityMutationAllowed(
+        current.entityType as CognitiveEntityType,
+        current.payload,
+        "delete",
+        Boolean(activeTask),
+      );
+      const deleted = await tx
+        .delete(maxcoreCognitiveEntities)
+        .where(and(
+          eq(maxcoreCognitiveEntities.ownerId, ownerId),
+          eq(maxcoreCognitiveEntities.id, id),
+        ))
+        .returning({ id: maxcoreCognitiveEntities.id });
+      if (deleted.length === 0) return null;
+      const eventId = await appendEvent(
+        tx,
+        ownerId,
+        "cognitive_entity_deleted",
+        id,
+        undefined,
+        { entityType: current.entityType },
+      );
+      return { eventId };
+    });
+    if (!deletion) return false;
+    await notifyCognitiveEvent(ownerId, deletion.eventId, "cognitive_entity_deleted");
+    return true;
   } catch (error) {
     if (error instanceof CognitiveStoreError) throw error;
     return asUnavailable(error);
@@ -650,6 +1314,100 @@ export async function deleteCognitiveRelationship(ownerId: string, id: string) {
   }
 }
 
+export async function executeCognitiveTool(
+  ownerId: string,
+  toolId: string,
+  input: unknown,
+) {
+  if (toolId !== "database") {
+    throw new CognitiveStoreError("Cognitive tool is not registered.", 404, "TOOL_NOT_FOUND");
+  }
+  const query = cognitiveQuerySchema.safeParse(input);
+  if (!query.success) {
+    throw new CognitiveStoreError("Invalid read-only search request.", 400, "INVALID_TOOL_INPUT");
+  }
+
+  const [entities, projects] = await Promise.all([
+    listCognitiveEntities(ownerId, { query: query.data.query, limit: 100 }),
+    searchUserProjects(ownerId, query.data.query, query.data.limit),
+  ]);
+  const readableEntityTypes = new Set([
+    "memory",
+    "goal",
+    "task",
+    "agent",
+    "department",
+    "document",
+    "knowledge_node",
+    "workflow",
+  ]);
+  const entityResults = entities
+    .filter((entity) => entity.ownerId === ownerId && readableEntityTypes.has(entity.entityType))
+    .slice(0, query.data.limit)
+    .map((entity) => {
+      const data = recordValue(entity.payload);
+      const summary = [
+        data.title,
+        data.name,
+        data.content,
+        data.objective,
+        data.description,
+      ].find((value) => typeof value === "string" && value.trim());
+      return {
+        id: entity.id,
+        kind: entity.entityType,
+        summary: typeof summary === "string" ? summary.trim().slice(0, 1_200) : "",
+        updatedAt: entity.updatedAt,
+        citation: `maxcore://cognitive/${entity.entityType}/${entity.id}`,
+      };
+    });
+  const projectResults = projects.map((project) => ({
+    id: project.id,
+    kind: "project",
+    summary: [project.title, project.description, project.genre]
+      .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
+      .join(" — ")
+      .slice(0, 1_200),
+    updatedAt: project.updatedAt,
+    citation: `maxbooster://projects/${project.id}`,
+  }));
+  const results = [...projectResults, ...entityResults].slice(0, query.data.limit);
+  if (results.some((result) => !result.citation || !result.id)) {
+    throw new CognitiveStoreError("Tool result verification failed.", 500, "TOOL_RESULT_UNVERIFIED");
+  }
+
+  const runId = randomUUID();
+  const queryHash = createHash("sha256").update(query.data.query).digest("hex");
+  try {
+    const eventId = await db.transaction((tx) =>
+      appendEvent(tx, ownerId, "tool_completed", "tool:database", undefined, {
+        runId,
+        querySha256: queryHash,
+        resultCount: results.length,
+        effect: "read_only",
+      }),
+    );
+    await notifyCognitiveEvent(ownerId, eventId, "tool_completed");
+  } catch (error) {
+    if (error instanceof CognitiveStoreError) throw error;
+    return asUnavailable(error);
+  }
+
+  return {
+    runId,
+    toolId,
+    toolName: "database",
+    operation: "owner_scoped_search",
+    results,
+    verification: {
+      ownerScoped: true,
+      citationsPresent: results.every((result) => result.citation.length > 0),
+      sideEffects: "none",
+      rollback: "not_applicable_read_only",
+    },
+  };
+}
+
 export async function getCognitiveCapabilities() {
   try {
     const result = await db.execute(sql`
@@ -672,9 +1430,9 @@ export async function getCognitiveCapabilities() {
       graphStore: storageReady,
       retrieval: storageReady ? "postgres_full_text" : "unavailable",
       vectorSearch: false,
-      agentExecution: false,
-      toolExecution: false,
-      eventBus: false,
+      agentExecution: storageReady,
+      toolExecution: storageReady,
+      eventBus: storageReady && isRealtimePubSubReady(),
       expansionManager: false,
       memorySharding: false,
     };

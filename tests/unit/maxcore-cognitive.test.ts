@@ -16,9 +16,20 @@ const serviceMocks = vi.hoisted(() => ({
   listCognitiveRelationships: vi.fn(),
   deleteCognitiveRelationship: vi.fn(),
   getCognitiveCapabilities: vi.fn(),
+  claimAgentTask: vi.fn(),
+  completeAgentTask: vi.fn(),
+  failAgentTask: vi.fn(),
+  maxcoreIsAvailable: vi.fn(),
+  maxcoreGenerate: vi.fn(),
 }));
 
 vi.mock("../../server/db.js", () => ({ db: {} }));
+vi.mock("../../server/services/maxcoreClient.js", () => ({
+  MaxCoreAIClient: {
+    isAvailable: serviceMocks.maxcoreIsAvailable,
+    generate: serviceMocks.maxcoreGenerate,
+  },
+}));
 
 vi.mock("../../server/services/maxcoreCognitiveService.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../server/services/maxcoreCognitiveService.js")>();
@@ -54,6 +65,7 @@ vi.mock("../../server/middleware/auth.js", () => ({
 
 import router from "../../server/routes/maxcoreCognitive.js";
 import {
+  assertCognitiveEntityMutationAllowed,
   CognitiveStoreError,
   buildCognitiveSearchText,
   parseCognitiveEntityInput,
@@ -121,6 +133,28 @@ describe("MaxCore cognitive persistence contract", () => {
       payload: memoryBody.data,
       tags: memoryBody.tags,
     });
+    serviceMocks.maxcoreIsAvailable.mockResolvedValue(false);
+    serviceMocks.maxcoreGenerate.mockReset();
+    serviceMocks.claimAgentTask.mockResolvedValue({
+      runId: "54e669f6-96f2-467a-a45f-276625e49561",
+      ownerId: "account-a",
+      taskId: "d14c561a-8464-4afc-83bb-4ea0ae797188",
+      agentId: "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+      title: "Draft an artist announcement",
+      description: "Write a release announcement for the new single.",
+      agentName: "Release Writer",
+      specialty: "artist communications",
+      objectives: ["Produce truthful release copy"],
+    });
+    serviceMocks.completeAgentTask.mockResolvedValue({
+      task: { id: "d14c561a-8464-4afc-83bb-4ea0ae797188", status: "complete" },
+      completedAt: "2026-11-09T12:00:00.000Z",
+    });
+    serviceMocks.failAgentTask.mockResolvedValue({
+      taskId: "d14c561a-8464-4afc-83bb-4ea0ae797188",
+      state: "blocked",
+      errorCode: "MODEL_OUTPUT_UNVERIFIED",
+    });
     serviceMocks.createUserProject.mockResolvedValue({
       id: "d14c561a-8464-4afc-83bb-4ea0ae797188",
       title: "My release project",
@@ -161,6 +195,45 @@ describe("MaxCore cognitive persistence contract", () => {
       const response = await send(origin, "/api/maxcore/cognitive/entities");
       expect(response.status).toBe(401);
       expect(serviceMocks.listCognitiveEntities).not.toHaveBeenCalled();
+    });
+  });
+
+  it("lists only the authenticated owner's durable cognitive events", async () => {
+    const event = {
+      id: "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+      ownerId: "account-a",
+      entityType: "event",
+      payload: { eventType: "memory_created", sourceId: "memory-id", payload: {} },
+    };
+    serviceMocks.listCognitiveEntities.mockResolvedValueOnce([event]);
+    await withServer(async (origin) => {
+      const response = await send(
+        origin,
+        "/api/maxcore/cognitive/events?limit=10",
+        { userId: "account-a" },
+      );
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        count: 1,
+        events: [event],
+        delivery: "durable_postgres_log_with_optional_websocket_notification",
+      });
+      expect(serviceMocks.listCognitiveEntities).toHaveBeenCalledWith(
+        "account-a",
+        { type: "event", query: undefined, limit: 10 },
+      );
+    });
+  });
+
+  it("rejects client-authored event records so the runtime owns the ledger", async () => {
+    await withServer(async (origin) => {
+      const response = await send(origin, "/api/maxcore/cognitive/event", {
+        userId: "account-a",
+        body: { data: {}, tags: [], metadata: {} },
+      });
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe("EVENT_SYSTEM_MANAGED");
+      expect(serviceMocks.createCognitiveEntity).not.toHaveBeenCalled();
     });
   });
 
@@ -395,6 +468,91 @@ describe("MaxCore cognitive persistence contract", () => {
     });
   });
 
+  it("does not claim or mutate a task while MaxCore model readiness is false", async () => {
+    await withServer(async (origin) => {
+      const response = await send(
+        origin,
+        "/api/maxcore/cognitive/tasks/d14c561a-8464-4afc-83bb-4ea0ae797188/execute",
+        { userId: "account-a", method: "POST", body: {} },
+      );
+      expect(response.status).toBe(503);
+      expect(response.body).toMatchObject({
+        code: "MAXCORE_NOT_READY",
+        taskStateChanged: false,
+      });
+      expect(serviceMocks.claimAgentTask).not.toHaveBeenCalled();
+      expect(serviceMocks.maxcoreGenerate).not.toHaveBeenCalled();
+    });
+  });
+
+  it("completes an assigned task only from model-provenanced non-echo output", async () => {
+    serviceMocks.maxcoreIsAvailable.mockResolvedValueOnce(true);
+    serviceMocks.maxcoreGenerate.mockResolvedValueOnce({
+      text: "Announcing the new single: a bright, forward-looking release arriving this Friday.",
+      source: "ai_model",
+      generation_contract: "documented-stack-v3",
+    });
+    await withServer(async (origin) => {
+      const response = await send(
+        origin,
+        "/api/maxcore/cognitive/tasks/d14c561a-8464-4afc-83bb-4ea0ae797188/execute",
+        { userId: "account-a", method: "POST", body: {} },
+      );
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        task: { status: "complete" },
+        runId: "54e669f6-96f2-467a-a45f-276625e49561",
+        agentId: "ce6a2ec0-bfb2-4d8e-8bda-7cf1378cce98",
+        model: { source: "ai_model", generationContract: "documented-stack-v3" },
+        awareness: "included_by_maxcore_generation_gateway",
+      });
+      expect(serviceMocks.claimAgentTask).toHaveBeenCalledWith(
+        "account-a",
+        "d14c561a-8464-4afc-83bb-4ea0ae797188",
+        false,
+      );
+      expect(serviceMocks.maxcoreGenerate).toHaveBeenCalledWith(
+        "/api/generate/text",
+        expect.objectContaining({
+          mode: "content",
+          topic: "Draft an artist announcement",
+          prompt: expect.stringContaining("new single"),
+        }),
+        "account-a",
+        600_000,
+      );
+      expect(serviceMocks.completeAgentTask).toHaveBeenCalledWith(
+        expect.objectContaining({ ownerId: "account-a" }),
+        response.body.output,
+        { source: "ai_model", generationContract: "documented-stack-v3" },
+      );
+    });
+  });
+
+  it("blocks model output without provenance and does not report task completion", async () => {
+    serviceMocks.maxcoreIsAvailable.mockResolvedValueOnce(true);
+    serviceMocks.maxcoreGenerate.mockResolvedValueOnce({
+      text: "This looks like a response but has no model provenance.",
+    });
+    await withServer(async (origin) => {
+      const response = await send(
+        origin,
+        "/api/maxcore/cognitive/tasks/d14c561a-8464-4afc-83bb-4ea0ae797188/execute",
+        { userId: "account-a", method: "POST", body: {} },
+      );
+      expect(response.status).toBe(503);
+      expect(response.body).toMatchObject({
+        code: "MODEL_OUTPUT_UNVERIFIED",
+        taskState: "blocked",
+      });
+      expect(serviceMocks.failAgentTask).toHaveBeenCalledWith(
+        expect.objectContaining({ ownerId: "account-a" }),
+        "MODEL_OUTPUT_UNVERIFIED",
+      );
+      expect(serviceMocks.completeAgentTask).not.toHaveBeenCalled();
+    });
+  });
+
   it("reports unavailable execution and vector capabilities honestly", async () => {
     await withServer(async (origin) => {
       const response = await send(origin, "/api/maxcore/cognitive/status", {
@@ -410,6 +568,79 @@ describe("MaxCore cognitive persistence contract", () => {
         expansionManager: false,
       });
     });
+  });
+
+  it("separates implemented task execution from current model readiness", async () => {
+    serviceMocks.getCognitiveCapabilities.mockResolvedValueOnce({
+      status: "partial",
+      storageReady: true,
+      persistence: "postgres",
+      graphStore: true,
+      retrieval: "postgres_full_text",
+      vectorSearch: false,
+      agentExecution: true,
+      toolExecution: false,
+      eventBus: false,
+      expansionManager: false,
+      memorySharding: false,
+    });
+    serviceMocks.maxcoreIsAvailable.mockResolvedValueOnce(false);
+    await withServer(async (origin) => {
+      const response = await send(origin, "/api/maxcore/cognitive/status", {
+        userId: "account-a",
+      });
+      expect(response.status).toBe(503);
+      expect(response.body).toMatchObject({
+        ready: false,
+        storageReady: true,
+        agentExecution: true,
+        agentExecutionReady: false,
+        maxcoreModelReady: false,
+        blockers: ["maxcore_model_or_awareness_not_ready"],
+      });
+    });
+  });
+
+  it("prevents edits and deletion from invalidating active task leases", () => {
+    for (const operation of ["update", "delete"] as const) {
+      let taskError: unknown;
+      try {
+        assertCognitiveEntityMutationAllowed(
+          "task",
+          { status: "active" },
+          operation,
+        );
+      } catch (error) {
+        taskError = error;
+      }
+      expect(taskError).toBeInstanceOf(CognitiveStoreError);
+      expect(taskError).toMatchObject({
+        statusCode: 409,
+        code: "TASK_EXECUTION_IN_PROGRESS",
+      });
+
+      let agentError: unknown;
+      try {
+        assertCognitiveEntityMutationAllowed(
+          "agent",
+          { status: "offline" },
+          operation,
+          true,
+        );
+      } catch (error) {
+        agentError = error;
+      }
+      expect(agentError).toBeInstanceOf(CognitiveStoreError);
+      expect(agentError).toMatchObject({
+        statusCode: 409,
+        code: "AGENT_EXECUTION_IN_PROGRESS",
+      });
+    }
+    expect(() => assertCognitiveEntityMutationAllowed(
+      "task",
+      { status: "pending" },
+      "update",
+    )).not.toThrow();
   });
 
   it("validates typed data and reserves system memory for admins", () => {
@@ -429,6 +660,16 @@ describe("MaxCore cognitive persistence contract", () => {
       type: "tool",
       data: { name: "terminal", category: "system", enabled: true },
     }, "admin")).toThrowError(CognitiveStoreError);
+    expect(() => parseCognitiveEntityInput({
+      type: "task",
+      data: { title: "Forged complete task", status: "complete" },
+      metadata: {},
+    }, "user")).toThrowError(CognitiveStoreError);
+    expect(() => parseCognitiveEntityInput({
+      type: "memory",
+      data: memoryBody.data,
+      metadata: { maxcoreRuntime: { state: "complete" } },
+    }, "user")).toThrowError(CognitiveStoreError);
   });
 
   it("builds retrieval text from entity content and tags only", () => {

@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import { requireAuthOnly } from "../middleware/auth.js";
+import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import type {
   CognitiveAgent,
   CognitiveContextPackage,
@@ -28,8 +29,11 @@ import {
   createCognitiveEntity,
   createCognitiveRelationship,
   createUserProject,
+  claimAgentTask,
+  completeAgentTask,
   deleteCognitiveEntity,
   deleteCognitiveRelationship,
+  failAgentTask,
   getCognitiveCapabilities,
   getCognitiveEntity,
   listCognitiveEntities,
@@ -50,6 +54,9 @@ const listQuery = z.object({
 const relationshipQuery = z.object({
   entityId: entityId.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+}).strict();
+const executeTaskBody = z.object({
+  retryBlocked: z.boolean().default(false),
 }).strict();
 const roleOf = (req: Request) => String(req.user?.role ?? "user");
 const ownerOf = (req: Request) => req.user!.id;
@@ -149,10 +156,24 @@ async function createTypedEntity(
 }
 
 router.get("/status", async (_req, res) => {
-  const capabilities = await getCognitiveCapabilities();
-  res.status(capabilities.storageReady ? 200 : 503).json({
+  const [capabilities, maxcoreModelReady] = await Promise.all([
+    getCognitiveCapabilities(),
+    MaxCoreAIClient.isAvailable(),
+  ]);
+  const agentExecutionReady = capabilities.agentExecution && maxcoreModelReady;
+  const blockers = [
+    ...(!capabilities.storageReady ? ["cognitive_storage_unavailable"] : []),
+    ...(!maxcoreModelReady ? ["maxcore_model_or_awareness_not_ready"] : []),
+  ];
+  const ready = capabilities.storageReady && maxcoreModelReady;
+  res.status(ready ? 200 : 503).json({
     service: "maxcore-cognitive-registry",
     ...capabilities,
+    status: ready ? "ready" : "degraded",
+    ready,
+    maxcoreModelReady,
+    agentExecutionReady,
+    blockers,
   });
 });
 
@@ -336,6 +357,177 @@ router.post("/workflow", (req, res) => createTypedEntity(req, res, "workflow"));
 router.post("/document", (req, res) => createTypedEntity(req, res, "document"));
 router.post("/knowledge-node", (req, res) => createTypedEntity(req, res, "knowledge_node"));
 router.post("/event", (req, res) => createTypedEntity(req, res, "event"));
+
+function extractVerifiedModelText(value: unknown): {
+  output: string;
+  source: string;
+  generationContract: string;
+} | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const response = value as Record<string, unknown>;
+  const outputs = Array.isArray(response.outputs) ? response.outputs : [];
+  const firstOutput = outputs[0] && typeof outputs[0] === "object"
+    ? outputs[0] as Record<string, unknown>
+    : {};
+  const output = [
+    response.text,
+    response.content,
+    response.script,
+    firstOutput.text,
+    firstOutput.content,
+  ].find((item): item is string => typeof item === "string" && item.trim().length > 0);
+  const source = response.source;
+  const generationContract = response.generation_contract;
+  if (
+    !output ||
+    typeof source !== "string" ||
+    !["ai_model", "model", "model_composed"].includes(source) ||
+    typeof generationContract !== "string" ||
+    !generationContract.trim()
+  ) return null;
+  return { output: output.trim().slice(0, 12_000), source, generationContract };
+}
+
+router.post("/tasks/:id/execute", async (req, res) => {
+  if (!entityId.safeParse(req.params.id).success) {
+    res.status(404).json({ error: "Task not found.", code: "TASK_NOT_FOUND" });
+    return;
+  }
+  const parsed = executeTaskBody.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid task execution options.", code: "INVALID_EXECUTION_OPTIONS" });
+    return;
+  }
+  if (!await MaxCoreAIClient.isAvailable()) {
+    res.status(503).json({
+      error: "MaxCore's serving model and awareness are not ready; task state was not changed.",
+      code: "MAXCORE_NOT_READY",
+      taskStateChanged: false,
+    });
+    return;
+  }
+
+  let claim: Awaited<ReturnType<typeof claimAgentTask>> | undefined;
+  try {
+    claim = await claimAgentTask(ownerOf(req), req.params.id, parsed.data.retryBlocked);
+    const taskPrompt = [claim.title, claim.description].filter(Boolean).join("\n\n");
+    const modelResponse = await MaxCoreAIClient.generate<Record<string, unknown>>(
+      "/api/generate/text",
+      {
+        mode: "content",
+        topic: claim.title,
+        prompt: taskPrompt,
+        intent: `Complete this assigned ${claim.specialty} task. Return the work product, not a plan to do the work.`,
+        platform: "general",
+        tone: "clear, factual, task-focused",
+        extra_context: JSON.stringify({
+          agent: {
+            name: claim.agentName,
+            specialty: claim.specialty,
+            objectives: claim.objectives,
+          },
+          task: {
+            title: claim.title,
+            description: claim.description,
+          },
+          outputRequirements: [
+            "Use the attached MaxCore awareness and account context only as relevant, cited context.",
+            "Do not claim actions, tool calls, tests, or external work that were not performed.",
+            "Return a concise, directly usable result.",
+          ],
+        }),
+      },
+      ownerOf(req),
+      600_000,
+    );
+    const verified = extractVerifiedModelText(modelResponse);
+    if (!verified) {
+      await failAgentTask(claim, "MODEL_OUTPUT_UNVERIFIED");
+      res.status(503).json({
+        error: "MaxCore did not return output with verified model provenance.",
+        code: "MODEL_OUTPUT_UNVERIFIED",
+        runId: claim.runId,
+        taskState: "blocked",
+      });
+      return;
+    }
+    const originalPrompt = taskPrompt.replace(/\s+/gu, " ").trim().toLocaleLowerCase();
+    const normalizedOutput = verified.output.replace(/\s+/gu, " ").trim().toLocaleLowerCase();
+    if (verified.output.length < 8 || normalizedOutput === originalPrompt) {
+      await failAgentTask(claim, "MODEL_OUTPUT_NOT_SUBSTANTIVE");
+      res.status(503).json({
+        error: "MaxCore output was empty, too short, or only echoed the task prompt.",
+        code: "MODEL_OUTPUT_NOT_SUBSTANTIVE",
+        runId: claim.runId,
+        taskState: "blocked",
+      });
+      return;
+    }
+    const completion = await completeAgentTask(claim, verified.output, {
+      source: verified.source,
+      generationContract: verified.generationContract,
+    });
+    res.json({
+      ...completion,
+      runId: claim.runId,
+      agentId: claim.agentId,
+      output: verified.output,
+      model: {
+        source: verified.source,
+        generationContract: verified.generationContract,
+      },
+      awareness: "included_by_maxcore_generation_gateway",
+    });
+  } catch (error) {
+    if (claim) {
+      const code = error && typeof error === "object" &&
+        "statusCode" in error && typeof error.statusCode === "number"
+        ? `MAXCORE_HTTP_${error.statusCode}`
+        : "MAXCORE_GENERATION_FAILED";
+      let taskFailurePersisted = false;
+      try {
+        await failAgentTask(claim, code);
+        taskFailurePersisted = true;
+      } catch {
+        logger.warn(
+          { operation: "execute-cognitive-task", runId: claim.runId },
+          "Task failure could not be persisted",
+        );
+      }
+      res.status(503).json({
+        error: "MaxCore agent execution did not complete successfully.",
+        code: "AGENT_EXECUTION_FAILED",
+        failureCode: code,
+        runId: claim.runId,
+        taskState: taskFailurePersisted ? "blocked" : "unknown",
+      });
+      return;
+    }
+    sendError(res, error, "execute-cognitive-task");
+  }
+});
+
+router.get("/events", async (req, res) => {
+  const parsed = listQuery.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid event query.", code: "INVALID_QUERY" });
+    return;
+  }
+  try {
+    const events = await listCognitiveEntities(ownerOf(req), {
+      type: "event",
+      query: parsed.data.q,
+      limit: parsed.data.limit,
+    });
+    res.json({
+      events,
+      count: events.length,
+      delivery: "durable_postgres_log_with_optional_websocket_notification",
+    });
+  } catch (error) {
+    sendError(res, error, "list-cognitive-events");
+  }
+});
 
 router.get("/entities", async (req, res) => {
   const parsed = listQuery.safeParse(req.query);

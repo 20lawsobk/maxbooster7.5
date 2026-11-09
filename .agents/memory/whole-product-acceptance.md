@@ -5,6 +5,12 @@ description: Acceptance evidence must cover the complete Max Booster product, no
 
 Max Booster release acceptance applies to the complete existing product: public and onboarding flows, regular accounts, administrator access, other supported roles, modules, cross-module journeys, integrations, and operational dependencies. MaxCore and the admin account are components and test paths, not substitutes for whole-product verification.
 
+Within that whole-product boundary, the owner's architecture treats MaxCore as Max Booster's central first-party intelligence subsystem, not as an unrelated external product. The existing gateway and service boundaries may remain, but Max Booster capabilities should connect to MaxCore through them.
+
+**Why:** the owner explicitly clarified that MaxCore is part of Max Booster and is intended to serve the wider ecosystem.
+
+**How to apply:** preserve the existing internal service architecture, make MaxCore integrations use the real gateway and readiness contracts, and do not treat an internal HTTP boundary as evidence that MaxCore is a third-party dependency.
+
 **Why:** the owner explicitly corrected the scope from MaxCore/admin-only verification to Max Booster as a whole.
 
 **How to apply:** inventory each existing role and user journey, then collect fresh evidence for each module, cross-module handoff, persistence/recovery behavior, and external dependency. Report blocked or untested items separately; never infer whole-product readiness from a passing subset.
