@@ -9,7 +9,8 @@ class SourceCoverageTests(unittest.TestCase):
         xmlns:media="http://search.yahoo.com/mrss/"><entry>
         <title>Fixture video</title><link href="https://www.youtube.com/watch?v=fixture"/>
         <media:statistics views="42"/></entry></feed>"""
-        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml):
+        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml), \
+                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
             rows = youtube("https://www.youtube.com/feeds/videos.xml")
         self.assertEqual(rows[0]["value"], 42)
         self.assertEqual(rows[0]["metric"], "youtube_feed_views")
@@ -23,13 +24,15 @@ class SourceCoverageTests(unittest.TestCase):
         <link href="https://www.youtube.com/watch?v=oldfixture"/>
         <published>{published}</published>
         </entry></feed>""".encode()
-        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml):
+        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml), \
+                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
             rows = youtube("https://www.youtube.com/feeds/videos.xml")
         self.assertEqual(rows, [])
 
     def test_youtube_feed_rejects_entity_declarations(self):
         xml = b'<!DOCTYPE feed [<!ENTITY x SYSTEM "file:///etc/passwd">]><feed>&x;</feed>'
-        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml):
+        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml), \
+                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
             with self.assertRaises(ValueError):
                 youtube("https://www.youtube.com/feeds/videos.xml")
 
@@ -47,7 +50,8 @@ class SourceCoverageTests(unittest.TestCase):
         <published>{published}</published>
         <media:group><media:statistics views="1200"/></media:group>
         </entry></feed>""".encode()
-        with patch("ai_model.awareness.sources._fetch", return_value=xml):
+        with patch("ai_model.awareness.sources._fetch", return_value=xml), \
+                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
             rows = youtube_with_profile_candidates(
                 "https://www.youtube.com/feeds/videos.xml?channel_id=UC123",
                 "Public music channel",
@@ -70,16 +74,19 @@ class SourceCoverageTests(unittest.TestCase):
         with patch.dict("os.environ", {}, clear=True):
             result = profile_source_status()["platforms"]
         self.assertEqual(set(result), set(PLATFORMS))
-        self.assertEqual(result["youtube"]["status"], "public_feed_configured")
-        self.assertEqual(result["youtube"]["authorization_mode"], "public_atom_feed")
+        self.assertEqual(result["youtube"]["status"], "public_feed_blocked")
+        self.assertEqual(result["youtube"]["authorization_mode"], "none")
+        self.assertEqual(result["youtube"]["native_crawl"]["state"], "blocked")
+        self.assertFalse(result["youtube"]["native_crawl"]["authorized"])
         self.assertEqual(result["youtube"]["freshness_state"], "unavailable")
         self.assertFalse(result["youtube"]["training_eligibility"]["eligible"])
         for platform in set(PLATFORMS) - {"youtube"}:
             self.assertEqual(result[platform]["status"], "unavailable")
             self.assertEqual(
                 result[platform]["reason"],
-                "search_provider_not_configured",
+                result[platform]["native_crawl"]["reason"],
             )
+            self.assertFalse(result[platform]["native_crawl"]["authorized"])
             self.assertEqual(result[platform]["connection_state"], "not_connected")
             self.assertEqual(result[platform]["freshness_state"], "unavailable")
             self.assertFalse(result[platform]["training_eligibility"]["eligible"])
@@ -138,7 +145,8 @@ class SourceCoverageTests(unittest.TestCase):
         </entry></feed>""".encode()
         feed_url = "https://www.youtube.com/feeds/videos.xml?channel_id=UC123"
         store = MemoryStore()
-        with patch("ai_model.awareness.sources._fetch", return_value=xml):
+        with patch("ai_model.awareness.sources._fetch", return_value=xml), \
+                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
             engine = Engine(
                 sources={"youtube_NoCopyrightSounds": (
                     "music", feed_url,

@@ -22,9 +22,25 @@ paths, and topic terms live together in `platform_discovery.py`.
   platform URLs are labeled `index_snippet`; non-platform URLs are labeled
   `third_party_search` because the result alone does not verify editorial
   independence. Search relevance is not engagement.
-- The existing official YouTube Atom feeds remain direct-public feed ingestion.
-  Direct page crawling for all eight platforms is disabled until platform
-  terms, robots rules, and allowed paths have been reviewed and encoded.
+- The current checkout does not contain a native public web-search/crawl engine
+  for the eight platforms. The local observatory searches only records already
+  collected by MaxCore; it is not a crawler.
+- Anonymous direct collection is fail-closed. The YouTube Atom adapter now
+  checks the exact origin's `robots.txt` before requesting a feed and refuses
+  collection when robots is inaccessible or disallows that path. The live
+  `www.youtube.com/robots.txt` response observed on 2026-11-08 disallowed
+  `/feeds/videos.xml` for the generic crawler group. An Allow rule would still
+  not replace terms review or explicit permission.
+- The current access matrix is exposed on the authenticated admin source-status
+  route. Facebook's live robots file explicitly requires express written
+  permission for automated collection; X's generic crawler group disallows
+  crawling; TikTok's robots file disallows its search paths; YouTube's file
+  disallows the configured Atom-feed path. Instagram, Threads, and LinkedIn
+  robots policy was not verified in the bounded live check. Google Maps robots
+  exceptions do not by themselves authorize Google Business profile scraping.
+  These are access blockers, not active feeds.
+- Existing Exa/Tavily sources remain optional search-index augmentation. They
+  are not the native crawler and are not required for the local index.
 - Search-index text and public feed content have unknown reuse rights and are
   explicitly training-ineligible. They may contribute cited awareness context
   only; they cannot become model-training examples through this source path.

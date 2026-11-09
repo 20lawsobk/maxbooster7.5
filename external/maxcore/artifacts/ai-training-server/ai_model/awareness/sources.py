@@ -640,10 +640,16 @@ def _freshness_score(published_at):
 
 
 def youtube(url):
+    from .public_access import assert_platform_feed_access
+
+    assert_platform_feed_access("youtube", url)
     return _youtube_rows(parse_feed_xml(_fetch(url)))
 
 
 def youtube_with_profile_candidates(url, channel_name):
+    from .public_access import assert_platform_feed_access
+
+    assert_platform_feed_access("youtube", url)
     root = parse_feed_xml(_fetch(url))
     return (_youtube_rows(root)
             + _youtube_profile_rows(root, url, channel_name))
@@ -653,6 +659,7 @@ def profile_source_status(source_health=None):
     """Report exact platform discovery paths without implying account access."""
     from ai_model.platform_optimization import PLATFORMS
     from ai_model.awareness.profile_quality import summarize_quality_cohort
+    from .public_access import native_crawl_status
 
     configured = {
         f"youtube_{feed['name']}": feed for feed in legacy.YOUTUBE_FEEDS
@@ -747,23 +754,16 @@ def profile_source_status(source_health=None):
             availability_reason = search["disabled_reason"]
             authorization_mode = "none"
             connection_state = "not_connected"
-        elif platform == "youtube":
-            availability_status = "public_feed_configured"
-            availability_reason = None
-            authorization_mode = "public_atom_feed"
-            connection_state = "not_applicable_public_feed"
         else:
             availability_status = "unavailable"
-            availability_reason = "search_provider_not_configured"
+            availability_reason = native_crawl_status(platform)["reason"]
             authorization_mode = "none"
             connection_state = "not_connected"
-        if platform == "youtube" and configured:
-            availability_status = "public_feed_configured"
-            authorization_mode = (
-                "public_atom_feed_and_search_index"
-                if search_sources[platform] else "public_atom_feed"
-            )
-            connection_state = "not_applicable_public_feed"
+        if platform == "youtube" and configured and not search_sources[platform]:
+            availability_status = "public_feed_blocked"
+            availability_reason = native_crawl_status(platform)["reason"]
+            authorization_mode = "none"
+            connection_state = "blocked_by_source_policy"
         observed = [
             row.get("last_observed_at")
             for row in source_health_rows
@@ -798,6 +798,7 @@ def profile_source_status(source_health=None):
             "network_group": direct_policy["network_group"],
             "status": availability_status,
             "reason": availability_reason,
+            "native_crawl": native_crawl_status(platform),
             "authorization_mode": authorization_mode,
             "connection_state": connection_state,
             "ingestion_state": ingestion_state,
@@ -816,7 +817,7 @@ def profile_source_status(source_health=None):
             "search_provider_last_query_at": (
                 provider_item.get("observed_at") if provider_item else None
             ),
-            "direct_fetch_policy": "disabled_until_terms_and_robots_review",
+            "direct_fetch_policy": native_crawl_status(platform)["reason"],
             "allowed_platform_domains": list(direct_policy["domains"]),
             "source_count": len(source_names),
             "candidate_count": candidates,

@@ -119,6 +119,12 @@ def _source_failure(exc):
             if 400 <= status <= 499:
                 return "http_error", status
         message = str(exc).casefold()
+        if "robots policy denied" in message:
+            return "robots_disallowed", None
+        if "robots policy could not be verified" in message:
+            return "robots_policy_unavailable", None
+        if "terms review required" in message:
+            return "terms_review_required", None
         if "redirect" in message:
             return "redirect_rejected", None
         if "deadline" in message or "timed out" in message or "timeout" in message:

@@ -156,8 +156,9 @@ test("maintenance permits exact recovery and verified webhooks, not header spoof
     } }],
   });
   const module = { exports: {} };
+  const runtimeProcess = { env: { NODE_ENV: "production" } };
   runInNewContext(output.outputFiles[0].text, { module, exports: module.exports,
-    require: createRequire(import.meta.url), Buffer, Date, process: { env: { NODE_ENV: "production" } } });
+    require: createRequire(import.meta.url), Buffer, Date, process: runtimeProcess });
   const check = async (path, method = "GET", headers = {}, user) => {
     let next = false; let status = 200;
     const req = { path, method, headers, user, get: name => headers[name] };
@@ -170,6 +171,17 @@ test("maintenance permits exact recovery and verified webhooks, not header spoof
   assert.equal((await check("/api/auth/login/evil", "POST")).status, 503);
   assert.equal((await check("/api/projects", "GET", { "x-admin-override": "true" })).status, 503);
   assert.equal((await check("/api/projects", "GET", {}, { role: "admin" })).next, true);
+  const sharedPolicyModule = `/@fs${process.cwd()}/shared/adminAccessPolicy.mjs`;
+  assert.equal((await check(sharedPolicyModule)).status, 503);
+  assert.equal((await check("/@id/__x00__vite/dynamic-import-helper.js")).status, 503);
+  runtimeProcess.env.NODE_ENV = "development";
+  assert.equal((await check(sharedPolicyModule)).next, true);
+  assert.equal((await check("/@id/__x00__vite/dynamic-import-helper.js")).next, true);
+  assert.equal((await check(`/@fs${process.cwd()}/shared/schema.ts`)).status, 503);
+  assert.equal((await check(`/@fs${process.cwd()}/shared/../server/.env`)).status, 503);
+  runtimeProcess.env.NODE_ENV = "production";
+  assert.equal((await check(sharedPolicyModule)).status, 503);
+  assert.equal((await check("/@id/__x00__vite/dynamic-import-helper.js")).status, 503);
   assert.equal((await check("/api/webhooks/stripe", "POST", { "stripe-signature": "fake" })).status, 401);
   assert.equal((await check("/api/webhooks/stripe", "POST", { "stripe-signature": "verified-test-boundary" })).next, true);
   assert.equal((await check("/api/webhooks/stripe/evil", "POST")).status, 503);

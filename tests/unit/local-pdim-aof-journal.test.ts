@@ -1,10 +1,14 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { RedisStore } from "../../external/pdim/artifacts/api-server/src/redis/store.js";
 import type { RedisAofRecord, RedisEntry } from "../../external/pdim/artifacts/api-server/src/redis/types.js";
-import { LocalPdimAofJournal } from "../../server/lib/localPdimAofJournal.js";
+import {
+  acquireLocalPdimAofOwnership,
+  LocalPdimAofJournal,
+} from "../../server/lib/localPdimAofJournal.js";
 
 const stores: RedisStore[] = [];
 const directories: string[] = [];
@@ -39,6 +43,63 @@ afterEach(() => {
 });
 
 describe("local PDIM Redis AOF durability", () => {
+  it("prevents a second disk-backed owner from writing the same journal", async () => {
+    const file = tempJournalPath();
+    const first = await acquireLocalPdimAofOwnership(file, () => {});
+    try {
+      await expect(
+        acquireLocalPdimAofOwnership(file, () => {}),
+      ).rejects.toThrow();
+    } finally {
+      await first();
+    }
+    const afterRelease = await acquireLocalPdimAofOwnership(file, () => {});
+    await afterRelease();
+  });
+
+  it("ignores valid snapshot-covered frames interleaved after newer writes", () => {
+    const file = tempJournalPath();
+    const frame = (sequence: number, value: string) => {
+      const record = { s: sequence, c: "SET", a: ["key", value] };
+      const body = JSON.stringify({
+        from: sequence,
+        through: sequence,
+        records: [record],
+      });
+      return JSON.stringify({
+        body,
+        sha256: createHash("sha256").update(body).digest("hex"),
+      });
+    };
+    fs.writeFileSync(
+      file,
+      [frame(6, "new-1"), frame(3, "snapshot-covered"), frame(7, "new-2")]
+        .join("\n") + "\n",
+    );
+
+    const journal = new LocalPdimAofJournal(file);
+    expect(journal.recover(5)).toEqual([
+      { s: 6, c: "SET", a: ["key", "new-1"] },
+      { s: 7, c: "SET", a: ["key", "new-2"] },
+    ]);
+  });
+
+  it("rejects different mutations for the same post-snapshot sequence", () => {
+    const file = tempJournalPath();
+    const frame = (value: string) => {
+      const record = { s: 6, c: "SET", a: ["key", value] };
+      const body = JSON.stringify({ from: 6, through: 6, records: [record] });
+      return JSON.stringify({
+        body,
+        sha256: createHash("sha256").update(body).digest("hex"),
+      });
+    };
+    fs.writeFileSync(file, `${frame("first")}\n${frame("second")}\n`);
+    expect(() => new LocalPdimAofJournal(file).recover(5)).toThrow(
+      "Local PDIM AOF has conflicting duplicate sequence",
+    );
+  });
+
   it("recovers acknowledged non-idempotent writes exactly once", async () => {
     const file = tempJournalPath();
     const store = owner(new LocalPdimAofJournal(file));
@@ -150,29 +211,32 @@ describe("local PDIM Redis AOF durability", () => {
     expect(await recovered.exec("GET", ["temporary"])).toBe("value");
   });
 
-  // Waits on a real 100 ms TTL expiry event; under full-suite parallel load
-  // the global 15s test timeout can starve the event loop, so this test
-  // carries its own headroom (same treatment as the retained-PDIM recovery
-  // simulation). Assertions are unchanged.
-  it("journals expiry tombstones so replay cannot resurrect expired keys", { timeout: 120_000 }, async () => {
+  it("journals expiry tombstones so replay cannot resurrect expired keys", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     const expiryFile = tempJournalPath();
     const expiryStore = owner(new LocalPdimAofJournal(expiryFile));
-    const expired = new Promise<void>((resolve) => {
-      expiryStore.once("expired", () => resolve());
-    });
-    await expiryStore.exec("SET", ["temporary", "value", "PX", "100"]);
-    await expired;
-    expect(await expiryStore.exec("GET", ["temporary"])).toBeNull();
-    expiryStore.closeEmbedded();
+    try {
+      const expired = new Promise<void>((resolve) => {
+        expiryStore.once("expired", () => resolve());
+      });
+      await expiryStore.exec("SET", ["temporary", "value", "PX", "100"]);
+      await vi.advanceTimersByTimeAsync(100);
+      await expired;
+      expect(await expiryStore.exec("GET", ["temporary"])).toBeNull();
+      expiryStore.closeEmbedded();
 
-    const expiredRecords = new LocalPdimAofJournal(expiryFile).recover(0);
-    expect(expiredRecords.some((record) => record.c === "__DELETE")).toBe(true);
-    const expiredReplay = new RedisStore("expiry-replay", "expiry replay test");
-    expiredReplay.attachEmbeddedSnapshot(new Map(), {
-      recoveryRecords: expiredRecords,
-    });
-    stores.push(expiredReplay);
-    expect(await expiredReplay.exec("GET", ["temporary"])).toBeNull();
+      const expiredRecords = new LocalPdimAofJournal(expiryFile).recover(0);
+      expect(expiredRecords.some((record) => record.c === "__DELETE")).toBe(true);
+      const expiredReplay = new RedisStore("expiry-replay", "expiry replay test");
+      expiredReplay.attachEmbeddedSnapshot(new Map(), {
+        recoveryRecords: expiredRecords,
+      });
+      stores.push(expiredReplay);
+      expect(await expiredReplay.exec("GET", ["temporary"])).toBeNull();
+    } finally {
+      expiryStore.closeEmbedded();
+      vi.useRealTimers();
+    }
   });
 
   it("journals LRU tombstones so replay cannot resurrect evicted keys", async () => {

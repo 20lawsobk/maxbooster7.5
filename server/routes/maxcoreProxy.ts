@@ -42,6 +42,11 @@ const router = Router();
 
 // Existing application authorization and transport credentials remain unchanged.
 router.get("/api/awareness/unified/status", requireAuthOnly, proxyToMaxCore);
+router.get(
+  "/api/awareness/unified/admin/source-status",
+  requireAdmin,
+  proxyToMaxCore,
+);
 router.post("/api/awareness/unified/context", requireAuthOnly, proxyToMaxCore);
 router.post("/api/awareness/unified/profile-discover", requireAuthOnly, proxyToMaxCore);
 
@@ -105,6 +110,7 @@ generatedArtifactRouter.post("/api/internal/generated-artifacts/commit",
 // It is routed separately below so application-level admin authorization is
 // required before Max Booster supplies that trusted credential upstream.
 const ADMIN_PATH_SUFFIXES = [
+  "/awareness/unified/admin/source-status",
   "/training/live/status",
   "/platform/model/reload",
   "/training/start",

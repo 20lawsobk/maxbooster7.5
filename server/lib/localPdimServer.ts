@@ -26,7 +26,10 @@ import { RedisStore } from "../../external/pdim/artifacts/api-server/src/redis/s
 import type { RedisAofRecord, RedisEntry, StreamGroup } from "../../external/pdim/artifacts/api-server/src/redis/types.js";
 import { LocalPdimCapsules } from "./localPdimCapsules.js";
 import { LocalPdimCapsuleJournal } from "./localPdimCapsuleJournal.js";
-import { LocalPdimAofJournal } from "./localPdimAofJournal.js";
+import {
+  acquireLocalPdimAofOwnership,
+  LocalPdimAofJournal,
+} from "./localPdimAofJournal.js";
 import { readSnapshotJson, snapshotJsonChunks } from "./pdimSnapshotJson.js";
 import { writeSnapshotOffThread } from "./pdimSnapshotWriter.js";
 import { configuredPdimBucketObjects } from "./pdimBucketObjects.js";
@@ -45,6 +48,8 @@ const CAPSULE_WATERMARK = "__local_pdim_capsule_journal_watermark__";
 const REDIS_AOF_WATERMARK = "__local_pdim_redis_aof_watermark__";
 const capsuleJournal = new LocalPdimCapsuleJournal(`${PERSIST_FILE}.capsules.jsonl`);
 const redisAofJournal = new LocalPdimAofJournal(`${PERSIST_FILE}.aof.jsonl`);
+let localAofOwnershipRelease: (() => Promise<void>) | null = null;
+let localAofOwnershipHealthy = true;
 
 // ── Store types ───────────────────────────────────────────────────────────────
 
@@ -85,7 +90,14 @@ let snapshotAofBaseline = 0;
 const capsuleStore = new LocalPdimCapsules(canonicalStore,
   (changes, publish) => bucketPersistence
     ? bucketPersistence.commitCapsule(changes, publish)
-    : capsuleJournal.commit(changes, publish));
+    : (assertLocalAofOwnership(), capsuleJournal.commit(changes, publish)));
+
+function assertLocalAofOwnership(): void {
+  if (!bucketPersistence &&
+      (!localAofOwnershipRelease || !localAofOwnershipHealthy)) {
+    throw new Error("Local PDIM persistence ownership is unavailable");
+  }
+}
 
 // ── TTL helpers ───────────────────────────────────────────────────────────────
 
@@ -111,6 +123,13 @@ function saveStoreAsync(): Promise<boolean> {
         "[LocalPDIM] Bucket checkpoint failed; committed journal remains authoritative");
       return false;
     });
+  }
+  try {
+    assertLocalAofOwnership();
+  } catch (error) {
+    logger.error({ errorType: error instanceof Error ? error.name : "unknown" },
+      "[LocalPDIM] Snapshot skipped because durable file ownership is unavailable");
+    return Promise.resolve(false);
   }
   const operation = snapshotTail.then(async () => {
     const publication = snapshotPublication;
@@ -142,6 +161,7 @@ function saveStoreAsync(): Promise<boolean> {
       });
       await snapshot.writing;
       if (writeFailure) throw writeFailure;
+      assertLocalAofOwnership();
       if (snapshotPublication !== publication) {
         // A newer synchronous checkpoint already durably covers this state.
         await fs.promises.rm(temporaryFile, { force: true });
@@ -170,6 +190,7 @@ function saveStoreAsync(): Promise<boolean> {
 function saveStore(): boolean {
   const temporaryFile = `${PERSIST_FILE}.tmp-${process.pid}`;
   try {
+    assertLocalAofOwnership();
     fs.mkdirSync(path.dirname(PERSIST_FILE), { recursive: true });
     const redisBaseline = canonicalStore.getEmbeddedAofSequence();
     const obj: Record<string, StoreEntry> = {};
@@ -634,12 +655,25 @@ export function startLocalPdimServer(): Promise<void> {
     return Promise.reject(new Error("Only the cluster primary may own local PDIM"));
   }
   if (_starting) return _starting;
-  _starting = prepareBucketOwner().then(() => new Promise<void>((resolve, reject) => {
+  _starting = prepareBucketOwner().then(async () => {
     if (_server) {
-      resolve();
       return;
     }
+    if (!bucketPersistence) {
+      localAofOwnershipHealthy = true;
+      localAofOwnershipRelease = await acquireLocalPdimAofOwnership(
+        redisAofJournal.file,
+        (error) => {
+          localAofOwnershipHealthy = false;
+          logger.error(
+            { errorType: error.name },
+            "[LocalPDIM] Disk persistence ownership was lost; writes are paused",
+          );
+        },
+      );
+    }
 
+    return new Promise<void>((resolve, reject) => {
     if (!bucketPersistence) {
     loadStore();
     const watermark = store.get(CAPSULE_WATERMARK);
@@ -672,7 +706,10 @@ export function startLocalPdimServer(): Promise<void> {
       {
         baselineSequence: snapshotAofBaseline,
         recoveryRecords: redisAofRecords,
-        appendAof: (records: readonly RedisAofRecord[]) => redisAofJournal.append(records),
+        appendAof: (records: readonly RedisAofRecord[]) => {
+          assertLocalAofOwnership();
+          return redisAofJournal.append(records);
+        },
       },
     );
     canonicalStore.on("durability-error", (error: Error) => {
@@ -835,7 +872,20 @@ export function startLocalPdimServer(): Promise<void> {
       _server = null;
       reject(err); // An occupied port is not proof of a shared, trusted owner.
     });
-  })).catch(async (error: unknown) => {
+    });
+  }).catch(async (error: unknown) => {
+    const releaseAofOwnership = localAofOwnershipRelease;
+    localAofOwnershipRelease = null;
+    localAofOwnershipHealthy = true;
+    if (releaseAofOwnership) {
+      try { await releaseAofOwnership(); }
+      catch (releaseError) {
+        logger.error(
+          { errorType: releaseError instanceof Error ? releaseError.name : "unknown" },
+          "[LocalPDIM] Failed-start disk ownership release was not confirmed",
+        );
+      }
+    }
     if (bucketPersistence) {
       const failedOwner = bucketPersistence;
       bucketPersistence = undefined;
@@ -872,9 +922,16 @@ export async function stopLocalPdimServer(): Promise<void> {
     await closed;
   }
   await snapshotTail;
-  await bucketPersistence?.close();
-  bucketPersistence = undefined;
-  bucketBatcher = undefined;
+  try {
+    await bucketPersistence?.close();
+  } finally {
+    bucketPersistence = undefined;
+    bucketBatcher = undefined;
+    const releaseAofOwnership = localAofOwnershipRelease;
+    localAofOwnershipRelease = null;
+    localAofOwnershipHealthy = true;
+    if (releaseAofOwnership) await releaseAofOwnership();
+  }
 }
 
 async function prepareBucketOwner(): Promise<void> {
@@ -914,6 +971,7 @@ export async function importOfflinePdimToBucket(namespace: string) {
   if (process.env.PDIM_OFFLINE_MIGRATION !== "1" || bucketPersistence || !_server?.listening) {
     throw new Error("Migration requires an offline local-only owner");
   }
+  assertLocalAofOwnership();
   const objects = await configuredPdimBucketObjects();
   const journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
   return canonicalStore.captureEmbeddedCheckpoint(async redisSequence => {

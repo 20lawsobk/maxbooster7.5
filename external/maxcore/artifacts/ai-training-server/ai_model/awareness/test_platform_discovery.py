@@ -534,7 +534,7 @@ class PlatformDiscoveryTests(unittest.TestCase):
         self.assertEqual(third_party_status["tiktok"]["ingestion_state"], "third_party_only")
         self.assertEqual(
             result["tiktok"]["direct_fetch_policy"],
-            "disabled_until_terms_and_robots_review",
+            result["tiktok"]["native_crawl"]["reason"],
         )
         self.assertFalse(result["tiktok"]["training_eligibility"]["eligible"])
         self.assertNotIn("fixture-do-not-return", repr(result))

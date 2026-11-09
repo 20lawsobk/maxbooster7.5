@@ -12,6 +12,18 @@ export function isDevDependencyResource(urlPath: string): boolean {
     /\.(?:[cm]?js|css|map|woff2?|ttf)$/.test(relative);
 }
 
+/** Only the client-imported shared policy module may use Vite's @fs route. */
+export function isDevSharedPolicyResource(urlPath: string): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  return urlPath === `/@fs${path.resolve("shared/adminAccessPolicy.mjs")}`;
+}
+
+/** Vite emits this exact virtual module for dynamic imports in development. */
+export function isDevViteDynamicImportHelper(urlPath: string): boolean {
+  return process.env.NODE_ENV !== "production" &&
+    urlPath === "/@id/__x00__vite/dynamic-import-helper.js";
+}
+
 const recovery = new Set([
   "GET /", "GET /login", "GET /forgot-password", "GET /reset-password", "GET /favicon.ico",
   "GET /health", "GET /ready", "GET /healthz", "GET /api/health", "GET /api/ready",
@@ -30,7 +42,11 @@ export const governanceBoundary: RequestHandler = async (req, res, next) => {
   const path = req.path;
   const method = req.method === "HEAD" ? "GET" : req.method;
   if (recovery.has(`${method} ${path}`)) return next();
-  if (method === "GET" && isDevDependencyResource(path)) return next();
+  if (method === "GET" && (
+    isDevDependencyResource(path) ||
+    isDevSharedPolicyResource(path) ||
+    isDevViteDynamicImportHelper(path)
+  )) return next();
   // Static app-shell resources carry no application data/auth authority.
   if (method === "GET" && ["/assets/", "/js/", "/src/", "/node_modules/.vite/", "/@vite/", "/@react-refresh"]
     .some(prefix => path.startsWith(prefix))) return next();

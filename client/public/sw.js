@@ -43,7 +43,7 @@ const SHELL_CACHE = "max-booster-shell-" + CACHE_VER;
 const STATIC_ASSETS = [
   "/manifest.json",
   "/offline.html",
-  "/favicon.png",
+  "/favicon-16.png",
   "/favicon.svg",
   "/favicon-32.png",
   "/logo.png",

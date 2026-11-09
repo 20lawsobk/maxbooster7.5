@@ -96,6 +96,7 @@ describe("MaxCore public proxy contract", () => {
     ["post", "/api/optimize/ad"],
     ["post", "/api/audio/mastering-recommendation"],
     ["post", "/api/audio/mixing-recommendation"],
+    ["get", "/api/awareness/unified/admin/source-status"],
     ["post", "/api/awareness/unified/profile-discover"],
     ["get", "/api/models/social/state"],
     ["post", "/api/train/feedback"],
@@ -193,6 +194,46 @@ describe("MaxCore public proxy contract", () => {
         headers: expect.objectContaining({ Authorization: "Bearer service" }),
       }),
     );
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it("uses the admin MaxCore credential for the protected source-status route", async () => {
+    const payload = {
+      ready: false,
+      source_scan_state: "complete",
+      platforms: {},
+    };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const path = "/api/awareness/unified/admin/source-status";
+    const res = responseDouble();
+
+    await routeHandler("get", path)({
+      method: "GET",
+      originalUrl: path,
+      path,
+      params: {},
+      body: undefined,
+      user: { id: "admin-7", role: "admin" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      `http://maxcore.internal${path}`,
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({ "X-Admin-Key": "admin" }),
+      }),
+    );
+    const forwardedHeaders = vi.mocked(transport).mock.calls[0]?.[1]?.headers as
+      | Record<string, string>
+      | undefined;
+    expect(forwardedHeaders?.Authorization).toBeUndefined();
     expect(res.statusCode).toBe(200);
     expect(res.payload).toEqual(payload);
   });

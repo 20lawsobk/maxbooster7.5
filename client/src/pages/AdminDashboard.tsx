@@ -12,6 +12,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { MaxCoreAwarenessStatus } from "@/components/admin/MaxCoreAwarenessStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -791,6 +792,8 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                 </p>
               </CardContent>
             </Card>
+
+            <MaxCoreAwarenessStatus />
           </TabsContent>
 
           {/* Audit Tab */}

@@ -1,7 +1,42 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { createHash, randomUUID } from "node:crypto";
 import type { RedisAofRecord } from "../../external/pdim/artifacts/api-server/src/redis/types.js";
+
+type ProperLockfile = {
+  lock(
+    target: string,
+    options: {
+      realpath: false;
+      retries: number;
+      stale: number;
+      update: number;
+      onCompromised: (error: Error) => void;
+    },
+  ): Promise<() => Promise<void>>;
+};
+const properLockfile = createRequire(import.meta.url)("proper-lockfile") as ProperLockfile;
+
+/** One process owns the entire disk-backed PDIM snapshot/journal set at a time. */
+export async function acquireLocalPdimAofOwnership(
+  file: string,
+  onCompromised: (error: Error) => void,
+): Promise<() => Promise<void>> {
+  const releaseLock = await properLockfile.lock(file, {
+    realpath: false,
+    retries: 0,
+    stale: 60_000,
+    update: 15_000,
+    onCompromised,
+  });
+  let released = false;
+  return async () => {
+    if (released) return;
+    released = true;
+    await releaseLock();
+  };
+}
 
 type FrameBody = {
   from: number;
@@ -109,32 +144,39 @@ export class LocalPdimAofJournal {
     const bytes = fs.readFileSync(this.file);
     const end = bytes.lastIndexOf(10) + 1;
     const lines = bytes.subarray(0, end).toString("utf8").split("\n").filter(Boolean);
-    const records: RedisAofRecord[] = [];
-    let previousFrameEnd: number | null = null;
+    const replayBySequence = new Map<number, RedisAofRecord>();
+    let maximumFrameSequence = baseline;
     for (const line of lines) {
       const frame = decode(line);
-      const extendsPrevious = previousFrameEnd !== null &&
-        frame.from === previousFrameEnd + 1;
-      const beginsAfterSnapshot = previousFrameEnd !== null &&
-        previousFrameEnd <= baseline && frame.from === baseline + 1;
-      if (previousFrameEnd !== null && !extendsPrevious && !beginsAfterSnapshot) {
-        throw new Error("Local PDIM AOF frame sequence discontinuity");
+      maximumFrameSequence = Math.max(maximumFrameSequence, frame.through);
+      // A durable snapshot is authoritative through its watermark. Older
+      // processes may have appended valid, already-covered frames after a
+      // newer writer's frame; those records are safe to ignore, but every
+      // post-snapshot sequence must still be present and unambiguous.
+      for (const record of frame.records) {
+        if (record.s <= baseline) continue;
+        const prior = replayBySequence.get(record.s);
+        if (prior && (
+          prior.c !== record.c ||
+          prior.a.length !== record.a.length ||
+          prior.a.some((argument, index) => argument !== record.a[index])
+        )) {
+          throw new Error("Local PDIM AOF has conflicting duplicate sequence");
+        }
+        if (!prior) replayBySequence.set(record.s, record);
       }
-      previousFrameEnd = frame.through;
-      records.push(...frame.records);
     }
 
     const replay: RedisAofRecord[] = [];
     let replaySeq = baseline;
-    for (const record of records) {
-      if (record.s <= baseline) continue;
+    for (const record of [...replayBySequence.values()].sort((a, b) => a.s - b.s)) {
       if (record.s !== replaySeq + 1) {
         throw new Error("Local PDIM AOF sequence gap after snapshot watermark");
       }
       replay.push(record);
       replaySeq = record.s;
     }
-    this.publishedSeq = Math.max(baseline, previousFrameEnd ?? 0);
+    this.publishedSeq = maximumFrameSequence;
 
     // A torn trailing frame cannot have been acknowledged because append()
     // resolves only after fsync. Remove it before accepting further appends.
