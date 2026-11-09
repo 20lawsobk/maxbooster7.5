@@ -95,7 +95,7 @@ export async function runExecutive(tasks, {
   const priorities=new Map(tasks.map(t=>[t.id,rank(t.id)]));
   const abort=()=>{
     if(failure) return;
-    failure = signal?.reason instanceof Error
+    failure = signal?.reason instanceof Error && signal.reason.name!=="AbortError"
       ? signal.reason
       : Error("Executive interrupted by an external stop request");
     log(`[executive] Stop requested: ${failure.message}; stopping without retry so an explicit publish cancellation remains effective.`);
