@@ -159,7 +159,9 @@ try {
     LOCAL_PDIM_PORT: String(pdimPort), LOCAL_PDIM_STORE_FILE: path.join(temporary, 'pdim.json'),
     PDIM_LOCAL_CHANNEL_TOKEN: pdimChannelToken, PDIM_EXEC_TOKEN: pdimChannelToken, PDIM_BEARER_TOKEN: pdimChannelToken,
     ENABLE_BACKUPS: 'false', ENABLE_FAN_DELIVERY_WORKER: 'false', ACME_ENABLED: 'false', DNS_NODE_LOCAL: '0',
-    DISABLE_CLUSTER: 'true', DB_POOL_SIZE: '2', DB_CONNECTION_TIMEOUT: '2000',
+    // Match the app's normal single-process pool instead of creating artificial
+    // startup starvation: its DB readiness and session checks fan out during boot.
+    DISABLE_CLUSTER: 'true', DB_POOL_SIZE: '8', DB_CONNECTION_TIMEOUT: '3000',
     PORT: String(appPort), APP_PORT: String(appPort), APP_URL: `http://localhost:${appPort}`, PUBLIC_APP_URL: `http://localhost:${appPort}` };
   const fullGuard = path.join(root, 'scripts/readiness-egress-guard.mjs');
   const appFd = fs.openSync(path.join(temporary, 'app.txt'), 'w');

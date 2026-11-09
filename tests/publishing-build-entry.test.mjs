@@ -115,6 +115,9 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
   {REPLIT_DEPLOYMENT:"1",REPLIT_DEPLOYMENT_ID:"runtime-present"}]) {
   test(`legacy recovery publishing helper packs and reenters with indicators ${JSON.stringify(indicators)}`, t => {
     const f = fixture(t);
+    const cacheEvidence = path.join(f.root, ".cache", "platform-owned");
+    fs.mkdirSync(path.dirname(cacheEvidence), { recursive: true });
+    fs.writeFileSync(cacheEvidence, "preserve Replit-owned root cache");
     const protectedFiles = ["package.json", "start.sh", RECOVERY_HELPER_PATH];
     const before = protectedFiles.map(p => fs.readFileSync(path.join(f.root,p)));
     for (let attempt=0; attempt<2; attempt++) {
@@ -147,11 +150,12 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
       assert.ok(!fs.existsSync(path.join(f.root,"node_modules")));
       assert.ok(!fs.existsSync(path.join(f.root,"fixture-build.mjs")));
       assert.ok(!fs.existsSync(path.join(f.root,"venv")));
-      assert.ok(!fs.existsSync(path.join(f.root,".cache")));
+      assert.equal(fs.readFileSync(cacheEvidence, "utf8"), "preserve Replit-owned root cache");
       assert.equal(fs.readFileSync(f.outsideInterpreter,"utf8"), "external interpreter must remain unchanged");
     }
     const restored=f.run({...indicators,...f.authorization},["--recover", "."]);
     assert.equal(restored.status,0,restored.stderr);
+    assert.equal(fs.readFileSync(cacheEvidence, "utf8"), "preserve Replit-owned root cache");
     assert.deepEqual(fs.readFileSync(path.join(f.root,"node_modules/input")),Buffer.from([0,1,127,255]));
     assert.equal(fs.readFileSync(path.join(f.root,"server/source.ts"),"utf8"),"original source");
   });

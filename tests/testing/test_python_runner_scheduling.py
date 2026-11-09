@@ -15,6 +15,7 @@ import unittest
 
 REPO = Path(os.environ.get('MAXBOOSTER_TEST_REPO_ROOT', Path(__file__).resolve().parents[2]))
 RUNNER = Path(os.environ.get('MAXBOOSTER_PYTHON_RUNNER_SOURCE', REPO / 'scripts/testing/run-python-suites.py'))
+TEST_PYTHON = os.environ.get('MAXBOOSTER_TEST_PYTHON', sys.executable)
 QUIESCENT = 'tests/testing/test_report_progress.py'
 
 WRITER = '''from pathlib import Path
@@ -67,8 +68,8 @@ class PythonRunnerScheduling(unittest.TestCase):
         # Only metadata is needed; the runner records the actual local revision.
         subprocess.run(['git', '-c', 'user.name=Fixture', '-c', 'user.email=fixture@invalid',
                         'commit', '-qm', 'isolated scheduling fixture'], cwd=self.root, check=True)
-        command = [sys.executable, str(self.root / 'scripts/testing/run-python-suites.py'),
-                   '--python', sys.executable, '--output', str(self.root / 'out'),
+        command = [TEST_PYTHON, str(self.root / 'scripts/testing/run-python-suites.py'),
+                   '--python', TEST_PYTHON, '--output', str(self.root / 'out'),
                    '--workers', '2', '--timeout', str(timeout)]
         for name in files:
             command += ['--file', name]
@@ -148,7 +149,7 @@ def test_worker_overlap():
         self.put(historical, 'raise RuntimeError("historical copy must never execute")\ndef test_old():\n    assert False\n')
         self.put('tests/test_current.py', 'def test_current():\n    assert True\n')
         self.run_fixture(files=('tests/test_current.py',))
-        result = subprocess.run([sys.executable, str(self.root / 'scripts/testing/run-python-suites.py'),
+        result = subprocess.run([TEST_PYTHON, str(self.root / 'scripts/testing/run-python-suites.py'),
                                  '--file', historical, '--output', str(self.root / 'denied')],
                                 cwd=self.root, text=True, capture_output=True, timeout=10)
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)

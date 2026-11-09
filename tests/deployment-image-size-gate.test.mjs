@@ -58,6 +58,7 @@ test("the actual finalize phase runs after source removal and rejects an oversiz
   fs.mkdirSync(path.join(root, "dist/deployment"), { recursive: true });
   fs.mkdirSync(path.join(root, ".local/state"), { recursive: true });
   fs.copyFileSync(gate, path.join(root, "dist/deployment/image-size-gate.sh"));
+  fs.copyFileSync("script/lib/verify-utf8-root.py", path.join(root, "dist/deployment/verify-utf8-root.py"));
   fs.copyFileSync("build.sh", path.join(root, "build.sh"));
   fs.writeFileSync(path.join(root, ".local/state/build-path"), "0");
   const options = { cwd: root, encoding: "utf8", timeout: 15000,
@@ -82,6 +83,9 @@ test("the configured publishing build runs the image-size gate before reporting 
   assert.match(repl, /build\s*=\s*\[\s*"bash"\s*,\s*"build\.sh"\s*\]/);
   assert.match(repl, /run\s*=\s*\[\s*"bash"\s*,\s*"start\.sh"\s*\]/);
   const finalize = build.slice(build.indexOf("phase_finalize()"));
+  assert.match(build, /cp script\/lib\/verify-utf8-root\.py dist\/deployment\//);
+  assert.match(finalize, /dist\/deployment\/verify-utf8-root\.py/);
+  assert.doesNotMatch(finalize, /script\/lib\/verify-utf8-root\.py/);
   assert.match(build, /cp script\/deployment\/image-size-gate\.sh dist\/deployment\//);
   assert.match(finalize, /dist\/deployment\/image-size-gate\.sh/);
   assert.match(finalize, /image-size-gate\.sh/);

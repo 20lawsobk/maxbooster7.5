@@ -9,7 +9,12 @@ type ProperLockfile = {
     target: string,
     options: {
       realpath: false;
-      retries: number;
+      retries: number | {
+        retries: number;
+        factor: number;
+        minTimeout: number;
+        maxTimeout: number;
+      };
       stale: number;
       update: number;
       onCompromised: (error: Error) => void;
@@ -23,13 +28,64 @@ export async function acquireLocalPdimAofOwnership(
   file: string,
   onCompromised: (error: Error) => void,
 ): Promise<() => Promise<void>> {
-  const releaseLock = await properLockfile.lock(file, {
-    realpath: false,
+  // A clean deployment may not have created the private data directory yet.
+  // Persist its creation before proper-lockfile creates the sibling lock;
+  // otherwise startup fails with ENOENT before the journal can recover.
+  await ensureDurableDirectory(path.dirname(file));
+  const staleMs = 60_000;
+  const heartbeatMs = 5_000;
+  const lockPath = `${file}.lock`;
+  const options = {
+    realpath: false as const,
     retries: 0,
-    stale: 60_000,
-    update: 15_000,
+    stale: staleMs,
+    update: heartbeatMs,
     onCompromised,
-  });
+  };
+  const readLockMtime = async (): Promise<number | null> => {
+    try {
+      const stat = await fs.promises.lstat(lockPath);
+      if (!stat.isDirectory()) {
+        throw new Error("Local PDIM AOF ownership lock is not a directory");
+      }
+      return stat.mtimeMs;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw error;
+    }
+  };
+
+  let releaseLock: () => Promise<void>;
+  for (let vanishedLockRetries = 0; ; ) {
+    try {
+      releaseLock = await properLockfile.lock(file, options);
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ELOCKED") throw error;
+
+      let observedMtime = await readLockMtime();
+      if (observedMtime === null) {
+        if (++vanishedLockRetries > 8) throw error;
+        continue;
+      }
+
+      // Fail quickly when another owner is actively heartbeating. If the
+      // heartbeat stops, wait through the original full lease before allowing
+      // proper-lockfile to perform its own stale-lock recovery. A paused owner
+      // is therefore never bypassed early.
+      while (true) {
+        const remainingMs = staleMs - (Date.now() - observedMtime);
+        if (remainingMs <= 0) break;
+        await new Promise<void>(resolve =>
+          setTimeout(resolve, Math.min(heartbeatMs + 1_000, remainingMs)),
+        );
+        const currentMtime = await readLockMtime();
+        if (currentMtime === null) break;
+        if (currentMtime !== observedMtime) throw error;
+      }
+    }
+  }
+
   let released = false;
   return async () => {
     if (released) return;
@@ -66,7 +122,7 @@ async function ensureDurableDirectory(directory: string): Promise<void> {
 
   for (const created of missing.reverse()) {
     try {
-      await fs.promises.mkdir(created);
+      await fs.promises.mkdir(created, { mode: 0o700 });
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
       const stat = await fs.promises.stat(created);

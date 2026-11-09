@@ -145,13 +145,14 @@ def discover():
     return suites, duplicates
 
 
-def clean_environment(home, guard, suite):
+def clean_environment(home, guard, suite, interpreter):
     paths = [str(guard), str(ROOT), str(ROOT / 'tests')]
     if suite['file'].startswith('external/maxcore/'):
         paths = [str(guard), str(MAXCORE), str(MAXCORE / 'tests'), str(ROOT)]
     return {
         'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'HOME': str(home), 'TMPDIR': str(home),
         'LANG': 'C.UTF-8', 'TZ': 'UTC', 'PYTHONPATH': os.pathsep.join(paths),
+        'MAXBOOSTER_TEST_PYTHON': interpreter,
         'PYTHONDONTWRITEBYTECODE': '1', 'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1',
         'MAXCORE_PRIVATE_STATE_DIR': str(home / 'state'), 'STORAGE_HTTP_URL': 'http://127.0.0.1:1',
         'MAXCORE_SERVING_RELEASE': 'live-awareness', 'HF_HUB_OFFLINE': '1', 'TRANSFORMERS_OFFLINE': '1',
@@ -188,7 +189,7 @@ def run_suite(suite, output, interpreter, timeout, coverage_config=None, coverag
     with tempfile.TemporaryDirectory(prefix='maxbooster-python-test-') as temporary:
         home = Path(temporary)
         guard = home / 'guard'; guard.mkdir(); (guard / 'sitecustomize.py').write_text(GUARD)
-        env = clean_environment(home, guard, suite)
+        env = clean_environment(home, guard, suite, interpreter)
         started = time.monotonic()
         child = subprocess.Popen(args, cwd=ROOT if not relative.startswith('external/maxcore/') else MAXCORE,
                                  env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

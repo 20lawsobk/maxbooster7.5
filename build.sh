@@ -272,6 +272,7 @@ echo "   Compressor: existing deployment capsule packer (${_PDIM_FORMAT})"
 mkdir -p dist/deployment
 cp script/deployment/*.mjs dist/deployment/
 cp script/deployment/image-size-gate.sh dist/deployment/
+cp script/lib/verify-utf8-root.py dist/deployment/
 cp scripts/port-contract.sh scripts/boot-stub-server.mjs dist/deployment/
 if [ -f runtime-data.manifest.json ]; then
   cp runtime-data.manifest.json dist/deployment/runtime-data-backup.json
@@ -481,7 +482,7 @@ rm -rf .deployment-capsule-cache
 # policy inside the disposable historical build, where they were surviving.
 rm -rf maxbooster7.5 .pythonlibs hardware reports .pdim-scratch-*
 echo "==> Verifying UTF-8-safe filenames without deleting workspace data..."
-python3 script/lib/verify-utf8-root.py "$PWD"
+python3 dist/deployment/verify-utf8-root.py "$PWD"
 
 # ─── Final summary ────────────────────────────────────────────────────────────
 FAST_PATH=$(cat "$DEPLOY_STATE_DIR/build-path")

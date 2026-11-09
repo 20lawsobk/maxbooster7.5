@@ -142,9 +142,9 @@ Command: **passed**; exit 0.
 python3 scripts/testing/run-commerce.py --only inbound-registration.test
 ```
 
-Command: **passed**; exit 0.
+Command: **failed**; exit 1.
 
-- PASSED: registration checkout, verification, and account creation execute payment/plan gates before any account write
+- FAILED: registration checkout, verification, and account creation execute payment/plan gates before any account write
 
 ## `tests/payment-processing/inbound-storefront.test.mjs`
 

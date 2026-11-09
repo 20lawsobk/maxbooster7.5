@@ -14,15 +14,46 @@ test('Replit configuration parses as TOML and preserves the production entrypoin
   assert.deepEqual(config.deployment.build, ['bash', 'build.sh']);
   assert.deepEqual(config.deployment.run, ['bash', 'start.sh']);
   assert.equal(config.deployment.ignorePorts, false);
-  assert.deepEqual(config.ports.filter(port => port.externalPort !== undefined), [{ localPort: 5000, externalPort: 80 }]);
+  const publicMappings = config.ports.filter(port => port.externalPort !== undefined);
+  assert.deepEqual(publicMappings, [{ localPort: 5000, externalPort: 80 }]);
   for (const port of config.ports.filter(port => port.externalPort === undefined)) {
-    assert.equal(port.exposeLocalhost, false, `Internal port ${port.localPort} must remain private`);
+    assert.notEqual(port.exposeLocalhost, true, `Internal port ${port.localPort} must remain private`);
   }
   assert.equal(config.env.MAXCORE_SERVING_RELEASE, 'live-awareness');
   assert.equal(config.env.DATABASE_URL, undefined);
   assert.equal(config.env.NEON_DATABASE_URL, undefined);
   const tracked = spawnSync('git', ['check-ignore', '.replit'], { encoding: 'utf8' });
   assert.equal(tracked.status, 1, '.replit must survive Git synchronization');
+});
+
+test('port preflight rejects any extra public mapping, including unknown system ports', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'port-contract-security-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(root, '.replit'), [
+    '[[ports]]', 'localPort = 5000', 'externalPort = 80', '',
+    '[[ports]]', 'localPort = 53', 'externalPort = 3001', '',
+  ].join('\n'));
+  const loader = path.resolve('node_modules/tsx/dist/loader.mjs');
+  const checker = path.resolve('scripts/check-port-contract.ts');
+  const result = spawnSync(process.execPath, ['--import', loader, checker], {
+    cwd: root,
+    encoding: 'utf8',
+    env: {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      PORT: '5000',
+      LOCAL_PDIM_PORT: '5556',
+      VIDEO_DIFFUSION_PORT: '8008',
+      MAXCORE_LOCAL_PORT: '8090',
+      BOOSTERSTATE_SIDECAR_PORT: '9877',
+      MODEL_API_PORT: '9878',
+      MODEL_API_HEALTH_PORT: '9879',
+      PYTHON_AI_PORT: '9880',
+    },
+    timeout: 15000,
+  });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stderr, /only localPort 5000 on externalPort 80 is allowed/);
 });
 
 for (const corrupt of [false, true]) {

@@ -63,6 +63,7 @@ async function uploadProbe(scope) {
 async function decoderProbe(scope) {
   const require = createRequire(`${root}/${scope}/package.json`);
   const undici = scope === "." ? createRequire(require.resolve("gaxios"))("undici") : require("undici");
+  const dispatcher = new undici.Agent({ connections: 1 });
   const server = createServer((req, res) => {
     if (req.url === "/excessive") {
       res.setHeader("content-encoding", Array(100).fill("gzip").join(","));
@@ -77,13 +78,14 @@ async function decoderProbe(scope) {
   try {
     const origin = `http://127.0.0.1:${server.address().port}`;
     await assert.rejects(async () => {
-      const response = await undici.fetch(`${origin}/excessive`);
+      const response = await undici.fetch(`${origin}/excessive`, { dispatcher });
       await response.text();
     }, error => /too many content-encodings/.test(String(error.cause?.message ?? error.message)),
     "untrusted excessive encoding must produce a bounded controlled fetch rejection");
-    assert.equal(await (await undici.fetch(`${origin}/gzip`)).text(), "normal decoded response");
-    assert.equal(await (await undici.fetch(`${origin}/health`)).text(), "alive");
+    assert.equal(await (await undici.fetch(`${origin}/gzip`, { dispatcher })).text(), "normal decoded response");
+    assert.equal(await (await undici.fetch(`${origin}/health`, { dispatcher })).text(), "alive");
   } finally {
+    await dispatcher.close();
     server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));
   }

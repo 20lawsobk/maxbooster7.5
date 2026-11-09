@@ -29,7 +29,7 @@ async function within(promise, deadlineMs, message) {
   }
 }
 
-function startOwned(childScript, cwd, port) {
+function startOwned(childScript, cwd, port, readyTimeoutMs = 12_000) {
   // The production module receives no database/provider/remote bucket binding.
   const env = {
     NODE_ENV: "test", LOCAL_PDIM_PORT: String(port), PORT: String(port + 1),
@@ -44,11 +44,14 @@ function startOwned(childScript, cwd, port) {
   let readyResolve, readyReject;
   let exited = false;
   const announced = new Promise((accept, reject) => { readyResolve = accept; readyReject = reject; });
-  const ready = within(announced, 12_000, "private PDIM startup deadline exceeded");
+  const ready = within(announced, readyTimeoutMs, "private PDIM startup deadline exceeded");
   const closed = new Promise(accept => {
     child.once("close", (code, signal) => {
       exited = true;
-      readyReject(new Error(`private PDIM exited before ready (${code ?? signal})`));
+      const detail = output.trim().slice(-4_000);
+      readyReject(new Error(
+        `private PDIM exited before ready (${code ?? signal})${detail ? `: ${detail}` : ""}`,
+      ));
       accept({ code, signal });
     });
   });
@@ -75,7 +78,7 @@ async function command(port, cmd, args) {
   return response.json();
 }
 
-test("local PDIM preserves every concurrent acknowledged increment after abrupt process loss", { timeout: 60_000 }, async t => {
+test("local PDIM preserves every concurrent acknowledged increment after abrupt process loss", { timeout: 120_000 }, async t => {
   const scratch = await mkdtemp("/tmp/pdim-ack-capacity-");
   const children = [];
   let peakObservedRssKiB = 0;
@@ -117,11 +120,14 @@ test("local PDIM preserves every concurrent acknowledged increment after abrupt 
     assert.equal(Math.max(...values), 256);
 
     // No grace period or graceful save: every response already crossed the AOF
-    // acknowledgement boundary. Recovery must include the last acknowledged op.
+    // acknowledgement boundary. Recovery must include the last acknowledged
+    // op, while respecting the full stale-owner lease before takeover.
     assert.equal((await stopOwned(first, "SIGKILL")).signal, "SIGKILL");
-    const second = startOwned(childScript, scratch, port);
+    const recoveryStarted = performance.now();
+    const second = startOwned(childScript, scratch, port, 85_000);
     children.push(second);
     await second.ready;
+    const restartLockWaitMs = Math.round(performance.now() - recoveryStarted);
     assert.equal(await command(port, "GET", ["probe:counter"]), "256");
     assert.equal((await stopOwned(second, "SIGTERM")).code, 0);
 
@@ -130,7 +136,7 @@ test("local PDIM preserves every concurrent acknowledged increment after abrupt 
     t.diagnostic(JSON.stringify({
       scope: "actual local PDIM HTTP/canonical RedisStore/AOF with disposable local state",
       concurrency: 8, acknowledgedMutations: 256, recoveredCounter: 256, retries: 0,
-      wallMs, p50Ms: percentile(.5), p95Ms: percentile(.95), p99Ms: percentile(.99), peakObservedRssKiB,
+      wallMs, restartLockWaitMs, p50Ms: percentile(.5), p95Ms: percentile(.95), p99Ms: percentile(.99), peakObservedRssKiB,
       productionDataTouched: false,
       limitations: "bounded local probe, not worldwide capacity, saturation/soak, power loss, remote bucket or application/inference load",
     }));

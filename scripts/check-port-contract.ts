@@ -15,11 +15,11 @@
  *   1. Every internal service port is distinct (delegates to
  *      server/config/ports.ts, which throws on collision).
  *   2. The public app port (PORT) does not collide with any internal port.
- *   3. `.replit`'s [[ports]] table maps exactly one `localPort` to the
- *      Replit-default external port (80) — the app's public HTTP port — and
- *      that mapping points at `runtimePorts.app`, not an internal service.
- *   4. No internal service port has any `externalPort`. A `[[ports]]` entry
- *      with only `localPort` is explicitly private and is permitted.
+ *   3. `.replit`'s [[ports]] table has exactly one external mapping:
+ *      `runtimePorts.app` to Replit's public HTTP port (80).
+ *   4. Every other port entry omits `externalPort`, keeping the listener
+ *      private. This is stricter than checking only known app-side services:
+ *      an unknown/system port must not become public by accident.
  *   5. `.replit`'s [[ports]] table itself has no duplicate `localPort` or
  *      duplicate `externalPort` entries.
  *
@@ -152,8 +152,30 @@ for (const m of mappings) {
   externalOwners.set(m.externalPort, m.line);
 }
 
-// 3 & 4. Exactly one mapping to the Replit-default external port (80), and it
-// must be the app's listener — not an internal service.
+// 3 & 4. Every external mapping must be the app listener on port 80.
+const unexpectedExternal = mappings.find(
+  (m) =>
+    m.externalPort !== undefined &&
+    (m.localPort !== runtimePorts.app ||
+      m.externalPort !== REPLIT_DEFAULT_EXTERNAL_PORT),
+);
+if (unexpectedExternal) {
+  fail(
+    `.replit exposes localPort ${unexpectedExternal.localPort} on externalPort ` +
+      `${unexpectedExternal.externalPort} (line ${unexpectedExternal.line}); only ` +
+      `localPort ${runtimePorts.app} on externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT} is allowed. ` +
+      "All other ports must omit externalPort.",
+  );
+}
+
+const externalMappings = mappings.filter((m) => m.externalPort !== undefined);
+if (externalMappings.length > 1) {
+  fail(
+    `.replit contains ${externalMappings.length} external port mappings; only the app listener ` +
+      `(localPort ${runtimePorts.app} → externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT}) may be public`,
+  );
+}
+
 const publicMappings = mappings.filter(
   (m) => m.externalPort === REPLIT_DEFAULT_EXTERNAL_PORT,
 );

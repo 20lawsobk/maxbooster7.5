@@ -8359,13 +8359,53 @@ import path6 from "node:path";
 import { createRequire as createRequire2 } from "node:module";
 import { createHash as createHash6, randomUUID as randomUUID3 } from "node:crypto";
 async function acquireLocalPdimAofOwnership(file, onCompromised) {
-  const releaseLock = await properLockfile.lock(file, {
+  await ensureDurableDirectory(path6.dirname(file));
+  const staleMs = 6e4;
+  const heartbeatMs = 5e3;
+  const lockPath = `${file}.lock`;
+  const options = {
     realpath: false,
     retries: 0,
-    stale: 6e4,
-    update: 15e3,
+    stale: staleMs,
+    update: heartbeatMs,
     onCompromised
-  });
+  };
+  const readLockMtime = async () => {
+    try {
+      const stat = await fs4.promises.lstat(lockPath);
+      if (!stat.isDirectory()) {
+        throw new Error("Local PDIM AOF ownership lock is not a directory");
+      }
+      return stat.mtimeMs;
+    } catch (error) {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    }
+  };
+  let releaseLock;
+  for (let vanishedLockRetries = 0; ; ) {
+    try {
+      releaseLock = await properLockfile.lock(file, options);
+      break;
+    } catch (error) {
+      if (error.code !== "ELOCKED") throw error;
+      let observedMtime = await readLockMtime();
+      if (observedMtime === null) {
+        if (++vanishedLockRetries > 8) throw error;
+        continue;
+      }
+      while (true) {
+        const remainingMs = staleMs - (Date.now() - observedMtime);
+        if (remainingMs <= 0) break;
+        await new Promise(
+          (resolve) => setTimeout(resolve, Math.min(heartbeatMs + 1e3, remainingMs))
+        );
+        const currentMtime = await readLockMtime();
+        if (currentMtime === null) break;
+        if (currentMtime !== observedMtime) throw error;
+      }
+    }
+  }
   let released = false;
   return async () => {
     if (released) return;
@@ -8392,7 +8432,7 @@ async function ensureDurableDirectory(directory) {
   }
   for (const created of missing.reverse()) {
     try {
-      await fs4.promises.mkdir(created);
+      await fs4.promises.mkdir(created, { mode: 448 });
     } catch (error) {
       if (error.code !== "EEXIST") throw error;
       const stat = await fs4.promises.stat(created);

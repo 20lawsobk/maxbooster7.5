@@ -12,10 +12,10 @@ import http from "node:http";
 import { spawn } from "node:child_process";
 import WebSocket from "ws";
 import { trackBrowserProcesses } from "./helpers-browser-processes.mjs";
+import { findChromiumExecutable } from "./helpers-chromium.mjs";
 
 test("AI analytics page renders honest measured, insufficient, failure and account-transition states", { timeout: 40000 }, async t => {
-  const root = process.cwd(), chromium = [process.env.CHROMIUM_PATH, process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE,
-    "/usr/bin/chromium", "/usr/bin/chromium-browser"].find(binary => binary && fs.existsSync(binary));
+  const root = process.cwd(), chromium = findChromiumExecutable();
   assert.ok(chromium, "Actual Chromium is required; missing browser is not a pass");
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "account-analytics-browser-"));
   let server, socket, stopBrowser;

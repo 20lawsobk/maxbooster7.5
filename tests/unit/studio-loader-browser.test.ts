@@ -9,6 +9,7 @@ import WebSocket from "ws";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { trackBrowserProcesses } from "../helpers-browser-processes.mjs";
+import { findChromiumExecutable } from "../helpers-chromium.mjs";
 
 // The real React DOM and installed Query v5 execute in an owned browser. Only
 // HTTP, toast and error-reporting boundaries are fixtures. This dormant wrapper
@@ -44,9 +45,7 @@ describe("StudioLoader with the installed Query client", () => {
   }
   beforeAll(async () => {
     const root = process.cwd();
-    const chromium = [process.env.CHROMIUM_PATH, process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE,
-      "/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome", "/usr/bin/google-chrome-stable"]
-      .find(value => value && fs.existsSync(value));
+    const chromium = findChromiumExecutable();
     expect(chromium, "Owned Chromium is required; this test never skips a missing browser").toBeTruthy();
     temp = fs.mkdtempSync(path.join(os.tmpdir(), "studio-loader-query-"));
     const bundle = await build({

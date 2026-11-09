@@ -37,6 +37,21 @@ function checkPortConfig(replitConfig: string) {
   );
 }
 
+function expectPublicMappingRejected(
+  result: ReturnType<typeof checkPortConfig>,
+  localPort: number,
+  externalPort: number,
+) {
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain(
+    `exposes localPort ${localPort} on externalPort ${externalPort}`,
+  );
+  expect(result.stderr).toContain(
+    "only localPort 5000 on externalPort 80 is allowed",
+  );
+  expect(result.stderr).toContain("All other ports must omit externalPort");
+}
+
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) {
     rmSync(directory, { recursive: true, force: true });
@@ -55,8 +70,7 @@ localPort = 8090
 # Blank lines do not terminate a TOML table.
 externalPort = 3002
 `);
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("exposes internal-only localPort 8090");
+    expectPublicMappingRejected(result, 8090, 3002);
   });
 
   it("rejects explicitly enabling localhost exposure for private services", () => {
@@ -130,11 +144,7 @@ localPort = 6379
 externalPort = 80
 `);
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain(
-      "exposes localPort 6379 on the public default port 80",
-    );
-    expect(result.stderr).toContain("the app listens on 5000");
+    expectPublicMappingRejected(result, 6379, 80);
   });
 
   it("rejects adding Redis beside the application on public 80", () => {
@@ -165,10 +175,7 @@ localPort = 6379
 externalPort = 3001
 `);
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain(
-      "exposes internal-only localPort 6379 on externalPort 3001",
-    );
+    expectPublicMappingRejected(result, 6379, 3001);
   });
 
   it("rejects publishing the configured non-default loopback Redis port", () => {
@@ -185,10 +192,7 @@ localPort = 6380
 externalPort = 3001
 `);
 
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain(
-        "exposes internal-only localPort 6380 on externalPort 3001",
-      );
+      expectPublicMappingRejected(result, 6380, 3001);
     } finally {
       if (previous === undefined) delete portEnvironment.REDIS_URL;
       else portEnvironment.REDIS_URL = previous;
@@ -206,10 +210,6 @@ localPort = 5556
 externalPort = 3000
 `);
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain(
-      "exposes internal-only localPort 5556 on externalPort 3000",
-    );
-    expect(result.stderr).toContain("remain private and omit externalPort");
+    expectPublicMappingRejected(result, 5556, 3000);
   });
 });

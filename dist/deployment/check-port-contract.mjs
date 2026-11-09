@@ -176,6 +176,20 @@ for (const m of mappings) {
   }
   externalOwners.set(m.externalPort, m.line);
 }
+var unexpectedExternal = mappings.find(
+  (m) => m.externalPort !== void 0 && (m.localPort !== runtimePorts2.app || m.externalPort !== REPLIT_DEFAULT_EXTERNAL_PORT)
+);
+if (unexpectedExternal) {
+  fail(
+    `.replit exposes localPort ${unexpectedExternal.localPort} on externalPort ${unexpectedExternal.externalPort} (line ${unexpectedExternal.line}); only localPort ${runtimePorts2.app} on externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT} is allowed. All other ports must omit externalPort.`
+  );
+}
+var externalMappings = mappings.filter((m) => m.externalPort !== void 0);
+if (externalMappings.length > 1) {
+  fail(
+    `.replit contains ${externalMappings.length} external port mappings; only the app listener (localPort ${runtimePorts2.app} \u2192 externalPort ${REPLIT_DEFAULT_EXTERNAL_PORT}) may be public`
+  );
+}
 var publicMappings = mappings.filter(
   (m) => m.externalPort === REPLIT_DEFAULT_EXTERNAL_PORT
 );

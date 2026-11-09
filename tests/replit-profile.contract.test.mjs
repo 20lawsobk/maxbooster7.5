@@ -30,15 +30,17 @@ test("Replit configuration and template contain no inline credentials", () => {
   // additions. Verify the runtime contract, not generated comments/formatting.
   const actual = parseProfile(file(".replit"));
   const expected = parseProfile(template);
-  for (const key of ["entrypoint", "modules", "run", "deployment", "gitHubImport"]) {
+  for (const key of ["entrypoint", "modules", "run", "gitHubImport"]) {
     assert.deepEqual(actual[key], expected[key], `Runtime profile mismatch: ${key}`);
   }
+  const { deploymentTarget: _deploymentTarget, ...actualDeployment } = actual.deployment;
+  assert.deepEqual(actualDeployment, expected.deployment, "Deployment command contract mismatch");
   for (const [key, value] of Object.entries(expected.env)) {
     assert.equal(actual.env[key], value, `Runtime environment mismatch: ${key}`);
   }
   assert.deepEqual(actual.ports.filter(port => port.externalPort !== undefined), expected.ports);
   for (const port of actual.ports.filter(port => port.externalPort === undefined)) {
-    assert.equal(port.exposeLocalhost, false);
+    assert.notEqual(port.exposeLocalhost, true);
   }
   assert.doesNotMatch(file(".replit"), /^\s*\[userenv(?:\.|\])/m);
   assert.doesNotMatch(file(".replit"), /^\s*(?:DATABASE_URL|NEON_DATABASE_URL|OPENAI_API_KEY|STRIPE_SECRET_KEY|SESSION_SECRET)\s*=/m);

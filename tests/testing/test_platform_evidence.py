@@ -2,11 +2,14 @@
 import copy
 import hashlib
 import importlib.util
+import os
 from pathlib import Path
+import sys
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+TEST_PYTHON = os.environ.get("MAXBOOSTER_TEST_PYTHON", sys.executable)
 SPEC = importlib.util.spec_from_file_location("platform_register", ROOT / "scripts/testing/platform-register.py")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
@@ -169,7 +172,7 @@ def actual_execution(tmp_path):
             source.write_text(python_source or "def test_owned_producer():\n    assert 2 + 2 == 4\n")
             artifact = incoming / "python/owned.xml"
             artifact.parent.mkdir()
-            command = [sys.executable, "-m", "pytest", "-q", relative, "--junitxml=" + str(artifact)]
+            command = [TEST_PYTHON, "-m", "pytest", "-q", relative, "--junitxml=" + str(artifact)]
             name = "test_owned_producer"
         else:
             source.write_text("import {test} from 'node:test'; import assert from 'node:assert/strict';\n"
@@ -399,7 +402,6 @@ def test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass(actual_execution
     """Both occurrences really execute the same unchanged owned source."""
     import datetime
     import json
-    import sys
 
     proof = actual_execution("node")
     proof["source"].write_text("import {test} from 'node:test'; import assert from 'node:assert/strict';\n"
@@ -431,7 +433,7 @@ print('Two actual owned runs completed: passed + ' + second)
     common.ROOT = proof["root"]
     started = datetime.datetime.now(datetime.timezone.utc).isoformat()
     prior = proof["master"]["runs"][0]
-    command = [sys.executable, "-c", runner, proof["caseFile"], prior["command"][0],
+    command = [TEST_PYTHON, "-c", runner, proof["caseFile"], prior["command"][0],
                str(proof["incoming"] / "node"), second_outcome]
     run = common.run_command(command, proof["incoming"] / "orchestration/duplicate-node.txt", cwd=proof["root"], timeout=15)
     assert run["exitCode"] == 0

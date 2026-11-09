@@ -40,7 +40,13 @@ test("real Rust compilation survives concurrent workspace cleanup", {
   fs.cpSync("boosterstate/src", path.join(root, "boosterstate/src"), { recursive: true });
   const child = spawn("bash", ["build.sh", "--executive-task", "rust"], {
     cwd: root,
-    env: { ...process.env, TMPDIR: path.join(root, "scratch"), DEPLOY_TASK_CPU: "2" },
+    env: {
+      ...process.env,
+      TMPDIR: path.join(root, "scratch"),
+      BOOSTERSTATE_PORTABLE_RUST_DIR: path.join(root, "portable-rust"),
+      BOOSTERSTATE_CARGO_HOME: path.join(root, "cargo-home"),
+      DEPLOY_TASK_CPU: "2",
+    },
     detached: true,
   });
   let output = "";

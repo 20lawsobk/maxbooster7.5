@@ -66,9 +66,15 @@ test("governance requires verified Resend raw bytes and Twilio signatures before
     TWILIO_AUTH_TOKEN: "synthetic", APP_URL: "https://example.invalid" };
   const email = load("server/services/emailWebhookVerification.ts", { "node:crypto": crypto });
   const sms = load("server/services/smsWebhookVerification.ts", { twilio: { default: twilio } }, env);
+  const assuranceMustNotRunForVerifiedWebhooks = {
+    enforceAssurance() {
+      assert.fail("verified provider webhooks must bypass session assurance only after signature validation");
+    },
+  };
   const { governanceBoundary } = load("server/middleware/governanceBoundary.ts", {
     "../services/governancePolicyService.js": { enforceMaintenance: (_, res) => res.status(503).json({}) },
     "../services/emailWebhookVerification.js": email, "../services/smsWebhookVerification.js": sms,
+    "./authAssurance.js": assuranceMustNotRunForVerifiedWebhooks,
   }, env);
   const raw = Buffer.from('{ "type": "email.delivered" }');
   const timestamp = String(Math.floor(Date.now() / 1000));
