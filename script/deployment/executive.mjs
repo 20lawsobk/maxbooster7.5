@@ -65,6 +65,16 @@ export function validatePlan(tasks) {
     const t=map.get(id);
     if(!t.command || !Array.isArray(t.args) || ![t.cpu,t.io,t.memoryMB].every(n=>Number.isFinite(n)&&n>=0))
       throw Error(`Invalid task ${id}`);
+    if(t.maxRetries !== undefined &&
+      (!Number.isInteger(t.maxRetries) || t.maxRetries < 0 || t.maxRetries > 2))
+      throw Error(`Invalid retry limit for task ${id}`);
+    if(t.retryBackoffMs !== undefined &&
+      (!Number.isInteger(t.retryBackoffMs) || t.retryBackoffMs < 0 || t.retryBackoffMs > 30000))
+      throw Error(`Invalid retry backoff for task ${id}`);
+    if(t.retryOnSignals !== undefined &&
+      (!Array.isArray(t.retryOnSignals) ||
+       t.retryOnSignals.some(s => !["SIGTERM", "SIGHUP"].includes(s))))
+      throw Error(`Invalid retry signals for task ${id}`);
     t.deps.forEach(visit); visiting.delete(id); done.add(id);
   }
   tasks.forEach(t=>visit(t.id));
@@ -77,11 +87,19 @@ export async function runExecutive(tasks, {
   validatePlan(tasks);
   if(!Number.isFinite(budgetMs)||budgetMs<=0) throw Error("Invalid executive budget");
   const start=Date.now(),done=new Set(),pending=new Map(tasks.map(t=>[t.id,t]));
-  const active=new Map(), children=new Set(); let failure=null,lastReport=0,ready=false;
+  const active=new Map(), children=new Set(), attempts=new Map(), retryAt=new Map();
+  for (const task of tasks) attempts.set(task.id,0);
+  let failure=null,lastReport=0,ready=false;
   // Prioritize prerequisites with the most downstream work instead of file order.
   const rank=id=>1+Math.max(0,...tasks.filter(t=>t.deps.includes(id)).map(t=>rank(t.id)));
   const priorities=new Map(tasks.map(t=>[t.id,rank(t.id)]));
-  const abort=()=>{failure ??= Error("Executive interrupted");};
+  const abort=()=>{
+    if(failure) return;
+    failure = signal?.reason instanceof Error
+      ? signal.reason
+      : Error("Executive interrupted by an external stop request");
+    log(`[executive] Stop requested: ${failure.message}; stopping without retry so an explicit publish cancellation remains effective.`);
+  };
   signal?.addEventListener("abort",abort,{once:true});
   try {
     while(pending.size || active.size) {
@@ -93,13 +111,30 @@ export async function runExecutive(tasks, {
         if(!job.closed) continue;
         active.delete(id);
         if(job.error || job.code!==0) {
-          failure ??= job.error ?? Error(`${id} exited ${job.code}`);
+          let cleanupError=null;
           try {
             await terminateFailedTaskGroup(job.child.pid);
           } catch(error) {
-            failure = Error(`${failure.message}; task process group cleanup failed: ${error.message}`, {
-              cause: failure,
-            });
+            cleanupError=error;
+          }
+          const maxRetries=job.task.maxRetries??0;
+          const retriesUsed=Math.max(0,job.attempt-1);
+          const retryableSignal=!signal?.aborted && !failure && !cleanupError && job.signal &&
+            (job.task.retryOnSignals??[]).includes(job.signal);
+          if(retryableSignal && retriesUsed<maxRetries) {
+            const baseDelay=job.task.retryBackoffMs??500;
+            const backoff=Math.min(30000,baseDelay*(2**retriesUsed));
+            pending.set(id,job.task);
+            retryAt.set(id,Date.now()+backoff);
+            log(`[executive] ${id} interrupted by ${job.signal}; retry ${retriesUsed+1}/${maxRetries} in ${backoff}ms after process cleanup.`);
+          } else {
+            failure ??= cleanupError
+              ? Error(`${id} process group cleanup failed: ${cleanupError.message}`,{cause:cleanupError})
+              : job.error ?? Error(
+                job.signal
+                  ? `${id} interrupted by ${job.signal} after ${retriesUsed} retries`
+                  : `${id} exited ${job.code}`,
+              );
           }
         }
         else {
@@ -114,6 +149,7 @@ export async function runExecutive(tasks, {
       let io=running.reduce((n,j)=>n+j.task.io,0);
       for(const task of [...pending.values()].sort((a,b)=>priorities.get(b.id)-priorities.get(a.id))) {
         if(!task.deps.every(d=>done.has(d))) continue;
+        if((retryAt.get(task.id)??0)>Date.now()) continue;
         const eligible=[...pending.values()].filter(t=>t.deps.every(d=>done.has(d))).length;
         const slots=Math.max(1,Math.min(eligible,cap.ioSlots-io));
         const desired=task.elasticCPU ? Math.min(task.maxCPU,Math.floor((cap.cpus-cpu)/slots)) : task.cpu;
@@ -125,14 +161,17 @@ export async function runExecutive(tasks, {
         const child=spawn(task.command,task.args,{cwd,detached:true,stdio:"inherit",env:{
           ...env,DEPLOY_TASK_CPU:String(assignedCPU),CARGO_BUILD_JOBS:String(assignedCPU),
         }});
-        const job={task,child,cpu:assignedCPU,closed:false,started:Date.now(),
+        const attempt=attempts.get(task.id)+1;
+        attempts.set(task.id,attempt);
+        const job={task,child,cpu:assignedCPU,closed:false,started:Date.now(),attempt,
           owned:child.pid?createOwnedProcessTracker(child.pid):null};
         children.add(job);
         child.once("error",error=>{job.error=error;job.closed=true;});
-        child.once("close",code=>{job.code=code;job.closed=true;});
+        child.once("close",(code,exitSignal)=>{job.code=code;job.signal=exitSignal;job.closed=true;});
         active.set(task.id,job); pending.delete(task.id);
         cpu+=assignedCPU;memory+=task.memoryMB;io+=task.io;
-        log(`[executive] starting ${task.id}; cpu=${assignedCPU}, reserved=${task.memoryMB} MiB`);
+        retryAt.delete(task.id);
+        log(`[executive] starting ${task.id}; attempt=${attempt}; cpu=${assignedCPU}, reserved=${task.memoryMB} MiB`);
       }
       if(!ready && readiness && [...active.values()].some(j=>j.task.application)) {
         ready=await readiness();
@@ -144,7 +183,12 @@ export async function runExecutive(tasks, {
       }
         if(active.size || pending.size) await delay(pollMs);
     }
-    if(failure) throw failure;
+    if(failure) {
+      failure.completedTasks=[...done];
+      failure.runningTasks=[...active.keys()];
+      failure.waitingTasks=[...pending.keys()];
+      throw failure;
+    }
     if(readiness && !ready) throw Error("Application exited before becoming ready");
     return {completed:[...done],ready};
   } finally {
