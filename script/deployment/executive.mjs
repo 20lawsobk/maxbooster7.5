@@ -53,6 +53,26 @@ async function terminateFailedTaskGroup(groupId, { graceMs = 250, killWaitMs = 1
   }
 }
 
+export function bindShutdownSignals(controller, emitter = process) {
+  const bindings = ["SIGINT", "SIGTERM", "SIGHUP"].map(signalName => {
+    const handler = () => {
+      if (controller.signal.aborted) return;
+      const reason = Error(`Executive interrupted by ${signalName}`);
+      reason.code = "DEPLOY_EXECUTIVE_SIGNAL";
+      reason.signal = signalName;
+      // POSIX signals do not identify whether the sender is a user action,
+      // platform supervisor, or another parent process.
+      reason.signalOrigin = "unknown";
+      controller.abort(reason);
+    };
+    emitter.on(signalName, handler);
+    return [signalName, handler];
+  });
+  return () => {
+    for (const [signalName, handler] of bindings) emitter.off(signalName, handler);
+  };
+}
+
 export function validatePlan(tasks) {
   const map=new Map(tasks.map(t=>[t.id,t]));
   if(map.size!==tasks.length) throw Error("Duplicate task ID");
@@ -88,26 +108,55 @@ export async function runExecutive(tasks, {
   if(!Number.isFinite(budgetMs)||budgetMs<=0) throw Error("Invalid executive budget");
   const start=Date.now(),done=new Set(),pending=new Map(tasks.map(t=>[t.id,t]));
   const active=new Map(), children=new Set(), attempts=new Map(), retryAt=new Map();
+  const firstStartedAt=new Map(), completionStats=new Map();
   for (const task of tasks) attempts.set(task.id,0);
   let failure=null,lastReport=0,ready=false;
   // Prioritize prerequisites with the most downstream work instead of file order.
   const rank=id=>1+Math.max(0,...tasks.filter(t=>t.deps.includes(id)).map(t=>rank(t.id)));
   const priorities=new Map(tasks.map(t=>[t.id,rank(t.id)]));
+  const taskCheckpoint=()=>{
+    const now=Date.now();
+    return tasks.map(task=>{
+      if(done.has(task.id)) return {id:task.id,state:"completed",attempts:attempts.get(task.id),
+        elapsedSeconds:completionStats.get(task.id)?.elapsedSeconds??0};
+      const job=active.get(task.id);
+      if(job) return {id:task.id,state:"running",attempt:job.attempt,
+        elapsedSeconds:Math.max(0,Math.floor((now-job.started)/1000)),
+        cpu:job.cpu,memoryMB:job.task.memoryMB,io:job.task.io};
+      if(pending.has(task.id)) {
+        const blockedBy=task.deps.filter(dependency=>!done.has(dependency));
+        const retryDelay=Math.max(0,(retryAt.get(task.id)??0)-now);
+        return {id:task.id,state:retryDelay?"retry-backoff":"waiting",
+          attempts:attempts.get(task.id),blockedBy,
+          ...(retryDelay?{retryInMs:retryDelay}:{})};
+      }
+      return {id:task.id,state:"blocked",attempts:attempts.get(task.id),
+        blockedBy:task.deps.filter(dependency=>!done.has(dependency))};
+    });
+  };
   const abort=()=>{
     if(failure) return;
     failure = signal?.reason instanceof Error && signal.reason.name!=="AbortError"
       ? signal.reason
       : Error("Executive interrupted by an external stop request");
-    log(`[executive] Stop requested: ${failure.message}; stopping without retry so an explicit publish cancellation remains effective.`);
+    log(`[executive] Stop requested: ${failure.message}; signalOrigin=${failure.signalOrigin??"not supplied"}; stopping without retry.`);
   };
   signal?.addEventListener("abort",abort,{once:true});
+  let primaryError=null;
   try {
     while(pending.size || active.size) {
       if(signal?.aborted) abort();
-      if(!ready && Date.now()-start>budgetMs) failure ??= Error(`Executive deadline expired; running=${[...active.keys()]} waiting=${[...pending.keys()]}`);
+      if(!ready && Date.now()-start>budgetMs) {
+        failure ??= Error(`Executive deadline expired after ${Math.round((Date.now()-start)/1000)}s`);
+        failure.code ??= "DEPLOY_EXECUTIVE_DEADLINE";
+      }
       for(const [id,job] of active) {
         job.owned?.capture();
-        if(!job.closed && !(ready && job.task.application) && Date.now()-job.started>(job.task.timeoutMs??budgetMs)) failure ??= Error(`Task deadline expired: ${id}`);
+        if(!job.closed && !(ready && job.task.application) && Date.now()-job.started>(job.task.timeoutMs??budgetMs)) {
+          failure ??= Error(`Task deadline expired: ${id} after ${Math.round((Date.now()-job.started)/1000)}s`);
+          failure.code ??= "DEPLOY_TASK_DEADLINE";
+          failure.taskId ??= id;
+        }
         if(!job.closed) continue;
         active.delete(id);
         if(job.error || job.code!==0) {
@@ -135,11 +184,15 @@ export async function runExecutive(tasks, {
                   ? `${id} interrupted by ${job.signal} after ${retriesUsed} retries`
                   : `${id} exited ${job.code}`,
               );
+            failure.taskId ??= id;
+            failure.taskSignal ??= job.signal??null;
           }
         }
         else {
           done.add(id);
-          log(`[executive] completed ${id} in ${((Date.now()-job.started)/1000).toFixed(1)}s`);
+          const elapsedSeconds=Number(((Date.now()-(firstStartedAt.get(id)??job.started))/1000).toFixed(1));
+          completionStats.set(id,{elapsedSeconds,attempts:job.attempt});
+          log(`[executive] completed ${id} in ${elapsedSeconds.toFixed(1)}s (attempts=${job.attempt})`);
         }
       }
       if(failure) break;
@@ -163,6 +216,7 @@ export async function runExecutive(tasks, {
         }});
         const attempt=attempts.get(task.id)+1;
         attempts.set(task.id,attempt);
+        if(!firstStartedAt.has(task.id)) firstStartedAt.set(task.id,Date.now());
         const job={task,child,cpu:assignedCPU,closed:false,started:Date.now(),attempt,
           owned:child.pid?createOwnedProcessTracker(child.pid):null};
         children.add(job);
@@ -171,14 +225,20 @@ export async function runExecutive(tasks, {
         active.set(task.id,job); pending.delete(task.id);
         cpu+=assignedCPU;memory+=task.memoryMB;io+=task.io;
         retryAt.delete(task.id);
-        log(`[executive] starting ${task.id}; attempt=${attempt}; cpu=${assignedCPU}, reserved=${task.memoryMB} MiB`);
+        log(`[executive] starting ${task.id}; attempt=${attempt}; cpu=${assignedCPU}, reserved=${task.memoryMB} MiB, io=${task.io}`);
       }
       if(!ready && readiness && [...active.values()].some(j=>j.task.application)) {
         ready=await readiness();
         if(ready) log("[executive] Application readiness confirmed; supervising runtime (not a publication-success claim)");
       }
       if(Date.now()-lastReport>=15000) {
-        log(`[executive] elapsed=${Math.round((Date.now()-start)/1000)}s running=${[...active.keys()].join(",")||"none"} waiting=${[...pending.keys()].join(",")||"none"} available=${Math.round(cap.availableMB)}MiB ioSlots=${cap.ioSlots} ${ready?"ready":`budgetRemaining=${Math.max(0,Math.round((budgetMs-Date.now()+start)/1000))}s`}`);
+        const running=[...active.values()].map(job=>
+          `${job.task.id}:${Math.floor((Date.now()-job.started)/1000)}s/a${job.attempt}/cpu${job.cpu}/io${job.task.io}`);
+        const waiting=[...pending.values()].map(task=>{
+          const blockers=task.deps.filter(dependency=>!done.has(dependency));
+          return blockers.length?`${task.id}[${blockers.join("+")}]`:task.id;
+        });
+        log(`[executive] elapsed=${Math.round((Date.now()-start)/1000)}s running=${running.join(",")||"none"} waiting=${waiting.join(",")||"none"} available=${Math.round(cap.availableMB)}MiB io=${io}/${cap.ioSlots} ${ready?"ready":`budgetRemaining=${Math.max(0,Math.round((budgetMs-Date.now()+start)/1000))}s`}`);
         lastReport=Date.now();
       }
         if(active.size || pending.size) await delay(pollMs);
@@ -187,19 +247,33 @@ export async function runExecutive(tasks, {
       failure.completedTasks=[...done];
       failure.runningTasks=[...active.keys()];
       failure.waitingTasks=[...pending.keys()];
+      failure.taskCheckpoint=taskCheckpoint();
+      failure.checkpointAt=new Date().toISOString();
       throw failure;
     }
     if(readiness && !ready) throw Error("Application exited before becoming ready");
-    return {completed:[...done],ready};
+    log(`[executive] plan completed in ${((Date.now()-start)/1000).toFixed(1)}s; tasks=${done.size}; retries=${[...attempts.values()].reduce((sum,count)=>sum+Math.max(0,count-1),0)}`);
+    return {completed:[...done],ready,durations:Object.fromEntries(completionStats)};
+  } catch(error) {
+    primaryError=error;
+    throw error;
   } finally {
     signal?.removeEventListener("abort",abort);
     // Application sidecars can create their own sessions. A group-only kill
     // misses those descendants; cutting the app off at5s also prevented its
     // existing25s graceful worker drain from reaching subsystem shutdown.
+    if(active.size) log(`[executive] Draining active tasks after failure: ${[...active.keys()].join(",")}`);
     const stopped=await Promise.all([...children].map(job=>job.owned?.stop({
       graceMs:job.task.application?26000:5000,descendantGraceMs:2000,
     })));
-    if(stopped.some(result=>result?.remaining.length))throw Error('Owned deployment descendants did not stop');
+    const remaining=stopped.flatMap(result=>result?.remaining??[]);
+    if(remaining.length) {
+      const cleanupError=Error(`Owned deployment descendants did not stop: ${remaining.join(",")}`);
+      if(primaryError) {
+        primaryError.cleanupError=cleanupError.message;
+        log(`[executive] Cleanup warning after primary failure: ${cleanupError.message}`);
+      } else throw cleanupError;
+    }
     await Promise.all([...children].filter(j=>!j.closed).map(j=>new Promise(resolve=>j.child.once("close",resolve))));
   }
 }
@@ -210,12 +284,7 @@ async function main(mode) {
   validatePlan(tasks);
   const state=fs.mkdtempSync(path.join(os.tmpdir(),"deployment-executive-"));
   const controller=new AbortController();
-  const stop=signalName=>{
-    if(controller.signal.aborted) return;
-    controller.abort(Error(`Executive interrupted by ${signalName}`));
-  };
-  const stopTerm=()=>stop("SIGTERM"),stopInt=()=>stop("SIGINT");
-  process.on("SIGTERM",stopTerm);process.on("SIGINT",stopInt);
+  const unbindSignals=bindShutdownSignals(controller);
   const budget=Number(mode==="build" ? process.env.DEPLOY_BUILD_BUDGET_SECONDS??1800 : process.env.DEPLOY_START_BUDGET_SECONDS??900);
   const bootstrapElapsed=mode==="build" && process.env.DEPLOY_EXECUTIVE_STARTED_SECONDS
     ? Date.now()-Number(process.env.DEPLOY_EXECUTIVE_STARTED_SECONDS)*1000 : 0;
@@ -231,13 +300,20 @@ async function main(mode) {
       }}:{})});
   } catch(error) {
     console.error("[executive] Task checkpoint:", JSON.stringify({
+      code:error.code??null,
+      signal:error.signal??error.taskSignal??null,
+      signalOrigin:error.signalOrigin??null,
+      taskId:error.taskId??null,
+      checkpointAt:error.checkpointAt??new Date().toISOString(),
       completed: error.completedTasks ?? [],
       interrupted: error.runningTasks ?? [],
       waiting: error.waitingTasks ?? [],
+      tasks:error.taskCheckpoint??[],
+      cleanupError:error.cleanupError??null,
     }));
     throw error;
   } finally {
-    process.off("SIGTERM",stopTerm);process.off("SIGINT",stopInt);
+    unbindSignals();
     fs.rmSync(state,{recursive:true,force:true});
     if(mode==="build" && /^\/tmp\/deployment-tools\.[a-zA-Z0-9]+$/.test(process.env.DEPLOY_BOOTSTRAP_DIR??"")) {
       fs.rmSync(process.env.DEPLOY_BOOTSTRAP_DIR,{recursive:true,force:true});

@@ -32,10 +32,14 @@ export function buildPlan() {
     task("prune",["app_capsule"],128),
     // Level 19 + long-window compression measured above 600 MiB for the
     // compressor alone at one worker. Reserve the parent, tar and two workers.
-    task("pack_node",["prune"],1536),
-    task("pack_python",["app_capsule"],1536),
-    task("pack_maxcore",["app_capsule"],1536),
-    task("pack_pdim",["app_capsule"],1536),
+    // Each capsule launches a multi-threaded zstd process and reads/writes large
+    // trees on the same deployment volume. Two I/O reservations cap concurrent
+    // packers at two; this avoids four-way disk contention while leaving CPU and
+    // memory headroom for the parent and the other builder services.
+    task("pack_node",["prune"],1536,1,2),
+    task("pack_python",["app_capsule"],1536,1,2),
+    task("pack_maxcore",["app_capsule"],1536,1,2),
+    task("pack_pdim",["app_capsule"],1536,1,2),
     task("source",["pack_node","pack_python","pack_maxcore","pack_pdim"],1536),
     task("remainder",["source"],1536),
     task("finalize",["remainder"],128),

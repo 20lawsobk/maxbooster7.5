@@ -4,7 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import {runExecutive,validatePlan} from "../script/deployment/executive.mjs";
+import {EventEmitter} from "node:events";
+import {bindShutdownSignals,runExecutive,validatePlan} from "../script/deployment/executive.mjs";
 import {buildPlan,startPlan} from "../script/deployment/plans.mjs";
 import {buildSync} from "esbuild";
 import {pathToFileURL} from "node:url";
@@ -58,8 +59,38 @@ test("executor cancellation stops promptly and is never retried",async t=>{
   while(!fs.existsSync(attemptsFile)&&Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,10));
   assert.equal(fs.existsSync(attemptsFile),true,"task should have started before cancellation");
   controller.abort(Error("Publish cancelled by user"));
-  await assert.rejects(running,/Publish cancelled by user/);
+  let rejection;
+  await assert.rejects(running,error=>{rejection=error;return /Publish cancelled by user/.test(error.message);});
   assert.equal(fs.readFileSync(attemptsFile,"utf8").trim().split("\n").length,1);
+  assert.deepEqual(rejection.runningTasks,["pack"]);
+  assert.equal(rejection.taskCheckpoint.find(item=>item.id==="pack").state,"running");
+});
+test("executor binds TERM, INT and HUP with truthful signal metadata and removes handlers",()=>{
+  const emitter=new EventEmitter(),controller=new AbortController();
+  const unbind=bindShutdownSignals(controller,emitter);
+  emitter.emit("SIGHUP");
+  assert.equal(controller.signal.aborted,true);
+  assert.equal(controller.signal.reason.message,"Executive interrupted by SIGHUP");
+  assert.equal(controller.signal.reason.code,"DEPLOY_EXECUTIVE_SIGNAL");
+  assert.equal(controller.signal.reason.signalOrigin,"unknown");
+  unbind();
+  assert.equal(emitter.listenerCount("SIGINT"),0);
+  assert.equal(emitter.listenerCount("SIGTERM"),0);
+  assert.equal(emitter.listenerCount("SIGHUP"),0);
+});
+test("capsule I/O reservations bound simultaneous heavy packers to two",async()=>{
+  const logs=[];let active=0,maximum=0;
+  const jobs=["pack_node","pack_python","pack_maxcore","pack_pdim"].map(id=>({
+    ...task(id,[],"setTimeout(()=>{},40)"),io:2,
+  }));
+  await runExecutive(jobs,{capacity,pollMs:5,budgetMs:3000,log(line){
+    logs.push(line);
+    if(line.includes("starting pack_"))maximum=Math.max(maximum,++active);
+    if(line.includes("completed pack_"))active--;
+  }});
+  assert.equal(maximum,2);
+  assert.equal(active,0);
+  assert.ok(logs.some(line=>line.includes("io=2")));
 });
 test("failed prerequisite blocks dependent; invalid graphs rejected before execution",async()=>{
  await assert.rejects(runExecutive([task("fail",[],"process.exit(12)"),task("child",["fail"])],
@@ -69,6 +100,9 @@ test("failed prerequisite blocks dependent; invalid graphs rejected before execu
  validatePlan(plan);validatePlan(startPlan(process.execPath));
  assert.deepEqual(plan.find(t=>t.id==="cleanup").deps,["node"]);
  assert.deepEqual(plan.find(t=>t.id==="node").deps,[]);
+  for(const id of ["pack_node","pack_python","pack_maxcore","pack_pdim"]) {
+    assert.equal(plan.find(t=>t.id===id).io,2,`${id} must reserve two I/O slots`);
+  }
 });
 test("admission adapts when available memory recovers",async()=>{
  let samples=0;
