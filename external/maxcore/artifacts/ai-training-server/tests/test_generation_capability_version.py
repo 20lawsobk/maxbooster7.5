@@ -1,8 +1,9 @@
-"""Actual capability ASGI output matches the immutable plan version.
+"""Generation metadata and readiness route contracts for MaxCore ASGI.
 
-Only the production metadata route is extracted; no server startup, model,
-learning worker, provider request or rendered artifact is required. These
-checks do not establish generation availability or quality.
+The metadata/readiness handlers are extracted without server startup, a model,
+learning worker, provider request, or rendered artifact. Dependency probes are
+controlled for deterministic status assertions; media output acceptance lives
+in the dedicated renderer HTTP tests.
 """
 import ast
 import json
@@ -18,7 +19,7 @@ from ai_model.generation.plan import GenerationPlan
 SERVER = Path(__file__).parents[1] / "server.py"
 
 
-async def get_capabilities(app):
+async def get_capabilities(app, path="/api/generation/capabilities"):
     messages = []
 
     async def receive():
@@ -27,7 +28,6 @@ async def get_capabilities(app):
     async def send(message):
         messages.append(message)
 
-    path = "/api/generation/capabilities"
     await app({"type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1",
                "method": "GET", "scheme": "http", "path": path, "raw_path": path.encode(),
                "root_path": "", "query_string": b"", "headers": [],
@@ -41,7 +41,8 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         app = FastAPI()
         names = {"_live_awareness_capability", "_generation_readiness",
-                 "_generation_endpoint_catalog", "generation_capabilities",
+                 "_generation_runtime_dependencies", "_generation_endpoint_catalog",
+                 "generation_capabilities", "generation_readiness",
                  "live_learning_status"}
         nodes = [node for node in ast.parse(SERVER.read_text()).body
                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in names]
@@ -61,8 +62,12 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
         scope = {
             "app": app, "Depends": Depends, "verify_admin": lambda: {"role": "admin"},
             "_serving_release_status": self.serving, "_model_ready": self.model_ready,
+            "_model_init_error": None,
             "_script_agent": self.script_agent, "_live_learning_loop": self.learning_loop,
-            "_live_serving_model": self.live_serving_model, "os": os,
+            "_live_serving_model": self.live_serving_model,
+            "_generation_runtime_dependencies": lambda _modality: {
+                "runtime_fixture": True},
+            "os": os,
         }
         exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SERVER), "exec"), scope)
         self.app = app
@@ -95,8 +100,10 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
                          ["text", "image", "audio", "video"])
         self.assertEqual(set(result["renderers"]), {"image", "audio", "video"})
         endpoints = result["endpoint_routes"]
+        self.assertEqual(endpoints["readiness"]["paths"], ["/ready", "/api/ready"])
+        self.assertTrue(endpoints["readiness"]["ready"])
         self.assertEqual(endpoints["capabilities"]["path"], "/api/generation/capabilities")
-        self.assertTrue(endpoints["capabilities"]["responding"])
+        self.assertTrue(endpoints["capabilities"]["route_registered"])
         self.assertEqual(endpoints["awareness_status"]["path"], "/api/awareness/unified/status")
         self.assertTrue(endpoints["awareness_status"]["ready"])
         expected_paths = {
@@ -113,13 +120,17 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
             endpoint["route_declared"] and endpoint["shared_generation_gate_ready"]
             for endpoint in endpoints["generation"].values()
         ))
+        self.assertTrue(all(
+            endpoint["online"] and endpoint["ready"] and endpoint["status"] == "online"
+            for endpoint in endpoints["generation"].values()
+        ))
         self.assertFalse(endpoints["generation"]["text"]["trained"])
         self.assertTrue(all(
             endpoint["trained"] is False
             for name, endpoint in endpoints["generation"].items()
             if name != "text"
         ))
-        self.assertIn("not an individual media-job health probe", endpoints["note"])
+        self.assertIn("does not assert trained weights", endpoints["note"])
         self.assertTrue(all(renderer["trained"] is False for renderer in result["renderers"].values()))
         result["renderers"]["image"]["trained"] = True
         second_status, second = await get_capabilities(self.app)
@@ -163,11 +174,63 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result["serving"]["generation_ready"])
         self.assertFalse(result["serving"]["awareness_ready"])
         self.assertEqual(result["serving"]["generation_mode"], "unavailable")
+        self.assertFalse(result["endpoint_routes"]["readiness"]["ready"])
         self.assertFalse(result["endpoint_routes"]["awareness_status"]["ready"])
         self.assertTrue(all(
-            endpoint["shared_generation_gate_ready"] is False
+            endpoint["online"] is False and endpoint["status"] == "blocked"
             for endpoint in result["endpoint_routes"]["generation"].values()
         ))
+
+    async def test_ready_exposes_each_generation_route_and_actual_renderer_gate(self):
+        status, result = await get_capabilities(self.app, "/ready")
+        self.assertEqual(status, 200, result)
+        self.assertTrue(result["ready"])
+        self.assertTrue(result["endpoint_routes"]["readiness"]["ready"])
+        self.assertEqual(result["endpoint_routes"]["readiness"]["paths"],
+                         ["/ready", "/api/ready"])
+        self.assertFalse(result["model_loaded"])
+        self.assertEqual(
+            {name: endpoint["path"] for name, endpoint
+             in result["endpoint_routes"]["generation"].items()},
+            {
+                "text": "/api/generate/text",
+                "image": "/api/generate/image",
+                "audio": "/api/generate/audio",
+                "video": "/api/generate-video",
+            },
+        )
+        self.assertTrue(all(
+            endpoint["online"] and endpoint["route_declared"]
+            for endpoint in result["endpoint_routes"]["generation"].values()
+        ))
+        self.assertEqual(
+            result["endpoint_routes"]["generation"]["text"]["serving_mode"],
+            "live_awareness",
+        )
+        self.assertTrue(all(
+            result["endpoint_routes"]["generation"][modality]["serving_mode"]
+            == "procedural_renderer"
+            for modality in ("image", "audio", "video")
+        ))
+        self.assertTrue(all(
+            result["endpoint_routes"]["generation"][modality]["trained"] is False
+            for modality in ("image", "audio", "video")
+        ))
+
+    async def test_ready_fails_when_a_required_modality_runtime_dependency_is_missing(self):
+        self.scope["_generation_runtime_dependencies"] = lambda modality: {
+            "required_renderer": modality != "audio",
+        }
+        status, result = await get_capabilities(self.app, "/api/ready")
+        self.assertEqual(status, 503, result)
+        self.assertFalse(result["ready"])
+        self.assertTrue(result["endpoint_routes"]["generation"]["text"]["online"])
+        self.assertFalse(result["endpoint_routes"]["generation"]["audio"]["online"])
+        self.assertEqual(
+            result["endpoint_routes"]["generation"]["audio"]["readiness_reason"],
+            "runtime_dependencies_missing",
+        )
+        self.assertTrue(result["endpoint_routes"]["generation"]["video"]["online"])
 
 
 if __name__ == "__main__":

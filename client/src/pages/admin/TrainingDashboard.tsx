@@ -247,8 +247,11 @@ export default function TrainingDashboard() {
     queryKey: ["maxcore-generation-endpoints"],
     queryFn: async () => {
       const data = await apiFetch("/api/generation/capabilities");
-      if (!data?.endpoint_routes?.generation) {
-        throw new Error("MaxCore did not return its generation endpoint catalog.");
+      if (
+        !data?.endpoint_routes?.generation ||
+        !data?.endpoint_routes?.readiness?.paths?.length
+      ) {
+        throw new Error("MaxCore did not return its readiness and generation endpoint catalog.");
       }
       return data;
     },
@@ -527,6 +530,28 @@ export default function TrainingDashboard() {
                   <span className="text-xs text-gray-400">
                     MaxCore capability response received
                   </span>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-700 p-3">
+                  <div className="flex flex-wrap gap-2">
+                    {generationCapabilities.endpoint_routes.readiness.paths.map(
+                      (path: string) => (
+                        <code key={path} className="text-xs text-gray-200">
+                          GET {path}
+                        </code>
+                      ),
+                    )}
+                  </div>
+                  <Badge
+                    variant={
+                      generationCapabilities.endpoint_routes.readiness.ready
+                        ? "default"
+                        : "destructive"
+                    }
+                  >
+                    {generationCapabilities.endpoint_routes.readiness.ready
+                      ? "All generation routes ready"
+                      : "Generation readiness blocked"}
+                  </Badge>
                 </div>
                 <div className="rounded-md border border-gray-700 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">

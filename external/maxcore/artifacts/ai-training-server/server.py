@@ -2764,11 +2764,20 @@ def _generation_endpoint_catalog(generation, awareness_ready, renderers):
                 else renderer.get("renderer")
             ),
         }
+    modality_ready = all(
+        generation_routes[modality]["online"]
+        for modality in ("text", "image", "audio", "video")
+    )
     return {
+        "readiness": {
+            "method": "GET",
+            "paths": ["/ready", "/api/ready"],
+            "route_registered": True,
+            "ready": bool(generation.get("ready") is True and modality_ready),
+        },
         "capabilities": {
             "method": "GET",
             "path": "/api/generation/capabilities",
-            "responding": True,
             "route_registered": True,
         },
         "awareness_status": {
@@ -2931,11 +2940,7 @@ async def generation_readiness():
     endpoint_routes = _generation_endpoint_catalog(
         generation, awareness_ready, capabilities(),
     )
-    modality_ready = all(
-        endpoint_routes["generation"][modality]["online"]
-        for modality in ("text", "image", "audio", "video")
-    )
-    ready = generation["ready"] and modality_ready
+    ready = endpoint_routes["readiness"]["ready"]
     return JSONResponse(status_code=200 if ready else 503, content={
         "model_loaded": _model_ready, "awareness": awareness,
         "live_awareness": _live_awareness_capability(awareness_ready),

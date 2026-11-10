@@ -61,7 +61,8 @@ def planner_app(model, learning_loop=None, script_agent=None):
     names = {"_AwarenessMixin", "_as_text", "_request_live_learning_check",
              "_live_awareness_capability", "unified_awareness_status",
              "_generation_readiness", "unified_awareness_readiness",
-             "generation_readiness", "unified_awareness_context",
+              "_generation_runtime_dependencies", "_generation_endpoint_catalog",
+              "generation_readiness", "unified_awareness_context",
              "_merged_awareness_for",
              "_merged_awareness_legacy", "_planned_generation", "MaxcoreTextRequest",
              "ApiGenerateTextRequest", "ApiGenerateContentRequest", "_planner_inputs",
@@ -240,6 +241,20 @@ class LiveAwarenessPlannerHTTP(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result["model_loaded"])
         self.assertTrue(result["generation_ready"])
         self.assertEqual(result["generation_mode"], "live_awareness")
+        self.assertEqual(
+            {name: endpoint["path"] for name, endpoint
+             in result["endpoint_routes"]["generation"].items()},
+            {
+                "text": "/api/generate/text",
+                "image": "/api/generate/image",
+                "audio": "/api/generate/audio",
+                "video": "/api/generate-video",
+            },
+        )
+        self.assertTrue(all(
+            endpoint["online"]
+            for endpoint in result["endpoint_routes"]["generation"].values()
+        ))
         self.assertFalse(result["trained_checkpoint_ready"])
 
     async def test_real_script_agent_composes_from_bound_live_awareness_without_checkpoint(self):
