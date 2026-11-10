@@ -15,3 +15,4 @@
 - [Automation side-effect serialization](automation-side-effect-serialization.md) — serialize workflow steps and lifecycle transitions; retries of external actions need durable idempotency evidence.
 - [Python test interpreter alignment](python-test-interpreter-alignment.md) — ensure coverage and test tools are importable in the exact interpreter selected by the runner.
 - [Vitest timeout and sharding hygiene](vitest-cli-subprocess-contention.md) — distinguish runner timeouts from test failures and merge coverage shards before enforcing global thresholds.
+- [Nested Max Booster copy](nested-maxbooster-copy.md) — the owner identified `maxbooster7.5` as a nested duplicate, not the active app source.
