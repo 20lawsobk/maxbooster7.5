@@ -1,7 +1,6 @@
-#!/bin/bash
-# Max Booster deployment build.
-# Operates on a disposable deployment copy.
-# Keep nounset off for compatibility with sourced project helpers.
+#!/usr/bin/env bash
+# Run only in the disposable publishing copy.
+# Sourced project helpers retain their existing shell contract.
 set -Ee -o pipefail
 
 _build_error() {
@@ -13,7 +12,6 @@ _build_error() {
 }
 trap '_build_error "$?" "$LINENO"' ERR
 
-# Resolve the project root independently of the caller and CDPATH.
 BUILD_ROOT=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 readonly BUILD_ROOT
 cd -- "$BUILD_ROOT"
@@ -31,123 +29,85 @@ require_state_dir() {
   [[ -n ${DEPLOY_STATE_DIR:-} &&
      -d $DEPLOY_STATE_DIR &&
      -w $DEPLOY_STATE_DIR ]] ||
-    fail 'DEPLOY_STATE_DIR must name an existing writable directory supplied by bootstrap'
+    fail 'DEPLOY_STATE_DIR must be an existing writable directory supplied by the executive'
 }
 
 phase_cleanup() {
-  # Leave workspace-root .cache alone: Replit may be repopulating it.
-  # npm ci manages node_modules; compiler caches are removed after compilation.
-  echo "==> Purging disposable agent state from build container..."
+  echo '==> Purging disposable agent state'
   bash script/parallel-build-cleanup.sh "$PWD"
-  echo "   Done (agent state purged; npm-owned caches are left to npm)."
 }
 
 phase_node() {
-  # Produce the portable Node runtime expected by start.sh.
   bash script/deployment/provision-node.sh
-  echo "==> Build env: node $(node --version)  npm $(npm --version)"
+  echo "==> Build environment: node $(node --version), npm $(npm --version)"
 }
 
 phase_diffusion() {
-  echo "==> Preserving Python diffusion server files in services/diffusion/..."
+  [[ -d server/services/diffusion ]] ||
+    fail 'server/services/diffusion/ is required for production Python services'
 
-  if [ -d server/services/diffusion ]; then
-    python3 script/lib/copy-diffusion-source.py \
-      server/services/diffusion services/diffusion
-  else
-    fail 'server/services/diffusion/ is required for the production Python services'
-  fi
-
-  PREBUILT_FRONTEND="dist/public/index.html"
+  python3 script/lib/copy-diffusion-source.py \
+    server/services/diffusion services/diffusion
 }
 
 phase_dependencies() {
   require_state_dir
 
-  PREBUILT_FRONTEND="dist/public/index.html"
-  PREBUILT_SERVER="dist/index.mjs"
-  PREBUILT_CLUSTER="dist/cluster.mjs"
+  local frontend=dist/public/index.html
+  local server=dist/index.mjs
+  local cluster=dist/cluster.mjs
+  local artifact
 
-  # Avoid ffmpeg-static downloading a separate binary when the configured
-  # executable already provides the required production capabilities.
   source script/deployment/ffmpeg-path.sh
   if ! resolve_ffmpeg || ! verify_ffmpeg_capabilities; then
-    fail 'Configured FFmpeg is missing required production capabilities'
+    fail 'Configured FFmpeg lacks required production capabilities'
   fi
 
-  # Existing artifacts do not establish freshness when application source exists.
-  if [ ! -d client ] &&
-     [ ! -d server ] &&
-     [ -f "$PREBUILT_FRONTEND" ] &&
-     [ -f "$PREBUILT_SERVER" ] &&
-     [ -f "$PREBUILT_CLUSTER" ]; then
-
-    echo "==> FAST PATH: artifact-only input (no application source present)"
-    echo "   Retaining public assets from the prebuilt dist artifact tree."
-    echo "==> Installing production dependencies from the lockfile..."
-
-    npm ci --omit=dev --no-audit --no-fund
-
-    for _req_pkg in \
-      "@sentry/node" \
-      "exceljs" \
-      "pino" \
-      "express" \
-      "drizzle-orm"; do
-      if [ ! -d "node_modules/${_req_pkg}" ]; then
-        fail "${_req_pkg} missing after npm ci --omit=dev; check production dependencies"
-      fi
-    done
-
-    echo "   Critical runtime packages verified."
-    bash script/sync-subsystem-dependencies.sh
+  # Both paths retain tools until capsule preparation finishes.
+  if [[ ! -d client &&
+        ! -d server &&
+        -s "$frontend" &&
+        -s "$server" &&
+        -s "$cluster" ]]; then
     FAST_PATH=1
-  else
-    echo "==> COMPILE PATH: building current application"
-
-    [ ! -f "$PREBUILT_FRONTEND" ] && echo "   missing: $PREBUILT_FRONTEND"
-    [ ! -f "$PREBUILT_SERVER" ] && echo "   missing: $PREBUILT_SERVER"
-    [ ! -f "$PREBUILT_CLUSTER" ] && echo "   missing: $PREBUILT_CLUSTER"
-
-    if [ ! -d client ] || [ ! -d server ]; then
-      fail 'Compile path requires both client/ and server/; provide complete source or complete prebuilt artifacts'
-    fi
-
-    # Explicitly include build tools even when NODE_ENV=production.
-    echo "==> Installing all locked dependencies for compilation..."
+    echo '==> Installing locked dependencies for artifact inputs'
     npm ci --include=dev --no-audit --no-fund
-
-    echo "==> Building application (Vite frontend + esbuild server bundle)..."
-    PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build
-
-    echo "==> Pruning development dependencies..."
-    npm prune --omit=dev --no-audit --no-fund
+    bash script/sync-subsystem-dependencies.sh
+  else
+    [[ -d client && -d server ]] ||
+      fail 'Compilation requires both client/ and server/'
 
     FAST_PATH=0
+    echo '==> Installing locked dependencies and compiling current source'
+    npm ci --include=dev --no-audit --no-fund
+    PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build
   fi
 
-  echo "==> Verifying final production dependency security..."
-  npm run security:audit
-  npm run verify:dependency-security
+  for artifact in "$frontend" "$server" "$cluster"; do
+    require_file "$artifact"
+  done
 
   mkdir -p dist/deployment
   cp script/deployment/ffmpeg-path.sh dist/deployment/ffmpeg-path.sh
+  printf '%s\n' "$FAST_PATH" > "$DEPLOY_STATE_DIR/build-path"
 
-  printf '%s' "$FAST_PATH" > "$DEPLOY_STATE_DIR/build-path"
-
-  # Preserve tfjs-node/deps and its native TensorFlow libraries.
-  echo "==> Keeping TF native libraries from tfjs-node postinstall..."
-  echo "   TF native libraries preserved for production."
+  echo '==> Build tools retained until capsule preparation finishes'
 }
 
 phase_rust() {
-  echo "==> Rust sidecar: compiling release binary..."
-  CARGO_BUILD_JOBS="${DEPLOY_TASK_CPU:-2}" bash scripts/build-boosterstate.sh
+  echo '==> Compiling Rust sidecar'
+  CARGO_BUILD_JOBS="${DEPLOY_TASK_CPU:-2}" \
+    bash scripts/build-boosterstate.sh
   rm -rf boosterstate/target/
 }
 
+# Preserve the existing task name while deferring actual stripping.
 phase_strip() {
-  echo "==> Stripping node_modules..."
+  echo '==> Runtime stripping deferred until production finalization'
+}
+
+_strip_runtime_modules() {
+  echo '==> Stripping runtime dependencies'
 
   rm -rf \
     node_modules/electron \
@@ -159,30 +119,27 @@ phase_strip() {
     node_modules/electron-updater \
     node_modules/7zip-bin
 
-  echo "   Removed: electron / app-builder / 7zip-bin"
-
-  # Keep tfjs-backend-webgl: tf.node.js requires it even in a headless runtime.
-  # Keep tfjs-node/deps: production needs the native TensorFlow libraries.
+  # Preserve tfjs-node/deps and tfjs-backend-webgl.
   rm -rf node_modules/@tensorflow/tfjs-node/dist/kernels
 
-  if [ -d node_modules/@tensorflow/tfjs/dist ]; then
+  if [[ -d node_modules/@tensorflow/tfjs/dist ]]; then
     find node_modules/@tensorflow/tfjs/dist -type f \
-      \( -name "tf.js" -o -name "tf.min.js" \
-         -o -name "tf.es2017.js" -o -name "tf.es2017.min.js" \
-         -o -name "tf.fesm.js" -o -name "tf.fesm.min.js" \) \
+      -name 'tf.js' -o -name 'tf.min.js' \
+         -o -name 'tf.es2017.js' -o -name 'tf.es2017.min.js' \
+         -o -name 'tf.fesm.js' -o -name 'tf.fesm.min.js' \
       -delete
   fi
 
-  for pkg in tfjs-core tfjs-layers tfjs-converter tfjs-backend-cpu tfjs-data; do
-    if [ -d "node_modules/@tensorflow/${pkg}/dist" ]; then
+  local pkg
+  for pkg in \
+    tfjs-core tfjs-layers tfjs-converter tfjs-backend-cpu tfjs-data; do
+    if [[ -d "node_modules/@tensorflow/${pkg}/dist" ]]; then
       find "node_modules/@tensorflow/${pkg}/dist" -type f \
-        \( -name "*.umd.js" -o -name "*.fesm.js" \
-           -o -name "*.es2017.js" -o -name "*.min.js" \) \
+        -name '*.umd.js' -o -name '*.fesm.js' \
+           -o -name '*.es2017.js' -o -name '*.min.js' \
         -delete
     fi
   done
-
-  echo "   Removed: TensorFlow browser bundle variants"
 
   rm -rf \
     node_modules/@sentry/browser \
@@ -192,9 +149,6 @@ phase_strip() {
     node_modules/@sentry-internal/replay \
     node_modules/@sentry-internal/replay-canvas \
     node_modules/@sentry-internal/feedback
-
-  echo "   Removed: Sentry browser/replay SDKs"
-  echo "   Broad runtime pruning is deferred until after the app capsule."
 }
 
 phase_python() {
@@ -202,30 +156,26 @@ phase_python() {
 }
 
 phase_app_capsule() {
-  # This source snapshot is separate from the startup restoration capsules.
-  # Run before source removal and before node_modules is packed.
-  echo "==> App capsule: building portable Pocket Dimension snapshot..."
+  require_state_dir
+  require_file script/build-capsule.ts
 
-  if [ -f script/build-capsule.ts ] && [ -x node_modules/.bin/tsx ]; then
-    _APP_CAPSULE_VERSION="${REPLIT_DEPLOYMENT_ID:-$(date -u +%Y%m%d%H%M%S)}"
+  [[ -x node_modules/.bin/tsx ]] ||
+    fail 'tsx is required for app capsule preparation'
 
-    if node_modules/.bin/tsx script/build-capsule.ts "$_APP_CAPSULE_VERSION"; then
-      echo "   App capsule built: deploy-capsule/"
-    else
-      fail 'Adaptive app capsule build failed; refusing incomplete publishing output'
-    fi
-  else
-    fail 'script/build-capsule.ts and tsx are required for the adaptive app capsule'
-  fi
+  local version="${REPLIT_DEPLOYMENT_ID:-$(date -u +%Y%m%d%H%M%S)}"
+  node_modules/.bin/tsx script/build-capsule.ts "$version"
+
+  printf 'complete\n' > "$DEPLOY_STATE_DIR/app-capsule-ready"
 }
 
 phase_packer() {
-  echo "==> PDIM: Creating Pocket Dimension capsules..."
+  require_state_dir
 
   command -v zstd >/dev/null ||
     fail 'zstd is required for publishing'
 
-  # Compile the CLI before node_modules is packed or removed.
+  echo '==> Preparing deployment capsule tooling'
+
   node_modules/.bin/esbuild script/publish-capsules.ts \
     --bundle \
     --platform=node \
@@ -233,8 +183,9 @@ phase_packer() {
     --format=esm \
     --outfile=dist/publish-capsules.mjs
 
-  _PDIM_FORMAT=$(node dist/publish-capsules.mjs format)
-  echo "   Compressor: existing deployment capsule packer (${_PDIM_FORMAT})"
+  local format
+  format=$(node dist/publish-capsules.mjs format)
+  echo "   Capsule format: $format"
 
   mkdir -p dist/deployment
   cp script/deployment/*.mjs dist/deployment/
@@ -242,8 +193,9 @@ phase_packer() {
   cp script/lib/verify-utf8-root.py dist/deployment/
   cp scripts/port-contract.sh scripts/boot-stub-server.mjs dist/deployment/
 
-  if [ -f runtime-data.manifest.json ]; then
-    cp runtime-data.manifest.json dist/deployment/runtime-data-backup.json
+  if [[ -f runtime-data.manifest.json ]]; then
+    cp runtime-data.manifest.json \
+      dist/deployment/runtime-data-backup.json
 
     node_modules/.bin/esbuild scripts/restore-runtime-data.mjs \
       --bundle \
@@ -256,7 +208,7 @@ phase_packer() {
     node dist/deployment/restore-runtime-data.mjs --verify-backup
     printf 'required\n' > dist/deployment/runtime-data-required
 
-    # Remove only after backup verification, in the disposable build copy.
+    # Remove only after authenticated backup verification.
     rm -rf data uploads
   fi
 
@@ -265,6 +217,8 @@ phase_packer() {
     --platform=node \
     --format=esm \
     --outfile=dist/deployment/check-port-contract.mjs
+
+  printf 'complete\n' > "$DEPLOY_STATE_DIR/packer-ready"
 }
 
 _pdim_tar_create() {
@@ -274,48 +228,32 @@ _pdim_tar_create() {
 }
 
 _pdim_prune_nm() {
-  echo "   Removing npm-owned compiler caches after build..."
   rm -rf node_modules/.vite node_modules/.cache
   node script/lib/pruneRuntimeNodeModules.mjs "$PWD"
 }
 
 _pdim_pack() {
   local dir="$1" capsule="$2" label="$3"
-  echo "   Packing ${label}..."
+  echo "==> Packing $label"
   node dist/publish-capsules.mjs directory "$capsule" "$dir"
 }
 
 phase_prune() {
-  _pdim_prune_nm
-
-  # Startup uses this sentinel to identify restored dependencies.
-  touch node_modules/.pdim-restored
-  echo "   Sentinel written: node_modules/.pdim-restored"
-}
-
-phase_pack_node() {
-  _pdim_pack "node_modules" "node_modules.pdim" "Production node_modules"
-}
-
-phase_pack_python() {
-  _pdim_pack "python_runtime" "python_runtime.pdim" "Portable Python 3.12 runtime"
-}
-
-phase_pack_maxcore() {
-  _pdim_pack "external/maxcore" "external_maxcore.pdim" "MaxCore server"
-}
-
-phase_pack_pdim() {
-  _pdim_pack "external/pdim" "external_pdim.pdim" "PDIM server"
-}
-
-phase_source() {
   require_state_dir
 
-  local -a source_paths=()
-  local _d _f
+  # These markers belong to this execution, not a persistent cache.
+  require_file "$DEPLOY_STATE_DIR/app-capsule-ready"
+  require_file "$DEPLOY_STATE_DIR/packer-ready"
+  require_file dist/publish-capsules.mjs
 
-  # Preserve the registry needed by the application remainder capsule.
+  echo '==> Finalizing production dependencies'
+  npm prune --omit=dev --no-audit --no-fund
+  npm run security:audit
+  npm run verify:dependency-security
+
+  # Preserve the original audit-before-stripping contract.
+  _strip_runtime_modules
+  _pserve the registry needed by the application remainder capsule.
   _RUNTIME_REGISTRY_BACKUP=""
   if [ -f shared/social-platform-optimization.json ]; then
     _RUNTIME_REGISTRY_BACKUP="$DEPLOY_STATE_DIR/social-platform-optimization.json"

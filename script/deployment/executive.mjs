@@ -3,216 +3,1145 @@ import os from "node:os";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {spawn} from "node:child_process";
+import {performance} from "node:perf_hooks";
 import {setTimeout as delay} from "node:timers/promises";
 import {liveCapacity} from "./capacity.mjs";
-import {buildPlan,startPlan} from "./plans.mjs";
+import {buildPlan, startPlan} from "./plans.mjs";
 import {createOwnedProcessTracker} from "./owned-processes.mjs";
 
-function liveProcessGroupMembers(groupId) {
+const now = () => performance.now();
+
+function signalGroup(pid, signal) {
+  if (!Number.isInteger(pid) || pid < 2) return;
+  try {
+    process.kill(-pid, signal);
+  } catch (error) {
+    if (error.code !== "ESRCH") throw error;
+  }
+}
+
+function liveGroup(pid) {
+  if (!Number.isInteger(pid) || pid < 2) return [];
   const members = [];
+
   for (const name of fs.readdirSync("/proc")) {
     if (!/^\d+$/.test(name)) continue;
+
     try {
-      const match = fs.readFileSync(`/proc/${name}/stat`, "utf8").match(/^\d+ \(.*\) (.*)$/s);
+      const match = fs.readFileSync(`/proc/${name}/stat`, "utf8")
+        .match(/^\d+ \(.*\) (.*)$/s);
+
       if (!match) continue;
+
       const fields = match[1].trim().split(/\s+/);
-      if (Number(fields[2]) === groupId && !["Z", "X"].includes(fields[0])) {
-        members.push(Number(name));
-      }
+      if (
+        Number(fields[2]) === pid &&
+        !["Z", "X"].includes(fields[0])
+      ) members.push(Number(name));
     } catch (error) {
       if (!["ENOENT", "ESRCH", "EACCES"].includes(error.code)) throw error;
     }
   }
+
   return members;
 }
 
-async function terminateFailedTaskGroup(groupId, { graceMs = 250, killWaitMs = 1000 } = {}) {
-  if (!Number.isInteger(groupId) || groupId < 2) return;
-  const signalGroup = signal => {
-    try {
-      process.kill(-groupId, signal);
-    } catch (error) {
-      if (error.code !== "ESRCH") throw error;
+async function bounded(operation, ms, label) {
+  let timer;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(operation),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(Object.assign(
+          Error(`${label} timed out after ${ms}ms`),
+          {code: "DEPLOY_OPERATION_TIMEOUT"},
+        )), ms);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function stopJob(job) {
+  const graceMs = job.task.application ? 26000 : 5000;
+  let trackerError;
+
+  try {
+    if (job.owned) {
+      const result = await bounded(
+        () => job.owned.stop({graceMs, descendantGraceMs: 2000}),
+        graceMs + 5000,
+        `Cleanup for ${job.task.id}`,
+      );
+
+      if (result?.remaining?.length) {
+        throw Error(`Live owned descendants: ${result.remaining.join(",")}`);
+      }
     }
-  };
-  signalGroup("SIGTERM");
-  const graceDeadline = Date.now() + graceMs;
-  while (liveProcessGroupMembers(groupId).length && Date.now() < graceDeadline) {
-    await delay(10);
+  } catch (error) {
+    trackerError = error;
   }
-  let remaining = liveProcessGroupMembers(groupId);
+
+  signalGroup(job.child.pid, "SIGTERM");
+
+  const deadline = now() + (job.owned ? 250 : graceMs);
+  while (liveGroup(job.child.pid).length && now() < deadline) {
+    await delay(50);
+  }
+
+  let remaining = liveGroup(job.child.pid);
+
   if (remaining.length) {
-    signalGroup("SIGKILL");
-    const killDeadline = Date.now() + killWaitMs;
-    while ((remaining = liveProcessGroupMembers(groupId)).length && Date.now() < killDeadline) {
-      await delay(10);
-    }
+    signalGroup(job.child.pid, "SIGKILL");
+    const killDeadline = now() + 1500;
+
+    while (
+      (remaining = liveGroup(job.child.pid)).length &&
+      now() < killDeadline
+    ) await delay(50);
   }
+
   if (remaining.length) {
-    throw new Error(`failed task process group still has live members: ${remaining.join(",")}`);
+    throw Error(`Live task group members: ${remaining.join(",")}`);
   }
+
+  if (trackerError) throw trackerError;
 }
 
 export function bindShutdownSignals(controller, emitter = process) {
   const bindings = ["SIGINT", "SIGTERM", "SIGHUP"].map(signalName => {
     const handler = () => {
       if (controller.signal.aborted) return;
-      const reason = Error(`Executive interrupted by ${signalName}`);
-      reason.code = "DEPLOY_EXECUTIVE_SIGNAL";
-      reason.signal = signalName;
-      // POSIX signals do not identify whether the sender is a user action,
-      // platform supervisor, or another parent process.
-      reason.signalOrigin = "unknown";
-      controller.abort(reason);
+
+      controller.abort(Object.assign(
+        Error(`Executive interrupted by ${signalName}`),
+        {
+          code: "DEPLOY_EXECUTIVE_SIGNAL",
+          signal: signalName,
+          signalOrigin: "unknown",
+        },
+      ));
     };
+
     emitter.on(signalName, handler);
     return [signalName, handler];
   });
+
   return () => {
-    for (const [signalName, handler] of bindings) emitter.off(signalName, handler);
+    for (const [name, handler] of bindings) emitter.off(name, handler);
   };
 }
 
 export function validatePlan(tasks) {
-  const map=new Map(tasks.map(t=>[t.id,t]));
-  if(map.size!==tasks.length) throw Error("Duplicate task ID");
-  const visiting=new Set(),done=new Set();
-  function visit(id) {
-    if(!map.has(id)) throw Error(`Unknown prerequisite ${id}`);
-    if(visiting.has(id)) throw Error(`Dependency cycle at ${id}`);
-    if(done.has(id)) return;
-    visiting.add(id);
-    const t=map.get(id);
-    if(!t.command || !Array.isArray(t.args) || ![t.cpu,t.io,t.memoryMB].every(n=>Number.isFinite(n)&&n>=0))
-      throw Error(`Invalid task ${id}`);
-    if(t.maxRetries !== undefined &&
-      (!Number.isInteger(t.maxRetries) || t.maxRetries < 0 || t.maxRetries > 2))
-      throw Error(`Invalid retry limit for task ${id}`);
-    if(t.retryBackoffMs !== undefined &&
-      (!Number.isInteger(t.retryBackoffMs) || t.retryBackoffMs < 0 || t.retryBackoffMs > 30000))
-      throw Error(`Invalid retry backoff for task ${id}`);
-    if(t.retryOnSignals !== undefined &&
-      (!Array.isArray(t.retryOnSignals) ||
-       t.retryOnSignals.some(s => !["SIGTERM", "SIGHUP"].includes(s))))
-      throw Error(`Invalid retry signals for task ${id}`);
-    t.deps.forEach(visit); visiting.delete(id); done.add(id);
+  if (!Array.isArray(tasks)) throw Error("Plan must be an array");
+  const map = new Map();
+
+  for (const task of tasks) {
+    if (
+      !task || typeof task.id !== "string" ||
+      !task.id || map.has(task.id)
+    ) throw Error("Invalid or duplicate task ID");
+
+    if (
+      typeof task.command !== "string" || !task.command ||
+      !Array.isArray(task.args) ||
+      task.args.some(arg => typeof arg !== "string") ||
+      !Array.isArray(task.deps) ||
+      task.deps.some(id => typeof id !== "string") ||
+      ![task.cpu, task.io, task.memoryMB].every(
+        n => Number.isFinite(n) && n >= 0,
+      )
+    ) throw Error(`Invalid task ${task.id}`);
+
+    if (
+      task.elasticCPU &&
+      (!Number.isInteger(task.maxCPU) || task.maxCPU < 1)
+    ) throw Error(`Invalid maxCPU for ${task.id}`);
+
+    for (const [key, min, max] of [
+      ["maxRetries", 0, 2],
+      ["retryBackoffMs", 0, 30000],
+    ]) {
+      if (
+        task[key] !== undefined &&
+        (!Number.isInteger(task[key]) || task[key] < min || task[key] > max)
+      ) throw Error(`Invalid ${key} for ${task.id}`);
+    }
+
+    if (
+      task.timeoutMs !== undefined &&
+      (!Number.isFinite(task.timeoutMs) || task.timeoutMs <= 0)
+    ) throw Error(`Invalid timeout for ${task.id}`);
+
+    if (
+      task.retryOnSignals !== undefined &&
+      (
+        !Array.isArray(task.retryOnSignals) ||
+        task.retryOnSignals.some(s => !["SIGTERM", "SIGHUP"].includes(s))
+      )
+    ) throw Error(`Invalid retry signals for ${task.id}`);
+
+    map.set(task.id, task);
   }
-  tasks.forEach(t=>visit(t.id));
+
+  const visiting = new Set();
+  const done = new Set();
+
+  function visit(id) {
+    if (!map.has(id)) throw Error(`Unknown prerequisite ${id}`);
+    if (visiting.has(id)) throw Error(`Dependency cycle at ${id}`);
+    if (done.has(id)) return;
+
+    visiting.add(id);
+    map.get(id).deps.forEach(visit);
+    visiting.delete(id);
+    done.add(id);
+  }
+
+  tasks.forEach(task => visit(task.id));
+}
+
+export function coordinateBuildPlan(tasks) {
+  validatePlan(tasks);
+
+  const result = tasks.map(task => ({...task, deps: [...task.deps]}));
+  const map = new Map(result.map(task => [task.id, task]));
+
+  const rules = {
+    app_capsule: ["dependencies"],
+    packer: ["dependencies"],
+    prune: ["app_capsule", "packer"],
+    pack_node: ["prune"],
+    source: [
+      "assets", "rust", "pack_node",
+      "pack_python", "pack_maxcore", "pack_pdim",
+    ],
+    remainder: ["source"],
+    finalize: ["remainder"],
+  };
+
+  for (const [id, dependencies] of Object.entries(rules)) {
+    const task = map.get(id);
+    if (!task) continue;
+
+    for (const dependency of dependencies) {
+      if (!map.has(dependency)) {
+        throw Error(`Build phase ${id} requires phase ${dependency}`);
+      }
+
+      if (!task.deps.includes(dependency)) task.deps.push(dependency);
+    }
+  }
+
+  validatePlan(result);
+  return result;
 }
 
 export async function runExecutive(tasks, {
-  cwd=process.cwd(), env=process.env, capacity=liveCapacity, budgetMs=1800000,
-  pollMs=500, log=console.log, signal, readiness,
-}={}) {
+  cwd = process.cwd(),
+  env = process.env,
+  capacity = liveCapacity,
+  budgetMs = 1800000,
+  pollMs = 500,
+  log = console.log,
+  signal,
+  readiness,
+} = {}) {
   validatePlan(tasks);
-  if(!Number.isFinite(budgetMs)||budgetMs<=0) throw Error("Invalid executive budget");
-  const start=Date.now(),done=new Set(),pending=new Map(tasks.map(t=>[t.id,t]));
-  const active=new Map(), children=new Set(), attempts=new Map(), retryAt=new Map();
-  const firstStartedAt=new Map(), completionStats=new Map();
-  for (const task of tasks) attempts.set(task.id,0);
-  let failure=null,lastReport=0,ready=false;
-  // Prioritize prerequisites with the most downstream work instead of file order.
-  const rank=id=>1+Math.max(0,...tasks.filter(t=>t.deps.includes(id)).map(t=>rank(t.id)));
-  const priorities=new Map(tasks.map(t=>[t.id,rank(t.id)]));
-  const taskCheckpoint=()=>{
-    const now=Date.now();
-    return tasks.map(task=>{
-      if(done.has(task.id)) return {id:task.id,state:"completed",attempts:attempts.get(task.id),
-        elapsedSeconds:completionStats.get(task.id)?.elapsedSeconds??0};
-      const job=active.get(task.id);
-      if(job) return {id:task.id,state:"running",attempt:job.attempt,
-        elapsedSeconds:Math.max(0,Math.floor((now-job.started)/1000)),
-        cpu:job.cpu,memoryMB:job.task.memoryMB,io:job.task.io};
-      if(pending.has(task.id)) {
-        const blockedBy=task.deps.filter(dependency=>!done.has(dependency));
-        const retryDelay=Math.max(0,(retryAt.get(task.id)??0)-now);
-        return {id:task.id,state:retryDelay?"retry-backoff":"waiting",
-          attempts:attempts.get(task.id),blockedBy,
-          ...(retryDelay?{retryInMs:retryDelay}:{})};
-      }
-      return {id:task.id,state:"blocked",attempts:attempts.get(task.id),
-        blockedBy:task.deps.filter(dependency=>!done.has(dependency))};
-    });
-  };
-  const abort=()=>{
-    if(failure) return;
-    failure = signal?.reason instanceof Error && signal.reason.name!=="AbortError"
+
+  if (!Number.isFinite(budgetMs) || budgetMs <= 0) {
+    throw Error("Invalid executive budget");
+  }
+  if (!Number.isFinite(pollMs) || pollMs <= 0) {
+    throw Error("Invalid poll interval");
+  }
+
+  const started = now();
+  const done = new Set();
+  const pending = new Map(tasks.map(task => [task.id, task]));
+  const active = new Map();
+  const children = new Set();
+  const attempts = new Map(tasks.map(task => [task.id, 0]));
+  const retryAt = new Map();
+  const firstStartedAt = new Map();
+  const durations = new Map();
+  const failed = new Set();
+
+  let failure = null;
+  let primaryError = null;
+  let lastReport = -Infinity;
+  let lastProbe = -Infinity;
+  let ready = false;
+  let notify = () => {};
+
+  const successors = new Map(tasks.map(task => [task.id, []]));
+  for (const task of tasks) {
+    for (const dependency of task.deps) {
+      successors.get(dependency).push(task.id);
+    }
+  }
+
+  const priorities = new Map();
+  function rank(id) {
+    if (!priorities.has(id)) {
+      priorities.set(id, 1 + successors.get(id).reduce(
+        (highest, next) => Math.max(highest, rank(next)), 0,
+      ));
+    }
+    return priorities.get(id);
+  }
+
+  const ordered = [...tasks].sort((a, b) => rank(b.id) - rank(a.id));
+
+  const checkpoint = () => tasks.map(task => {
+    const job = active.get(task.id);
+    const base = {id: task.id, attempts: attempts.get(task.id)};
+
+    if (done.has(task.id)) {
+      return {...base, state: "completed", ...durations.get(task.id)};
+    }
+
+    if (job) {
+      return {
+        ...base,
+        state: "running",
+        attempt: job.attempt,
+        elapsedSeconds: Math.floor((now() - job.started) / 1000),
+        cpu: job.cpu,
+        memoryMB: task.memoryMB,
+        io: task.io,
+      };
+    }
+
+    const remaining = Math.max(
+      0, Math.ceil((retryAt.get(task.id) ?? 0) - now()),
+    );
+
+    return {
+      ...base,
+      state: failed.has(task.id)
+        ? "failed"
+        : remaining ? "retry-backoff" : "waiting",
+      blockedBy: task.deps.filter(id => !done.has(id)),
+      ...(remaining ? {retryInMs: remaining} : {}),
+    };
+  });
+
+  const abort = () => {
+    failure ??= signal?.reason instanceof Error
       ? signal.reason
       : Error("Executive interrupted by an external stop request");
-    log(`[executive] Stop requested: ${failure.message}; signalOrigin=${failure.signalOrigin??"not supplied"}; stopping without retry.`);
+    notify();
   };
-  signal?.addEventListener("abort",abort,{once:true});
-  let primaryError=null;
+
+  signal?.addEventListener("abort", abort, {once: true});
+
   try {
-    while(pending.size || active.size) {
-      if(signal?.aborted) abort();
-      if(!ready && Date.now()-start>budgetMs) {
-        failure ??= Error(`Executive deadline expired after ${Math.round((Date.now()-start)/1000)}s`);
-        failure.code ??= "DEPLOY_EXECUTIVE_DEADLINE";
+    if (signal?.aborted) {
+      abort();
+      throw failure;
+    }
+
+    while (pending.size || active.size) {
+      if (signal?.aborted) abort();
+
+      if (!ready && now() - started >= budgetMs) {
+        failure ??= Object.assign(
+          Error("Executive deadline expired"),
+          {code: "DEPLOY_EXECUTIVE_DEADLINE"},
+        );
       }
-      for(const [id,job] of active) {
+
+      if (failure) throw failure;
+
+      for (const [id, job] of active) {
         job.owned?.capture();
-        if(!job.closed && !(ready && job.task.application) && Date.now()-job.started>(job.task.timeoutMs??budgetMs)) {
-          failure ??= Error(`Task deadline expired: ${id} after ${Math.round((Date.now()-job.started)/1000)}s`);
-          failure.code ??= "DEPLOY_TASK_DEADLINE";
-          failure.taskId ??= id;
+
+        if (
+          !job.closed &&
+          !(ready && job.task.application) &&
+          now() - job.started >= (job.task.timeoutMs ?? budgetMs)
+        ) {
+          throw Object.assign(Error(`Task deadline expired: ${id}`), {
+            code: "DEPLOY_TASK_DEADLINE",
+            taskId: id,
+          });
         }
-        if(!job.closed) continue;
+
+        if (!job.closed) continue;
         active.delete(id);
-        if(job.error || job.code!==0) {
-          let cleanupError=null;
+
+        if (job.error || job.code !== 0) {
+          let cleanupError;
+
           try {
-            await terminateFailedTaskGroup(job.child.pid);
-          } catch(error) {
-            cleanupError=error;
+            await stopJob(job);
+            job.stopped = true;
+          } catch (error) {
+            cleanupError = error;
           }
-          const maxRetries=job.task.maxRetries??0;
-          const retriesUsed=Math.max(0,job.attempt-1);
-          const retryableSignal=!signal?.aborted && !failure && !cleanupError && job.signal &&
-            (job.task.retryOnSignals??[]).includes(job.signal);
-          if(retryableSignal && retriesUsed<maxRetries) {
-            const baseDelay=job.task.retryBackoffMs??500;
-            const backoff=Math.min(30000,baseDelay*(2**retriesUsed));
-            pending.set(id,job.task);
-            retryAt.set(id,Date.now()+backoff);
-            log(`[executive] ${id} interrupted by ${job.signal}; retry ${retriesUsed+1}/${maxRetries} in ${backoff}ms after process cleanup.`);
+
+          if (signal?.aborted) {
+            abort();
+            throw failure;
+          }
+
+          const retriesUsed = job.attempt - 1;
+
+          if (
+            !cleanupError && !signal?.aborted && !failure &&
+            (ready || now() - started < budgetMs) &&
+            retriesUsed < (job.task.maxRetries ?? 0) &&
+            (job.task.retryOnSignals ?? []).includes(job.signal)
+          ) {
+            const backoff = Math.min(
+              30000, (job.task.retryBackoffMs ?? 500) * 2 ** retriesUsed,
+            );
+
+            pending.set(id, job.task);
+            retryAt.set(id, now() + backoff);
+
+            log(
+              `[executive] retry ${id}: ${job.signal}; ` +
+              `${retriesUsed + 1}/${job.task.maxRetries} in ${backoff}ms`,
+            );
           } else {
-            failure ??= cleanupError
-              ? Error(`${id} process group cleanup failed: ${cleanupError.message}`,{cause:cleanupError})
-              : job.error ?? Error(
-                job.signal
-                  ? `${id} interrupted by ${job.signal} after ${retriesUsed} retries`
-                  : `${id} exited ${job.code}`,
-              );
-            failure.taskId ??= id;
-            failure.taskSignal ??= job.signal??null;
+            failed.add(id);
+
+            throw Object.assign(
+              cleanupError ?? job.error ?? Error(
+                `${id} ${
+                  job.signal
+                    ? `interrupted by ${job.signal}`
+                    : `exited ${job.code}`
+                }`,
+              ),
+              {taskId: id, taskSignal: job.signal ?? null},
+            );
           }
-        }
-        else {
+        } else {
           done.add(id);
-          const elapsedSeconds=Number(((Date.now()-(firstStartedAt.get(id)??job.started))/1000).toFixed(1));
-          completionStats.set(id,{elapsedSeconds,attempts:job.attempt});
-          log(`[executive] completed ${id} in ${elapsedSeconds.toFixed(1)}s (attempts=${job.attempt})`);
+
+          const elapsedSeconds = Number(
+            ((now() - firstStartedAt.get(id)) / 1000).toFixed(1),
+          );
+
+          durations.set(id, {elapsedSeconds, attempts: job.attempt});
+
+          log(
+            `[executive] completed ${id} in ${elapsedSeconds}s ` +
+            `(attempts=${job.attempt})`,
+          );
         }
       }
-      if(failure) break;
-      const cap=capacity();
-      const running=[...active.values()];
-      let cpu=running.reduce((n,j)=>n+j.cpu,0), memory=running.reduce((n,j)=>n+j.task.memoryMB,0);
-      let io=running.reduce((n,j)=>n+j.task.io,0);
-      for(const task of [...pending.values()].sort((a,b)=>priorities.get(b.id)-priorities.get(a.id))) {
-        if(!task.deps.every(d=>done.has(d))) continue;
-        if((retryAt.get(task.id)??0)>Date.now()) continue;
-        const eligible=[...pending.values()].filter(t=>t.deps.every(d=>done.has(d))).length;
-        const slots=Math.max(1,Math.min(eligible,cap.ioSlots-io));
-        const desired=task.elasticCPU ? Math.min(task.maxCPU,Math.floor((cap.cpus-cpu)/slots)) : task.cpu;
-        const assignedCPU=Math.max(1,Math.min(desired,Math.floor(cap.cpus)));
-        if(task.memoryMB>cap.memoryMB*0.9) throw Error(`${task.id} needs ${task.memoryMB} MiB; container capacity is insufficient`);
-        if(active.size && (cpu+assignedCPU>Math.max(1,cap.cpus) || memory+task.memoryMB>cap.memoryMB*0.8 ||
-          io+task.io>cap.ioSlots || task.memoryMB>cap.availableMB)) continue;
-        if(!active.size && task.memoryMB>cap.availableMB) continue;
-        const child=spawn(task.command,task.args,{cwd,detached:true,stdio:"inherit",env:{
-          ...env,DEPLOY_TASK_CPU:String(assignedCPU),CARGO_BUILD_JOBS:String(assignedCPU),
+
+      if (signal?.aborted) {
+        abort();
+        throw failure;
+      }
+
+      if (!pending.size && !active.size) break;
+
+      const cap = capacity();
+      if (
+        !cap ||
+        !["cpus", "memoryMB", "availableMB", "ioSlots"].every(
+          key => Number.isFinite(cap[key]) && cap[key] >= 0,
+        ) ||
+        cap.cpus <= 0 || cap.memoryMB <= 0 || cap.ioSlots < 1
+      ) throw Error("Invalid live capacity snapshot");
+
+      const cpuLimit = Math.max(1, Math.floor(cap.cpus));
+      let cpu = 0;
+      let memory = 0;
+      let io = 0;
+      let newlyReservedMB = 0;
+
+      for (const job of active.values()) {
+        cpu += job.cpu;
+        memory += job.task.memoryMB;
+        io += job.task.io;
+      }
+
+      const eligible = ordered.filter(task =>
+        pending.has(task.id) &&
+        task.deps.every(id => done.has(id)) &&
+        (retryAt.get(task.id) ?? 0) <= now()
+      );
+
+      for (let index = 0; index < eligible.length; index++) {
+        if (signal?.aborted) {
+          abort();
+          throw failure;
+        }
+
+        if (!ready && now() - started >= budgetMs) break;
+
+        const task = eligible[index];
+        const freeCPU = cpuLimit - cpu;
+
+        if (task.memoryMB > cap.memoryMB * 0.9) {
+          throw Object.assign(Error(
+            `${task.id} needs ${task.memoryMB} MiB; ` +
+            `capacity is ${cap.memoryMB} MiB`,
+          ), {taskId: task.id});
+        }
+
+        if (
+          freeCPU < 1 ||
+          task.memoryMB > Math.max(0, cap.availableMB - newlyReservedMB)
+        ) continue;
+
+        if (
+          active.size &&
+          (
+            memory + task.memoryMB > cap.memoryMB * 0.8 ||
+            io + task.io > cap.ioSlots
+          )
+        ) continue;
+
+        const share = Math.max(
+          1, Math.floor(freeCPU / Math.max(1, eligible.length - index)),
+        );
+
+        const requested = task.elasticCPU
+          ? Math.min(task.maxCPU, share)
+          : Math.max(1, Math.ceil(task.cpu));
+
+        if (
+          !task.elasticCPU && requested > freeCPU && active.size
+        ) continue;
+
+        const assignedCPU = Math.min(requested, freeCPU);
+
+        const child = spawn(task.command, task.args, {
+          cwd,
+          detached: true,
+          stdio: "inherit",
+          env: {
+            ...env,
+            DEPLOY_TASK_CPU: String(assignedCPU),
+            CARGO_BUILD_JOBS: String(assignedCPU),
+          },
+        });
+
+        const attempt = attempts.get(task.id) + 1;
+        const job = {
+          task, child, cpu: assignedCPU,
+          attempt, started: now(), closed: false,
+        };
+
+        children.add(job);
+        active.set(task.id, job);
+        pending.delete(task.id);
+        attempts.set(task.id, attempt);
+
+        if (!firstStartedAt.has(task.id)) {
+          firstStartedAt.set(task.id, job.started);
+        }
+
+        child.once("error", error => {
+          job.error = error;
+          job.closed = true;
+          notify();
+        });
+
+        child.once("close", (code, exitSignal) => {
+          job.code = code;
+          job.signal = exitSignal;
+          job.closed = true;
+          notify();
+        });
+
+        if (child.pid) job.owned = createOwnedProcessTracker(child.pid);
+
+        retryAt.delete(task.id);
+        cpu += assignedCPU;
+        memory += task.memoryMB;
+        newlyReservedMB += task.memoryMB;
+        io += task.io;
+
+        log(
+          `[executive] starting ${task.id}; attempt=${attempt}; ` +
+          `cpu=${assignedCPU}; memory=${task.memoryMB}MiB; io=${task.io}`,
+        );
+      }
+
+      if (
+        !ready && readiness && now() - lastProbe >= 1000 &&
+        [...active.values()].some(job => job.task.application)
+      ) {
+        lastProbe = now();
+
+        try {
+          ready = Boolean(await bounded(readiness, 2500, "Readiness probe"));
+        } catch (error) {
+          if (error.code !== "DEPLOY_OPERATION_TIMEOUT") throw error;
+        }
+
+        if (ready) {
+          log(
+            "[executive] Application ready; supervising runtime " +
+            "(not publication confirmation)",
+          );
+        }
+      }
+
+      if (now() - lastReport >= 15000) {
+        const remainingSeconds = Math.max(
+          0, Math.ceil((budgetMs - now() + started) / 1000),
+        );
+
+        log(
+          `[executive] elapsed=${Math.floor((now() - started) / 1000)}s; ` +
+          `running=${[...active.keys()].join(",") || "none"}; ` +
+          `waiting=${[...pending.keys()].join(",") || "none"}; ` +
+          `available=${Math.round(cap.availableMB)}MiB; ` +
+          `cpu=${cpu}/${cpuLimit}; io=${io}/${cap.ioSlots}; ` +
+          (ready ? "ready" : `budgetRemaining=${remainingSeconds}s`),
+        );
+
+        lastReport = now();
+      }
+
+      if (pending.size || active.size) {
+        let waitMs = Math.min(
+          pollMs,
+          ready ? pollMs : Math.max(1, budgetMs - now() + started),
+        );
+
+        for (const when of retryAt.values()) {
+          if (when > now()) {
+            waitMs = Math.min(waitMs, Math.max(1, when - now()));
+          }
+        }
+
+        await new Promise(resolve => {
+          const finish = () => {
+            clearTimeout(timer);
+            notify = () => {};
+            resolve();
+          };
+
+          const timer = setTimeout(finish, waitMs);
+          notify = finish;
+
+          if (
+            signal?.aborted ||
+            [...active.values()].some(job => job.closed)
+          ) finish();
+        });
+      }
+    }
+
+    if (readiness && !ready) {
+      throw Error("Application exited before becoming ready");
+    }
+
+    log(
+      `[executive] plan completed in ` +
+      `${((now() - started) / 1000).toFixed(1)}s; tasks=${done.size}`,
+    );
+
+    return {
+      completed: [...done],
+      ready,
+      durations: Object.fromEntries(durations),
+    };
+  } catch (error) {
+    primaryError = error;
+
+    Object.assign(error, {
+      completedTasks: [...done],
+      runningTasks: [...active.keys()],
+      waitingTasks: [...pending.keys()],
+      taskCheckpoint: checkpoint(),
+      checkpointAt: new Date().toISOString(),
+    });
+
+    throw error;
+  } finally {
+    signal?.removeEventListener("abort", abort);
+
+    if (active.size) {
+      log(`[executive] Draining tasks: ${[...active.keys()].join(",")}`);
+    }
+
+    const results = await Promise.allSettled(
+      [...children].filter(job => !job.stopped).map(stopJob),
+    );
+
+    const errors = results
+      .filter(result => result.status === "rejected")
+      .map(result => result.reason.message);
+
+    if (errors.length) {
+      if (primaryError) {
+        primaryError.cleanupError = errors.join("; ");
+        log(`[executive] Cleanup warning: ${primaryError.cleanupError}`);
+      } else {
+        throw Error(`Deployment cleanup failed: ${errors.join("; ")}`);
+      }
+    }
+  }
+}
+
+async function main(mode) {
+  let state;
+  let primaryError;
+  let unbind = () => {};
+
+  try {
+    if (!["build", "start"].includes(mode)) {
+      throw Error("Expected build or start executive mode");
+    }
+
+    const root = fs.realpathSync(
+      process.env.DEPLOY_PROJECT_ROOT || process.cwd(),
+    );
+    process.chdir(root);
+
+    const tasks = mode === "build"
+      ? coordinateBuildPlan(buildPlan())
+      : startPlan(process.execPath);
+
+    validatePlan(tasks);
+
+    const budget = Number(
+      mode === "build"
+        ? process.env.DEPLOY_BUILD_BUDGET_SECONDS ?? 1800
+        : process.env.DEPLOY_START_BUDGET_SECONDS ?? 900,
+    );
+
+    if (!Number.isFinite(budget) || budget <= 0) {
+      throw Error("Invalid configured executive budget");
+    }
+
+    const stamp = Number(process.env.DEPLOY_EXECUTIVE_STARTED_SECONDS);
+
+    if (
+      mode === "build" &&
+      process.env.DEPLOY_EXECUTIVE_STARTED_SECONDS !== undefined &&
+      (!Number.isFinite(stamp) || stamp <= 0)
+    ) throw Error("Invalid bootstrap start timestamp");
+
+    const elapsed =
+      mode === "build" && Number.isFinite(stamp) && stamp > 0
+        ? Math.max(0, Date.now() - stamp * 1000)
+        : 0;
+
+    if (elapsed >= budget * 1000) {
+      throw Object.assign(
+        Error("Executive budget exhausted during bootstrap"),
+        {code: "DEPLOY_EXECUTIVE_DEADLINE"},
+      );
+    }
+
+    state = fs.mkdtempSync(path.join(os.tmpdir(), "deployment-executive-"));
+
+    const controller = new AbortController();
+    unbind = bindShutdownSignals(controller);
+
+    console.log(
+      `[executive] ${mode} budget=${budget}s; ` +
+             !cleanupError &&
+            !signal?.aborted &&
+            !failure &&
+            (ready || now() - started < budgetMs) &&
+            retriesUsed < (job.task.maxRetries ?? 0) &&
+            (job.task.retryOnSignals ?? []).includes(job.signal)
+          ) {
+            const backoff = Math.min(
+              30000,
+              (job.task.retryBackoffMs ?? 500) * 2 ** retriesUsed,
+            );
+
+            pending.set(id, job.task);
+            retryAt.set(id, now() + backoff);
+
+            log(
+              `[executive] retry ${id}: ${job.signal}; ` +
+              `${retriesUsed + 1}/${job.task.maxRetries} ` +
+              `in ${backoff}ms`,
+            );
+          } else {
+            failed.add(id);
+
+            throw Object.assign(
+              cleanupError ??
+              job.error ??
+              Error(
+                `${id} ${
+                  job.signal
+                    ? `interrupted by ${job.signal}`
+                    : `exited ${job.code}`
+                }`,
+              ),
+              {
+                taskId: id,
+                taskSignal: job.signal ?? null,
+              },
+            );
+          }
+        } else {
+          done.add(id);
+
+          const elapsedSeconds = Number(
+            ((now() - firstStartedAt.get(id)) / 1000).toFixed(1),
+          );
+
+          durations.set(id, {
+            elapsedSeconds,
+            attempts: job.attempt,
+          });
+
+          log(
+            `[executive] completed ${id} in ${elapsedSeconds}s ` +
+            `(attempts=${job.attempt})`,
+          );
+        }
+      }
+
+      if (signal?.aborted) {
+        abort();
+        throw failure;
+      }
+
+      if (!pending.size && !active.size) break;
+
+      const cap = capacity();
+
+      if (
+        !cap ||
+        !["cpus", "memoryMB", "availableMB", "ioSlots"].every(
+          key => Number.isFinite(cap[key]) && cap[key] >= 0,
+        ) ||
+        cap.cpus <= 0 ||
+        cap.memoryMB <= 0 ||
+        cap.ioSlots < 1
+      ) {
+        throw Error("Invalid live capacity snapshot");
+      }
+
+      const cpuLimit = Math.max(1, Math.floor(cap.cpus));
+
+      let cpu = 0;
+      let memory = 0;
+      let io = 0;
+      let newlyReservedMB = 0;
+
+      for (const job of active.values()) {
+        cpu += job.cpu;
+        memory += job.task.memoryMB;
+        io += job.task.io;
+      }
+
+      const eligible = ordered.filter(task =>
+        pending.has(task.id) &&
+        task.deps.every(id => done.has(id)) &&
+        (retryAt.get(task.id) ?? 0) <= now()
+      );
+
+      for (let index = 0; index < eligible.length; index++) {
+        if (signal?.aborted) {
+          abort();
+          throw failure;
+        }
+
+        if (!ready && now() - started >= budgetMs) break;
+
+        const task = eligible[index];
+        const freeCPU = cpuLimit - cpu;
+
+        if (task.memoryMB > cap.memoryMB * 0.9) {
+          throw Object.assign(
+            Error(
+              `${task.id} needs ${task.memoryMB} MiB; ` +
+              `capacity is ${cap.memoryMB} MiB`,
+            ),
+            {taskId: task.id},
+          );
+        }
+
+        if (
+          freeCPU < 1 ||
+          task.memoryMB > Math.max(
+            0,
+            cap.availableMB - newlyReservedMB,
+          )
+        ) {
+          continue;
+        }
+
+        // Preserve the single-task escape hatch for soft memory and I/O
+        // reservations, while retaining physical-memory admission checks.
+        if (
+          active.size &&
+          (
+            memory + task.memoryMB > cap.memoryMB * 0.8 ||
+            io + task.io > cap.ioSlots
+          )
+        ) {
+          continue;
+        }
+
+        const share = Math.max(
+          1,
+          Math.floor(
+            freeCPU / Math.max(1, eligible.length - index),
+          ),
+        );
+
+        const requested = task.elasticCPU
+          ? Math.min(task.maxCPU, share)
+          : Math.max(1, Math.ceil(task.cpu));
+
+        if (
+          !task.elasticCPU &&
+          requested > freeCPU &&
+          active.size
+        ) {
+          continue;
+        }
+
+        const assignedCPU = Math.min(requested, freeCPU);
+
+        const child = spawn(task.command, task.args, {
+          cwd,
+          detached: true,
+          stdio: "inherit",
+          env: {
+            ...env,
+            DEPLOY_TASK_CPU: String(assignedCPU),
+            CARGO_BUILD_JOBS: String(assignedCPU),
+          },
+        });
+
+        const attempt = attempts.get(task.id) + 1;
+
+        const job = {
+          task,
+          child,
+          cpu: assignedCPU,
+          attempt,
+          started: now(),
+          closed: false,
+        };
+
+        // Track the child before invoking helpers that might throw.
+        children.add(job);
+        active.set(task.id, job);
+        pending.delete(task.id);
+        attempts.set(task.id, attempt);
+
+        if (!firstStartedAt.has(task.id)) {
+          firstStartedAt.set(task.id, job.started);
+        }
+
+        child.once("error", error => {
+          job.error = error;
+          job.closed = true;
+          notify();
+        });
+
+        child.once("close", (code, exitSignal) => {
+          job.code = code;
+          job.signal = exitSignal;
+          job.closed = true;
+          notify();
+        });
+
+        if (child.pid) {
+          job.owned = createOwnedProcessTracker(child.pid);
+        }
+
+        retryAt.delete(task.id);
+
+        cpu += assignedCPU;
+        memory += task.memoryMB;
+        newlyReservedMB += task.memoryMB;
+        io += task.io;
+
+        log(
+          `[executive] starting ${task.id}; attempt=${attempt}; ` +
+          `cpu=${assignedCPU}; memory=${task.memoryMB}MiB; ` +
+          `io=${task.io}`,
+        );
+      }
+
+      if (
+        !ready &&
+        readiness &&
+        now() - lastProbe >= 1000 &&
+        [...active.values()].some(job => job.task.application)
+      ) {
+        lastProbe = now();
+
+        try {
+          ready = Boolean(
+            await bounded(readiness, 2500, "Readiness probe"),
+          );
+        } catch (error) {
+          if (error.code !== "DEPLOY_OPERATION_TIMEOUT") {
+            throw error;
+          }
+        }
+
+        if (ready) {
+          log(
+            "[executive] Application ready; supervising runtime " +
+            "(not publication confirmation)",
+          );
+        }
+      }
+
+      if (now() - lastReport >= 15000) {
+        const remainingSeconds = Math.max(
+          0,
+          Math.ceil((budgetMs - now() + started) / 1000),
+        );
+
+        log(
+          `[executive] elapsed=${Math.floor((now() - started) / 1000)}s; ` +
+          `running=${[...active.keys()].join(",") || "none"}; ` +
+          `waiting=${[...pending.keys()].join(",") || "none"}; ` +
+          `available=${Math.round(cap.availableMB)}MiB; ` +
+          `cpu=${cpu}/${cpuLimit}; io=${io}/${cap.ioSlots}; ` +
+          (ready ? "ready" : `budgetRemaining=${remainingSeconds}s`),
+        );
+
+        lastReport = now();
+      }
+
+      // Completion and cancellation wake the scheduler immediately.
+      // Polling remains for capacity changes, deadlines and ownership capture.
+      if (pending.size || active.size) {
+        let waitMs = Math.min(
+          pollMs,
+          ready
+            ? pollMs
+            : Math.max(1, budgetMs - now() + started),
+        );
+
+        for (const when of retryAt.values()) {
+          if (when > now()) {
+            waitMs = Math.min(
+              waitMs,
+              Math.max(1, when - now()),
+            );
+          }
+        }
+
+        await new Promise(resolve => {
+          const finish = () => {
+            clearTimeout(timer);
+            notify = () => {};
+            resolve();
+          };
+
+          const timer = setTimeout(finish, waitMs);
+          notify = finish;
+
+          if (
+            signal?.aborted ||
+            [...active.values()].some(job => job.closed)
+          ) {
+            finish();
+          }
+        });
+      }
+    }
+
+    if (readiness && !ready) {
+      throw Error("Application exited before becoming ready");
+    }
+
+    log(
+      `[executive] plan completed in ` +
+      `${((now() - started) / 1000).toFixed(1)}s; tasks=${done.size}`,
+    );
+
+    return {
+      completed: [...done],
+      ready,
+      durations: Object.fromEntries(durations),
+    };
+  } catch (error) {
+    primaryError = error;
+
+    Object.assign(error, {
+      completedTasks: [...done],
+      runningTasks: [...active.keys()],
+      waitingTasks: [...pending.keys()],
+      taskCheckpoint: checkpoint(),
+      checkpointAt: new Date().toISOString(),
+    });
+
+    throw error;
+  } finally {
+    signal?.removeEventListener("abort", abort);
+
+    if (active.size) {
+      log(
+        `[executive] Draining tasks: ${[...active.keys()].join(",")}`,
+      );
+    }
+
+    const results = await Promise.allSettled(
+      [...children]
+        .filter(job => !job.stopped)
+        .map(stopJob),
+    );
+
+    const errors = results
+      .filter(result => result.status === "rejected")
+      .map(result => result.reason.message);
+
+    if (errors.length) {
+      if (primaryError) {
+        primaryError.cleanupError = errors.join("; ");
+
+        log(
+          `[executive] Cleanup warning: ${primaryError.cleanupError}`,
+        );
+      } else {
+        throw Error(
+          `Deployment cleanup failed: ${errors.join("; ")}`,
+        );
+      }
+    }
+  }
+}
+
+async function main(mode) {
+  if (!["build", "start"].includes(mode)) {
+    throw Error("Expected build or start executive mode");
+  }
+
+  const tasks = mode === "build"
+    ? buildPlan()
+    : startPlan(process.execPath);
+
+  validatePlan(tasks);
+
+  const budget = Number(
+    mode === "build"
+      ? process.env.DEPLOY_BUILD_BUDGET_SECONDS ?? 1800
+      : process.env.DEPLOY_START_BUDGET_SECONDS ?? 900,
+  );
+
+  if (!Number.isFinite(budget) || budget <= 0) {
+    throw Error("Invalid configured executive budget");
+  }
+
+  const stamp = Number(
+    process.env.DEPLOY_EXECUTIVE_STARTED_SECONDS,
+  );
+
+  if (
+    mode === "build" &&
+    process.env.DEPLOY_EXECU_CPU:String(assignedCPU),CARGO_BUILD_JOBS:String(assignedCPU),
         }});
         const attempt=attempts.get(task.id)+1;
         attempts.set(task.id,attempt);
