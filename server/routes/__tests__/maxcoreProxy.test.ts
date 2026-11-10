@@ -98,6 +98,7 @@ describe("MaxCore public proxy contract", () => {
     ["post", "/api/audio/mixing-recommendation"],
     ["get", "/api/awareness/unified/admin/source-status"],
     ["get", "/api/awareness/unified/ready"],
+    ["get", "/api/generation/capabilities"],
     ["post", "/api/awareness/unified/profile-discover"],
     ["get", "/api/models/social/state"],
     ["post", "/api/train/feedback"],
@@ -192,6 +193,48 @@ describe("MaxCore public proxy contract", () => {
       "http://maxcore.internal/api/awareness/unified/profile-discover",
       expect.objectContaining({
         method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer service" }),
+      }),
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it("forwards generation capabilities through the authenticated app proxy", async () => {
+    const payload = {
+      serving: {
+        generation_ready: true,
+        generation_mode: "live_awareness",
+        model_loaded: false,
+        awareness_ready: true,
+      },
+      awareness_conditioning: {
+        ready: true,
+        modalities: ["text", "image", "audio", "video"],
+      },
+    };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const path = "/api/generation/capabilities";
+    const res = responseDouble();
+
+    await routeHandler("get", path)({
+      method: "GET",
+      originalUrl: path,
+      path,
+      params: {},
+      user: { id: "artist-7", role: "artist" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      "http://maxcore.internal/api/generation/capabilities",
+      expect.objectContaining({
+        method: "GET",
         headers: expect.objectContaining({ Authorization: "Bearer service" }),
       }),
     );

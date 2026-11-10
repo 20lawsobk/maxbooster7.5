@@ -2721,8 +2721,16 @@ app.include_router(_live_learning_router(verify_admin, _live_learning_engine))
 
 @app.get("/api/training/live/status")
 async def live_learning_status(_admin=Depends(verify_admin)):
+    from ai_model.awareness import get_engine
+    awareness_ready = get_engine().readiness_status().get("ready") is True
+    generation = _generation_readiness(awareness_ready)
     return {
         "mode": os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness"),
+        "model_loaded": _model_ready is True,
+        "awareness_ready": awareness_ready,
+        "generation_ready": generation["ready"],
+        "generation_mode": generation["generation_mode"],
+        "trained_checkpoint_ready": generation["trained_checkpoint_ready"],
         "learning": _live_learning_loop.status() if _live_learning_loop is not None else {"training": "disabled"},
         "serving": _live_serving_model.status() if _live_serving_model is not None else _serving_release_status,
     }
@@ -4799,10 +4807,27 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
 
 @app.get("/api/generation/capabilities")
 async def generation_capabilities():
+    from ai_model.awareness import get_engine
     from ai_model.capabilities import capabilities
     from ai_model.generation.plan import GENERATION_PLAN_VERSION
+    awareness_ready = get_engine().readiness_status().get("ready") is True
+    generation = _generation_readiness(awareness_ready)
+    trained_ready = _model_ready is True
     return {"renderers": capabilities(), "quality": "not_evaluated",
             "serving_release": _serving_release_status,
+            "serving": {
+                "generation_ready": generation["ready"],
+                "generation_mode": generation["generation_mode"],
+                "model_loaded": trained_ready,
+                "trained_checkpoint_ready": generation["trained_checkpoint_ready"],
+                "awareness_ready": awareness_ready,
+                "live_awareness": _live_awareness_capability(awareness_ready),
+            },
+            "awareness_conditioning": {
+                "ready": awareness_ready,
+                "source": "maxcore_unified_awareness_snapshot",
+                "modalities": ["text", "image", "audio", "video"],
+            },
             "runtime": "not_probed", "digital_gpu_exclusive": "not_verified",
             "plan_version": GENERATION_PLAN_VERSION}
 

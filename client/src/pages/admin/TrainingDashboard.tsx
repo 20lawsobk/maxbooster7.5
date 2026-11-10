@@ -107,6 +107,12 @@ function formatDuration(seconds: number): string {
   return `${s}s`;
 }
 
+function formatEpochTimestamp(value: unknown): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "Not recorded";
+  const date = new Date(value * 1000);
+  return Number.isNaN(date.getTime()) ? "Not recorded" : date.toLocaleString();
+}
+
 function StatusBadge({ status }: { status: TrainStatus["status"] }) {
   const map: Record<
     TrainStatus["status"],
@@ -215,6 +221,19 @@ export default function TrainingDashboard() {
       query.state.data?.status === "stopping"
         ? 3000
         : 15000,
+    retry: false,
+  });
+
+  const {
+    data: liveLearning,
+    error: liveLearningQueryError,
+    isError: liveLearningError,
+    isLoading: liveLearningLoading,
+    refetch: refetchLiveLearning,
+  } = useQuery({
+    queryKey: ["maxcore-live-learning-status"],
+    queryFn: () => apiFetch("/api/training/live/status"),
+    refetchInterval: 10_000,
     retry: false,
   });
 
@@ -331,6 +350,114 @@ export default function TrainingDashboard() {
             </AlertDescription>
           </Alert>
         )}
+
+        <Card className="bg-gray-900 border-gray-700" data-testid="maxcore-live-learning-progress">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-white text-sm font-medium">
+                  MaxCore Live-Awareness Model Progress
+                </CardTitle>
+                <CardDescription className="mt-1 text-gray-400 text-xs">
+                  Awareness-backed serving is the active pre-checkpoint mode.
+                  Checkpoint training and certification remain separate.
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void refetchLiveLearning()}
+                disabled={liveLearningLoading}
+                aria-label="Refresh MaxCore live-learning status"
+              >
+                <RefreshCw className={`h-4 w-4 ${liveLearningLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            {liveLearningError ? (
+              <Alert className="border-yellow-500/30 bg-yellow-500/10 sm:col-span-2 lg:col-span-3">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                <AlertDescription className="text-yellow-300 text-xs">
+                  Live-learning status is unavailable:{" "}
+                  {(liveLearningQueryError as Error)?.message || "MaxCore did not return status"}
+                </AlertDescription>
+              </Alert>
+            ) : liveLearningLoading ? (
+              <p role="status" className="text-xs text-gray-400">Loading MaxCore status…</p>
+            ) : (
+              <>
+                <div>
+                  <div className="text-xs text-gray-400">Serving mode</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.generation_ready
+                      ? liveLearning.generation_mode === "live_awareness"
+                        ? "Live awareness serving"
+                        : liveLearning.generation_mode === "trained_checkpoint"
+                          ? "Trained checkpoint serving"
+                          : "Generation ready"
+                      : "Unavailable"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Checkpoint loaded</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.model_loaded === true ? "Yes" : "No"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Awareness snapshot</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.awareness_ready === true ? "Ready" : "Not ready"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Learning loop</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.running === true ? "Running" : "Not running"}
+                    {" · "}
+                    {liveLearning?.learning?.training || "state not reported"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Awareness endpoint use</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.awareness_endpoint_usage?.uses ?? "—"} uses
+                    {" · "}
+                    {liveLearning?.learning?.awareness_endpoint_usage?.learning_check_signals ?? "—"} learning checks
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Latest learning run</div>
+                  <div className="mt-1 break-all text-white">
+                    {liveLearning?.learning?.last_run_id || "No run reported"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Last awareness use</div>
+                  <div className="mt-1 text-white">
+                    {formatEpochTimestamp(
+                      liveLearning?.learning?.awareness_endpoint_usage?.last_used_at,
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Candidate evaluation</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.serving?.candidate_quality ||
+                      "No candidate quality reported"}
+                  </div>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3 text-xs text-gray-400">
+                  Endpoint use requests a bounded learner check. Candidate creation,
+                  review, and serving promotion are reported separately and are not
+                  inferred from request counts.
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Top stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
