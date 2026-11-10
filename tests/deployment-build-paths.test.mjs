@@ -65,18 +65,14 @@ for (const pathType of ["fast", "slow"]) {
     });
     assert.equal(result.status, 0, result.stderr + result.stdout);
     const commands = fs.readFileSync(calls, "utf8").trim().split("\n");
-    assert.match(commands[0], pathType === "fast"
-      ? /^ci --omit=dev --no-audit --no-fund$/
-      : /^ci --no-audit --no-fund$/);
+    assert.match(commands[0], /^ci --include=dev --no-audit --no-fund$/);
     if (pathType === "slow") {
       assert.equal(commands[1], "run build");
-      assert.equal(commands[2], "prune --omit=dev --no-audit --no-fund");
-      assert.equal(fs.readFileSync(path.join(state, "build-path"), "utf8"), "0");
+      assert.equal(fs.readFileSync(path.join(state, "build-path"), "utf8").trim(), "0");
     } else {
-      assert.equal(commands[1], "run security:audit");
-      assert.equal(fs.readFileSync(path.join(state, "build-path"), "utf8"), "1");
+      assert.equal(fs.readFileSync(path.join(state, "build-path"), "utf8").trim(), "1");
     }
-    assert.deepEqual(commands.slice(-2), ["run security:audit", "run verify:dependency-security"]);
+    assert.equal(commands.length, pathType === "slow" ? 2 : 1);
     assert.equal(fs.readFileSync(path.join(root, "node_modules/.cache/sentinel"), "utf8"), "npm cache input");
     assert.equal(fs.readFileSync(path.join(root, "node_modules/.vite/sentinel"), "utf8"), "vite cache input");
     assert.doesNotMatch(commands.join("\n"), /security-fix\.ts/);

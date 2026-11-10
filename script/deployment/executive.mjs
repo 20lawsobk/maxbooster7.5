@@ -687,6 +687,10 @@ export async function runExecutive(tasks, {
   }
 }
 
+/*
+ * This duplicated partial tail is quarantined: it contains interrupted,
+ * malformed copies of the executor entrypoint. The active scheduler is
+ * defined above; the single executable entrypoint is retained below.
 async function main(mode) {
   let state;
   let primaryError;
@@ -1207,9 +1211,10 @@ async function main(mode) {
   }
 }
 
+*/
 async function main(mode) {
   if(!["build","start"].includes(mode)) throw Error("Expected build or start executive mode");
-  const tasks=mode==="build"?buildPlan():startPlan(process.execPath);
+  const tasks=mode==="build"?coordinateBuildPlan(buildPlan()):startPlan(process.execPath);
   validatePlan(tasks);
   const state=fs.mkdtempSync(path.join(os.tmpdir(),"deployment-executive-"));
   const controller=new AbortController();

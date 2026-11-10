@@ -124,9 +124,9 @@ _strip_runtime_modules() {
 
   if [[ -d node_modules/@tensorflow/tfjs/dist ]]; then
     find node_modules/@tensorflow/tfjs/dist -type f \
-      -name 'tf.js' -o -name 'tf.min.js' \
+      \( -name 'tf.js' -o -name 'tf.min.js' \
          -o -name 'tf.es2017.js' -o -name 'tf.es2017.min.js' \
-         -o -name 'tf.fesm.js' -o -name 'tf.fesm.min.js' \
+         -o -name 'tf.fesm.js' -o -name 'tf.fesm.min.js' \) \
       -delete
   fi
 
@@ -135,8 +135,8 @@ _strip_runtime_modules() {
     tfjs-core tfjs-layers tfjs-converter tfjs-backend-cpu tfjs-data; do
     if [[ -d "node_modules/@tensorflow/${pkg}/dist" ]]; then
       find "node_modules/@tensorflow/${pkg}/dist" -type f \
-        -name '*.umd.js' -o -name '*.fesm.js' \
-           -o -name '*.es2017.js' -o -name '*.min.js' \
+        \( -name '*.umd.js' -o -name '*.fesm.js' \
+           -o -name '*.es2017.js' -o -name '*.min.js' \) \
         -delete
     fi
   done
@@ -238,6 +238,32 @@ _pdim_pack() {
   node dist/publish-capsules.mjs directory "$capsule" "$dir"
 }
 
+_pack_directory_capsule() {
+  local dir="$1" capsule="$2" label="$3"
+  require_state_dir
+  [[ -d "$dir" ]] || fail "Required capsule input directory missing: $dir"
+
+  _pdim_pack "$dir" "$capsule" "$label"
+  require_file "$capsule"
+  require_file "${capsule%.pdim}.manifest.json"
+}
+
+phase_pack_node() {
+  _pack_directory_capsule node_modules node_modules.pdim "Node dependencies"
+}
+
+phase_pack_python() {
+  _pack_directory_capsule python_runtime python_runtime.pdim "Python runtime"
+}
+
+phase_pack_maxcore() {
+  _pack_directory_capsule external/maxcore external_maxcore.pdim "MaxCore"
+}
+
+phase_pack_pdim() {
+  _pack_directory_capsule external/pdim external_pdim.pdim "Pocket Dimension"
+}
+
 phase_prune() {
   require_state_dir
 
@@ -253,25 +279,28 @@ phase_prune() {
 
   # Preserve the original audit-before-stripping contract.
   _strip_runtime_modules
-  _pserve the registry needed by the application remainder capsule.
-  _RUNTIME_REGISTRY_BACKUP=""
+
   if [ -f shared/social-platform-optimization.json ]; then
-    _RUNTIME_REGISTRY_BACKUP="$DEPLOY_STATE_DIR/social-platform-optimization.json"
-    cp shared/social-platform-optimization.json "$_RUNTIME_REGISTRY_BACKUP"
+    cp shared/social-platform-optimization.json \
+      "$DEPLOY_STATE_DIR/social-platform-optimization.json"
   fi
+}
 
-  _PDIM_FORMAT=$(node dist/publish-capsules.mjs format)
-  echo "   Packing source tree: source.pdim [${_PDIM_FORMAT}]..."
+phase_source() {
+  require_state_dir
 
-  for _d in \
+  local -a source_paths=()
+  local path
+
+  for path in \
     client server shared script scripts electron \
     attached_assets docs migrations boosterstate; do
-    if [[ -d "$_d" ]]; then
-      source_paths+=("$_d")
+    if [[ -d "$path" ]]; then
+      source_paths+=("$path")
     fi
   done
 
-  for _f in \
+  for path in \
     capacitor.config.ts \
     vite.config.ts \
     tailwind.config.ts \
@@ -283,37 +312,35 @@ phase_prune() {
     components.json \
     electron-builder.yml \
     design_guidelines.md; do
-    if [[ -f "$_f" ]]; then
-      source_paths+=("$_f")
+    if [[ -f "$path" ]]; then
+      source_paths+=("$path")
     fi
   done
 
-  if (( ${#source_paths[@]} )); then
-    # Invoke directly so errexit remains active inside the helper.
-    _pdim_tar_create source.pdim "${source_paths[@]}" \
-      '--exclude=server/services/diffusion/**/advanced_memory' \
-      '--exclude=server/services/diffusion/**/__pycache__' \
-      '--exclude=server/services/diffusion/**/*.npz'
+  (( ${#source_paths[@]} > 0 )) ||
+    fail 'No source inputs found for source capsule'
 
-    if [ ! -s source.pdim ] || [ ! -s source.manifest.json ]; then
-      fail 'Source capsule or manifest missing; source files were preserved'
-    fi
+  echo "==> Packing source tree: source.pdim"
+  _pdim_tar_create source.pdim "${source_paths[@]}" \
+    '--exclude=server/services/diffusion/**/advanced_memory' \
+    '--exclude=server/services/diffusion/**/__pycache__' \
+    '--exclude=server/services/diffusion/**/*.npz'
 
-    node script/lib/finalize-source-manifest.mjs \
-      source.pdim source.manifest.json
+  require_file source.pdim
+  require_file source.manifest.json
+  node script/lib/finalize-source-manifest.mjs \
+    source.pdim source.manifest.json
 
-    # Delete only after the existing finalizer validates the archive.
-    rm -rf -- "${source_paths[@]}"
+  # Source and user data are removed only after archive/manifest validation.
+  rm -rf -- "${source_paths[@]}"
 
-    if [ -n "$_RUNTIME_REGISTRY_BACKUP" ]; then
-      mkdir -p shared
-      cp "$_RUNTIME_REGISTRY_BACKUP" shared/social-platform-optimization.json
-    fi
-
-    echo "   Verified source capsule and manifest; archived inputs removed."
-  else
-    echo "   INFO: No source inputs found; skipping source capsule."
+  if [[ -s "$DEPLOY_STATE_DIR/social-platform-optimization.json" ]]; then
+    mkdir -p shared
+    cp "$DEPLOY_STATE_DIR/social-platform-optimization.json" \
+      shared/social-platform-optimization.json
   fi
+
+  echo '   Verified source capsule; removed archived source inputs.'
 }
 
 phase_remainder() {

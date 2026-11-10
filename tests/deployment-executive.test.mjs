@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import {EventEmitter} from "node:events";
-import {bindShutdownSignals,runExecutive,validatePlan} from "../script/deployment/executive.mjs";
+import {bindShutdownSignals,coordinateBuildPlan,runExecutive,validatePlan} from "../script/deployment/executive.mjs";
 import {buildPlan,startPlan} from "../script/deployment/plans.mjs";
 import {buildSync} from "esbuild";
 import {pathToFileURL} from "node:url";
@@ -42,7 +42,7 @@ test("capsule tasks retry a child-only transient signal after cleanup",async t=>
   }],{cwd:root,env:{...process.env,EXECUTIVE_ATTEMPTS_FILE:attemptsFile},
     capacity,pollMs:5,budgetMs:3000,log:line=>logs.push(line)});
   assert.equal(fs.readFileSync(attemptsFile,"utf8"),"2");
-  assert.ok(logs.some(line=>line.includes("interrupted by SIGTERM; retry 1/1")));
+  assert.ok(logs.some(line=>line.includes("retry pack: SIGTERM; 1/1")));
   assert.ok(logs.some(line=>line.includes("completed pack")));
 });
 test("executor cancellation stops promptly and is never retried",async t=>{
@@ -83,7 +83,7 @@ test("capsule I/O reservations bound simultaneous heavy packers to two",async()=
   const jobs=["pack_node","pack_python","pack_maxcore","pack_pdim"].map(id=>({
     ...task(id,[],"setTimeout(()=>{},40)"),io:2,
   }));
-  await runExecutive(jobs,{capacity,pollMs:5,budgetMs:3000,log(line){
+  await runExecutive(jobs,{capacity:()=>({...capacity(),cpus:8,ioSlots:4}),pollMs:5,budgetMs:3000,log(line){
     logs.push(line);
     if(line.includes("starting pack_"))maximum=Math.max(maximum,++active);
     if(line.includes("completed pack_"))active--;
@@ -114,8 +114,10 @@ test("startup plan requires all restores before launching app; source deletion i
  assert.deepEqual(startPlan(process.execPath).at(-1).deps.sort(),
  ["restore-app", "restore-node", "restore-python", "restore-maxcore", "restore-pdim"].sort());
  assert.equal(startPlan(process.execPath).find(t=>t.id==="restore-python").args.at(-1),".pdim-restored-py");
- const plan=buildPlan();
- assert.deepEqual(plan.find(t=>t.id==="source").deps.sort(),["pack_maxcore","pack_node","pack_pdim","pack_python"]);
+ const plan=coordinateBuildPlan(buildPlan());
+ assert.deepEqual(plan.find(t=>t.id==="source").deps.sort(),[
+  "assets","pack_maxcore","pack_node","pack_pdim","pack_python","rust",
+ ]);
 });
 test("a ready application is supervised beyond the startup deadline",async()=>{
  const app={...task("application",[],"setTimeout(()=>{},250)"),application:true};
@@ -134,6 +136,8 @@ test("failed process descendants cannot continue writing after rejection",async 
 test("actual build.sh pack task removes only its fixture source and restores it",async t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-real-pack-"));
  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const state=path.join(root,"state");
+ fs.mkdirSync(state);
  fs.mkdirSync(path.join(root,"dist"),{recursive:true});
  fs.mkdirSync(path.join(root,"python_runtime"));
  fs.copyFileSync("build.sh",path.join(root,"build.sh"));
@@ -143,7 +147,8 @@ test("actual build.sh pack task removes only its fixture source and restores it"
    outfile:path.join(root,"dist/publish-capsules.mjs")});
  const job={...buildPlan().find(t=>t.id==="pack_python"),deps:[],
    args:[path.join(root,"build.sh"),"--executive-task","pack_python"]};
- await runExecutive([job],{cwd:root,capacity,pollMs:10,budgetMs:10000,log(){}});
+ await runExecutive([job],{cwd:root,env:{...process.env,DEPLOY_STATE_DIR:state},
+  capacity,pollMs:10,budgetMs:10000,log(){}});
  assert.equal(fs.existsSync(path.join(root,"python_runtime")),false);
  const {restoreCapsule}=await import(pathToFileURL(path.join(root,"dist/pdim-restore.mjs")));
  assert.equal(await restoreCapsule("python_runtime.pdim","python_runtime.manifest.json","python_runtime"),true);
@@ -191,8 +196,10 @@ test("node_modules pruning preserves runtime sources and notices while dropping 
   fs.mkdirSync(path.dirname(filename),{recursive:true});
   fs.writeFileSync(filename,contents);
  }
- const result=spawnSync("bash",[path.join(root,"build.sh"),"--executive-task","prune"],
-  {cwd:root,encoding:"utf8",timeout:10000});
+ fs.writeFileSync(path.join(root,"node_modules/.pdim-restored"),"fixture marker");
+ const result=spawnSync(process.execPath,[
+  path.resolve("script/lib/pruneRuntimeNodeModules.mjs"),root,
+ ],{cwd:root,encoding:"utf8",timeout:10000});
  assert.equal(result.status,0,result.stderr+result.stdout);
  for(const [name] of files){
   const filename=path.join(root,name);
