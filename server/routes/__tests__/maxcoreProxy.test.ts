@@ -99,6 +99,9 @@ describe("MaxCore public proxy contract", () => {
     ["get", "/api/awareness/unified/admin/source-status"],
     ["get", "/api/awareness/unified/ready"],
     ["get", "/api/generation/capabilities"],
+    ["get", "/api/admin/maxcore/health"],
+    ["get", "/api/admin/maxcore/readiness"],
+    ["get", "/api/admin/maxcore/warm/status"],
     ["post", "/api/awareness/unified/profile-discover"],
     ["get", "/api/models/social/state"],
     ["post", "/api/train/feedback"],
@@ -248,6 +251,44 @@ describe("MaxCore public proxy contract", () => {
       }),
     );
     expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it.each([
+    ["/api/admin/maxcore/health", "/health", 200],
+    ["/api/admin/maxcore/readiness", "/ready", 503],
+    ["/api/admin/maxcore/warm/status", "/api/warm/status", 200],
+  ])("admin proxy maps %s to the actual MaxCore route and preserves status", async (
+    proxyPath,
+    serverPath,
+    upstreamStatus,
+  ) => {
+    const payload = { status: "healthy", ready: upstreamStatus === 200 };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: upstreamStatus,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const res = responseDouble();
+
+    await routeHandler("get", proxyPath)({
+      method: "GET",
+      originalUrl: `${proxyPath}?probe=admin`,
+      path: proxyPath,
+      params: {},
+      user: { id: "admin-7", role: "admin" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      `http://maxcore.internal${serverPath}?probe=admin`,
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({ "X-Admin-Key": "admin" }),
+      }),
+    );
+    expect(res.statusCode).toBe(upstreamStatus);
     expect(res.payload).toEqual(payload);
   });
 

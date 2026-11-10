@@ -43,7 +43,7 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
         names = {"_live_awareness_capability", "_generation_readiness",
                  "_generation_runtime_dependencies", "_generation_endpoint_catalog",
                  "generation_capabilities", "generation_readiness",
-                 "live_learning_status"}
+                 "live_learning_status", "health", "api_warm_status"}
         nodes = [node for node in ast.parse(SERVER.read_text()).body
                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in names]
         self.assertEqual({node.name for node in nodes}, names,
@@ -67,6 +67,11 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
             "_live_serving_model": self.live_serving_model,
             "_generation_runtime_dependencies": lambda _modality: {
                 "runtime_fixture": True},
+            "_warm_status": {"state": "warm"},
+            "_deep_warm_status": {"state": "pending"},
+            "_start_time": 100.0,
+            "_get_storage_mode": lambda: "test",
+            "time": SimpleNamespace(time=lambda: 110.0),
             "os": os,
         }
         exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SERVER), "exec"), scope)
@@ -102,6 +107,12 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
         endpoints = result["endpoint_routes"]
         self.assertEqual(endpoints["readiness"]["paths"], ["/ready", "/api/ready"])
         self.assertTrue(endpoints["readiness"]["ready"])
+        self.assertEqual(endpoints["health"]["path"], "/health")
+        self.assertTrue(endpoints["health"]["route_registered"])
+        self.assertEqual(endpoints["warm_status"]["path"], "/api/warm/status")
+        self.assertTrue(endpoints["warm_status"]["route_registered"])
+        self.assertTrue(endpoints["warm_status"]["admin_only"])
+        self.assertTrue(endpoints["warm_status"]["read_only"])
         self.assertEqual(endpoints["capabilities"]["path"], "/api/generation/capabilities")
         self.assertTrue(endpoints["capabilities"]["route_registered"])
         self.assertEqual(endpoints["awareness_status"]["path"], "/api/awareness/unified/status")
@@ -231,6 +242,67 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
             "runtime_dependencies_missing",
         )
         self.assertTrue(result["endpoint_routes"]["generation"]["video"]["online"])
+
+    async def test_health_liveness_includes_route_catalog_without_claiming_checkpoint_loaded(self):
+        with patch("ai_model.capabilities.capabilities", return_value={
+            "image": {"renderer": "image-test", "trained": False},
+            "audio": {"renderer": "audio-test", "trained": False},
+            "video": {"renderer": "video-test", "trained": False},
+        }):
+            status, result = await get_capabilities(self.app, "/health")
+        self.assertEqual(status, 200, result)
+        self.assertEqual(result["status"], "healthy")
+        self.assertFalse(result["model_loaded"])
+        self.assertEqual(result["endpoint_routes"]["health"]["path"], "/health")
+        self.assertEqual(
+            result["endpoint_routes"]["warm_status"]["path"],
+            "/api/warm/status",
+        )
+        self.assertEqual(
+            result["endpoint_routes"]["readiness"]["paths"],
+            ["/ready", "/api/ready"],
+        )
+
+    async def test_warm_status_includes_runtime_routes_and_remains_read_only(self):
+        with patch("ai_model.capabilities.capabilities", return_value={
+            "image": {"renderer": "image-test", "trained": False},
+            "audio": {"renderer": "audio-test", "trained": False},
+            "video": {"renderer": "video-test", "trained": False},
+        }):
+            status, result = await get_capabilities(self.app, "/api/warm/status")
+        self.assertEqual(status, 200, result)
+        self.assertTrue(result["awareness_ready"])
+        self.assertTrue(result["generation_ready"])
+        self.assertEqual(result["endpoint_routes"]["health"]["path"], "/health")
+        self.assertEqual(
+            result["endpoint_routes"]["warm_status"]["path"],
+            "/api/warm/status",
+        )
+        self.assertEqual(result["deep_warm"], self.scope["_deep_warm_status"])
+
+    async def test_health_stays_live_but_fails_closed_when_endpoint_inspection_errors(self):
+        with patch(
+            "ai_model.capabilities.capabilities",
+            side_effect=RuntimeError("renderer inspection failed"),
+        ):
+            status, result = await get_capabilities(self.app, "/health")
+        self.assertEqual(status, 200, result)
+        self.assertEqual(result["status"], "healthy")
+        self.assertFalse(result["generation_ready"])
+        self.assertFalse(result["endpoint_routes"]["readiness"]["ready"])
+        self.assertFalse(result["endpoint_routes"]["catalog_available"])
+
+    async def test_warm_status_remains_available_but_blocks_generation_on_catalog_error(self):
+        with patch(
+            "ai_model.capabilities.capabilities",
+            side_effect=RuntimeError("renderer inspection failed"),
+        ):
+            status, result = await get_capabilities(self.app, "/api/warm/status")
+        self.assertEqual(status, 200, result)
+        self.assertTrue(result["awareness_ready"])
+        self.assertFalse(result["generation_ready"])
+        self.assertFalse(result["endpoint_routes"]["readiness"]["ready"])
+        self.assertFalse(result["endpoint_routes"]["catalog_available"])
 
 
 if __name__ == "__main__":

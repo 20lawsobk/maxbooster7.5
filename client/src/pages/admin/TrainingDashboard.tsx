@@ -260,6 +260,50 @@ export default function TrainingDashboard() {
   });
 
   const {
+    data: maxcoreRuntimeEndpoints,
+    isLoading: maxcoreRuntimeEndpointsLoading,
+    refetch: refetchMaxcoreRuntimeEndpoints,
+  } = useQuery({
+    queryKey: ["maxcore-runtime-endpoint-status"],
+    queryFn: async () => {
+      const endpoints = [
+        {
+          id: "health",
+          label: "Liveness",
+          serverPath: "/health",
+          proxyPath: "/api/admin/maxcore/health",
+        },
+        {
+          id: "readiness",
+          label: "Readiness",
+          serverPath: "/ready",
+          proxyPath: "/api/admin/maxcore/readiness",
+        },
+        {
+          id: "warm",
+          label: "Warm status",
+          serverPath: "/api/warm/status",
+          proxyPath: "/api/admin/maxcore/warm/status",
+        },
+      ];
+      return Promise.all(endpoints.map(async (endpoint) => {
+        try {
+          const response = await apiFetch(endpoint.proxyPath);
+          return { ...endpoint, httpStatus: 200, response };
+        } catch (error) {
+          return {
+            ...endpoint,
+            httpStatus: Number((error as any)?.status) || null,
+            error: (error as Error)?.message || "No response from MaxCore",
+          };
+        }
+      }));
+    },
+    refetchInterval: 15_000,
+    retry: false,
+  });
+
+  const {
     data: datasets,
     error: datasetsQueryError,
     isError: datasetsError,
@@ -571,6 +615,62 @@ export default function TrainingDashboard() {
                         : "Awareness unavailable"}
                     </Badge>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      MaxCore runtime checks
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void refetchMaxcoreRuntimeEndpoints()}
+                      disabled={maxcoreRuntimeEndpointsLoading}
+                      aria-label="Refresh MaxCore runtime checks"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${maxcoreRuntimeEndpointsLoading ? "animate-spin" : ""}`} />
+                    </Button>
+                  </div>
+                  {maxcoreRuntimeEndpointsLoading && !maxcoreRuntimeEndpoints ? (
+                    <p role="status" className="text-xs text-gray-400">
+                      Checking MaxCore liveness, readiness, and warm status…
+                    </p>
+                  ) : maxcoreRuntimeEndpoints?.map((endpoint: any) => {
+                    const reachable = endpoint.httpStatus >= 200 && endpoint.httpStatus < 300;
+                    const detail = endpoint.id === "health"
+                      ? endpoint.response?.status || endpoint.error
+                      : endpoint.id === "readiness"
+                        ? endpoint.response?.ready
+                          ? "Generation readiness passed"
+                          : endpoint.error || "Generation readiness is blocked"
+                        : endpoint.response?.deep_warm?.state ||
+                          endpoint.response?.warm_start?.state ||
+                          endpoint.error ||
+                          "Warm status returned";
+                    return (
+                      <div
+                        key={endpoint.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-700 px-3 py-2"
+                        data-testid={`maxcore-runtime-${endpoint.id}`}
+                      >
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-200">{endpoint.label}</div>
+                          <code className="break-all text-xs text-gray-400">
+                            GET {endpoint.serverPath}
+                          </code>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={reachable ? "default" : "destructive"}>
+                            {endpoint.httpStatus === null
+                              ? "Unavailable"
+                              : `HTTP ${endpoint.httpStatus}`}
+                          </Badge>
+                          <span className="text-xs text-gray-400">{detail}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="space-y-2">
                   {Object.entries(

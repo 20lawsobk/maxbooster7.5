@@ -44,6 +44,9 @@ const router = Router();
 router.get("/api/awareness/unified/status", requireAuthOnly, proxyToMaxCore);
 router.get("/api/awareness/unified/ready", requireAuthOnly, proxyToMaxCore);
 router.get("/api/generation/capabilities", requireAuthOnly, proxyToMaxCore);
+router.get("/api/admin/maxcore/health", requireAdmin, proxyToMaxCore);
+router.get("/api/admin/maxcore/readiness", requireAdmin, proxyToMaxCore);
+router.get("/api/admin/maxcore/warm/status", requireAdmin, proxyToMaxCore);
 router.get(
   "/api/awareness/unified/admin/source-status",
   requireAdmin,
@@ -125,6 +128,12 @@ const ADMIN_PATH_SUFFIXES = [
   "/training/puller/stop",
   "/training/start-from-storage",
 ];
+
+const ADMIN_MAXCORE_ENDPOINT_ALIASES: Record<string, string> = {
+  "/api/admin/maxcore/health": "/health",
+  "/api/admin/maxcore/readiness": "/ready",
+  "/api/admin/maxcore/warm/status": "/api/warm/status",
+};
 
 // Generous timeout — generation calls (image/video/audio) can be slow.
 const GEN_TIMEOUT_MS = 120_000;
@@ -222,7 +231,13 @@ async function proxyToMaxCore(
     return;
   }
 
-  const targetUrl = `${origin}${req.originalUrl}`;
+  const upstreamPath = ADMIN_MAXCORE_ENDPOINT_ALIASES[req.path];
+  const requestSuffix = upstreamPath
+    ? req.originalUrl.slice(req.path.length)
+    : "";
+  const targetUrl = upstreamPath
+    ? `${origin}${upstreamPath}${requestSuffix}`
+    : `${origin}${req.originalUrl}`;
   const method = req.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD" && method !== "DELETE";
 
@@ -238,7 +253,7 @@ async function proxyToMaxCore(
 
   const isAdminPath = ADMIN_PATH_SUFFIXES.some((s) =>
     req.originalUrl.startsWith(`/api${s}`),
-  );
+  ) || Object.hasOwn(ADMIN_MAXCORE_ENDPOINT_ALIASES, req.path);
   if (isAdminPath) {
     delete headers.Authorization;
     Object.assign(headers, getMaxcoreAdminHeaders());

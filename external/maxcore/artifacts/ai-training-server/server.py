@@ -2769,11 +2769,24 @@ def _generation_endpoint_catalog(generation, awareness_ready, renderers):
         for modality in ("text", "image", "audio", "video")
     )
     return {
+        "health": {
+            "method": "GET",
+            "path": "/health",
+            "route_registered": True,
+            "purpose": "process_liveness",
+        },
         "readiness": {
             "method": "GET",
             "paths": ["/ready", "/api/ready"],
             "route_registered": True,
             "ready": bool(generation.get("ready") is True and modality_ready),
+        },
+        "warm_status": {
+            "method": "GET",
+            "path": "/api/warm/status",
+            "route_registered": True,
+            "admin_only": True,
+            "read_only": True,
         },
         "capabilities": {
             "method": "GET",
@@ -2960,12 +2973,42 @@ async def health():
     except Exception:
         awareness_ready = False
     generation = _generation_readiness(awareness_ready)
+    try:
+        from ai_model.capabilities import capabilities
+        endpoint_routes = _generation_endpoint_catalog(
+            generation, awareness_ready, capabilities(),
+        )
+    except Exception:
+        # Liveness must remain available when optional capability inspection is
+        # unavailable; do not report generation readiness as healthy in that case.
+        endpoint_routes = {
+            "health": {
+                "method": "GET",
+                "path": "/health",
+                "route_registered": True,
+                "purpose": "process_liveness",
+            },
+            "readiness": {
+                "method": "GET",
+                "paths": ["/ready", "/api/ready"],
+                "route_registered": True,
+                "ready": False,
+            },
+            "warm_status": {
+                "method": "GET",
+                "path": "/api/warm/status",
+                "route_registered": True,
+                "admin_only": True,
+                "read_only": True,
+            },
+            "catalog_available": False,
+        }
     payload = {
         "status": "healthy",
         "model_blocked": blocked,
         "readiness_endpoint": "/ready",
         "model_loaded": _model_ready,
-        "generation_ready": generation["ready"],
+        "generation_ready": endpoint_routes.get("readiness", {}).get("ready") is True,
         "generation_mode": generation["generation_mode"],
         "awareness": {"ready": awareness_ready},
         "live_awareness": _live_awareness_capability(awareness_ready),
@@ -2974,6 +3017,7 @@ async def health():
         "version": "1.0.0",
         "warm_start": _warm_status,
         "storage_mode": _get_storage_mode(),
+        "endpoint_routes": endpoint_routes,
     }
     return payload
 
@@ -12903,10 +12947,31 @@ async def api_warm(_admin=Depends(verify_admin)):
 @app.get("/api/warm/status")
 async def api_warm_status(_admin=Depends(verify_admin)):
     """Non-destructive warm-up status — returns last deep-warm result without running a new pass."""
+    from ai_model.awareness import get_engine
+    try:
+        awareness_ready = get_engine().readiness_status().get("ready") is True
+    except Exception:
+        awareness_ready = False
+    generation = _generation_readiness(awareness_ready)
+    try:
+        from ai_model.capabilities import capabilities
+        renderers = capabilities()
+        catalog_available = True
+    except Exception:
+        renderers = {}
+        catalog_available = False
+    endpoint_routes = _generation_endpoint_catalog(
+        generation, awareness_ready, renderers,
+    )
+    if not catalog_available:
+        endpoint_routes["catalog_available"] = False
     return {
         "model_ready": _model_ready,
         "warm_start": _warm_status,
         "deep_warm": _deep_warm_status,
+        "awareness_ready": awareness_ready,
+        "generation_ready": endpoint_routes["readiness"]["ready"],
+        "endpoint_routes": endpoint_routes,
     }
 
 
