@@ -566,14 +566,12 @@ export default function TrainingDashboard() {
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge
                           variant={
-                            endpoint.shared_generation_gate_ready
+                            endpoint.online
                               ? "default"
                               : "destructive"
                           }
                         >
-                          {endpoint.shared_generation_gate_ready
-                            ? "Shared gate ready"
-                            : "Shared gate unavailable"}
+                          {endpoint.online ? "Online" : "Blocked"}
                         </Badge>
                         <span className="text-xs text-gray-400">
                           {endpoint.trained
@@ -581,11 +579,16 @@ export default function TrainingDashboard() {
                             : modality === "text" &&
                                 generationCapabilities.serving?.generation_mode ===
                                   "live_awareness"
-                              ? "live-awareness serving"
+                              ? "live-awareness text serving"
                               : endpoint.renderer
-                                ? `${endpoint.renderer} · not trained`
+                                ? `${endpoint.renderer} · procedural, not trained`
                                 : "not trained"}
                         </span>
+                        {!endpoint.online && endpoint.readiness_reason && (
+                          <span className="text-xs text-red-300">
+                            {endpoint.readiness_reason}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}

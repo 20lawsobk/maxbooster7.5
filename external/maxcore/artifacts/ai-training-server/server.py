@@ -2674,8 +2674,30 @@ def _generation_readiness(awareness_ready: bool) -> dict:
     }
 
 
+def _generation_runtime_dependencies(modality):
+    """Check only local renderer prerequisites; never run a generation job here."""
+    import importlib.util
+    import shutil
+
+    requirements = {
+        "image": {"pillow": "PIL", "numpy": "numpy"},
+        "audio": {"numpy": "numpy", "ffmpeg": "ffmpeg"},
+        "video": {"pillow": "PIL", "numpy": "numpy", "ffmpeg": "ffmpeg"},
+    }.get(modality, {})
+    available = {}
+    for name, dependency in requirements.items():
+        if dependency == "ffmpeg":
+            available[name] = shutil.which("ffmpeg") is not None
+            continue
+        try:
+            available[name] = importlib.util.find_spec(dependency) is not None
+        except (ImportError, ModuleNotFoundError, ValueError):
+            available[name] = False
+    return available
+
+
 def _generation_endpoint_catalog(generation, awareness_ready, renderers):
-    """Expose same-origin API paths without leaking the private MaxCore origin."""
+    """Expose per-modality serving readiness without implying trained weights."""
     generation_routes = {}
     route_paths = {
         "text": "/api/generate/text",
@@ -2685,16 +2707,57 @@ def _generation_endpoint_catalog(generation, awareness_ready, renderers):
     }
     for modality, path in route_paths.items():
         renderer = renderers.get(modality, {})
+        dependencies = (
+            _generation_runtime_dependencies(modality)
+            if modality != "text"
+            else {"script_agent": _script_agent is not None}
+        )
+        missing_dependencies = [
+            name for name, available in dependencies.items() if available is not True
+        ]
+        trained = (
+            _model_ready is True
+            if modality == "text"
+            else renderer.get("trained") is True
+        )
+        if modality == "text":
+            online = bool(
+                awareness_ready is True
+                and _script_agent is not None
+                and generation.get("ready") is True
+            )
+            serving_mode = generation.get("generation_mode", "unavailable")
+        else:
+            # Media routes have an explicit procedural renderer independent of
+            # learned weights. They still require a fresh awareness snapshot,
+            # the local renderer prerequisites, and an implemented renderer.
+            online = bool(
+                awareness_ready is True
+                and renderer.get("renderer")
+                and not missing_dependencies
+            )
+            serving_mode = (
+                "procedural_renderer" if online else "unavailable"
+            )
+        reason = (
+            "route_and_runtime_prerequisites_ready" if online
+            else "fresh_awareness_snapshot_unavailable" if awareness_ready is not True
+            else "renderer_not_configured" if modality != "text" and not renderer.get("renderer")
+            else "runtime_dependencies_missing" if missing_dependencies
+            else "text_composer_or_checkpoint_unavailable"
+        )
         generation_routes[modality] = {
             "method": "POST",
             "path": path,
             "route_declared": True,
+            "online": online,
+            "ready": online,
+            "status": "online" if online else "blocked",
+            "readiness_reason": reason,
             "shared_generation_gate_ready": generation["ready"] is True,
-            "trained": (
-                _model_ready is True
-                if modality == "text"
-                else renderer.get("trained") is True
-            ),
+            "trained": trained,
+            "serving_mode": serving_mode,
+            "runtime_dependencies": dependencies,
             "renderer": (
                 "maxcore-text-serving"
                 if modality == "text"
@@ -2706,6 +2769,7 @@ def _generation_endpoint_catalog(generation, awareness_ready, renderers):
             "method": "GET",
             "path": "/api/generation/capabilities",
             "responding": True,
+            "route_registered": True,
         },
         "awareness_status": {
             "method": "GET",
@@ -2714,8 +2778,9 @@ def _generation_endpoint_catalog(generation, awareness_ready, renderers):
         },
         "generation": generation_routes,
         "note": (
-            "Paths are same-origin Max Booster proxy routes. The shared readiness "
-            "gate is not an individual media-job health probe."
+            "Online means the route, local runtime prerequisites, and fresh-awareness "
+            "gate are available. It does not assert trained weights, output quality, "
+            "authorization, or success of an individual generation job."
         ),
     }
 
@@ -2858,16 +2923,26 @@ async def unified_profile_discover(data: UnifiedProfileDiscoverRequest,
 @app.get("/api/ready")
 async def generation_readiness():
     from ai_model.awareness import get_engine
+    from ai_model.capabilities import capabilities
     from fastapi.responses import JSONResponse
     awareness = get_engine().readiness_status()
     awareness_ready = awareness.get("ready") is True
     generation = _generation_readiness(awareness_ready)
-    ready = generation["ready"]
+    endpoint_routes = _generation_endpoint_catalog(
+        generation, awareness_ready, capabilities(),
+    )
+    modality_ready = all(
+        endpoint_routes["generation"][modality]["online"]
+        for modality in ("text", "image", "audio", "video")
+    )
+    ready = generation["ready"] and modality_ready
     return JSONResponse(status_code=200 if ready else 503, content={
-        "ready": ready, "model_loaded": _model_ready, "awareness": awareness,
+        "model_loaded": _model_ready, "awareness": awareness,
         "live_awareness": _live_awareness_capability(awareness_ready),
         **generation,
         "generation_ready": ready,
+        "ready": ready,
+        "endpoint_routes": endpoint_routes,
         "model_error": _model_init_error, "serving_release": _serving_release_status})
 
 
