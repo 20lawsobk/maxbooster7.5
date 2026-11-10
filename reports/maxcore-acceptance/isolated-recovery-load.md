@@ -1,15 +1,18 @@
 # MaxCore isolated recovery and bounded HTTP acceptance
 
-**Result:** FAILED
+**Result:** PASSED
 
 **Run:** `python3 scripts/maxcore-isolated-recovery-acceptance.py`
 
 - scope: isolated production journal/recovery/readiness functions; disposable fixture storage transport and loopback HTTP only
 - production_data_touched: False
 - inference_invoked: False
-- stage: outage_launch
-
-Failure: JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+- outage: committing retained with explicit delivery error and identical scratch SHA-256
+- restart: interrupted render failed without rerender; readiness HTTP 503
+- instance_loss: destroyed isolated state directory; restored copy to same path; delivery-only startup produced one validated fixture receipt
+- fixture_artifact_sha256: 933912207f0318df35de7f60a7b503a27e3557fec60a5949af044d2318510d98
+- http_load: {'requests': 96, 'max_concurrency': 8, 'expected_unready_responses': 32, 'unexpected_responses': 0, 'wall_seconds': 0.5, 'p50_ms': 32.58, 'p95_ms': 120.97, 'p99_ms': 140.13}
+- idempotent_restart: completed job remained terminal; no second fixture delivery
 
 ## Limits
 

@@ -25,7 +25,7 @@ REPORT = ROOT / "reports/maxcore-acceptance"
 FUNCTIONS = {
     "_job_path", "_job_write", "_job_read", "_job_update", "_persist_generation_job",
     "_journal_job_id", "_journal_records", "recover_dedicated_delivery",
-    "generation_readiness",
+    "_live_awareness_capability", "_generation_readiness", "generation_readiness",
 }
 
 
@@ -51,6 +51,9 @@ def child(root, port):
         "_api_jobs_lock": threading.Lock(), "_render_manager": object(),
         "_model_ready": False,
         "_model_init_error": "No certified release selected in isolated fixture",
+        "_script_agent": None,
+        "_live_learning_loop": None,
+        "_live_serving_model": None,
         "_serving_release_status": {"mode": "live-awareness", "status": "waiting_for_candidate"},
     }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SERVICE / "server.py"), "exec"), scope)
@@ -118,9 +121,22 @@ def request(port, path, method="GET"):
     req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", method=method)
     try:
         with urllib.request.urlopen(req, timeout=4) as response:
-            return response.status, json.load(response)
+            status = response.status
+            content_type = response.headers.get_content_type()
+            body = response.read()
     except urllib.error.HTTPError as error:
-        return error.code, json.load(error)
+        status = error.code
+        content_type = error.headers.get_content_type()
+        body = error.read()
+
+    try:
+        return status, json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        digest = hashlib.sha256(body).hexdigest()
+        raise RuntimeError(
+            f"{path}: HTTP {status} returned invalid JSON "
+            f"(content-type={content_type}, bytes={len(body)}, sha256={digest})"
+        ) from error
 
 
 def launch(root, port, home):
