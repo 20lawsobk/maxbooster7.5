@@ -46,8 +46,40 @@ exit 0
   return { root, calls };
 }
 
+function pruneFixture(t, failOn = "") {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "deployment-prune-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.copyFileSync("build.sh", path.join(root, "build.sh"));
+  fs.mkdirSync(path.join(root, "script/lib"), { recursive: true });
+  fs.copyFileSync(
+    "script/lib/pruneRuntimeNodeModules.mjs",
+    path.join(root, "script/lib/pruneRuntimeNodeModules.mjs"),
+  );
+  fs.mkdirSync(path.join(root, "state"), { recursive: true });
+  for (const marker of ["app-capsule-ready", "packer-ready"]) {
+    fs.writeFileSync(path.join(root, `state/${marker}`), "ready\n");
+  }
+  fs.mkdirSync(path.join(root, "dist"), { recursive: true });
+  fs.writeFileSync(path.join(root, "dist/publish-capsules.mjs"), "fixture\n");
+  fs.mkdirSync(path.join(root, "node_modules/example"), { recursive: true });
+  fs.writeFileSync(path.join(root, "node_modules/example/package.json"), "{}\n");
+  fs.mkdirSync(path.join(root, "shared"), { recursive: true });
+  fs.writeFileSync(path.join(root, "shared/social-platform-optimization.json"), "registry\n");
+  fs.mkdirSync(path.join(root, "server"), { recursive: true });
+  fs.writeFileSync(path.join(root, "server/source-marker.ts"), "keep until source phase\n");
+  fs.mkdirSync(path.join(root, "bin"), { recursive: true });
+
+  const calls = path.join(root, "npm-calls");
+  fs.writeFileSync(path.join(root, "bin/npm"), `#!/bin/sh
+echo "$*" >> "$NPM_CALLS"
+if [ -n "$FAIL_ON" ] && [ "$*" = "$FAIL_ON" ]; then exit 23; fi
+exit 0
+`, { mode: 0o755 });
+  return { root, calls, failOn };
+}
+
 for (const pathType of ["fast", "slow"]) {
-  test(`${pathType} deployment dependency path runs locked install, compile policy, and fail-closed checks`, t => {
+  test(`${pathType} deployment dependency path runs its locked install and compile policy`, t => {
     const { root, calls } = fixture(t, pathType);
     const state = path.join(root, "state");
     fs.mkdirSync(state);
@@ -76,5 +108,58 @@ for (const pathType of ["fast", "slow"]) {
     assert.equal(fs.readFileSync(path.join(root, "node_modules/.cache/sentinel"), "utf8"), "npm cache input");
     assert.equal(fs.readFileSync(path.join(root, "node_modules/.vite/sentinel"), "utf8"), "vite cache input");
     assert.doesNotMatch(commands.join("\n"), /security-fix\.ts/);
+  });
+}
+
+test("production pruning runs both security gates before stripping and source removal", t => {
+  const { root, calls } = pruneFixture(t);
+  const result = spawnSync("bash", [path.join(root, "build.sh"), "--executive-task", "prune"], {
+    cwd: root,
+    encoding: "utf8",
+    timeout: 30_000,
+    env: {
+      ...process.env,
+      PATH: `${path.join(root, "bin")}:${process.env.PATH}`,
+      DEPLOY_STATE_DIR: path.join(root, "state"),
+      NPM_CALLS: calls,
+    },
+  });
+  assert.equal(result.status, 0, result.stderr + result.stdout);
+  assert.deepEqual(fs.readFileSync(calls, "utf8").trim().split("\n"), [
+    "prune --omit=dev --no-audit --no-fund",
+    "run security:audit",
+    "run verify:dependency-security",
+  ]);
+  assert.equal(
+    fs.readFileSync(path.join(root, "state/social-platform-optimization.json"), "utf8"),
+    "registry\n",
+  );
+  assert.equal(fs.readFileSync(path.join(root, "server/source-marker.ts"), "utf8"),
+    "keep until source phase\n");
+});
+
+for (const gate of ["run security:audit", "run verify:dependency-security"]) {
+  test(`production pruning fails closed when ${gate} fails`, t => {
+    const { root, calls, failOn } = pruneFixture(t, gate);
+    const result = spawnSync("bash", [path.join(root, "build.sh"), "--executive-task", "prune"], {
+      cwd: root,
+      encoding: "utf8",
+      timeout: 30_000,
+      env: {
+        ...process.env,
+        PATH: `${path.join(root, "bin")}:${process.env.PATH}`,
+        DEPLOY_STATE_DIR: path.join(root, "state"),
+        NPM_CALLS: calls,
+        FAIL_ON: failOn,
+      },
+    });
+    assert.notEqual(result.status, 0, result.stdout);
+    assert.ok(fs.existsSync(path.join(root, "server/source-marker.ts")),
+      "source must remain when a security gate fails");
+    const commands = fs.readFileSync(calls, "utf8").trim().split("\n");
+    assert.ok(commands.includes(gate));
+    if (gate === "run security:audit") {
+      assert.equal(commands.includes("run verify:dependency-security"), false);
+    }
   });
 }
