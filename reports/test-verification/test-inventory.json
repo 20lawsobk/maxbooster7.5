@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "d56e075bfcc2b6ff9e258a691042d8dae8506f16",
-  "workingTreeInputDigest": "a96b2f92697287aae086b165f2dd4d1a61b22bc25005bdefe25a6253a33e78ef",
+  "sourceRevision": "6f5e0735073ba883848864038e2782a2e6a8f5ee",
+  "workingTreeInputDigest": "3c8575e453d23d25e44fe2dc3abbab5676ed65d20b952e73393df998541ff758",
   "scope": "Canonical first-party tracked tests, operational acceptance scripts, test support and newly added testing runners; not runtime execution evidence",
   "caseEnumeration": "Literal source labels only, not a count of runtime test cases or coverage percentage",
   "counts": {
-    "canonicalTestFiles": 697,
+    "canonicalTestFiles": 698,
     "supportSourceFiles": 89,
     "retainedSnapshotFiles": 220,
     "nonExecutableSupportFiles": 12,
@@ -15,7 +15,7 @@
       "manual-destructive-provider": 37,
       "python": 149,
       "root-node": 139,
-      "root-unit": 334,
+      "root-unit": 335,
       "runner-support": 89,
       "subsystems": 5
     }
@@ -2453,7 +2453,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
-      "sha256": "e196f7b10a11953f0f99c12d0794922279bf02623a96bf05cc1587966c69a214",
+      "sha256": "65e06f490d349b5e0f34c09b95f6197c6930beead24ea471b435a13305dfc358",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2483,7 +2483,7 @@
         "test_api_text_rejects_legacy_cached_score",
         "test_api_content_fresh_copy_is_model_text_without_fake_scores",
         "test_alias_media_bodies_mark_asset_identifiers_as_specs",
-        "test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs",
+        "test_live_awareness_media_routes_reject_ownerless_jobs_before_rendering",
         "test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool",
         "test_audio_synth_receives_actual_instrument_and_prompt",
         "test_audio_reference_body_rejects_unfulfillable_piano_direction",
@@ -2494,7 +2494,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_media_http.py",
-      "sha256": "13387032d0616cb84efc498a159cd5fdc714d37279befcdaf3a20cb407a463af",
+      "sha256": "e501a94e363a89290f1fbd2c9fb13e4d7fe5947f7f80976e1bce178feccf10e5",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2511,7 +2511,7 @@
         "DedicatedMediaHTTP.test_real_image_audio_video_artifacts_without_language_checkpoint",
         "DedicatedMediaHTTP.test_raw_video_alias_runs_the_same_explicit_procedural_contract",
         "DedicatedMediaHTTP.test_production_composition_uses_owner_scoped_durable_delivery",
-        "DedicatedMediaHTTP.test_normal_learned_media_and_text_still_require_a_capable_candidate",
+        "DedicatedMediaHTTP.test_legacy_checkpoint_generation_stays_blocked_without_candidate",
         "DedicatedMediaHTTP.test_missing_or_stale_awareness_never_dispatches_a_renderer",
         "DedicatedMediaHTTP.test_semantic_controls_and_unrelated_routes_cannot_select_procedural_success",
         "DedicatedMediaHTTP.test_real_private_owner_middleware_blocks_spoofed_or_missing_identity",
@@ -2899,7 +2899,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_live_awareness_planner_http.py",
-      "sha256": "5eeef7514e1d9fb9faf0d12a576664ea733c77fb47c06b2162ae44d4e1d5687a",
+      "sha256": "8a5bce23a80351f88fd1aef062408a88eb65ca4d48501af5a8e6dab8e24895f2",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2914,8 +2914,13 @@
       "purpose": "Real ASGI planner requests without server startup, weights or provider calls.",
       "caseTitles": [
         "LiveAwarenessPlannerHTTP.test_multimodal_planner_uses_fresh_awareness_without_model",
+        "LiveAwarenessPlannerHTTP.test_live_awareness_readiness_does_not_claim_a_trained_model",
+        "LiveAwarenessPlannerHTTP.test_live_awareness_is_a_generation_release_without_claiming_loaded_weights",
+        "LiveAwarenessPlannerHTTP.test_real_script_agent_composes_from_bound_live_awareness_without_checkpoint",
+        "LiveAwarenessPlannerHTTP.test_orchestrator_text_content_uses_the_same_live_awareness_release",
+        "LiveAwarenessPlannerHTTP.test_awareness_context_use_signals_learning_outside_request_path",
         "LiveAwarenessPlannerHTTP.test_api_planner_alias_keeps_one_snapshot_and_caller_request",
-        "LiveAwarenessPlannerHTTP.test_actual_content_modes_remain_unavailable_without_capable_model",
+        "LiveAwarenessPlannerHTTP.test_generation_without_a_live_composer_or_checkpoint_remains_unavailable",
         "LiveAwarenessPlannerHTTP.test_missing_or_expired_awareness_does_not_become_planner_success",
         "LiveAwarenessPlannerHTTP.test_planner_preserves_validation_and_cannot_dispatch_render_controls",
         "LiveAwarenessPlannerHTTP.test_actual_route_dependencies_still_require_generation_authentication"
@@ -2924,7 +2929,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py",
-      "sha256": "c8f5708ac5576976e166a5da6420cdeaa23346f5ed35bdbf361d773bc14b8c23",
+      "sha256": "ea4b4bc433cdb9b64bac92469dc022239bf9cae69cb51c9d0c7d11c6576bfaf5",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2936,9 +2941,10 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "LiveServingTests.test_fresh_observations_train_but_cannot_promote_themselves; LiveServingTests.test_recovered_training_and_selection_clear_previous_error_labels",
+      "purpose": "LiveServingTests.test_fresh_observations_train_but_cannot_promote_themselves; LiveServingTests.test_awareness_use_wakes_the_existing_worker_with_bounded_coalescing",
       "caseTitles": [
         "LiveServingTests.test_fresh_observations_train_but_cannot_promote_themselves",
+        "LiveServingTests.test_awareness_use_wakes_the_existing_worker_with_bounded_coalescing",
         "LiveServingTests.test_recovered_training_and_selection_clear_previous_error_labels",
         "LiveServingTests.test_selected_release_activates_even_while_training_is_on_cooldown",
         "LiveServingTests.test_restart_and_timestamp_only_refresh_do_not_retrain_same_content",
@@ -4809,7 +4815,7 @@
     },
     {
       "path": "server/routes/__tests__/maxcoreProxy.test.ts",
-      "sha256": "c78c2bf01ad71d31e14d74271b2161c7d0159b2353e75a7d8a76fa404eb594bc",
+      "sha256": "47643be29bf1526d1c41d86306b1ce4ef7abd7cc16ea6a58df520be87139a011",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -7202,7 +7208,7 @@
     },
     {
       "path": "tests/deployment-build-paths.test.mjs",
-      "sha256": "895752f5ddd3a6857a2ec642bfe27f159c090d5e1546fb486be2553c802370c7",
+      "sha256": "b04d5195c6e052dc6423aeeebad575db4bd4d11f92e1b4086dea05196a265652",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -7214,9 +7220,11 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "${pathType} deployment dependency path runs locked install, compile policy, and fail-closed checks",
+      "purpose": "${pathType} deployment dependency path runs its locked install and compile policy; production pruning runs both security gates before stripping and source removal",
       "caseTitles": [
-        "${pathType} deployment dependency path runs locked install, compile policy, and fail-closed checks"
+        "${pathType} deployment dependency path runs its locked install and compile policy",
+        "production pruning runs both security gates before stripping and source removal",
+        "production pruning fails closed when ${gate} fails"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -7312,7 +7320,7 @@
     },
     {
       "path": "tests/deployment-executive.test.mjs",
-      "sha256": "317a4550636785731fc681dfae3476344f6acaba1c567ffa65c531ad7c4b9943",
+      "sha256": "1f879120f7bf05a0c47f5d8eada1882e82d07836f699710a6601d8095e29ec24",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -7328,6 +7336,11 @@
       "caseTitles": [
         "real subprocesses overlap and prerequisites finish before successors",
         "deadline kills hung task instead of admitting its dependent",
+        "capsule tasks retry a child-only transient signal after cleanup",
+        "executor cancellation stops promptly and is never retried",
+        "executor binds TERM, INT and HUP with truthful signal metadata and removes handlers",
+        "capsule packers use available CPU while I/O reservations cap concurrency",
+        "task exceeding total I/O capacity fails instead of waiting indefinitely",
         "failed prerequisite blocks dependent; invalid graphs rejected before execution",
         "admission adapts when available memory recovers",
         "startup plan requires all restores before launching app; source deletion is last",
@@ -8218,7 +8231,7 @@
     },
     {
       "path": "tests/fixtures/deployment-versions/current/build.sh",
-      "sha256": "3dbda48c3b757e4cf5cc2d44cbc00f4b0de162ef658cf24f89d8ae2be689605e",
+      "sha256": "7bd49f552e9f81119cfa919e93358e7da73c468dc0c37e7960e7d2464e935904",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -8229,7 +8242,7 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "build",
+      "purpose": "Sourced project helpers retain their existing shell contract.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -8303,7 +8316,7 @@
     },
     {
       "path": "tests/fixtures/deployment-versions/historical/build.sh",
-      "sha256": "57484a92b1cb4cb6f003f6fdb98786f394c722603529893434833f7be321af0c",
+      "sha256": "7bd49f552e9f81119cfa919e93358e7da73c468dc0c37e7960e7d2464e935904",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -8314,7 +8327,7 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "build",
+      "purpose": "Sourced project helpers retain their existing shell contract.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -10558,7 +10571,7 @@
     },
     {
       "path": "tests/publishing-cache-isolation.test.mjs",
-      "sha256": "ef8de426737afbc81614d086844075f41a8777b0a072903cf18d3cf14ca39e98",
+      "sha256": "527c844dc74899c3560cee60b959af13c0a9c852c3c347060d40e2cf05d82653",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -10580,7 +10593,7 @@
     },
     {
       "path": "tests/publishing-compression.test.mjs",
-      "sha256": "adaae686b6ca75b2e8eddb1c55046004b8fdfadaeca76ce6b1881fbc428e5201",
+      "sha256": "c4d133117fee1b4e37407f89e558cc6f6c6949ed8fedc3d7bc6e35c4c013ceac",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -12992,7 +13005,7 @@
     },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
-      "sha256": "076fe924afa316cae268df4c0f027f65395bc01246b0e255939454cc8986b695",
+      "sha256": "de00435f50e3cc04494fb1a2fac0a98a533ba654a2c0d909f0f17e453d9bba22",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -16020,7 +16033,7 @@
     },
     {
       "path": "tests/unit/maxcore-client-thin-transport.test.ts",
-      "sha256": "f5a7ee99ff043b333def648076f6e20275a1dd439095eba21d66fc46ea5bd99d",
+      "sha256": "87259ff49242736e902f82f67bdf384745c050769245e59c679fb8b8d3b43b0b",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -16032,10 +16045,11 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "MaxCore client is transport, not another AI processing layer; reports unavailable until the authenticated ready endpoint confirms model and awareness readiness",
+      "purpose": "MaxCore client is transport, not another AI processing layer; does not infer generation readiness from model liveness or awareness alone",
       "caseTitles": [
         "MaxCore client is transport, not another AI processing layer",
-        "reports unavailable until the authenticated ready endpoint confirms model and awareness readiness",
+        "does not infer generation readiness from model liveness or awareness alone",
+        "accepts explicit fresh live-awareness generation readiness without claiming trained weights",
         "does not treat a successful generation response as proof of model readiness",
         "closes a half-open circuit after authenticated model info proves the local model is ready",
         "releases the half-open probe reservation when cached health fast-fails before fetch"
@@ -16209,7 +16223,7 @@
     },
     {
       "path": "tests/unit/maxcore-local-supervisor.test.ts",
-      "sha256": "4d1d09cb6d0f822f42ac9a8cc1e30da81a1d8dcb12d5e16891c136bb7ab3cf79",
+      "sha256": "c56e80ca810d7c6c77686ed8552deb43bbc36d02eda5c3c63ee2bf29a64fd937",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -16232,7 +16246,7 @@
         "returns false (non-fatal) when the database is unreachable",
         "skips empty URLs",
         "checkMaxcoreLocalReady (Python-aware readiness)",
-        "requires model_loaded=true, not merely a healthy child process",
+        "accepts a certified model or the node's explicit live-awareness serving receipt",
         "does not claim readiness from an unowned process on the local port",
         "startMaxcoreLocal (workspace provisioning race)",
         "waits and does not run the bootstrap script when the workspace is absent but a restore capsule is present",
@@ -16295,7 +16309,7 @@
     },
     {
       "path": "tests/unit/maxcore-node-routes.test.ts",
-      "sha256": "30c1c8124f763f9677d576a155d57101be43c5a3c87786b3d1eedf8c6faabe5f",
+      "sha256": "59f01616aeec032fbd3ec01b25ffc255c3e8e37e6fca74ef9b58eb8a45d68392",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -16486,6 +16500,32 @@
         "fails closed while the supervised Python model is not loaded",
         "reports ok only after the supervised Python model readiness passes",
         "does not retain a cached ok after authority loss"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/maxcore-serving-readiness.test.ts",
+      "sha256": "122249974f45a8959840507fb10e2739be2d6761a8dedeef6a73f9a44556d709",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/maxcore-serving-readiness.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "MaxCore generation readiness; accepts a genuinely ready certified checkpoint",
+      "caseTitles": [
+        "MaxCore generation readiness",
+        "accepts a genuinely ready certified checkpoint",
+        "accepts the explicit live-awareness serving release without claiming weights",
+        "keeps restarting or open-circuit services unready"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [

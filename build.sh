@@ -277,6 +277,10 @@ phase_prune() {
   npm run security:audit
   npm run verify:dependency-security
 
+  # Remove only dependency-owned caches/package metadata, after compilation and
+  # security checks but before the Node dependency capsule is created.
+  _pdim_prune_nm
+
   # Preserve the original audit-before-stripping contract.
   _strip_runtime_modules
 

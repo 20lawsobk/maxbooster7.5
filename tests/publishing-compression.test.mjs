@@ -119,6 +119,8 @@ test("source manifest finalization rejects a capsule checksum mismatch", t => {
 
 test("build.sh source phase reuses streamed hash and member-size metadata", t => {
   const {root}=setup(t);
+  const state=path.join(root,"build-state");
+  fs.mkdirSync(state);
   fs.copyFileSync("build.sh",path.join(root,"build.sh"));
   fs.mkdirSync(path.join(root,"script/lib"),{recursive:true});
   fs.copyFileSync("script/lib/finalize-source-manifest.mjs",
@@ -128,7 +130,8 @@ test("build.sh source phase reuses streamed hash and member-size metadata", t =>
   fs.mkdirSync(path.join(root,"server"),{recursive:true});
   fs.writeFileSync(path.join(root,"server/source.ts"),payload);
   const result=spawnSync("bash",[path.join(root,"build.sh"),"--executive-task","source"],
-    {cwd:root,encoding:"utf8",timeout:30000});
+    {cwd:root,encoding:"utf8",timeout:30000,
+      env:{...process.env,DEPLOY_STATE_DIR:state}});
   assert.equal(result.status,0,result.stderr+result.stdout);
   assert.equal(fs.existsSync(path.join(root,"server")),false);
   const manifest=JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json")));
@@ -146,6 +149,8 @@ test("build.sh source phase reuses streamed hash and member-size metadata", t =>
 
 test("build.sh preserves source when the source manifest is missing or corrupt", t => {
   const {root}=setup(t);
+  const state=path.join(root,"build-state");
+  fs.mkdirSync(state);
   fs.copyFileSync("build.sh",path.join(root,"build.sh"));
   fs.mkdirSync(path.join(root,"script/lib"),{recursive:true});
   fs.copyFileSync("script/lib/finalize-source-manifest.mjs",
@@ -161,7 +166,8 @@ test("build.sh preserves source when the source manifest is missing or corrupt",
   fs.mkdirSync(path.join(root,"server"),{recursive:true});
   fs.writeFileSync(path.join(root,"server/source.ts"),"retained");
   const result=spawnSync("bash",[path.join(root,"build.sh"),"--executive-task","source"],
-    {cwd:root,encoding:"utf8",timeout:30000});
+    {cwd:root,encoding:"utf8",timeout:30000,
+      env:{...process.env,DEPLOY_STATE_DIR:state}});
   assert.notEqual(result.status,0);
   assert.match(result.stderr,/checksum does not match/);
   assert.equal(fs.readFileSync(path.join(root,"server/source.ts"),"utf8"),"retained");
@@ -183,7 +189,7 @@ test("compressor failure retains source and the previous archive", t => {
 test("both publishing paths use shared deployment packing while retaining adaptive app-capsule generation", () => {
   const shell=fs.readFileSync("build.sh","utf8"), build=fs.readFileSync("script/build.ts","utf8");
   assert.match(shell,/script\/build-capsule\.ts/);
-  assert.match(shell,/script\/publish-capsules\.ts --bundle/);
+  assert.match(shell,/script\/publish-capsules\.ts\s+\\\s*--bundle/);
   assert.match(shell,/node dist\/publish-capsules\.mjs directory/);
   assert.match(shell,/PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build/);
   assert.match(build,/await publishCapsule/);

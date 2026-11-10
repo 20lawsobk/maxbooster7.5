@@ -1,8 +1,8 @@
 # Static Frontend/Backend API Inventory
 
-Generated 2026-11-09T18:52:21.557Z without live requests.
+Generated 2026-11-10T08:32:38.483Z without live requests.
 
-- Backend route registrations: **2472** (2405 unique method/path pairs).
+- Backend route registrations: **2473** (2406 unique method/path pairs).
 - Mounted router files: **159**.
 - Frontend API call sites: **1200** (934 unique method/path pairs).
 - Matched: **934**; unmatched confirmed: **0**; method-unconfirmed: **0**.
@@ -29,7 +29,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/achievements/mark-notified/:param` via apiRequest — client/src/components/achievements/AchievementNotification.tsx:67 → server/routes/achievements.ts:48
 - `GET /api/achievements/streaks` via useQuery — client/src/components/achievements/StreakCounter.tsx:64 → server/routes/achievements.ts:87
 - `POST /api/achievements/streaks/:param` via apiRequest — client/src/components/achievements/StreakCounter.tsx:69 → server/routes/achievements.ts:97
-- `GET /api/awareness/unified/admin/source-status` via fetch — client/src/components/admin/MaxCoreAwarenessStatus.tsx:129 → server/routes/maxcoreProxy.ts:45
+- `GET /api/awareness/unified/admin/source-status` via fetch — client/src/components/admin/MaxCoreAwarenessStatus.tsx:129 → server/routes/maxcoreProxy.ts:46
 - `GET /api/advertising/dashboard/attribution` via useQuery — client/src/components/advertising/AttributionDashboard.tsx:76 → server/routes/advertising.ts:1581
 - `GET /api/advertising/dashboard/paths` via useQuery — client/src/components/advertising/AttributionDashboard.tsx:83 → server/routes/advertising.ts:1628
 - `GET /api/advertising/ab-tests` via useQuery — client/src/components/advertising/CreativeAutomation.tsx:92 → server/routes/advertising.ts:587

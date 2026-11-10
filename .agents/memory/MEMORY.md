@@ -11,3 +11,4 @@
 - [Live-awareness serving readiness](live-awareness-serving-readiness.md) — serve current awareness before a trained checkpoint, while reporting checkpoint status separately.
 - [Provider error logging](provider-error-logging.md) — do not log raw provider messages; they can embed unlabelled credentials that generic redaction cannot reliably identify.
 - [Whole-product acceptance](whole-product-acceptance.md) — cover every role and journey; MaxCore also has owner-defined memory, graph, agent, tool, expansion, and data-model requirements.
+- [Publishing SIGTERM boundary](publishing-sigterm-boundary.md) — honor supervisor termination; a deployment log may not identify its source, and application code cannot prevent an external stop.

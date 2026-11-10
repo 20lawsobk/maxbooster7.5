@@ -1,6 +1,6 @@
 # Platform-wide master verification results
 
-Generated: `2026-11-09T18:57:35.029161+00:00`. Checkout baseline: `d56e075bfcc2b6ff9e258a691042d8dae8506f16`.
+Generated: `2026-11-10T08:35:18.619668+00:00`. Checkout baseline: `6f5e0735073ba883848864038e2782a2e6a8f5ee`.
 
 **The master gate remains open.** Passing groups and unresolved checks are reported separately. No production-readiness or complete-feature claim follows from a passing subset.
 
@@ -16,8 +16,9 @@ Use [the setup guide](README.md) for dependencies and toolchain selectors, [the 
 
 | Group | Result | Measured scope |
 | --- | --- | --- |
-| `browser` | **passed** | tests: 5, pass: 5, fail: 0, skipped: 0 |
-| `master-commands` | **passed** | browser: exit 0 |
+| `root-unit` | **failed** | passed: 3024, failed: 3 |
+| `root-additional` | **passed** | passed: 18 |
+| `master-commands` | **failed** | ci: exit 1; additional: exit 0 |
 | `source-integrity` | **passed** | Git-visible code/configuration inputs remained unchanged throughout execution |
 | `evidence-gates` | **passed** | platform: exit 0; remediation: exit 0; completion-plan: exit 0 |
 
@@ -27,6 +28,8 @@ Group counts overlap. CI repeats some Node contracts; instrumented unit tests re
 
 | Source suite | Failed recorded cases |
 | --- | --- |
+| `tests/unit/maxcore-readiness-gate.test.ts` | 2 |
+| `tests/unit/build-shell-python-runtime.test.ts` | 1 |
 
 The full case list and exact assertion messages are in [case-results.json](../../reports/test-verification/case-results.json). Assertion failures may identify an implementation defect, obsolete fixture or unmet dependency; the remediation guide distinguishes confirmed observations from likely diagnoses.
 
@@ -34,15 +37,15 @@ The strict master retains missing-source targets, browser-policy restrictions, u
 
 ## Platform coverage and required work
 
-Source catalog: `{"byGroup": {"commerce": 22, "integration-browser": 11, "manual-destructive-provider": 37, "python": 149, "root-node": 139, "root-unit": 334, "runner-support": 89, "subsystems": 5}, "canonicalTestFiles": 697, "nonExecutableSupportFiles": 12, "retainedSnapshotFiles": 220, "supportSourceFiles": 89}`.
+Source catalog: `{"byGroup": {"commerce": 22, "integration-browser": 11, "manual-destructive-provider": 37, "python": 149, "root-node": 139, "root-unit": 335, "runner-support": 89, "subsystems": 5}, "canonicalTestFiles": 698, "nonExecutableSupportFiles": 12, "retainedSnapshotFiles": 220, "supportSourceFiles": 89}`.
 
-File evidence status: `{"executed": 5, "not_run": 692, "support": 89}`.
+File evidence status: `{"executed": 314, "failed": 2, "not_run": 382, "support": 89}`.
 
-Platform register: `{"actualCoverageFiles": 0, "backendRegistrations": 2991, "frontendApiContracts": 934, "invalidEvidenceLinks": 9, "requiredChecks": 34162, "routedPageDeclarations": 80, "scannedTypeScriptJavaScriptFiles": 3465, "uiInteractionDeclarations": 8431, "unknownMappings": 173, "unverifiedChecks": 34162}`.
+Platform register: `{"actualCoverageFiles": 0, "backendRegistrations": 2994, "frontendApiContracts": 934, "invalidEvidenceLinks": 9, "requiredChecks": 34180, "routedPageDeclarations": 80, "scannedTypeScriptJavaScriptFiles": 3466, "uiInteractionDeclarations": 8431, "unknownMappings": 173, "unverifiedChecks": 34180}`.
 
 Required behavior checks are a test plan, not a count of proven product bugs or necessarily a count of missing test files. Existing tests can satisfy checks when their exact automated evidence is linked. Static candidate matches and line execution alone do not establish authorization, persistence, recovery or full UI behavior. No human approval/signature is required.
 
-Repair task categories: `{"feature_acceptance_gap": 838, "mapping_gap": 20, "missing_evidence": 3, "missing_execution": 692}`.
+Repair task categories: `{"assertion_failure": 3, "command_failure": 1, "feature_acceptance_gap": 838, "mapping_gap": 20, "missing_evidence": 2, "missing_execution": 382}`.
 
 The readable checklist is bounded for review; its JSON retains every task, location, reproduction command and required proof.
 

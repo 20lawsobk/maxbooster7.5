@@ -78,10 +78,13 @@ test("executor binds TERM, INT and HUP with truthful signal metadata and removes
   assert.equal(emitter.listenerCount("SIGTERM"),0);
   assert.equal(emitter.listenerCount("SIGHUP"),0);
 });
-test("capsule I/O reservations bound simultaneous heavy packers to two",async()=>{
+test("capsule packers use available CPU while I/O reservations cap concurrency",async()=>{
   const logs=[];let active=0,maximum=0;
   const jobs=["pack_node","pack_python","pack_maxcore","pack_pdim"].map(id=>({
-    ...task(id,[],"setTimeout(()=>{},40)"),io:2,
+    ...task(id,[],"setTimeout(()=>{},40)"),
+    io:2,
+    elasticCPU:true,
+    maxCPU:4,
   }));
   await runExecutive(jobs,{capacity:()=>({...capacity(),cpus:8,ioSlots:4}),pollMs:5,budgetMs:3000,log(line){
     logs.push(line);
@@ -90,7 +93,18 @@ test("capsule I/O reservations bound simultaneous heavy packers to two",async()=
   }});
   assert.equal(maximum,2);
   assert.equal(active,0);
-  assert.ok(logs.some(line=>line.includes("io=2")));
+  assert.equal(logs.filter(line=>line.includes("starting pack_")&&line.includes("cpu=4;")).length,4);
+});
+test("task exceeding total I/O capacity fails instead of waiting indefinitely",async()=>{
+  await assert.rejects(
+    runExecutive([{...task("oversized",[]),io:3}],{
+      capacity:()=>({...capacity(),ioSlots:2}),
+      pollMs:5,
+      budgetMs:1000,
+      log(){},
+    }),
+    /oversized needs 3 I\/O slots; capacity is 2/,
+  );
 });
 test("failed prerequisite blocks dependent; invalid graphs rejected before execution",async()=>{
  await assert.rejects(runExecutive([task("fail",[],"process.exit(12)"),task("child",["fail"])],
@@ -102,6 +116,7 @@ test("failed prerequisite blocks dependent; invalid graphs rejected before execu
  assert.deepEqual(plan.find(t=>t.id==="node").deps,[]);
   for(const id of ["pack_node","pack_python","pack_maxcore","pack_pdim"]) {
     assert.equal(plan.find(t=>t.id===id).io,2,`${id} must reserve two I/O slots`);
+    assert.equal(plan.find(t=>t.id===id).maxCPU,4,`${id} should use available build CPU`);
   }
 });
 test("admission adapts when available memory recovers",async()=>{
