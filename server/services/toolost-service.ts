@@ -7,6 +7,14 @@ import {
   type ToolostApiEnvironment,
 } from "./toolostEnvironment.js";
 
+function configuredEnvironmentValue(...names: string[]): string | undefined {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+  return undefined;
+}
+
 /**
  * Too Lost's confirmed failure envelope is `{status:false, error:"..."}`;
  * field-level validation detail beyond that was never observed against a
@@ -380,12 +388,26 @@ class ToolostService {
   } | null = null;
   constructor(userId?: string) {
     this.userId = userId;
-    this.clientId = process.env.TOOLOST_CLIENT_ID;
     this.environment = getToolostApiEnvironment();
-    this.clientSecret =
-      this.environment === "sandbox"
-        ? process.env.TOOLOST_SANDBOX_CLIENT_SECRET
-        : process.env.TOOLOST_CLIENT_SECRET;
+    if (this.environment === "sandbox") {
+      this.clientId = configuredEnvironmentValue(
+        "TOOLOST_SANDBOX_CLIENT_ID",
+        "Sandbox_TooLost_client_Key",
+      );
+      this.clientSecret = configuredEnvironmentValue(
+        "TOOLOST_SANDBOX_CLIENT_SECRET",
+        "Sandbox_TooLost_Secret_Key",
+      );
+    } else {
+      this.clientId = configuredEnvironmentValue(
+        "TOOLOST_CLIENT_ID",
+        "TooLost_Client_Key",
+      );
+      this.clientSecret = configuredEnvironmentValue(
+        "TOOLOST_CLIENT_SECRET",
+        "TooLost_Secret_Key",
+      );
+    }
     this.baseUrl =
       this.environment === "sandbox"
         ? "https://api-sandbox.toolost.com/v1"
@@ -492,8 +514,8 @@ class ToolostService {
     if (this.clientId && this.clientSecret) return null;
     const variables =
       this.environment === "sandbox"
-        ? "TOOLOST_CLIENT_ID / TOOLOST_SANDBOX_CLIENT_SECRET"
-        : "TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET";
+        ? "TOOLOST_SANDBOX_CLIENT_ID (or Sandbox_TooLost_client_Key) / TOOLOST_SANDBOX_CLIENT_SECRET (or Sandbox_TooLost_Secret_Key)"
+        : "TOOLOST_CLIENT_ID (or TooLost_Client_Key) / TOOLOST_CLIENT_SECRET (or TooLost_Secret_Key)";
     return `Too Lost OAuth app credentials are not configured for the ${this.environment} environment (${variables}).`;
   }
 
