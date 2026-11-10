@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "6f5e0735073ba883848864038e2782a2e6a8f5ee",
-  "workingTreeInputDigest": "3c8575e453d23d25e44fe2dc3abbab5676ed65d20b952e73393df998541ff758",
+  "sourceRevision": "71dc6a882d3d4d505939b1baa7408e0e43d045a8",
+  "workingTreeInputDigest": "5c3dc1fd39660e270c130a2c1ff6de11c93977f18ed5a3aabd5e21990259e00c",
   "scope": "Canonical first-party tracked tests, operational acceptance scripts, test support and newly added testing runners; not runtime execution evidence",
   "caseEnumeration": "Literal source labels only, not a count of runtime test cases or coverage percentage",
   "counts": {
@@ -12899,7 +12899,7 @@
     },
     {
       "path": "tests/unit/automation-honesty.test.ts",
-      "sha256": "f53947cc144e273cd667699394fadf0eeb7895adc0dae6e4633c82def7c0a094",
+      "sha256": "65b7863ed71c6e235560348a41de6d745782923b49a6e3d240eed1f8f77f50b3",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -12918,6 +12918,9 @@
         "backup-data fails safely when no database is configured",
         "send-notification reports failure (not success) with zero recipients",
         "send-email reports failure (not success) when no userId/email can be resolved",
+        "keeps workflow start/stop idempotent and stops each configured trigger",
+        "does not run the same slow workflow action concurrently",
+        "keeps raw provider exception text out of persisted workflow status",
         "every registered action returns an explicit success boolean (positive contract)"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
@@ -13313,7 +13316,7 @@
     },
     {
       "path": "tests/unit/build-shell-python-runtime.test.ts",
-      "sha256": "4eb0bcd551b55c6ff97e33606cc4a38959a37fa0e0c872e2b0270f5f90f8f180",
+      "sha256": "31b18a8cb4ca2f0675444bf3c38fb41aa872d440c104d1fe7643f0e173fead99",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -16482,7 +16485,7 @@
     },
     {
       "path": "tests/unit/maxcore-readiness-gate.test.ts",
-      "sha256": "656c2facb8636c20428335e09da5c22036e3301b1b55197d77f87fcac6bb8fea",
+      "sha256": "75a3922133ae519c84dff7c2fa453891231ae9d00bdf346da7d4b0f8aaf99d8b",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -16494,11 +16497,11 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "MaxCore application readiness gate; fails closed while the supervised Python model is not loaded",
+      "purpose": "MaxCore application readiness gate; fails closed while supervised MaxCore generation serving is unavailable",
       "caseTitles": [
         "MaxCore application readiness gate",
-        "fails closed while the supervised Python model is not loaded",
-        "reports ok only after the supervised Python model readiness passes",
+        "fails closed while supervised MaxCore generation serving is unavailable",
+        "reports ok only after the supervised MaxCore serving authority is ready",
         "does not retain a cached ok after authority loss"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",

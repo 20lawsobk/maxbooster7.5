@@ -1,26 +1,151 @@
 import os from "node:os";
 import fs from "node:fs";
+
+const MiB = 1024 ** 2;
+const GiB = 1024 ** 3;
+
 function read(file) {
-  try { return fs.readFileSync(file,"utf8").trim(); }
-  catch(error) { if(["ENOENT","ENOTDIR"].includes(error.code)) return null; throw error; }
-}
-export function effectiveCapacity() {
-  let cpus=os.availableParallelism(), memory=os.totalmem();
-  const max=read("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
-  const quota=max?Number(max[0]):Number(read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"));
-  const period=max?Number(max[1]):Number(read("/sys/fs/cgroup/cpu/cpu.cfs_period_us"));
-  if(quota>0 && period>0) cpus=Math.min(cpus,quota/period);
-  for(const file of ["/sys/fs/cgroup/memory.max","/sys/fs/cgroup/memory/memory.limit_in_bytes"]) {
-    const n=Number(read(file)); if(n>0 && Number.isFinite(n)) memory=Math.min(memory,n);
+  try {
+    return fs.readFileSync(file, "utf8").trim();
+  } catch (error) {
+    if ([
+      "ENOENT",
+      "ENOTDIR",
+      "EACCES",
+      "EPERM",
+    ].includes(error.code)) {
+      return null;
+    }
+
+    throw error;
   }
-  return {cpus,memoryGB:memory/1024**3};
 }
+
+function nonnegative(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    value === "max"
+  ) {
+    return null;
+  }
+
+  const result = Number(value);
+
+  return Number.isFinite(result) && result >= 0
+    ? result
+    : null;
+}
+
+export function effectiveCapacity() {
+  let cpus = os.availableParallelism();
+  let memory = os.totalmem();
+
+  const max = read("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
+
+  const quota = nonnegative(
+    max?.[0] ??
+    read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"),
+  );
+
+  const period = nonnegative(
+    max?.[1] ??
+    read("/sys/fs/cgroup/cpu/cpu.cfs_period_us"),
+  );
+
+  if (
+    quota !== null && quota > 0 &&
+    period !== null && period > 0
+  ) {
+    cpus = Math.min(cpus, quota / period);
+  }
+
+  for (const file of [
+    "/sys/fs/cgroup/memory.max",
+    "/sys/fs/cgroup/memory/memory.limit_in_bytes",
+  ]) {
+    const limit = nonnegative(read(file));
+
+    if (limit !== null && limit > 0) {
+      memory = Math.min(memory, limit);
+    }
+  }
+
+  return {
+    cpus,
+    memoryGB: memory / GiB,
+  };
+}
+
 export function liveCapacity() {
-  const {cpus,memoryGB}=effectiveCapacity();
-  const used=Number(read("/sys/fs/cgroup/memory.current") ?? read("/sys/fs/cgroup/memory/memory.usage_in_bytes"));
-  const stats=read("/sys/fs/cgroup/memory.stat") ?? read("/sys/fs/cgroup/memory/memory.stat") ?? "";
-  const reclaimable=Number(stats.match(/^(?:total_)?inactive_file (\d+)$/m)?.[1] ?? 0);
-  const availableMB=Math.min(os.freemem()+reclaimable,Math.max(0,memoryGB*1024**3-used+reclaimable))/1024**2;
-  const pressure=Number((read("/sys/fs/cgroup/io.pressure") ?? read("/proc/pressure/io"))?.match(/some avg10=([\d.]+)/)?.[1] ?? 0);
-  return {cpus,memoryMB:memoryGB*1024,availableMB,ioSlots:pressure>25?1:Math.max(1,Math.min(4,Math.floor(cpus/2)))};
+  const {cpus, memoryGB} = effectiveCapacity();
+  const memoryBytes = memoryGB * GiB;
+
+  const used =
+    nonnegative(read("/sys/fs/cgroup/memory.current")) ??
+    nonnegative(read(
+      "/sys/fs/cgroup/memory/memory.usage_in_bytes",
+    ));
+
+  const stats =
+    read("/sys/fs/cgroup/memory.stat") ??
+    read("/sys/fs/cgroup/memory/memory.stat") ??
+    "";
+
+  const reclaimable = Math.min(
+    memoryBytes,
+    nonnegative(
+      stats.match(/^total_inactive_file\s+(\d+)$/m)?.[1],
+    ) ??
+    nonnegative(
+      stats.match(/^inactive_file\s+(\d+)$/m)?.[1],
+    ) ??
+    0,
+  );
+
+  const meminfo = read("/proc/meminfo") ?? "";
+
+  const hostAvailableKB = nonnegative(
+    meminfo.match(/^MemAvailable:\s+(\d+)\s+kB$/m)?.[1],
+  );
+
+  const hostAvailable = hostAvailableKB === null
+    ? os.freemem()
+    : hostAvailableKB * 1024;
+
+  // MemAvailable already accounts for reclaimable host cache.
+  // Add inactive-file reclamation only to the cgroup calculation.
+  const cgroupAvailable = used === null
+    ? memoryBytes
+    : Math.max(0, memoryBytes - used + reclaimable);
+
+  const availableMB = Math.max(
+    0,
+    Math.min(
+      memoryBytes,
+      hostAvailable,
+      cgroupAvailable,
+    ),
+  ) / MiB;
+
+  const pressureText =
+    read("/sys/fs/cgroup/io.pressure") ??
+    read("/proc/pressure/io") ??
+    "";
+
+  const pressure = nonnegative(
+    pressureText.match(/^some\s+avg10=([\d.]+)/m)?.[1],
+  ) ?? 0;
+
+  const ioSlots = pressure > 25
+    ? 1
+    : Math.max(1, Math.min(4, Math.floor(cpus / 2)));
+
+  return {
+    cpus,
+    memoryMB: memoryBytes / MiB,
+    availableMB,
+    ioSlots,
+  };
 }

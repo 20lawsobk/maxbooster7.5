@@ -2011,13 +2011,16 @@ env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C CI=1
 
 Requirements: Node.js >=22.12; npm ci.
 
-<details><summary>Source case labels (6; runtime expansion may differ)</summary>
+<details><summary>Source case labels (9; runtime expansion may differ)</summary>
 
 - Automation action honesty
 - ${type} honestly reports success:false (no real implementation exists)
 - backup-data fails safely when no database is configured
 - send-notification reports failure (not success) with zero recipients
 - send-email reports failure (not success) when no userId/email can be resolved
+- keeps workflow start/stop idempotent and stops each configured trigger
+- does not run the same slow workflow action concurrently
+- keeps raw provider exception text out of persisted workflow status
 - every registered action returns an explicit success boolean (positive contract)
 
 </details>
@@ -4820,7 +4823,7 @@ Requirements: Node.js >=22.12; npm ci.
 
 ### [tests/unit/maxcore-readiness-gate.test.ts](../../tests/unit/maxcore-readiness-gate.test.ts)
 
-MaxCore application readiness gate; fails closed while the supervised Python model is not loaded
+MaxCore application readiness gate; fails closed while supervised MaxCore generation serving is unavailable
 
 Runner: `vitest`. Working directory: `.`.
 
@@ -4833,8 +4836,8 @@ Requirements: Node.js >=22.12; npm ci.
 <details><summary>Source case labels (4; runtime expansion may differ)</summary>
 
 - MaxCore application readiness gate
-- fails closed while the supervised Python model is not loaded
-- reports ok only after the supervised Python model readiness passes
+- fails closed while supervised MaxCore generation serving is unavailable
+- reports ok only after the supervised MaxCore serving authority is ready
 - does not retain a cached ok after authority loss
 
 </details>

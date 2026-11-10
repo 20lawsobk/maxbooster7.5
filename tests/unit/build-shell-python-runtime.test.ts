@@ -59,6 +59,13 @@ describe("build.sh delegates to the production executive bootstrap", () => {
     const source = fs.readFileSync(path.join(root, "build.sh"), "utf8");
     expect(source).toContain('exec bash script/deployment/bootstrap.sh');
     expect(source).toContain('if [ "${1:-}" = "--executive-task" ]');
-    expect(source).toContain('*) echo "Unknown build task" >&2; exit 1');
+    const unknownTask = spawnSync(
+      "bash",
+      [path.join(root, "build.sh"), "--executive-task", "not-a-real-phase"],
+      { cwd: root, encoding: "utf8" },
+    );
+    expect(unknownTask.status).toBe(1);
+    expect(unknownTask.stderr).toContain("Unknown build task");
+    expect(unknownTask.stdout).not.toContain("Starting task");
   });
 });

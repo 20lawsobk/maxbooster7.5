@@ -6961,25 +6961,57 @@ function read(file) {
   try {
     return fs2.readFileSync(file, "utf8").trim();
   } catch (error) {
-    if (["ENOENT", "ENOTDIR"].includes(error.code)) return null;
+    if ([
+      "ENOENT",
+      "ENOTDIR",
+      "EACCES",
+      "EPERM"
+    ].includes(error.code)) {
+      return null;
+    }
     throw error;
   }
 }
-function effectiveCapacity() {
-  let cpus = os3.availableParallelism(), memory = os3.totalmem();
-  const max = read("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
-  const quota = max ? Number(max[0]) : Number(read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"));
-  const period = max ? Number(max[1]) : Number(read("/sys/fs/cgroup/cpu/cpu.cfs_period_us"));
-  if (quota > 0 && period > 0) cpus = Math.min(cpus, quota / period);
-  for (const file of ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"]) {
-    const n = Number(read(file));
-    if (n > 0 && Number.isFinite(n)) memory = Math.min(memory, n);
+function nonnegative(value) {
+  if (value === null || value === void 0 || value === "" || value === "max") {
+    return null;
   }
-  return { cpus, memoryGB: memory / 1024 ** 3 };
+  const result = Number(value);
+  return Number.isFinite(result) && result >= 0 ? result : null;
 }
+function effectiveCapacity() {
+  let cpus = os3.availableParallelism();
+  let memory = os3.totalmem();
+  const max = read("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
+  const quota = nonnegative(
+    max?.[0] ?? read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us")
+  );
+  const period = nonnegative(
+    max?.[1] ?? read("/sys/fs/cgroup/cpu/cpu.cfs_period_us")
+  );
+  if (quota !== null && quota > 0 && period !== null && period > 0) {
+    cpus = Math.min(cpus, quota / period);
+  }
+  for (const file of [
+    "/sys/fs/cgroup/memory.max",
+    "/sys/fs/cgroup/memory/memory.limit_in_bytes"
+  ]) {
+    const limit = nonnegative(read(file));
+    if (limit !== null && limit > 0) {
+      memory = Math.min(memory, limit);
+    }
+  }
+  return {
+    cpus,
+    memoryGB: memory / GiB
+  };
+}
+var MiB, GiB;
 var init_capacity = __esm({
   "script/deployment/capacity.mjs"() {
     "use strict";
+    MiB = 1024 ** 2;
+    GiB = 1024 ** 3;
   }
 });
 

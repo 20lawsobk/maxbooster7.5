@@ -77,6 +77,145 @@ describe("Automation action honesty", () => {
     expect(result).toMatchObject({ success: false });
   });
 
+  it("keeps workflow start/stop idempotent and stops each configured trigger", () => {
+    const stopped: string[] = [];
+    for (const triggerType of ["test-trigger-a", "test-trigger-b"]) {
+      system.registerTrigger(triggerType, {
+        name: triggerType,
+        description: "test-only trigger",
+        parameters: [],
+        start: () => ({ triggerType }),
+        stop: (instance: unknown) => {
+          expect(instance).toEqual({ triggerType });
+          stopped.push(triggerType);
+        },
+      });
+    }
+
+    const workflow = system.createWorkflow({
+      name: "lifecycle regression",
+      description: "isolated lifecycle test",
+      triggers: [
+        { type: "test-trigger-a", parameters: {} },
+        { type: "test-trigger-b", parameters: {} },
+      ],
+      actions: [],
+    });
+    const baseline = system.getMetrics().activeWorkflows;
+
+    try {
+      expect(system.startWorkflow(workflow.id)).toBe(true);
+      expect(system.getMetrics().activeWorkflows).toBe(baseline + 1);
+      expect(system.startWorkflow(workflow.id)).toBe(true);
+      expect(system.getMetrics().activeWorkflows).toBe(baseline + 1);
+
+      expect(system.stopWorkflow(workflow.id)).toBe(true);
+      expect(system.getMetrics().activeWorkflows).toBe(baseline);
+      expect(system.stopWorkflow(workflow.id)).toBe(true);
+      expect(system.getMetrics().activeWorkflows).toBe(baseline);
+      expect(stopped).toEqual(["test-trigger-a", "test-trigger-b"]);
+    } finally {
+      system.deleteWorkflow(workflow.id);
+      const triggers = (system as unknown as {
+        triggers: Map<string, unknown>;
+      }).triggers;
+      triggers.delete("test-trigger-a");
+      triggers.delete("test-trigger-b");
+    }
+  });
+
+  it("does not run the same slow workflow action concurrently", async () => {
+    const actionType = "test-delayed-workflow-action";
+    let calls = 0;
+    let announceStarted = () => {};
+    let releaseAction = () => {};
+    const started = new Promise<void>((resolve) => {
+      announceStarted = resolve;
+    });
+    const actionGate = new Promise<void>((resolve) => {
+      releaseAction = resolve;
+    });
+
+    system.registerAction(actionType, {
+      name: "test-only delayed action",
+      description: "isolated concurrency test",
+      parameters: [],
+      execute: async () => {
+        calls++;
+        announceStarted();
+        await actionGate;
+        return { success: true };
+      },
+    });
+
+    const workflow = system.createWorkflow({
+      name: "concurrency regression",
+      description: "isolated in-flight action test",
+      triggers: [],
+      actions: [{ type: actionType, parameters: {} }],
+    });
+    const runner = system as unknown as {
+      executeWorkflowStep(workflow: unknown): Promise<void>;
+      actions: Map<string, unknown>;
+    };
+    system.startWorkflow(workflow.id);
+    workflow.status = "triggered";
+    const firstRun = runner.executeWorkflowStep(workflow);
+
+    try {
+      await started;
+      await runner.executeWorkflowStep(workflow);
+      expect(calls).toBe(1);
+      releaseAction();
+      await firstRun;
+      expect(workflow.status).toBe("completed");
+      expect(calls).toBe(1);
+    } finally {
+      releaseAction();
+      await firstRun;
+      system.deleteWorkflow(workflow.id);
+      runner.actions.delete(actionType);
+    }
+  });
+
+  it("keeps raw provider exception text out of persisted workflow status", async () => {
+    const actionType = "test-provider-error-action";
+    const sensitiveMessage = "provider response contained a private credential";
+    system.registerAction(actionType, {
+      name: "test-only failing action",
+      description: "isolated error-redaction test",
+      parameters: [],
+      execute: async () => {
+        throw new Error(sensitiveMessage);
+      },
+    });
+
+    const workflow = system.createWorkflow({
+      name: "error-redaction regression",
+      description: "isolated provider failure test",
+      triggers: [],
+      actions: [{ type: actionType, parameters: {} }],
+    });
+    const runner = system as unknown as {
+      executeWorkflowStep(workflow: unknown): Promise<void>;
+      actions: Map<string, unknown>;
+    };
+    system.startWorkflow(workflow.id);
+    workflow.status = "triggered";
+
+    try {
+      await runner.executeWorkflowStep(workflow);
+      expect(workflow.status).toBe("failed");
+      expect(workflow.error).toMatch(
+        /^Automation action failed \(reference [0-9a-f-]{36}\)$/,
+      );
+      expect(workflow.error).not.toContain(sensitiveMessage);
+    } finally {
+      system.deleteWorkflow(workflow.id);
+      runner.actions.delete(actionType);
+    }
+  });
+
   it("every registered action returns an explicit success boolean (positive contract)", async () => {
     for (const [type, action] of actions.entries()) {
       // Actions that require real params/DB to run meaningfully are covered

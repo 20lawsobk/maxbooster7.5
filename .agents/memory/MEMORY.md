@@ -12,3 +12,4 @@
 - [Provider error logging](provider-error-logging.md) — do not log raw provider messages; they can embed unlabelled credentials that generic redaction cannot reliably identify.
 - [Whole-product acceptance](whole-product-acceptance.md) — cover every role and journey; MaxCore also has owner-defined memory, graph, agent, tool, expansion, and data-model requirements.
 - [Publishing SIGTERM boundary](publishing-sigterm-boundary.md) — honor supervisor termination; a deployment log may not identify its source, and application code cannot prevent an external stop.
+- [Automation side-effect serialization](automation-side-effect-serialization.md) — serialize workflow steps and lifecycle transitions; retries of external actions need durable idempotency evidence.

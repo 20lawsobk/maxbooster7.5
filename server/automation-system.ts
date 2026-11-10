@@ -19,6 +19,12 @@ function numParam(v: unknown): number | undefined {
   return typeof v === "number" && Number.isFinite(v) ? v : undefined;
 }
 
+function safeAutomationErrorType(error: unknown): string {
+  if (error instanceof TypeError) return "TypeError";
+  if (error instanceof RangeError) return "RangeError";
+  return error instanceof Error ? "Error" : "UnknownError";
+}
+
 // Lazy service loaders — avoid circular imports at module load time.
 async function loadNotificationService() {
   const m = await import("./services/notificationService.js");
@@ -61,6 +67,7 @@ export class AutomationSystem extends EventEmitter {
   private triggers: Map<string, Trigger> = new Map();
   private actions: Map<string, Action> = new Map();
   private conditions: Map<string, Condition> = new Map();
+  private executingWorkflowIds = new Set<string>();
   private automationMetrics: AutomationMetrics;
   private webhookHandlers: Map<
     string,
@@ -84,7 +91,10 @@ export class AutomationSystem extends EventEmitter {
         await h?.callback({ webhookId, payload, headers });
         fired += 1;
       } catch (err: unknown) {
-        logger.warn({ err, webhookId }, "[Automation] webhook handler threw");
+        logger.warn(
+          { errorType: safeAutomationErrorType(err) },
+          "[Automation] webhook handler threw",
+        );
       }
     }
     return fired;
@@ -134,7 +144,10 @@ export class AutomationSystem extends EventEmitter {
 
       logger.info("🤖 Automation system initialized");
     } catch (error: unknown) {
-      logger.warn({ err: error }, "❌ Failed to initialize automation system:");
+      logger.warn(
+        { errorType: safeAutomationErrorType(error) },
+        "❌ Failed to initialize automation system:",
+      );
     }
   }
 
@@ -190,7 +203,10 @@ export class AutomationSystem extends EventEmitter {
           }
           return { success: true, message: "Email sent successfully" };
         } catch (e) {
-          logger.warn({ err: e }, "send-email action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "send-email action failed",
+          );
           return { success: false, message: (e as Error).message ?? "send-email failed" };
         }
       },
@@ -249,7 +265,10 @@ export class AutomationSystem extends EventEmitter {
             result: r,
           };
         } catch (e) {
-          logger.warn({ err: e }, "post-social-media action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "post-social-media action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "post-social-media failed",
@@ -292,7 +311,10 @@ export class AutomationSystem extends EventEmitter {
             detail: r,
           };
         } catch (e) {
-          logger.warn({ err: e }, "distribute-music action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "distribute-music action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "distribute-music failed",
@@ -372,7 +394,10 @@ export class AutomationSystem extends EventEmitter {
             },
           };
         } catch (e) {
-          logger.warn({ err: e }, "generate-analytics-report action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "generate-analytics-report action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "generate-analytics-report failed",
@@ -414,7 +439,10 @@ export class AutomationSystem extends EventEmitter {
             result: { downloadUrl: rendered.downloadPath },
           };
         } catch (e) {
-          logger.warn({ err: e }, "ai-mix-track action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "ai-mix-track action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "ai-mix-track failed",
@@ -458,7 +486,10 @@ export class AutomationSystem extends EventEmitter {
             },
           };
         } catch (e) {
-          logger.warn({ err: e }, "ai-master-track action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "ai-master-track action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "ai-master-track failed",
@@ -549,7 +580,10 @@ export class AutomationSystem extends EventEmitter {
             count: deliveredCount,
           };
         } catch (e) {
-          logger.warn({ err: e }, "send-notification action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "send-notification action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "send-notification failed",
@@ -585,7 +619,10 @@ export class AutomationSystem extends EventEmitter {
             result: { backupFile },
           };
         } catch (e) {
-          logger.warn({ err: e }, "backup-data action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "backup-data action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "backup-data failed",
@@ -639,7 +676,10 @@ export class AutomationSystem extends EventEmitter {
             result: { url: r.url, filename: r.filename },
           };
         } catch (e) {
-          logger.warn({ err: e }, "create-promo-video action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "create-promo-video action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "create-promo-video failed",
@@ -697,7 +737,10 @@ export class AutomationSystem extends EventEmitter {
             result: results,
           };
         } catch (e) {
-          logger.warn({ err: e }, "create-social-video action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "create-social-video action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "create-social-video failed",
@@ -753,7 +796,10 @@ export class AutomationSystem extends EventEmitter {
             result: { url: r.url, filename: r.filename },
           };
         } catch (e) {
-          logger.warn({ err: e }, "create-lyric-video action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "create-lyric-video action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "create-lyric-video failed",
@@ -805,7 +851,10 @@ export class AutomationSystem extends EventEmitter {
             result: { url: r.url, filename: r.filename },
           };
         } catch (e) {
-          logger.warn({ err: e }, "create-visualizer-video action failed");
+          logger.warn(
+            { errorType: safeAutomationErrorType(e) },
+            "create-visualizer-video action failed",
+          );
           return {
             success: false,
             message: (e as Error).message ?? "create-visualizer-video failed",
@@ -1002,8 +1051,8 @@ export class AutomationSystem extends EventEmitter {
           }
         } catch (error: unknown) {
           logger.warn(
-            { err: error },
-            `Trigger error for workflow ${workflow?.id}:`,
+            { errorType: safeAutomationErrorType(error) },
+            "Automation trigger evaluation failed",
           );
         }
       }
@@ -1012,6 +1061,14 @@ export class AutomationSystem extends EventEmitter {
 
   // Trigger workflow
   private async triggerWorkflow(workflow: Workflow): Promise<void> {
+    // Scheduler/webhook triggers can race while a prior run is still active.
+    // Never reset its cursor or start time while an action is in flight.
+    if (workflow.status === "inactive" || workflow.status === "triggered") {
+      return;
+    }
+    if (workflow.status === "completed" || workflow.status === "failed") {
+      this.automationMetrics.activeWorkflows++;
+    }
     workflow.status = "triggered";
     workflow.nextAction = 0;
     workflow.startTime = Date.now();
@@ -1024,36 +1081,66 @@ export class AutomationSystem extends EventEmitter {
 
   // Execute workflow step
   private async executeWorkflowStep(workflow: Workflow): Promise<void> {
-    const actionConfig = workflow?.actions[workflow?.nextAction];
-    const action = this.actions.get(actionConfig?.type);
-
-    if (!action) {
-      logger.warn(`Action not found: ${actionConfig?.type}`);
-      workflow.status = "failed";
+    if (
+      workflow.status !== "triggered" ||
+      this.executingWorkflowIds.has(workflow.id)
+    ) {
       return;
     }
 
+    this.executingWorkflowIds.add(workflow.id);
     try {
+      await this.executeWorkflowStepOnce(workflow);
+    } finally {
+      this.executingWorkflowIds.delete(workflow.id);
+    }
+  }
+
+  private async executeWorkflowStepOnce(workflow: Workflow): Promise<void> {
+    const actionConfig = workflow?.actions[workflow?.nextAction];
+    const action = this.actions.get(actionConfig?.type);
+
+    try {
+      if (!actionConfig) {
+        this.completeWorkflow(workflow);
+        return;
+      }
+      if (!action) {
+        throw new Error(`Action not registered: ${actionConfig?.type}`);
+      }
+
       // Check conditions
       if (actionConfig?.conditions) {
         for (const conditionConfig of actionConfig?.conditions ?? []) {
           const condition = this.conditions.get(conditionConfig?.type);
-          if (condition) {
-            const conditionMet = await condition?.evaluate(
-              conditionConfig?.parameters,
+          if (!condition) {
+            throw new Error(
+              `Condition not registered: ${conditionConfig?.type}`,
             );
-            if (!conditionMet) {
-              logger.info(`Condition not met for action: ${actionConfig?.type}`);
-              workflow.nextAction++;
-              return;
+          }
+          const conditionMet = await condition.evaluate(
+            conditionConfig?.parameters,
+          );
+          if (workflow.status !== "triggered") {
+            return;
+          }
+          if (!conditionMet) {
+            logger.info(`Condition not met for action: ${actionConfig?.type}`);
+            workflow.nextAction++;
+            if (workflow.nextAction >= workflow.actions.length) {
+              this.completeWorkflow(workflow);
             }
+            return;
           }
         }
+      }
+      if (workflow.status !== "triggered") {
+        return;
       }
 
       // Execute action
       const startTime = Date.now();
-      const actionResult = await action?.execute(actionConfig?.parameters);
+      const actionResult = await action.execute(actionConfig?.parameters);
       const executionTime = Date.now() - startTime;
       // Positive success contract: every built-in action now returns an
       // explicit { success: boolean } result reflecting its real side effect.
@@ -1088,31 +1175,54 @@ export class AutomationSystem extends EventEmitter {
 
       // Check if workflow is complete
       if (workflow?.nextAction >= workflow?.actions.length) {
-        workflow.status = "completed";
-        workflow.endTime = Date.now();
-        workflow.executionTime =
-          workflow.endTime - (workflow.startTime ?? workflow.endTime);
-
-        this.automationMetrics.completedWorkflows++;
-        logger.info(`🎉 Workflow completed: ${workflow?.name}`);
-
-        // Emit workflow completed event
-        this.emit("workflow:completed", workflow);
+        this.completeWorkflow(workflow);
       }
     } catch (error: unknown) {
-      logger.warn(
-        { err: error },
-        `Action execution failed: ${actionConfig?.type}`,
-      );
-      workflow.status = "failed";
-      workflow.endTime = Date.now();
-      workflow.error = error instanceof Error ? error?.message : String(error);
-
-      this.automationMetrics.failedWorkflows++;
-
-      // Emit workflow failed event
-      this.emit("workflow:failed", workflow);
+      this.failWorkflow(workflow, error);
     }
+  }
+
+  private completeWorkflow(workflow: Workflow): void {
+    if (workflow.status !== "triggered") {
+      return;
+    }
+    workflow.status = "completed";
+    workflow.endTime = Date.now();
+    workflow.executionTime =
+      workflow.endTime - (workflow.startTime ?? workflow.endTime);
+    this.automationMetrics.activeWorkflows = Math.max(
+      0,
+      this.automationMetrics.activeWorkflows - 1,
+    );
+    this.automationMetrics.completedWorkflows++;
+    logger.info(`🎉 Workflow completed: ${workflow?.name}`);
+    this.emit("workflow:completed", workflow);
+  }
+
+  private failWorkflow(workflow: Workflow, error: unknown): void {
+    const wasActive =
+      workflow.status === "active" || workflow.status === "triggered";
+    const failureRef = randomUUID();
+    const actionType = workflow.actions[workflow.nextAction]?.type;
+    logger.warn(
+      {
+        failureRef,
+        actionType,
+        errorType: safeAutomationErrorType(error),
+      },
+      "Automation workflow step failed",
+    );
+    workflow.status = "failed";
+    workflow.endTime = Date.now();
+    workflow.error = `Automation action failed (reference ${failureRef})`;
+    if (wasActive) {
+      this.automationMetrics.activeWorkflows = Math.max(
+        0,
+        this.automationMetrics.activeWorkflows - 1,
+      );
+    }
+    this.automationMetrics.failedWorkflows++;
+    this.emit("workflow:failed", workflow);
   }
 
   // Create workflow
@@ -1141,19 +1251,41 @@ export class AutomationSystem extends EventEmitter {
   public startWorkflow(workflowId: string): boolean {
     const workflow = this.workflows.get(workflowId);
     if (!workflow) return false;
+    if (workflow.status === "active" || workflow.status === "triggered") {
+      return true;
+    }
+    // A stopped workflow cannot be restarted while its current action is
+    // unresolved; doing so could replay an externally visible side effect.
+    if (this.executingWorkflowIds.has(workflowId)) {
+      return false;
+    }
 
+    if (workflow.status === "completed") {
+      workflow.nextAction = 0;
+    }
+    workflow.error = undefined;
+    workflow.endTime = undefined;
+    workflow.executionTime = undefined;
     workflow.status = "active";
     workflow.updatedAt = Date.now();
 
     // Start triggers
-    for (const triggerConfig of workflow?.triggers ?? []) {
-      const trigger = this.triggers.get(triggerConfig?.type);
-      if (trigger) {
-        const triggerInstance = trigger?.start(triggerConfig?.parameters, () => {
-          this.triggerWorkflow(workflow);
-        });
-        workflow.triggerInstances = workflow?.triggerInstances || [];
-        workflow?.triggerInstances.push(triggerInstance);
+    if (!workflow.triggerInstances?.length) {
+      for (const triggerConfig of workflow?.triggers ?? []) {
+        const trigger = this.triggers.get(triggerConfig?.type);
+        if (trigger) {
+          const triggerInstance = trigger?.start(
+            triggerConfig?.parameters,
+            () => {
+              this.triggerWorkflow(workflow);
+            },
+          );
+          workflow.triggerInstances = workflow?.triggerInstances || [];
+          workflow.triggerInstances.push({
+            triggerType: triggerConfig.type,
+            instance: triggerInstance,
+          });
+        }
       }
     }
 
@@ -1168,21 +1300,40 @@ export class AutomationSystem extends EventEmitter {
     const workflow = this.workflows.get(workflowId);
     if (!workflow) return false;
 
+    const wasActive =
+      workflow.status === "active" || workflow.status === "triggered";
     workflow.status = "inactive";
     workflow.updatedAt = Date.now();
 
     // Stop triggers
     if (workflow?.triggerInstances) {
-      for (const triggerInstance of workflow?.triggerInstances ?? []) {
-        const trigger = this.triggers.get(workflow?.triggers[0].type);
+      for (const [index, entry] of workflow.triggerInstances.entries()) {
+        const typedEntry =
+          entry &&
+          typeof entry === "object" &&
+          "triggerType" in entry &&
+          "instance" in entry
+            ? (entry as { triggerType: string; instance: unknown })
+            : undefined;
+        const triggerType =
+          typedEntry?.triggerType ?? workflow.triggers[index]?.type;
+        const triggerInstance = typedEntry?.instance ?? entry;
+        const trigger = triggerType
+          ? this.triggers.get(triggerType)
+          : undefined;
         if (trigger) {
-          trigger?.stop(triggerInstance);
+          trigger.stop(triggerInstance);
         }
       }
       workflow.triggerInstances = [];
     }
 
-    this.automationMetrics.activeWorkflows--;
+    if (wasActive) {
+      this.automationMetrics.activeWorkflows = Math.max(
+        0,
+        this.automationMetrics.activeWorkflows - 1,
+      );
+    }
     logger.info(`⏹️ Workflow stopped: ${workflow?.name}`);
 
     return true;
@@ -1212,7 +1363,10 @@ export class AutomationSystem extends EventEmitter {
       // Implement workflow loading from database
       logger.info("📂 Loading workflows from storage...");
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error loading workflows:");
+      logger.warn(
+        { errorType: safeAutomationErrorType(error) },
+        "Error loading workflows:",
+      );
     }
   }
 

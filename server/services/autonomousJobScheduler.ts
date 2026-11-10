@@ -13,6 +13,38 @@ export const AUTONOMOUS_QUEUE = "autonomous";
 
 let queue: Queue | null = null;
 let worker: Worker | null = null;
+const intentionallyClosingWorkers = new WeakSet<Worker>();
+
+const SAFE_ERROR_TYPES = new Set([
+  "AbortError",
+  "AggregateError",
+  "ConnectionError",
+  "Error",
+  "EvalError",
+  "RangeError",
+  "ReferenceError",
+  "SyntaxError",
+  "TimeoutError",
+  "TypeError",
+  "URIError",
+]);
+
+function safeErrorType(error: unknown): string {
+  if (!(error instanceof Error)) return "NonError";
+  return SAFE_ERROR_TYPES.has(error.name) ? error.name : "ApplicationError";
+}
+
+function isPdimDisconnect(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message === "[PDIM] Redis client disconnected"
+  );
+}
+
+async function closeAutonomousWorker(target: Worker): Promise<void> {
+  intentionallyClosingWorkers.add(target);
+  await target.close();
+}
 
 // Track whether this pod is currently executing a job AND when it last finished one.
 // isSchedulerLeader() returns true while a job is running OR within 2× the shortest
@@ -252,7 +284,7 @@ async function processAutonomousJob(job: Job): Promise<void> {
           );
         }
       } else {
-        logger.warn(`[AutonomousScheduler] Unknown job: ${jobName}`);
+        logger.warn("[AutonomousScheduler] Ignored unknown job");
       }
   }
 }
@@ -271,7 +303,7 @@ async function processAutonomousJob(job: Job): Promise<void> {
 function createAutonomousWorker(): Worker {
   const connection = newBullMQRedisConnection();
 
-  const worker = new Worker(
+  const autonomousWorker = new Worker(
     AUTONOMOUS_QUEUE,
     async (job: Job) => {
       logger.info(`[AutonomousScheduler] ▶ ${job.name} (id=${job.id})`);
@@ -281,7 +313,7 @@ function createAutonomousWorker(): Worker {
         _lastJobCompletedAt = Date.now(); // update on success so isSchedulerLeader() stays true between ticks
       } catch (err) {
         logger.warn(
-          `[AutonomousScheduler] ${job.name} error: ${(err as Error).message}`,
+          `[AutonomousScheduler] Job failed (type=${safeErrorType(err)})`,
         );
         throw err; // re-throw so BullMQ handles retry/failure state
       } finally {
@@ -306,23 +338,40 @@ function createAutonomousWorker(): Worker {
   );
 
   setImmediate(() => {
-    worker?.run().catch((err) => {
-      logger.warn({ err }, "[AutonomousScheduler] Worker run loop failed:");
+    autonomousWorker.run().catch((err) => {
+      if (
+        intentionallyClosingWorkers.has(autonomousWorker) &&
+        isPdimDisconnect(err)
+      ) {
+        return;
+      }
+      logger.warn(
+        { errorType: safeErrorType(err) },
+        "[AutonomousScheduler] Worker run loop failed",
+      );
     });
   });
 
-  worker?.on("completed", (job) =>
+  autonomousWorker.on("completed", (job) =>
     logger.info(`[AutonomousScheduler] ✅ ${job?.name} done`),
   );
-  worker?.on("failed", (job, err) => {
+  autonomousWorker.on("failed", (job, err) => {
     const msg = err?.message ?? "";
     if (/PDIM circuit OPEN|Circuit OPEN/i?.test(msg)) return; // circuit-open is self-healing
-    logger.warn(`[AutonomousScheduler] ❌ ${job?.name} failed: ${msg}`);
+    logger.warn(
+      `[AutonomousScheduler] Job failed (type=${safeErrorType(err)})`,
+    );
   });
-  worker?.on("error", (err) => {
+  autonomousWorker.on("error", (err) => {
     const full = err?.message ?? "";
     // Strip Lua/Node?.js stack traces — keep only the first line of the message.
     const msg = full?.split("\n")[0] ?? full;
+    if (
+      intentionallyClosingWorkers.has(autonomousWorker) &&
+      isPdimDisconnect(err)
+    ) {
+      return;
+    }
     // Completely silent: circuit-open and PDIM 5xx are handled by the
     // circuit breaker which already emits its own diagnostics.
     if (
@@ -340,19 +389,17 @@ function createAutonomousWorker(): Worker {
       ) ||
       /StalledJobsError|worker hard-killed|moveToFinished/i?.test(msg)
     ) {
-      logger.warn(
-        `[AutonomousScheduler] BullMQ lock/stall (self-healing): ${msg}`,
-      );
+      logger.warn("[AutonomousScheduler] BullMQ lock/stall (self-healing)");
       return;
     }
-    // Unknown — log full error object so we can diagnose it
+    // Provider or queue error text can contain credentials or customer data.
     logger.warn(
-      { err },
-      `[AutonomousScheduler] Unexpected worker error: ${msg}`,
+      { errorType: safeErrorType(err) },
+      "[AutonomousScheduler] Unexpected worker error",
     );
   });
 
-  return worker;
+  return autonomousWorker;
 }
 
 // ── Job schedule definition ───────────────────────────────────────────────────
@@ -470,8 +517,9 @@ async function waitForPdimSettled(
 
 export async function setupRepeatableJobs(): Promise<void> {
   if (worker) {
-    await worker?.close().catch(() => {});
+    const closingWorker = worker;
     worker = null;
+    await closeAutonomousWorker(closingWorker).catch(() => {});
   }
 
   // ── Wait for startup PDIM burst to drain ─────────────────────────────────
@@ -583,7 +631,7 @@ export async function setupRepeatableJobs(): Promise<void> {
             return;
           }
           logger.warn(
-            `[AutonomousScheduler] Failed to register ${name}: ${msg}`,
+            `[AutonomousScheduler] Failed to register ${name} (type=${safeErrorType(err)})`,
           );
         });
     }
@@ -675,8 +723,9 @@ export async function removeCampaignOptimization(
  */
 export async function teardownRepeatableJobs(): Promise<void> {
   if (worker) {
-    await worker?.close().catch(() => {});
+    const closingWorker = worker;
     worker = null;
+    await closeAutonomousWorker(closingWorker).catch(() => {});
   }
   _isProcessingJob = false;
   logger.info(
@@ -689,8 +738,9 @@ export async function teardownRepeatableJobs(): Promise<void> {
  */
 export async function closeScheduler(): Promise<void> {
   if (worker) {
-    await worker?.close().catch(() => {});
+    const closingWorker = worker;
     worker = null;
+    await closeAutonomousWorker(closingWorker).catch(() => {});
   }
   if (queue) {
     await queue?.close().catch(() => {});

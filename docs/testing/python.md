@@ -44,7 +44,7 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `d56e075bfcc2b6ff9e258a691042d8dae8506f16`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Source baseline: `71dc6a882d3d4d505939b1baa7408e0e43d045a8`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
 - Files: {"blocked": 154, "empty": 0, "failed": 0, "passed": 0, "skipped": 0, "timeout": 0}.
 - JUnit cases: 0; failures: 0; errors: 0; skipped: 0.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
@@ -175,6 +175,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 - `AwarenessTests.test_source_observation_writes_are_fenced_by_ingest_ownership`: source observation writes are fenced by ingest ownership
 - `AwarenessTests.test_source_records_do_not_require_every_topic_bucket`: source records do not require every topic bucket
 - `AwarenessTests.test_ready_snapshot_does_not_claim_latest_scan_completed`: ready snapshot does not claim latest scan completed
+- `AwarenessTests.test_readiness_status_uses_only_bounded_in_memory_state`: readiness status uses only bounded in memory state
 - `AwarenessTests.test_public_source_failure_classification_is_actionable_and_redacted`: public source failure classification is actionable and redacted
 - `AwarenessTests.test_scan_retains_source_failure_class_without_exception_details`: scan retains source failure class without exception details
 - `AwarenessTests.test_invalid_snapshot_reports_safe_failure_category`: invalid snapshot reports safe failure category
@@ -2019,7 +2020,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 - `test_api_text_rejects_legacy_cached_score`: api text rejects legacy cached score
 - `test_api_content_fresh_copy_is_model_text_without_fake_scores`: api content fresh copy is model text without fake scores
 - `test_alias_media_bodies_mark_asset_identifiers_as_specs`: alias media bodies mark asset identifiers as specs
-- `test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs`: unavailable model media routes never enter legacy render or create jobs
+- `test_live_awareness_media_routes_reject_ownerless_jobs_before_rendering`: live awareness media routes reject ownerless jobs before rendering
 - `test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool`: audio explicit direction reaches synth and avoids genre pool
 - `test_audio_synth_receives_actual_instrument_and_prompt`: audio synth receives actual instrument and prompt
 - `test_audio_reference_body_rejects_unfulfillable_piano_direction`: audio reference body rejects unfulfillable piano direction
@@ -2044,7 +2045,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 - `DedicatedMediaHTTP.test_real_image_audio_video_artifacts_without_language_checkpoint`: real image audio video artifacts without language checkpoint
 - `DedicatedMediaHTTP.test_raw_video_alias_runs_the_same_explicit_procedural_contract`: raw video alias runs the same explicit procedural contract
 - `DedicatedMediaHTTP.test_production_composition_uses_owner_scoped_durable_delivery`: production composition uses owner scoped durable delivery
-- `DedicatedMediaHTTP.test_normal_learned_media_and_text_still_require_a_capable_candidate`: normal learned media and text still require a capable candidate
+- `DedicatedMediaHTTP.test_legacy_checkpoint_generation_stays_blocked_without_candidate`: legacy checkpoint generation stays blocked without candidate
 - `DedicatedMediaHTTP.test_missing_or_stale_awareness_never_dispatches_a_renderer`: missing or stale awareness never dispatches a renderer
 - `DedicatedMediaHTTP.test_semantic_controls_and_unrelated_routes_cannot_select_procedural_success`: semantic controls and unrelated routes cannot select procedural success
 - `DedicatedMediaHTTP.test_real_private_owner_middleware_blocks_spoofed_or_missing_identity`: real private owner middleware blocks spoofed or missing identity
@@ -2402,8 +2403,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 <summary>What each case checks</summary>
 
 - `LiveAwarenessPlannerHTTP.test_multimodal_planner_uses_fresh_awareness_without_model`: multimodal planner uses fresh awareness without model
+- `LiveAwarenessPlannerHTTP.test_live_awareness_readiness_does_not_claim_a_trained_model`: live awareness readiness does not claim a trained model
+- `LiveAwarenessPlannerHTTP.test_live_awareness_is_a_generation_release_without_claiming_loaded_weights`: live awareness is a generation release without claiming loaded weights
+- `LiveAwarenessPlannerHTTP.test_real_script_agent_composes_from_bound_live_awareness_without_checkpoint`: real script agent composes from bound live awareness without checkpoint
+- `LiveAwarenessPlannerHTTP.test_orchestrator_text_content_uses_the_same_live_awareness_release`: orchestrator text content uses the same live awareness release
+- `LiveAwarenessPlannerHTTP.test_awareness_context_use_signals_learning_outside_request_path`: awareness context use signals learning outside request path
 - `LiveAwarenessPlannerHTTP.test_api_planner_alias_keeps_one_snapshot_and_caller_request`: api planner alias keeps one snapshot and caller request
-- `LiveAwarenessPlannerHTTP.test_actual_content_modes_remain_unavailable_without_capable_model`: actual content modes remain unavailable without capable model
+- `LiveAwarenessPlannerHTTP.test_generation_without_a_live_composer_or_checkpoint_remains_unavailable`: generation without a live composer or checkpoint remains unavailable
 - `LiveAwarenessPlannerHTTP.test_missing_or_expired_awareness_does_not_become_planner_success`: missing or expired awareness does not become planner success
 - `LiveAwarenessPlannerHTTP.test_planner_preserves_validation_and_cannot_dispatch_render_controls`: planner preserves validation and cannot dispatch render controls
 - `LiveAwarenessPlannerHTTP.test_actual_route_dependencies_still_require_generation_authentication`: actual route dependencies still require generation authentication
@@ -2424,6 +2430,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 <summary>What each case checks</summary>
 
 - `LiveServingTests.test_fresh_observations_train_but_cannot_promote_themselves`: fresh observations train but cannot promote themselves
+- `LiveServingTests.test_awareness_use_wakes_the_existing_worker_with_bounded_coalescing`: awareness use wakes the existing worker with bounded coalescing
 - `LiveServingTests.test_recovered_training_and_selection_clear_previous_error_labels`: recovered training and selection clear previous error labels
 - `LiveServingTests.test_selected_release_activates_even_while_training_is_on_cooldown`: selected release activates even while training is on cooldown
 - `LiveServingTests.test_restart_and_timestamp_only_refresh_do_not_retrain_same_content`: restart and timestamp only refresh do not retrain same content
@@ -3607,7 +3614,7 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_
 - `test_preserves_all_details_aliases_unrouted_entities_and_original_statuses`: preserves all details aliases unrouted entities and original statuses
 - `test_missing_reference_or_template_and_page_deduplication_fail_closed`: missing reference or template and page deduplication fail closed
 - `test_emitted_work_validator_detects_lost_details_and_missing_tasks`: emitted work validator detects lost details and missing tasks
-- `test_business_sections_bind_exact_pages_and_reject_invented_references`: business sections bind exact pages and reject invented references
+- `test_business_sections_bind_exact_pages_and_mark_invented_references_incomplete`: business sections bind exact pages and mark invented references incomplete
 - `test_human_output_contains_all_aliases_controls_contracts_and_global_unknowns`: human output contains all aliases controls contracts and global unknowns
 - `test_all_page_sections_and_exact_work_dimensions_become_distinct_actions`: all page sections and exact work dimensions become distinct actions
 - `test_both_supplement_source_inventory_schemas_detect_stale_analysis`: both supplement source inventory schemas detect stale analysis
