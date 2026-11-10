@@ -137,13 +137,13 @@ export async function probeMaxcoreReadiness(): Promise<
     return ready
       ? {
           status: "ok",
-          detail: "supervised Python model loaded",
+            detail: "supervised MaxCore generation serving is ready",
         }
       : {
           status: "degraded",
           detail:
             current.error ??
-            `supervised Python model not ready (running=${current.running}, restarts=${current.restarts})`,
+            `supervised MaxCore serving not ready (running=${current.running}, restarts=${current.restarts})`,
         };
   }
 
@@ -252,9 +252,10 @@ export function registerCoreProbes(): void {
     }
   });
 
-  // Local MaxCore readiness is the supervised Python model-loaded gate, not
-  // merely the request circuit's lack of observed failures. Remote mode keeps
-  // the circuit-breaker signal because there is no locally owned child.
+  // Local MaxCore readiness is the supervised generation-serving contract
+  // (certified checkpoint or explicit live-awareness mode), not merely the
+  // request circuit's lack of observed failures. Remote mode keeps the
+  // circuit-breaker signal because there is no locally owned child.
   healthRegistry?.register("maxcore", async () => {
     try {
       return await probeMaxcoreReadiness();

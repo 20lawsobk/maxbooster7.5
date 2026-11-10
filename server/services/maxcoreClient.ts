@@ -115,20 +115,38 @@ export class MaxCoreAIClient {
       const data = contentType.includes("json")
         ? await response.json() as Record<string, unknown>
         : null;
-      // Any HTTP response proves transport reachability, but only the strict
-      // readiness contract proves a usable model and fresh awareness snapshot.
+      // Any HTTP response proves transport reachability, but generation is
+      // ready only when either a certified checkpoint or the explicit
+      // live-awareness serving mode is available with a fresh snapshot.
       MaxCoreAIClient._remoteAvailable = true;
+      const python = data?.python as Record<string, unknown> | undefined;
+      const awarenessValue = data?.awareness ?? python?.awareness;
+      const awarenessReady =
+        !!awarenessValue &&
+        typeof awarenessValue === "object" &&
+        (awarenessValue as Record<string, unknown>).ready === true;
+      const liveAwareness = (data?.live_awareness ?? python?.live_awareness) as
+        Record<string, unknown> | undefined;
+      const generationMode = data?.generation_mode ?? python?.generation_mode;
+      const generationReady =
+        data?.generation_ready === true || python?.generation_ready === true;
+      const trainedReady = data?.model_loaded === true || python?.model_loaded === true;
+      const liveGenerationReady =
+        generationReady &&
+        generationMode === "live_awareness" &&
+        liveAwareness?.available === true &&
+        liveAwareness?.live_awareness_serving === true;
       const ready = response.ok &&
         data?.ready === true &&
-        data?.model_loaded === true &&
-        !!data.awareness &&
-        typeof data.awareness === "object" &&
-        (data.awareness as Record<string, unknown>).ready === true;
+        awarenessReady &&
+        (trainedReady || liveGenerationReady);
       MaxCoreAIClient._modelReady = ready;
       MaxCoreAIClient._lastReadinessCheck = now;
-      if (ready) logger.info("[MaxCoreAI] Model and awareness readiness confirmed");
-      else if ((data?.live_awareness as Record<string, unknown> | undefined)?.available === true) {
-        logger.info("[MaxCoreAI] Live awareness is available; certified model-backed generation is not ready");
+      if (ready && liveGenerationReady && !trainedReady) {
+        logger.info("[MaxCoreAI] Live-awareness generation and fresh awareness readiness confirmed");
+      } else if (ready) logger.info("[MaxCoreAI] Certified model and awareness readiness confirmed");
+      else if (liveAwareness?.available === true) {
+        logger.info("[MaxCoreAI] Live awareness is available; generation readiness is not confirmed");
       }
       else logger.warn("[MaxCoreAI] Liveness responded, but model/awareness readiness is unavailable");
       return ready;

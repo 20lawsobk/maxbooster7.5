@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from ai_model.awareness import AwarenessUnavailable, Snapshot, bound_snapshot
 from ai_model.awareness.engine import DOMAINS, canonical
+from ai_model.agents.script_agent import ScriptAgent
 from ai_model.generation.live_serving import LiveServingModel
 from ai_model.generation.plan import active_plan
 
@@ -44,7 +45,7 @@ def fresh_snapshot(now=None):
     return Snapshot.parse(doc, now=now)
 
 
-def planner_app(model, learning_loop=None):
+def planner_app(model, learning_loop=None, script_agent=None):
     # Retain the actual Pydantic request models, route decorators, planner
     # bodies, shared context merge and immutable generation wrapper. Only the
     # process-wide startup/background services are excluded from this fixture.
@@ -59,24 +60,54 @@ def planner_app(model, learning_loop=None):
 
     names = {"_AwarenessMixin", "_as_text", "_request_live_learning_check",
              "_live_awareness_capability", "unified_awareness_status",
-             "unified_awareness_readiness", "unified_awareness_context",
+             "_generation_readiness", "unified_awareness_readiness",
+             "generation_readiness", "unified_awareness_context",
              "_merged_awareness_for",
              "_merged_awareness_legacy", "_planned_generation", "MaxcoreTextRequest",
              "ApiGenerateTextRequest", "ApiGenerateContentRequest", "_planner_inputs",
-             "maxcore_generate_text", "api_generate_text", "api_generate_content"}
+             "_require_model_script", "_script_provenance", "maxcore_generate_text",
+             "api_generate_text", "api_generate_content"}
     tree = ast.parse(SERVER.read_text())
     nodes = [node for node in tree.body
              if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
              and node.name in names]
+    class Pdim:
+        def compute(self, key, build, namespace=""):
+            return {"result": build(), "source": "compute"}
+
+    class Coalescer:
+        async def compute(self, key, build):
+            return await build()
+
+    async def in_thread(fn):
+        return await asyncio.to_thread(fn)
+
     scope = {"app": app, "Any": Any, "Dict": Dict, "List": List, "Optional": Optional,
              "BaseModel": BaseModel, "Field": Field, "model_validator": model_validator,
              "Depends": Depends, "HTTPException": HTTPException, "Request": Request, "os": os,
              "require_scope": require_scope, "json": json, "time": time, "uuid": uuid,
-             "_model_ready": False, "_script_agent": None, "_distribution_agent": None,
+              "_model_ready": False, "_script_agent": script_agent, "_distribution_agent": None,
              "_live_serving_model": model,
              "_live_learning_loop": learning_loop,
+              "_model_init_error": None,
              "_serving_release_status": {"checkpoint_sha256": "unrelated-checkpoint"},
-             "_GENERATION_CONTRACT": "documented-stack-v3"}
+              "_GENERATION_CONTRACT": "documented-stack-v3",
+              "_effective_awareness": lambda platform, value: value,
+              "_platform_optimization_awareness": lambda req: {},
+              "_generation_plan_hash": lambda: "fixture-plan",
+              "_ad_hook_score": lambda hook: 0.5,
+              "_resolve_topic_from_url": lambda topic: topic,
+              "_get_storage_mode": lambda: "live",
+              "_get_pdim_orchestrator": lambda: Pdim(),
+              "_get_async_coalescer": lambda: Coalescer(),
+              "_in_thread": in_thread,
+              "_platform_rules": {
+                  "instagram": {"text": {
+                      "recommendedLength": 220, "tone": ["authentic"],
+                      "hashtags": {"max": 0, "allowed": False},
+                  }},
+              },
+              "normalize_platform": lambda platform: str(platform).lower()}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SERVER), "exec"), scope)
     return app
 
@@ -201,6 +232,66 @@ class LiveAwarenessPlannerHTTP(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["live_model"]["learning_state"], "waiting_for_observations")
         self.assertFalse(result["live_model"]["trained_candidate_serving"])
 
+    async def test_live_awareness_is_a_generation_release_without_claiming_loaded_weights(self):
+        app = planner_app(self.model, self.learning_loop, ScriptAgent(self.model))
+        status, result = await get_json(app, "/api/ready")
+        self.assertEqual(status, 200, result)
+        self.assertTrue(result["ready"])
+        self.assertFalse(result["model_loaded"])
+        self.assertTrue(result["generation_ready"])
+        self.assertEqual(result["generation_mode"], "live_awareness")
+        self.assertFalse(result["trained_checkpoint_ready"])
+
+    async def test_real_script_agent_composes_from_bound_live_awareness_without_checkpoint(self):
+        app = planner_app(self.model, self.learning_loop, ScriptAgent(self.model))
+        brief = SimpleNamespace(tone="authentic", to_dict=lambda: {"tone": "authentic"})
+        context = SimpleNamespace(
+            brief=brief,
+            awareness="short-form music discovery and listener conversation",
+        )
+        with patch("ai_model.generation.build_context", return_value=context), \
+             patch("ai_model.request_intelligence.rank_candidates",
+                   side_effect=lambda candidates, _brief: [(candidates[0], 1.0)]), \
+             patch.dict(os.environ, {"MAXCORE_SERVING_RELEASE": "live-awareness"}):
+            status, result = await post_json(app, "/api/generate/text", {
+                "mode": "content",
+                "topic": "Midnight Signal",
+                "platform": "instagram",
+                "goal": "introduce the single",
+                "tone": "warm",
+                "slots": 1,
+            })
+        self.assertEqual(status, 200, result)
+        self.assertEqual(result["source"], "live_awareness")
+        self.assertEqual(result["generation_mode"], "live_awareness")
+        self.assertFalse(result["checkpoint_inference"])
+        self.assertIn("Midnight Signal", result["text"])
+        self.assertNotIn("observed public trend", result["text"])
+        self.assertTrue(result["text"].strip())
+        self.assert_clean_context()
+
+    async def test_orchestrator_text_content_uses_the_same_live_awareness_release(self):
+        app = planner_app(self.model, self.learning_loop, ScriptAgent(self.model))
+        status, result = await post_json(app, "/generate/text", {
+            "mode": "content",
+            "awareness": "listener conversation and short-form music discovery",
+            "input": {
+                "normalized": {"semantic": {"topic": "Blue Hour", "intent": "announce"}},
+                "step": {"params": {"slots": [
+                    {"id": "caption", "platform": "instagram", "purpose": "release"},
+                ]}},
+                "inputs": {"normalized": {"semantic": {
+                    "topic": "Blue Hour", "intent": "announce",
+                }}},
+            },
+        })
+        self.assertEqual(status, 200, result)
+        self.assertEqual(result["generation_mode"], "live_awareness")
+        self.assertFalse(result["checkpoint_inference"])
+        self.assertEqual(result["outputs"][0]["meta"]["source"], "live_awareness")
+        self.assertIn("Blue Hour", result["outputs"][0]["text"])
+        self.assert_clean_context()
+
     async def test_awareness_context_use_signals_learning_outside_request_path(self):
         status, result = await post_json(self.app, "/api/awareness/unified/context", {
             "platform": "instagram", "modality": "text",
@@ -227,20 +318,23 @@ class LiveAwarenessPlannerHTTP(unittest.IsolatedAsyncioTestCase):
         self.model.pin.assert_not_called()
         self.assert_clean_context()
 
-    async def test_actual_content_modes_remain_unavailable_without_capable_model(self):
+    async def test_generation_without_a_live_composer_or_checkpoint_remains_unavailable(self):
         for path, body in [
-                ("/generate/text", {"mode": "content", "input": {}}),
+                ("/generate/text", {"mode": "content", "input": {
+                    "normalized": {"semantic": {"topic": "New release"}},
+                    "step": {"params": {"slots": [{"platform": "instagram"}]}},
+                    "inputs": {"normalized": {"semantic": {"topic": "New release"}}},
+                }}),
                 ("/api/generate/text", {"mode": "content", "topic": "New release"}),
                 ("/api/generate/content", {"platform": "instagram", "topic": "New release",
                                            "tone": "warm", "mode": "planner"})]:
             with self.subTest(path=path):
                 status, result = await post_json(self.app, path, body)
                 self.assertEqual(status, 503, result)
-                self.assertIn("No operationally capable", result["detail"])
                 self.assertNotIn("text", result)
                 self.assertNotIn("caption", result)
                 self.assert_clean_context()
-        self.assertEqual(self.model.pin.call_count, 3)
+        self.assertEqual(self.model.pin.call_count, 1)
 
     async def test_missing_or_expired_awareness_does_not_become_planner_success(self):
         for snapshot in (None, fresh_snapshot(time.time() - 1000)):

@@ -75,7 +75,7 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
     },
   );
 
-  it("reports unavailable until the authenticated ready endpoint confirms model and awareness readiness", async () => {
+  it("does not infer generation readiness from model liveness or awareness alone", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({
         ready: false,
@@ -96,7 +96,7 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const { logger } = await import("../../server/logger.js");
     expect(logger.info).toHaveBeenCalledWith(
-      "[MaxCoreAI] Live awareness is available; certified model-backed generation is not ready",
+      "[MaxCoreAI] Live awareness is available; generation readiness is not confirmed",
     );
 
     expect((MaxCoreAIClient as any)._remoteAvailable).toBe(true);
@@ -107,6 +107,30 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
       "https://maxcore.example.test/api/ready",
       "https://maxcore.example.test/api/ready",
     ]);
+  });
+
+  it("accepts explicit fresh live-awareness generation readiness without claiming trained weights", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ready: true,
+      model_loaded: false,
+      generation_ready: true,
+      generation_mode: "live_awareness",
+      awareness: { ready: true },
+      live_awareness: {
+        available: true,
+        live_awareness_serving: true,
+        trained_model_loaded: false,
+      },
+    }), { headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { MaxCoreAIClient } = await import("../../server/services/maxcoreClient.js");
+
+    expect(await MaxCoreAIClient.isAvailable()).toBe(true);
+    expect((MaxCoreAIClient as any)._remoteAvailable).toBe(true);
+    const { logger } = await import("../../server/logger.js");
+    expect(logger.info).toHaveBeenCalledWith(
+      "[MaxCoreAI] Live-awareness generation and fresh awareness readiness confirmed",
+    );
   });
 
   it("does not treat a successful generation response as proof of model readiness", async () => {

@@ -421,7 +421,7 @@ def test_alias_media_bodies_mark_asset_identifiers_as_specs(monkeypatch):
         assert result["outputs"][0]["url"].startswith("asset://")
 
 
-def test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs(monkeypatch):
+def test_live_awareness_media_routes_reject_ownerless_jobs_before_rendering(monkeypatch):
     import server
     import inspect
     from fastapi import Request
@@ -441,8 +441,8 @@ def test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs
                      "client": ("127.0.0.1", 1)})} if "request" in inspect.signature(handler).parameters else {}
         with pytest.raises(HTTPException) as error:
             asyncio.run(handler(request, _key={}, **transport))
-        assert error.value.status_code == 503
-        assert error.value.detail == "Selected model unavailable"
+        assert error.value.status_code == 403
+        assert error.value.detail == "Authenticated private owner required for generated media"
 
 
 def test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool(monkeypatch, tmp_path):

@@ -2639,12 +2639,38 @@ def _live_awareness_capability(awareness_ready):
         "mode": mode,
         "available": awareness_ready is True,
         "live_awareness_serving": mode == "live-awareness" and awareness_ready is True,
+        "live_text_composer_ready": (
+            mode == "live-awareness" and awareness_ready is True
+            and _script_agent is not None and _model_ready is not True
+        ),
         "trained_model_loaded": _model_ready is True,
         "trained_candidate_serving": bool(serving and serving.available),
         "learning_loop_running": learning.get("running") is True,
         "learning_state": learning.get("training", "disabled"),
         "last_training_run_id": learning.get("last_run_id"),
         "awareness_endpoint_usage": learning.get("awareness_endpoint_usage", {}),
+    }
+
+
+def _generation_readiness(awareness_ready: bool) -> dict:
+    """The active serving contract may be live awareness before trained weights."""
+    mode = os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
+    trained_ready = _model_ready is True and awareness_ready is True
+    live_ready = (
+        mode == "live-awareness"
+        and awareness_ready is True
+        and _script_agent is not None
+    )
+    ready = trained_ready or live_ready
+    return {
+        "ready": ready,
+        "generation_mode": (
+            "trained_checkpoint" if trained_ready
+            else "live_awareness" if live_ready
+            else "unavailable"
+        ),
+        "trained_checkpoint_ready": trained_ready,
+        "live_awareness_generation_ready": live_ready,
     }
 
 
@@ -2655,12 +2681,16 @@ async def unified_awareness_readiness(_key=Depends(require_scope("generate"))):
     from fastapi.responses import JSONResponse
     awareness = get_engine().readiness_status()
     live_model = _live_awareness_capability(awareness.get("ready") is True)
+    generation = _generation_readiness(awareness.get("ready") is True)
     ready = awareness.get("ready") is True
     return JSONResponse(status_code=200 if ready else 503, content={
         "ready": ready,
         "capability": "live-awareness",
         "live_model": live_model,
-        "generation_ready": _model_ready is True and awareness.get("ready") is True,
+        "generation_mode": generation["generation_mode"],
+        "trained_checkpoint_ready": generation["trained_checkpoint_ready"],
+        "live_awareness_generation_ready": generation["live_awareness_generation_ready"],
+        "generation_ready": generation["ready"],
         "awareness": awareness,
     })
 
@@ -2777,10 +2807,12 @@ async def generation_readiness():
     from fastapi.responses import JSONResponse
     awareness = get_engine().readiness_status()
     awareness_ready = awareness.get("ready") is True
-    ready = bool(_model_ready and awareness_ready)
+    generation = _generation_readiness(awareness_ready)
+    ready = generation["ready"]
     return JSONResponse(status_code=200 if ready else 503, content={
         "ready": ready, "model_loaded": _model_ready, "awareness": awareness,
         "live_awareness": _live_awareness_capability(awareness_ready),
+        **generation,
         "generation_ready": ready,
         "model_error": _model_init_error, "serving_release": _serving_release_status})
 
@@ -2788,11 +2820,21 @@ async def generation_readiness():
 @app.get("/health")
 async def health():
     blocked = _serving_release_status.get("candidate_quality") == "blocked"
+    try:
+        from ai_model.awareness import get_engine
+        awareness_ready = get_engine().readiness_status().get("ready") is True
+    except Exception:
+        awareness_ready = False
+    generation = _generation_readiness(awareness_ready)
     payload = {
         "status": "healthy",
         "model_blocked": blocked,
         "readiness_endpoint": "/ready",
         "model_loaded": _model_ready,
+        "generation_ready": generation["ready"],
+        "generation_mode": generation["generation_mode"],
+        "awareness": {"ready": awareness_ready},
+        "live_awareness": _live_awareness_capability(awareness_ready),
         "serving_release": _serving_release_status,
         "uptime_seconds": time.time() - _start_time,
         "version": "1.0.0",
@@ -4513,6 +4555,7 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
         signature = inspect.signature(handler, eval_str=True)
         @functools.wraps(handler)
         async def wrapped(*args, **kwargs):
+            import os as _os
             from ai_model.awareness import bind, current_snapshot, AwarenessUnavailable
             from contextlib import ExitStack
             from ai_model.generation.awareness import sampling_snapshot
@@ -4529,6 +4572,23 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                 controls = (plan_input.get("dedicated_controls") if isinstance(plan_input, dict)
                             else getattr(req, "dedicated_controls", None))
                 rendering_only = dedicated_media and controls is not None
+                live_release = (
+                    _os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
+                    == "live-awareness"
+                )
+                live_text_generation = (
+                    live_release and not _model_ready and modality == "text"
+                    and getattr(req, "mode", None) == "content"
+                )
+                live_media_generation = (
+                    live_release and not _model_ready and dedicated_media
+                    and modality in {"image", "audio", "video"}
+                )
+                if live_media_generation and not _request_job_owner.get():
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Authenticated private owner required for generated media",
+                    )
                 if controls is not None:
                     if not dedicated_media or specification or planning_only:
                         raise HTTPException(status_code=422, detail="This route does not support dedicated media controls")
@@ -4536,7 +4596,8 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                         raise HTTPException(status_code=422, detail="dedicated_controls must be a media controls object")
                     if not _request_job_owner.get():
                         raise HTTPException(status_code=403, detail="Authenticated private owner required for durable media")
-                model_independent = planning_only or rendering_only
+                live_awareness_generation = live_text_generation or live_media_generation
+                model_independent = planning_only or rendering_only or live_awareness_generation
                 snapshot = sampling_snapshot() if active_plan.get() is not None else current_snapshot()
                 if snapshot is not None:
                     try:
@@ -4619,6 +4680,7 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                     try:
                         request_data = plan.to_dict()["request"]
                         if (modality in {"image", "video", "audio"} and not specification
+                                and not live_awareness_generation
                                 and request_data.get("render_engine") not in {"procedural", "rta", "pathtraced", "raytraced"}):
                             raise HTTPException(status_code=503, detail=(
                                 "Learned media generation unavailable on this legacy route; "
@@ -4710,6 +4772,19 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                     if rendering_only:
                         result["source"] = result["capability"]["renderer"]
                         result["checkpoint_inference"] = False
+                    elif live_awareness_generation:
+                        result["generation_mode"] = "live_awareness"
+                        result["checkpoint_inference"] = False
+                        result["trained_model_inference"] = False
+                        if live_media_generation:
+                            result.setdefault("source", f"{modality}_procedural_renderer")
+                    if dedicated_media and not specification:
+                        result["renderer_mode"] = "procedural"
+                        # The serving contract may be conditioned by a trained
+                        # text checkpoint, but these renderer routes do not
+                        # execute trained image/audio/video weights.
+                        result["trained_modality_inference"] = False
+                        result["checkpoint_inference"] = False
                     if is_spec:
                         result["kind"] = "specification"
                 return result
@@ -4740,25 +4815,16 @@ async def generate_content(req: ContentRequest, _key = Depends(require_scope("ge
     topic = _resolve_topic_from_url(req.topic)
     effective_awareness = _effective_awareness(platform, _merged_awareness_for(req))
 
-    await _wait_for_model_ready()
-
-    async def _run_content_inference():
-        from ai_model.agents.script_agent import ScriptRequest
-        from ai_model.agents.distribution_agent import DistributionRequest
-        script_result = await _in_thread(lambda: _script_agent.run(ScriptRequest(
-            idea=topic, platform=platform, goal=req.goal, tone=req.tone,
-            awareness=effective_awareness,
-        )))
-        full_script = f"{script_result.hook}\n{script_result.body}\n{script_result.cta}"
-        dist_result = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
-            script=full_script, platform=platform, goal=req.goal,
-            awareness=effective_awareness,
-        )))
-        return script_result, dist_result
+    live_awareness_mode = (
+        not _model_ready
+        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
+        == "live-awareness"
+    )
+    if not live_awareness_mode:
+        await _wait_for_model_ready()
 
     def _build_result(_request=None):
         from ai_model.agents.script_agent import ScriptRequest, ScriptResponse
-        from ai_model.agents.distribution_agent import DistributionRequest
         sr = _script_agent.run(ScriptRequest(
             idea=topic, platform=platform, goal=req.goal,
             tone=req.tone, awareness=effective_awareness,
@@ -4770,21 +4836,30 @@ async def generate_content(req: ContentRequest, _key = Depends(require_scope("ge
             raise HTTPException(status_code=503, detail="Model returned garbled content")
 
         full_script = f"{sr.hook}\n{sr.body}\n{sr.cta}"
-        dr = _distribution_agent.run(DistributionRequest(
-            script=full_script, platform=platform,
-            goal=req.goal, awareness=effective_awareness,
-        ))
-        if not isinstance(dr.caption, str) or not dr.caption.strip():
-            raise HTTPException(status_code=503, detail="Distribution returned empty caption")
+        if live_awareness_mode:
+            caption = full_script
+            hashtags = []
+        else:
+            from ai_model.agents.distribution_agent import DistributionRequest
+            dr = _distribution_agent.run(DistributionRequest(
+                script=full_script, platform=platform,
+                goal=req.goal, awareness=effective_awareness,
+            ))
+            if not isinstance(dr.caption, str) or not dr.caption.strip():
+                raise HTTPException(status_code=503, detail="Distribution returned empty caption")
+            caption = dr.caption
+            hashtags = dr.hashtags if req.include_hashtags else []
         return {
             "success": True,
             "platform": platform,
-            "caption": dr.caption,
+            "caption": caption,
             "hook": sr.hook,
             "body": sr.body,
             "cta": sr.cta,
-            "hashtags": dr.hashtags if req.include_hashtags else [],
+            "hashtags": hashtags,
             **_script_provenance(sr),
+            "generation_mode": "live_awareness" if live_awareness_mode else "trained_checkpoint",
+            "checkpoint_inference": not live_awareness_mode,
             "generation_contract": _GENERATION_CONTRACT,
         }
 
@@ -4793,13 +4868,25 @@ async def generate_content(req: ContentRequest, _key = Depends(require_scope("ge
         # Identical concurrent requests collapse to one compute; all share result.
         _orch = _get_pdim_orchestrator()
         _cache_key = {"generation_contract": _GENERATION_CONTRACT,
+                      "generation_mode": (
+                          "live_awareness" if live_awareness_mode else "trained_checkpoint"
+                      ),
                       "plan_hash": _generation_plan_hash(),
                       "platform": platform, "topic": topic, "tone": req.tone,
                       "goal": req.goal, "awareness": effective_awareness,
                       "platform_optimization": _platform_optimization_awareness(req)}
-        _out = await _in_thread(lambda: _orch.compute(_cache_key, _build_result, namespace="api_content_model_v2"))
+        _out = await _in_thread(lambda: _orch.compute(
+            _cache_key, _build_result,
+            namespace=(
+                "api_content_live_awareness_v1" if live_awareness_mode
+                else "api_content_model_v2"
+            ),
+        ))
         _result = dict(_out["result"])
-        if (_result.get("source") not in {"ai_model", "model", "model_composed"}
+        allowed_sources = {"ai_model", "model", "model_composed"}
+        if live_awareness_mode:
+            allowed_sources.add("live_awareness")
+        if (_result.get("source") not in allowed_sources
                 or _result.get("generation_contract") != _GENERATION_CONTRACT):
             raise HTTPException(status_code=503, detail="Cached content lacks model provenance")
         if _out.get("source") in ("cache", "coalesced"):
@@ -6042,7 +6129,14 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
     topic = (normalized.get("semantic") or {}).get("topic") or normalized.get("payload_summary", "content")
     intent = (normalized.get("semantic") or {}).get("intent", "engagement")
     outputs = []
-    if not (_model_ready and _script_agent and _distribution_agent):
+    live_awareness_mode = (
+        not _model_ready
+        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
+        == "live-awareness"
+    )
+    if not _script_agent or (
+        not live_awareness_mode and not (_model_ready and _distribution_agent)
+    ):
         raise HTTPException(status_code=503, detail="Text model or distribution agent unavailable")
     for slot in slots:
         platform = normalize_platform(slot.get("platform", "general"))
@@ -6059,7 +6153,8 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
 
         tags: list = []
         from ai_model.agents.script_agent import ScriptRequest
-        from ai_model.agents.distribution_agent import DistributionRequest
+        if not live_awareness_mode:
+            from ai_model.agents.distribution_agent import DistributionRequest
         try:
             script = await _in_thread(lambda: _script_agent.run(ScriptRequest(
                 idea=topic, platform=platform, goal=intent, tone=tone,
@@ -6068,16 +6163,20 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
             _require_model_script(script)
             hook_line, body_line, cta_line = script.hook, script.body, script.cta
             full_script = f"{hook_line}\n{body_line}\n{cta_line}".strip()
-            dist = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
-                script=full_script, platform=platform, goal=intent,
-                awareness=effective_awareness,
-            )))
-            text = dist.caption
-            if not isinstance(text, str) or not text.strip():
-                raise HTTPException(status_code=503, detail="Distribution returned empty caption")
-            posting_time = getattr(dist, "posting_time", "") or ""
-            if hashtags_allowed:
-                tags = getattr(dist, "hashtags", [])[:max_hashtags]
+            if live_awareness_mode:
+                text = full_script
+                posting_time = None
+            else:
+                dist = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
+                    script=full_script, platform=platform, goal=intent,
+                    awareness=effective_awareness,
+                )))
+                text = dist.caption
+                if not isinstance(text, str) or not text.strip():
+                    raise HTTPException(status_code=503, detail="Distribution returned empty caption")
+                posting_time = getattr(dist, "posting_time", "") or ""
+                if hashtags_allowed:
+                    tags = getattr(dist, "hashtags", [])[:max_hashtags]
         except HTTPException:
             raise
         except Exception as exc:
@@ -6108,6 +6207,8 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
 
     return {
         "outputs": outputs,
+        "generation_mode": "live_awareness" if live_awareness_mode else "trained_checkpoint",
+        "checkpoint_inference": not live_awareness_mode,
         "processing_time_ms": round((time.time() - start) * 1000, 1),
     }
 
@@ -8208,13 +8309,18 @@ _GENERATION_CONTRACT = "documented-stack-v3"
 def _require_model_script(script: Any) -> None:
     """Require real checkpoint prose, allowing disclosed caller composition."""
     source = str(getattr(script, "source", "") or "unknown").lower()
-    if source not in {"model", "ai_model", "model_composed"} or not all(
+    live_awareness = (
+        source == "live_awareness"
+        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
+        == "live-awareness"
+    )
+    if (source not in {"model", "ai_model", "model_composed"} and not live_awareness) or not all(
         isinstance(getattr(script, field, None), str)
         and getattr(script, field).strip() for field in ("hook", "body", "cta")
     ):
         raise HTTPException(
             status_code=503,
-            detail={"error": "MaxCore model generation unavailable",
+            detail={"error": "MaxCore text generation unavailable",
                     "source": source},
         )
 
@@ -8226,6 +8332,9 @@ def _script_provenance(script: Any) -> dict:
         "source": source,
         "checkpoint_inference": source in {"model", "ai_model", "model_composed"},
         "composition": "caller_direction" if source == "model_composed" else None,
+        "generation_mode": (
+            "live_awareness" if source == "live_awareness" else "trained_checkpoint"
+        ),
     }
 
 
@@ -8890,12 +8999,19 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
     idea     = _resolve_topic_from_url(req.topic or req.prompt or (str(inputs) if inputs else intent))
     platform = normalize_platform(req.platform) if req.platform else "general"
     tone     = req.tone or "authentic"
-    if not _model_ready or not _script_agent:
+    live_awareness_mode = (
+        not _model_ready
+        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
+        == "live-awareness"
+    )
+    if not _script_agent or (not _model_ready and not live_awareness_mode):
         raise HTTPException(
             status_code=503,
             detail={
                 "error": "MaxCore text generation inference unavailable",
-                "required_capability": "loaded ScriptAgent model",
+                "required_capability": (
+                    "fresh live awareness or a loaded ScriptAgent checkpoint"
+                ),
             },
         )
 
@@ -8965,6 +9081,9 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
     try:
         _key = {
             "generation_contract": _GENERATION_CONTRACT,
+            "generation_mode": (
+                "live_awareness" if live_awareness_mode else "trained_checkpoint"
+            ),
             "plan_hash": _generation_plan_hash(),
             "platform": getattr(req, "platform", ""),
             "topic":    getattr(req, "topic", "") or getattr(req, "idea", ""),
@@ -8978,11 +9097,20 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
             # Actual batch/unbatched execution owns its admission and GPU.
             _orch = _get_pdim_orchestrator()
             return await _in_thread(
-                lambda: _orch.compute(_key, _build, namespace="api_text_stack_v3")
+                lambda: _orch.compute(
+                    _key, _build,
+                    namespace=(
+                        "api_text_live_awareness_v1" if live_awareness_mode
+                        else "api_text_stack_v3"
+                    ),
+                )
             )
         _out = await _get_async_coalescer().compute(_key, _coalesced_social)
         result = dict(_out["result"])
-        if (result.get("source") not in {"ai_model", "model", "model_composed"}
+        allowed_sources = {"ai_model", "model", "model_composed"}
+        if live_awareness_mode:
+            allowed_sources.add("live_awareness")
+        if (result.get("source") not in allowed_sources
                 or result.get("generation_contract") != _GENERATION_CONTRACT
                 or "quality_score" in result):
             raise RuntimeError("Cached text result lacks genuine model provenance")
@@ -9827,35 +9955,20 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
                 },
             })
         else:
-            # Fallback: return spec without a rendered file so callers can
-            # still use the layout/color_scheme guidance even if PIL fails
-            from ai_model.image.image_engine import PLATFORM_DIMS
-            w, h = PLATFORM_DIMS.get(layout, (1080, 1080))
-            outputs.append({
-                "type":    "image",
-                "url":     None,
-                "width":   w,
-                "height":  h,
-                "format":  "png",
-                "slot":    slot_id,
-                "platform": platform,
-                "intent":  purpose,
-                "meta": {
-                    "color_scheme": color_scheme,
-                    "layout":       layout,
-                    "prompt_used":  prompt,
-                    "style_tags":   slot_style_tags,
-                    "engine":       "maxbooster-pil-v1",
-                    "status":       "engine_not_ready",
-                    "ai_disclosure": brief.ai_disclosure,
-                    "technique":    _tech.to_dict() if _tech else None,
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "error": "image_renderer_unavailable",
+                    "message": "The image renderer did not produce a retrievable artifact",
+                    "slot": slot_id,
                 },
-            })
+            )
 
     # Top-level aliases the MaxBooster client reads (url / image_url / path)
     first_url = next((o.get("url") for o in outputs if o.get("url")), None)
     return {
         "outputs": outputs,
+        "source": "maxbooster_pil_v1",
         "url":       first_url,
         "image_url": first_url,
         "path":      first_url,
@@ -11466,7 +11579,13 @@ async def api_generate_video(req: ApiGenerateVideoRequest, request: Request, _ke
             validate_manifest(req.media_manifest)
         except (ValueError, TypeError) as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
-    await _wait_for_model_ready()
+    live_awareness_mode = (
+        not _model_ready
+        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
+        == "live-awareness"
+    )
+    if not live_awareness_mode:
+        await _wait_for_model_ready()
     if req.user_audio_path:
         req.user_audio_path = _resolve_owner_audio_upload(req.user_audio_path, request)
 

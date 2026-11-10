@@ -96,20 +96,78 @@ describe("MaxCore local supervisor", () => {
   });
 
   describe("checkMaxcoreLocalReady (Python-aware readiness)", () => {
-    it("requires model_loaded=true, not merely a healthy child process", async () => {
+    it("accepts a certified model or the node's explicit live-awareness serving receipt", async () => {
       const { isMaxcoreModelHealth } = await import(
         "../../server/services/maxcoreLocalSupervisor.js"
       );
-      expect(isMaxcoreModelHealth({ status: "healthy", model_loaded: true })).toBe(true);
+      expect(isMaxcoreModelHealth({
+        status: "healthy",
+        model_loaded: true,
+        generation_ready: true,
+      })).toBe(true);
       expect(isMaxcoreModelHealth({ status: "healthy", model_loaded: false })).toBe(false);
+      expect(isMaxcoreModelHealth({
+        status: "healthy",
+        model_loaded: false,
+        generation_ready: true,
+        generation_mode: "live_awareness",
+        live_awareness: { available: true, live_awareness_serving: true },
+      })).toBe(true);
+      expect(isMaxcoreModelHealth({
+        status: "healthy",
+        model_loaded: false,
+        generation_ready: true,
+        generation_mode: "live_awareness",
+        live_awareness: { available: true, live_awareness_serving: false },
+      })).toBe(false);
       expect(isMaxcoreModelHealth({ status: "healthy" })).toBe(false);
       expect(isMaxcoreModelHealth({ status: "degraded", model_loaded: true })).toBe(false);
+      expect(isMaxcoreModelHealth({
+        ready: true,
+        generation_ready: true,
+        generation_mode: "live_awareness",
+        model_loaded: false,
+        python: {
+          reachable: true,
+          generation_ready: true,
+          generation_mode: "live_awareness",
+          model_loaded: false,
+          live_awareness: { available: true, live_awareness_serving: true },
+        },
+        node: { python_restarting: false, circuit_breaker: "closed" },
+      })).toBe(true);
+      expect(isMaxcoreModelHealth({
+        ready: false,
+        generation_ready: true,
+        generation_mode: "live_awareness",
+        model_loaded: false,
+        python: {
+          reachable: true,
+          generation_ready: true,
+          generation_mode: "live_awareness",
+          live_awareness: { available: true, live_awareness_serving: true },
+        },
+        node: { python_restarting: true, circuit_breaker: "closed" },
+      })).toBe(false);
     });
 
     it("does not claim readiness from an unowned process on the local port", async () => {
       const fetchMock = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ status: "healthy", model_loaded: true }),
+        json: async () => ({
+          ready: true,
+          generation_ready: true,
+          generation_mode: "live_awareness",
+          model_loaded: false,
+          python: {
+            reachable: true,
+            generation_ready: true,
+            generation_mode: "live_awareness",
+            model_loaded: false,
+            live_awareness: { available: true, live_awareness_serving: true },
+          },
+          node: { python_restarting: false, circuit_breaker: "closed" },
+        }),
       });
       vi.stubGlobal("fetch", fetchMock);
       const { checkMaxcoreLocalReady } = await import(
@@ -230,7 +288,20 @@ describe("MaxCore local supervisor", () => {
 
       const fetchMock = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ status: "healthy", model_loaded: true }),
+        json: async () => ({
+          ready: true,
+          generation_ready: true,
+          generation_mode: "live_awareness",
+          model_loaded: false,
+          python: {
+            reachable: true,
+            generation_ready: true,
+            generation_mode: "live_awareness",
+            model_loaded: false,
+            live_awareness: { available: true, live_awareness_serving: true },
+          },
+          node: { python_restarting: false, circuit_breaker: "closed" },
+        }),
       });
       vi.stubGlobal("fetch", fetchMock);
       vi.doMock("../../server/services/maxcoreConnector.js", () => ({
@@ -250,13 +321,14 @@ describe("MaxCore local supervisor", () => {
       expect(status.running).toBe(true);
       expect(status.pid).toBe(424242);
       expect(spawnMock).toHaveBeenCalledTimes(1);
-      expect(await checkMaxcoreLocalReady()).toBe(true);
+      const ready = await checkMaxcoreLocalReady();
       expect(fetchMock).toHaveBeenCalledWith(
-        "http://127.0.0.1:8090/api/health",
+        "http://127.0.0.1:8090/api/system/readiness",
         expect.objectContaining({
           headers: { Authorization: "Bearer test-generation-key" },
         }),
       );
+      expect(ready).toBe(true);
 
       vi.useFakeTimers();
       const groupKill = vi.spyOn(process, "kill").mockReturnValue(true);

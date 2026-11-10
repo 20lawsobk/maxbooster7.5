@@ -1276,6 +1276,10 @@ router.get("/system/readiness", async (_req, res) => {
   }
 
   const modelLoaded       = pythonHealth["model_loaded"] === true;
+  const generationMode    = typeof pythonHealth["generation_mode"] === "string"
+    ? pythonHealth["generation_mode"] : "unavailable";
+  const liveAwareness     = pythonHealth["live_awareness"] ?? null;
+  const awareness         = pythonHealth["awareness"] ?? { ready: false };
   const warmStartState    = (pythonHealth["warm_start"] as Record<string, unknown> | undefined)?.["state"] ?? "unknown";
   // Keepalive and warm-up state are diagnostics; /ready is the authoritative
   // serving requirement. Optional/disabled warm passes must not mark it down.
@@ -1296,11 +1300,19 @@ router.get("/system/readiness", async (_req, res) => {
 
   res.status(ready ? 200 : 503).json({
     ready,
+    generation_ready: pythonReady,
+    generation_mode: generationMode,
+    model_loaded: modelLoaded,
+    awareness,
+    live_awareness: liveAwareness,
     node: { workers: "up", python_restarting: isPythonRestarting(), circuit_breaker: _cbState(), keepalive_enabled: keepaliveEnabled, keepalive_running: keepalive["running"] ?? false },
     python: {
       reachable: pythonReachable,
       generation_ready: pythonReady,
+      generation_mode: generationMode,
       model_loaded: modelLoaded,
+      awareness,
+      live_awareness: liveAwareness,
       model_blocked: pythonHealth["model_blocked"] ?? null,
       serving_release: pythonHealth["serving_release"] ?? null,
       uptime_seconds: pythonHealth["uptime_seconds"] ?? null,

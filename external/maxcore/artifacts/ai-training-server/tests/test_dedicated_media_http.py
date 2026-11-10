@@ -223,19 +223,19 @@ class DedicatedMediaHTTP(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(image, json.dumps(self.commits[-1]))
         self.assert_clean_context()
 
-    async def test_normal_learned_media_and_text_still_require_a_capable_candidate(self):
+    async def test_legacy_checkpoint_generation_stays_blocked_without_candidate(self):
         cases = [
             ("/api/generate/image", {"prompt": "A photographic artist"}),
             ("/api/generate/audio", {"prompt": "An arbitrary soundtrack"}),
             ("/api/generate-video", {"idea": "Arbitrary cinematic subjects"}),
             ("/api/generate/content", {"topic": "A new release", "platform": "instagram", "tone": "casual"}),
         ]
-        for path, body in cases:
-            with self.subTest(path=path):
-                status, result = await post_json(self.app, path, body)
-                self.assertEqual(status, 503, result)
-                self.assertIn("No operationally capable", result["detail"])
-                self.assert_clean_context()
+        with patch.dict(os.environ, {"MAXCORE_SERVING_RELEASE": "legacy"}):
+            for path, body in cases:
+                with self.subTest(path=path):
+                    status, result = await post_json(self.app, path, body)
+                    self.assertEqual(status, 503, result)
+                    self.assert_clean_context()
         self.assertEqual(self.model.pin.call_count, 4)
         self.assertEqual(self.commits, [])
 

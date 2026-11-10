@@ -630,16 +630,39 @@ export async function startMaxcoreLocal(): Promise<void> {
   }
 }
 
-/** Ready = the Python-backed model service is actually healthy. The Node
- *  layer's /healthz answers even while Python is crash-looping, so probe
- *  /api/health (proxied to Python) and require both healthy status and the
- *  model-loaded flag. Python intentionally reports status=healthy while its
- *  process is alive but the checkpoint is still loading, so status alone is
- *  only child liveness, not model readiness. */
+/** Ready = the Python-backed serving contract is healthy. The Node layer's
+ *  /healthz answers even while Python is crash-looping, so require Python
+ *  health plus either a loaded certified checkpoint or an explicit,
+ *  snapshot-backed live-awareness generation release. Liveness alone is not
+ *  generation readiness. */
 export function isMaxcoreModelHealth(body: unknown): boolean {
   if (!body || typeof body !== "object") return false;
-  const health = body as { status?: unknown; model_loaded?: unknown };
-  return health.status === "healthy" && health.model_loaded === true;
+  const health = body as Record<string, unknown>;
+  const python = health.python && typeof health.python === "object"
+    ? health.python as Record<string, unknown> : health;
+  const node = health.node && typeof health.node === "object"
+    ? health.node as Record<string, unknown> : null;
+  const status = python.status ?? health.status;
+  const modelLoaded = python.model_loaded === true || health.model_loaded === true;
+  const generationReady = python.generation_ready === true || health.generation_ready === true;
+  const generationMode = python.generation_mode ?? health.generation_mode;
+  const liveAwareness = (python.live_awareness ?? health.live_awareness) as
+    | Record<string, unknown> | undefined;
+  const capabilityReady = modelLoaded || (
+    generationReady &&
+    generationMode === "live_awareness" &&
+    liveAwareness?.available === true &&
+    liveAwareness.live_awareness_serving === true
+  );
+  const aggregateReady = health.ready === true &&
+    python.reachable === true &&
+    node?.python_restarting === false &&
+    node?.circuit_breaker === "closed";
+
+  if (health.ready === true) {
+    return aggregateReady && generationReady && capabilityReady;
+  }
+  return status === "healthy" && generationReady && capabilityReady;
 }
 
 export async function checkMaxcoreLocalReady(): Promise<boolean> {
@@ -659,10 +682,9 @@ export async function checkMaxcoreLocalReady(): Promise<boolean> {
   lastReadyCheck = now;
   readyInFlight = (async () => {
     try {
-      // The supervised API server requires an explicit MaxCore service
-      // credential even for its proxied health endpoint. Reuse the normal
-      // generation authorization; never probe it anonymously or weaken its
-      // auth middleware just to satisfy the application's readiness gate.
+      // Probe the API server's full serving contract rather than its
+      // liveness-only Python health route. Reuse the normal generation
+      // authorization; do not weaken proxy authentication to satisfy readiness.
       const { getMaxcoreGenerationHeaders } = await import("./maxcoreConnector.js");
       const headers = getMaxcoreGenerationHeaders();
       if (!headers.Authorization) {
@@ -670,7 +692,7 @@ export async function checkMaxcoreLocalReady(): Promise<boolean> {
         return lastReady;
       }
       const r = await fetch(
-        `http://127.0.0.1:${config.maxcoreLocal.port}/api/health`,
+        `http://127.0.0.1:${config.maxcoreLocal.port}/api/system/readiness`,
         {
           headers,
           signal: AbortSignal.timeout(3_000),

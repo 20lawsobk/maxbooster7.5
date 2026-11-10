@@ -269,38 +269,40 @@ async function probeHttpHealth(): Promise<"healthy" | "hung" | "down"> {
   }
 }
 
-// ─── Post-startup warm-up pass ────────────────────────────────────────────────
-// After Python confirms model_loaded=true, POST /api/warm to exercise the
-// Digital GPU inference chains (transformer → flash-attn → pocket GEMM) before
-// any real user traffic arrives.  On a reserved VM this runs once per deploy so
-// the very first request hits a hot path, not a cold one.
+// ─── Post-startup readiness and optional checkpoint warm-up ──────────────────
+// A certified checkpoint gets the Digital GPU warm pass. Before one exists,
+// the explicit live-awareness serving release is a valid generation mode and
+// must not remain parked behind a model_loaded-only wait.
 
-async function waitForModelReady(maxMs = 180_000): Promise<boolean> {
+async function waitForServingReady(
+  maxMs = 180_000,
+): Promise<"trained_checkpoint" | "live_awareness" | null> {
   const owner = pythonProcess;
   const deadline = Date.now() + maxMs;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (ADMIN_KEY) headers["X-Admin-Key"] = ADMIN_KEY;
 
   while (Date.now() < deadline) {
-    if (shuttingDown || owner !== pythonProcess) return false;
+    if (shuttingDown || owner !== pythonProcess) return null;
     try {
+      const { classifyPythonServingReadiness } = await import("./routes/health.js");
       const { statusCode, body } = await undiciRequest(
-        `http://localhost:${PYTHON_PORT}/health`,
+        `http://localhost:${PYTHON_PORT}/api/ready`,
         { method: "GET", dispatcher: _warmPool, headers,
           signal: AbortSignal.timeout(Math.max(1, Math.min(10_000, deadline - Date.now()))),
           headersTimeout: 0, bodyTimeout: 0 },
       );
       const raw = await body.text();
       if (statusCode === 200 && owner === pythonProcess && !shuttingDown) {
-        const parsed = JSON.parse(raw) as { model_loaded?: boolean };
-        if (parsed.model_loaded === true) return true;
+        const mode = classifyPythonServingReadiness(JSON.parse(raw) as unknown);
+        if (mode) return mode;
       }
     } catch {
       // server still starting — keep polling
     }
     await new Promise((r) => setTimeout(r, 3_000));
   }
-  return false;
+  return null;
 }
 
 const fireWarmPass = ownedSingleFlight(() => pythonProcess, async (owner): Promise<void> => {
@@ -352,11 +354,16 @@ const fireWarmPass = ownedSingleFlight(() => pythonProcess, async (owner): Promi
 });
 
 const scheduleWarmup = ownedSingleFlight(() => pythonProcess, async (owner) => {
-  const ready = await waitForModelReady(180_000);
+  const mode = await waitForServingReady(180_000);
   if (owner !== pythonProcess || shuttingDown) return;
-  if (ready) await fireWarmPass();
+  if (mode === "trained_checkpoint") {
+    await fireWarmPass();
+  } else if (mode === "live_awareness") {
+    console.log("[Python] Live-awareness serving is ready; checkpoint warm-up deferred until a trained model is loaded");
+    if (owner === pythonProcess && !shuttingDown) setPythonRestarting(false);
+  }
   else {
-    console.warn("[Python] Model did not become ready within 3 min — readiness remains unavailable");
+    console.warn("[Python] No generation-ready serving mode within 3 min — readiness remains unavailable");
     // Release the hold, not readiness: actual model probes still decide health.
     setPythonRestarting(false);
   }
@@ -592,12 +599,14 @@ export async function ensurePythonServer(): Promise<void> {
 
   startHealthMonitor();
 
-  // ── Production warm-up pass ───────────────────────────────────────────────
-  // Hold incoming user requests until the model is fully hot so the first real
-  // request never hits a cold KV-cache or uncompiled kernel path.
+  // ── Startup serving readiness ─────────────────────────────────────────────
+  // Hold incoming requests until either the live-awareness release or a
+  // certified checkpoint is actually generation-ready. Only the latter gets
+  // the model-specific warm pass; live awareness is not mislabeled as weights.
   // setPythonRestarting(true) parks requests at the proxy hold-queue;
-  // fireWarmPass() clears it via setPythonRestarting(false) on completion
-  // (success or failure) so requests are never held indefinitely.
+  // scheduleWarmup() clears it after serving readiness or a bounded wait so
+  // requests are never held indefinitely. API readiness remains independently
+  // enforced by Python /api/ready and the proxy readiness contract.
   // Runs in background — never blocks startKeepalive() or worker fork.
   setPythonRestarting(true);
   void scheduleWarmup().catch(err => console.error("[Python] Warm-up scheduling failed", err));
