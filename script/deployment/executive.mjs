@@ -328,6 +328,50 @@ export async function runExecutive(tasks, {
     };
   });
 
+  function concurrentlyAdmissible(index, {
+    eligible,
+    active,
+    cpu,
+    memory,
+    io,
+    newlyReservedMB,
+    cpuLimit,
+    cap,
+  }) {
+    let slots = 0;
+    let reservedCPU = cpu;
+    let reservedMemory = memory;
+    let reservedIO = io;
+    let reservedAvailableMB = newlyReservedMB;
+
+    for (const candidate of eligible.slice(index)) {
+      const minimumCPU = candidate.elasticCPU
+        ? 1
+        : Math.max(1, Math.ceil(candidate.cpu));
+
+      if (
+        candidate.memoryMB > cap.memoryMB * 0.9 ||
+        candidate.io > cap.ioSlots ||
+        reservedCPU + minimumCPU > cpuLimit ||
+        candidate.memoryMB > cap.availableMB - reservedAvailableMB ||
+        reservedIO + candidate.io > cap.ioSlots
+      ) continue;
+
+      if (
+        active.size + slots > 0 &&
+        reservedMemory + candidate.memoryMB > cap.memoryMB * 0.8
+      ) continue;
+
+      slots++;
+      reservedCPU += minimumCPU;
+      reservedMemory += candidate.memoryMB;
+      reservedIO += candidate.io;
+      reservedAvailableMB += candidate.memoryMB;
+    }
+
+    return slots;
+  }
+
   const abort = () => {
     failure ??= signal?.reason instanceof Error
       ? signal.reason
@@ -480,6 +524,12 @@ export async function runExecutive(tasks, {
 
         const task = eligible[index];
         const freeCPU = cpuLimit - cpu;
+        if (task.io > cap.ioSlots) {
+          throw Object.assign(Error(
+            `${task.id} needs ${task.io} I/O slots; ` +
+            `capacity is ${cap.ioSlots}`,
+          ), {taskId: task.id});
+        }
 
         if (task.memoryMB > cap.memoryMB * 0.9) {
           throw Object.assign(Error(
@@ -502,7 +552,19 @@ export async function runExecutive(tasks, {
         ) continue;
 
         const share = Math.max(
-          1, Math.floor(freeCPU / Math.max(1, eligible.length - index)),
+          1,
+          Math.floor(
+            freeCPU / Math.max(1, concurrentlyAdmissible(index, {
+              eligible,
+              active,
+              cpu,
+              memory,
+              io,
+              newlyReservedMB,
+              cpuLimit,
+              cap,
+            })),
+          ),
         );
 
         const requested = task.elasticCPU

@@ -51,7 +51,7 @@ function buildTask(id, deps = [], memoryMB = 256, cpu = 1, io = 1) {
 
     ...(ELASTIC_TASKS.has(id) ? {
       elasticCPU: true,
-      maxCPU: id === "app_capsule" ? 8 : 2,
+      maxCPU: id === "app_capsule" ? 8 : 4,
     } : {}),
 
     // These stages must continue to commit verified capsules atomically.
