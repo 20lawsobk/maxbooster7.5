@@ -68,7 +68,11 @@ def main():
                                   new=partial(commit_artifact, transport=transport, attempts=1)))
         app, namespace = actual_media_app(uploads, LiveServingModel(), persist, read)
         # Compile the actual awareness routes in the same ASGI fixture scope.
-        names = {"unified_awareness_status", "unified_awareness_context"}
+        names = {
+            "unified_awareness_status",
+            "unified_awareness_context",
+            "_request_live_learning_check",
+        }
         nodes = [node for node in ast.parse((MAXCORE / "server.py").read_text()).body
                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in names]
         exec(compile(ast.Module(body=nodes, type_ignores=[]), str(MAXCORE / "server.py"), "exec"), namespace)

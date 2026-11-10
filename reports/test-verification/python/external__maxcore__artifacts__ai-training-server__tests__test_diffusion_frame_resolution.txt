@@ -1,2 +1,4 @@
-.....                                                                    [100%]
-5 passed in 4.07s
+/tmp/maxbooster-python312-test-tools/coverage/core.py:108: CoverageWarning: Couldn't import C tracer: No module named 'coverage.tracer' (no-ctracer); see https://coverage.readthedocs.io/en/7.17.2/messages.html#warning-no-ctracer
+  warn(f"Couldn't import C tracer: {IMPORT_ERROR}", slug="no-ctracer", once=True)
+sssss                                                                    [100%]
+5 skipped in 2.50s

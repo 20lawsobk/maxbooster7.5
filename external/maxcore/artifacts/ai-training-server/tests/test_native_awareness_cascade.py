@@ -60,6 +60,9 @@ def test_native_profile_discovery_route_reads_local_index_without_external_searc
                 "snapshot_ready": True,
             }
 
+        def discovery_observations(self):
+            return []
+
     monkeypatch.setattr("ai_model.awareness.get_engine", lambda: Engine())
     route = next(
         row for row in server.app.routes

@@ -616,4 +616,5 @@ describe("local PDIM real HTTP protocol", () => {
     expect(Buffer.from(snapshot[chunkKeys[0]].value, "base64").subarray(0, 4).toString()).toBe("PDCF");
     expect(await exec("CAPSULE.GET", ["gpu-state/http-roundtrip"])).toBe(payload);
   });
+
 });

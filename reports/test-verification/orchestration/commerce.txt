@@ -1,4 +1,4 @@
-beat-loop-lifecycle-postgres.test: passed {'tests': 10, 'failures': 0, 'errors': 0, 'skipped': 0}
+beat-loop-lifecycle-postgres.test: failed {'tests': 10, 'failures': 1, 'errors': 0, 'skipped': 0}
 business-integrity-postgres.test: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
 business-integrity.test: passed {'tests': 3, 'failures': 0, 'errors': 0, 'skipped': 0}
 compensation-races-postgres.test: passed {'tests': 10, 'failures': 0, 'errors': 0, 'skipped': 0}
@@ -9,6 +9,7 @@ inbound-known-failures: passed {'tests': 5, 'failures': 0, 'errors': 0, 'skipped
 inbound-legacy-services.test: passed {'tests': 3, 'failures': 0, 'errors': 0, 'skipped': 0}
 inbound-registration.test: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
 inbound-storefront.test: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
+maxcore-cognitive-registry-migration.test: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
 outbound-commerce: passed {'tests': 7, 'failures': 0, 'errors': 0, 'skipped': 0}
 outbound-membership-auth: passed {'tests': 1, 'failures': 0, 'errors': 0, 'skipped': 0}
 outbound-services-webhooks: passed {'tests': 8, 'failures': 0, 'errors': 0, 'skipped': 0}

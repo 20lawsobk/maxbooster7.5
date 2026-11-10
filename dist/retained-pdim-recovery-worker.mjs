@@ -10049,6 +10049,9 @@ function startLocalPdimServer() {
     }
     return new Promise((resolve, reject) => {
       if (!bucketPersistence) {
+        store.clear();
+        capsuleJournal = new LocalPdimCapsuleJournal(capsuleJournalFile);
+        redisAofJournal = new LocalPdimAofJournal(redisAofJournalFile);
         loadStore();
         const watermark = store.get(CAPSULE_WATERMARK);
         const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
@@ -10197,7 +10200,7 @@ function startLocalPdimServer() {
         _persistTimer.unref();
         const saveOnShutdown = () => {
           if (!saveStore()) {
-            _finalSaveFailed = true;
+            localPdimProcessExitState.finalSaveFailed = true;
             process.exitCode = 1;
           }
         };
@@ -10206,9 +10209,12 @@ function startLocalPdimServer() {
           process.on("SIGTERM", saveOnShutdown);
           process.on("SIGINT", saveOnShutdown);
         }
-        process.on("exit", () => {
-          if (_finalSaveFailed) process.exitCode = 1;
-        });
+        const exitHandler = localPdimProcessExitState.exitHandler ??= () => {
+          if (localPdimProcessExitState.finalSaveFailed) process.exitCode = 1;
+        };
+        if (!process.listeners("exit").includes(exitHandler)) {
+          process.on("exit", exitHandler);
+        }
         resolve();
       });
       _server.on("error", (err) => {
@@ -10332,7 +10338,7 @@ async function importOfflinePdimToBucket(namespace) {
     };
   });
 }
-var LOCAL_PORT, PERSIST_FILE, PERSIST_INTERVAL_MS, CAPSULE_WATERMARK, REDIS_AOF_WATERMARK, capsuleJournal, redisAofJournal, localAofOwnershipRelease, localAofOwnershipHealthy, store, canonicalStore, bucketPersistence, bucketBatcher, snapshotAofBaseline, capsuleStore, snapshotPublication, asyncSnapshotSequence, snapshotTail, _server, _finalSaveFailed, _persistTimer, _saveOnShutdown, _starting;
+var LOCAL_PORT, PERSIST_FILE, PERSIST_INTERVAL_MS, CAPSULE_WATERMARK, REDIS_AOF_WATERMARK, capsuleJournalFile, redisAofJournalFile, capsuleJournal, redisAofJournal, localAofOwnershipRelease, localAofOwnershipHealthy, store, canonicalStore, bucketPersistence, bucketBatcher, snapshotAofBaseline, capsuleStore, snapshotPublication, asyncSnapshotSequence, snapshotTail, _server, processWithLocalPdimExitState, localPdimProcessExitState, _persistTimer, _saveOnShutdown, _starting;
 var init_localPdimServer = __esm({
   "server/lib/localPdimServer.ts"() {
     "use strict";
@@ -10357,8 +10363,10 @@ var init_localPdimServer = __esm({
     PERSIST_INTERVAL_MS = 3e4;
     CAPSULE_WATERMARK = "__local_pdim_capsule_journal_watermark__";
     REDIS_AOF_WATERMARK = "__local_pdim_redis_aof_watermark__";
-    capsuleJournal = new LocalPdimCapsuleJournal(`${PERSIST_FILE}.capsules.jsonl`);
-    redisAofJournal = new LocalPdimAofJournal(`${PERSIST_FILE}.aof.jsonl`);
+    capsuleJournalFile = `${PERSIST_FILE}.capsules.jsonl`;
+    redisAofJournalFile = `${PERSIST_FILE}.aof.jsonl`;
+    capsuleJournal = new LocalPdimCapsuleJournal(capsuleJournalFile);
+    redisAofJournal = new LocalPdimAofJournal(redisAofJournalFile);
     localAofOwnershipRelease = null;
     localAofOwnershipHealthy = true;
     store = /* @__PURE__ */ new Map();
@@ -10372,7 +10380,8 @@ var init_localPdimServer = __esm({
     asyncSnapshotSequence = 0;
     snapshotTail = Promise.resolve();
     _server = null;
-    _finalSaveFailed = false;
+    processWithLocalPdimExitState = process;
+    localPdimProcessExitState = processWithLocalPdimExitState.__maxboosterLocalPdimExitState ??= { finalSaveFailed: false };
     _persistTimer = null;
     _saveOnShutdown = null;
     _starting = null;

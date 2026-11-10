@@ -97,8 +97,8 @@ def run_command(command, logfile, timeout=180, cwd=ROOT, extra_env=None):
                         os.killpg(process.pid, signal.SIGKILL)
                         process.wait()
                     code = 124
-            except OSError as error:
-                output.write(str(error).encode())
+            except (OSError, TypeError, ValueError) as error:
+                output.write(str(error).encode("utf-8", errors="replace"))
                 code = 127
             output.seek(0)
             raw = output.read().decode("utf-8", errors="replace")

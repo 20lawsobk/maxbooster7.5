@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).with_name('report-progress.py')
 # Installed location is tests/testing/test_report_progress.py.
@@ -209,6 +210,109 @@ class CountedProgressTests(unittest.TestCase):
         else:
             self.assertIn(measured['measurementStatus'], {'CURRENT', 'STALE'})
         self.assertEqual(snapshot(), before)
+
+
+class MasterRunnerProgressTests(unittest.TestCase):
+    def test_master_writes_running_report_before_first_command(self):
+        runner_path = SCRIPT.with_name('run-all.py')
+        runner_dir = str(runner_path.parent.resolve())
+        original_path = sys.path[:]
+        try:
+            sys.path.insert(0, runner_dir)
+            spec = importlib.util.spec_from_file_location('maxbooster_test_run_all', runner_path)
+            runner = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(runner)
+        finally:
+            sys.path[:] = original_path
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            report_path = output / 'orchestration/results.json'
+            source_snapshot = {'sha256': 'fixture-source-hash', 'files': {}}
+            observed_commands = []
+
+            def fake_run(command, logfile, timeout, cwd=runner.ROOT, extra_env=None):
+                self.assertTrue(report_path.is_file(), 'The run report must exist before child work starts')
+                running = json.loads(report_path.read_text())
+                self.assertEqual(running.get('status'), 'running')
+                self.assertNotIn('finishedAt', running)
+                observed_commands.append(command)
+                return {
+                    'command': command,
+                    'cwd': '.',
+                    'startedAt': '2026-01-01T00:00:00+00:00',
+                    'durationSeconds': 0,
+                    'exitCode': 0,
+                    'timedOut': False,
+                    'status': 'passed',
+                    'log': str(logfile),
+                    'logSha256': 'a' * 64,
+                }
+
+            argv = [
+                str(runner_path), '--group', 'python', '--python', sys.executable,
+                '--output', tmp,
+            ]
+            with patch.object(runner, 'run_command', side_effect=fake_run), \
+                 patch.object(runner, 'source_inputs', return_value=source_snapshot), \
+                 patch.object(runner, 'source_revision', return_value='fixture-revision'), \
+                 patch.object(sys, 'argv', argv):
+                self.assertEqual(runner.main(), 0)
+
+            self.assertTrue(observed_commands)
+            self.assertIn('generate-catalog.py', observed_commands[0][1])
+            final = json.loads(report_path.read_text())
+            self.assertEqual(final['status'], 'executed_groups_passed')
+            self.assertTrue(final.get('finishedAt'))
+
+    def test_http_group_uses_resolved_application_python_runtime(self):
+        runner_path = SCRIPT.with_name('run-all.py')
+        runner_dir = str(runner_path.parent.resolve())
+        original_path = sys.path[:]
+        try:
+            sys.path.insert(0, runner_dir)
+            spec = importlib.util.spec_from_file_location('maxbooster_test_run_all_runtime', runner_path)
+            runner = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(runner)
+        finally:
+            sys.path[:] = original_path
+
+        with tempfile.TemporaryDirectory() as tmp:
+            source_snapshot = {'sha256': 'fixture-source-hash', 'files': {}}
+            runtime_envs = []
+
+            def fake_run(command, logfile, timeout, cwd=runner.ROOT, extra_env=None):
+                if extra_env and 'MAXBOOSTER_TEST_PYTHON' in extra_env:
+                    runtime_envs.append(dict(extra_env))
+                return {
+                    'command': command,
+                    'cwd': '.',
+                    'startedAt': '2026-01-01T00:00:00+00:00',
+                    'durationSeconds': 0,
+                    'exitCode': 0,
+                    'timedOut': False,
+                    'status': 'passed',
+                    'log': str(logfile),
+                    'logSha256': 'a' * 64,
+                }
+
+            argv = [
+                str(runner_path), '--group', 'http', '--python', sys.executable,
+                '--output', tmp,
+            ]
+            with patch.object(runner, 'run_command', side_effect=fake_run), \
+                 patch.object(runner, 'source_inputs', return_value=source_snapshot), \
+                 patch.object(runner, 'source_revision', return_value='fixture-revision'), \
+                 patch.object(sys, 'argv', argv):
+                self.assertEqual(runner.main(), 0)
+
+            packaged_python = runner.ROOT / 'python_runtime' / 'bin' / 'python3'
+            expected = str(packaged_python if packaged_python.is_file() else Path(sys.executable).resolve())
+            self.assertTrue(runtime_envs, 'The HTTP and preflight commands must receive the app runtime')
+            for env in runtime_envs:
+                self.assertEqual(env.get('MAXBOOSTER_TEST_PYTHON'), expected)
+                self.assertEqual(env.get('MAXBOOSTER_PYTHON'), expected)
+                self.assertNotIn(None, env.values())
 
     def test_missing_input_cli_writes_unavailable_and_returns_two(self):
         with tempfile.TemporaryDirectory() as tmp:

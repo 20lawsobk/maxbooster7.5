@@ -120,12 +120,23 @@ class ReleaseSelectionTests(unittest.TestCase):
     def test_blocked_selected_release_health_remains_liveness(self):
         import time
         tree = ast.parse((ROOT / "server.py").read_text())
+        capability_node = next(
+            n for n in tree.body
+            if isinstance(n, ast.FunctionDef) and n.name == "_live_awareness_capability"
+        )
+        readiness_node = next(
+            n for n in tree.body
+            if isinstance(n, ast.FunctionDef) and n.name == "_generation_readiness"
+        )
         node = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef) and n.name == "health")
         node.decorator_list = []
-        scope = {"time": time, "_serving_release_status": {"candidate_quality": "blocked"},
+        scope = {"time": time, "os": os, "_script_agent": None,
+                 "_live_learning_loop": None, "_live_serving_model": None,
+                 "_serving_release_status": {"candidate_quality": "blocked"},
                  "_model_ready": False, "_start_time": time.time(), "_warm_status": {},
                  "_get_storage_mode": lambda: "offline"}
-        exec(compile(ast.Module(body=[node], type_ignores=[]), "server.py", "exec"), scope)
+        exec(compile(ast.Module(body=[capability_node, readiness_node, node], type_ignores=[]),
+                     "server.py", "exec"), scope)
         response = asyncio.run(scope["health"]())
         self.assertEqual(response["status"], "healthy")
         self.assertTrue(response["model_blocked"])

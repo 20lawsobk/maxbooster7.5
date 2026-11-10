@@ -7,15 +7,15 @@ This source register and the machine JSON distinguish declarations, static assoc
 | Surface | Count |
 | --- | ---: |
 | routedPageDeclarations | 80 |
-| uiInteractionDeclarations | 8374 |
-| backendRegistrations | 2909 |
-| frontendApiContracts | 932 |
-| scannedTypeScriptJavaScriptFiles | 3408 |
-| actualCoverageFiles | 2653 |
-| requiredChecks | 33549 |
-| unverifiedChecks | 33540 |
-| unknownMappings | 170 |
-| invalidEvidenceLinks | 0 |
+| uiInteractionDeclarations | 8431 |
+| backendRegistrations | 2994 |
+| frontendApiContracts | 934 |
+| scannedTypeScriptJavaScriptFiles | 3466 |
+| actualCoverageFiles | 2663 |
+| requiredChecks | 34180 |
+| unverifiedChecks | 34180 |
+| unknownMappings | 173 |
+| invalidEvidenceLinks | 9 |
 
 ## Routed pages
 
@@ -24,7 +24,7 @@ Each row links to its source and names the next test to add. The JSON retains ev
 | Route | Component/source | Direct controls | API calls | Candidate tests | Acceptance | Next test |
 | --- | --- | ---: | ---: | ---: | --- | --- |
 | `/` | `Landing` — `client/src/pages/Landing.tsx:1` | 33 | 8 | 0 static candidates | UNVERIFIED | `tests/browser/landing-acceptance.test.mjs` |
-| `/login` | `Login` — `client/src/pages/Login.tsx:1` | 15 | 7 | 0 static candidates | UNVERIFIED | `tests/browser/login-acceptance.test.mjs` |
+| `/login` | `Login` — `client/src/pages/Login.tsx:1` | 15 | 8 | 0 static candidates | UNVERIFIED | `tests/browser/login-acceptance.test.mjs` |
 | `/forgot-password` | `ForgotPassword` — `client/src/pages/ForgotPassword.tsx:1` | 11 | 1 | 0 static candidates | UNVERIFIED | `tests/browser/forgot-password-acceptance.test.mjs` |
 | `/reset-password` | `ResetPassword` — `client/src/pages/ResetPassword.tsx:1` | 19 | 1 | 0 static candidates | UNVERIFIED | `tests/browser/reset-password-acceptance.test.mjs` |
 | `/register` | `Register` — `client/src/pages/Register.tsx:1` | 19 | 8 | 1 static candidates | UNVERIFIED | `tests/browser/register-acceptance.test.mjs` |
@@ -37,14 +37,14 @@ Each row links to its source and names the next test to add. The JSON retains ev
 | `/analytics/ai` | `AIDashboard` — `client/src/pages/analytics/AIDashboard.tsx:1` | 49 | 14 | 0 static candidates | UNVERIFIED | `tests/browser/analytics-ai-acceptance.test.mjs` |
 | `/analytics` | `Analytics` — `client/src/pages/Analytics.tsx:1` | 196 | 30 | 2 static candidates | UNVERIFIED | `tests/browser/analytics-acceptance.test.mjs` |
 | `/developer-api` | `DeveloperApi` — `client/src/pages/DeveloperApi.tsx:1` | 72 | 17 | 1 static candidates | UNVERIFIED | `tests/browser/developer-api-acceptance.test.mjs` |
-| `/social-media` | `SocialMedia` — `client/src/pages/SocialMedia.tsx:1` | 496 | 61 | 7 static candidates | UNVERIFIED | `tests/browser/social-media-acceptance.test.mjs` |
-| `/advertising` | `Advertisement` — `client/src/pages/Advertisement.tsx:1` | 258 | 39 | 2 static candidates | UNVERIFIED | `tests/browser/advertising-acceptance.test.mjs` |
+| `/social-media` | `SocialMedia` — `client/src/pages/SocialMedia.tsx:1` | 534 | 61 | 7 static candidates | UNVERIFIED | `tests/browser/social-media-acceptance.test.mjs` |
+| `/advertising` | `Advertisement` — `client/src/pages/Advertisement.tsx:1` | 296 | 39 | 2 static candidates | UNVERIFIED | `tests/browser/advertising-acceptance.test.mjs` |
 | `/marketplace` | `Marketplace` — `client/src/pages/Marketplace.tsx:1` | 595 | 46 | 2 static candidates | UNVERIFIED | `tests/browser/marketplace-acceptance.test.mjs` |
 | `/marketplace/beat/:beatId` | `Marketplace` — `client/src/pages/Marketplace.tsx:1` | 595 | 46 | 2 static candidates | UNVERIFIED | `tests/browser/marketplace-beat-beatid-acceptance.test.mjs` |
 | `/marketplace/producer/:producerId` | `ProducerProfilePage` — `client/src/pages/ProducerProfilePage.tsx:1` | 70 | 18 | 0 static candidates | UNVERIFIED | `tests/browser/marketplace-producer-producerid-acceptance.test.mjs` |
 | `/royalties` | `Royalties` — `client/src/pages/Royalties.tsx:1` | 130 | 40 | 2 static candidates | UNVERIFIED | `tests/browser/royalties-acceptance.test.mjs` |
-| `/studio/:projectId` | `Studio` — `client/src/pages/Studio.tsx:1` | 627 | 85 | 1 static candidates | UNVERIFIED | `tests/browser/studio-projectid-acceptance.test.mjs` |
-| `/studio` | `Studio` — `client/src/pages/Studio.tsx:1` | 627 | 85 | 1 static candidates | UNVERIFIED | `tests/browser/studio-acceptance.test.mjs` |
+| `/studio/:projectId` | `Studio` — `client/src/pages/Studio.tsx:1` | 630 | 85 | 1 static candidates | UNVERIFIED | `tests/browser/studio-projectid-acceptance.test.mjs` |
+| `/studio` | `Studio` — `client/src/pages/Studio.tsx:1` | 630 | 85 | 1 static candidates | UNVERIFIED | `tests/browser/studio-acceptance.test.mjs` |
 | `/show` | `ShowPage` — `client/src/pages/ShowPage.tsx:1` | 102 | 16 | 0 static candidates | UNVERIFIED | `tests/browser/show-acceptance.test.mjs` |
 | `/distribution` | `Distribution` — `client/src/pages/Distribution.tsx:1` | 616 | 120 | 4 static candidates | UNVERIFIED | `tests/browser/distribution-acceptance.test.mjs` |
 | `/pricing` | `Pricing` — `client/src/pages/Pricing.tsx:1` | 20 | 0 | 3 static candidates | UNVERIFIED | `tests/browser/pricing-acceptance.test.mjs` |
@@ -57,8 +57,8 @@ Each row links to its source and names the next test to add. The JSON retains ev
 | `/admin/kyc` | `KYCReview` — `client/src/pages/admin/KYCReview.tsx:1` | 25 | 10 | 1 static candidates | UNVERIFIED | `tests/browser/admin-kyc-acceptance.test.mjs` |
 | `/admin/training` | `TrainingDashboard` — `client/src/pages/admin/TrainingDashboard.tsx:1` | 60 | 13 | 0 static candidates | UNVERIFIED | `tests/browser/admin-training-acceptance.test.mjs` |
 | `/admin/content-sampler` | `ContentSampler` — `client/src/pages/admin/ContentSampler.tsx:1` | 81 | 16 | 0 static candidates | UNVERIFIED | `tests/browser/admin-content-sampler-acceptance.test.mjs` |
-| `/admin/dashboard` | `AdminDashboard` — `client/src/pages/AdminDashboard.tsx:1` | 71 | 20 | 1 static candidates | UNVERIFIED | `tests/browser/admin-dashboard-acceptance.test.mjs` |
-| `/admin/beat-money-loop` | `AdminDashboard` — `client/src/pages/AdminDashboard.tsx:1` | 71 | 20 | 1 static candidates | UNVERIFIED | `tests/browser/admin-beat-money-loop-acceptance.test.mjs` |
+| `/admin/dashboard` | `AdminDashboard` — `client/src/pages/AdminDashboard.tsx:1` | 89 | 21 | 1 static candidates | UNVERIFIED | `tests/browser/admin-dashboard-acceptance.test.mjs` |
+| `/admin/beat-money-loop` | `AdminDashboard` — `client/src/pages/AdminDashboard.tsx:1` | 89 | 21 | 1 static candidates | UNVERIFIED | `tests/browser/admin-beat-money-loop-acceptance.test.mjs` |
 | `/admin` | `Admin` — `client/src/pages/Admin.tsx:1` | 98 | 29 | 0 static candidates | UNVERIFIED | `tests/browser/admin-acceptance.test.mjs` |
 | `/settings` | `Settings` — `client/src/pages/Settings.tsx:1` | 256 | 60 | 3 static candidates | UNVERIFIED | `tests/browser/settings-acceptance.test.mjs` |
 | `/features` | `Features` — `client/src/pages/Features.tsx:1` | 9 | 0 | 0 static candidates | UNVERIFIED | `tests/browser/features-acceptance.test.mjs` |
@@ -77,7 +77,7 @@ Each row links to its source and names the next test to add. The JSON retains ev
 | `/storefront` | `Storefront` — `client/src/pages/Storefront.tsx:1` | 28 | 15 | 0 static candidates | UNVERIFIED | `tests/browser/storefront-acceptance.test.mjs` |
 | `/storefront/:slug` | `Storefront` — `client/src/pages/Storefront.tsx:1` | 28 | 15 | 0 static candidates | UNVERIFIED | `tests/browser/storefront-slug-acceptance.test.mjs` |
 | `/store/:slug` | `Storefront` — `client/src/pages/Storefront.tsx:1` | 28 | 15 | 0 static candidates | UNVERIFIED | `tests/browser/store-slug-acceptance.test.mjs` |
-| `/s/:label` | `StorefrontShortLink` — `client/src/App.tsx:265` | 4 | 1 | 0 static candidates | UNVERIFIED | `tests/browser/s-label-acceptance.test.mjs` |
+| `/s/:label` | `StorefrontShortLink` — `client/src/App.tsx:266` | 5 | 1 | 0 static candidates | UNVERIFIED | `tests/browser/s-label-acceptance.test.mjs` |
 | `/admin/autonomy` | `AdminAutonomy` — `client/src/pages/AdminAutonomy.tsx:1` | 53 | 29 | 0 static candidates | UNVERIFIED | `tests/browser/admin-autonomy-acceptance.test.mjs` |
 | `/verification` | `Verification` — `client/src/pages/Verification.tsx:1` | 107 | 17 | 0 static candidates | UNVERIFIED | `tests/browser/verification-acceptance.test.mjs` |
 | `/contracts` | `Contracts` — `client/src/pages/Contracts.tsx:1` | 87 | 24 | 1 static candidates | UNVERIFIED | `tests/browser/contracts-acceptance.test.mjs` |
@@ -115,42 +115,42 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/:id` | 3 | 1 | 18 |
 | `main-endpoint-audit/achievements` | 7 | 1 | 37 |
 | `main-endpoint-audit/adaptive-pricing` | 2 | 1 | 11 |
-| `main-endpoint-audit/admin` | 87 | 10 | 488 |
+| `main-endpoint-audit/admin` | 88 | 10 | 494 |
 | `main-endpoint-audit/advertising` | 68 | 2 | 368 |
 | `main-endpoint-audit/ai` | 30 | 2 | 172 |
 | `main-endpoint-audit/analysis` | 2 | 1 | 11 |
 | `main-endpoint-audit/analytics` | 24 | 2 | 127 |
 | `main-endpoint-audit/analytics-alerts` | 12 | 1 | 66 |
-| `main-endpoint-audit/analyze` | 4 | 2 | 25 |
+| `main-endpoint-audit/analyze` | 7 | 2 | 44 |
 | `main-endpoint-audit/api-docs.json` | 1 | 1 | 5 |
 | `main-endpoint-audit/ar-intelligence` | 3 | 1 | 15 |
 | `main-endpoint-audit/artist-profiles` | 29 | 1 | 164 |
 | `main-endpoint-audit/artist-progress` | 5 | 1 | 26 |
 | `main-endpoint-audit/assets` | 2 | 1 | 11 |
 | `main-endpoint-audit/assistant` | 3 | 1 | 18 |
-| `main-endpoint-audit/audio` | 7 | 2 | 47 |
+| `main-endpoint-audit/audio` | 10 | 2 | 68 |
 | `main-endpoint-audit/audio-analysis` | 6 | 1 | 40 |
 | `main-endpoint-audit/audio-job` | 1 | 1 | 6 |
 | `main-endpoint-audit/audio-processing` | 8 | 1 | 53 |
 | `main-endpoint-audit/audit` | 2 | 1 | 11 |
-| `main-endpoint-audit/auth` | 84 | 7 | 487 |
+| `main-endpoint-audit/auth` | 85 | 7 | 493 |
 | `main-endpoint-audit/auto` | 3 | 1 | 17 |
 | `main-endpoint-audit/auto-updates` | 13 | 1 | 72 |
 | `main-endpoint-audit/autopilot` | 74 | 6 | 413 |
-| `main-endpoint-audit/awareness` | 2 | 1 | 11 |
+| `main-endpoint-audit/awareness` | 5 | 1 | 28 |
 | `main-endpoint-audit/backup` | 5 | 1 | 27 |
 | `main-endpoint-audit/batch` | 29 | 1 | 172 |
-| `main-endpoint-audit/billing` | 24 | 1 | 130 |
+| `main-endpoint-audit/billing` | 24 | 1 | 132 |
 | `main-endpoint-audit/boot-status` | 1 | 1 | 5 |
 | `main-endpoint-audit/bootstrap` | 1 | 1 | 5 |
 | `main-endpoint-audit/callback` | 1 | 1 | 6 |
-| `main-endpoint-audit/campaigns` | 6 | 1 | 35 |
+| `main-endpoint-audit/campaigns` | 7 | 1 | 41 |
 | `main-endpoint-audit/career-coach` | 13 | 1 | 74 |
 | `main-endpoint-audit/certified-analytics` | 17 | 1 | 88 |
 | `main-endpoint-audit/clear-all` | 1 | 1 | 7 |
 | `main-endpoint-audit/collaboration` | 18 | 1 | 105 |
 | `main-endpoint-audit/collaborations` | 14 | 1 | 78 |
-| `main-endpoint-audit/content` | 12 | 3 | 78 |
+| `main-endpoint-audit/content` | 14 | 3 | 91 |
 | `main-endpoint-audit/content-analysis` | 8 | 1 | 50 |
 | `main-endpoint-audit/contracts` | 51 | 1 | 284 |
 | `main-endpoint-audit/countdowns` | 10 | 1 | 57 |
@@ -178,16 +178,16 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/fan-hub` | 16 | 1 | 91 |
 | `main-endpoint-audit/fan-memberships` | 9 | 1 | 50 |
 | `main-endpoint-audit/files` | 15 | 2 | 85 |
-| `main-endpoint-audit/generate` | 8 | 2 | 56 |
-| `main-endpoint-audit/generate-video` | 1 | 1 | 7 |
+| `main-endpoint-audit/generate` | 14 | 2 | 98 |
+| `main-endpoint-audit/generate-video` | 2 | 1 | 14 |
 | `main-endpoint-audit/generation` | 1 | 1 | 6 |
 | `main-endpoint-audit/gpu` | 1 | 1 | 5 |
 | `main-endpoint-audit/growth` | 23 | 1 | 135 |
-| `main-endpoint-audit/health` | 15 | 7 | 92 |
+| `main-endpoint-audit/health` | 15 | 7 | 94 |
 | `main-endpoint-audit/helpdesk` | 5 | 1 | 28 |
 | `main-endpoint-audit/hns` | 11 | 1 | 60 |
 | `main-endpoint-audit/hybrid-storage` | 10 | 1 | 56 |
-| `main-endpoint-audit/infer` | 1 | 1 | 6 |
+| `main-endpoint-audit/infer` | 2 | 1 | 12 |
 | `main-endpoint-audit/infrastructure` | 1 | 1 | 5 |
 | `main-endpoint-audit/insights` | 1 | 1 | 5 |
 | `main-endpoint-audit/internal` | 2 | 1 | 14 |
@@ -199,7 +199,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/logs` | 4 | 1 | 21 |
 | `main-endpoint-audit/mark-all-read` | 1 | 1 | 6 |
 | `main-endpoint-audit/marketplace` | 53 | 1 | 295 |
-| `main-endpoint-audit/maxcore` | 23 | 1 | 129 |
+| `main-endpoint-audit/maxcore` | 53 | 3 | 301 |
 | `main-endpoint-audit/maxcore-media` | 1 | 1 | 5 |
 | `main-endpoint-audit/memory` | 2 | 1 | 12 |
 | `main-endpoint-audit/merch` | 10 | 1 | 56 |
@@ -214,19 +214,19 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/notifications` | 24 | 1 | 141 |
 | `main-endpoint-audit/offline` | 17 | 1 | 97 |
 | `main-endpoint-audit/onboarding` | 18 | 1 | 99 |
-| `main-endpoint-audit/optimize` | 1 | 1 | 6 |
+| `main-endpoint-audit/optimize` | 2 | 1 | 12 |
 | `main-endpoint-audit/organic` | 11 | 1 | 58 |
 | `main-endpoint-audit/outreach` | 8 | 1 | 47 |
 | `main-endpoint-audit/paid` | 2 | 1 | 10 |
 | `main-endpoint-audit/payment-bypass` | 1 | 1 | 5 |
 | `main-endpoint-audit/payouts` | 32 | 1 | 174 |
 | `main-endpoint-audit/personalization` | 35 | 1 | 195 |
-| `main-endpoint-audit/ping` | 1 | 1 | 4 |
-| `main-endpoint-audit/platform` | 14 | 1 | 86 |
+| `main-endpoint-audit/ping` | 1 | 1 | 5 |
+| `main-endpoint-audit/platform` | 25 | 1 | 156 |
 | `main-endpoint-audit/platform-sync` | 12 | 1 | 67 |
 | `main-endpoint-audit/playlist-pitching` | 8 | 1 | 45 |
 | `main-endpoint-audit/pocket` | 6 | 1 | 32 |
-| `main-endpoint-audit/predict` | 1 | 1 | 6 |
+| `main-endpoint-audit/predict` | 2 | 1 | 12 |
 | `main-endpoint-audit/preferences` | 16 | 2 | 85 |
 | `main-endpoint-audit/press-kit` | 7 | 1 | 40 |
 | `main-endpoint-audit/project-budgets` | 9 | 1 | 53 |
@@ -237,8 +237,8 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/push-subscriptions` | 3 | 1 | 18 |
 | `main-endpoint-audit/push-test` | 1 | 1 | 6 |
 | `main-endpoint-audit/radio-pitches` | 7 | 1 | 40 |
-| `main-endpoint-audit/ready` | 5 | 5 | 29 |
-| `main-endpoint-audit/readyz` | 1 | 1 | 5 |
+| `main-endpoint-audit/ready` | 5 | 5 | 30 |
+| `main-endpoint-audit/readyz` | 1 | 1 | 6 |
 | `main-endpoint-audit/register-after-payment` | 1 | 1 | 6 |
 | `main-endpoint-audit/retention` | 5 | 1 | 29 |
 | `main-endpoint-audit/revenue-forecast` | 6 | 1 | 34 |
@@ -246,7 +246,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/root` | 4 | 3 | 20 |
 | `main-endpoint-audit/royalties` | 20 | 1 | 110 |
 | `main-endpoint-audit/s` | 1 | 1 | 5 |
-| `main-endpoint-audit/safety` | 1 | 1 | 6 |
+| `main-endpoint-audit/safety` | 2 | 1 | 12 |
 | `main-endpoint-audit/sample-clearances` | 6 | 1 | 34 |
 | `main-endpoint-audit/search` | 19 | 1 | 104 |
 | `main-endpoint-audit/security` | 16 | 3 | 86 |
@@ -259,7 +259,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/songwriting` | 8 | 1 | 45 |
 | `main-endpoint-audit/startup` | 1 | 1 | 5 |
 | `main-endpoint-audit/status` | 20 | 4 | 107 |
-| `main-endpoint-audit/storage` | 26 | 3 | 148 |
+| `main-endpoint-audit/storage` | 28 | 3 | 161 |
 | `main-endpoint-audit/storefront` | 47 | 1 | 270 |
 | `main-endpoint-audit/storefront-domains` | 22 | 1 | 124 |
 | `main-endpoint-audit/studio` | 225 | 9 | 1315 |
@@ -274,8 +274,8 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/tiktok-developers-site-verification.txt` | 1 | 1 | 5 |
 | `main-endpoint-audit/tiktokShgx3KxJb3b1mCeV8AHEsINRNKf2pmH5.txt` | 1 | 1 | 5 |
 | `main-endpoint-audit/tiktokhnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx.txt` | 1 | 1 | 5 |
-| `main-endpoint-audit/train` | 4 | 2 | 22 |
-| `main-endpoint-audit/training` | 24 | 2 | 133 |
+| `main-endpoint-audit/train` | 5 | 2 | 28 |
+| `main-endpoint-audit/training` | 33 | 2 | 187 |
 | `main-endpoint-audit/undo` | 16 | 1 | 94 |
 | `main-endpoint-audit/unread-count` | 1 | 1 | 5 |
 | `main-endpoint-audit/uploads` | 4 | 2 | 24 |
@@ -285,7 +285,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/venues` | 6 | 1 | 34 |
 | `main-endpoint-audit/verify-checkout-session` | 1 | 1 | 6 |
 | `main-endpoint-audit/version` | 1 | 1 | 5 |
-| `main-endpoint-audit/video` | 2 | 1 | 14 |
+| `main-endpoint-audit/video` | 4 | 1 | 28 |
 | `main-endpoint-audit/video-job` | 6 | 1 | 38 |
 | `main-endpoint-audit/video-jobs` | 1 | 1 | 6 |
 | `main-endpoint-audit/webhooks` | 4 | 3 | 28 |
@@ -304,7 +304,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `python-decorator-ast/api-keys` | 4 | 1 | 24 |
 | `python-decorator-ast/audio` | 6 | 1 | 40 |
 | `python-decorator-ast/audio-job` | 3 | 2 | 20 |
-| `python-decorator-ast/awareness` | 4 | 1 | 22 |
+| `python-decorator-ast/awareness` | 7 | 1 | 39 |
 | `python-decorator-ast/boostsheets` | 1 | 1 | 5 |
 | `python-decorator-ast/campaigns` | 6 | 1 | 35 |
 | `python-decorator-ast/concurrency` | 1 | 1 | 5 |
@@ -349,7 +349,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `python-decorator-ast/warm` | 2 | 1 | 11 |
 | `python-decorator-ast/watchdog` | 3 | 1 | 16 |
 | `typescript-router-ast/*path` | 1 | 1 | 5 |
-| `typescript-router-ast/<computed>` | 9 | 4 | 49 |
+| `typescript-router-ast/<computed>` | 10 | 4 | 55 |
 | `typescript-router-ast/activate` | 1 | 1 | 6 |
 | `typescript-router-ast/activity` | 1 | 1 | 5 |
 | `typescript-router-ast/ai-insights` | 1 | 1 | 5 |
@@ -365,7 +365,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `typescript-router-ast/audio` | 6 | 1 | 40 |
 | `typescript-router-ast/audio-job` | 1 | 1 | 6 |
 | `typescript-router-ast/autopush` | 2 | 1 | 11 |
-| `typescript-router-ast/awareness` | 4 | 1 | 21 |
+| `typescript-router-ast/awareness` | 6 | 1 | 33 |
 | `typescript-router-ast/beat-analyze` | 1 | 1 | 6 |
 | `typescript-router-ast/benchmark` | 3 | 1 | 15 |
 | `typescript-router-ast/boostsheets` | 1 | 1 | 5 |
@@ -391,7 +391,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `typescript-router-ast/generation` | 1 | 1 | 6 |
 | `typescript-router-ast/gpu` | 9 | 1 | 46 |
 | `typescript-router-ast/hashtags` | 1 | 1 | 5 |
-| `typescript-router-ast/health` | 4 | 3 | 24 |
+| `typescript-router-ast/health` | 3 | 3 | 18 |
 | `typescript-router-ast/healthz` | 3 | 3 | 18 |
 | `typescript-router-ast/inbox` | 9 | 1 | 50 |
 | `typescript-router-ast/infer` | 1 | 1 | 6 |
@@ -472,47 +472,47 @@ Coverage comes from the supplied V8/Istanbul `coverage-final.json`. Uncovered fu
 | Source | Statements hit/total | Functions hit/total | Uncovered functions |
 | --- | ---: | ---: | ---: |
 | `client/src/pages/Marketplace.tsx` | 0/1561 | 0/572 | 572 |
-| `client/src/components/studio/StudioOneDAW.tsx` | 0/1507 | 0/452 | 452 |
+| `client/src/components/studio/StudioOneDAW.tsx` | 0/1517 | 0/454 | 454 |
 | `client/src/lib/studioStore.ts` | 5/551 | 1/356 | 355 |
-| `server/routes.ts` | 0/2843 | 0/345 | 345 |
+| `server/routes.ts` | 0/2852 | 0/346 | 346 |
 | `server/routes/distribution.ts` | 194/2627 | 2/323 | 321 |
 | `client/src/pages/Distribution.tsx` | 0/706 | 0/307 | 307 |
 | `client/src/pages/SocialMedia.tsx` | 0/875 | 0/252 | 252 |
 | `server/storage.ts` | 1/901 | 0/240 | 240 |
 | `server/services/artistProfileService.ts` | 0/1210 | 0/239 | 239 |
 | `server/routes/socialMedia.ts` | 0/1859 | 0/220 | 220 |
-| `client/src/stores/studioStore.ts` | 17/292 | 4/214 | 210 |
 | `client/src/components/studio/HighPerformanceDAW.tsx` | 0/508 | 0/203 | 203 |
+| `client/src/stores/studioStore.ts` | 44/292 | 18/214 | 196 |
 | `server/routes/studio.ts` | 0/1855 | 0/188 | 188 |
-| `server/lib/pdimClient.ts` | 529/954 | 92/278 | 186 |
+| `server/lib/pdimClient.ts` | 549/965 | 96/278 | 182 |
 | `shared/ml/models/AdOptimizationEngine.ts` | 0/902 | 0/163 | 163 |
 | `client/src/components/marketplace/StorefrontBuilder.tsx` | 86/493 | 3/158 | 155 |
 | `external/pdim/artifacts/api-server/src/redis/store.ts` | 1374/3004 | 185/339 | 154 |
 | `client/src/pages/Advertisement.tsx` | 0/388 | 0/151 | 151 |
 | `client/src/components/marketplace/StorefrontDnsZoneManager.tsx` | 8/338 | 0/147 | 147 |
 | `server/services/hyperLearningEngine.ts` | 0/1004 | 0/145 | 145 |
-| `client/src/App.tsx` | 0/296 | 0/136 | 136 |
+| `client/src/App.tsx` | 0/303 | 0/138 | 138 |
 | `client/src/components/distribution/AutoArtistSync.tsx` | 0/391 | 0/133 | 133 |
 | `server/security-system.ts` | 0/564 | 0/131 | 131 |
-| `client/src/pages/Admin.tsx` | 0/315 | 0/128 | 128 |
+| `client/src/pages/Admin.tsx` | 0/313 | 0/128 | 128 |
 | `server/services/distributionDataTransferService.ts` | 149/1168 | 21/146 | 125 |
 | `client/src/pages/Royalties.tsx` | 70/370 | 2/126 | 124 |
 | `client/src/lib/video/SceneGraph.ts` | 0/380 | 0/122 | 122 |
-| `external/maxcore/artifacts/api-server/src/routes/model-proxy.ts` | 408/734 | 39/161 | 122 |
+| `external/maxcore/artifacts/api-server/src/routes/model-proxy.ts` | 408/733 | 40/161 | 121 |
 | `server/services/careerCoachService.ts` | 0/206 | 0/119 | 119 |
 | `shared/ml/models/AdvertisingAutopilotAI_v3.ts` | 0/615 | 0/112 | 112 |
 | `client/src/pages/ProjectsPageImpl.tsx` | 0/336 | 0/112 | 112 |
 | `external/pdim/artifacts/api-server/src/services/datasetDiscoveryService.ts` | 0/297 | 0/111 | 111 |
-| `server/routes/marketplace.ts` | 0/1040 | 0/110 | 110 |
+| `server/routes/marketplace.ts` | 0/1039 | 0/110 | 110 |
 | `server/services/platformAutoFixer.ts` | 96/821 | 11/119 | 108 |
 | `server/services/labelgrid-service.ts` | 24/528 | 10/115 | 105 |
 | `client/src/lib/audioEngine.ts` | 0/1261 | 0/103 | 103 |
 | `server/testing-system.ts` | 0/389 | 0/103 | 103 |
 | `client/src/components/studio/VideoTrack.tsx` | 0/382 | 0/102 | 102 |
+| `server/index.ts` | 0/751 | 0/101 | 101 |
 | `server/autonomous-updates.ts` | 0/513 | 0/101 | 101 |
 | `shared/ml/models/SocialMediaAutopilotAI.ts` | 0/376 | 0/101 | 101 |
-| `server/index.ts` | 0/747 | 0/100 | 100 |
-| `client/src/components/studio/UltimateDAW.tsx` | 0/343 | 0/97 | 97 |
+| `client/src/components/studio/UltimateDAW.tsx` | 0/353 | 0/99 | 99 |
 | `server/services/aiMusicService.ts` | 0/602 | 0/96 | 96 |
 | `client/src/components/studio/LyricsPanel.tsx` | 0/263 | 0/94 | 94 |
 | `client/src/pages/ShowPage.tsx` | 0/232 | 0/94 | 94 |
@@ -522,7 +522,7 @@ Coverage comes from the supplied V8/Istanbul `coverage-final.json`. Uncovered fu
 | `client/src/components/social/UnifiedCalendar.tsx` | 0/227 | 0/91 | 91 |
 | `external/pdim/artifacts/api-server/src/pocket-dimension/fabric/PocketStorageService.ts` | 12/460 | 3/93 | 90 |
 
-The table shows at most 50 files with the largest uncovered surfaces. All 2653 measured files, exact function names and uncovered statement lines remain in the machine register.
+The table shows at most 50 files with the largest uncovered surfaces. All 2663 measured files, exact function names and uncovered statement lines remain in the machine register.
 
 ## Limits
 

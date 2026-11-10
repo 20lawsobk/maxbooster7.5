@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "kind": "actual-public-Istanbul-pre-JSON-sidecar",
-  "producerId": "74dc75b0-7236-4295-8423-c785155612c4",
+  "producerId": "1a6231a0-2534-4e6c-b16a-ede49619e6c4",
   "snapshot": {
-    "id": "74dc75b0-7236-4295-8423-c785155612c4-report",
-    "capturedAt": "2026-11-09T06:37:09.338Z",
+    "id": "1a6231a0-2534-4e6c-b16a-ede49619e6c4-report",
+    "capturedAt": "2026-11-10T15:03:20.698Z",
     "semantics": "One completed Vitest provider aggregate, captured by public Istanbul reporter before JSON; no global merge admission"
   },
   "contract": {
@@ -82,8 +82,8 @@
     {
       "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
       "name": "external__pdim__artifacts__api-server__src__redis__store.ts.v8",
-      "bytes": 710338,
-      "sha256": "9922bb098470f711deefc37167cc0833a305952cf384ace9711836c6bf65c9e8",
+      "bytes": 710341,
+      "sha256": "eb3d1e300ff0c5e9b04b176a493d2b27229f83b12d23b9173839a9b24f8cfd7b",
       "sourceSha256": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770"
     },
     {
@@ -97,42 +97,42 @@
       "file": "server/config/ports.ts",
       "name": "server__config__ports.ts.v8",
       "bytes": 4617,
-      "sha256": "afc0c9ce90db099a1ddf79d69aaa0072aeaebee8979ce251989937177bd0acae",
+      "sha256": "f28113f20dafb105edd90eec23b71fbedcd8d2daadec65925e57476746e15815",
       "sourceSha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d"
     },
     {
       "file": "server/lib/luaExecutor.ts",
       "name": "server__lib__luaExecutor.ts.v8",
       "bytes": 39573,
-      "sha256": "6667038bfaa72c6294f62d143cb7a062469970a3bba91176c9a17b272215bbc4",
+      "sha256": "007cfacf062f5b4ae92a75bab3d19fce8ea0e664d90f6e81beddc494a2628bc2",
       "sourceSha256": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00"
     },
     {
       "file": "server/lib/pdimCircuitBreaker.ts",
       "name": "server__lib__pdimCircuitBreaker.ts.v8",
       "bytes": 23723,
-      "sha256": "d0d9ee26b08b3da85af6869b6457bb4b5ab8e21129e120fbb9cda3fcadee0dd8",
+      "sha256": "f48af34d4aa2404e03dd9d4c5a7932e40477006dfc59c09ec137f5fb8d8f99e0",
       "sourceSha256": "beb5d21a1bf9d41affb5edcff3a1cfdc5dd8102c5eef27fbb41d7aaa0e0b65f4"
     },
     {
       "file": "server/lib/pdimClient.ts",
       "name": "server__lib__pdimClient.ts.v8",
       "bytes": 216398,
-      "sha256": "a1be9f91478de5f4ce114dfec767505b3d9516ef77e91387a6d90c7f344a6fa5",
+      "sha256": "dfbae6e301420767596aca2fbf3dc1c4113c3582e2a96dffdee2bfbbda1cbe41",
       "sourceSha256": "b49fc0fed27ad79cfab196b19c1bddfdf3e4fb05ed794e10dc66d2140826a039"
     },
     {
       "file": "server/logger.ts",
       "name": "server__logger.ts.v8",
       "bytes": 5601,
-      "sha256": "c22374dc58561f473d6e778c63cabf3960f0eafd43391ed7c410ceef5fe460ad",
+      "sha256": "2ba5bb0155d198713dcba1601f17d1a33577671793b925558f0ba0aa5d80c196",
       "sourceSha256": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5"
     },
     {
       "file": "server/logSanitizer.ts",
       "name": "server__logSanitizer.ts.v8",
       "bytes": 11576,
-      "sha256": "168e8460d427ecdba09741406aee20440a14d683f04746b40b54f8550625667f",
+      "sha256": "c5a4e152fa70c4fc4921d287cdb4c30aa2b376011b7732a8eeb9b3979e6bd176",
       "sourceSha256": "9e6f07f97665a730823ddc7aa2004de6336ed4aa78d40b83efe12979165402e1"
     },
     {

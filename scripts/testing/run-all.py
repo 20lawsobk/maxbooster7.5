@@ -281,11 +281,14 @@ def main():
     before_inputs = source_inputs()
     write_json(output / 'orchestration/source-inputs.json', before_inputs)
     report['sourceInputsSha256'] = before_inputs['sha256']
+    report['status'] = 'running'
+    write_json(output / 'orchestration/results.json', report)
     catalog = run_command([args.python, 'scripts/testing/generate-catalog.py',
                            '--inventory', str(output / 'test-inventory.json'),
                            '--catalog', str(output / 'catalog.md')],
                           output / 'orchestration/catalog.txt', 120)
     report['catalog'] = catalog
+    write_json(output / 'orchestration/results.json', report)
     # Test subprocesses get tool paths only. Never inherit application keys/URLs.
     for group, name, command, timeout in jobs:
         env = {}
@@ -295,8 +298,8 @@ def main():
             env['MAXBOOSTER_TEST_REPORT_DIR'] = str(output / 'integration-browser' / {'http': 'http', 'pages': 'page80', 'load': 'http-load'}[group])
             # The disposable app and its media helpers must use the packaged
             # application runtime; args.python is only the test-runner runtime.
-            env['MAXBOOSTER_TEST_PYTHON'] = args.runtime_python
-            env['MAXBOOSTER_PYTHON'] = args.runtime_python
+            env['MAXBOOSTER_TEST_PYTHON'] = runtime_python
+            env['MAXBOOSTER_PYTHON'] = runtime_python
         if group == 'subsystems' or name == 'audit' or group == 'providers':
             # Dependencies may be fetched through the approved platform proxy.
             for key in ('HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'CARGO_HTTP_CAINFO', 'NODE_EXTRA_CA_CERTS', 'NPM_CONFIG_CAFILE'):

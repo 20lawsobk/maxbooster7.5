@@ -46,8 +46,10 @@ const PERSIST_FILE = path.resolve(
 const PERSIST_INTERVAL_MS = 30_000;
 const CAPSULE_WATERMARK = "__local_pdim_capsule_journal_watermark__";
 const REDIS_AOF_WATERMARK = "__local_pdim_redis_aof_watermark__";
-const capsuleJournal = new LocalPdimCapsuleJournal(`${PERSIST_FILE}.capsules.jsonl`);
-const redisAofJournal = new LocalPdimAofJournal(`${PERSIST_FILE}.aof.jsonl`);
+const capsuleJournalFile = `${PERSIST_FILE}.capsules.jsonl`;
+const redisAofJournalFile = `${PERSIST_FILE}.aof.jsonl`;
+let capsuleJournal = new LocalPdimCapsuleJournal(capsuleJournalFile);
+let redisAofJournal = new LocalPdimAofJournal(redisAofJournalFile);
 let localAofOwnershipRelease: (() => Promise<void>) | null = null;
 let localAofOwnershipHealthy = true;
 
@@ -407,7 +409,17 @@ function loadStore(): void {
 // ── HTTP server ───────────────────────────────────────────────────────────────
 
 let _server: http.Server | null = null;
-let _finalSaveFailed = false;
+interface LocalPdimProcessExitState {
+  finalSaveFailed: boolean;
+  exitHandler?: () => void;
+}
+type ProcessWithLocalPdimExitState = NodeJS.Process & {
+  __maxboosterLocalPdimExitState?: LocalPdimProcessExitState;
+};
+const processWithLocalPdimExitState = process as ProcessWithLocalPdimExitState;
+const localPdimProcessExitState =
+  processWithLocalPdimExitState.__maxboosterLocalPdimExitState ??=
+    { finalSaveFailed: false };
 let _persistTimer: ReturnType<typeof setInterval> | null = null;
 let _saveOnShutdown: (() => void) | null = null;
 let _starting: Promise<void> | null = null;
@@ -675,6 +687,12 @@ export function startLocalPdimServer(): Promise<void> {
 
     return new Promise<void>((resolve, reject) => {
     if (!bucketPersistence) {
+    // A clean in-process restart must rebuild volatile state from the durable
+    // snapshot and journals. Reusing the old journal object would either reject
+    // its second recovery or replay records into an already-mutated Map.
+    store.clear();
+    capsuleJournal = new LocalPdimCapsuleJournal(capsuleJournalFile);
+    redisAofJournal = new LocalPdimAofJournal(redisAofJournalFile);
     loadStore();
     const watermark = store.get(CAPSULE_WATERMARK);
     const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
@@ -850,7 +868,7 @@ export function startLocalPdimServer(): Promise<void> {
       // durability boundary cannot be completed.
       const saveOnShutdown = () => {
         if (!saveStore()) {
-          _finalSaveFailed = true;
+          localPdimProcessExitState.finalSaveFailed = true;
           process.exitCode = 1;
         }
       };
@@ -861,9 +879,12 @@ export function startLocalPdimServer(): Promise<void> {
       }
       // Preserve the failure even if another shutdown coordinator subsequently
       // calls process.exit(0).
-      process.on("exit", () => {
-        if (_finalSaveFailed) process.exitCode = 1;
-      });
+      const exitHandler = localPdimProcessExitState.exitHandler ??= () => {
+        if (localPdimProcessExitState.finalSaveFailed) process.exitCode = 1;
+      };
+      if (!process.listeners("exit").includes(exitHandler)) {
+        process.on("exit", exitHandler);
+      }
 
       resolve();
     });

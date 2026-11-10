@@ -13,3 +13,4 @@
 - [Whole-product acceptance](whole-product-acceptance.md) — cover every role and journey; MaxCore also has owner-defined memory, graph, agent, tool, expansion, and data-model requirements.
 - [Publishing SIGTERM boundary](publishing-sigterm-boundary.md) — honor supervisor termination; a deployment log may not identify its source, and application code cannot prevent an external stop.
 - [Automation side-effect serialization](automation-side-effect-serialization.md) — serialize workflow steps and lifecycle transitions; retries of external actions need durable idempotency evidence.
+- [Python test interpreter alignment](python-test-interpreter-alignment.md) — ensure coverage and test tools are importable in the exact interpreter selected by the runner.

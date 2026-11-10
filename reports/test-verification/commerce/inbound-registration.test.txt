@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: registration checkout, verification, and account creation execute payment/plan gates before any account write
 ok 1 - registration checkout, verification, and account creation execute payment/plan gates before any account write
   ---
-  duration_ms: 599.041424
+  duration_ms: 556.35026
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - registration checkout, verification, and account creation execute payment
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 694.295379
+# duration_ms 636.69386

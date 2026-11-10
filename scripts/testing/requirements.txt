@@ -2,6 +2,7 @@
 # Install CPU PyTorch separately as documented in docs/testing/README.md.
 pytest==9.1.1
 coverage>=7.13,<8
+py>=1.11,<2
 certifi>=2026.10.18
 numpy==2.4.6
 scipy==1.17.1

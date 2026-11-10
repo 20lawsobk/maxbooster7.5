@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from ai_model.awareness.engine import Engine, DOMAINS
 from ai_model.awareness.test_engine import MemoryStore
@@ -96,16 +96,13 @@ class TextTrainingRightsTests(unittest.TestCase):
             with self.assertRaises(live_learning.Blocked):
                 live_learning.require_peak_training_rights(records)
 
-    def test_trusted_live_admission_retains_unknown_license_and_provenance(self):
+    def test_public_visibility_and_legacy_flag_do_not_authorize_training(self):
         records = copy.deepcopy(self.records)
         with patch.dict(os.environ, {key: "" for key in self.environment}):
-            live_learning.require_peak_training_rights(records, allow_public_live=True)
-        for before, after in zip(self.records, records):
-            admission = after.pop("learning_admission")
-            self.assertEqual(before, after)
-            self.assertFalse(admission["license_asserted"])
-            self.assertEqual(admission["record_id"], before["live_provenance"]["record_id"])
-            self.assertNotIn("training_rights", after)
+            with self.assertRaises(live_learning.Blocked) as raised:
+                live_learning.require_peak_training_rights(records, allow_public_live=True)
+        self.assertEqual(raised.exception.code, "blocked_training_rights")
+        self.assertEqual(records, self.records)
 
     def test_trusted_live_admission_rejects_corruption_private_and_spoofed_receipts(self):
         for key, value in (("text", "Changed text"), ("private", True),
@@ -135,20 +132,15 @@ class TextTrainingRightsTests(unittest.TestCase):
                     live_learning.require_peak_training_rights(records, allow_public_live=True)
         self.assertTrue(all("learning_admission" not in row for row in mixed))
 
-    def test_live_execute_reaches_worker_with_audited_public_corpus(self):
+    def test_live_execute_without_operator_grants_never_reaches_worker(self):
         with patch.dict(os.environ, {**{key: "" for key in self.environment},
                                      "MAXCORE_MODEL_STATE_DIR": str(self.root)}), \
              patch.object(live_learning, "JOBS", self.root / "live_learning_runs"), \
-             patch.object(live_learning.subprocess, "run", return_value=Mock(returncode=1)) as worker:
-            result = live_learning.execute(self.engine, 1, context_tokens=128)
-        worker.assert_called_once()
-        self.assertEqual(result["status"], "failed_training")
-        corpus = self.root / "live_learning_runs" / result["run_id"] / "corpus.json"
-        self.assertEqual(hashlib.sha256(corpus.read_bytes()).hexdigest(), result["corpus_sha256"])
-        for row in json.loads(corpus.read_text())["records"]:
-            self.assertEqual(row["license"], "NOASSERTION")
-            self.assertFalse(row["learning_admission"]["license_asserted"])
-            self.assertNotIn("training_rights", row)
+             patch.object(live_learning.subprocess, "run") as worker:
+            with self.assertRaises(live_learning.Blocked) as raised:
+                live_learning.execute(self.engine, 1, context_tokens=128)
+        self.assertEqual(raised.exception.code, "blocked_training_rights")
+        worker.assert_not_called()
         self.assertFalse((self.root / "candidate_registry/selected.json").exists())
 
     def test_manifest_and_evidence_mutations_fail_closed(self):
@@ -244,17 +236,14 @@ class TextTrainingRightsTests(unittest.TestCase):
         changed[0]["private"] = True
         self.assert_blocked(changed)
 
-    def test_admission_persists_receipts_in_hash_bound_input_without_running_trainer(self):
+    def test_live_execute_with_grants_still_requires_separate_frozen_holdout(self):
         with patch.dict(os.environ, {**self.environment, "MAXCORE_MODEL_STATE_DIR": str(self.root)}), \
              patch.object(live_learning, "JOBS", self.root / "live_learning_runs"), \
-             patch.object(live_learning.subprocess, "run", return_value=Mock(returncode=1)) as worker:
-            result = live_learning.execute(self.engine, 1, context_tokens=128)
-        worker.assert_called_once()
-        self.assertEqual(result["status"], "failed_training")
-        corpus = self.root / "live_learning_runs" / result["run_id"] / "corpus.json"
-        self.assertEqual(hashlib.sha256(corpus.read_bytes()).hexdigest(), result["corpus_sha256"])
-        document = json.loads(corpus.read_text())
-        self.assertTrue(all(row["training_rights"]["status"] == "operator_attested" for row in document["records"]))
+             patch.object(live_learning.subprocess, "run") as worker:
+            with self.assertRaises(live_learning.Blocked) as raised:
+                live_learning.execute(self.engine, 1, context_tokens=128)
+        self.assertEqual(raised.exception.code, "blocked_holdout")
+        worker.assert_not_called()
         self.assertFalse((self.root / "candidate_runs").exists())
         self.assertFalse((self.root / "candidate_registry/selected.json").exists())
 

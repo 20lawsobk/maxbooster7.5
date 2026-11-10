@@ -44,9 +44,9 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `71dc6a882d3d4d505939b1baa7408e0e43d045a8`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 154, "empty": 0, "failed": 0, "passed": 0, "skipped": 0, "timeout": 0}.
-- JUnit cases: 0; failures: 0; errors: 0; skipped: 0.
+- Source baseline: `d33649d75e7a0dffc80adf40fa410f4ee66b1984`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 133, "skipped": 2, "timeout": 0}.
+- JUnit cases: 1881; failures: 0; errors: 0; skipped: 17.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
@@ -57,11 +57,13 @@ The wrapper commands below reproduce the same isolated per-file execution. For b
 
 Fast evaluator-contract tests: no model import or inference.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file evaluations/maxcore-quality/test_protocol.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -77,11 +79,13 @@ python3 scripts/testing/run-python-suites.py --file evaluations/maxcore-quality/
 
 Tests for the Conductor (audio_analysis). Run:
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -99,11 +103,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test controls
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_controls.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -119,11 +125,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real backend execution and decodes, not facade-call mocks.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_media_facade.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -143,11 +151,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Short soundtrack planning regression; does not run native synthesis.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_short_duration.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -162,11 +172,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Isolated fixtures only; never accesses production PDIM or live network.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 45}.
 
 <details>
 <summary>What each case checks</summary>
@@ -209,11 +221,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real Lua/Redis atomicity tests in an isolated temporary Unix-socket Redis.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -231,11 +245,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Deterministic tests for the opt-in eight-platform awareness discovery layer.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 <details>
 <summary>What each case checks</summary>
@@ -266,11 +282,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test profile quality
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_profile_quality.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 <details>
 <summary>What each case checks</summary>
@@ -296,11 +314,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Robots and authorization gates for native platform-page access.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_public_access.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 <details>
 <summary>What each case checks</summary>
@@ -319,11 +339,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test sources
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 34}.
 
 <details>
 <summary>What each case checks</summary>
@@ -360,11 +382,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test director
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 <details>
 <summary>What each case checks</summary>
@@ -390,11 +414,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Campaign generation must not substitute the retired template composer.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -408,11 +434,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the native SIMD kernel library.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 <details>
 <summary>What each case checks</summary>
@@ -439,11 +467,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the DigitalGPUBackend bridge methods: alloc/free/run_kernel.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -463,11 +493,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Comprehensive tests for the digital GPU system.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 137}.
 
 <details>
 <summary>What each case checks</summary>
@@ -616,11 +648,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Regression tests for the redesigned HyperSIMDCore kernels.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -637,11 +671,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real small-kernel/inference checks; no checkpoints or training involved.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_pocket_execution.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 1, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
@@ -671,11 +707,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the digital-silicon performance model and its wiring.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -695,11 +733,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test controls
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/image/test_controls.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -715,11 +755,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Lightweight regression checks: no model inference or GPU needed.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/image/test_image_contract.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -735,11 +777,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the honest backend auto-selector (registry.select_backend).
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -799,11 +843,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the from-scratch memory (VramPool) and orchestration (StreamScheduler) layers, and their integration into Runtime/DigitalGPU.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 23}.
 
 <details>
 <summary>What each case checks</summary>
@@ -838,11 +884,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the runtime thread/hardware configuration.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -861,11 +909,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the MaxCore / DigitalGPU stack.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 31}.
 
 <details>
 <summary>What each case checks</summary>
@@ -908,11 +958,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the precision/quantization numerics reference.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -930,11 +982,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for resource_plan.py — the CPU/memory/tile-size planning layer.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 <details>
 <summary>What each case checks</summary>
@@ -961,11 +1015,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Correctness tests: SiliconSimtBackend vs. the reference DigitalGPUBackend / NumPy.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
@@ -995,11 +1051,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Small, checkpoint-free regressions for the live generation contracts.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/model/test_generation_regressions.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1007,7 +1065,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 - `AttentionShapeTests.test_real_hypergpu_prefix_and_kv_logits_agree`: real hypergpu prefix and kv logits agree
 - `AttentionShapeTests.test_batched_prefill_and_decode_use_per_head_gpu_gemm`: batched prefill and decode use per head gpu gemm
 - `AttentionShapeTests.test_gpu_failure_is_not_masked_with_cpu_attention`: gpu failure is not masked with cpu attention
-- `GenerationContractTests.test_unavailable_live_model_remains_an_error_without_repeated_tracebacks`: unavailable live model remains an error without repeated tracebacks
+- `GenerationContractTests.test_live_awareness_serves_without_candidate_only_with_fresh_snapshot`: live awareness serves without candidate only with fresh snapshot
 - `GenerationContractTests.test_released_word_vocab_is_not_encoded_as_untrained_bpe`: released word vocab is not encoded as untrained bpe
 - `GenerationContractTests.test_script_prompt_bounds_awareness_and_excludes_plan_transport`: script prompt bounds awareness and excludes plan transport
 - `GenerationContractTests.test_canonical_awareness_context_is_added_once`: canonical awareness context is added once
@@ -1024,11 +1082,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Focused request-local replay tests; tiny deterministic logits, no checkpoints.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/model/test_sampling_context.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1047,11 +1107,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test text
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1068,11 +1130,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test website
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1089,11 +1153,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for Phase 4 — brand identity centroid, embedding cache, seeded-render dedupe, and the generated-asset ingestor.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1115,11 +1181,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the retrieval real-asset pipeline (image features + anchor/seed library + gap ingestion). Renders REAL images via the in-house ImageEngine, so it is a slower integration test than test_retrieval.py.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1139,11 +1207,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the live RCGS query path: the probe ring buffer, retrieval-conditioned background compositing, and the CoverageWatchdog's context-carrying probe handling.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1159,11 +1229,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the retrieval spine (AssetIndex) and the self-healing CoverageWatchdog.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1188,11 +1260,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Regression tests for the RTA-1 fabric's strict correctness contracts.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1207,11 +1281,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Mandatory-awareness compatibility tests; replaces obsolete retirement tests.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1227,11 +1303,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test ranker upgrades
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_ranker_upgrades.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1256,11 +1334,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test request intelligence trends
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_request_intelligence_trends.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1278,11 +1358,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test candidate
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1303,11 +1385,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real bounded runtime evidence tests, NOT synthetic quality-approval fixtures.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_generic.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1321,11 +1405,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test candidate manual
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_manual.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1340,11 +1426,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Contract tests cover rolling live-source admission and candidate isolation.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_live_learning.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 24}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1370,11 +1458,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test public content model
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_public_content_model.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1390,11 +1480,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test controls
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_controls.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1410,11 +1502,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Cheap duration/transition regression checks; no model or video inference.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_duration_contract.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1431,11 +1525,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Actual encoded-frame checks plus isolated continuity orchestration tests.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_frame_continuity.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1452,11 +1548,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test production
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_production.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1473,11 +1571,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test sampler upgrades
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_sampler_upgrades.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1499,11 +1599,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test admin content loop
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_admin_content_loop.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1528,11 +1630,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real encoded file checks; isolated receipt transport exercises retry semantics.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_artifact_delivery_contract.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1552,11 +1656,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Focused integration checks for audio dataset auto-growth.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1575,11 +1681,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Audio BPM/key match validation — end-to-end + unit tests.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 5, "tests": 30}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1621,11 +1729,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test audio finishing
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_finishing.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1641,11 +1751,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the audio-generation seeding guard.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1665,11 +1777,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Selection policy; real signatures and artifact verification covered by integration.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_auto_selection.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1686,11 +1800,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Selector scheduling/cache checks; capability itself keeps real-agent guards.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1767,11 +1883,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the expanded AwarenessConditioner vocab.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1812,11 +1930,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Batching metadata must not turn infrastructure startup into inference.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_batching_bootstrap_metadata.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1830,11 +1950,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Beat-marketplace conditioning — regression guards.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1851,11 +1973,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real rollout assembly with a controlled inference boundary and public scan.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1877,11 +2001,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Encoding constraints are not language-quality claims or output repairs.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_candidate_utf8.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1898,11 +2024,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test checkpoint release
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_checkpoint_release.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1922,11 +2050,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Failure-boundary tests: invalid requests must stop before expensive work.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_content_breakpoints.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 53}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1995,11 +2125,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Handler/legacy body contracts, distinct from real media route admission.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 23}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2033,11 +2165,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real procedural artifacts through actual ASGI admission and private delivery.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_media_http.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 16}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2058,11 +2192,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Checkpoint lifecycle tests, not evidence of learned visual quality.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_diffusion_checkpoints.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2087,11 +2223,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Regression guard: get_diffusion_frame must denoise at native resolution.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **skipped**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 5, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2106,11 +2244,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Offline stack contracts: no server startup, storage, weights, or training.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 20}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2136,11 +2276,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Operational admission executes real agent guards without training fixtures.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_capability.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2157,11 +2299,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Actual capability ASGI output matches the immutable plan version.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_capability_version.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2175,11 +2319,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real WAV commit validation; synthetic awareness and renderer fixtures, no quality claim.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_durable_delivery.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2200,11 +2346,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Offline handler-contract tests. No server startup, media render or weight access.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_plan_contract.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2228,11 +2376,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Startup selection tests, with no model initialization/training or server start.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_release_selection.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2252,11 +2402,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Exercise registered startup handlers with isolated on-disk production journals.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_restart_reconciliation.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2265,7 +2417,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 - `RestartTests.test_delivery_outage_keeps_journal_bytes_and_allows_later_delivery_only_retry`: delivery outage keeps journal bytes and allows later delivery only retry
 - `RestartTests.test_dedicated_interrupt_and_completed_cleanup_are_ownership_scoped`: dedicated interrupt and completed cleanup are ownership scoped
 - `RestartTests.test_gc_retains_retryable_manager_delivery_but_expires_terminal_jobs`: gc retains retryable manager delivery but expires terminal jobs
-- `RestartTests.test_readiness_requires_both_model_and_fresh_awareness`: readiness requires both model and fresh awareness
+- `RestartTests.test_readiness_accepts_trained_model_or_fresh_live_awareness`: readiness accepts trained model or fresh live awareness
 - `RestartTests.test_invalid_journal_names_rejected_before_reconciliation_or_delivery`: invalid journal names rejected before reconciliation or delivery
 - `RestartTests.test_terminal_gc_retries_failed_owned_unlink_before_deleting_journal`: terminal gc retries failed owned unlink before deleting journal
 - `RestartTests.test_terminal_gc_never_deletes_unowned_or_symlink_scratch`: terminal gc never deletes unowned or symlink scratch
@@ -2276,11 +2428,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Exercise production gates without importing server's background daemons.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_route_bindings.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 17}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2309,11 +2463,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Focused immutable plan and fail-closed binding regressions.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_snapshot_contract.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2331,11 +2487,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Incremental v2 inference must preserve full causal computation, not its tape.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_incremental_candidate_inference.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2353,11 +2511,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test intent url reader safe http
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2371,11 +2531,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tiny fake native functions exercise real process isolation, never rendering.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2393,11 +2555,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real ASGI planner requests without server startup, weights or provider calls.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_awareness_planner_http.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 21}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2420,11 +2584,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test live serving
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2454,11 +2620,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Rights-safe live learning and reviewed-candidate integration contracts.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_serving_integration.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2473,11 +2641,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test live tempo controls
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_tempo_controls.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2492,11 +2662,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Private local PDIM transport contracts; no real service or SQLite opened.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_local_canonical_storage.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2512,11 +2684,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Isolated tests: no server startup, model loading, network, or live data.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 21}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2549,11 +2723,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test media learning
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_media_learning.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 24}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2576,11 +2752,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Execute the real state-reporting function without starting live services.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_model_state_provenance.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2595,11 +2773,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test native analysis api
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2617,11 +2797,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test native analysis safe http
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2638,11 +2820,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Regression coverage for awareness at native MaxCore consumer seams.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2666,11 +2850,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test native media analysis
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2685,11 +2871,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Offline, lightweight contract tests for the original quality runner.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2705,11 +2893,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test platform awareness wiring
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2723,11 +2913,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test public fetch proxy
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_public_fetch_proxy.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2742,18 +2934,20 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 ### `external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py`
 
-Actual bounded public-content training; fixtures never claim model quality.
+Rights-gated public observations and bounded owned-fixture training checks.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py --output /tmp/maxbooster-python-single
 ```
 
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 19}.
+
 <details>
 <summary>What each case checks</summary>
 
-- `PublicPeakCurriculumTests.test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor`: real isolated v2 updates resume weights optimizer and cursor
+- `PublicPeakCurriculumTests.test_public_peak_observations_without_operator_rights_never_reach_worker`: public peak observations without operator rights never reach worker
 - `PublicPeakCurriculumTests.test_invalid_explicit_rights_block_before_worker_and_preserve_awareness`: invalid explicit rights block before worker and preserve awareness
 - `PublicPeakCurriculumTests.test_legacy_mode_cannot_bypass_invalid_explicit_rights`: legacy mode cannot bypass invalid explicit rights
 - `PublicPeakCurriculumTests.test_peak_training_rights_never_infer_license_from_public_metadata`: peak training rights never infer license from public metadata
@@ -2776,11 +2970,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test safe feed xml
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_safe_feed_xml.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2795,11 +2991,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Focused regression tests for runtime SAST remediations.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2817,11 +3015,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Model admission belongs to executing work, not queued callers or caches.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_scoped_batch_admission.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2836,11 +3036,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Token-unit boundary tests; no generated prose fixtures or fallback output.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_script_byte_budget.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2866,11 +3068,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Social + advertising quality beacon — regression guards.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2885,11 +3089,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 test social generation controls
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2910,11 +3116,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Operator receipts bind test-authored posts; no source permissions are inferred.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 48}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2922,11 +3130,11 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 - `TextTrainingRightsTests.test_exact_operator_grants_attach_bound_receipts_without_relabeling_awareness`: exact operator grants attach bound receipts without relabeling awareness
 - `TextTrainingRightsTests.test_missing_either_operator_configuration_value_cannot_grant_permission`: missing either operator configuration value cannot grant permission
 - `TextTrainingRightsTests.test_receipts_supplied_as_record_metadata_are_not_operator_configuration`: receipts supplied as record metadata are not operator configuration
-- `TextTrainingRightsTests.test_trusted_live_admission_retains_unknown_license_and_provenance`: trusted live admission retains unknown license and provenance
+- `TextTrainingRightsTests.test_public_visibility_and_legacy_flag_do_not_authorize_training`: public visibility and legacy flag do not authorize training
 - `TextTrainingRightsTests.test_trusted_live_admission_rejects_corruption_private_and_spoofed_receipts`: trusted live admission rejects corruption private and spoofed receipts
 - `TextTrainingRightsTests.test_trusted_live_admission_does_not_ignore_explicit_broken_grant_policy`: trusted live admission does not ignore explicit broken grant policy
 - `TextTrainingRightsTests.test_trusted_live_admission_requires_one_nonempty_observation_set`: trusted live admission requires one nonempty observation set
-- `TextTrainingRightsTests.test_live_execute_reaches_worker_with_audited_public_corpus`: live execute reaches worker with audited public corpus
+- `TextTrainingRightsTests.test_live_execute_without_operator_grants_never_reaches_worker`: live execute without operator grants never reaches worker
 - `TextTrainingRightsTests.test_manifest_and_evidence_mutations_fail_closed`: manifest and evidence mutations fail closed
 - `TextTrainingRightsTests.test_source_domain_citation_and_complete_text_must_match`: source domain citation and complete text must match
 - `TextTrainingRightsTests.test_permission_license_purpose_and_dated_evidence_are_required`: permission license purpose and dated evidence are required
@@ -2936,7 +3144,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 - `TextTrainingRightsTests.test_evidence_cannot_escape_local_directory_or_use_symlinks`: evidence cannot escape local directory or use symlinks
 - `TextTrainingRightsTests.test_symlink_directories_and_writable_evidence_are_refused`: symlink directories and writable evidence are refused
 - `TextTrainingRightsTests.test_private_record_is_not_licensed_by_a_matching_public_receipt`: private record is not licensed by a matching public receipt
-- `TextTrainingRightsTests.test_admission_persists_receipts_in_hash_bound_input_without_running_trainer`: admission persists receipts in hash bound input without running trainer
+- `TextTrainingRightsTests.test_live_execute_with_grants_still_requires_separate_frozen_holdout`: live execute with grants still requires separate frozen holdout
 
 </details>
 
@@ -2944,11 +3152,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Offline trust-boundary tests for configured service HTTP.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2965,11 +3175,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Contract guards for MaxCore capabilities that have no real model yet.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2988,11 +3200,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Unit tests for the URL-parser label-echo garble guard.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 48}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3073,11 +3287,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Voice-over synthesis regression tests (Task: birdcall narration fix).
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3102,11 +3318,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 API-level regression tests: the voice-over flag must be strictly opt-in.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **skipped**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 6, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3174,7 +3392,7 @@ python3 scripts/testing/run-python-suites.py --file tests/dns-production-smoke.p
 
 Real filesystem/template consumers, without network or app database access.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/fsspec-advisories.py --output /tmp/maxbooster-python-single
@@ -3234,11 +3452,13 @@ python3 scripts/testing/run-python-suites.py --file tests/production_fixture_sup
 
 test ltx adapter download
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_ltx_adapter_download.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 1}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3251,11 +3471,13 @@ python3 scripts/testing/run-python-suites.py --file tests/test_ltx_adapter_downl
 
 Portable compiler verification must fail before an altered compiler is run.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_portable_rust_toolchain.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3270,11 +3492,13 @@ python3 scripts/testing/run-python-suites.py --file tests/test_portable_rust_too
 
 test production fixture support
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_production_fixture_support.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3289,11 +3513,13 @@ python3 scripts/testing/run-python-suites.py --file tests/test_production_fixtur
 
 test secure http
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_secure_http.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3311,11 +3537,13 @@ python3 scripts/testing/run-python-suites.py --file tests/test_secure_http.py --
 
 Regression tests for the supplemental CPU Torch integrity gate.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_torch_provenance.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3329,11 +3557,13 @@ python3 scripts/testing/run-python-suites.py --file tests/test_torch_provenance.
 
 Archive integrity must stay distinct from missing current inference evidence.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_archived_quality_verifiers.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3348,11 +3578,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_archived_
 
 Real pytest must reject false checks in canonical custom assertion helpers.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_assertion_oracles.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3366,11 +3598,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_assertion
 
 Keep report-owned source in the catalog without registering historical suites.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_catalog_snapshot_ownership.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3389,11 +3623,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_catalog_s
 
 Exercise the real legacy-commerce selector boundary without SQL or providers.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_commerce_subject_selector.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 22}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3417,11 +3653,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_commerce_
 
 Real subprocesses exercise producer-time byte/nonce/count binding.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_coverage_command_binding.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 46}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3446,11 +3684,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_coverage_
 
 The actual registry consumer must retain source topology uncertainty.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_endpoint_mount_resolution.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3469,11 +3709,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_endpoint_
 
 JUnit evidence must retain failed cases with multiple assertion details.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_junit_multiple_failures.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3488,11 +3730,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_junit_mul
 
 Fail-closed launch decisions and exact inventory/provenance regressions.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_launch_readiness_audit.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 42}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3521,11 +3765,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_launch_re
 
 Real authenticated FastAPI contracts for transient MaxCore account analytics.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_maxcore_analytics.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 59}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3554,11 +3800,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_maxcore_a
 
 Explicit feature proofs require every exact current passing case.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_evidence.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 83}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3602,11 +3850,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_
 
 Exhaustive ledger preserves aliases, unresolved work and exact evidence states.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_plan.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3625,11 +3875,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_
 
 Static factory topology must preserve declarations and fail closed on ambiguity.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_factory_mounts.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 62}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3662,11 +3914,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_fa
 
 Exercise Python worker isolation and quiescent read-only scheduling with real children.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_runner_scheduling.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3685,11 +3939,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_ru
 
 test readiness catalog
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_readiness_catalog.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3705,11 +3961,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_readiness
 
 Pure-data contracts for the master verification's repair guide.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_remediation.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3727,11 +3985,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_remediati
 
 Behavior and malformed-evidence checks for the counted progress report.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_report_progress.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 38}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3751,7 +4011,8 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_report_pr
 - `CountedProgressTests.test_coverage_overflow_negative_boolean_and_stale_summary_are_rejected`: coverage overflow negative boolean and stale summary are rejected
 - `CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent`: zero denominator has no fabricated completion percent
 - `CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged`: real collection leaves all git visible files unchanged
-- `CountedProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two`: missing input cli writes unavailable and returns two
+- `MasterRunnerProgressTests.test_master_writes_running_report_before_first_command`: master writes running report before first command
+- `MasterRunnerProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two`: missing input cli writes unavailable and returns two
 
 </details>
 
@@ -3759,11 +4020,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_report_pr
 
 Retain every case in mixed Node/Vitest JUnit layouts without double counts.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_summary_results.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3784,11 +4047,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_summary_r
 
 Exercise suite discovery against real Git indexes and working trees.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_untracked_suite_discovery.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3803,11 +4068,13 @@ python3 scripts/testing/run-python-suites.py --file tests/testing/test_untracked
 
 Real loopback streaming regressions, runnable with both app interpreters.
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/urllib3-security-paths.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3822,11 +4089,13 @@ python3 scripts/testing/run-python-suites.py --file tests/urllib3-security-paths
 
 test sophia
 
-Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tools/sophia-agent-runner/tests/test_sophia.py --output /tmp/maxbooster-python-single
 ```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>

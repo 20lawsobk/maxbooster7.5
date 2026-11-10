@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "71dc6a882d3d4d505939b1baa7408e0e43d045a8",
-  "workingTreeInputDigest": "5c3dc1fd39660e270c130a2c1ff6de11c93977f18ed5a3aabd5e21990259e00c",
+  "sourceRevision": "d33649d75e7a0dffc80adf40fa410f4ee66b1984",
+  "workingTreeInputDigest": "c0718c744f28d4fbb557afe9e6133928c8a594628be1cbfa04ff5a39ec514baa",
   "scope": "Canonical first-party tracked tests, operational acceptance scripts, test support and newly added testing runners; not runtime execution evidence",
   "caseEnumeration": "Literal source labels only, not a count of runtime test cases or coverage percentage",
   "counts": {
-    "canonicalTestFiles": 698,
+    "canonicalTestFiles": 700,
     "supportSourceFiles": 89,
     "retainedSnapshotFiles": 220,
     "nonExecutableSupportFiles": 12,
@@ -13,8 +13,8 @@
       "commerce": 22,
       "integration-browser": 11,
       "manual-destructive-provider": 37,
-      "python": 149,
-      "root-node": 139,
+      "python": 150,
+      "root-node": 140,
       "root-unit": 335,
       "runner-support": 89,
       "subsystems": 5
@@ -1322,7 +1322,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/ai_model/model/test_generation_regressions.py",
-      "sha256": "e355f81085805d58af8f3a8c06fd3c633d6d9d2c2ad48c2abc54f6ae6505ca59",
+      "sha256": "2053608a95ae73afb3b23bc3be4288d47709e701a77ca9a80d7a214af0971cb6",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -1339,7 +1339,7 @@
         "AttentionShapeTests.test_real_hypergpu_prefix_and_kv_logits_agree",
         "AttentionShapeTests.test_batched_prefill_and_decode_use_per_head_gpu_gemm",
         "AttentionShapeTests.test_gpu_failure_is_not_masked_with_cpu_attention",
-        "GenerationContractTests.test_unavailable_live_model_remains_an_error_without_repeated_tracebacks",
+        "GenerationContractTests.test_live_awareness_serves_without_candidate_only_with_fresh_snapshot",
         "GenerationContractTests.test_released_word_vocab_is_not_encoded_as_untrained_bpe",
         "GenerationContractTests.test_script_prompt_bounds_awareness_and_excludes_plan_transport",
         "GenerationContractTests.test_canonical_awareness_context_is_added_once",
@@ -2713,7 +2713,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_generation_release_selection.py",
-      "sha256": "5139c705018ed4b27ffadbd79641c8a6c74a54c375200e860a06045c21cd0ec4",
+      "sha256": "74b232abbd32e2c045d15d717312412d04ab3a1097356feb0b4232ddc2d9402d",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2740,7 +2740,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_generation_restart_reconciliation.py",
-      "sha256": "948d68a9b236aee401ebb1bbbca2fb37153c86d7415a176680ab410dd9b97ff6",
+      "sha256": "78dbd2398a970dc64bcbadb69c4e5742d4b0261dd3d54728f2953a4fb273b68f",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2758,7 +2758,7 @@
         "RestartTests.test_delivery_outage_keeps_journal_bytes_and_allows_later_delivery_only_retry",
         "RestartTests.test_dedicated_interrupt_and_completed_cleanup_are_ownership_scoped",
         "RestartTests.test_gc_retains_retryable_manager_delivery_but_expires_terminal_jobs",
-        "RestartTests.test_readiness_requires_both_model_and_fresh_awareness",
+        "RestartTests.test_readiness_accepts_trained_model_or_fresh_live_awareness",
         "RestartTests.test_invalid_journal_names_rejected_before_reconciliation_or_delivery",
         "RestartTests.test_terminal_gc_retries_failed_owned_unlink_before_deleting_journal",
         "RestartTests.test_terminal_gc_never_deletes_unowned_or_symlink_scratch"
@@ -3175,7 +3175,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
-      "sha256": "2e276a0dd710551d36fa61401b258eca964ba92d9d5bee8c4d3235a75e657bd6",
+      "sha256": "be1424d652679c3700cc119988f51c149483f57a3adbf4155cea16898e655c5a",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -3297,7 +3297,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py",
-      "sha256": "3df906a64fb1a125087cd2875715573e20cc6efff56fff8570190097d84ffa48",
+      "sha256": "6a4ab129bc09ca6d6491ce21bbda93b85c5f7f495586d55c9eaa4f82f18e9098",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -3309,9 +3309,9 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "Actual bounded public-content training; fixtures never claim model quality.",
+      "purpose": "Rights-gated public observations and bounded owned-fixture training checks.",
       "caseTitles": [
-        "PublicPeakCurriculumTests.test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor",
+        "PublicPeakCurriculumTests.test_public_peak_observations_without_operator_rights_never_reach_worker",
         "PublicPeakCurriculumTests.test_invalid_explicit_rights_block_before_worker_and_preserve_awareness",
         "PublicPeakCurriculumTests.test_legacy_mode_cannot_bypass_invalid_explicit_rights",
         "PublicPeakCurriculumTests.test_peak_training_rights_never_infer_license_from_public_metadata",
@@ -3496,7 +3496,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py",
-      "sha256": "92e0018adb99a3b07e762e310486786cecb940d6658b91ad51f37e4d65b4c87f",
+      "sha256": "7f75f149f17f22c52545205dd82bd67e688e02c27b6855b7b2be515365981d09",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -3513,11 +3513,11 @@
         "TextTrainingRightsTests.test_exact_operator_grants_attach_bound_receipts_without_relabeling_awareness",
         "TextTrainingRightsTests.test_missing_either_operator_configuration_value_cannot_grant_permission",
         "TextTrainingRightsTests.test_receipts_supplied_as_record_metadata_are_not_operator_configuration",
-        "TextTrainingRightsTests.test_trusted_live_admission_retains_unknown_license_and_provenance",
+        "TextTrainingRightsTests.test_public_visibility_and_legacy_flag_do_not_authorize_training",
         "TextTrainingRightsTests.test_trusted_live_admission_rejects_corruption_private_and_spoofed_receipts",
         "TextTrainingRightsTests.test_trusted_live_admission_does_not_ignore_explicit_broken_grant_policy",
         "TextTrainingRightsTests.test_trusted_live_admission_requires_one_nonempty_observation_set",
-        "TextTrainingRightsTests.test_live_execute_reaches_worker_with_audited_public_corpus",
+        "TextTrainingRightsTests.test_live_execute_without_operator_grants_never_reaches_worker",
         "TextTrainingRightsTests.test_manifest_and_evidence_mutations_fail_closed",
         "TextTrainingRightsTests.test_source_domain_citation_and_complete_text_must_match",
         "TextTrainingRightsTests.test_permission_license_purpose_and_dated_evidence_are_required",
@@ -3527,7 +3527,7 @@
         "TextTrainingRightsTests.test_evidence_cannot_escape_local_directory_or_use_symlinks",
         "TextTrainingRightsTests.test_symlink_directories_and_writable_evidence_are_refused",
         "TextTrainingRightsTests.test_private_record_is_not_licensed_by_a_matching_public_receipt",
-        "TextTrainingRightsTests.test_admission_persists_receipts_in_hash_bound_input_without_running_trainer"
+        "TextTrainingRightsTests.test_live_execute_with_grants_still_requires_separate_frozen_holdout"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -4196,7 +4196,7 @@
     },
     {
       "path": "scripts/testing/common.py",
-      "sha256": "d04c8fd61742e11409e4de31484104c42496dfb1c4167057c585634ce3ba28e6",
+      "sha256": "ff6facc4f9656f0651e01841ab686e3f147491242c2f7ff17e395e20f45d0b0e",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4555,7 +4555,7 @@
     },
     {
       "path": "scripts/testing/run-all.py",
-      "sha256": "1f2d0cb6e13737daf0d87bdaa84d9f806634991c950db29570b7e7587433e1a8",
+      "sha256": "a9b4c91ef486cdcb368d5bf4fd281566bfa15faa73d24607b252ec00d3ff29e2",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -9070,6 +9070,26 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/local-pdim-restart.test.mjs",
+      "sha256": "afa619933e5a2811a57c6ea22af6d27c7f29996a7ff51e418d88b27817ae4a1d",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/local-pdim-restart.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "disk-backed local PDIM recovers acknowledged data after in-process restarts",
+      "caseTitles": [
+        "disk-backed local PDIM recovers acknowledged data after in-process restarts"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/marketplace-purchase-signal.test.mjs",
       "sha256": "f5b6f9dc90b455a5f31858fee454a94bbfe0f60ff96549b70994007e88d1c0da",
       "category": "test",
@@ -9625,7 +9645,7 @@
     },
     {
       "path": "tests/payment-processing/helpers-beat-media-asgi.py",
-      "sha256": "50a6c07e5ccccecaaac2d881733cdc1c28e95ff194bd353363de3521f20f8f7e",
+      "sha256": "7b9694533febe74071361b96ca4a6ba91b9b3262618b4db16acd7932fefc390d",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -11738,6 +11758,26 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/testing/test_command_harness.py",
+      "sha256": "6e42e90ebe61315cd2da382e6b2c9bcd58a7c8e833174159d9a715619bb41839",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_command_harness.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "CommandHarnessTests.test_invalid_environment_is_reported_without_aborting_orchestration",
+      "caseTitles": [
+        "CommandHarnessTests.test_invalid_environment_is_reported_without_aborting_orchestration"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/testing/test_commerce_subject_selector.py",
       "sha256": "53bb5f75f101a39dc40e2eb412520a2d1eefd82db46fac0b399d3fc14e70dff7",
       "category": "test",
@@ -12113,7 +12153,7 @@
     },
     {
       "path": "tests/testing/test_report_progress.py",
-      "sha256": "5ade36db3ec3369ac4bcb1803730772a6327dae9005503bdc99a94240a29426e",
+      "sha256": "36dd07160efaf5a8ac0d84b272220d92dfb77ba5376d5435de3337bdc7f29391",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -12142,7 +12182,9 @@
         "CountedProgressTests.test_coverage_overflow_negative_boolean_and_stale_summary_are_rejected",
         "CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent",
         "CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged",
-        "CountedProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two"
+        "MasterRunnerProgressTests.test_master_writes_running_report_before_first_command",
+        "MasterRunnerProgressTests.test_http_group_uses_resolved_application_python_runtime",
+        "MasterRunnerProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -14343,7 +14385,7 @@
     },
     {
       "path": "tests/unit/distributed-sched-lock.test.ts",
-      "sha256": "6ab2871c8d9ff9b6a5a11f7b7f15148b34e9a402e350eefd679eb788d76fb0e2",
+      "sha256": "12508acf5e98a8dcce8c7b986745e525c6f95a77145ebfa2aac69b77f12b2c10",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -14371,6 +14413,7 @@
         "teardownRepeatableJobs() closes the worker (graceful drain)",
         "teardownRepeatableJobs() resets isSchedulerLeader to false",
         "teardownRepeatableJobs() is safe when no worker is running",
+        "suppresses only intentional disconnects during teardown and never logs raw error text",
         "closeScheduler() closes both worker and queue",
         "closeScheduler() is safe to call multiple times",
         "BullMQ autonomous scheduler \u2014 isSchedulerLeader()",
@@ -15683,7 +15726,7 @@
     },
     {
       "path": "tests/unit/local-pdim-protocol.test.ts",
-      "sha256": "2e573ad8a31c5202eccd72ca567ea43b6d3cfe2f1dbe341241af067367744606",
+      "sha256": "8437f8fa51c31d745c3d65dcb6cb11598487d0e5058d81abd896ff6cb2c563e8",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",

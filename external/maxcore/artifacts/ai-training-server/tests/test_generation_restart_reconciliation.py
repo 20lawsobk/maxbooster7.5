@@ -26,7 +26,8 @@ class RestartTests(unittest.TestCase):
         self.root = Path(self.directory.name)
         names = {"_job_path", "_job_write", "_job_read", "_job_update",
                  "_persist_generation_job", "_journal_records", "_journal_job_id", "_job_gc",
-                 "recover_dedicated_delivery", "generation_readiness"}
+                 "recover_dedicated_delivery", "_live_awareness_capability",
+                 "_generation_readiness", "generation_readiness"}
         tree = ast.parse((ROOT / "server.py").read_text())
         nodes = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
                  and n.name in names]
@@ -38,7 +39,8 @@ class RestartTests(unittest.TestCase):
             "_api_jobs_lock": threading.Lock(), "_active_jobs_lock": threading.Lock(),
             "_active_jobs": {}, "_JOB_TTL_S": 600, "_render_manager": None,
             "_model_ready": False, "_create_durable_render_manager": Mock(return_value=object()),
-            "_model_init_error": None, "_serving_release_status": {},
+            "_model_init_error": None, "_serving_release_status": {}, "_script_agent": object(),
+            "_live_learning_loop": None, "_live_serving_model": None,
         }
         exec(compile(ast.Module(body=nodes, type_ignores=[]), str(ROOT / "server.py"), "exec"),
              self.scope)
@@ -126,16 +128,23 @@ class RestartTests(unittest.TestCase):
         self.assertIsNotNone(self.read("committing"))
         self.assertIsNone(self.read("failed"))
 
-    def test_readiness_requires_both_model_and_fresh_awareness(self):
-        for model, awareness, expected in ((False, False, 503), (False, True, 503),
+    def test_readiness_accepts_trained_model_or_fresh_live_awareness(self):
+        for model, awareness, expected in ((False, False, 503), (False, True, 200),
                                            (True, False, 503), (True, True, 200)):
             self.scope["_model_ready"] = model
             engine = Mock()
             engine.readiness_status.return_value = {"ready": awareness}
-            with patch("ai_model.awareness.get_engine", return_value=engine):
+            with patch.dict(os.environ, {"MAXCORE_SERVING_RELEASE": "live-awareness"}), \
+                 patch("ai_model.awareness.get_engine", return_value=engine):
                 response = asyncio.run(self.scope["generation_readiness"]())
             self.assertEqual(response.status_code, expected)
-            self.assertEqual(json.loads(response.body)["ready"], expected == 200)
+            body = json.loads(response.body)
+            self.assertEqual(body["ready"], expected == 200)
+            self.assertEqual(
+                body["generation_mode"],
+                ("live_awareness" if not model and awareness else
+                 "trained_checkpoint" if model and awareness else "unavailable"),
+            )
 
     def test_invalid_journal_names_rejected_before_reconciliation_or_delivery(self):
         self.save("valid", status="running")
