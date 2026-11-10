@@ -2674,6 +2674,52 @@ def _generation_readiness(awareness_ready: bool) -> dict:
     }
 
 
+def _generation_endpoint_catalog(generation, awareness_ready, renderers):
+    """Expose same-origin API paths without leaking the private MaxCore origin."""
+    generation_routes = {}
+    route_paths = {
+        "text": "/api/generate/text",
+        "image": "/api/generate/image",
+        "audio": "/api/generate/audio",
+        "video": "/api/generate-video",
+    }
+    for modality, path in route_paths.items():
+        renderer = renderers.get(modality, {})
+        generation_routes[modality] = {
+            "method": "POST",
+            "path": path,
+            "route_declared": True,
+            "shared_generation_gate_ready": generation["ready"] is True,
+            "trained": (
+                _model_ready is True
+                if modality == "text"
+                else renderer.get("trained") is True
+            ),
+            "renderer": (
+                "maxcore-text-serving"
+                if modality == "text"
+                else renderer.get("renderer")
+            ),
+        }
+    return {
+        "capabilities": {
+            "method": "GET",
+            "path": "/api/generation/capabilities",
+            "responding": True,
+        },
+        "awareness_status": {
+            "method": "GET",
+            "path": "/api/awareness/unified/status",
+            "ready": awareness_ready is True,
+        },
+        "generation": generation_routes,
+        "note": (
+            "Paths are same-origin Max Booster proxy routes. The shared readiness "
+            "gate is not an individual media-job health probe."
+        ),
+    }
+
+
 @app.get("/api/awareness/unified/ready")
 async def unified_awareness_readiness(_key=Depends(require_scope("generate"))):
     """Readiness for live awareness, distinct from trained-model readiness."""
@@ -4813,7 +4859,8 @@ async def generation_capabilities():
     awareness_ready = get_engine().readiness_status().get("ready") is True
     generation = _generation_readiness(awareness_ready)
     trained_ready = _model_ready is True
-    return {"renderers": capabilities(), "quality": "not_evaluated",
+    renderers = capabilities()
+    return {"renderers": renderers, "quality": "not_evaluated",
             "serving_release": _serving_release_status,
             "serving": {
                 "generation_ready": generation["ready"],
@@ -4828,6 +4875,9 @@ async def generation_capabilities():
                 "source": "maxcore_unified_awareness_snapshot",
                 "modalities": ["text", "image", "audio", "video"],
             },
+            "endpoint_routes": _generation_endpoint_catalog(
+                generation, awareness_ready, renderers,
+            ),
             "runtime": "not_probed", "digital_gpu_exclusive": "not_verified",
             "plan_version": GENERATION_PLAN_VERSION}
 

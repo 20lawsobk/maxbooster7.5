@@ -109,6 +109,15 @@ describe("MaxCore public proxy contract", () => {
     routeHandler(method, path);
   });
 
+  it("registers the generation capability proxy exactly once", () => {
+    const matches = (router as unknown as { stack: Layer[] }).stack.filter(
+      (candidate) =>
+        candidate.route?.path === "/api/generation/capabilities" &&
+        candidate.route.methods.get,
+    );
+    expect(matches).toHaveLength(1);
+  });
+
   it("forwards authenticated identity and preserves the MaxCore response", async () => {
     const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ score: 91, reasoning: ["model"] }), {

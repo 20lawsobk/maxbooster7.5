@@ -238,6 +238,25 @@ export default function TrainingDashboard() {
   });
 
   const {
+    data: generationCapabilities,
+    error: generationCapabilitiesQueryError,
+    isError: generationCapabilitiesError,
+    isLoading: generationCapabilitiesLoading,
+    refetch: refetchGenerationCapabilities,
+  } = useQuery({
+    queryKey: ["maxcore-generation-endpoints"],
+    queryFn: async () => {
+      const data = await apiFetch("/api/generation/capabilities");
+      if (!data?.endpoint_routes?.generation) {
+        throw new Error("MaxCore did not return its generation endpoint catalog.");
+      }
+      return data;
+    },
+    refetchInterval: 15_000,
+    retry: false,
+  });
+
+  const {
     data: datasets,
     error: datasetsQueryError,
     isError: datasetsError,
@@ -455,6 +474,130 @@ export default function TrainingDashboard() {
                   inferred from request counts.
                 </div>
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900 border-gray-700" data-testid="maxcore-server-endpoints">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-white text-sm font-medium">
+                  MaxCore Server Endpoints
+                </CardTitle>
+                <CardDescription className="mt-1 text-gray-400 text-xs">
+                  Live MaxCore routes through the authenticated Max Booster proxy.
+                  The private service address and credentials stay server-side.
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void refetchGenerationCapabilities()}
+                disabled={generationCapabilitiesLoading}
+                aria-label="Refresh MaxCore server endpoint status"
+              >
+                <RefreshCw className={`h-4 w-4 ${generationCapabilitiesLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {generationCapabilitiesError ? (
+              <Alert className="border-yellow-500/30 bg-yellow-500/10">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                <AlertDescription className="text-yellow-300 text-xs">
+                  MaxCore endpoint status unavailable:{" "}
+                  {(generationCapabilitiesQueryError as Error)?.message ||
+                    "No capability response was received"}
+                </AlertDescription>
+              </Alert>
+            ) : generationCapabilitiesLoading ? (
+              <p role="status" className="text-xs text-gray-400">
+                Loading MaxCore endpoint status…
+              </p>
+            ) : generationCapabilities?.endpoint_routes ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-gray-700 p-3">
+                  <Badge variant="default">Connected</Badge>
+                  <span className="text-gray-300">
+                    {generationCapabilities.endpoint_routes.capabilities.method}{" "}
+                    {generationCapabilities.endpoint_routes.capabilities.path}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    MaxCore capability response received
+                  </span>
+                </div>
+                <div className="rounded-md border border-gray-700 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <code className="text-xs text-gray-200">
+                      {generationCapabilities.endpoint_routes.awareness_status.method}{" "}
+                      {generationCapabilities.endpoint_routes.awareness_status.path}
+                    </code>
+                    <Badge
+                      variant={
+                        generationCapabilities.endpoint_routes.awareness_status.ready
+                          ? "default"
+                          : "destructive"
+                      }
+                    >
+                      {generationCapabilities.endpoint_routes.awareness_status.ready
+                        ? "Awareness ready"
+                        : "Awareness unavailable"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {Object.entries(
+                    generationCapabilities.endpoint_routes.generation,
+                  ).map(([modality, endpoint]: [string, any]) => (
+                    <div
+                      key={modality}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-700 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-medium capitalize text-gray-200">
+                          {modality}
+                        </div>
+                        <code className="break-all text-xs text-gray-400">
+                          {endpoint.method} {endpoint.path}
+                        </code>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={
+                            endpoint.shared_generation_gate_ready
+                              ? "default"
+                              : "destructive"
+                          }
+                        >
+                          {endpoint.shared_generation_gate_ready
+                            ? "Shared gate ready"
+                            : "Shared gate unavailable"}
+                        </Badge>
+                        <span className="text-xs text-gray-400">
+                          {endpoint.trained
+                            ? "trained checkpoint"
+                            : modality === "text" &&
+                                generationCapabilities.serving?.generation_mode ===
+                                  "live_awareness"
+                              ? "live-awareness serving"
+                              : endpoint.renderer
+                                ? `${endpoint.renderer} · not trained`
+                                : "not trained"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400">
+                  {generationCapabilities.endpoint_routes.note}
+                </p>
+              </>
+            ) : (
+              <p role="status" className="text-xs text-gray-400">
+                MaxCore endpoint catalog is not available.
+              </p>
             )}
           </CardContent>
         </Card>

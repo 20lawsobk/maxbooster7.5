@@ -571,7 +571,6 @@ router.get(
   proxyToMaxCore,
 );
 router.get("/api/platform/model/info", requireAuthOnly, proxyToMaxCore);
-router.get("/api/generation/capabilities", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/social/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/advertising/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/content/state", requireAuthOnly, proxyToMaxCore);

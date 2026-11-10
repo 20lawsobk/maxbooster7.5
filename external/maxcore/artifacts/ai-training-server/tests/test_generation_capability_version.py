@@ -41,7 +41,8 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         app = FastAPI()
         names = {"_live_awareness_capability", "_generation_readiness",
-                 "generation_capabilities", "live_learning_status"}
+                 "_generation_endpoint_catalog", "generation_capabilities",
+                 "live_learning_status"}
         nodes = [node for node in ast.parse(SERVER.read_text()).body
                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in names]
         self.assertEqual({node.name for node in nodes}, names,
@@ -93,6 +94,32 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["awareness_conditioning"]["modalities"],
                          ["text", "image", "audio", "video"])
         self.assertEqual(set(result["renderers"]), {"image", "audio", "video"})
+        endpoints = result["endpoint_routes"]
+        self.assertEqual(endpoints["capabilities"]["path"], "/api/generation/capabilities")
+        self.assertTrue(endpoints["capabilities"]["responding"])
+        self.assertEqual(endpoints["awareness_status"]["path"], "/api/awareness/unified/status")
+        self.assertTrue(endpoints["awareness_status"]["ready"])
+        expected_paths = {
+            "text": "/api/generate/text",
+            "image": "/api/generate/image",
+            "audio": "/api/generate/audio",
+            "video": "/api/generate-video",
+        }
+        self.assertEqual(
+            {name: endpoint["path"] for name, endpoint in endpoints["generation"].items()},
+            expected_paths,
+        )
+        self.assertTrue(all(
+            endpoint["route_declared"] and endpoint["shared_generation_gate_ready"]
+            for endpoint in endpoints["generation"].values()
+        ))
+        self.assertFalse(endpoints["generation"]["text"]["trained"])
+        self.assertTrue(all(
+            endpoint["trained"] is False
+            for name, endpoint in endpoints["generation"].items()
+            if name != "text"
+        ))
+        self.assertIn("not an individual media-job health probe", endpoints["note"])
         self.assertTrue(all(renderer["trained"] is False for renderer in result["renderers"].values()))
         result["renderers"]["image"]["trained"] = True
         second_status, second = await get_capabilities(self.app)
@@ -136,6 +163,11 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result["serving"]["generation_ready"])
         self.assertFalse(result["serving"]["awareness_ready"])
         self.assertEqual(result["serving"]["generation_mode"], "unavailable")
+        self.assertFalse(result["endpoint_routes"]["awareness_status"]["ready"])
+        self.assertTrue(all(
+            endpoint["shared_generation_gate_ready"] is False
+            for endpoint in result["endpoint_routes"]["generation"].values()
+        ))
 
 
 if __name__ == "__main__":
