@@ -88,3 +88,9 @@ outputType = "webview"
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 600000
+
+[userenv]
+
+[userenv.development]
+MAXCORE_AWARENESS_PLATFORM_DISCOVERY = "1"
+MAXCORE_AWARENESS_PLATFORM_DISCOVERY_PROVIDER = "exa"

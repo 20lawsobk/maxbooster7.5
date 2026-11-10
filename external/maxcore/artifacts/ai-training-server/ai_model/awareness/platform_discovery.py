@@ -137,16 +137,20 @@ def provider_state(environ=None) -> dict:
         if isinstance(env.get(key_name), str) and bool(env.get(key_name))
     ]
     requested = env.get(SEARCH_PROVIDER_SETTING, "").strip().casefold()
-    selected = (
-        requested if requested in available
-        else None if requested
-        else (available[0] if available else None)
+    providers = (
+        [requested, *(provider for provider in available if provider != requested)]
+        if requested in available
+        else [] if requested
+        else available
     )
+    selected = providers[0] if providers else None
     enabled = env.get(SEARCH_OPT_IN) == "1" and selected is not None
     return {
         "enabled": enabled,
         "provider": selected if enabled else None,
         "configured_provider": selected,
+        "providers": providers,
+        "fallback_providers": providers[1:],
         "provider_available": bool(selected),
         "search_interval_seconds": search_interval_seconds(env),
         "disabled_reason": (
@@ -180,16 +184,34 @@ def source_name(provider: str, platform: str) -> str:
     return f"platform_discovery_{provider}_{normalize_platform(platform)}"
 
 
+def router_source_name(platform: str) -> str:
+    """Stable scheduler identity for a provider-fallback discovery route."""
+    return f"platform_discovery_auto_{normalize_platform(platform)}"
+
+
 class DiscoveryRows(list):
     """A successful discovery scan may validly return no eligible observations."""
 
-    def __init__(self, rows=(), *, scan_state="observed"):
+    def __init__(
+        self,
+        rows=(),
+        *,
+        scan_state="observed",
+        providers_tried=(),
+        providers_succeeded=(),
+        provider_failures=(),
+        provider_used=None,
+    ):
         super().__init__(rows)
         self.scan_state = scan_state
+        self.providers_tried = list(providers_tried)
+        self.providers_succeeded = list(providers_succeeded)
+        self.provider_failures = list(provider_failures)
+        self.provider_used = provider_used
 
 
 def source_specs(environ=None) -> dict:
-    """Provide bounded per-platform scheduler sources only after explicit opt-in."""
+    """Register one bounded fallback route per platform after explicit opt-in."""
     state = provider_state(environ)
     if not state["enabled"]:
         return {}
@@ -200,11 +222,11 @@ def source_specs(environ=None) -> dict:
         else "https://api.tavily.com/search"
     )
     from functools import partial
-    from .sources import platform_search
+    from .sources import platform_search_with_backup
 
     return {
-        source_name(provider, platform): (
-            "social", endpoint, partial(platform_search, provider, platform)
+        router_source_name(platform): (
+            "social", endpoint, partial(platform_search_with_backup, platform)
         )
         for platform in PLATFORMS
     }
@@ -442,11 +464,17 @@ def validate_provenance(
                 or not source.startswith("youtube_")):
             raise ValueError("unverified_direct_fetch_policy")
     elif method in {"index_snippet", "third_party_search"}:
+        provider_source = (
+            source == source_name(provider, platform_scope)
+            if provider in _PROVIDER_KEYS
+            else False
+        )
+        routed_source = source == router_source_name(platform_scope)
         if (source_type != (
                 "platform_origin_search_index" if method == "index_snippet"
                 else "third_party_search_index"
         ) or provider not in _PROVIDER_KEYS
-                or source != f"platform_discovery_{provider}_{platform_scope}"
+                or not (provider_source or routed_source)
                 or (method == "index_snippet" and platform != platform_scope)
                 or (method == "third_party_search" and platform is not None)):
             raise ValueError("discovery_source_mismatch")

@@ -39,6 +39,7 @@ import {
   canRetryToolostRelease,
   deriveToolostSubmissionPersistence,
   mapToolostDispatchStatus,
+  persistToolostSubmission,
   submitToolostRelease,
 } from "./distribution-toolost-submission";
 import {
@@ -1221,12 +1222,14 @@ router.post(
   "/releases/:id/schedule",
   requireAuth,
   async (req: Request, res: Response) => {
+    let providerRequestStarted = false;
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { id } = req.params as Record<string, string>;
-      const { releaseDate } = z
+      const { releaseDate, submitToTooLost } = z
         .object({
           releaseDate: z.string(),
+          submitToTooLost: z.boolean().optional().default(false),
         })
         .parse(req.body);
 
@@ -1234,13 +1237,171 @@ router.post(
       if (!release || release.artistId !== userId) {
         return res.status(404).json({ error: "Release not found" });
       }
+      const existingMetadata = (release.metadata || {}) as Record<
+        string,
+        unknown
+      >;
+      const currentStatus = String(
+        existingMetadata.status || release.status || "draft",
+      );
+      if (
+        submitToTooLost &&
+        !["draft", "pending", "rejected"].includes(currentStatus)
+      ) {
+        return res.status(409).json({
+          error:
+            "This release has already been submitted and must be reconciled with Too Lost.",
+        });
+      }
 
       const scheduledDate = new Date(releaseDate);
+      if (Number.isNaN(scheduledDate.getTime())) {
+        return res.status(400).json({ error: "Invalid release date" });
+      }
+      if (submitToTooLost && scheduledDate.getTime() <= Date.now()) {
+        return res.status(422).json({
+          error: "Too Lost scheduled submissions require a future release date.",
+        });
+      }
       const updatedRelease = await storage.updateDistroRelease(id, {
         releaseDate: scheduledDate,
       });
 
-      res.json(updatedRelease);
+      let toolostSubmission:
+        | Awaited<ReturnType<typeof persistToolostSubmission>>
+        | undefined;
+      let toolostReleaseId: string | undefined;
+      let finalRelease = updatedRelease;
+      if (submitToTooLost) {
+        const metadata = (updatedRelease?.metadata || {}) as Record<
+          string,
+          unknown
+        >;
+        const requiredMetadata = [
+          ["artistName", "Artist name"],
+          ["releaseType", "Release type"],
+          ["primaryGenre", "Primary genre"],
+          ["language", "Language"],
+          ["copyrightOwner", "Copyright owner"],
+        ] as const;
+        const missingMetadata = requiredMetadata
+          .filter(
+            ([key]) =>
+              typeof metadata[key] !== "string" ||
+              !(metadata[key] as string).trim(),
+          )
+          .map(([, label]) => label);
+        const copyrightYear = Number(metadata.copyrightYear);
+        const upc = typeof metadata.upc === "string" ? metadata.upc.trim() : "";
+        const tracks = await storage.getDistroTracks(id);
+        const selectedPlatforms = Array.isArray(metadata.selectedPlatforms)
+          ? Array.from(
+              new Set(
+                metadata.selectedPlatforms.filter(
+                  (platform): platform is string =>
+                    typeof platform === "string" && Boolean(platform.trim()),
+                ),
+              ),
+            )
+          : [];
+        const missingTracks = tracks.filter(
+          (track) =>
+            typeof track.audioUrl !== "string" ||
+            !track.audioUrl.trim() ||
+            typeof track.isrc !== "string" ||
+            !track.isrc.trim(),
+        );
+        const invalidIsrc = tracks.filter((track) => {
+          const normalized = String(track.isrc || "")
+            .replace(/[-\s]/g, "")
+            .toUpperCase();
+          return !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(normalized);
+        });
+        const missingRights =
+          metadata.acceptTerms !== true ||
+          metadata.confirmRights !== true ||
+          (selectedPlatforms.some((platform) =>
+            /youtube/i.test(platform),
+          ) &&
+            metadata.confirmYoutubeRights !== true);
+        if (
+          missingMetadata.length > 0 ||
+          !Number.isInteger(copyrightYear) ||
+          copyrightYear < 1900 ||
+          copyrightYear > new Date().getFullYear() + 1 ||
+          !updatedRelease?.artworkUrl ||
+          !/^\d{12,13}$/.test(upc) ||
+          tracks.length === 0 ||
+          missingTracks.length > 0 ||
+          invalidIsrc.length > 0 ||
+          selectedPlatforms.length === 0 ||
+          missingRights
+        ) {
+          return res.status(422).json({
+            error: "Release is not ready for automatic Too Lost submission.",
+            scheduledLocally: true,
+            requirements: {
+              missingMetadata,
+              validCopyrightYear:
+                Number.isInteger(copyrightYear) &&
+                copyrightYear >= 1900 &&
+                copyrightYear <= new Date().getFullYear() + 1,
+              artworkPresent: Boolean(updatedRelease?.artworkUrl),
+              upcValid: /^\d{12,13}$/.test(upc),
+              trackCount: tracks.length,
+              tracksMissingAudioOrISRC: missingTracks.length,
+              tracksWithInvalidISRC: invalidIsrc.length,
+              selectedPlatformCount: selectedPlatforms.length,
+              rightsConfirmed: !missingRights,
+            },
+          });
+        }
+        const toolost = await getDistributionToolostService(userId);
+        providerRequestStarted = true;
+        const { providerPlatforms, result } = await submitToolostRelease({
+          client: toolost,
+          userId,
+          releaseId: id,
+          release: updatedRelease as unknown as Record<string, unknown>,
+          tracks: tracks as unknown[],
+          requestedPlatforms: selectedPlatforms,
+        });
+        toolostReleaseId = result.releaseId;
+        toolostSubmission = await persistToolostSubmission({
+          storage,
+          releaseId: id,
+          metadata,
+          selectedPlatforms,
+          selectedStores: providerPlatforms,
+          result,
+        });
+        finalRelease = (await storage.getDistroRelease(id)) || updatedRelease;
+      }
+
+      const responseBody = {
+        ...finalRelease,
+        success: toolostSubmission
+          ? toolostSubmission.accepted && !toolostSubmission.indeterminate
+          : true,
+        submissionStatus: toolostSubmission?.status || "scheduled_locally",
+        submissionError: toolostSubmission?.indeterminate
+          ? "Too Lost's outcome is not fully reconciled. Check the distributor status before retrying."
+          : undefined,
+        toolostSubmission: toolostSubmission
+          ? {
+              requested: true,
+              status: toolostSubmission.status,
+              accepted: toolostSubmission.accepted,
+              indeterminate: toolostSubmission.indeterminate,
+              toolostReleaseId,
+              acceptedPlatformCount: toolostSubmission.acceptedPlatformCount,
+              platforms: toolostSubmission.platforms,
+            }
+          : { requested: false, status: "not_requested" },
+      };
+      res
+        .status(toolostSubmission?.indeterminate ? 202 : 200)
+        .json(responseBody);
 
       setImmediate(async () => {
         try {
@@ -1262,8 +1423,49 @@ router.post(
           .status(400)
           .json({ error: "Validation error", details: error.issues });
       }
-      logger.warn({ err: error }, "Error scheduling release:");
-      res.status(500).json({ error: "Failed to schedule release" });
+      const message = error instanceof Error ? error.message : "";
+      if (message.startsWith("Too Lost is not connected")) {
+        return res.status(409).json({
+          error: message,
+          scheduledLocally: true,
+          providerSubmission: "not_submitted",
+        });
+      }
+      if (
+        message.startsWith("Too Lost release blocked:") ||
+        message.startsWith("Too Lost requires valid explicit AI-involvement")
+      ) {
+        return res.status(422).json({
+          error: message,
+          scheduledLocally: true,
+          providerSubmission: "not_submitted",
+        });
+      }
+      // Provider errors are intentionally not logged raw because they can
+      // include unlabelled credentials or response fragments.
+      logger.warn(
+        {
+          errorType: error instanceof Error ? error.name : "unknown",
+          providerRequestStarted,
+        },
+        "Too Lost scheduled submission did not return a confirmed outcome",
+      );
+      if (providerRequestStarted) {
+        return res.status(202).json({
+          success: false,
+          submissionStatus: "pending",
+          submissionError:
+            "The release date was saved, but Too Lost did not return a confirmed submission outcome. Check the distributor status before retrying.",
+          scheduledLocally: true,
+          providerSubmission: "unknown",
+        });
+      }
+      return res.status(500).json({
+        error:
+          "The release date was saved, but the submission could not be prepared. No Too Lost submission was confirmed.",
+        scheduledLocally: true,
+        providerSubmission: "not_confirmed",
+      });
     }
   },
 );

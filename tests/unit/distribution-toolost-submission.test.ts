@@ -127,7 +127,7 @@ describe("shared Too Lost route submission", () => {
       client,
       userId: "user-1",
       releaseId: "release-1",
-      release,
+      release: { ...release, releaseDate: "2027-02-15" },
       tracks,
       requestedPlatforms: ["spotify"],
     });
@@ -138,6 +138,7 @@ describe("shared Too Lost route submission", () => {
       "release-1",
       expect.objectContaining({
         platforms: ["Spotify"],
+          releaseDate: "2027-02-15",
         acceptTerms: true,
         confirmRights: true,
         confirmYoutubeRights: true,
@@ -296,5 +297,84 @@ describe("shared Too Lost route submission", () => {
       indeterminate: false,
       status: "rejected",
     });
+  });
+
+  it("persists Too Lost schedule receipts and reports the confirmed platform state", async () => {
+    const { persistToolostSubmission } = await import(
+      "../../server/routes/distribution-toolost-submission"
+    );
+    const storage = {
+      getDSPProviderBySlug: vi.fn().mockResolvedValue({
+        id: "provider-spotify",
+        name: "Spotify",
+      }),
+      createDistroDispatch: vi.fn().mockResolvedValue({ id: "dispatch-1" }),
+      updateDistroRelease: vi.fn().mockResolvedValue({ id: "release-1" }),
+    };
+
+    const outcome = await persistToolostSubmission({
+      storage,
+      releaseId: "release-1",
+      metadata: { selectedPlatforms: ["spotify"] },
+      selectedPlatforms: ["spotify"],
+      selectedStores: ["Spotify"],
+      result: {
+        releaseId: "toolost-1",
+        status: "processing",
+        platforms: [{ platform: "Spotify", status: "processing" }],
+      },
+    });
+
+    expect(storage.createDistroDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        releaseId: "release-1",
+        providerId: "provider-spotify",
+        platform: "spotify",
+      }),
+    );
+    expect(storage.updateDistroRelease).toHaveBeenCalledWith(
+      "release-1",
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          toolostReleaseId: "toolost-1",
+          status: outcome.status,
+        }),
+      }),
+    );
+    expect(outcome.acceptedPlatformCount).toBe(1);
+    expect(outcome.indeterminate).toBe(false);
+  });
+
+  it("keeps the schedule pending when the remote receipt cannot be durably recorded", async () => {
+    const { persistToolostSubmission } = await import(
+      "../../server/routes/distribution-toolost-submission"
+    );
+    const storage = {
+      getDSPProviderBySlug: vi.fn().mockResolvedValue(undefined),
+      createDistroDispatch: vi.fn().mockRejectedValue(new Error("db failed")),
+      updateDistroRelease: vi.fn().mockResolvedValue({ id: "release-1" }),
+    };
+
+    const outcome = await persistToolostSubmission({
+      storage,
+      releaseId: "release-1",
+      metadata: {},
+      selectedPlatforms: ["spotify"],
+      selectedStores: ["Spotify"],
+      result: {
+        releaseId: "toolost-1",
+        status: "processing",
+        platforms: [{ platform: "Spotify", status: "processing" }],
+      },
+    });
+
+    expect(outcome.status).toBe("pending");
+    expect(outcome.indeterminate).toBe(true);
+    expect(outcome.platforms[0]).toEqual(
+      expect.objectContaining({
+        accepted: false,
+        indeterminate: true,
+      }),
+    );
   });
 });

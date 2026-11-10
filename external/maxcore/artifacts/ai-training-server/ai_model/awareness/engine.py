@@ -1457,6 +1457,18 @@ class Engine:
                             "ok": True, "domain": self.sources[name][0],
                             "url": citation(self.sources[name][1]),
                             "error": None, "observed_at": observed_at,
+                            "search_providers_attempted": list(
+                                getattr(rows, "providers_tried", [])
+                            ),
+                            "search_providers_succeeded": list(
+                                getattr(rows, "providers_succeeded", [])
+                            ),
+                            "search_provider_failures": list(
+                                getattr(rows, "provider_failures", [])
+                            ),
+                            "search_provider_used": getattr(
+                                rows, "provider_used", None
+                            ),
                         }
                         normalized = self._normalize_source_records(
                             name, rows, observed_at, rank_signals,
@@ -1531,6 +1543,18 @@ class Engine:
                             "ok": True, "domain": self.sources[name][0],
                             "url": citation(self.sources[name][1]),
                             "error": None, "observed_at": observed_at,
+                            "search_providers_attempted": list(
+                                getattr(rows, "providers_tried", [])
+                            ),
+                            "search_providers_succeeded": list(
+                                getattr(rows, "providers_succeeded", [])
+                            ),
+                            "search_provider_failures": list(
+                                getattr(rows, "provider_failures", [])
+                            ),
+                            "search_provider_used": getattr(
+                                rows, "provider_used", None
+                            ),
                             "discovery_observation_count": 0,
                             "platform_origin_observation_count": 0,
                             "third_party_search_result_count": 0,

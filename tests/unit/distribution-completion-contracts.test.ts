@@ -119,6 +119,16 @@ describe("distribution completion source guards (not rendered UI coverage)", () 
     expect(wizard).toContain('submissionStatus === "submitted" && createPreSave');
   });
 
+  it("sends future-dated submissions through the explicit Too Lost schedule path", () => {
+    expect(wizard).toContain(
+      '`/api/distribution/releases/${releaseData.id}/schedule`',
+    );
+    expect(wizard).toContain("submitToTooLost: true");
+    expect(wizard).toContain('"pending-reconciliation"');
+    expect(routes).toContain('providerSubmission: "unknown"');
+    expect(routes).toContain("submitToTooLost: z.boolean().optional().default(false)");
+  });
+
   it("uses actual child component contracts for completion fields", () => {
     expect(wizard).toContain("lyricsData={lyricsTracks.map");
     expect(wizard).toContain("selectedDate={releaseDate}");

@@ -33,10 +33,15 @@ from ai_model.awareness.platform_discovery import (
     search_interval_seconds,
     source_min_interval,
     source_name,
+    router_source_name,
     source_specs,
     validate_provenance,
 )
-from ai_model.awareness.sources import platform_search, profile_source_status
+from ai_model.awareness.sources import (
+    platform_search,
+    platform_search_with_backup,
+    profile_source_status,
+)
 from ai_model.awareness.test_engine import MemoryStore
 from ai_model.platform_optimization import ALIASES, PLATFORMS
 
@@ -63,16 +68,121 @@ class PlatformDiscoveryTests(unittest.TestCase):
         self.assertEqual(len(configured), 8)
         self.assertEqual(
             set(configured),
-            {source_name("tavily", platform) for platform in PLATFORMS},
+            {router_source_name(platform) for platform in PLATFORMS},
         )
         self.assertEqual(
             {platform for platform in PLATFORMS
-             if source_name("tavily", platform) in configured},
+             if router_source_name(platform) in configured},
             set(PLATFORMS),
         )
         self.assertTrue(all(row[0] == "social" for row in configured.values()))
         self.assertTrue(all(row[1] == "https://api.tavily.com/search"
                             for row in configured.values()))
+        state = provider_state(env)
+        self.assertEqual(state["providers"], ["tavily", "exa"])
+        self.assertEqual(state["fallback_providers"], ["exa"])
+
+    def test_provider_fallback_uses_secondary_only_after_primary_has_no_usable_rows(self):
+        env = {
+            "EXA_API_KEY": "fixture-only",
+            "TAVILY_API_KEY": "fixture-only",
+            SEARCH_OPT_IN: "1",
+        }
+        primary_empty = DiscoveryRows((), scan_state="no_results")
+        backup_rows = DiscoveryRows(
+            [{"discovery": {"provider": "tavily"}}],
+            scan_state="observed",
+            provider_used="tavily",
+        )
+        with patch.dict("os.environ", env, clear=True):
+            with patch(
+                "ai_model.awareness.sources.platform_search",
+                side_effect=[primary_empty, backup_rows],
+            ) as search:
+                result = platform_search_with_backup("facebook")
+
+        self.assertEqual(
+            [call.args[0] for call in search.call_args_list],
+            ["exa", "tavily"],
+        )
+        self.assertEqual(result.providers_tried, ["exa", "tavily"])
+        self.assertEqual(result.providers_succeeded, ["exa", "tavily"])
+        self.assertEqual(result.provider_used, "tavily")
+
+    def test_provider_fallback_keeps_failures_bounded_and_does_not_leak_messages(self):
+        env = {
+            "EXA_API_KEY": "fixture-only",
+            "TAVILY_API_KEY": "fixture-only",
+            SEARCH_OPT_IN: "1",
+        }
+        with patch.dict("os.environ", env, clear=True):
+            with patch(
+                "ai_model.awareness.sources.platform_search",
+                side_effect=RuntimeError("provider error contained a fake secret"),
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError, "^all_configured_search_providers_failed$"
+                ) as error:
+                    platform_search_with_backup("facebook")
+        self.assertNotIn("fake secret", str(error.exception))
+
+    def test_provider_transport_failure_falls_back_to_the_other_configured_provider(self):
+        env = {
+            "EXA_API_KEY": "fixture-only",
+            "TAVILY_API_KEY": "fixture-only",
+            SEARCH_OPT_IN: "1",
+        }
+        backup_rows = DiscoveryRows(
+            [{"discovery": {"provider": "tavily"}}],
+            scan_state="observed",
+        )
+        with patch.dict("os.environ", env, clear=True):
+            with patch(
+                "ai_model.awareness.sources.platform_search",
+                side_effect=[TimeoutError("secret-containing transport detail"), backup_rows],
+            ) as search:
+                result = platform_search_with_backup("instagram")
+
+        self.assertEqual(
+            [call.args[0] for call in search.call_args_list],
+            ["exa", "tavily"],
+        )
+        self.assertEqual(result.provider_used, "tavily")
+        self.assertEqual(
+            result.provider_failures,
+            [{"provider": "exa", "failure": "timeout"}],
+        )
+        self.assertNotIn("secret-containing", repr(result.provider_failures))
+
+    def test_router_provenance_records_the_provider_that_returned_the_observation(self):
+        observed = time.time()
+        citation = "https://www.facebook.com/artist/posts/123"
+        text = "A public artist shared a new music release."
+        provenance = make_provenance(
+            platform="facebook",
+            retrieval_method="index_snippet",
+            source_type="platform_origin_search_index",
+            provider="tavily",
+            query="music artist",
+            source_url=citation,
+            content=text,
+            original_published_at=datetime.now(timezone.utc).isoformat(),
+            search_relevance=0.7,
+        )
+        router = router_source_name("facebook")
+        engine = Engine(sources={router: ("social", "https://api.exa.ai/search", lambda: [])})
+        engine._health[router] = {}
+        from ai_model.gpu.awareness_kernels import rank_signals
+        normalized = engine._normalize_source_records(
+            router,
+            [{"text": text, "citation": citation, "value": 0.7,
+              "metric": "search_index_relevance", "discovery": provenance}],
+            observed,
+            rank_signals,
+        )
+        self.assertEqual(len(normalized), 1)
+        self.assertEqual(normalized[0]["source"], router)
+        self.assertEqual(normalized[0]["discovery"]["provider"], "tavily")
 
     def test_query_uses_a_rolling_window_without_a_frozen_year(self):
         instant = datetime(2027, 2, 3, 12, tzinfo=timezone.utc)
@@ -489,7 +599,7 @@ class PlatformDiscoveryTests(unittest.TestCase):
     def test_admin_matrix_distinguishes_configured_search_from_real_ingestion(self):
         observed = time.time()
         provider = "tavily"
-        name = source_name(provider, "tiktok")
+        name = router_source_name("tiktok")
         health = {
             name: {
                 "ok": True,
@@ -497,6 +607,10 @@ class PlatformDiscoveryTests(unittest.TestCase):
                 "discovery_observation_count": 3,
                 "discovery_scan_state": "observed",
                 "discovery_freshness_state": "fresh",
+            "search_provider_used": provider,
+            "search_providers_attempted": ["exa", "tavily"],
+            "search_providers_succeeded": ["exa", "tavily"],
+            "search_provider_failures": [{"provider": "exa", "failure": "timeout"}],
             }
         }
         env = {

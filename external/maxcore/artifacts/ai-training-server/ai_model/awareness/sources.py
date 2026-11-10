@@ -21,8 +21,8 @@ from .platform_discovery import (
     make_provenance,
     parse_publication_date,
     provider_state,
+    router_source_name,
     safe_result_text,
-    source_name,
 )
 
 
@@ -295,7 +295,6 @@ def platform_search(provider, platform):
     from ai_model.native_analysis.safe_http import SafeHTTPError
     from .platform_discovery import (
         SEARCH_OPT_IN,
-        SEARCH_PROVIDER_SETTING,
         classify_result,
         policy_for,
         query_for,
@@ -303,10 +302,7 @@ def platform_search(provider, platform):
     )
 
     state = provider_state()
-    if (os.environ.get(SEARCH_OPT_IN) != "1"
-            or state["provider"] != provider
-            or os.environ.get(SEARCH_PROVIDER_SETTING, "").strip().casefold()
-            not in ("", provider)):
+    if os.environ.get(SEARCH_OPT_IN) != "1" or provider not in state["providers"]:
         raise RuntimeError("platform_discovery_not_enabled")
     key_name = "TAVILY_API_KEY" if provider == "tavily" else "EXA_API_KEY"
     key = os.environ.get(key_name)
@@ -401,9 +397,76 @@ def platform_search(provider, platform):
         seen.add(cite)
         seen_content.add(fingerprint)
 
-    return DiscoveryRows(rows, scan_state="observed" if rows else (
-        "filtered" if raw_results else "no_results"
-    ))
+    return DiscoveryRows(
+        rows,
+        scan_state="observed" if rows else (
+            "filtered" if raw_results else "no_results"
+        ),
+        providers_tried=[provider],
+        providers_succeeded=[provider],
+        provider_used=provider,
+    )
+
+
+def _provider_failure_category(error):
+    """Return a safe, bounded error label without retaining provider messages."""
+    name = type(error).__name__
+    if name == "SafeHTTPError":
+        status = getattr(error, "status", None)
+        return f"http_{status}" if type(status) is int and 100 <= status <= 599 else "http_error"
+    if isinstance(error, TimeoutError):
+        return "timeout"
+    if isinstance(error, (ValueError, json.JSONDecodeError)):
+        return "invalid_response"
+    return "provider_unavailable"
+
+
+def platform_search_with_backup(platform):
+    """Try configured providers in priority order; use backups only if needed.
+
+    Results remain discovery evidence only. Each result retains the provider that
+    actually returned it; provider errors are reduced to safe categories.
+    """
+    state = provider_state()
+    if not state["enabled"] or not state["providers"]:
+        raise RuntimeError("platform_discovery_not_enabled")
+
+    tried = []
+    succeeded = []
+    failures = []
+    empty_states = []
+    for provider in state["providers"]:
+        tried.append(provider)
+        try:
+            rows = platform_search(provider, platform)
+        except Exception as error:
+            failures.append({
+                "provider": provider,
+                "failure": _provider_failure_category(error),
+            })
+            continue
+
+        succeeded.append(provider)
+        if rows:
+            rows.providers_tried = tried
+            rows.providers_succeeded = succeeded
+            rows.provider_failures = failures
+            rows.provider_used = provider
+            return rows
+        empty_states.append(getattr(rows, "scan_state", "no_results"))
+
+    if succeeded:
+        state_name = "filtered" if "filtered" in empty_states else "no_results"
+        return DiscoveryRows(
+            (),
+            scan_state=state_name,
+            providers_tried=tried,
+            providers_succeeded=succeeded,
+            provider_failures=failures,
+            provider_used=succeeded[-1],
+        )
+    # Do not pass through provider exception text; it may contain sensitive data.
+    raise RuntimeError("all_configured_search_providers_failed") from None
 
 
 MAX_SEARCH_SNIPPET_CHARS = 500
@@ -668,7 +731,7 @@ def profile_source_status(source_health=None):
     search = provider_state()
     search_sources = {
         platform: (
-            source_name(search["provider"], platform) if search["enabled"] else None
+            router_source_name(platform) if search["enabled"] else None
         )
         for platform in PLATFORMS
     }
@@ -724,6 +787,16 @@ def profile_source_status(source_health=None):
                 "schedule_state": item.get("schedule_state", "scheduled"),
                 "next_scan_at": item.get("next_scan_at"),
                 "last_attempt_outcome": item.get("last_attempt_outcome"),
+                "search_providers_attempted": item.get(
+                    "search_providers_attempted", []
+                ),
+                "search_providers_succeeded": item.get(
+                    "search_providers_succeeded", []
+                ),
+                "search_provider_failures": item.get(
+                    "search_provider_failures", []
+                ),
+                "search_provider_used": item.get("search_provider_used"),
                 "candidate_count": item.get("profile_candidate_count", 0),
                 "eligible_count": item.get("profile_eligible_count", 0),
             })
@@ -810,6 +883,19 @@ def profile_source_status(source_health=None):
                 "reason": "public_visibility_does_not_prove_training_rights",
             },
             "search_provider": search["provider"] if search_sources[platform] else None,
+            "search_provider_used": provider_item.get("search_provider_used"),
+            "search_providers_configured": (
+                list(search["providers"]) if search_sources[platform] else []
+            ),
+            "search_providers_attempted": provider_item.get(
+                "search_providers_attempted", []
+            ),
+            "search_providers_succeeded": provider_item.get(
+                "search_providers_succeeded", []
+            ),
+            "search_provider_failures": provider_item.get(
+                "search_provider_failures", []
+            ),
             "search_provider_available": search["provider_available"],
             "search_provider_configured_name": search["configured_provider"],
             "search_provider_configured": bool(search_sources[platform]),

@@ -163,6 +163,7 @@ class AutoPostingServiceV2 {
   private recoveryInterval: NodeJS.Timeout | null = null;
   private isInitialized: boolean = false;
   private isPaused: boolean = false;
+  private isShuttingDown: boolean = false;
   private initializationPromise: Promise<void> | null = null;
 
   constructor() {
@@ -173,6 +174,7 @@ class AutoPostingServiceV2 {
     if (this.isPaused) {
       throw new Error("Auto-posting is paused and cannot accept scheduled posts");
     }
+    this.isShuttingDown = false;
     if (this.isInitialized && this.worker) return;
     if (!this.initializationPromise) {
       this.initializationPromise = (async () => {
@@ -356,6 +358,13 @@ class AutoPostingServiceV2 {
       );
     });
     this.worker.on("error", (error) => {
+      if (
+        this.isShuttingDown &&
+        error instanceof Error &&
+        error.message === "[PDIM] Redis client disconnected"
+      ) {
+        return;
+      }
       logger.warn({ err: error }, "Auto-post BullMQ worker error:");
     });
     this.recoveryInterval = setInterval(() => {
@@ -1342,6 +1351,7 @@ class AutoPostingServiceV2 {
   }
 
   async shutdown() {
+    this.isShuttingDown = true;
     logger.info("Shutting down auto-posting service...");
 
     if (this.recoveryInterval) clearInterval(this.recoveryInterval);
