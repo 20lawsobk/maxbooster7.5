@@ -14,3 +14,4 @@
 - [Publishing SIGTERM boundary](publishing-sigterm-boundary.md) — honor supervisor termination; a deployment log may not identify its source, and application code cannot prevent an external stop.
 - [Automation side-effect serialization](automation-side-effect-serialization.md) — serialize workflow steps and lifecycle transitions; retries of external actions need durable idempotency evidence.
 - [Python test interpreter alignment](python-test-interpreter-alignment.md) — ensure coverage and test tools are importable in the exact interpreter selected by the runner.
+- [Vitest timeout and sharding hygiene](vitest-cli-subprocess-contention.md) — distinguish runner timeouts from test failures and merge coverage shards before enforcing global thresholds.
