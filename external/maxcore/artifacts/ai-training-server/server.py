@@ -1598,10 +1598,27 @@ def _platform_optimization_awareness(req: Any) -> str:
     ])
 
 
+def _request_live_learning_check():
+    """Signal the existing learner after fresh awareness is actually consumed."""
+    loop = globals().get("_live_learning_loop")
+    wake = getattr(loop, "request_learning_check", None)
+    if callable(wake):
+        try:
+            return bool(wake())
+        except Exception:
+            # Learning is advisory to request latency; the scheduler still runs
+            # independently and records its own failures.
+            return False
+    return False
+
+
 def _merged_awareness_for(req: Any) -> str:
     # The immutable plan remains attached to the request/job for provenance.
     # It is structured transport metadata, not model-conditioning prose.
-    return _merged_awareness_legacy(req)
+    awareness = _merged_awareness_legacy(req)
+    if awareness:
+        _request_live_learning_check()
+    return awareness
 
 
 def _generation_plan_hash():
@@ -2608,7 +2625,44 @@ async def stop_awareness():
 @app.get("/api/awareness/unified/status")
 async def unified_awareness_status(_key=Depends(require_scope("generate"))):
     from ai_model.awareness import get_engine
-    return get_engine().status()
+    status = get_engine().status()
+    status["live_model"] = _live_awareness_capability(status.get("ready") is True)
+    return status
+
+
+def _live_awareness_capability(awareness_ready):
+    mode = os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness")
+    loop = _live_learning_loop
+    learning = loop.status() if loop is not None else {"training": "disabled", "running": False}
+    serving = _live_serving_model
+    return {
+        "mode": mode,
+        "available": awareness_ready is True,
+        "live_awareness_serving": mode == "live-awareness" and awareness_ready is True,
+        "trained_model_loaded": _model_ready is True,
+        "trained_candidate_serving": bool(serving and serving.available),
+        "learning_loop_running": learning.get("running") is True,
+        "learning_state": learning.get("training", "disabled"),
+        "last_training_run_id": learning.get("last_run_id"),
+        "awareness_endpoint_usage": learning.get("awareness_endpoint_usage", {}),
+    }
+
+
+@app.get("/api/awareness/unified/ready")
+async def unified_awareness_readiness(_key=Depends(require_scope("generate"))):
+    """Readiness for live awareness, distinct from trained-model readiness."""
+    from ai_model.awareness import get_engine
+    from fastapi.responses import JSONResponse
+    awareness = get_engine().readiness_status()
+    live_model = _live_awareness_capability(awareness.get("ready") is True)
+    ready = awareness.get("ready") is True
+    return JSONResponse(status_code=200 if ready else 503, content={
+        "ready": ready,
+        "capability": "live-awareness",
+        "live_model": live_model,
+        "generation_ready": _model_ready is True and awareness.get("ready") is True,
+        "awareness": awareness,
+    })
 
 
 @app.get("/api/awareness/unified/admin/source-status")
@@ -2657,6 +2711,8 @@ async def unified_awareness_context(request: Request, _key=Depends(require_scope
         return {"snapshot_id": None, "expires_at": None, "ready": False,
                 "awareness": "", "context": ""}
     context = conditioning(snapshot, data.get("platform", "general"), data.get("modality", "text"))
+    if context:
+        _request_live_learning_check()
     return {"snapshot_id": snapshot.id, "expires_at": snapshot.expires_at,
             "ready": True, "awareness": context, "context": context}
 
@@ -2720,9 +2776,12 @@ async def generation_readiness():
     from ai_model.awareness import get_engine
     from fastapi.responses import JSONResponse
     awareness = get_engine().readiness_status()
-    ready = bool(_model_ready and awareness.get("ready") is True)
+    awareness_ready = awareness.get("ready") is True
+    ready = bool(_model_ready and awareness_ready)
     return JSONResponse(status_code=200 if ready else 503, content={
         "ready": ready, "model_loaded": _model_ready, "awareness": awareness,
+        "live_awareness": _live_awareness_capability(awareness_ready),
+        "generation_ready": ready,
         "model_error": _model_init_error, "serving_release": _serving_release_status})
 
 

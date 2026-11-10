@@ -321,6 +321,7 @@ async function proxyRequest(
   // return a prior authorized response to an unvalidated credential.
   const isGet = req.method === "GET" || req.method === "HEAD";
   const awarenessOnly = path === "/api/awareness/unified/status" ||
+    path === "/api/awareness/unified/ready" ||
     path === "/api/awareness/unified/context" ||
     path === "/api/awareness/unified/profile-discover";
   const accountAnalytics = ["/api/analytics/capability", "/api/analytics/predict", "/api/analytics/insights"].includes(path);
@@ -1142,6 +1143,9 @@ router.get("/awareness/status", async (req, res) => {
 });
 router.get("/awareness/unified/status", async (req, res) => {
   await proxyRequest(req, res, "/api/awareness/unified/status");
+});
+router.get("/awareness/unified/ready", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/ready");
 });
 router.post("/awareness/unified/context", async (req, res) => {
   await proxyRequest(req, res, "/api/awareness/unified/context");

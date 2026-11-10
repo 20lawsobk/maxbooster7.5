@@ -52,6 +52,31 @@ class LiveServingTests(unittest.TestCase):
             self.model.generate("prompt")
         self.assertNotIn('"text"', (Path(self.temp.name) / "live-learning.json").read_text())
 
+    def test_awareness_use_wakes_the_existing_worker_with_bounded_coalescing(self):
+        loop = self.loop()
+        loop.poll = 10
+        first_tick, second_tick = threading.Event(), threading.Event()
+        ticks = []
+
+        def tick():
+            ticks.append(True)
+            (first_tick if len(ticks) == 1 else second_tick).set()
+            return loop.status()
+
+        loop.tick = tick
+        loop.start()
+        try:
+            self.assertTrue(first_tick.wait(2))
+            self.assertTrue(loop.request_learning_check())
+            self.assertFalse(loop.request_learning_check())
+            self.assertTrue(second_tick.wait(.5), "endpoint use should wake the worker before its poll interval")
+            usage = loop.status()["awareness_endpoint_usage"]
+            self.assertEqual(usage["uses"], 2)
+            self.assertEqual(usage["learning_check_signals"], 1)
+            self.assertEqual(usage["signal_min_interval_seconds"], 5)
+        finally:
+            loop.stop()
+
     def test_recovered_training_and_selection_clear_previous_error_labels(self):
         loop = self.loop()
         loop._status.update(training_error="Blocked", release_error="AwarenessUnavailable")

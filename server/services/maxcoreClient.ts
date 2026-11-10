@@ -127,6 +127,9 @@ export class MaxCoreAIClient {
       MaxCoreAIClient._modelReady = ready;
       MaxCoreAIClient._lastReadinessCheck = now;
       if (ready) logger.info("[MaxCoreAI] Model and awareness readiness confirmed");
+      else if ((data?.live_awareness as Record<string, unknown> | undefined)?.available === true) {
+        logger.info("[MaxCoreAI] Live awareness is available; certified model-backed generation is not ready");
+      }
       else logger.warn("[MaxCoreAI] Liveness responded, but model/awareness readiness is unavailable");
       return ready;
     } catch {

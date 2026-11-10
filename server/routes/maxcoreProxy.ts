@@ -42,6 +42,7 @@ const router = Router();
 
 // Existing application authorization and transport credentials remain unchanged.
 router.get("/api/awareness/unified/status", requireAuthOnly, proxyToMaxCore);
+router.get("/api/awareness/unified/ready", requireAuthOnly, proxyToMaxCore);
 router.get(
   "/api/awareness/unified/admin/source-status",
   requireAdmin,

@@ -3,6 +3,7 @@ import ast
 import asyncio
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import time
 from types import SimpleNamespace
@@ -43,7 +44,7 @@ def fresh_snapshot(now=None):
     return Snapshot.parse(doc, now=now)
 
 
-def planner_app(model):
+def planner_app(model, learning_loop=None):
     # Retain the actual Pydantic request models, route decorators, planner
     # bodies, shared context merge and immutable generation wrapper. Only the
     # process-wide startup/background services are excluded from this fixture.
@@ -56,7 +57,10 @@ def planner_app(model):
             return {"scope": scope}
         return check
 
-    names = {"_AwarenessMixin", "_as_text", "_merged_awareness_for",
+    names = {"_AwarenessMixin", "_as_text", "_request_live_learning_check",
+             "_live_awareness_capability", "unified_awareness_status",
+             "unified_awareness_readiness", "unified_awareness_context",
+             "_merged_awareness_for",
              "_merged_awareness_legacy", "_planned_generation", "MaxcoreTextRequest",
              "ApiGenerateTextRequest", "ApiGenerateContentRequest", "_planner_inputs",
              "maxcore_generate_text", "api_generate_text", "api_generate_content"}
@@ -66,10 +70,11 @@ def planner_app(model):
              and node.name in names]
     scope = {"app": app, "Any": Any, "Dict": Dict, "List": List, "Optional": Optional,
              "BaseModel": BaseModel, "Field": Field, "model_validator": model_validator,
-             "Depends": Depends, "HTTPException": HTTPException, "Request": Request,
+             "Depends": Depends, "HTTPException": HTTPException, "Request": Request, "os": os,
              "require_scope": require_scope, "json": json, "time": time, "uuid": uuid,
              "_model_ready": False, "_script_agent": None, "_distribution_agent": None,
              "_live_serving_model": model,
+             "_live_learning_loop": learning_loop,
              "_serving_release_status": {"checkpoint_sha256": "unrelated-checkpoint"},
              "_GENERATION_CONTRACT": "documented-stack-v3"}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SERVER), "exec"), scope)
@@ -104,16 +109,55 @@ async def post_json(app, path, body, *, authenticated=True):
     return status, json.loads(data)
 
 
+async def get_json(app, path, *, authenticated=True):
+    messages = []
+
+    async def receive():
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message):
+        messages.append(message)
+
+    headers = []
+    if authenticated:
+        headers.append((b"authorization", b"Bearer fixture-generation"))
+    await app({"type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1",
+               "method": "GET", "scheme": "http", "path": path, "raw_path": path.encode(),
+               "root_path": "", "query_string": b"", "headers": headers,
+               "client": ("127.0.0.1", 12345), "server": ("127.0.0.1", 80)}, receive, send)
+    status = next(message["status"] for message in messages
+                  if message["type"] == "http.response.start")
+    data = b"".join(message.get("body", b"") for message in messages
+                    if message["type"] == "http.response.body")
+    return status, json.loads(data)
+
+
 class LiveAwarenessPlannerHTTP(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.snapshot = fresh_snapshot()
-        self.engine = SimpleNamespace(current_snapshot=Mock(return_value=self.snapshot))
-        self.patch = patch("ai_model.awareness.engine.get_engine", return_value=self.engine)
-        self.patch.start()
-        self.addCleanup(self.patch.stop)
+        self.engine = SimpleNamespace(
+            current_snapshot=Mock(return_value=self.snapshot),
+            status=Mock(return_value={"ready": True, "phase": "idle"}),
+            readiness_status=Mock(return_value={"ready": True, "snapshot_ready": True}),
+        )
+        self.patches = [
+            patch("ai_model.awareness.engine.get_engine", return_value=self.engine),
+            patch("ai_model.awareness.get_engine", return_value=self.engine),
+        ]
+        for active_patch in self.patches:
+            active_patch.start()
+            self.addCleanup(active_patch.stop)
         self.model = LiveServingModel()
         self.model.pin = Mock(wraps=self.model.pin)
-        self.app = planner_app(self.model)
+        self.learning_loop = SimpleNamespace(
+            status=Mock(return_value={
+                "running": True, "training": "waiting_for_observations",
+                "last_run_id": None,
+                "awareness_endpoint_usage": {"uses": 0, "learning_check_signals": 0},
+            }),
+            request_learning_check=Mock(return_value=True),
+        )
+        self.app = planner_app(self.model, self.learning_loop)
 
     def assert_clean_context(self):
         self.assertIsNone(active_plan.get())
@@ -140,6 +184,31 @@ class LiveAwarenessPlannerHTTP(unittest.IsolatedAsyncioTestCase):
             self.assertIn("Caller creative context", step["params"]["awareness"])
         self.model.pin.assert_not_called()
         self.assert_clean_context()
+
+    async def test_live_awareness_readiness_does_not_claim_a_trained_model(self):
+        status, _ = await get_json(self.app, "/api/awareness/unified/ready", authenticated=False)
+        self.assertEqual(status, 401)
+        status, result = await get_json(self.app, "/api/awareness/unified/ready")
+        self.assertEqual(status, 200, result)
+        self.assertTrue(result["ready"])
+        self.assertTrue(result["live_model"]["available"])
+        self.assertFalse(result["live_model"]["trained_model_loaded"])
+        self.assertFalse(result["generation_ready"])
+
+        status, result = await get_json(self.app, "/api/awareness/unified/status")
+        self.assertEqual(status, 200, result)
+        self.assertTrue(result["live_model"]["available"])
+        self.assertEqual(result["live_model"]["learning_state"], "waiting_for_observations")
+        self.assertFalse(result["live_model"]["trained_candidate_serving"])
+
+    async def test_awareness_context_use_signals_learning_outside_request_path(self):
+        status, result = await post_json(self.app, "/api/awareness/unified/context", {
+            "platform": "instagram", "modality": "text",
+        })
+        self.assertEqual(status, 200, result)
+        self.assertTrue(result["ready"])
+        self.assertEqual(result["snapshot_id"], self.snapshot.id)
+        self.learning_loop.request_learning_check.assert_called_once_with()
 
     async def test_api_planner_alias_keeps_one_snapshot_and_caller_request(self):
         status, result = await post_json(self.app, "/api/generate/text", {

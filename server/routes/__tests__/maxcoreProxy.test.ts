@@ -97,6 +97,7 @@ describe("MaxCore public proxy contract", () => {
     ["post", "/api/audio/mastering-recommendation"],
     ["post", "/api/audio/mixing-recommendation"],
     ["get", "/api/awareness/unified/admin/source-status"],
+    ["get", "/api/awareness/unified/ready"],
     ["post", "/api/awareness/unified/profile-discover"],
     ["get", "/api/models/social/state"],
     ["post", "/api/train/feedback"],

@@ -81,6 +81,7 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
         ready: false,
         model_loaded: false,
         awareness: { ready: true },
+        live_awareness: { available: true },
       }), { status: 503, headers: { "content-type": "application/json" } }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
         ready: true,
@@ -93,6 +94,10 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
     expect(await MaxCoreAIClient.isAvailable()).toBe(false);
     expect(await MaxCoreAIClient.isAvailable()).toBe(false);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    const { logger } = await import("../../server/logger.js");
+    expect(logger.info).toHaveBeenCalledWith(
+      "[MaxCoreAI] Live awareness is available; certified model-backed generation is not ready",
+    );
 
     expect((MaxCoreAIClient as any)._remoteAvailable).toBe(true);
     (MaxCoreAIClient as any)._lastReadinessCheck = Date.now() - 31_000;

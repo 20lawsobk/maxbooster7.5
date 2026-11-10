@@ -110,12 +110,29 @@ class LiveLearningLoop:
         self.steps, self.context_tokens = steps, context_tokens
         self.trainer, self.loader, self.clock = trainer, loader, clock
         self._stop = threading.Event()
+        self._wake = threading.Event()
         self._thread = None
         self._guard = threading.Lock()
+        self._usage_lock = threading.Lock()
+        self._awareness_endpoint_uses = 0
+        self._learning_check_signals = 0
+        self._last_awareness_use_at = None
+        self._last_learning_signal_at = None
+        self._learning_signal_min_interval = 5
         self._status = {"training": "waiting_for_observations", "serving": "waiting_for_candidate"}
 
     def status(self):
-        return {**self._status, "interval_seconds": self.interval,
+        with self._usage_lock:
+            endpoint_usage = {
+                "uses": self._awareness_endpoint_uses,
+                "last_used_at": self._last_awareness_use_at,
+                "learning_check_signals": self._learning_check_signals,
+                "last_learning_signal_at": self._last_learning_signal_at,
+                "signal_min_interval_seconds": self._learning_signal_min_interval,
+            }
+        return {**self._status, "running": bool(self._thread and self._thread.is_alive()),
+                "awareness_endpoint_usage": endpoint_usage,
+                "interval_seconds": self.interval,
                 "reload_seconds": self.poll, "steps": self.steps,
                 "context_tokens": self.context_tokens, "review_required": True,
                 "learning_policy": "public-peak-shortform-v1" if self.peak_content else "legacy-context-v1",
@@ -137,6 +154,27 @@ class LiveLearningLoop:
                 "bootstrap_window_seconds": self.bootstrap_window,
                 "bootstrap_max_runs": self.bootstrap_max_runs,
                 "worker_timeout_seconds": self.worker_timeout}
+
+    def request_learning_check(self):
+        """Wake the existing learner from awareness use without doing work inline.
+
+        Requests are coalesced to one wake signal per five seconds. The learner's
+        persisted cooldown, observation fingerprint, rights checks, worker lock,
+        and candidate review requirements remain authoritative.
+        """
+        now = self.clock()
+        should_signal = False
+        with self._usage_lock:
+            self._awareness_endpoint_uses += 1
+            self._last_awareness_use_at = now
+            previous = self._last_learning_signal_at
+            if previous is None or now - previous >= self._learning_signal_min_interval:
+                self._last_learning_signal_at = now
+                self._learning_check_signals += 1
+                should_signal = True
+        if should_signal and not self._stop.is_set():
+            self._wake.set()
+        return should_signal
 
     def _read_state(self):
         path = self.directory / "live-learning.json"
@@ -325,12 +363,15 @@ class LiveLearningLoop:
         self._stop.clear()
         def run():
             while not self._stop.is_set():
+                self._wake.clear()
                 self.tick()
-                self._stop.wait(self.poll)
+                if not self._stop.is_set():
+                    self._wake.wait(self.poll)
         self._thread = threading.Thread(target=run, name="live-awareness-learning", daemon=True)
         self._thread.start()
 
     def stop(self):
         self._stop.set()
+        self._wake.set()
         if self._thread:
             self._thread.join(timeout=3)
