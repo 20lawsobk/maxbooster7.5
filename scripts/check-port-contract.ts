@@ -43,8 +43,9 @@ function fail(message: string): never {
 // (throws on any collision, including invalid non-numeric values) using the
 // real process.env, so we get that validation for free by importing it.
 let runtimePorts: Record<string, number>;
+let dnsNodeLocalHealthPort: number;
 try {
-  ({ runtimePorts } = await import("../server/config/ports.js"));
+  ({ runtimePorts, dnsNodeLocalHealthPort } = await import("../server/config/ports.js"));
 } catch (err) {
   fail(
     `runtime port contract failed to load: ${
@@ -126,10 +127,11 @@ if (mappings.length === 0) {
 }
 
 if (process.env.PORT_CONTRACT_REQUIRE_ALL === "1") {
-  const expected = new Set(Object.values(runtimePorts));
+  const required = new Set(Object.values(runtimePorts));
+  const allowed = new Set([...required, dnsNodeLocalHealthPort]);
   const configured = new Set(mappings.map((mapping) => mapping.localPort));
-  const missing = [...expected].filter((port) => !configured.has(port));
-  const unexpected = [...configured].filter((port) => !expected.has(port));
+  const missing = [...required].filter((port) => !configured.has(port));
+  const unexpected = [...configured].filter((port) => !allowed.has(port));
   if (missing.length || unexpected.length) {
     fail(
       `strict port contract mismatch; missing mappings: ${missing.join(", ") || "none"}; ` +
@@ -223,7 +225,7 @@ const internalPortSet = new Set(
     .filter(([name]) => name !== "app")
     .map(([, port]) => port),
 );
-internalPortSet.add(Number(process.env.DNS_NODE_LOCAL_HEALTH_PORT || 5380));
+internalPortSet.add(dnsNodeLocalHealthPort);
 // Redis/BullMQ is also an internal-only dependency even though it is selected
 // by URL rather than server/config/ports.ts. Protect both its conventional
 // local port and the effective configured loopback port from being moved to a

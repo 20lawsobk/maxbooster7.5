@@ -114,7 +114,7 @@ externalPort = 80
     );
   });
 
-  it("strictly requires all eleven app listener mappings for launch commands", () => {
+  it("requires runtime service mappings and permits the private DNS health mapping", () => {
     const result = checkPortConfig(`
 [[ports]]
 localPort = 53
@@ -153,7 +153,7 @@ externalPort = 80
 localPort = 5353
 `, { PORT_CONTRACT_REQUIRE_ALL: "1" });
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("missing mappings: 53, 5556, 8008, 8090, 9877, 9878, 9879, 9880, 5380");
+    expect(result.stderr).toContain("missing mappings: 53, 5556, 8008, 8090, 9877, 9878, 9879, 9880");
   });
 
   it("accepts local-only Redis 6379 as a private entry", () => {
