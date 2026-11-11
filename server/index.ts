@@ -39,6 +39,7 @@ import {
 import path from "path";
 import fs from "fs";
 import { isProductionEnv } from "./lib/envHelpers.js";
+import type { ViteRuntime } from "./vite.js";
 
 // MANDATORY safety imports - these MUST load successfully
 import { initializeSafetySystems, applyMandatoryMiddleware, globalErrorHandler as safetyErrorHandler, sanitizationMiddleware, killSwitch } from "./safety/index.js";
@@ -535,6 +536,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 (async () => {
+  const developmentMode = !isProductionEnv();
+  let viteRuntime: ViteRuntime | null = null;
   // ── Option 2: Parallel deferred imports ──────────────────────────────────
   // All modules that were previously static top-level imports are loaded here
   // in one parallel Promise.all.  Removing them from the module's static
@@ -583,6 +586,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // express.static() calls next() for unknown paths so Vite's own module graph
   // (/@vite/client, /src/...) is unaffected.
   serveStaticFiles(app);
+  if (developmentMode) {
+    const { createViteRuntime } = await import("./vite.js");
+    viteRuntime = await createViteRuntime(httpServer);
+    // Vite's dev modules are static code, not user requests. Serve them before
+    // express-session so a cold PDIM/session store cannot stall the mobile
+    // preview's initial JavaScript graph. The SPA fallback stays after API
+    // registration below, preserving API and page-route precedence.
+    app.use(viteRuntime.middleware);
+  }
   logger.info(
     "✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)",
   );
@@ -1450,11 +1462,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // MANDATORY global error handler (from safety module) - must be LAST middleware
   app.use(safetyErrorHandler);
 
-  if (isProductionEnv()) {
+  if (!developmentMode) {
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite.js");
-    await setupVite(httpServer, app);
+    if (!viteRuntime) {
+      throw new Error("Vite runtime was not initialized in development mode.");
+    }
+    viteRuntime.registerSpaFallback(app);
   }
   // Real SPA handler is now registered — disable the boot-time fallback shim.
   _spaHandlerReady = true;

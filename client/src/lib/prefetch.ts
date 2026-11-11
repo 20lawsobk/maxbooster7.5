@@ -9,8 +9,8 @@
  *   bootstrapUserData(qc)        — Call /api/bootstrap once after auth and
  *                                  pre-populate the query cache so the Dashboard
  *                                  renders instantly without individual API calls.
- *   prefetchAllAuthChunks()      — Eagerly download JS chunks for every auth
- *                                  route on idle so navigation is instant.
+ *   prefetchAllAuthChunks()      — Sequentially download auth-route chunks
+ *                                  only on confirmed fast desktop clients.
  *   prefetchRoute(importFn)      — Lazy-load a page JS chunk on idle
  *   prefetchRouteByPath(path)    — Load chunk + key API data for a path
  *   setupLinkPrefetching()       — Register pointer-over listener on links;
@@ -18,8 +18,8 @@
  *   prefetchAdjacentRoutes(path) — Background-prefetch likely next routes
  *                                  (called on route change, idle-queued)
  *
- * All prefetching is suppressed on 2G/slow-2g connections and when
- * navigator?.connection.saveData is true.
+ * Speculative downloads are suppressed for data-saving, slow-network, and
+ * low-capacity clients. Unknown/mobile clients get intent-based prefetch only.
  *
  * Authentication-gated API endpoints are skipped when the user is logged out
  * (call setAuthState(true) after successful login to enable them).
@@ -27,6 +27,7 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 import { offlineIdentity, assertOfflineIdentity } from "./offline/identity";
+import { getPrefetchMode } from "./prefetchPolicy";
 
 const prefetchedRoutes = new Set<string>();
 const prefetchedData = new Set<string>();
@@ -44,13 +45,44 @@ export function setAuthState(authenticated: boolean): void {
 
 function shouldPrefetch(): boolean {
   if (typeof navigator === "undefined") return false;
-  const conn = (navigator as Record<string, unknown>).connection;
-  if (conn) {
-    if (conn?.saveData) return false;
-    if (conn?.effectiveType === "2g" || conn?.effectiveType === "slow-2g")
-      return false;
-  }
-  return true;
+  const clientNavigator = navigator as Navigator & {
+    connection?: {
+      saveData?: boolean;
+      effectiveType?: string;
+      downlink?: number;
+    };
+    deviceMemory?: number;
+  };
+  return getPrefetchMode({
+    saveData: clientNavigator.connection?.saveData,
+    effectiveType: clientNavigator.connection?.effectiveType,
+    downlink: clientNavigator.connection?.downlink,
+    deviceMemory: clientNavigator.deviceMemory,
+    hardwareConcurrency: clientNavigator.hardwareConcurrency,
+    viewportWidth: typeof window === "undefined" ? 0 : window.innerWidth,
+  }) !== "none";
+}
+
+function canPrefetchDuringIdle(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const clientNavigator = navigator as Navigator & {
+    connection?: {
+      saveData?: boolean;
+      effectiveType?: string;
+      downlink?: number;
+    };
+    deviceMemory?: number;
+  };
+  return (
+    getPrefetchMode({
+      saveData: clientNavigator.connection?.saveData,
+      effectiveType: clientNavigator.connection?.effectiveType,
+      downlink: clientNavigator.connection?.downlink,
+      deviceMemory: clientNavigator.deviceMemory,
+      hardwareConcurrency: clientNavigator.hardwareConcurrency,
+      viewportWidth: typeof window === "undefined" ? 0 : window.innerWidth,
+    }) === "idle"
+  );
 }
 
 const routeImportMap: Record<string, () => Promise<unknown>> = {
@@ -129,6 +161,9 @@ export function setupLinkPrefetching() {
   let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const handlePointerOver = (e: Event) => {
+    // Touch users navigate by tapping; do not turn touch pointer events into
+    // speculative downloads on phones and tablets.
+    if ((e as PointerEvent).pointerType === "touch") return;
     const target = (e?.target as HTMLElement)?.closest("a[href], [data-href]");
     if (!target) return;
 
@@ -161,6 +196,7 @@ export function setupLinkPrefetching() {
 }
 
 export function prefetchAdjacentRoutes(currentPath: string) {
+  if (!canPrefetchDuringIdle()) return;
   const adjacencyMap: Record<string, string[]> = {
     "/": ["/dashboard", "/login", "/register", "/pricing"],
     "/login": ["/dashboard", "/register"],
@@ -284,23 +320,34 @@ const ALL_AUTH_CHUNKS: Array<() => Promise<unknown>> = [
  * delay, no Suspense skeleton, just an immediate render.
  */
 export function prefetchAllAuthChunks(): void {
-  if (!shouldPrefetch()) return;
+  if (!canPrefetchDuringIdle()) return;
 
-  const load = () => {
-    for (const fn of ALL_AUTH_CHUNKS) {
-      const key = fn?.toString();
-      if (!prefetchedRoutes?.has(key)) {
-        prefetchedRoutes?.add(key);
-        fn().catch(() => {});
+  let index = 0;
+  const scheduleNext = () => {
+    if (index >= ALL_AUTH_CHUNKS.length) return;
+
+    const loadOne = (deadline?: IdleDeadline) => {
+      if (deadline && !deadline.didTimeout && deadline.timeRemaining() < 8) {
+        scheduleNext();
+        return;
       }
+
+      const importFn = ALL_AUTH_CHUNKS[index++];
+      const key = importFn.toString();
+      if (prefetchedRoutes.has(key)) {
+        scheduleNext();
+        return;
+      }
+      prefetchedRoutes.add(key);
+      void importFn().catch(() => {}).finally(scheduleNext);
+    };
+
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(loadOne, { timeout: 5000 });
+    } else {
+      window.setTimeout(() => loadOne(), 2000);
     }
   };
 
-  if ("requestIdleCallback" in window) {
-    (window as Record<string, unknown>).requestIdleCallback(load, {
-      timeout: 5000,
-    });
-  } else {
-    setTimeout(load, 2000);
-  }
+  scheduleNext();
 }

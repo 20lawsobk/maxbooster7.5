@@ -1,6 +1,7 @@
 import { logger } from "../logger.js";
 import { applyIoredisCompatShim } from "../lib/redisCompat.js";
 import { getPdimClient } from "../lib/pdimClient.js";
+import { cbIsPdimUnhealthy } from "../lib/pdimCircuitBreaker.js";
 
 interface CacheConfig {
   defaultTTL: number;
@@ -42,6 +43,8 @@ export class DistributedCache {
   private readonly L1_MAX = 5_000;
   private readonly L1_TTL_MS = 4_000;
   private l1PrunedAt = Date?.now();
+  private pendingReads = new Map<string, Promise<string | null>>();
+  private pendingFetches = new Map<string, Promise<unknown>>();
 
   private l1Get(key: string): string | null {
     const entry = this.l1.get(key);
@@ -70,6 +73,27 @@ export class DistributedCache {
 
   private l1Del(key: string): void {
     this.l1.delete(key);
+  }
+
+  private readFromPdim(key: string): Promise<string | null> {
+    const pending = this.pendingReads.get(key);
+    if (pending) return pending;
+
+    let timeout: ReturnType<typeof setTimeout>;
+    let read: Promise<string | null>;
+    read = Promise.race([
+      this.redis.get(key),
+      new Promise<null>((resolve) => {
+        timeout = setTimeout(() => resolve(null), 500);
+      }),
+    ]).finally(() => {
+      clearTimeout(timeout);
+      if (this.pendingReads.get(key) === read) {
+        this.pendingReads.delete(key);
+      }
+    });
+    this.pendingReads.set(key, read);
+    return read;
   }
 
   private constructor(config: Partial<CacheConfig> = {}) {
@@ -114,22 +138,16 @@ export class DistributedCache {
       }
     }
 
-    if (!this.redis) {
+    if (!this.redis || cbIsPdimUnhealthy()) {
       this.stats.misses++;
       return null;
     }
 
-    // Timeout guard: under PDIM congestion the ioredis call can hang indefinitely.
-    // After 500 ms we treat the result as a cache miss and let the fetcher run.
-    // This is safe: the data path (fetcher → DB) always works without cache.
-    const PDIM_GET_TIMEOUT_MS = 500;
     try {
-      const value = await Promise?.race([
-        this.redis.get(key),
-        new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), PDIM_GET_TIMEOUT_MS),
-        ),
-      ]);
+      // Collapse same-key misses in this process and fail fast while the shared
+      // PDIM breaker knows the backing store is unhealthy. This prevents cache
+      // misses from adding more queued Redis calls to an already congested PDIM.
+      const value = await this.readFromPdim(key);
       if (value) {
         this.l1Set(key, value);
         this.stats.hits++;
@@ -225,12 +243,26 @@ export class DistributedCache {
       // Defensive: get() is already non-throwing, but belt-and-suspenders
     }
 
-    const value = await fetcher();
+    const pending = this.pendingFetches.get(key);
+    if (pending) return pending as Promise<T>;
 
-    // Fire-and-forget cache write — must not delay or fail the response
-    this.set(key, value, ttlSeconds).catch(() => {});
+    let fetch: Promise<T>;
+    fetch = (async () => {
+      const value = await fetcher();
 
-    return value;
+      // Fire-and-forget cache write — must not delay or fail the response
+      this.set(key, value, ttlSeconds).catch(() => {});
+
+      return value;
+    })();
+    this.pendingFetches.set(key, fetch);
+    try {
+      return await fetch;
+    } finally {
+      if (this.pendingFetches.get(key) === fetch) {
+        this.pendingFetches.delete(key);
+      }
+    }
   }
 
   async getOrSetWithLock<T>(

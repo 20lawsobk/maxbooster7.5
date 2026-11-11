@@ -1,6 +1,7 @@
 /**
- * Max Booster Service Worker v12
+ * Max Booster Service Worker v13
  *
+ * v13: cache WebP branding and recognize Vite's base64url asset hashes.
  * v12: public-only asset caching, owner-bound receipt-backed handoffs,
  * account Web Lock coordination and acknowledged waiting-worker activation.
  *
@@ -34,7 +35,7 @@ const IS_DEV =
   self.location.hostname.endsWith(".replit.dev") ||
   self.location.hostname.endsWith(".picard.replit.dev");
 
-const CACHE_VER = "v12";
+const CACHE_VER = "v13";
 const STATIC_CACHE = "max-booster-static-" + CACHE_VER;
 const DYNAMIC_CACHE = "max-booster-dynamic-" + CACHE_VER;
 const API_CACHE = "max-booster-api-" + CACHE_VER;
@@ -47,6 +48,7 @@ const STATIC_ASSETS = [
   "/favicon.svg",
   "/favicon-32.png",
   "/logo.png",
+  "/logo.webp",
 ];
 
 const API_CACHE_ENDPOINTS = [
@@ -78,6 +80,8 @@ const UPDATE_CONTROL_CACHE = "max-booster-update-control-v1";
 const HANDOFF_CACHE = "max-booster-sync-handoffs-v1";
 const ACCOUNT_STATE_CACHE = "max-booster-account-state-v1";
 let updateRequest = null;
+const HASHED_PUBLIC_ASSET =
+  /^\/assets\/[^/]*-[A-Za-z0-9_-]{6,16}\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif|avif)$/;
 
 // ── Install ──────────────────────────────────────────────────────────────────
 // Verify required public assets before install succeeds; remain waiting.
@@ -134,9 +138,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   // Private responses and writes belong to the account-scoped page repository.
-  const publicAsset = url.origin === self.location.origin &&
+  const publicAsset =
+    url.origin === self.location.origin &&
     (STATIC_ASSETS.includes(url.pathname) ||
-      /^\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.(js|css)$/.test(url.pathname));
+      HASHED_PUBLIC_ASSET.test(url.pathname));
   if (!publicAsset) {
     if (request.mode === "navigate") {
       event.respondWith(fetch(request).catch(async () =>
@@ -162,9 +167,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Hashed static assets (immutable): cache-first, no expiry.
-  // Pattern matches Vite's content-hash filenames: /assets/name-[hash].js|css
-  if (url.pathname.match(/assets\/.*-[a-f0-9]{8,}\.(js|css)$/)) {
+  // Public app assets are immutable or versioned by the service-worker update.
+  // Vite hashes are base64url, not hex-only; match the same filename family
+  // used by the server's static cache headers.
+  if (
+    STATIC_ASSETS.includes(url.pathname) ||
+    HASHED_PUBLIC_ASSET.test(url.pathname)
+  ) {
     event.respondWith(cacheFirst(request, STATIC_CACHE));
     return;
   }

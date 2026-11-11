@@ -1,6 +1,5 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import * as Sentry from "@sentry/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -19,23 +18,56 @@ import { reportWebVitals } from "./lib/reportWebVitals";
 // VITE_SENTRY_DSN must be set to the same value as the server-side SENTRY_DSN secret.
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
 if (sentryDsn) {
-  Sentry.init({
-    dsn: sentryDsn,
-    environment: import.meta.env.MODE ?? "development",
-    tracesSampleRate: import.meta.env.PROD ? 0.1 : 0,
-    replaysSessionSampleRate: 0,
-    replaysOnErrorSampleRate: import.meta.env.PROD ? 0.5 : 0,
-    beforeSend(event) {
-      // Drop ResizeObserver noise
-      if (
-        event.exception?.values?.some((v) =>
-          v.value?.includes("ResizeObserver loop"),
-        )
-      )
-        return null;
-      return event;
-    },
-  });
+  const initializeSentry = () => {
+    void import("@sentry/react")
+      .then(({ init }) => {
+        init({
+          dsn: sentryDsn,
+          environment: import.meta.env.MODE ?? "development",
+          tracesSampleRate: import.meta.env.PROD ? 0.1 : 0,
+          replaysSessionSampleRate: 0,
+          replaysOnErrorSampleRate: import.meta.env.PROD ? 0.5 : 0,
+          beforeSend(event) {
+            // Drop ResizeObserver noise
+            if (
+              event.exception?.values?.some((v) =>
+                v.value?.includes("ResizeObserver loop"),
+              )
+            )
+              return null;
+            return event;
+          },
+        });
+      })
+      .catch(() => {
+        console.warn("[Sentry] Deferred initialization failed");
+      });
+  };
+
+  // Error reporting is optional telemetry. Initialize after initial HTML and
+  // hydration have had time to paint so its SDK cannot compete with first paint.
+  const deferSentryUntilAfterInitialPaint = () => {
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (
+        callback: () => void,
+        options?: { timeout: number },
+      ) => number;
+    };
+    if (idleWindow.requestIdleCallback) {
+      idleWindow.requestIdleCallback(initializeSentry, { timeout: 5000 });
+    } else {
+      window.setTimeout(initializeSentry, 2000);
+    }
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      deferSentryUntilAfterInitialPaint,
+      { once: true },
+    );
+  } else {
+    deferSentryUntilAfterInitialPaint();
+  }
 }
 
 const rootElement = document.getElementById("root");
