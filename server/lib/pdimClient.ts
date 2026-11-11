@@ -16,6 +16,7 @@ import { logger } from "../logger.js";
 import { loopbackUrl, runtimePorts } from "../config/ports.js";
 import { execLuaViaPdim } from "./luaExecutor.js";
 import { cbAllowRequest, cbRecordFailure as cbRecord503, cbRecordSuccess, cbHalfOpenFailed, cbForceClose, cbGetState } from "./pdimCircuitBreaker.js";
+import { retryTransientStorageOperation } from "./transientStorageRetry.js";
 
 // ── Adaptive PDIM Rate Limiter (AIMD) ────────────────────────────────────────
 // "Fluid like water: easy to contain but expands freely when userbase expands."
@@ -1059,6 +1060,9 @@ export class PdimRedisClient extends EventEmitter {
   ): Promise<T> {
     if (this.disconnected) return Promise.reject(this.disconnectedError);
     const [cmd, ...rawArgs] = command as (string | number | null | undefined)[];
+    if (typeof cmd !== "string" || !cmd.trim()) {
+      throw new TypeError("[PDIM] command must be a non-empty string");
+    }
     // PDIM's HTTP contract accepts only string arguments. An absent Redis value
     // is a result (`{ result: null }`), not a valid command argument. Rejecting
     // nullish inputs prevents silently persisting an empty string in its place.
@@ -1093,7 +1097,7 @@ export class PdimRedisClient extends EventEmitter {
 
       let counted = false; // prevent double-counting in the catch block
       try {
-        const res = await fetch(this.execUrl, {
+        const request = () => fetch(this.execUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1107,6 +1111,15 @@ export class PdimRedisClient extends EventEmitter {
           // circuit breaker rather than silently following into an HTML page.
           redirect: "manual",
         });
+        // GET is read-only; HSET replaces the same field values on replay.
+        // A single transport-only retry is safe for both if the connection
+        // resets before the response reaches this process. Other commands,
+        // including INCR and queue mutations, are never replayed after an
+        // uncertain write.
+        const normalizedCommand = cmd.toUpperCase();
+        const res = normalizedCommand === "GET" || normalizedCommand === "HSET"
+          ? await retryTransientStorageOperation(request, { delaysMs: [100] })
+          : await request();
 
         if (!res.ok) {
           const text = await res.text().catch(() => "");

@@ -54,6 +54,33 @@ _wait_http() {
   return 1
 }
 
+_boosterstate_healthy() {
+  node --input-type=module -e '
+    try {
+      const headers = {};
+      if (process.env.BOOSTERSTATE_SECRET) {
+        headers.authorization = `Bearer ${process.env.BOOSTERSTATE_SECRET}`;
+      }
+      const response = await fetch(`http://127.0.0.1:${process.argv[1]}/health`, {
+        headers,
+        signal: AbortSignal.timeout(500),
+      });
+      process.exit(response.status === 200 ? 0 : 1);
+    } catch { process.exit(1); }
+  ' "$BOOSTERSTATE_SIDECAR_PORT" >/dev/null 2>&1
+}
+
+_tcp_port_open() {
+  node --input-type=module -e '
+    import net from "node:net";
+    const socket = net.createConnection({ host: "127.0.0.1", port: Number(process.argv[1]) });
+    socket.setTimeout(400);
+    socket.once("connect", () => { socket.destroy(); process.exit(0); });
+    socket.once("error", () => process.exit(1));
+    socket.once("timeout", () => { socket.destroy(); process.exit(1); });
+  ' "$BOOSTERSTATE_SIDECAR_PORT" >/dev/null 2>&1
+}
+
 if ! redis_supervisor_start "$(command -v node)" "$(cd "${_SCRIPT_DIR}/.." && pwd)"; then
   echo "[start-dev] FATAL: configured loopback Redis is unavailable" >&2
   exit 1
@@ -75,20 +102,46 @@ elif [ -x "./boosterstate/target/debug/boosterstate" ]; then
 fi
 
 if [ -n "$_BOOSTER_BIN" ]; then
-  if pgrep -x boosterstate >/dev/null 2>&1; then
-    echo "[start-dev] boosterstate already running — skipping"
+  if _boosterstate_healthy; then
+    echo "[start-dev] BoosterState authenticated health check passed — reusing existing instance"
+  elif _tcp_port_open; then
+    echo "[start-dev] FATAL: port ${BOOSTERSTATE_SIDECAR_PORT} is occupied by a listener that is not the configured BoosterState service" >&2
+    exit 1
   else
     BOOSTERSTATE_PORT="${BOOSTERSTATE_SIDECAR_PORT}" "$_BOOSTER_BIN" &
     _BOOSTER_PID=$!
-    # Surface a bind failure before starting the app. A short check is enough:
-    # BoosterState binds its socket before entering its serve loop.
-    sleep 0.25
-    if ! kill -0 "$_BOOSTER_PID" 2>/dev/null; then
-      wait "$_BOOSTER_PID"
-      echo "[Ports] FATAL: BoosterState did not remain running on ${BOOSTERSTATE_SIDECAR_PORT}" >&2
+    _BOOSTER_READY=0
+    for _attempt in $(seq 1 50); do
+      if _boosterstate_healthy; then
+        _BOOSTER_READY=1
+        break
+      fi
+      if ! kill -0 "$_BOOSTER_PID" 2>/dev/null; then
+        set +e
+        wait "$_BOOSTER_PID"
+        _BOOSTER_EXIT=$?
+        set -e
+        _BOOSTER_PID=""
+        if _boosterstate_healthy; then
+          echo "[start-dev] BoosterState became healthy through a concurrent startup; reusing it"
+          _BOOSTER_READY=1
+        else
+          echo "[start-dev] FATAL: BoosterState exited before authenticated health on port ${BOOSTERSTATE_SIDECAR_PORT} (exit ${_BOOSTER_EXIT})" >&2
+          exit 1
+        fi
+        break
+      fi
+      sleep 0.1
+    done
+    if [ "$_BOOSTER_READY" != "1" ]; then
+      _stop_owned "$_BOOSTER_PID"
+      _BOOSTER_PID=""
+      echo "[start-dev] FATAL: BoosterState did not pass authenticated health on port ${BOOSTERSTATE_SIDECAR_PORT} within 5 seconds" >&2
       exit 1
     fi
-    echo "[start-dev] boosterstate started (pid ${_BOOSTER_PID}) on internal port ${BOOSTERSTATE_SIDECAR_PORT} via ${_BOOSTER_BIN}"
+    if [ -n "$_BOOSTER_PID" ]; then
+      echo "[start-dev] BoosterState authenticated health passed (pid ${_BOOSTER_PID}) on internal port ${BOOSTERSTATE_SIDECAR_PORT} via ${_BOOSTER_BIN}"
+    fi
   fi
 else
   echo "[start-dev] boosterstate binary not found (bin/boosterstate or boosterstate/target/{release,debug}) — skipping sidecar"

@@ -4939,6 +4939,57 @@ try {
   }
 });
 
+// server/lib/transientStorageRetry.ts
+function isTransientStorageTransportError(error) {
+  const seen = /* @__PURE__ */ new Set();
+  let current = error;
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    if (typeof current === "object") {
+      const candidate = current;
+      if (typeof candidate.code === "string" && TRANSIENT_CODES.has(candidate.code)) {
+        return true;
+      }
+      if (candidate.name === "AbortError" || candidate.name === "TimeoutError") {
+        return true;
+      }
+      current = candidate.cause;
+    } else {
+      break;
+    }
+  }
+  return false;
+}
+async function retryTransientStorageOperation(operation, options = {}) {
+  const delays = options.delaysMs ?? [100, 300];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= delays.length || !isTransientStorageTransportError(error)) {
+        throw error;
+      }
+      const delay = delays[attempt];
+      if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+var TRANSIENT_CODES;
+var init_transientStorageRetry = __esm({
+  "server/lib/transientStorageRetry.ts"() {
+    "use strict";
+    TRANSIENT_CODES = /* @__PURE__ */ new Set([
+      "ECONNRESET",
+      "ECONNREFUSED",
+      "EPIPE",
+      "ETIMEDOUT",
+      "EAI_AGAIN",
+      "UND_ERR_SOCKET",
+      "UND_ERR_CONNECT_TIMEOUT"
+    ]);
+  }
+});
+
 // server/lib/pdimClient.ts
 var pdimClient_exports = {};
 __export(pdimClient_exports, {
@@ -5223,6 +5274,7 @@ var init_pdimClient = __esm({
     init_ports();
     init_luaExecutor();
     init_pdimCircuitBreaker();
+    init_transientStorageRetry();
     clusterWorkers = Math.max(
       1,
       parseInt(process.env.PDIM_CLUSTER_WORKERS ?? "1", 10)
@@ -5604,6 +5656,9 @@ var init_pdimClient = __esm({
       exec(command, options = {}) {
         if (this.disconnected) return Promise.reject(this.disconnectedError);
         const [cmd, ...rawArgs] = command;
+        if (typeof cmd !== "string" || !cmd.trim()) {
+          throw new TypeError("[PDIM] command must be a non-empty string");
+        }
         if (rawArgs.some((arg) => arg === null || arg === void 0)) {
           throw new TypeError(`[PDIM] ${String(cmd)} received a nullish command argument`);
         }
@@ -5622,7 +5677,7 @@ var init_pdimClient = __esm({
           this.assertConnected();
           let counted = false;
           try {
-            const res = await fetch(this.execUrl, {
+            const request = () => fetch(this.execUrl, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -5636,6 +5691,7 @@ var init_pdimClient = __esm({
               // circuit breaker rather than silently following into an HTML page.
               redirect: "manual"
             });
+            const res = cmd.toUpperCase() === "HSET" ? await retryTransientStorageOperation(request, { delaysMs: [100] }) : await request();
             if (!res.ok) {
               const text3 = await res.text().catch(() => "");
               if (res.status === 429) {

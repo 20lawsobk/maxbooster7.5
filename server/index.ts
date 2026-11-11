@@ -1,6 +1,8 @@
 // ── Self-Confinement: initialise unified config before anything else ─────────
 // Validates all env vars and builds the typed config object. Must be first.
 import "./config/index.js";
+import { ensureDnsSyncSecret } from "./lib/dnsSyncAuth.js";
+ensureDnsSyncSecret();
 
 // Reconcile stale PDIM_* credentials against the working STORAGE_* token
 // BEFORE any other module reads PDIM-related environment settings — must stay first.

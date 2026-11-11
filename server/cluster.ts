@@ -23,6 +23,11 @@ import {
   handlePdimRecoveryAuthorityRequest,
   initializePdimRecoveryAuthority,
 } from "./services/backup/pdimRecoveryBackupService.js";
+import { ensureDnsSyncSecret } from "./lib/dnsSyncAuth.js";
+
+// The cluster primary generates a single private credential before workers
+// fork so all workers and the local DNS child share the same sync identity.
+ensureDnsSyncSecret();
 
 // ── Boosterstate sidecar startup ──────────────────────────────────────────────
 // Previously handled by start?.sh. Moved here so the run command can be a plain

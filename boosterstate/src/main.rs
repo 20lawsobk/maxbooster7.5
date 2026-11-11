@@ -12,6 +12,10 @@ use boosterstate::BoosterState;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::SystemTime;
+use std::{io, time::Duration};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::time::timeout;
 use tower_http::cors::CorsLayer;
 
 #[derive(Serialize)]
@@ -380,6 +384,57 @@ async fn auth_middleware(
     }
 }
 
+async fn existing_instance_is_healthy(addr: &str, secret: &str) -> bool {
+    timeout(Duration::from_millis(500), async {
+        let Ok(mut stream) = TcpStream::connect(addr).await else {
+            return false;
+        };
+
+        // Never interpolate a malformed value into an HTTP header. The secret
+        // is sent only to the loopback health endpoint and is never logged.
+        if secret.contains('\r') || secret.contains('\n') {
+            return false;
+        }
+        let authorization = if secret.is_empty() {
+            String::new()
+        } else {
+            format!("Authorization: Bearer {secret}\r\n")
+        };
+        let request = format!(
+            "GET /health HTTP/1.1\r\nHost: 127.0.0.1\r\n{authorization}Connection: close\r\n\r\n"
+        );
+        if stream.write_all(request.as_bytes()).await.is_err() {
+            return false;
+        }
+
+        let mut status_prefix = [0_u8; 12];
+        stream
+            .read_exact(&mut status_prefix)
+            .await
+            .is_ok_and(|_| {
+                status_prefix == *b"HTTP/1.1 200" || status_prefix == *b"HTTP/1.0 200"
+            })
+    })
+    .await
+    .unwrap_or(false)
+}
+
+async fn bind_or_reuse(addr: &str, secret: &str) -> anyhow::Result<Option<TcpListener>> {
+    match TcpListener::bind(addr).await {
+        Ok(listener) => Ok(Some(listener)),
+        Err(error) if error.kind() == io::ErrorKind::AddrInUse => {
+            if existing_instance_is_healthy(addr, secret).await {
+                Ok(None)
+            } else {
+                Err(anyhow::anyhow!(
+                    "BoosterState port {addr} is occupied by a process that failed authenticated health verification"
+                ))
+            }
+        }
+        Err(error) => Err(error.into()),
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let port: u16 = std::env::var("BOOSTERSTATE_PORT")
@@ -405,6 +460,17 @@ async fn main() -> anyhow::Result<()> {
         println!("BoosterState: bearer token auth enabled");
     }
 
+    let addr = format!("127.0.0.1:{port}");
+    let listener = match bind_or_reuse(&addr, secret.as_str()).await? {
+        Some(listener) => listener,
+        None => {
+            println!("BoosterState already healthy on {addr}; duplicate startup skipped");
+            return Ok(());
+        }
+    };
+
+    // Acquire the listener before opening the WAL so a competing startup never
+    // opens the same persistent files while another process owns the service.
     let state = Arc::new(BoosterState::new_with_wal(data_dir.into(), n_shards)?);
 
     let auth_secret = secret.clone();
@@ -432,11 +498,108 @@ async fn main() -> anyhow::Result<()> {
         .layer(CorsLayer::permissive())
         .with_state(state);
 
-    let addr = format!("127.0.0.1:{}", port);
     println!("BoosterState listening on {}", addr);
-
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::bind_or_reuse;
+    use tokio::{
+        io::{AsyncReadExt, AsyncWriteExt},
+        net::TcpListener,
+        task::JoinHandle,
+    };
+
+    async fn mock_health_server(
+        expected_authorization: Option<&'static str>,
+    ) -> (String, JoinHandle<String>) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap().to_string();
+        let task = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = [0_u8; 1024];
+            let size = stream.read(&mut request).await.unwrap();
+            let request = String::from_utf8_lossy(&request[..size]).to_string();
+            let provided_authorization = request
+                .lines()
+                .find(|line| line.to_ascii_lowercase().starts_with("authorization:"))
+                .map(str::to_string);
+            let matches = match expected_authorization {
+                Some(expected) => provided_authorization.as_deref() == Some(expected),
+                None => provided_authorization.is_none(),
+            };
+            let status = if matches { "200 OK" } else { "401 Unauthorized" };
+            stream
+                .write_all(
+                    format!(
+                        "HTTP/1.1 {status}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                    )
+                    .as_bytes(),
+                )
+                .await
+                .unwrap();
+            request
+        });
+        (address, task)
+    }
+
+    #[tokio::test]
+    async fn binds_when_no_listener_owns_the_port() {
+        let listener = bind_or_reuse("127.0.0.1:0", "")
+            .await
+            .unwrap()
+            .expect("new startup should own an available port");
+        assert!(listener.local_addr().is_ok());
+    }
+
+    #[tokio::test]
+    async fn reuses_an_existing_instance_only_after_authenticated_health_check() {
+        let (address, server) =
+            mock_health_server(Some("Authorization: Bearer test-secret")).await;
+
+        assert!(bind_or_reuse(&address, "test-secret")
+            .await
+            .unwrap()
+            .is_none());
+        assert!(server
+            .await
+            .unwrap()
+            .contains("Authorization: Bearer test-secret"));
+    }
+
+    #[tokio::test]
+    async fn rejects_a_listener_that_fails_health_authentication() {
+        let (address, server) =
+            mock_health_server(Some("Authorization: Bearer expected-secret")).await;
+
+        let error = bind_or_reuse(&address, "wrong-secret")
+            .await
+            .unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("authenticated health verification"));
+        assert!(server
+            .await
+            .unwrap()
+            .contains("Authorization: Bearer wrong-secret"));
+    }
+
+    #[tokio::test]
+    async fn rejects_an_unexpected_open_health_endpoint() {
+        let (address, server) = mock_health_server(None).await;
+
+        let error = bind_or_reuse(&address, "configured-secret")
+            .await
+            .unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("authenticated health verification"));
+        assert!(server
+            .await
+            .unwrap()
+            .contains("Authorization: Bearer configured-secret"));
+    }
 }

@@ -10,6 +10,7 @@ import * as path from "path";
 import { PocketDimensionManager } from "../pocket-dimension/index.js";
 import { hybridStorageService } from "./hybridStorageService";
 import { createHash } from "node:crypto";
+import { retryTransientStorageOperation } from "../lib/transientStorageRetry.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -145,12 +146,14 @@ class OfflineModeService extends EventEmitter {
   private async initPocket(): Promise<void> {
     try {
       const manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
-      this.pocket = await manager?.openPocket(POCKET_ID, {
-        compressionLevel: 9,
-        enableDeduplication: true,
-        enableVersioning: false,
-        chunkSize: 2 * 1024 * 1024,
-      });
+      this.pocket = await retryTransientStorageOperation(() =>
+        manager?.openPocket(POCKET_ID, {
+          compressionLevel: 9,
+          enableDeduplication: true,
+          enableVersioning: false,
+          chunkSize: 2 * 1024 * 1024,
+        }),
+      );
       logger.info(
         "[OfflineCache] Pocket Dimension storage bubble opened (level-9 gzip, dedup)",
       );

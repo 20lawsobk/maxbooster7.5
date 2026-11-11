@@ -2,6 +2,11 @@ import type { RequestHandler } from "express";
 import path from "node:path";
 import { enforceMaintenance } from "../services/governancePolicyService.js";
 import { enforceAssurance } from "./authAssurance.js";
+import {
+  ensureDnsSyncSecret,
+  hasValidDnsSyncSecret,
+  isDnsZoneSyncRequest,
+} from "../lib/dnsSyncAuth.js";
 
 export function isDevDependencyResource(urlPath: string): boolean {
   if (process.env.NODE_ENV === "production") return false;
@@ -41,6 +46,12 @@ export const governanceBoundary: RequestHandler = async (req, res, next) => {
   try {
   const path = req.path;
   const method = req.method === "HEAD" ? "GET" : req.method;
+  if (isDnsZoneSyncRequest(method, path) && ensureDnsSyncSecret()) {
+    if (!hasValidDnsSyncSecret(req.get("x-dns-sync-secret"))) {
+      return res.status(401).json({ error: "Authenticated DNS zone sync required" });
+    }
+    return next();
+  }
   if (recovery.has(`${method} ${path}`)) return next();
   if (method === "GET" && (
     isDevDependencyResource(path) ||

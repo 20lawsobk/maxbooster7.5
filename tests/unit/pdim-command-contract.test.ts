@@ -44,6 +44,51 @@ describe("PDIM command argument contract (PdimRedisClient)", () => {
     expect(body).toEqual({ cmd: "GET", args: ["some-key"] });
   });
 
+  it("retries a transport reset once for idempotent HSET only", async () => {
+    fetchMock
+      .mockRejectedValueOnce(Object.assign(new Error("fetch failed"), {
+        cause: Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" }),
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ result: 1 }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }));
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+
+    await expect(client.sendCommand(["HSET", "session:1", "status", "active"]))
+      .resolves.toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const sentBodies = fetchMock.mock.calls.map((call) =>
+      JSON.parse(String((call[1] as RequestInit).body)),
+    );
+    expect(sentBodies[0]).toEqual(sentBodies[1]);
+  });
+
+  it("retries a transport reset once for read-only GET", async () => {
+    fetchMock
+      .mockRejectedValueOnce(Object.assign(new Error("fetch failed"), {
+        cause: Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" }),
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ result: "value" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }));
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+
+    await expect(client.sendCommand(["GET", "state:key"])).resolves.toBe("value");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not replay non-idempotent commands after an uncertain transport failure", async () => {
+    fetchMock.mockRejectedValueOnce(Object.assign(new Error("fetch failed"), {
+      cause: Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" }),
+    }));
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+
+    await expect(client.sendCommand(["INCR", "counter"])).rejects.toThrow("fetch failed");
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it("coerces numeric arguments to strings on the wire", async () => {
     const client = new PdimRedisClient(EXEC_URL, TOKEN);
     await client.sendCommand(["INCRBY", "counter", 2 as unknown as string]);
