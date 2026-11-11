@@ -38,6 +38,14 @@ test("startup, admin, catalog and DSP analytics do not load the retired SDK", ()
   }
 });
 
+test("admin external API health presents Too Lost, not retired LabelGrid", () => {
+  const dashboard = fs.readFileSync("client/src/pages/AdminDashboard.tsx", "utf8");
+  const adminRoute = fs.readFileSync("server/routes/admin.ts", "utf8");
+  assert.match(dashboard, /toolost:\s*"Too Lost"/);
+  assert.doesNotMatch(dashboard, /labelgrid/i);
+  assert.match(adminRoute, /toolost:\s*getResult\(apiChecks\[1\]\)/);
+});
+
 test("historical catalog reads are owner-scoped and retain legacy IDs, UPC and ISRC", async () => {
   const api = await isolatedModule("server/services/legacyDistributionCatalog.ts", {
     "storage.js": `export const storage = {

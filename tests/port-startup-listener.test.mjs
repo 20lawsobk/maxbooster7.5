@@ -45,12 +45,16 @@ function listenHttp(statusCode = 200) {
   });
 }
 
-test("dev and production readiness cover all eleven configured local listeners", () => {
+test("dev and production readiness cover all twelve configured local listeners", () => {
   const ports = configuredPortSpecs({});
-  assert.equal(ports.length, 11);
+  assert.equal(ports.length, 12);
   assert.deepEqual(
     ports.map(({ port }) => port).sort((a, b) => a - b),
-    [53, 5000, 5353, 5380, 5556, 8008, 8090, 9877, 9878, 9879, 9880],
+    [53, 5000, 5353, 5380, 5556, 8008, 8090, 8080, 9877, 9878, 9879, 9880].sort((a, b) => a - b),
+  );
+  assert.deepEqual(
+    ports.find(({ name }) => name === "DNS API"),
+    { name: "DNS API", port: 8080, httpPath: "/ready" },
   );
   assert.deepEqual(
     ports.find(({ name }) => name === "local DNS health"),
@@ -72,6 +76,23 @@ test("readiness requires the DNS health listener to return HTTP 200", async () =
     await healthy.close();
     await unhealthy.close();
   }
+});
+
+test("DNS API readiness probes /ready rather than accepting a TCP-only listener", async () => {
+  let requestedPath = null;
+  const result = await waitForConfiguredPorts([
+    { name: "DNS API", port: 8_080, httpPath: "/ready" },
+  ], {
+    timeoutMs: 100,
+    intervalMs: 10,
+    tcpProbe: async () => true,
+    httpProbe: async (_port, path) => {
+      requestedPath = path;
+      return path === "/ready";
+    },
+  });
+  assert.deepEqual(result, { ready: true, missing: [] });
+  assert.equal(requestedPath, "/ready");
 });
 
 test("readiness waits for TCP listeners and both DNS UDP sockets", async () => {

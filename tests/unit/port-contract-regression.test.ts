@@ -114,7 +114,7 @@ externalPort = 80
     );
   });
 
-  it("requires runtime service mappings and permits the private DNS health mapping", () => {
+  it("requires service mappings and accepts a private DNS health mapping", () => {
     const result = checkPortConfig(`
 [[ports]]
 localPort = 53
@@ -124,7 +124,39 @@ externalPort = 80
 [[ports]]
 localPort = 5353
 [[ports]]
+localPort = 8080
+[[ports]]
 localPort = 5380
+[[ports]]
+localPort = 5556
+[[ports]]
+localPort = 8008
+[[ports]]
+localPort = 8090
+[[ports]]
+localPort = 9877
+[[ports]]
+localPort = 9878
+[[ports]]
+localPort = 9879
+[[ports]]
+localPort = 9880
+`, { PORT_CONTRACT_REQUIRE_ALL: "1" });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("12 entries");
+  });
+
+  it("does not require a separate Replit map for the supervised DNS health listener", () => {
+    const result = checkPortConfig(`
+[[ports]]
+localPort = 53
+[[ports]]
+localPort = 5000
+externalPort = 80
+[[ports]]
+localPort = 5353
+[[ports]]
+localPort = 8080
 [[ports]]
 localPort = 5556
 [[ports]]
@@ -153,7 +185,10 @@ externalPort = 80
 localPort = 5353
 `, { PORT_CONTRACT_REQUIRE_ALL: "1" });
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("missing mappings: 53, 5556, 8008, 8090, 9877, 9878, 9879, 9880");
+    expect(result.stderr).toContain("missing mappings:");
+    expect(result.stderr).toContain("53");
+    expect(result.stderr).toContain("8080");
+    expect(result.stderr).not.toContain("5380");
   });
 
   it("accepts local-only Redis 6379 as a private entry", () => {

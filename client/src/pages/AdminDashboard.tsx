@@ -56,20 +56,33 @@ interface TopCountry {
 }
 
 interface ExternalApiCheck {
-  status: "connected" | "disconnected" | "unknown";
+  status:
+    | "connected"
+    | "disconnected"
+    | "unreachable"
+    | "not_configured"
+    | "not_probed"
+    | "unknown";
   latency: number | null;
 }
 
+type ExternalApiId =
+  | "stripe"
+  | "toolost"
+  | "spotify"
+  | "apple_music"
+  | "youtube"
+  | "twitter"
+  | "instagram"
+  | "tiktok";
+
 interface SystemHealthResponse {
-  externalApis: Record<
-    "stripe" | "labelgrid" | "spotify" | "apple_music" | "youtube" | "twitter" | "instagram" | "tiktok",
-    ExternalApiCheck
-  >;
+  externalApis: Record<ExternalApiId, ExternalApiCheck>;
 }
 
-const EXTERNAL_API_LABELS: Record<string, string> = {
+const EXTERNAL_API_LABELS: Record<ExternalApiId, string> = {
   stripe: "Stripe",
-  labelgrid: "LabelGrid",
+  toolost: "Too Lost",
   spotify: "Spotify",
   apple_music: "Apple Music",
   youtube: "YouTube",
@@ -751,8 +764,12 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                       ];
                       const status = check?.status ?? "unknown";
                       const isOperational = status === "connected";
-                      const isUnknown = status === "unknown";
-                      const isDown = status === "disconnected";
+                      const isUnknown =
+                        status === "unknown" ||
+                        status === "not_configured" ||
+                        status === "not_probed";
+                      const isDown =
+                        status === "disconnected" || status === "unreachable";
                       return (
                         <div
                           key={key}
@@ -778,7 +795,11 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                           </div>
                           <p className="text-xs text-gray-500">
                             {isUnknown
-                              ? "not configured"
+                              ? status === "not_probed"
+                                ? "not checked"
+                                : status === "unknown"
+                                  ? "unknown"
+                                  : "not configured"
                               : isDown
                                 ? "unreachable"
                                 : `${check?.latency ?? "–"}ms`}
@@ -789,7 +810,7 @@ export default function AdminDashboard({ defaultTab }: { defaultTab?: string } =
                   </div>
                 )}
                 <p className="text-xs text-gray-400 mt-3">
-                  Live reachability checks against each provider's API, run every 30s. "Not configured" means no credential is set for that service in this environment.
+                  Status reflects the evidence available for each provider. "Not checked" means no provider request was made; reachability alone does not confirm account authorization.
                 </p>
               </CardContent>
             </Card>

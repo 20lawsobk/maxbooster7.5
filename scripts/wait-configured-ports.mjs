@@ -16,6 +16,11 @@ export function configuredPortSpecs(env = process.env) {
     { name: "web application", port: portFromEnv(env, "PORT", 5000) },
     { name: "local DNS node", port: portFromEnv(env, "DNS_NODE_LOCAL_PORT", 5353), udp: true },
     {
+      name: "DNS API",
+      port: portFromEnv(env, "DNS_API_PORT", 8080),
+      httpPath: "/ready",
+    },
+    {
       name: "local DNS health",
       port: portFromEnv(env, "DNS_NODE_LOCAL_HEALTH_PORT", 5380),
       httpPath: "/health",

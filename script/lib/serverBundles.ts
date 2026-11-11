@@ -4,6 +4,7 @@ import { build } from "esbuild";
 
 export const SERVER_ENTRIES = {
   "dns-node": "dns-node/src/index.ts",
+  "dns-api": "dns-os/services/dns-api/src/index.ts",
   index: "server/index.ts",
   "retained-pdim-recovery-worker": "scripts/retained-pdim-recovery-worker.ts",
   cluster: "server/cluster.ts",

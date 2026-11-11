@@ -24,11 +24,16 @@ spec:
                   key: url
             - name: PORT
               value: "8080"
+            - name: DNS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dns-os-api
+                  key: token
           ports:
             - containerPort: 8080
           readinessProbe:
             httpGet:
-              path: /health
+              path: /ready
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10

@@ -1132,6 +1132,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     void import("./services/dnsNodeLocalSupervisor.js")
       .then(({ startDnsNodeLocal }) => startDnsNodeLocal())
       .catch((err) => logger.error({ err }, "[DnsNodeLocal] failed to start supervisor"));
+    void import("./services/dnsApiSupervisor.js")
+      .then(({ startDnsApi }) => startDnsApi())
+      .catch((err) => logger.error({ err }, "[DnsApi] failed to start supervisor"));
   }
   const { setRoutesReady: _setRoutesReady } = await import(
     "./lib/bootState.js"
@@ -2007,6 +2010,15 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     const { stopDnsNodeLocal } = await import("./services/dnsNodeLocalSupervisor.js");
     stopDnsNodeLocal();
     logger.info("[Shutdown] Local dns-node subsystem stopped");
+  } catch {
+    /* non-critical */
+  }
+
+  try {
+    // Stop the authenticated, loopback-only DNS API child.
+    const { stopDnsApi } = await import("./services/dnsApiSupervisor.js");
+    stopDnsApi();
+    logger.info("[Shutdown] DNS API subsystem stopped");
   } catch {
     /* non-critical */
   }

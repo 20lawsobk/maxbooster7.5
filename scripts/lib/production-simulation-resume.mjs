@@ -129,7 +129,7 @@ export function validateSimulationResume({ state, report, runsRoot, cleanup = fa
       }
     }
     for (const path of [
-      "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs",
+      "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs", "dist/dns-api.mjs",
       "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html",
       "node_modules/tsx/package.json", "python_runtime/bin/python3.12",
       "external/maxcore/artifacts/ai-training-server/server.py",

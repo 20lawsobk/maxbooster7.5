@@ -64,6 +64,7 @@ var init_ports = __esm({
       app: 5e3,
       dnsAuthority: 53,
       dnsNodeLocal: 5353,
+      dnsApi: 8080,
       localPdim: 5556,
       diffusionGateway: 8008,
       maxcoreApi: 8090,
@@ -76,6 +77,7 @@ var init_ports = __esm({
       app: readPort("PORT", defaultPorts.app),
       dnsAuthority: readPort("DNS_AUTHORITY_PORT", defaultPorts.dnsAuthority),
       dnsNodeLocal: readPort("DNS_NODE_LOCAL_PORT", defaultPorts.dnsNodeLocal),
+      dnsApi: readPort("DNS_API_PORT", defaultPorts.dnsApi),
       localPdim: readPort("LOCAL_PDIM_PORT", defaultPorts.localPdim),
       diffusionGateway: readPort(
         "VIDEO_DIFFUSION_PORT",
@@ -117,8 +119,9 @@ function fail(message) {
   process.exit(1);
 }
 var runtimePorts2;
+var dnsNodeLocalHealthPort2;
 try {
-  ({ runtimePorts: runtimePorts2 } = await Promise.resolve().then(() => (init_ports(), ports_exports)));
+  ({ runtimePorts: runtimePorts2, dnsNodeLocalHealthPort: dnsNodeLocalHealthPort2 } = await Promise.resolve().then(() => (init_ports(), ports_exports)));
 } catch (err) {
   fail(
     `runtime port contract failed to load: ${err instanceof Error ? err.message : String(err)}`
@@ -170,10 +173,11 @@ if (mappings.length === 0) {
   fail(`.replit has no [[ports]] entries; expected a mapping for the app port`);
 }
 if (process.env.PORT_CONTRACT_REQUIRE_ALL === "1") {
-  const expected = new Set(Object.values(runtimePorts2));
+  const required = new Set(Object.values(runtimePorts2));
+  const allowed = /* @__PURE__ */ new Set([...required, dnsNodeLocalHealthPort2]);
   const configured = new Set(mappings.map((mapping) => mapping.localPort));
-  const missing = [...expected].filter((port) => !configured.has(port));
-  const unexpected = [...configured].filter((port) => !expected.has(port));
+  const missing = [...required].filter((port) => !configured.has(port));
+  const unexpected = [...configured].filter((port) => !allowed.has(port));
   if (missing.length || unexpected.length) {
     fail(
       `strict port contract mismatch; missing mappings: ${missing.join(", ") || "none"}; unexpected mappings: ${unexpected.join(", ") || "none"}`
@@ -237,7 +241,7 @@ if (publicMapping.localPort !== runtimePorts2.app) {
 var internalPortSet = new Set(
   Object.entries(runtimePorts2).filter(([name]) => name !== "app").map(([, port]) => port)
 );
-internalPortSet.add(Number(process.env.DNS_NODE_LOCAL_HEALTH_PORT || 5380));
+internalPortSet.add(dnsNodeLocalHealthPort2);
 internalPortSet.add(6379);
 var nativeRedisUrl = process.env.REDIS_URL || process.env.NATIVE_REDIS_URL || "";
 try {

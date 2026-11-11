@@ -196,6 +196,7 @@ var init_ports = __esm({
       app: 5e3,
       dnsAuthority: 53,
       dnsNodeLocal: 5353,
+      dnsApi: 8080,
       localPdim: 5556,
       diffusionGateway: 8008,
       maxcoreApi: 8090,
@@ -208,6 +209,7 @@ var init_ports = __esm({
       app: readPort("PORT", defaultPorts.app),
       dnsAuthority: readPort("DNS_AUTHORITY_PORT", defaultPorts.dnsAuthority),
       dnsNodeLocal: readPort("DNS_NODE_LOCAL_PORT", defaultPorts.dnsNodeLocal),
+      dnsApi: readPort("DNS_API_PORT", defaultPorts.dnsApi),
       localPdim: readPort("LOCAL_PDIM_PORT", defaultPorts.localPdim),
       diffusionGateway: readPort(
         "VIDEO_DIFFUSION_PORT",

@@ -122,7 +122,7 @@ test("production startup rejects missing, altered and stale build output", () =>
     fs.mkdirSync(path.join(root, "dist/public"), { recursive: true });
     fs.mkdirSync(path.join(root, "external/maxcore/artifacts/api-server/dist"), { recursive: true });
     for (const file of ["package.json", "package-lock.json", "vite.config.ts", "start.sh",
-      "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs", "dist/dns-node.mjs",
+      "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs", "dist/dns-node.mjs", "dist/dns-api.mjs",
       "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html",
       "external/maxcore/artifacts/api-server/dist/index.mjs"]) {
       fs.writeFileSync(path.join(root, file), "fixture");
@@ -156,6 +156,10 @@ test("production startup rejects missing, altered and stale build output", () =>
     fs.rmSync(path.join(root, "dist/dns-node.mjs"));
     assert.throws(() => validateBuild(root), /Production build is missing/);
     fs.writeFileSync(path.join(root, "dist/dns-node.mjs"), "fixture");
+    assert.doesNotThrow(() => validateBuild(root));
+    fs.rmSync(path.join(root, "dist/dns-api.mjs"));
+    assert.throws(() => validateBuild(root), /Production build is missing/);
+    fs.writeFileSync(path.join(root, "dist/dns-api.mjs"), "fixture");
     assert.doesNotThrow(() => validateBuild(root));
     fs.writeFileSync(path.join(root, "dist/index.mjs"), "modified");
     assert.throws(() => validateBuild(root), /Changed since build/);

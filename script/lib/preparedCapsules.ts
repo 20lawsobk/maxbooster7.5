@@ -72,7 +72,7 @@ export async function verifyCapsule(sourceRoot: string, work: string, output: st
     }
     if (name === "app_remainder") {
       const result = inspectRestored(scratch, [
-        "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs",
+        "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs", "dist/dns-api.mjs",
         "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html", "bin/boosterstate",
         "scripts/startup-health.mjs", "scripts/redis-supervisor.sh",
       ]);

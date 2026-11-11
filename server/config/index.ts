@@ -84,6 +84,13 @@ export const config = {
     healthPort: dnsNodeLocalHealthPort,
     domain: p.DNS_NODE_LOCAL_DOMAIN || "max-booster.com",
   },
+  // Internal DNS management API. It is supervised by this app, bound to
+  // loopback, and isolated from existing application DNS tables.
+  dnsApi: {
+    host: "127.0.0.1",
+    port: runtimePorts.dnsApi,
+    schema: "dns_os",
+  },
   // Keep generation and administrative credentials distinct. A missing
   // generation key may fall back to the admin key for backwards-compatible
   // deployments, but an admin request must never inherit the generation key.
