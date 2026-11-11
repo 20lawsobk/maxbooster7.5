@@ -35,6 +35,7 @@ describe("production simulation filtered copy", () => {
     const fixtureFiles = new Map<string, string>([
       [".npmrc", "root credential fixture"],
       [".env.production", "root env fixture"],
+      ["max_booster_apis_v2.env", "legacy credential fixture"],
       [".config/local/credentials.json", "local config fixture"],
       [".agents/memory/MEMORY.md", "workspace memory fixture"],
       [".cloudflared/config.yml", "tunnel config fixture"],
@@ -141,6 +142,7 @@ describe("production simulation filtered copy", () => {
     for (const omitted of [
       ".npmrc",
       ".env.production",
+      "max_booster_apis_v2.env",
       ".cloudflared/config.yml",
       "dns-node/keys/private.pem",
       ".config/local/credentials.json",
@@ -195,6 +197,9 @@ describe("production simulation filtered copy", () => {
     expect(await fs.readlink(workspaceWrapper)).toBe(wrapperTargetBefore);
     expect(await fs.readFile(outsideInterpreter)).toEqual(externalInterpreterBefore);
     expect(shouldCopyProductionSimulationPath("venv/bin/python")).toBe(false);
+    expect(shouldCopyProductionSimulationPath("max_booster_apis_v2.env")).toBe(
+      false,
+    );
     expect(shouldCopyProductionSimulationPath("external/pdim/venv/lib/site-packages/nested-dependency.py")).toBe(true);
 
     expect(shouldCopyProductionSimulationPath("node_modules/example/.npmrc")).toBe(
@@ -203,6 +208,29 @@ describe("production simulation filtered copy", () => {
     expect(shouldCopyProductionSimulationPath(".cloudflared/config.yml")).toBe(
       false,
     );
+  });
+
+  it("excludes non-dot-prefixed environment files from release inputs", async () => {
+    temporaryRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), "release-environment-file-"),
+    );
+    await fs.mkdir(path.join(temporaryRoot, "server"));
+    await fs.writeFile(
+      path.join(temporaryRoot, "server", "app.ts"),
+      "runtime source",
+    );
+    await fs.writeFile(
+      path.join(temporaryRoot, "max_booster_apis_v2.env"),
+      "fixture-only=not-a-real-credential",
+    );
+
+    const entries = await inventory(temporaryRoot, sourceIncluded);
+    const paths = entries.map((entry) => entry.path);
+    expect(paths).toContain("server/app.ts");
+    expect(paths).not.toContain("max_booster_apis_v2.env");
+    expect(
+      shouldCopyProductionSimulationPath("server/local-secrets.env"),
+    ).toBe(false);
   });
 
   it("ignores changing restore/test scratch in release identity while binding runtime changes", async () => {
