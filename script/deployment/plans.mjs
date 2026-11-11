@@ -38,6 +38,8 @@ const RETRYABLE_CAPSULE_TASKS = new Set([
   "pack_pdim",
 ]);
 
+const DEDICATED_BUILD_MAX_CPUS = 16;
+
 function buildTask(id, deps = [], memoryMB = 256, cpu = 1, io = 1) {
   return {
     id,
@@ -45,13 +47,16 @@ function buildTask(id, deps = [], memoryMB = 256, cpu = 1, io = 1) {
     memoryMB,
     cpu,
     io,
+    // These are executor reservations for concurrency admission, not OS memory
+    // limits; live cgroup availability remains the final admission check.
+    toolchainBudget: true,
     timeoutMs: DEADLINES_SECONDS[id] * 1000,
     command: "bash",
     args: ["build.sh", "--executive-task", id],
 
     ...(ELASTIC_TASKS.has(id) ? {
       elasticCPU: true,
-      maxCPU: id === "app_capsule" ? 8 : 4,
+      maxCPU: DEDICATED_BUILD_MAX_CPUS,
     } : {}),
 
     // These stages must continue to commit verified capsules atomically.
@@ -76,12 +81,12 @@ export function buildPlan() {
     buildTask(
       "dependencies",
       ["cleanup", "diffusion"],
-      3072,
-      2,
+      8192,
+      8,
     ),
 
-    buildTask("rust", ["cleanup"], 2048, 2),
-    buildTask("python", ["cleanup"], 768),
+    buildTask("rust", ["cleanup"], 8192, 8),
+    buildTask("python", ["cleanup"], 2048, 2),
 
     // The updated build script defers actual stripping until prune.
     buildTask("strip", ["dependencies"], 128),
@@ -98,13 +103,14 @@ export function buildPlan() {
       "node",
       "diffusion",
       "python",
-    ], 2048, 2),
+    ], 8192, 2),
 
     // Now includes npm prune and security audits, so reserve more memory.
     buildTask("prune", ["app_capsule", "packer"], 768),
 
-    // Each compressor retains its existing two-worker ceiling and memory
-    // reservation. I/O reservations limit simultaneous heavy packers.
+    // Each archive is CPU-elastic up to the machine ceiling. I/O reservations
+    // admit at most two heavy packers together, so the executive divides the
+    // available CPU budget between them and gives a lone packer the full share.
     buildTask("pack_node", ["prune"], 1536, 1, 2),
     buildTask("pack_python", ["app_capsule"], 1536, 1, 2),
     buildTask("pack_maxcore", ["app_capsule"], 1536, 1, 2),

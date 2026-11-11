@@ -77,6 +77,15 @@ command or run destructive packing in the development checkout. A GitHub push
 does not prove a successful publication. The owner-defined target is a Replit
 Reserved VM; historical scaled tests do not measure that production VM's capacity.
 
+The Publishing tool currently selects a dedicated **16 vCPU / 64 GiB RAM**
+machine. Build and startup settings are selected in Publishing, not encoded in
+`.replit`; Replit applies that machine configuration to the configured commands.
+The deployment executive reads the live cgroup limits, caps scheduling at
+16 vCPU / 64 GiB, and logs the detected capacity. Per-task `memoryMB` values
+are scheduler reservations, not hard memory limits; the cgroup remains the
+actual process limit. Machine-setting changes require a new publish. See
+[Replit machine configuration](https://docs.replit.com/features/publishing/machine-configuration).
+
 `.prepared-release` is optional tooling, not a dependency of this configured
 Publish path. See [prepared-production-releases.md](prepared-production-releases.md).
 There is no `npm run deploy` command: Replit's Publish workflow is the only

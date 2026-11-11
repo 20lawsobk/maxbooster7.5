@@ -7,10 +7,25 @@ import { spawnSync } from "node:child_process";
 import {EventEmitter} from "node:events";
 import {bindShutdownSignals,coordinateBuildPlan,runExecutive,validatePlan} from "../script/deployment/executive.mjs";
 import {buildPlan,startPlan} from "../script/deployment/plans.mjs";
+import {
+  clampDeploymentCapacity,
+  DEDICATED_DEPLOYMENT_LIMITS,
+  liveCapacity,
+} from "../script/deployment/capacity.mjs";
 import {buildSync} from "esbuild";
 import {pathToFileURL} from "node:url";
 const capacity=()=>({cpus:4,memoryMB:8192,availableMB:8192,ioSlots:2});
 const task=(id,deps=[],code="")=>({id,deps,cpu:1,io:1,memoryMB:64,command:process.execPath,args:["-e",code]});
+test("deployment resource ceiling matches the configured dedicated machine",()=>{
+ assert.deepEqual(DEDICATED_DEPLOYMENT_LIMITS,{cpus:16,memoryGB:64});
+ assert.deepEqual(clampDeploymentCapacity({cpus:32,memoryGB:128}),{cpus:16,memoryGB:64});
+ assert.deepEqual(clampDeploymentCapacity({cpus:8,memoryGB:32}),{cpus:8,memoryGB:32});
+ assert.throws(()=>clampDeploymentCapacity({cpus:0,memoryGB:64}),/Invalid detected deployment capacity/);
+ const live=liveCapacity();
+ assert.ok(live.cpus>0&&live.cpus<=16);
+ assert.ok(live.memoryMB>0&&live.memoryMB<=65536);
+ assert.ok(live.availableMB<=live.memoryMB);
+});
 test("real subprocesses overlap and prerequisites finish before successors",async t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-test-"));
  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
@@ -84,16 +99,31 @@ test("capsule packers use available CPU while I/O reservations cap concurrency",
     ...task(id,[],"setTimeout(()=>{},40)"),
     io:2,
     elasticCPU:true,
-    maxCPU:4,
+    maxCPU:16,
   }));
-  await runExecutive(jobs,{capacity:()=>({...capacity(),cpus:8,ioSlots:4}),pollMs:5,budgetMs:3000,log(line){
+  await runExecutive(jobs,{capacity:()=>({cpus:16,memoryMB:65536,availableMB:65536,ioSlots:4}),pollMs:5,budgetMs:3000,log(line){
     logs.push(line);
     if(line.includes("starting pack_"))maximum=Math.max(maximum,++active);
     if(line.includes("completed pack_"))active--;
   }});
   assert.equal(maximum,2);
   assert.equal(active,0);
-  assert.equal(logs.filter(line=>line.includes("starting pack_")&&line.includes("cpu=4;")).length,4);
+  assert.equal(logs.filter(line=>line.includes("starting pack_")&&line.includes("cpu=8;")).length,4);
+});
+test("assigned CPU budget reaches native, Go, and npm build workers",async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-resource-budget-"));
+ t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const output=path.join(root,"assigned.json");
+ const code=`require("node:fs").writeFileSync(${JSON.stringify(output)},JSON.stringify({
+  deploy:process.env.DEPLOY_TASK_CPU,cargo:process.env.CARGO_BUILD_JOBS,
+  go:process.env.GOMAXPROCS,npm:process.env.npm_config_jobs
+ }))`;
+ await runExecutive([{...task("resource-budget",[],code),elasticCPU:true,maxCPU:16,toolchainBudget:true}],{
+  cwd:root,
+  capacity:()=>({cpus:16,memoryMB:65536,availableMB:65536,ioSlots:4}),
+  pollMs:5,budgetMs:3000,log(){},
+ });
+ assert.deepEqual(JSON.parse(fs.readFileSync(output,"utf8")),{deploy:"16",cargo:"16",go:"16",npm:"16"});
 });
 test("task exceeding total I/O capacity fails instead of waiting indefinitely",async()=>{
   await assert.rejects(
@@ -116,8 +146,16 @@ test("failed prerequisite blocks dependent; invalid graphs rejected before execu
  assert.deepEqual(plan.find(t=>t.id==="node").deps,[]);
   for(const id of ["pack_node","pack_python","pack_maxcore","pack_pdim"]) {
     assert.equal(plan.find(t=>t.id===id).io,2,`${id} must reserve two I/O slots`);
-    assert.equal(plan.find(t=>t.id===id).maxCPU,4,`${id} should use available build CPU`);
+     assert.equal(plan.find(t=>t.id===id).maxCPU,16,`${id} should use available build CPU`);
   }
+   for(const id of ["app_capsule","source","remainder"]) {
+     assert.equal(plan.find(t=>t.id===id).maxCPU,16,`${id} should use available dedicated CPU`);
+   }
+   assert.equal(plan.find(t=>t.id==="dependencies").cpu,8);
+   assert.equal(plan.find(t=>t.id==="rust").cpu,8);
+   assert.equal(plan.find(t=>t.id==="dependencies").memoryMB,8192);
+   assert.equal(plan.find(t=>t.id==="rust").memoryMB,8192);
+   assert.equal(plan.find(t=>t.id==="app_capsule").memoryMB,8192);
 });
 test("admission adapts when available memory recovers",async()=>{
  let samples=0;

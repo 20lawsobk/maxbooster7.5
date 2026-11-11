@@ -4,6 +4,11 @@ import fs from "node:fs";
 const MiB = 1024 ** 2;
 const GiB = 1024 ** 3;
 
+export const DEDICATED_DEPLOYMENT_LIMITS = Object.freeze({
+  cpus: 16,
+  memoryGB: 64,
+});
+
 function read(file) {
   try {
     return fs.readFileSync(file, "utf8").trim();
@@ -78,8 +83,25 @@ export function effectiveCapacity() {
   };
 }
 
+export function clampDeploymentCapacity({cpus, memoryGB}) {
+  if (
+    !Number.isFinite(cpus) || cpus <= 0 ||
+    !Number.isFinite(memoryGB) || memoryGB <= 0
+  ) {
+    throw new Error("Invalid detected deployment capacity");
+  }
+
+  return {
+    cpus: Math.min(cpus, DEDICATED_DEPLOYMENT_LIMITS.cpus),
+    memoryGB: Math.min(memoryGB, DEDICATED_DEPLOYMENT_LIMITS.memoryGB),
+  };
+}
+
 export function liveCapacity() {
-  const {cpus, memoryGB} = effectiveCapacity();
+  // Replit's configured dedicated machine is 16 vCPU / 64 GiB. Continue to
+  // honor lower cgroup limits, but never schedule beyond that configured size
+  // if host-level capacity is visible to the process.
+  const {cpus, memoryGB} = clampDeploymentCapacity(effectiveCapacity());
   const memoryBytes = memoryGB * GiB;
 
   const used =

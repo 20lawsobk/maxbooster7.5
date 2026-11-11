@@ -5,7 +5,10 @@ import {fileURLToPath} from "node:url";
 import {spawn} from "node:child_process";
 import {performance} from "node:perf_hooks";
 import {setTimeout as delay} from "node:timers/promises";
-import {liveCapacity} from "./capacity.mjs";
+import {
+  DEDICATED_DEPLOYMENT_LIMITS,
+  liveCapacity,
+} from "./capacity.mjs";
 import {buildPlan, startPlan} from "./plans.mjs";
 import {createOwnedProcessTracker} from "./owned-processes.mjs";
 
@@ -585,6 +588,10 @@ export async function runExecutive(tasks, {
             ...env,
             DEPLOY_TASK_CPU: String(assignedCPU),
             CARGO_BUILD_JOBS: String(assignedCPU),
+            ...(task.toolchainBudget ? {
+              GOMAXPROCS: String(assignedCPU),
+              npm_config_jobs: String(assignedCPU),
+            } : {}),
           },
         });
 
@@ -1286,6 +1293,15 @@ async function main(mode) {
     ? Date.now()-Number(process.env.DEPLOY_EXECUTIVE_STARTED_SECONDS)*1000 : 0;
   console.log(`[executive] ${mode} budget=${budget}s (local safety budget, not a documented platform timeout)`);
   try {
+    const cap = liveCapacity();
+    console.log(
+      `[executive] detected resources=${cap.cpus.toFixed(2)} vCPU/` +
+      `${Math.round(cap.memoryMB)} MiB RAM; ceiling=` +
+      `${DEDICATED_DEPLOYMENT_LIMITS.cpus} vCPU/` +
+      `${DEDICATED_DEPLOYMENT_LIMITS.memoryGB} GiB; ` +
+      `available=${Math.round(cap.availableMB)} MiB; ` +
+      `I/O slots=${cap.ioSlots}`,
+    );
     await runExecutive(tasks,{env:{...process.env,DEPLOY_STATE_DIR:state},budgetMs:budget*1000-bootstrapElapsed,signal:controller.signal,
       ...(mode==="start"?{readiness:async()=>{
         try {
