@@ -186,7 +186,7 @@ function assertUniquePorts(ports) {
 function loopbackUrl(port) {
   return `http://127.0.0.1:${port}`;
 }
-var MIN_PORT, MAX_PORT, defaultPorts, runtimePorts;
+var MIN_PORT, MAX_PORT, defaultPorts, runtimePorts, dnsNodeLocalHealthPort;
 var init_ports = __esm({
   "server/config/ports.ts"() {
     "use strict";
@@ -194,6 +194,8 @@ var init_ports = __esm({
     MAX_PORT = 65535;
     defaultPorts = Object.freeze({
       app: 5e3,
+      dnsAuthority: 53,
+      dnsNodeLocal: 5353,
       localPdim: 5556,
       diffusionGateway: 8008,
       maxcoreApi: 8090,
@@ -204,6 +206,8 @@ var init_ports = __esm({
     });
     runtimePorts = assertUniquePorts({
       app: readPort("PORT", defaultPorts.app),
+      dnsAuthority: readPort("DNS_AUTHORITY_PORT", defaultPorts.dnsAuthority),
+      dnsNodeLocal: readPort("DNS_NODE_LOCAL_PORT", defaultPorts.dnsNodeLocal),
       localPdim: readPort("LOCAL_PDIM_PORT", defaultPorts.localPdim),
       diffusionGateway: readPort(
         "VIDEO_DIFFUSION_PORT",
@@ -224,6 +228,15 @@ var init_ports = __esm({
       ),
       legacyPythonAi: readPort("PYTHON_AI_PORT", defaultPorts.legacyPythonAi)
     });
+    dnsNodeLocalHealthPort = readPort(
+      "DNS_NODE_LOCAL_HEALTH_PORT",
+      5380
+    );
+    if (Object.values(runtimePorts).includes(dnsNodeLocalHealthPort)) {
+      throw new Error(
+        `[Ports] DNS_NODE_LOCAL_HEALTH_PORT collides with configured service port ${dnsNodeLocalHealthPort}`
+      );
+    }
   }
 });
 
@@ -7006,12 +7019,16 @@ function effectiveCapacity() {
     memoryGB: memory / GiB
   };
 }
-var MiB, GiB;
+var MiB, GiB, DEDICATED_DEPLOYMENT_LIMITS;
 var init_capacity = __esm({
   "script/deployment/capacity.mjs"() {
     "use strict";
     MiB = 1024 ** 2;
     GiB = 1024 ** 3;
+    DEDICATED_DEPLOYMENT_LIMITS = Object.freeze({
+      cpus: 16,
+      memoryGB: 64
+    });
   }
 });
 

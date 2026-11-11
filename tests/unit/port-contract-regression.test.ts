@@ -20,7 +20,10 @@ const portEnvironment: Record<string, string> = {
   PYTHON_AI_PORT: "9880",
 };
 
-function checkPortConfig(replitConfig: string) {
+function checkPortConfig(
+  replitConfig: string,
+  extraEnvironment: Record<string, string> = {},
+) {
   const directory = mkdtempSync(join(tmpdir(), "port-contract-"));
   temporaryDirectories.push(directory);
   writeFileSync(join(directory, ".replit"), replitConfig);
@@ -31,7 +34,7 @@ function checkPortConfig(replitConfig: string) {
     {
       cwd: directory,
       encoding: "utf8",
-      env: portEnvironment,
+      env: { ...portEnvironment, ...extraEnvironment },
       timeout: 10_000,
     },
   );
@@ -109,6 +112,46 @@ externalPort = 80
     expect(result.stdout).toContain(
       "localPort 5000 → externalPort 80",
     );
+  });
+
+  it("strictly requires the complete ten-port runtime mapping for launch commands", () => {
+    const result = checkPortConfig(`
+[[ports]]
+localPort = 53
+[[ports]]
+localPort = 5000
+externalPort = 80
+[[ports]]
+localPort = 5353
+[[ports]]
+localPort = 5556
+[[ports]]
+localPort = 8008
+[[ports]]
+localPort = 8090
+[[ports]]
+localPort = 9877
+[[ports]]
+localPort = 9878
+[[ports]]
+localPort = 9879
+[[ports]]
+localPort = 9880
+`, { PORT_CONTRACT_REQUIRE_ALL: "1" });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("10 entries");
+  });
+
+  it("rejects a strict runtime mapping with any configured service port missing", () => {
+    const result = checkPortConfig(`
+[[ports]]
+localPort = 5000
+externalPort = 80
+[[ports]]
+localPort = 5353
+`, { PORT_CONTRACT_REQUIRE_ALL: "1" });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("missing mappings: 53, 5556, 8008, 8090, 9877, 9878, 9879, 9880");
   });
 
   it("accepts local-only Redis 6379 as a private entry", () => {

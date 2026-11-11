@@ -125,6 +125,19 @@ if (mappings.length === 0) {
   fail(`.replit has no [[ports]] entries; expected a mapping for the app port`);
 }
 
+if (process.env.PORT_CONTRACT_REQUIRE_ALL === "1") {
+  const expected = new Set(Object.values(runtimePorts));
+  const configured = new Set(mappings.map((mapping) => mapping.localPort));
+  const missing = [...expected].filter((port) => !configured.has(port));
+  const unexpected = [...configured].filter((port) => !expected.has(port));
+  if (missing.length || unexpected.length) {
+    fail(
+      `strict port contract mismatch; missing mappings: ${missing.join(", ") || "none"}; ` +
+        `unexpected mappings: ${unexpected.join(", ") || "none"}`,
+    );
+  }
+}
+
 // 5a. No duplicate localPort entries.
 const localOwners = new Map<number, number>();
 for (const m of mappings) {
@@ -210,6 +223,7 @@ const internalPortSet = new Set(
     .filter(([name]) => name !== "app")
     .map(([, port]) => port),
 );
+internalPortSet.add(Number(process.env.DNS_NODE_LOCAL_HEALTH_PORT || 5380));
 // Redis/BullMQ is also an internal-only dependency even though it is selected
 // by URL rather than server/config/ports.ts. Protect both its conventional
 // local port and the effective configured loopback port from being moved to a

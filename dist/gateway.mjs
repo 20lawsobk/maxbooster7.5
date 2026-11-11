@@ -218,6 +218,8 @@ var MIN_PORT = 1;
 var MAX_PORT = 65535;
 var defaultPorts = Object.freeze({
   app: 5e3,
+  dnsAuthority: 53,
+  dnsNodeLocal: 5353,
   localPdim: 5556,
   diffusionGateway: 8008,
   maxcoreApi: 8090,
@@ -257,6 +259,8 @@ function assertUniquePorts(ports) {
 }
 var runtimePorts = assertUniquePorts({
   app: readPort("PORT", defaultPorts.app),
+  dnsAuthority: readPort("DNS_AUTHORITY_PORT", defaultPorts.dnsAuthority),
+  dnsNodeLocal: readPort("DNS_NODE_LOCAL_PORT", defaultPorts.dnsNodeLocal),
   localPdim: readPort("LOCAL_PDIM_PORT", defaultPorts.localPdim),
   diffusionGateway: readPort(
     "VIDEO_DIFFUSION_PORT",
@@ -277,6 +281,15 @@ var runtimePorts = assertUniquePorts({
   ),
   legacyPythonAi: readPort("PYTHON_AI_PORT", defaultPorts.legacyPythonAi)
 });
+var dnsNodeLocalHealthPort = readPort(
+  "DNS_NODE_LOCAL_HEALTH_PORT",
+  5380
+);
+if (Object.values(runtimePorts).includes(dnsNodeLocalHealthPort)) {
+  throw new Error(
+    `[Ports] DNS_NODE_LOCAL_HEALTH_PORT collides with configured service port ${dnsNodeLocalHealthPort}`
+  );
+}
 function loopbackUrl(port) {
   return `http://127.0.0.1:${port}`;
 }
@@ -460,8 +473,8 @@ var config2 = {
   // DNS_NODE_LOCAL=1 for internal verification only.
   dnsNodeLocal: {
     enabled: p.DNS_NODE_LOCAL === "1",
-    port: Number(p.DNS_NODE_LOCAL_PORT) || 5353,
-    healthPort: Number(p.DNS_NODE_LOCAL_HEALTH_PORT) || 5380,
+    port: runtimePorts.dnsNodeLocal,
+    healthPort: dnsNodeLocalHealthPort,
     domain: p.DNS_NODE_LOCAL_DOMAIN || "max-booster.com"
   },
   // Keep generation and administrative credentials distinct. A missing

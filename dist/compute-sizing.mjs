@@ -6,6 +6,10 @@ import os from "node:os";
 import fs from "node:fs";
 var MiB = 1024 ** 2;
 var GiB = 1024 ** 3;
+var DEDICATED_DEPLOYMENT_LIMITS = Object.freeze({
+  cpus: 16,
+  memoryGB: 64
+});
 function read(file) {
   try {
     return fs.readFileSync(file, "utf8").trim();

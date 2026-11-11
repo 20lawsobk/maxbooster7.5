@@ -113,6 +113,13 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="mask-icon" href="/favicon.svg" color="#4a9eff" />
     <link rel="manifest" href="/manifest.json" />
+    <link
+      rel="preload"
+      as="image"
+      href="/logo.webp"
+      type="image/webp"
+      fetchpriority="high"
+    />
 
     <!-- DNS prefetch for external domains -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
@@ -350,11 +357,11 @@
     <!-- Instant dark/light theme — runs before first paint to prevent flash -->
     <script src="/js/theme-init.js"></script>
     <script src="/js/font-loader.js"></script>
-    <script type="module" crossorigin src="/assets/index-C7krO0tE.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-state-DPnotUV5.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-ui-CJhzx3WK.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-utils-BK_vLh4y.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-react-Cuw_aUSA.js">
+    <script type="module" crossorigin src="/assets/index-DDSZs5sr.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react--lPTBB-X.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-ui-Dei71t1V.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-state-CPIMsDjJ.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-utils-CAF_ZcXq.js">
     <link rel="stylesheet" crossorigin href="/assets/index-D44BQVsS.css">
   </head>
 
@@ -385,18 +392,23 @@
           z-index: 9999;
         "
       >
-        <img
-          src="/logo.png"
-          alt="Max Booster"
-          style="
-            width: 80px;
-            height: 80px;
-            border-radius: 14px;
-            object-fit: cover;
-            margin-bottom: 16px;
-            box-shadow: 0 0 32px rgba(74, 158, 255, 0.25);
-          "
-        />
+        <picture>
+          <source srcset="/logo.webp" type="image/webp" />
+          <img
+            src="/logo.png"
+            width="512"
+            height="512"
+            alt="Max Booster"
+            style="
+              width: 80px;
+              height: 80px;
+              border-radius: 14px;
+              object-fit: cover;
+              margin-bottom: 16px;
+              box-shadow: 0 0 32px rgba(74, 158, 255, 0.25);
+            "
+          />
+        </picture>
         <div style="width: 36px; height: 36px; margin-bottom: 4px">
           <svg
             viewBox="0 0 36 36"

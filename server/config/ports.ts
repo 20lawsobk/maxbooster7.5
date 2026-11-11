@@ -11,6 +11,8 @@ const MAX_PORT = 65_535;
 
 export const defaultPorts = Object.freeze({
   app: 5_000,
+  dnsAuthority: 53,
+  dnsNodeLocal: 5_353,
   localPdim: 5_556,
   diffusionGateway: 8_008,
   maxcoreApi: 8_090,
@@ -61,6 +63,8 @@ function assertUniquePorts(ports: RuntimePorts): RuntimePorts {
 
 export const runtimePorts = assertUniquePorts({
   app: readPort("PORT", defaultPorts.app),
+  dnsAuthority: readPort("DNS_AUTHORITY_PORT", defaultPorts.dnsAuthority),
+  dnsNodeLocal: readPort("DNS_NODE_LOCAL_PORT", defaultPorts.dnsNodeLocal),
   localPdim: readPort("LOCAL_PDIM_PORT", defaultPorts.localPdim),
   diffusionGateway: readPort(
     "VIDEO_DIFFUSION_PORT",
@@ -81,6 +85,17 @@ export const runtimePorts = assertUniquePorts({
   ),
   legacyPythonAi: readPort("PYTHON_AI_PORT", defaultPorts.legacyPythonAi),
 });
+
+export const dnsNodeLocalHealthPort = readPort(
+  "DNS_NODE_LOCAL_HEALTH_PORT",
+  5_380,
+);
+
+if (Object.values(runtimePorts).includes(dnsNodeLocalHealthPort)) {
+  throw new Error(
+    `[Ports] DNS_NODE_LOCAL_HEALTH_PORT collides with configured service port ${dnsNodeLocalHealthPort}`,
+  );
+}
 
 export function loopbackUrl(port: number): string {
   return `http://127.0.0.1:${port}`;

@@ -21,13 +21,15 @@ The ordinary production commands are:
 
 ```sh
 npm run build
-npm run start
+npm run prod
 ```
 
 The build compiles the frontend and runtime entries and records source/artifact
 hashes. Start validates that record before handing off to `start.sh`. Runtime
 resources and services must also be provisioned; `dist` alone is not a complete
-installation. Read [npm-build-start.md](npm-build-start.md) for exact boundaries.
+installation. `npm run start` is an equivalent alias. Both production commands
+wait for the complete private listener set before reporting startup success.
+Read [npm-build-start.md](npm-build-start.md) for exact boundaries.
 
 The default model mode is `live-awareness`. Its model registry, candidate bundles
 and training audit are private runtime state under `MAXCORE_MODEL_STATE_DIR`,
@@ -102,8 +104,13 @@ for verification of the actual web runtime.
 
 ## Configuration and service authority
 
-- Public application: local port 5000, externally mapped according to the host
-  port contract. Keep sidecars private.
+- The strict launcher contract maps all ten configured listeners:
+  authoritative DNS 53, public application 5000, local DNS 5353, PDIM 5556,
+  diffusion gateway 8008, MaxCore API 8090, BoosterState 9877, model API 9878,
+  model health 9879, and the legacy MaxCore proxy 9880. DNS listeners use TCP
+  and UDP. Only application port 5000 maps externally (to port 80); the other
+  nine mappings remain private. The local DNS health probe uses private port
+  5380 and is not an additional published service mapping.
 - Canonical PDIM: local loopback port 5556, used for Redis-compatible state and
   storage through the application's real clients. Remote `STORAGE_*` credentials
   are not an automatic requirement for this local topology.

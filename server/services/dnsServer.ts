@@ -28,6 +28,7 @@ import { eq, and } from "drizzle-orm";
 import { db } from "../db.js";
 import { storefrontDomains, dnsZoneRecords, dnsZones } from "@shared/schema";
 import { logger } from "../logger.js";
+import { runtimePorts } from "../config/ports.js";
 import { getOrCreateKeys, makeDS, makeDnskeyData, signRRset, zoneSalt, encodeNameWire, nsec3ParamRdata, NSEC3_ITERATIONS, RRTYPE_DNSKEY, RRTYPE_DS } from "./dnssec.js";
 import { resolveGeoIP, getGeoDnsStatus } from "./geoDns.js";
 import {
@@ -64,7 +65,7 @@ const BASE_DOMAIN = (
   process.env.BASE_DOMAIN || "max-booster.com"
 ).toLowerCase();
 const DNS_SERVER_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
-const DNS_PORT = parseInt(process.env.DNS_PORT || "53", 10);
+const DNS_PORT = runtimePorts.dnsAuthority;
 const UPSTREAM_DNS = process.env.UPSTREAM_DNS || "8.8.8.8";
 
 // DoH upstream used when outbound UDP port 53 is blocked (e?.g. in sandboxed envs)

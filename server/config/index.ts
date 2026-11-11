@@ -18,7 +18,7 @@ export {
   isReplitWorkspace,
   getBaseUrl,
 } from "./defaults.js";
-import { runtimePorts } from "./ports.js";
+import { dnsNodeLocalHealthPort, runtimePorts } from "./ports.js";
 
 // ─── Unified config object (self-confinement spec) ───────────────────────────
 
@@ -80,8 +80,8 @@ export const config = {
   // DNS_NODE_LOCAL=1 for internal verification only.
   dnsNodeLocal: {
     enabled: p.DNS_NODE_LOCAL === "1",
-    port: Number(p.DNS_NODE_LOCAL_PORT) || 5353,
-    healthPort: Number(p.DNS_NODE_LOCAL_HEALTH_PORT) || 5380,
+    port: runtimePorts.dnsNodeLocal,
+    healthPort: dnsNodeLocalHealthPort,
     domain: p.DNS_NODE_LOCAL_DOMAIN || "max-booster.com",
   },
   // Keep generation and administrative credentials distinct. A missing

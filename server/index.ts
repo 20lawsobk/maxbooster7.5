@@ -1128,9 +1128,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.info("Fan delivery scheduler disabled; enable only after consent schema and mail configuration approval");
   }
   _routesReady = true;
-  void import("./services/dnsNodeLocalSupervisor.js")
-    .then(({ startDnsNodeLocal }) => startDnsNodeLocal())
-    .catch((err) => logger.error({ err }, "[DnsNodeLocal] failed to start supervisor"));
+  if (isBgWorker) {
+    void import("./services/dnsNodeLocalSupervisor.js")
+      .then(({ startDnsNodeLocal }) => startDnsNodeLocal())
+      .catch((err) => logger.error({ err }, "[DnsNodeLocal] failed to start supervisor"));
+  }
   const { setRoutesReady: _setRoutesReady } = await import(
     "./lib/bootState.js"
   );
@@ -1868,14 +1870,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     // A socket has one owner. The supervised node already serves this zone
     // when configured on the same port; never race a second nameserver for it.
     const supervisedDnsOwnsPort = process.env.DNS_NODE_LOCAL === "1" &&
-      (Number(process.env.DNS_NODE_LOCAL_PORT) || 5353) ===
-        Number(process.env.DNS_PORT || "53");
+      runtimePorts.dnsNodeLocal === runtimePorts.dnsAuthority;
     if (supervisedDnsOwnsPort) {
       logger.info("[DNS] Authoritative listener owned by the supervised local DNS node");
-    } else {
+    } else if (isBgWorker) {
       void import("./services/dnsServer.js")
         .then(({ startDNSServer }) => startDNSServer())
         .catch((err) => logger.error({ err }, "[DNS] Failed to start authoritative listener"));
+    } else {
+      logger.info(`[DNS] Listener owned by worker 0 on port ${runtimePorts.dnsAuthority}`);
     }
 
     // MaxCore feedback/state transport runs on worker 0 only. MaxCore owns its
