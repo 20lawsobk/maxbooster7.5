@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
-test("historical publishing shell only reuses prebuilt output for source-less input", () => {
+test("publishing shell reuses verified artifacts only on its source-less fast path", () => {
   const shell = readFileSync("build.sh", "utf8");
-  assert.match(shell, /if \[ ! -d client \] && \[ ! -d server \]/);
+  assert.match(shell, /if \[\[ ! -d client &&\s*! -d server &&\s*-s "\$frontend" &&\s*-s "\$server" &&\s*-s "\$cluster" \]\]/);
+  assert.match(shell, /FAST_PATH=1/);
+  assert.match(shell, /FAST_PATH=0/);
   assert.match(shell, /PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build/);
   execFileSync("bash", ["-n", "build.sh"]);
   execFileSync("bash", ["-n", "start.sh"]);

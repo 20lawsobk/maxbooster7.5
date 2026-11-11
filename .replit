@@ -6,8 +6,8 @@ run = "npm run dev"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-build = ["bash", "build.sh"]
-run = ["bash", "start.sh"]
+build = ["npm", "run", "deployment:build"]
+run = ["npm", "run", "deployment:start"]
 ignorePorts = false
 deploymentTarget = "gce"
 

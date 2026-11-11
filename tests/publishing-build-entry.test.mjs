@@ -100,14 +100,21 @@ function fixture(t) {
   return {root,state,calls,authorization,write,run,runLegacyPublishing,outsideInterpreter};
 }
 
-test("Replit publishing selects the current guarded bootstrap executive shell", () => {
+test("Replit publishing selects the canonical npm scripts for the capsule-aware pipeline", () => {
   const command = configuredBuildCommand();
-  assert.deepEqual(command, ["bash", "build.sh"]);
+  assert.deepEqual(command, ["npm", "run", "deployment:build"]);
   const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
     .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
   const publishing = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
   assert.deepEqual(publishing, command);
+  const runtime = JSON.parse(section.match(/^run\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
+  assert.deepEqual(runtime, ["npm", "run", "deployment:start"]);
+  const scripts = JSON.parse(fs.readFileSync("package.json", "utf8")).scripts;
+  assert.equal(scripts["deployment:build"], "bash build.sh");
+  assert.equal(scripts["deployment:start"], "bash start.sh");
+  assert.equal(scripts.deploy, undefined);
   assert.match(fs.readFileSync("build.sh", "utf8"), /exec bash script\/deployment\/bootstrap\.sh/);
+  assert.match(fs.readFileSync("start.sh", "utf8"), /dist\/deployment\/executive\.mjs/);
   assert.ok(fs.readFileSync("docs/publishing-build-authorization.md","utf8").includes(publishing.join(" ")));
 });
 

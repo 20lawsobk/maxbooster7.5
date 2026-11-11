@@ -68,8 +68,8 @@ print(json.dumps({k:d["deployment"][k] for k in ("build","run","deploymentTarget
 `, path.join(root, ".replit")], { env, encoding: "utf8" });
 if (config.status !== 0) throw new Error("Cannot read publishing commands");
 const deployment = JSON.parse(config.stdout);
-if (JSON.stringify(deployment.build) !== JSON.stringify(["bash", "build.sh"]) ||
-    JSON.stringify(deployment.run) !== JSON.stringify(["bash", "start.sh"])) {
+if (JSON.stringify(deployment.build) !== JSON.stringify(["npm", "run", "deployment:build"]) ||
+    JSON.stringify(deployment.run) !== JSON.stringify(["npm", "run", "deployment:start"])) {
   throw new Error("Publishing commands changed; rehearsal requires review");
 }
 fs.writeFileSync(path.join(app, ".replit"), `[deployment]\n${Object.entries(deployment)
@@ -112,6 +112,6 @@ child.on("error", error => { console.error(error.message); process.exitCode = 1;
 child.on("exit", (code, signal) => {
   cacheWatch.close();
   fs.writeFileSync(path.join(run, "status.json"), JSON.stringify({ stage: "built", app, code, signal }));
-  console.log(`Actual bash build.sh exited ${code ?? signal}; evidence retained in ${run}`);
+  console.log(`Configured npm deployment build exited ${code ?? signal}; evidence retained in ${run}`);
   process.exitCode = code ?? 1;
 });

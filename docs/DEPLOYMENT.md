@@ -68,17 +68,20 @@ Keep all dependency locks; there is no supported tar stub or lock-deletion repai
 
 ## Configured publishing
 
-The tracked `.replit` deployment invokes `bash build.sh`, then `bash start.sh`.
-The build delegates to the guarded deployment bootstrap/executive; its cleanup,
-packing and restoration are separate from an ordinary npm build. Do not execute
-destructive packing in the development checkout or infer successful publication
-from a GitHub push. The owner-defined target is a Replit Reserved VM; historical
-scaled tests do not measure that production VM's capacity.
+The tracked `.replit` deployment invokes `npm run deployment:build`, then
+`npm run deployment:start`. These npm entrypoints delegate to `bash build.sh`
+and `bash start.sh`, preserving the guarded deployment executive, portable
+runtimes, capsule packaging/restoration and integrity checks. Replit runs the
+build and start as separate ordered phases; do not combine them into one shell
+command or run destructive packing in the development checkout. A GitHub push
+does not prove a successful publication. The owner-defined target is a Replit
+Reserved VM; historical scaled tests do not measure that production VM's capacity.
 
 `.prepared-release` is optional tooling, not a dependency of this configured
 Publish path. See [prepared-production-releases.md](prepared-production-releases.md).
-The legacy `npm run deploy` points to an absent `scripts/deploy.ts`; use the
-configured host workflow rather than treating that script as operational.
+There is no `npm run deploy` command: Replit's Publish workflow is the only
+publication path. `npm run build` and `npm run start` remain the ordinary
+unpacked production compile/start pair for local validation and CI.
 
 Desktop/mobile packages, store uploads and multi-application workflows are
 excluded from this web/API readiness scope. Their statuses are not substitutes

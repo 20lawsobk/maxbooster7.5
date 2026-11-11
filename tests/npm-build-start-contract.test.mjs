@@ -16,6 +16,12 @@ test("production build aliases do not invoke missing fixers or prune the workspa
   assert.equal(scripts["security-fix"], undefined);
 });
 
+test("legacy production shell delegates to the validated npm start path", () => {
+  const source = fs.readFileSync("scripts/start-production.sh", "utf8");
+  assert.match(source, /exec npm run start/);
+  assert.doesNotMatch(source, /dist\/(?:cluster|index)\.mjs/);
+});
+
 test("release CI preserves PostgreSQL fixtures, builds through npm, and validates restored hashes", () => {
   const ci = fs.readFileSync(".github/workflows/ci.yml", "utf8");
   assert.match(ci, /Prepare private PostgreSQL fixture binaries/);

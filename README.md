@@ -83,6 +83,8 @@ another copy matching the release manifest. Live-awareness mode does not load it
 | `npm run dev` | Development server |
 | `npm run build` | Production build (client + server) |
 | `npm run start` | Production start via `start.sh` |
+| `npm run deployment:build` | Replit capsule-aware publishing build |
+| `npm run deployment:start` | Replit capsule-restoring production start |
 | `npm run check` | TypeScript check (server + client configs) |
 | `npm test` | Unit test suite (Vitest) |
 | `npm run lint` | ESLint (errors only) |
@@ -115,9 +117,10 @@ another copy matching the release manifest. Live-awareness mode does not load it
 ## Deployment
 
 Deploy path is **Dev → production-fidelity simulations in Dev → production**
-on Replit (VM). There is no separate staging environment. The production run
-command is `bash start.sh`; the build produces `dist/` and prunes dev
-dependencies. `replit.nix` provides zstd, redis, postgresql_17, and ffmpeg.
+on Replit (VM). There is no separate staging environment. Replit runs
+`npm run deployment:build`, then `npm run deployment:start`; these npm scripts
+delegate to the capsule-aware `build.sh` and `start.sh` lifecycle.
+`replit.nix` provides zstd, redis, postgresql_17, and ffmpeg.
 
 Deployment is operated from Replit; do not deploy from a local checkout.
 
