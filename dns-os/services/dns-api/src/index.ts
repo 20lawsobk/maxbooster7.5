@@ -2,13 +2,12 @@ import { timingSafeEqual } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Fastify from "fastify";
-import { hasDnsApiDatabaseConfiguration, pool } from "./db/pool.js";
+import { hasDnsApiDatabaseConfiguration, pool, schema } from "./db/pool.js";
 import tenantsRoutes from "./routes/tenants.js";
 import zonesRoutes from "./routes/zones.js";
 import recordsRoutes from "./routes/records.js";
 
 const API_TOKEN = process.env.DNS_API_TOKEN || "";
-const DB_SCHEMA = process.env.DNS_API_DB_SCHEMA || "public";
 const READY_TABLES = ["tenants", "zones", "records", "audit_log"] as const;
 
 function tokenMatches(candidate: string, expected: string): boolean {
@@ -20,18 +19,15 @@ function tokenMatches(candidate: string, expected: string): boolean {
 
 export async function dnsApiDatabaseReady(): Promise<boolean> {
   if (!hasDnsApiDatabaseConfiguration()) return false;
-  const relations = READY_TABLES.map((table) => `${DB_SCHEMA}.${table}`);
+  const relations = READY_TABLES.map((table) => `${schema}.${table}`);
   const result = await pool.query(
-    "SELECT current_schema() AS current_schema, " +
-      "to_regclass($1) AS tenants, to_regclass($2) AS zones, " +
+    "SELECT to_regclass($1) AS tenants, to_regclass($2) AS zones, " +
       "to_regclass($3) AS records, to_regclass($4) AS audit_log",
     relations,
   );
   const row = result.rows[0];
   return Boolean(
-    row &&
-      row.current_schema === DB_SCHEMA &&
-      READY_TABLES.every((table) => row[table] !== null),
+    row && READY_TABLES.every((table) => row[table] !== null),
   );
 }
 
@@ -62,7 +58,7 @@ export function createDnsApiApp({
   app.get("/health", async () => ({ ok: true, ts: new Date().toISOString() }));
   app.get("/status", async () => ({
     service: "dns-api",
-    schema: DB_SCHEMA,
+    schema,
     managementAuthRequired: true,
   }));
   app.get("/ready", async (_request, reply) => {

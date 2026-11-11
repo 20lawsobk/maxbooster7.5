@@ -20,13 +20,6 @@ var pool = new Pool({
 function hasDnsApiDatabaseConfiguration() {
   return Boolean(databaseUrl);
 }
-pool.on("connect", (client) => {
-  void client.query(`SET search_path TO ${schema}, public`).catch((err) => {
-    const code = err.code || "unknown";
-    console.error(`[dns-api] could not initialize schema search_path (${code})`);
-    void client.end().catch(() => void 0);
-  });
-});
 pool.on("error", (err) => {
   const code = err.code || "unknown";
   console.error(`[dns-api] database pool error (${code}); details omitted`);
@@ -50,7 +43,7 @@ async function tenantsRoutes(app) {
     async (req, reply) => {
       const { name } = req.body;
       const { rows } = await pool.query(
-        `INSERT INTO tenants (name) VALUES ($1) RETURNING id, name, api_key, created_at`,
+        `INSERT INTO ${schema}.tenants (name) VALUES ($1) RETURNING id, name, api_key, created_at`,
         [name]
       );
       return reply.code(201).send(rows[0]);
@@ -58,7 +51,7 @@ async function tenantsRoutes(app) {
   );
   app.get("/:id", async (req, reply) => {
     const { rows } = await pool.query(
-      `SELECT id, name, api_key, created_at FROM tenants WHERE id = $1`,
+      `SELECT id, name, api_key, created_at FROM ${schema}.tenants WHERE id = $1`,
       [req.params.id]
     );
     if (!rows[0]) return reply.code(404).send({ error: "not_found" });
@@ -66,12 +59,12 @@ async function tenantsRoutes(app) {
   });
   app.get("/", async (_req, reply) => {
     const { rows } = await pool.query(
-      `SELECT id, name, created_at FROM tenants ORDER BY created_at DESC`
+      `SELECT id, name, created_at FROM ${schema}.tenants ORDER BY created_at DESC`
     );
     return reply.send(rows);
   });
   app.delete("/:id", async (req, reply) => {
-    const { rowCount } = await pool.query(`DELETE FROM tenants WHERE id = $1`, [
+    const { rowCount } = await pool.query(`DELETE FROM ${schema}.tenants WHERE id = $1`, [
       req.params.id
     ]);
     if (!rowCount) return reply.code(404).send({ error: "not_found" });
@@ -99,7 +92,7 @@ async function zonesRoutes(app) {
       const { tenant_id, name } = req.body;
       const normalised = name.toLowerCase().replace(/\.$/, "");
       const { rows } = await pool.query(
-        `INSERT INTO zones (tenant_id, name)
+        `INSERT INTO ${schema}.zones (tenant_id, name)
        VALUES ($1, $2)
        RETURNING id, tenant_id, name, status, serial, created_at`,
         [tenant_id, normalised]
@@ -110,7 +103,7 @@ async function zonesRoutes(app) {
   app.get("/:id", async (req, reply) => {
     const { rows } = await pool.query(
       `SELECT id, tenant_id, name, status, serial, created_at, updated_at
-       FROM zones WHERE id = $1`,
+       FROM ${schema}.zones WHERE id = $1`,
       [req.params.id]
     );
     if (!rows[0]) return reply.code(404).send({ error: "not_found" });
@@ -119,10 +112,10 @@ async function zonesRoutes(app) {
   app.get("/", async (req, reply) => {
     const { tenant_id } = req.query;
     const { rows } = tenant_id ? await pool.query(
-      `SELECT id, tenant_id, name, status, serial FROM zones WHERE tenant_id = $1 ORDER BY name`,
+      `SELECT id, tenant_id, name, status, serial FROM ${schema}.zones WHERE tenant_id = $1 ORDER BY name`,
       [tenant_id]
     ) : await pool.query(
-      `SELECT id, tenant_id, name, status, serial FROM zones ORDER BY name`
+      `SELECT id, tenant_id, name, status, serial FROM ${schema}.zones ORDER BY name`
     );
     return reply.send(rows);
   });
@@ -132,7 +125,7 @@ async function zonesRoutes(app) {
       const { status } = req.body;
       if (!status) return reply.code(400).send({ error: "nothing_to_update" });
       const { rows } = await pool.query(
-        `UPDATE zones SET status = $1, updated_at = now() WHERE id = $2 RETURNING *`,
+        `UPDATE ${schema}.zones SET status = $1, updated_at = now() WHERE id = $2 RETURNING *`,
         [status, req.params.id]
       );
       if (!rows[0]) return reply.code(404).send({ error: "not_found" });
@@ -140,7 +133,7 @@ async function zonesRoutes(app) {
     }
   );
   app.delete("/:id", async (req, reply) => {
-    const { rowCount } = await pool.query(`DELETE FROM zones WHERE id = $1`, [
+    const { rowCount } = await pool.query(`DELETE FROM ${schema}.zones WHERE id = $1`, [
       req.params.id
     ]);
     if (!rowCount) return reply.code(404).send({ error: "not_found" });
@@ -219,7 +212,7 @@ async function recordsRoutes(app) {
       try {
         await client.query("BEGIN");
         await client.query(
-          `INSERT INTO records (zone_id, name, type, ttl, priority, weight, port, data)
+          `INSERT INTO ${schema}.records (zone_id, name, type, ttl, priority, weight, port, data)
          VALUES ($1, $2, upper($3), $4, $5, $6, $7, $8)
          ON CONFLICT (zone_id, name, type, data)
          DO UPDATE SET ttl = EXCLUDED.ttl,
@@ -238,7 +231,12 @@ async function recordsRoutes(app) {
             data
           ]
         );
-        await client.query(`SELECT bump_zone_serial($1)`, [zone_id]);
+        await client.query(
+          `UPDATE ${schema}.zones
+           SET serial = serial + 1, updated_at = now()
+           WHERE id = $1`,
+          [zone_id]
+        );
         await client.query("COMMIT");
         return reply.code(201).send({ ok: true });
       } catch (err) {
@@ -254,7 +252,7 @@ async function recordsRoutes(app) {
     async (req, reply) => {
       const { rows } = await pool.query(
         `SELECT id, name, type, ttl, priority, weight, port, data, created_at, updated_at
-       FROM records WHERE zone_id = $1 ORDER BY type, name`,
+       FROM ${schema}.records WHERE zone_id = $1 ORDER BY type, name`,
         [req.params.zone_id]
       );
       return reply.send(rows);
@@ -268,14 +266,19 @@ async function recordsRoutes(app) {
       try {
         await client.query("BEGIN");
         const { rowCount } = await client.query(
-          `DELETE FROM records WHERE id = $1 AND zone_id = $2`,
+          `DELETE FROM ${schema}.records WHERE id = $1 AND zone_id = $2`,
           [record_id, zone_id]
         );
         if (!rowCount) {
           await client.query("ROLLBACK");
           return reply.code(404).send({ error: "not_found" });
         }
-        await client.query(`SELECT bump_zone_serial($1)`, [zone_id]);
+        await client.query(
+          `UPDATE ${schema}.zones
+           SET serial = serial + 1, updated_at = now()
+           WHERE id = $1`,
+          [zone_id]
+        );
         await client.query("COMMIT");
         return reply.code(204).send();
       } catch (err) {
@@ -290,7 +293,6 @@ async function recordsRoutes(app) {
 
 // dns-os/services/dns-api/src/index.ts
 var API_TOKEN = process.env.DNS_API_TOKEN || "";
-var DB_SCHEMA = process.env.DNS_API_DB_SCHEMA || "public";
 var READY_TABLES = ["tenants", "zones", "records", "audit_log"];
 function tokenMatches(candidate, expected) {
   const actualBytes = Buffer.from(candidate);
@@ -299,14 +301,14 @@ function tokenMatches(candidate, expected) {
 }
 async function dnsApiDatabaseReady() {
   if (!hasDnsApiDatabaseConfiguration()) return false;
-  const relations = READY_TABLES.map((table) => `${DB_SCHEMA}.${table}`);
+  const relations = READY_TABLES.map((table) => `${schema}.${table}`);
   const result = await pool.query(
-    "SELECT current_schema() AS current_schema, to_regclass($1) AS tenants, to_regclass($2) AS zones, to_regclass($3) AS records, to_regclass($4) AS audit_log",
+    "SELECT to_regclass($1) AS tenants, to_regclass($2) AS zones, to_regclass($3) AS records, to_regclass($4) AS audit_log",
     relations
   );
   const row = result.rows[0];
   return Boolean(
-    row && row.current_schema === DB_SCHEMA && READY_TABLES.every((table) => row[table] !== null)
+    row && READY_TABLES.every((table) => row[table] !== null)
   );
 }
 function createDnsApiApp({
@@ -329,7 +331,7 @@ function createDnsApiApp({
   app.get("/health", async () => ({ ok: true, ts: (/* @__PURE__ */ new Date()).toISOString() }));
   app.get("/status", async () => ({
     service: "dns-api",
-    schema: DB_SCHEMA,
+    schema,
     managementAuthRequired: true
   }));
   app.get("/ready", async (_request, reply) => {

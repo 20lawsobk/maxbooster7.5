@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { pool } from "../db/pool.js";
+import { pool, schema } from "../db/pool.js";
 
 export default async function tenantsRoutes(app: FastifyInstance) {
   app.post<{ Body: { name: string } }>(
@@ -23,7 +23,7 @@ export default async function tenantsRoutes(app: FastifyInstance) {
         api_key: string;
         created_at: string;
       }>(
-        `INSERT INTO tenants (name) VALUES ($1) RETURNING id, name, api_key, created_at`,
+        `INSERT INTO ${schema}.tenants (name) VALUES ($1) RETURNING id, name, api_key, created_at`,
         [name],
       );
       return reply.code(201).send(rows[0]);
@@ -32,7 +32,7 @@ export default async function tenantsRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { id: string } }>("/:id", async (req, reply) => {
     const { rows } = await pool.query(
-      `SELECT id, name, api_key, created_at FROM tenants WHERE id = $1`,
+      `SELECT id, name, api_key, created_at FROM ${schema}.tenants WHERE id = $1`,
       [req.params.id],
     );
     if (!rows[0]) return reply.code(404).send({ error: "not_found" });
@@ -41,13 +41,13 @@ export default async function tenantsRoutes(app: FastifyInstance) {
 
   app.get("/", async (_req, reply) => {
     const { rows } = await pool.query(
-      `SELECT id, name, created_at FROM tenants ORDER BY created_at DESC`,
+      `SELECT id, name, created_at FROM ${schema}.tenants ORDER BY created_at DESC`,
     );
     return reply.send(rows);
   });
 
   app.delete<{ Params: { id: string } }>("/:id", async (req, reply) => {
-    const { rowCount } = await pool.query(`DELETE FROM tenants WHERE id = $1`, [
+    const { rowCount } = await pool.query(`DELETE FROM ${schema}.tenants WHERE id = $1`, [
       req.params.id,
     ]);
     if (!rowCount) return reply.code(404).send({ error: "not_found" });
