@@ -769,6 +769,12 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     description: "Too Lost sandbox OAuth client secret",
   },
   {
+    name: "TOOLOST_SANDBOX_SECRET",
+    required: false,
+    category: "distribution",
+    description: "Too Lost sandbox OAuth client secret (alternate name)",
+  },
+  {
     name: "TOOLOST_ENVIRONMENT",
     required: false,
     category: "distribution",

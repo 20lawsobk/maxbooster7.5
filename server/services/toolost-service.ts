@@ -395,6 +395,7 @@ class ToolostService {
         "Sandbox_TooLost_client_Key",
       );
       this.clientSecret = configuredEnvironmentValue(
+        "TOOLOST_SANDBOX_SECRET",
         "TOOLOST_SANDBOX_CLIENT_SECRET",
         "Sandbox_TooLost_Secret_Key",
       );
@@ -514,7 +515,7 @@ class ToolostService {
     if (this.clientId && this.clientSecret) return null;
     const variables =
       this.environment === "sandbox"
-        ? "TOOLOST_SANDBOX_CLIENT_ID (or Sandbox_TooLost_client_Key) / TOOLOST_SANDBOX_CLIENT_SECRET (or Sandbox_TooLost_Secret_Key)"
+        ? "TOOLOST_SANDBOX_CLIENT_ID (or Sandbox_TooLost_client_Key) / TOOLOST_SANDBOX_SECRET, TOOLOST_SANDBOX_CLIENT_SECRET, or Sandbox_TooLost_Secret_Key"
         : "TOOLOST_CLIENT_ID (or TooLost_Client_Key) / TOOLOST_CLIENT_SECRET (or TooLost_Secret_Key)";
     return `Too Lost OAuth app credentials are not configured for the ${this.environment} environment (${variables}).`;
   }

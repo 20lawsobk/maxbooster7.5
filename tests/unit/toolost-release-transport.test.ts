@@ -58,6 +58,7 @@ describe("Too Lost release transport", () => {
       "TOOLOST_CLIENT_SECRET",
       "TOOLOST_SANDBOX_CLIENT_ID",
       "TOOLOST_SANDBOX_CLIENT_SECRET",
+      "TOOLOST_SANDBOX_SECRET",
       "Sandbox_TooLost_client_Key",
       "Sandbox_TooLost_Secret_Key",
     ];
@@ -68,9 +69,10 @@ describe("Too Lost release transport", () => {
       process.env.TOOLOST_CLIENT_ID = "production-client";
       process.env.TOOLOST_CLIENT_SECRET = "production-secret";
       delete process.env.TOOLOST_SANDBOX_CLIENT_ID;
-      delete process.env.TOOLOST_SANDBOX_CLIENT_SECRET;
+      process.env.TOOLOST_SANDBOX_CLIENT_SECRET = "older-sandbox-secret";
+      process.env.TOOLOST_SANDBOX_SECRET = "sandbox-secret";
       process.env.Sandbox_TooLost_client_Key = "sandbox-client";
-      process.env.Sandbox_TooLost_Secret_Key = "sandbox-secret";
+      process.env.Sandbox_TooLost_Secret_Key = "legacy-sandbox-secret";
 
       const { toolostService } = await import(
         "../../server/services/toolost-service"
