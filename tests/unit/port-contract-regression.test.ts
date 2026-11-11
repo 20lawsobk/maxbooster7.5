@@ -114,7 +114,7 @@ externalPort = 80
     );
   });
 
-  it("strictly requires the complete ten-port runtime mapping for launch commands", () => {
+  it("strictly requires all eleven app listener mappings for launch commands", () => {
     const result = checkPortConfig(`
 [[ports]]
 localPort = 53
@@ -123,6 +123,8 @@ localPort = 5000
 externalPort = 80
 [[ports]]
 localPort = 5353
+[[ports]]
+localPort = 5380
 [[ports]]
 localPort = 5556
 [[ports]]
@@ -139,7 +141,7 @@ localPort = 9879
 localPort = 9880
 `, { PORT_CONTRACT_REQUIRE_ALL: "1" });
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("10 entries");
+    expect(result.stdout).toContain("11 entries");
   });
 
   it("rejects a strict runtime mapping with any configured service port missing", () => {
@@ -151,7 +153,7 @@ externalPort = 80
 localPort = 5353
 `, { PORT_CONTRACT_REQUIRE_ALL: "1" });
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("missing mappings: 53, 5556, 8008, 8090, 9877, 9878, 9879, 9880");
+    expect(result.stderr).toContain("missing mappings: 53, 5556, 8008, 8090, 9877, 9878, 9879, 9880, 5380");
   });
 
   it("accepts local-only Redis 6379 as a private entry", () => {
