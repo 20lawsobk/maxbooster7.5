@@ -8,11 +8,12 @@ import { spawn, spawnSync } from "node:child_process";
 test("actual publishing Rust phase fails closed even with a stale binary", t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "rust-publish-failure-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  for (const dir of ["scripts", "boosterstate/target", "bin"]) {
+  for (const dir of ["scripts", "script/deployment", "boosterstate/target", "bin"]) {
     fs.mkdirSync(path.join(root, dir), { recursive: true });
   }
   fs.copyFileSync("build.sh", path.join(root, "build.sh"));
   fs.copyFileSync("scripts/build-boosterstate.sh", path.join(root, "scripts/build-boosterstate.sh"));
+  fs.copyFileSync("script/deployment/capacity.mjs", path.join(root, "script/deployment/capacity.mjs"));
   fs.copyFileSync("boosterstate/Cargo.toml", path.join(root, "boosterstate/Cargo.toml"));
   fs.writeFileSync(path.join(root, "bin/boosterstate"), "stale", { mode: 0o755 });
   const result = spawnSync("bash", ["build.sh", "--executive-task", "rust"], {
@@ -30,10 +31,10 @@ test("real Rust compilation survives concurrent workspace cleanup", {
 }, async t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "rust-publish-concurrent-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  for (const dir of ["scripts", "boosterstate", "scratch"]) {
+  for (const dir of ["scripts", "script/deployment", "boosterstate", "scratch"]) {
     fs.mkdirSync(path.join(root, dir), { recursive: true });
   }
-  for (const file of ["build.sh", "scripts/build-boosterstate.sh", "scripts/boosterstate-toolchain.nix", "scripts/prepare-rust-toolchain.py",
+  for (const file of ["build.sh", "script/deployment/capacity.mjs", "scripts/build-boosterstate.sh", "scripts/boosterstate-toolchain.nix", "scripts/prepare-rust-toolchain.py",
     "boosterstate/Cargo.toml", "boosterstate/Cargo.lock"]) {
     fs.copyFileSync(file, path.join(root, file));
   }

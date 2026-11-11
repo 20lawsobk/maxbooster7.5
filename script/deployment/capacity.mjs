@@ -97,6 +97,69 @@ export function clampDeploymentCapacity({cpus, memoryGB}) {
   };
 }
 
+/**
+ * Resolve an optional worker allocation against both the live execution limit
+ * and the configured dedicated-machine ceiling. A worker can be assigned at
+ * least one CPU because the scheduler itself must make progress on fractional
+ * quotas; it must never claim a larger budget than the detected capacity.
+ */
+export function deploymentWorkerBudget(
+  requested,
+  cpus = liveCapacity().cpus,
+  variable = "DEPLOY_TASK_CPU",
+) {
+  if (!Number.isFinite(cpus) || cpus <= 0) {
+    throw new Error("Invalid detected deployment CPU capacity");
+  }
+
+  const maximum = Math.max(
+    1,
+    Math.min(
+      Math.floor(cpus),
+      DEDICATED_DEPLOYMENT_LIMITS.cpus,
+    ),
+  );
+
+  if (requested === undefined) return maximum;
+
+  const value = String(requested);
+  if (
+    !/^[1-9]\d*$/.test(value) ||
+    !Number.isSafeInteger(Number(value)) ||
+    Number(value) > maximum
+  ) {
+    throw new Error(`${variable} must be an integer from 1 to ${maximum}`);
+  }
+
+  return Number(value);
+}
+
+/**
+ * The executive's per-task assignment is advisory to child tools. If the
+ * child observes a lower quota than its parent, reduce worker fan-out instead
+ * of turning a valid scheduled task into an avoidable build failure.
+ */
+export function deploymentTaskWorkerBudget(
+  requested,
+  cpus = liveCapacity().cpus,
+) {
+  const available = deploymentWorkerBudget(undefined, cpus);
+  if (requested === undefined) return available;
+
+  const value = String(requested);
+  if (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value))) {
+    throw new Error("DEPLOY_TASK_CPU must be a positive safe integer");
+  }
+
+  if (Number(value) > DEDICATED_DEPLOYMENT_LIMITS.cpus) {
+    throw new Error(
+      `DEPLOY_TASK_CPU must not exceed ${DEDICATED_DEPLOYMENT_LIMITS.cpus}`,
+    );
+  }
+
+  return Math.min(Number(value), available);
+}
+
 export function liveCapacity() {
   // Replit's configured dedicated machine is 16 vCPU / 64 GiB. Continue to
   // honor lower cgroup limits, but never schedule beyond that configured size

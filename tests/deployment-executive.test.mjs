@@ -146,10 +146,10 @@ test("failed prerequisite blocks dependent; invalid graphs rejected before execu
  assert.deepEqual(plan.find(t=>t.id==="node").deps,[]);
   for(const id of ["pack_node","pack_python","pack_maxcore","pack_pdim"]) {
     assert.equal(plan.find(t=>t.id===id).io,2,`${id} must reserve two I/O slots`);
-     assert.equal(plan.find(t=>t.id===id).maxCPU,16,`${id} should use available build CPU`);
+     assert.equal(plan.find(t=>t.id===id).maxCPU,DEDICATED_DEPLOYMENT_LIMITS.cpus,`${id} should use available build CPU`);
   }
    for(const id of ["app_capsule","source","remainder"]) {
-     assert.equal(plan.find(t=>t.id===id).maxCPU,16,`${id} should use available dedicated CPU`);
+     assert.equal(plan.find(t=>t.id===id).maxCPU,DEDICATED_DEPLOYMENT_LIMITS.cpus,`${id} should use available dedicated CPU`);
    }
    assert.equal(plan.find(t=>t.id==="dependencies").cpu,8);
    assert.equal(plan.find(t=>t.id==="rust").cpu,8);

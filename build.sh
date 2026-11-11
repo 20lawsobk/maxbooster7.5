@@ -96,7 +96,18 @@ phase_dependencies() {
 
 phase_rust() {
   echo '==> Compiling Rust sidecar'
-  CARGO_BUILD_JOBS="${DEPLOY_TASK_CPU:-2}" \
+  local assigned_cpu="${DEPLOY_TASK_CPU:-}"
+
+  if [[ -z "$assigned_cpu" ]]; then
+    assigned_cpu=$(node --input-type=module -e \
+      'import {deploymentTaskWorkerBudget} from "./script/deployment/capacity.mjs"; console.log(deploymentTaskWorkerBudget());')
+  else
+    assigned_cpu=$(DEPLOY_TASK_CPU="$assigned_cpu" node --input-type=module -e \
+      'import {deploymentTaskWorkerBudget} from "./script/deployment/capacity.mjs"; console.log(deploymentTaskWorkerBudget(process.env.DEPLOY_TASK_CPU));')
+  fi
+
+  CARGO_BUILD_JOBS="$assigned_cpu" \
+  GOMAXPROCS="$assigned_cpu" \
     bash scripts/build-boosterstate.sh
   rm -rf boosterstate/target/
 }

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import {DEDICATED_DEPLOYMENT_LIMITS} from "./capacity.mjs";
 
 const DEADLINES_SECONDS = Object.freeze({
   cleanup: 600,
@@ -38,8 +39,6 @@ const RETRYABLE_CAPSULE_TASKS = new Set([
   "pack_pdim",
 ]);
 
-const DEDICATED_BUILD_MAX_CPUS = 16;
-
 function buildTask(id, deps = [], memoryMB = 256, cpu = 1, io = 1) {
   return {
     id,
@@ -56,7 +55,7 @@ function buildTask(id, deps = [], memoryMB = 256, cpu = 1, io = 1) {
 
     ...(ELASTIC_TASKS.has(id) ? {
       elasticCPU: true,
-      maxCPU: DEDICATED_BUILD_MAX_CPUS,
+      maxCPU: DEDICATED_DEPLOYMENT_LIMITS.cpus,
     } : {}),
 
     // These stages must continue to commit verified capsules atomically.

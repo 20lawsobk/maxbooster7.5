@@ -2,7 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { packCapsuleMembers, CAPSULE_COMPRESSION_ID, MAXCORE_CAPSULE_EXCLUDE_PATHS, PDIM_CAPSULE_EXCLUDE_PATHS } from "./lib/capsulePack.js";
-import { effectiveCapacity } from "../server/computeSizing.js";
+import {
+  deploymentTaskWorkerBudget,
+  liveCapacity,
+} from "./deployment/capacity.mjs";
 import { packCachedDeploymentCapsule } from "./lib/deploymentCapsuleCache.js";
 import { computeRemainingAppMembers } from "./lib/dockerignoreScan.js";
 
@@ -21,9 +24,10 @@ export async function publishCapsule(root: string, mode: string, capsule: string
       throw new Error("Capsule paths must stay inside the build root");
     }
   }
-  const assigned = Number(process.env.DEPLOY_TASK_CPU ?? 2);
-  if (!Number.isFinite(assigned) || assigned < 1) throw new Error("Invalid task CPU allocation");
-  const threads = Math.max(1, Math.min(Math.floor(effectiveCapacity().cpus), Math.floor(assigned)));
+  const threads = deploymentTaskWorkerBudget(
+    process.env.DEPLOY_TASK_CPU,
+    liveCapacity().cpus,
+  );
   if (mode === "remainder") {
     if (capsule !== "app_remainder.pdim" || inputs.length) {
       throw new Error("Remainder operation requires only app_remainder.pdim");

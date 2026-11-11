@@ -78,11 +78,15 @@ does not prove a successful publication. The owner-defined target is a Replit
 Reserved VM; historical scaled tests do not measure that production VM's capacity.
 
 The Publishing tool currently selects a dedicated **16 vCPU / 64 GiB RAM**
-machine. Build and startup settings are selected in Publishing, not encoded in
-`.replit`; Replit applies that machine configuration to the configured commands.
-The deployment executive reads the live cgroup limits, caps scheduling at
-16 vCPU / 64 GiB, and logs the detected capacity. Per-task `memoryMB` values
-are scheduler reservations, not hard memory limits; the cgroup remains the
+machine. Machine sizing is selected in Publishing and is not encoded in
+`.replit`; the build and startup commands are encoded there. Replit applies the
+selected machine configuration to those commands.
+The shared deployment capacity module is the source of the **16 vCPU / 64 GiB**
+ceiling used by build plans, the executor, and capsule/release helpers. Each
+tool receives its per-task CPU assignment; worker counts cannot exceed either
+that assignment or the live cgroup capacity. The optional prepared-release path
+uses the same detected CPU budget by default. Per-task `memoryMB` values are
+scheduler reservations, not hard memory limits; the live cgroup remains the
 actual process limit. Machine-setting changes require a new publish. See
 [Replit machine configuration](https://docs.replit.com/features/publishing/machine-configuration).
 
