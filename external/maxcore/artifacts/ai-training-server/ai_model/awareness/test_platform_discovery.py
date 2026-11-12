@@ -13,6 +13,7 @@ from ai_model.awareness.engine import (
     Engine,
     Snapshot,
     _retry_delay,
+    _discovery_method_counts,
     canonical,
     conditioning,
     validate_source_observation_document,
@@ -21,6 +22,7 @@ from ai_model.awareness.platform_discovery import (
     DiscoveryRows,
     FRESHNESS_WINDOW_DAYS,
     PLATFORM_DISCOVERY,
+    PLATFORM_RIGHTS_POLICIES,
     SEARCH_OPT_IN,
     SEARCH_PROVIDER_SETTING,
     DEFAULT_SEARCH_INTERVAL_SECONDS,
@@ -30,6 +32,7 @@ from ai_model.awareness.platform_discovery import (
     make_provenance,
     provider_state,
     query_for,
+    rights_policy_for,
     search_interval_seconds,
     source_min_interval,
     source_name,
@@ -47,10 +50,27 @@ from ai_model.platform_optimization import ALIASES, PLATFORMS
 
 
 class PlatformDiscoveryTests(unittest.TestCase):
+    def test_retrieval_method_counts_never_call_index_snippets_page_fetches(self):
+        counts = _discovery_method_counts([
+            {"discovery": {"retrieval_method": "direct_public"}},
+            {"discovery": {"retrieval_method": "index_snippet"}},
+            {"discovery": {"retrieval_method": "third_party_search"}},
+            {"text": "legacy record without discovery provenance"},
+        ])
+        self.assertEqual(counts, {
+            "discovery_observation_count": 3,
+            "platform_origin_observation_count": 2,
+            "direct_public_observation_count": 1,
+            "platform_index_snippet_count": 1,
+            "third_party_search_result_count": 1,
+        })
+
     def test_registry_is_exact_and_aliases_are_canonical(self):
         self.assertEqual(set(PLATFORM_DISCOVERY), set(PLATFORMS))
+        self.assertEqual(set(PLATFORM_RIGHTS_POLICIES), set(PLATFORMS))
         self.assertEqual(ALIASES["twitter"], "x")
         self.assertEqual(source_name("exa", "twitter"), "platform_discovery_exa_x")
+        self.assertEqual(rights_policy_for("twitter")["platform"], "x")
 
     def test_search_is_disabled_without_explicit_opt_in(self):
         env = {"EXA_API_KEY": "fixture", "TAVILY_API_KEY": "fixture"}
@@ -605,6 +625,9 @@ class PlatformDiscoveryTests(unittest.TestCase):
                 "ok": True,
                 "observed_at": observed,
                 "discovery_observation_count": 3,
+                "platform_index_snippet_count": 3,
+                "direct_public_observation_count": 0,
+                "platform_origin_observation_count": 3,
                 "discovery_scan_state": "observed",
                 "discovery_freshness_state": "fresh",
             "search_provider_used": provider,
@@ -623,7 +646,21 @@ class PlatformDiscoveryTests(unittest.TestCase):
         self.assertEqual(result["tiktok"]["status"], "search_index_configured")
         self.assertEqual(result["tiktok"]["ingestion_state"], "available")
         self.assertEqual(result["tiktok"]["observation_count"], 3)
+        self.assertEqual(result["tiktok"]["platform_index_snippet_count"], 3)
+        self.assertEqual(result["tiktok"]["direct_public_observation_count"], 0)
+        self.assertEqual(
+            result["tiktok"]["source_health"][0]["retrieval_state"],
+            "platform_search_index_snippets",
+        )
         self.assertEqual(result["tiktok"]["freshness_state"], "fresh")
+        self.assertFalse(result["tiktok"]["training_eligibility"]["eligible"])
+        self.assertFalse(
+            result["tiktok"]["training_eligibility"]["owner_authorization_sufficient"]
+        )
+        self.assertEqual(
+            result["tiktok"]["rights_policy"]["awareness_path"],
+            "conditional_search_index_snippet_only",
+        )
         self.assertEqual(
             result["tiktok"]["search_provider_query_status"], "last_query_succeeded"
         )
@@ -646,6 +683,10 @@ class PlatformDiscoveryTests(unittest.TestCase):
             third_party_status = profile_source_status(third_party_only)["platforms"]
         self.assertEqual(third_party_status["tiktok"]["observation_count"], 0)
         self.assertEqual(third_party_status["tiktok"]["ingestion_state"], "third_party_only")
+        self.assertEqual(
+            third_party_status["tiktok"]["source_health"][0]["retrieval_state"],
+            "third_party_reporting_only",
+        )
         self.assertEqual(
             result["tiktok"]["direct_fetch_policy"],
             result["tiktok"]["native_crawl"]["reason"],

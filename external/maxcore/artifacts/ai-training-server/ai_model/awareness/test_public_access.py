@@ -9,6 +9,11 @@ from ai_model.awareness.public_access import (
     clear_robots_cache_for_tests,
     native_crawl_status,
 )
+from ai_model.awareness.platform_discovery import (
+    PLATFORM_RIGHTS_POLICIES,
+    RIGHTS_POLICY_REVIEWED_ON,
+    rights_policy_for,
+)
 from ai_model.native_analysis.safe_http import FetchResult, SafeHTTPError
 from ai_model.platform_optimization import PLATFORMS
 
@@ -22,6 +27,7 @@ class PublicAccessTests(unittest.TestCase):
 
     def test_exact_eight_are_fail_closed_without_authorization(self):
         self.assertEqual(set(NATIVE_CRAWL_POLICIES), set(PLATFORMS))
+        self.assertEqual(set(PLATFORM_RIGHTS_POLICIES), set(PLATFORMS))
         for platform in PLATFORMS:
             with self.subTest(platform=platform):
                 state = native_crawl_status(platform)
@@ -29,6 +35,43 @@ class PublicAccessTests(unittest.TestCase):
                 self.assertEqual(state["first_party_observation_count"], 0)
                 self.assertEqual(state["implementation_state"],
                                  "not_available_without_source_authorization")
+                rights = rights_policy_for(platform)
+                self.assertEqual(rights["reviewed_on"], RIGHTS_POLICY_REVIEWED_ON)
+                self.assertFalse(rights["training_eligible"])
+                self.assertFalse(rights["owner_authorization_sufficient"])
+                self.assertEqual(rights["reuse_rights"], "unknown")
+                self.assertEqual(
+                    rights["awareness_path"],
+                    "conditional_search_index_snippet_only",
+                )
+                self.assertTrue(rights["policy_sources"])
+                self.assertEqual(state["policy_sources"], rights["policy_sources"])
+
+    def test_platform_specific_terms_restrictions_are_visible(self):
+        self.assertEqual(
+            rights_policy_for("x")["platform_training_restriction"],
+            "x_api_content_cannot_train_foundation_or_frontier_models",
+        )
+        self.assertEqual(
+            rights_policy_for("twitter")["platform"],
+            "x",
+        )
+        self.assertEqual(
+            rights_policy_for("tiktok")["direct_collection"],
+            "blocked_without_written_tiktok_approval",
+        )
+        self.assertEqual(
+            rights_policy_for("linkedin")["direct_collection"],
+            "blocked_for_automated_scraping",
+        )
+        self.assertIn(
+            "person who created them",
+            " ".join(rights_policy_for("threads")["constraints"]),
+        )
+        self.assertIn(
+            "30 calendar days",
+            " ".join(rights_policy_for("google_business")["constraints"]),
+        )
 
     def test_youtube_robots_disallow_prevents_feed_access(self):
         body = b"User-agent: *\nDisallow: /feeds/videos.xml\n"

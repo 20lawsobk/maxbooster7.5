@@ -15,6 +15,7 @@ import os
 import re
 import ipaddress
 import unicodedata
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 
@@ -83,6 +84,161 @@ PLATFORM_DISCOVERY = {
     },
 }
 
+# This is an operational allow/deny matrix, not legal advice. Public visibility
+# is not treated as a license to collect, retain, or train. Search-index snippets
+# remain awareness-only unless a separate, source-specific right is verified.
+RIGHTS_POLICY_VERSION = 1
+RIGHTS_POLICY_REVIEWED_ON = "2026-11-12"
+PLATFORM_RIGHTS_POLICIES = {
+    "facebook": {
+        "direct_collection": "disabled_pending_approved_source_access",
+        "awareness_path": "conditional_search_index_snippet_only",
+        "reuse_rights": "unknown",
+        "training_eligible": False,
+        "training_block_reason": "source_specific_training_rights_not_verified",
+        "platform_training_restriction": "no_training_license_verified",
+        "owner_authorization_sufficient": False,
+        "constraints": [
+            "Meta Platform Terms govern approved Platform Data access.",
+            "Rights to content supplied through an app must be held or secured.",
+            "Honor applicable user and platform deletion requests.",
+            "Do not build or augment user profiles without valid user consent.",
+        ],
+        "policy_sources": ["https://developers.facebook.com/terms/"],
+    },
+    "instagram": {
+        "direct_collection": "disabled_pending_approved_source_access",
+        "awareness_path": "conditional_search_index_snippet_only",
+        "reuse_rights": "unknown",
+        "training_eligible": False,
+        "training_block_reason": "source_specific_training_rights_not_verified",
+        "platform_training_restriction": "no_training_license_verified",
+        "owner_authorization_sufficient": False,
+        "constraints": [
+            "Meta Platform Terms and applicable Instagram terms govern API data.",
+            "Rights to content supplied through an app must be held or secured.",
+            "Honor applicable user and platform deletion requests.",
+        ],
+        "policy_sources": [
+            "https://developers.facebook.com/terms/",
+            "https://help.instagram.com/581066165581870",
+        ],
+    },
+    "x": {
+        "direct_collection": "disabled_pending_authorized_api_scope",
+        "awareness_path": "conditional_search_index_snippet_only",
+        "reuse_rights": "unknown",
+        "training_eligible": False,
+        "training_block_reason": "source_specific_training_rights_not_verified",
+        "platform_training_restriction": "x_api_content_cannot_train_foundation_or_frontier_models",
+        "owner_authorization_sufficient": False,
+        "constraints": [
+            "X Developer Agreement forbids using X API or X Content to fine-tune or train foundation or frontier models.",
+            "Honor removal or protected-status changes; do not detach location from its content.",
+        ],
+        "policy_sources": ["https://developer.x.com/en/developer-terms/agreement"],
+    },
+    "youtube": {
+        "direct_collection": "disabled_pending_current_robots_and_terms_approval",
+        "awareness_path": "conditional_search_index_snippet_only",
+        "reuse_rights": "unknown",
+        "training_eligible": False,
+        "training_block_reason": "source_specific_training_rights_not_verified",
+        "platform_training_restriction": "no_training_license_verified",
+        "owner_authorization_sufficient": False,
+        "constraints": [
+            "YouTube API Services Terms govern API Data and do not grant a general content-reuse license.",
+            "The configured Atom feed is separately gated by a fresh robots check and source-policy review.",
+            "Honor attribution and deletion requirements for any approved API data.",
+        ],
+        "policy_sources": [
+            "https://developers.google.com/youtube/terms/api-services-terms-of-service",
+        ],
+    },
+    "tiktok": {
+        "direct_collection": "blocked_without_written_tiktok_approval",
+        "awareness_path": "conditional_search_index_snippet_only",
+        "reuse_rights": "unknown",
+        "training_eligible": False,
+        "training_block_reason": "source_specific_training_rights_not_verified",
+        "platform_training_restriction": "no_training_license_verified",
+        "owner_authorization_sufficient": False,
+        "constraints": [
+            "TikTok Terms prohibit automated scraping, crawling, exporting, or extraction without written approval.",
+            "Do not treat public visibility as approval for automated collection or model training.",
+        ],
+        "policy_sources": ["https://www.tiktok.com/legal/terms-of-service"],
+    },
+    "linkedin": {
+        "direct_collection": "blocked_for_automated_scraping",
+        "awareness_path": "conditional_search_index_snippet_only",
+        "reuse_rights": "unknown",
+        "training_eligible": False,
+        "training_block_reason": "source_specific_training_rights_not_verified",
+        "platform_training_restriction": "no_training_license_verified",
+        "owner_authorization_sufficient": False,
+        "constraints": [
+            "LinkedIn User Agreement prohibits crawlers and other automated means from scraping or copying Services.",
+            "Third-party search results do not establish content-owner consent or reuse rights.",
+        ],
+        "policy_sources": ["https://www.linkedin.com/legal/user-agreement"],
+    },
+    "threads": {
+        "direct_collection": "disabled_outside_verified_api_scopes",
+        "awareness_path": "conditional_search_index_snippet_only",
+        "reuse_rights": "unknown",
+        "training_eligible": False,
+        "training_block_reason": "source_specific_training_rights_not_verified",
+        "platform_training_restriction": "no_training_license_verified",
+        "owner_authorization_sufficient": False,
+        "constraints": [
+            "The reviewed Threads API overview describes displaying created posts only to the person who created them.",
+            "No general third-party public-feed collection or training grant is configured here.",
+        ],
+        "policy_sources": [
+            "https://developers.facebook.com/docs/threads/overview/",
+        ],
+    },
+    "google_business": {
+        "direct_collection": "disabled_outside_owned_or_authorized_business_profiles",
+        "awareness_path": "conditional_search_index_snippet_only",
+        "reuse_rights": "unknown",
+        "training_eligible": False,
+        "training_block_reason": "business_profile_data_is_not_authorized_for_durable_training",
+        "platform_training_restriction": "business_profile_api_content_not_for_durable_training",
+        "owner_authorization_sufficient": False,
+        "constraints": [
+            "Business Profile APIs are scoped to businesses owned or authorized for management.",
+            "API content storage is limited; stored content must be temporary (no more than 30 calendar days), secure, unmanipulated, and non-aggregated.",
+            "Business Profile API content is not admitted to the durable awareness history or training corpus.",
+        ],
+        "policy_sources": [
+            "https://developers.google.com/my-business/content/policies",
+        ],
+    },
+}
+
+
+def rights_policy_for(platform: str) -> dict:
+    """Return a detached, canonical source-rights policy for diagnostics."""
+    canonical = normalize_platform(platform)
+    policy = PLATFORM_RIGHTS_POLICIES[canonical]
+    return {
+        "schema": RIGHTS_POLICY_VERSION,
+        "reviewed_on": RIGHTS_POLICY_REVIEWED_ON,
+        "platform": canonical,
+        "direct_collection": policy["direct_collection"],
+        "awareness_path": policy["awareness_path"],
+        "reuse_rights": policy["reuse_rights"],
+        "training_eligible": policy["training_eligible"],
+        "training_block_reason": policy["training_block_reason"],
+        "platform_training_restriction": policy["platform_training_restriction"],
+        "owner_authorization_sufficient": policy["owner_authorization_sufficient"],
+        "constraints": list(policy["constraints"]),
+        "policy_sources": list(policy["policy_sources"]),
+    }
+
+
 _PLATFORM_HOSTS = {
     platform: tuple(policy["domains"])
     for platform, policy in PLATFORM_DISCOVERY.items()
@@ -116,7 +272,8 @@ _EMAIL_OR_PHONE = re.compile(
 
 def validate_registry() -> None:
     """Fail closed if the discovery policy drifts from the app registry."""
-    if set(PLATFORM_DISCOVERY) != set(PLATFORMS):
+    if (set(PLATFORM_DISCOVERY) != set(PLATFORMS)
+            or set(PLATFORM_RIGHTS_POLICIES) != set(PLATFORMS)):
         raise RuntimeError("platform_discovery_registry_mismatch")
     for platform, policy in PLATFORM_DISCOVERY.items():
         if (not policy["domains"] or not policy["paths"] or not policy["topics"]

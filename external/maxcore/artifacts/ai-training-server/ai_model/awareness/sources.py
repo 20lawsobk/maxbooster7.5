@@ -722,6 +722,7 @@ def profile_source_status(source_health=None):
     """Report exact platform discovery paths without implying account access."""
     from ai_model.platform_optimization import PLATFORMS
     from ai_model.awareness.profile_quality import summarize_quality_cohort
+    from .platform_discovery import rights_policy_for
     from .public_access import native_crawl_status
 
     configured = {
@@ -765,6 +766,25 @@ def profile_source_status(source_health=None):
                 item.get("discovery_observation_count", 0),
             )
             third_party_count = item.get("third_party_search_result_count", 0)
+            if type(platform_count) is not int or platform_count < 0:
+                platform_count = 0
+            if type(third_party_count) is not int or third_party_count < 0:
+                third_party_count = 0
+            direct_count = item.get("direct_public_observation_count", 0)
+            index_count = item.get("platform_index_snippet_count", 0)
+            if type(direct_count) is not int or direct_count < 0:
+                direct_count = 0
+            if type(index_count) is not int or index_count < 0:
+                index_count = 0
+            unclassified_count = max(0, platform_count - direct_count - index_count)
+            retrieval_state = (
+                "mixed_direct_and_indexed" if direct_count and index_count else
+                "direct_public_pages" if direct_count else
+                "platform_search_index_snippets" if index_count else
+                "legacy_method_unclassified" if unclassified_count else
+                "third_party_reporting_only" if third_party_count else
+                "no_source_observations"
+            )
             if not item:
                 item_status = "not_scanned"
             elif item.get("ok") and platform_count:
@@ -781,7 +801,11 @@ def profile_source_status(source_health=None):
                 "failure": failure,
                 "http_status": item.get("http_status"),
                 "observation_count": platform_count,
+                "direct_public_observation_count": direct_count,
+                "platform_index_snippet_count": index_count,
+                "unclassified_observation_count": unclassified_count,
                 "third_party_result_count": third_party_count,
+                "retrieval_state": retrieval_state,
                 "freshness_state": item.get("discovery_freshness_state", "unknown"),
                 "last_observed_at": item.get("observed_at"),
                 "schedule_state": item.get("schedule_state", "scheduled"),
@@ -857,6 +881,7 @@ def profile_source_status(source_health=None):
             if type(row.get("observation_count")) is int
         )
         direct_policy = PLATFORM_DISCOVERY[platform]
+        rights = rights_policy_for(platform)
         provider_item = health.get(search_sources[platform], {}) if search_sources[platform] else {}
         provider_item = provider_item if isinstance(provider_item, dict) else {}
         if not search_sources[platform]:
@@ -877,10 +902,34 @@ def profile_source_status(source_health=None):
             "ingestion_state": ingestion_state,
             "freshness_state": freshness,
             "observation_count": observation_count,
+            "direct_public_observation_count": sum(
+                row["direct_public_observation_count"]
+                for row in source_health_rows
+                if type(row["direct_public_observation_count"]) is int
+            ),
+            "platform_index_snippet_count": sum(
+                row["platform_index_snippet_count"]
+                for row in source_health_rows
+                if type(row["platform_index_snippet_count"]) is int
+            ),
+            "unclassified_observation_count": sum(
+                row["unclassified_observation_count"]
+                for row in source_health_rows
+                if type(row["unclassified_observation_count"]) is int
+            ),
+            "third_party_search_result_count": sum(
+                row["third_party_result_count"]
+                for row in source_health_rows
+                if type(row["third_party_result_count"]) is int
+            ),
             "last_observed_at": max(observed) if observed else None,
+            "rights_policy": rights,
             "training_eligibility": {
-                "eligible": False,
-                "reason": "public_visibility_does_not_prove_training_rights",
+                "eligible": rights["training_eligible"],
+                "reason": rights["training_block_reason"],
+                "owner_authorization_sufficient": rights[
+                    "owner_authorization_sufficient"
+                ],
             },
             "search_provider": search["provider"] if search_sources[platform] else None,
             "search_provider_used": provider_item.get("search_provider_used"),

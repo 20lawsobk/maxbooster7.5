@@ -219,6 +219,27 @@ def _retry_delay(source, failures):
     return base * (0.8 + 0.2 * fraction)
 
 
+def _discovery_method_counts(rows):
+    """Keep fetched platform pages distinct from indexed snippets and reporting."""
+    discovery = [
+        row for row in rows
+        if isinstance(row, dict) and isinstance(row.get("discovery"), dict)
+    ]
+    methods = [
+        row["discovery"].get("retrieval_method") for row in discovery
+    ]
+    direct = methods.count("direct_public")
+    indexed = methods.count("index_snippet")
+    third_party = methods.count("third_party_search")
+    return {
+        "discovery_observation_count": len(discovery),
+        "platform_origin_observation_count": direct + indexed,
+        "direct_public_observation_count": direct,
+        "platform_index_snippet_count": indexed,
+        "third_party_search_result_count": third_party,
+    }
+
+
 def citation(value):
     try:
         u = urlsplit(str(value))
@@ -1493,29 +1514,25 @@ class Engine:
                 "http_status": document.get("last_http_status"),
                 "observed_at": observed_at,
             }
-            discovery_rows = [
-                row for row in rows if isinstance(row.get("discovery"), dict)
-            ]
+            counts = _discovery_method_counts(rows)
+            discovery_count = counts["discovery_observation_count"]
+            platform_count = counts["platform_origin_observation_count"]
+            third_party_count = counts["third_party_search_result_count"]
             platform_rows = [
-                row for row in discovery_rows
-                if row["discovery"].get("retrieval_method")
+                row for row in rows
+                if isinstance(row.get("discovery"), dict)
+                and row["discovery"].get("retrieval_method")
                 in {"direct_public", "index_snippet"}
             ]
-            third_party_rows = [
-                row for row in discovery_rows
-                if row["discovery"].get("retrieval_method") == "third_party_search"
-            ]
-            if scan_state == "observed" and discovery_rows:
+            if scan_state == "observed" and discovery_count:
                 freshness = {
                     row["discovery"].get("freshness_state") for row in platform_rows
                 }
                 health.update({
-                    "discovery_observation_count": len(discovery_rows),
-                    "platform_origin_observation_count": len(platform_rows),
-                    "third_party_search_result_count": len(third_party_rows),
+                    **counts,
                     "discovery_scan_state": (
                         "observed" if platform_rows else
-                        "third_party_only" if third_party_rows else "observed"
+                        "third_party_only" if third_party_count else "observed"
                     ),
                     "discovery_freshness_state": (
                         "fresh" if platform_rows and "fresh" in freshness else
@@ -1526,6 +1543,8 @@ class Engine:
                 health.update({
                     "discovery_observation_count": 0,
                     "platform_origin_observation_count": 0,
+                    "direct_public_observation_count": 0,
+                    "platform_index_snippet_count": 0,
                     "third_party_search_result_count": 0,
                     "discovery_scan_state": scan_state,
                     "discovery_freshness_state": "unavailable",
@@ -1554,6 +1573,8 @@ class Engine:
                 health.update(
                     discovery_observation_count=0,
                     platform_origin_observation_count=0,
+                    direct_public_observation_count=0,
+                    platform_index_snippet_count=0,
                     third_party_search_result_count=0,
                     discovery_scan_state="stale_waiting_interval",
                     discovery_freshness_state="unavailable",
@@ -1638,31 +1659,25 @@ class Engine:
                             name, rows, observed_at, rank_signals,
                         )
                         if normalized:
-                            discovery_rows = [
+                            counts = _discovery_method_counts(normalized)
+                            platform_rows = [
                                 row for row in normalized
                                 if isinstance(row.get("discovery"), dict)
-                            ]
-                            platform_rows = [
-                                row for row in discovery_rows
-                                if row["discovery"].get("retrieval_method")
+                                and row["discovery"].get("retrieval_method")
                                 in {"direct_public", "index_snippet"}
                             ]
-                            third_party_rows = [
-                                row for row in discovery_rows
-                                if row["discovery"].get("retrieval_method")
-                                == "third_party_search"
+                            third_party_count = counts[
+                                "third_party_search_result_count"
                             ]
                             freshness_states = {
                                 row["discovery"].get("freshness_state")
                                 for row in platform_rows
                             }
                             self._health[name].update({
-                                "discovery_observation_count": len(discovery_rows),
-                                "platform_origin_observation_count": len(platform_rows),
-                                "third_party_search_result_count": len(third_party_rows),
+                                **counts,
                                 "discovery_scan_state": (
                                     "observed" if platform_rows else
-                                    "third_party_only" if third_party_rows else
+                                    "third_party_only" if third_party_count else
                                     "observed"
                                 ),
                                 "discovery_freshness_state": (
@@ -1721,6 +1736,8 @@ class Engine:
                             ),
                             "discovery_observation_count": 0,
                             "platform_origin_observation_count": 0,
+                            "direct_public_observation_count": 0,
+                            "platform_index_snippet_count": 0,
                             "third_party_search_result_count": 0,
                             "discovery_scan_state": rows.scan_state,
                             "discovery_freshness_state": "unavailable",

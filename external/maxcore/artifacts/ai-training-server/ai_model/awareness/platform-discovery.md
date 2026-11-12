@@ -25,20 +25,20 @@ paths, and topic terms live together in `platform_discovery.py`.
 - The current checkout does not contain a native public web-search/crawl engine
   for the eight platforms. The local observatory searches only records already
   collected by MaxCore; it is not a crawler.
-- Anonymous direct collection is fail-closed. The YouTube Atom adapter now
-  checks the exact origin's `robots.txt` before requesting a feed and refuses
-  collection when robots is inaccessible or disallows that path. The live
-  `www.youtube.com/robots.txt` response observed on 2026-11-08 disallowed
-  `/feeds/videos.xml` for the generic crawler group. An Allow rule would still
-  not replace terms review or explicit permission.
-- The current access matrix is exposed on the authenticated admin source-status
-  route. Facebook's live robots file explicitly requires express written
-  permission for automated collection; X's generic crawler group disallows
-  crawling; TikTok's robots file disallows its search paths; YouTube's file
-  disallows the configured Atom-feed path. Instagram, Threads, and LinkedIn
-  robots policy was not verified in the bounded live check. Google Maps robots
-  exceptions do not by themselves authorize Google Business profile scraping.
-  These are access blockers, not active feeds.
+- Anonymous direct collection is fail-closed. The YouTube Atom adapter checks
+  the exact origin's current `robots.txt` before requesting a feed and refuses
+  collection when robots is inaccessible or disallows that path. A robots
+  Allow rule alone never grants content-reuse or training rights.
+- An official-policy review on 2026-11-12 is recorded in
+  `platform-rights.md` and enforced as a conservative matrix in
+  `platform_discovery.py`. The admin source-status payload returns the
+  per-platform policy and separates direct-page fetches, first-party search
+  index snippets, and third-party search results.
+- Direct crawling is disabled for all eight platforms in this checkout. The
+  provider adapters may supply short, sanitized search-index results only when
+  explicitly enabled; they do not fetch result pages. A search result is not
+  proof of a platform connection, a content license, measured engagement, or
+  permission to train.
 - Existing Exa/Tavily sources remain optional search-index augmentation. They
   are not the native crawler and are not required for the local index.
 - Search-index text and public feed content have unknown reuse rights and are
@@ -52,6 +52,7 @@ paths, and topic terms live together in `platform_discovery.py`.
 
 The admin-only diagnostics route is
 `GET /api/awareness/unified/admin/source-status`. It reports configuration,
-scan outcome, freshness, source failures, and schedule state without returning
-provider credentials or raw search snippets. The profile-discovery route
-searches the persisted local index and does not make request-time web calls.
+scan outcome, freshness, source failures, schedule state, rights policy, and
+retrieval-method counts without returning provider credentials or raw search
+snippets. The profile-discovery route searches the persisted local index and
+does not make request-time web calls.

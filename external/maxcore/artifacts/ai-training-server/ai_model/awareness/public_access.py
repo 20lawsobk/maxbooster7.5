@@ -15,7 +15,7 @@ from urllib.robotparser import RobotFileParser
 
 from ai_model.native_analysis.safe_http import SafeHTTPError, fetch_bytes
 from ai_model.platform_optimization import normalize_platform
-from .platform_discovery import policy_for
+from .platform_discovery import policy_for, rights_policy_for
 
 
 ROBOTS_USER_AGENT = "MaxCore-NativeAnalysis/1"
@@ -30,43 +30,43 @@ _robots_cache: dict[str, tuple[float, RobotFileParser]] = {}
 NATIVE_CRAWL_POLICIES = {
     "facebook": {
         "state": "blocked",
-        "reason": "written_permission_required",
-        "basis": "robots_notice",
+        "reason": "approved_meta_source_access_not_configured",
+        "basis": "meta_platform_terms_and_application_policy",
     },
     "instagram": {
         "state": "blocked",
-        "reason": "terms_and_robots_review_required",
-        "basis": "unverified",
+        "reason": "approved_meta_source_access_not_configured",
+        "basis": "meta_platform_terms_and_application_policy",
     },
     "x": {
         "state": "blocked",
-        "reason": "robots_disallows_general_crawlers",
-        "basis": "robots_disallow_all",
+        "reason": "authorized_x_source_api_not_configured",
+        "basis": "x_developer_agreement_and_application_policy",
     },
     "youtube": {
         "state": "blocked",
-        "reason": "robots_disallows_configured_atom_feed",
-        "basis": "robots_feed_path_disallowed",
+        "reason": "youtube_feed_requires_current_robots_and_terms_approval",
+        "basis": "youtube_api_terms_and_live_robots_gate",
     },
     "tiktok": {
         "state": "blocked",
-        "reason": "search_path_disallowed_terms_unreviewed",
-        "basis": "robots_search_path_disallowed",
+        "reason": "written_tiktok_approval_required_for_automated_extraction",
+        "basis": "tiktok_terms_of_service",
     },
     "linkedin": {
         "state": "blocked",
-        "reason": "terms_and_robots_review_required",
-        "basis": "unverified",
+        "reason": "automated_scraping_prohibited_by_user_agreement",
+        "basis": "linkedin_user_agreement",
     },
     "threads": {
         "state": "blocked",
-        "reason": "terms_and_robots_review_required",
-        "basis": "unverified",
+        "reason": "verified_threads_api_scope_not_configured",
+        "basis": "threads_api_overview_and_application_policy",
     },
     "google_business": {
         "state": "blocked",
-        "reason": "approved_search_api_or_terms_review_required",
-        "basis": "unverified",
+        "reason": "owned_or_authorized_business_profile_api_not_configured",
+        "basis": "business_profile_api_policies",
     },
 }
 
@@ -75,12 +75,16 @@ def native_crawl_status(platform: str) -> dict:
     """Return a safe, explicit status without making a network request."""
     canonical = normalize_platform(platform)
     policy = NATIVE_CRAWL_POLICIES[canonical]
+    rights = rights_policy_for(canonical)
     return {
         "engine": "maxcore_native_public_web",
         "implementation_state": "not_available_without_source_authorization",
         "state": policy["state"],
         "reason": policy["reason"],
         "policy_basis": policy["basis"],
+        "rights_policy_schema": rights["schema"],
+        "rights_policy_reviewed_on": rights["reviewed_on"],
+        "policy_sources": rights["policy_sources"],
         "authorized": False,
         "robots_checked_at": None,
         "last_attempt_at": None,
