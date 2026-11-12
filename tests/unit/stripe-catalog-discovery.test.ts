@@ -3,6 +3,7 @@ import { beforeEach, afterEach, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({ client: {} as any }));
 vi.mock("../../server/lib/stripeClient", () => ({
   hasStripeCredential: (key: unknown) => typeof key === "string" && key.length > 0,
+  getStripeSecretKey: () => process.env.STRIPE_SECRET_KEY,
   createStripeClient: () => state.client,
 }));
 vi.mock("../../server/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn() } }));

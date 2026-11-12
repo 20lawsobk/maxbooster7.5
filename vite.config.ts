@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { fileURLToPath } from "url";
-import { selectStripePublishableKey } from "./shared/stripeCredentials";
+import { selectStripePublishableKey } from "./shared/stripeCredentials.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
