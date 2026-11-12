@@ -2,15 +2,21 @@
 
 import asyncio
 from contextlib import contextmanager
+from hashlib import sha256
 import json
 from pathlib import Path
 from types import SimpleNamespace
+import time
 
 import pytest
 
 import server
+from ai_model.awareness import Snapshot
+from ai_model.awareness.engine import DOMAINS, canonical
 from ai_model.generation import campaign
+from ai_model.generation.live_serving import LiveServingModel
 from ai_model.agents.script_agent import ScriptAgent, ScriptRequest
+from ai_model.agents.distribution_agent import DistributionAgent
 from ai_model.generation.plan import GenerationPlan, active_plan
 
 
@@ -30,6 +36,38 @@ def agent_response(model, request):
 
 def _run(coro):
     return asyncio.run(coro)
+
+
+def _fresh_snapshot():
+    now = time.time()
+    domains, health = {}, {}
+    for domain in DOMAINS:
+        source = f"{domain}-test-source"
+        citation = f"https://example.org/{domain}"
+        text = f"{domain} observed music trend"
+        row = {
+            "source": source,
+            "text": text,
+            "citation": citation,
+            "observed_at": now,
+            "value": 10,
+            "score": 0.5,
+            "metric": "rank",
+        }
+        row["id"] = sha256(canonical([source, citation, text]).encode()).hexdigest()
+        domains[domain] = [row]
+        health[source] = {"ok": True, "domain": domain, "observed_at": now}
+    document = {
+        "schema": 1,
+        "created_at": now,
+        "expires_at": now + 600,
+        "domains": domains,
+        "source_health": health,
+        "ranking": "test:v1",
+        "secondary": {},
+    }
+    document["id"] = sha256(canonical(document).encode()).hexdigest()
+    return Snapshot.parse(document, now=now)
 
 
 def test_native_profile_discovery_route_reads_local_index_without_external_search(monkeypatch):
@@ -177,6 +215,52 @@ def test_social_route_delivers_structured_envelope_to_agents(monkeypatch):
         assert '"campaignId":"distinctive-context-956"' in consumed.awareness
         assert "distinctive-awareness-214" in consumed.awareness
         assert "{'goal':" not in consumed.awareness  # no Python repr injection
+
+
+def test_social_route_generates_from_live_awareness_without_trained_candidate(monkeypatch):
+    snapshot = _fresh_snapshot()
+    model = LiveServingModel()
+    model.pin = lambda *args, **kwargs: (_ for _ in ()).throw(
+        AssertionError("live-awareness text must not require a trained release pin")
+    )
+    engine = SimpleNamespace(current_snapshot=lambda: snapshot)
+    monkeypatch.setattr("ai_model.awareness.engine.get_engine", lambda: engine)
+    monkeypatch.setattr(server, "_model_ready", False)
+    monkeypatch.setattr(server, "_model_init_error", "no certified candidate")
+    monkeypatch.setattr(server, "_live_serving_model", model)
+    monkeypatch.setattr(server, "_script_agent", ScriptAgent(model))
+    monkeypatch.setattr(server, "_distribution_agent", DistributionAgent(model))
+    monkeypatch.setattr(server, "_build_personalized_tone", lambda _user, _platform, tone: tone)
+    monkeypatch.setattr(server, "_request_live_learning_check", lambda: True)
+    monkeypatch.setattr(server, "_fw_ingest", lambda *args, **kwargs: None)
+    monkeypatch.setenv("MAXCORE_SERVING_RELEASE", "live-awareness")
+
+    async def trained_checkpoint_guard_must_not_run():
+        raise AssertionError("live-awareness route must not wait for trained weights")
+
+    monkeypatch.setattr(server, "_wait_for_model_ready", trained_checkpoint_guard_must_not_run)
+    req = server.PlatformSocialRequest.model_validate({
+        "user_id": "live-social-owner",
+        "platform": "tiktok",
+        "topic": "Midnight Signals single release",
+        "tone": "authentic",
+        "goal": "engagement",
+        "include_hashtags": True,
+        "num_variants": 1,
+    })
+
+    result = _run(server.platform_social_generate(req, _key={"scopes": ["generate"]}))
+
+    assert result["success"] is True
+    assert result["model_ready"] is False
+    assert result["generation_mode"] == "live_awareness"
+    assert result["checkpoint_inference"] is False
+    variant = result["variants"][0]
+    assert variant["source"] == "live_awareness"
+    assert variant["caption"].strip()
+    assert variant["hook"].strip()
+    assert variant["body"].strip()
+    assert variant["cta"].strip()
 
 
 def test_live_report_payload_conditions_real_agent_without_metadata_leak():

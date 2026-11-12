@@ -4723,7 +4723,7 @@ async def url_parser_inspect(url: str = "", _key = Depends(require_scope("genera
 
 
 def _planned_generation(modality, *, specification=False, deterministic_planner=False,
-                        dedicated_media=False):
+                        dedicated_media=False, live_awareness_text=False):
     """Apply the same immutable contract to direct and HTTP handler calls."""
     import functools
     import inspect
@@ -4755,8 +4755,9 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                     == "live-awareness"
                 )
                 live_text_generation = (
-                    live_release and not _model_ready and modality == "text"
-                    and getattr(req, "mode", None) == "content"
+                    live_release and not _model_ready and live_awareness_text
+                    and not specification and not deterministic_planner
+                    and modality in {"text", "content"}
                 )
                 live_media_generation = (
                     live_release and not _model_ready and dedicated_media
@@ -5007,7 +5008,7 @@ async def generation_capabilities():
 
 
 @app.post("/content/generate")
-@_planned_generation("content")
+@_planned_generation("content", live_awareness_text=True)
 async def generate_content(req: ContentRequest, _key = Depends(require_scope("generate"))):
     start = time.time()
     platform = normalize_platform(req.platform)
@@ -5549,7 +5550,7 @@ def _build_personalized_tone(user_id: str, platform: str, base_tone: str) -> str
 
 
 @app.post("/platform/social/generate")
-@_planned_generation("content")
+@_planned_generation("content", live_awareness_text=True)
 async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(require_scope("generate"))):
     """
     Main platform social media content generation.
@@ -5615,7 +5616,13 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
     )
 
     variants = []
-    await _wait_for_model_ready()
+    live_awareness_mode = (
+        not _model_ready
+        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
+        == "live-awareness"
+    )
+    if not live_awareness_mode:
+        await _wait_for_model_ready()
 
     for i in range(req.num_variants):
         try:
@@ -5636,11 +5643,17 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
                      genre=req.genre or "",
                 )))
                 _require_model_script(s)
-                d = await _in_thread(lambda: _distribution_agent.run(DistributionRequest(
+                distribution_request = DistributionRequest(
                     script=f"{s.hook}\n{s.body}\n{s.cta}",
                     platform=platform, goal=req.goal,
                     awareness=effective_awareness,
-                )))
+                )
+                if getattr(s, "source", "") == "live_awareness":
+                    d = _distribution_agent.compose_live_awareness(distribution_request)
+                else:
+                    d = await _in_thread(
+                        lambda: _distribution_agent.run(distribution_request)
+                    )
                 return s, d
 
             script, dist = await _run_variant()
