@@ -5,6 +5,7 @@
   "surfaces": [
     {
       "id": "social-url-composer",
+      "productArea": "Social",
       "clientFile": "client/src/pages/SocialMedia.tsx",
       "action": "Generate social copy or media from a supplied public URL",
       "backend": ["POST /api/social/generate-from-url", "POST /api/multimodal/generate"],
@@ -17,6 +18,7 @@
     },
     {
       "id": "social-page-direct-copy",
+      "productArea": "Social",
       "clientFile": "client/src/pages/SocialMedia.tsx",
       "action": "Generate manual platform copy",
       "backend": ["POST /api/social/generate-content"],
@@ -29,6 +31,7 @@
     },
     {
       "id": "social-component-copy",
+      "productArea": "Social",
       "clientFile": "client/src/components/social/ContentGenerator.tsx",
       "action": "Generate social copy from the reusable content composer",
       "backend": ["POST /api/social/generate"],
@@ -41,6 +44,7 @@
     },
     {
       "id": "social-image",
+      "productArea": "Social",
       "clientFile": "client/src/components/content/AIImageGenerator.tsx",
       "action": "Create an image for a social post",
       "backend": ["POST /api/social/generate-image"],
@@ -53,6 +57,7 @@
     },
     {
       "id": "social-multimodal",
+      "productArea": "Social",
       "clientFile": "client/src/components/social/ContentGenerator.tsx",
       "action": "Generate a text-led package with selected media assets",
       "backend": ["POST /api/multimodal/generate"],
@@ -65,6 +70,7 @@
     },
     {
       "id": "social-ab-variants",
+      "productArea": "Social",
       "clientFile": "client/src/components/social/ContentGenerator.tsx",
       "action": "Create A/B copy variants",
       "backend": ["POST /api/social/ai-content/ab-variants"],
@@ -77,6 +83,7 @@
     },
     {
       "id": "social-multilingual-copy",
+      "productArea": "Social",
       "clientFile": "client/src/components/social/ContentGenerator.tsx",
       "action": "Translate and culturally adapt user-supplied copy",
       "backend": ["POST /api/social/ai-content/multilingual"],
@@ -89,6 +96,7 @@
     },
     {
       "id": "social-audio-to-copy",
+      "productArea": "Social",
       "clientFile": "client/src/components/content/ServerVideoGenerator.tsx",
       "action": "Analyze uploaded audio and create social copy",
       "backend": ["POST /api/social/analyze-audio"],
@@ -101,6 +109,7 @@
     },
     {
       "id": "social-image-to-copy",
+      "productArea": "Social",
       "clientFile": "client/src/components/content/ServerVideoGenerator.tsx",
       "action": "Analyze an uploaded image and create social copy",
       "backend": ["POST /api/social/analyze-image"],
@@ -113,6 +122,7 @@
     },
     {
       "id": "dashboard-copy-optimization",
+      "productArea": "Dashboard",
       "clientFile": "client/src/pages/Dashboard.tsx",
       "action": "Generate an improved unpublished draft",
       "backend": ["POST /api/ai/optimize-content"],
@@ -125,6 +135,7 @@
     },
     {
       "id": "advertising-copy",
+      "productArea": "Advertising",
       "clientFile": "client/src/components/advertising/CreativeVariantGenerator.tsx",
       "action": "Generate advertising copy variants",
       "backend": ["POST /api/advertising/generate-content"],
@@ -137,6 +148,7 @@
     },
     {
       "id": "advertising-campaign-draft",
+      "productArea": "Advertising",
       "clientFile": "client/src/pages/Advertisement.tsx",
       "action": "Generate and save an advertising campaign draft",
       "backend": ["POST /api/advertising/generate-campaign"],
@@ -149,6 +161,7 @@
     },
     {
       "id": "advertising-image",
+      "productArea": "Advertising",
       "clientFile": "client/src/pages/Advertisement.tsx",
       "action": "Create an advertising image",
       "backend": ["POST /api/advertising/generate-image"],
@@ -161,6 +174,7 @@
     },
     {
       "id": "advertising-video",
+      "productArea": "Advertising",
       "clientFile": "client/src/pages/Advertisement.tsx",
       "action": "Create an advertising video",
       "backend": ["POST /api/advertising/generate-video"],
@@ -173,6 +187,7 @@
     },
     {
       "id": "songwriting-assist",
+      "productArea": "Songwriting",
       "clientFile": "client/src/pages/ProjectsPageImpl.tsx",
       "action": "Generate songwriting suggestions",
       "backend": ["POST /api/songwriting/ai-assist"],
@@ -185,6 +200,7 @@
     },
     {
       "id": "outreach-pitch",
+      "productArea": "Outreach",
       "clientFile": "client/src/pages/OutreachCRM.tsx",
       "action": "Draft an outreach pitch without sending it",
       "backend": ["POST /api/outreach/generate-pitch"],
@@ -197,6 +213,7 @@
     },
     {
       "id": "studio-audio-from-text",
+      "productArea": "Studio",
       "clientFile": "client/src/components/studio/AIMusicGenerator.tsx",
       "action": "Generate audio from text and musical controls",
       "backend": ["POST /api/studio/generation/text", "GET /api/audio-job/:jobId"],
@@ -209,6 +226,7 @@
     },
     {
       "id": "studio-pattern-generation",
+      "productArea": "Studio",
       "clientFile": "client/src/components/studio/FlowStateLyricsToMelody.tsx",
       "action": "Generate melody, chords, drums, and arrangement data",
       "backend": ["POST /api/studio/generation/pattern/melody", "POST /api/studio/generation/pattern/chords", "POST /api/studio/generation/pattern/arrangement"],
@@ -221,6 +239,7 @@
     },
     {
       "id": "social-video-and-music-video",
+      "productArea": "Social",
       "clientFile": "client/src/components/content/ServerVideoGenerator.tsx",
       "action": "Render a social video or beat-synced music video",
       "backend": ["POST /api/social/generate-video", "POST /api/social/generate-music-video"],
@@ -233,6 +252,7 @@
     },
     {
       "id": "advertising-autopilot-media",
+      "productArea": "Advertising",
       "clientFile": "client/src/pages/Advertisement.tsx",
       "action": "Generate media for explicitly configured scheduled advertising drafts",
       "backend": ["POST /api/advertising/start", "AdvertisingAutopilotRunner"],
@@ -245,6 +265,7 @@
     },
     {
       "id": "procedural-media-tool",
+      "productArea": "Shared generation",
       "clientFile": "client/src/components/content/LocalMediaRenderer.tsx",
       "action": "Create a controlled poster, instrumental, or promotional clip",
       "backend": ["POST /api/generate/image", "POST /api/generate/audio", "POST /api/generate-video"],
@@ -264,13 +285,33 @@
     },
     {
       "clientFile": "client/src/components/distribution/ContentIDManager.tsx",
+      "productArea": "Distribution",
       "backend": "POST /api/distribution/content-id/generate",
-      "classification": "Catalog identifier creation; not generative AI"
+      "classification": "Exact file SHA-256 digest; not Content ID registration or generative AI"
     },
     {
       "clientFile": "client/src/components/distribution/ISRCManager.tsx",
+      "productArea": "Distribution",
       "backend": "POST /api/distribution/codes/generate",
       "classification": "Identifier creation; not generative AI"
+    },
+    {
+      "clientFile": "client/src/pages/Distribution.tsx",
+      "productArea": "Distribution",
+      "backend": "POST /api/distribution/releases/:id/ddex/preview and GET /api/distribution/releases/:id/ddex/download",
+      "classification": "Owner-scoped DDEX XML preview and ZIP package; not schema certification or distributor acceptance"
+    },
+    {
+      "clientFile": "client/src/components/distribution/AutomatedQC.tsx",
+      "productArea": "Distribution",
+      "backend": "POST /api/distribution/qc/analyze and POST /api/distribution/qc/fix",
+      "classification": "Persisted QC report and individually acknowledged fixes"
+    },
+    {
+      "clientFile": "client/src/pages/Distribution.tsx",
+      "productArea": "Distribution",
+      "backend": "POST /api/distribution/export-report and client PDF report export",
+      "classification": "CSV and PDF exports of actual account release records"
     },
     {
       "clientFile": "client/src/pages/Royalties.tsx",

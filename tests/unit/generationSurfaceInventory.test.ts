@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 type Surface = {
   id: string;
+  productArea: string;
   clientFile: string;
   backend: string[];
   maxCorePath: string[];
@@ -15,7 +16,10 @@ type Surface = {
 const root = process.cwd();
 const inventory = JSON.parse(
   readFileSync(path.join(root, "tests/e2e/generation-surface-inventory.json"), "utf8"),
-) as { surfaces: Surface[]; nonCreativeOperations: Array<{ clientFile: string }> };
+) as {
+  surfaces: Surface[];
+  nonCreativeOperations: Array<{ clientFile: string; productArea?: string }>;
+};
 
 describe("MaxCore generation surface inventory", () => {
   it("lists unique, source-backed client entry points and non-creative generation operations", () => {
@@ -33,6 +37,21 @@ describe("MaxCore generation surface inventory", () => {
     for (const operation of inventory.nonCreativeOperations) {
       expect(readFileSync(path.join(root, operation.clientFile), "utf8").length).toBeGreaterThan(0);
     }
+    const productAreas = new Set([
+      ...inventory.surfaces.map((surface) => surface.productArea),
+      ...inventory.nonCreativeOperations.map((operation) => operation.productArea),
+    ]);
+    expect([...productAreas]).toEqual(
+      expect.arrayContaining([
+        "Social",
+        "Advertising",
+        "Studio",
+        "Songwriting",
+        "Outreach",
+        "Distribution",
+        "Dashboard",
+      ]),
+    );
   });
 
   it("covers the four modalities without treating procedural media as trained inference", () => {

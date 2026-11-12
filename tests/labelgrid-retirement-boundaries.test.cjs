@@ -46,6 +46,14 @@ test("admin external API health presents Too Lost, not retired LabelGrid", () =>
   assert.match(adminRoute, /toolost:\s*getResult\(apiChecks\[1\]\)/);
 });
 
+test("unconfigured legacy LabelGrid operations never report simulated success or zero data", () => {
+  const service = fs.readFileSync("server/services/labelgrid-service.ts", "utf8");
+  assert.match(service, /requireLegacyProvider\(operation:\s*string\)/);
+  assert.match(service, /LEGACY_LABELGRID_UNAVAILABLE/);
+  assert.doesNotMatch(service, /simulate(?:Get|Update|Create|Request)/);
+  assert.doesNotMatch(service, /Distribution features will use simulated mode/);
+});
+
 test("historical catalog reads are owner-scoped and retain legacy IDs, UPC and ISRC", async () => {
   const api = await isolatedModule("server/services/legacyDistributionCatalog.ts", {
     "storage.js": `export const storage = {

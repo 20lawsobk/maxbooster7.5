@@ -1,21 +1,28 @@
 // @ts-nocheck
 import { createHash } from "crypto";
-import { readFile, writeFile, unlink } from "fs/promises";
-import { join } from "path";
-import { tmpdir } from "os";
+import { createReadStream, createWriteStream } from "fs";
+import { stat } from "fs/promises";
+import path from "path";
 import archiver from "archiver";
 import { create } from "xmlbuilder2";
-import { logger } from "../logger.js";
 
-// ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
-// can hold the event loop indefinitely.  Per-call signal overrides this default.
-const timedFetch = (
-  url: string | URL | Request,
-  init: RequestInit = {},
-): Promise<Response> =>
-  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
+const MESSAGE_SCHEMA_VERSION = "ern/43";
+const MAX_DDEX_AUDIO_BYTES = 200 * 1024 * 1024;
+const MAX_DDEX_PACKAGE_BYTES = 1024 * 1024 * 1024;
+const MAX_DDEX_ARTWORK_BYTES = 25 * 1024 * 1024;
+function hasValidGs1CheckDigit(code: string): boolean {
+  if (!/^(?:\d{12}|\d{13})$/.test(code)) return false;
+  const dataDigits = code.slice(0, -1);
+  const firstWeight = code.length === 12 ? 3 : 1;
+  const sum = [...dataDigits].reduce(
+    (total, digit, index) =>
+      total + Number(digit) * (index % 2 === 0 ? firstWeight : 4 - firstWeight),
+    0,
+  );
+  return (10 - (sum % 10)) % 10 === Number(code.at(-1));
+}
 
-interface ReleaseMetadata {
+export interface DDEXReleaseMetadata {
   id: string;
   title: string;
   artistName: string;
@@ -30,10 +37,13 @@ interface ReleaseMetadata {
   secondaryGenre?: string;
   isExplicit: boolean;
   coverArtPath?: string;
+  coverArtCodec?: string;
+  coverArtWidth?: number;
+  coverArtHeight?: number;
   territories?: string[];
 }
 
-interface TrackMetadata {
+export interface DDEXTrackMetadata {
   id: string;
   title: string;
   isrc: string;
@@ -43,12 +53,17 @@ interface TrackMetadata {
   explicit: boolean;
   lyrics?: string;
   primaryArtist: string;
+  audioCodec: string;
+  sampleRate: number;
+  channels: number;
+  bitDepth?: number;
+  bitrate?: number;
   featuredArtists?: string[];
   songwriters?: RoyaltySplit[];
   producers?: RoyaltySplit[];
 }
 
-interface RoyaltySplit {
+export interface RoyaltySplit {
   name: string;
   email: string;
   role: string;
@@ -56,12 +71,114 @@ interface RoyaltySplit {
 }
 
 export class DDEXPackageService {
-  private static readonly _MESSAGE_SCHEMA_VERSION = "ern/43";
+  private async assertPackageInputs(
+    release: DDEXReleaseMetadata,
+    tracks: DDEXTrackMetadata[],
+  ): Promise<void> {
+    const requiredReleaseFields: Array<[string, unknown]> = [
+      ["release title", release?.title],
+      ["artist name", release?.artistName],
+      ["release type", release?.releaseType],
+      ["UPC/EAN", release?.upc],
+      ["release date", release?.releaseDate],
+      ["label name", release?.labelName],
+      ["copyright year", release?.copyrightYear],
+      ["copyright owner", release?.copyrightOwner],
+      ["primary genre", release?.primaryGenre],
+    ];
+    const missing = requiredReleaseFields
+      .filter(([, value]) => value === undefined || value === null || value === "")
+      .map(([name]) => name);
+    if (missing.length) {
+      throw new Error(`Missing required release metadata: ${missing.join(", ")}`);
+    }
+    if (!["single", "EP", "album"].includes(release.releaseType)) {
+      throw new Error("Release type must be single, EP, or album");
+    }
+    if (!Number.isInteger(release.copyrightYear) ||
+        release.copyrightYear < 1900 ||
+        release.copyrightYear > new Date().getFullYear() + 1) {
+      throw new Error("Copyright year is invalid");
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(release.releaseDate) ||
+        Number.isNaN(Date.parse(`${release.releaseDate}T00:00:00Z`)) ||
+        new Date(`${release.releaseDate}T00:00:00Z`).toISOString().slice(0, 10) !== release.releaseDate) {
+      throw new Error("Release date must be a real YYYY-MM-DD date");
+    }
+    if (!hasValidGs1CheckDigit(release.upc)) {
+      throw new Error("UPC/EAN must have a valid GS1 check digit");
+    }
+    if (typeof release.isExplicit !== "boolean") {
+      throw new Error("Release explicit-content status is required");
+    }
+    if (!Array.isArray(tracks) || tracks.length === 0 || tracks.length > 100) {
+      throw new Error("DDEX packages require between 1 and 100 tracks");
+    }
+
+    const seenTrackNumbers = new Set<number>();
+    let packageBytes = 0;
+    for (const track of tracks) {
+      if (!track?.id || !track?.title || !track?.primaryArtist) {
+        throw new Error("Every track requires an ID, title, and artist");
+      }
+      if (!/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(track.isrc || "")) {
+        throw new Error(`Track ${track.trackNumber} has no valid ISRC`);
+      }
+      if (!Number.isInteger(track.trackNumber) || track.trackNumber < 1 ||
+          seenTrackNumbers.has(track.trackNumber)) {
+        throw new Error("Track numbers must be unique positive integers");
+      }
+      seenTrackNumbers.add(track.trackNumber);
+      if (!track.audioFilePath || !path.isAbsolute(track.audioFilePath) ||
+          /^https?:\/\//i.test(track.audioFilePath)) {
+        throw new Error(`Track ${track.trackNumber} must use an owned local audio file`);
+      }
+      if (!Number.isFinite(track.duration) || track.duration <= 0 ||
+          !track.audioCodec || track.audioCodec === "unknown" ||
+          !Number.isFinite(track.sampleRate) || track.sampleRate <= 0 ||
+          !Number.isInteger(track.channels) || track.channels <= 0) {
+        throw new Error(`Track ${track.trackNumber} has incomplete verified audio metadata`);
+      }
+      const fileInfo = await stat(track.audioFilePath);
+      if (!fileInfo.isFile() || fileInfo.size === 0) {
+        throw new Error(`Track ${track.trackNumber} audio file is empty or unavailable`);
+      }
+      if (fileInfo.size > MAX_DDEX_AUDIO_BYTES) {
+        throw new Error(`Track ${track.trackNumber} exceeds the 200 MiB DDEX audio limit`);
+      }
+      packageBytes += fileInfo.size;
+    }
+
+    if (release.coverArtPath) {
+      if (!release.coverArtCodec ||
+          !Number.isInteger(release.coverArtWidth) ||
+          !Number.isInteger(release.coverArtHeight) ||
+          (release.coverArtWidth ?? 0) <= 0 ||
+          (release.coverArtHeight ?? 0) <= 0) {
+        throw new Error("Cover art requires verified format and dimensions");
+      }
+      const artInfo = await stat(release.coverArtPath);
+      if (!artInfo.isFile() || artInfo.size === 0) {
+        throw new Error("Cover art file is empty or unavailable");
+      }
+      if (artInfo.size > MAX_DDEX_ARTWORK_BYTES) {
+        throw new Error("Cover art exceeds the 25 MiB DDEX artwork limit");
+      }
+      packageBytes += artInfo.size;
+      if (!/^[a-z0-9]{1,8}$/i.test(path.extname(release.coverArtPath).slice(1))) {
+        throw new Error("Cover art has no safe package extension");
+      }
+    }
+    if (packageBytes > MAX_DDEX_PACKAGE_BYTES) {
+      throw new Error("DDEX package exceeds the 1 GiB total asset limit");
+    }
+  }
 
   async generateDDEXXML(
-    release: ReleaseMetadata,
-    tracks: TrackMetadata[],
+    release: DDEXReleaseMetadata,
+    tracks: DDEXTrackMetadata[],
   ): Promise<string> {
+    await this.assertPackageInputs(release, tracks);
     const messageId = this.generateMessageId(release?.id);
     const releaseId = `REL${release?.id.replace(/-/g, "").substring(0, 12).toUpperCase()}`;
 
@@ -70,7 +187,7 @@ export class DDEXPackageService {
       {
         "xmlns:ernm": "http://ddex.net/xml/ern/43",
         "xmlns:xs": "http://www.w3.org/2001/XMLSchema-instance",
-        MessageSchemaVersionId: (this as any).MESSAGE_SCHEMA_VERSION,
+        MessageSchemaVersionId: MESSAGE_SCHEMA_VERSION,
         LanguageAndScriptCode: "en",
       },
     );
@@ -164,20 +281,23 @@ export class DDEXPackageService {
       technicalDetails
         .ele("TechnicalResourceDetailsReference")
         .txt(`T${track?.trackNumber}`);
-      technicalDetails?.ele("AudioCodecType").txt("FLAC");
-      technicalDetails?.ele("BitRate").txt("1411");
-      technicalDetails?.ele("SamplingRate").txt("44100");
-      technicalDetails?.ele("BitsPerSample").txt("16");
-      technicalDetails?.ele("NumberOfChannels").txt("2");
+      technicalDetails?.ele("AudioCodecType").txt(track.audioCodec);
+      if (track.bitrate) technicalDetails?.ele("BitRate").txt(String(track.bitrate));
+      technicalDetails?.ele("SamplingRate").txt(String(track.sampleRate));
+      if (track.bitDepth) {
+        technicalDetails?.ele("BitsPerSample").txt(String(track.bitDepth));
+      }
+      technicalDetails?.ele("NumberOfChannels").txt(String(track.channels));
 
       // File reference
+      const trackFileName = this.getTrackFileName(track);
       technicalDetails
         .ele("File")
         .ele("FileName")
-        .txt(`track_${track?.trackNumber}.flac`)
+        .txt(trackFileName)
         .up()
         .ele("FilePath")
-        .txt(track?.audioFilePath)
+        .txt(trackFileName)
         .up()
         .ele("HashSum", { HashSumAlgorithmType: "MD5" })
         .txt(await this.calculateMD5(track?.audioFilePath));
@@ -202,17 +322,18 @@ export class DDEXPackageService {
       const technicalDetails = imageDetails?.ele("TechnicalImageDetails", {
         SequenceNumber: "1",
       });
-      technicalDetails?.ele("ImageCodecType").txt("JPEG");
-      technicalDetails?.ele("ImageHeight").txt("3000");
-      technicalDetails?.ele("ImageWidth").txt("3000");
+      technicalDetails?.ele("ImageCodecType").txt(release.coverArtCodec);
+      technicalDetails?.ele("ImageHeight").txt(String(release.coverArtHeight));
+      technicalDetails?.ele("ImageWidth").txt(String(release.coverArtWidth));
+      const coverFileName = `cover.${path.extname(release.coverArtPath).slice(1).toLowerCase()}`;
 
       technicalDetails
         .ele("File")
         .ele("FileName")
-        .txt("cover.jpg")
+        .txt(coverFileName)
         .up()
         .ele("FilePath")
-        .txt(release?.coverArtPath)
+        .txt(coverFileName)
         .up()
         .ele("HashSum", { HashSumAlgorithmType: "MD5" })
         .txt(await this.calculateMD5(release?.coverArtPath));
@@ -336,106 +457,61 @@ export class DDEXPackageService {
     return xml;
   }
 
-  /**
-   * Download a remote audio URL to a temp file and return the temp path.
-   * Caller is responsible for unlinking the temp file when done.
-   */
-  private async downloadAudioToTemp(
-    url: string,
-    trackNumber: number,
-  ): Promise<string> {
-    const ext = url?.split("?")[0].split(".").pop() || "mp3";
-    const tmpPath = join(
-      tmpdir(),
-      `ddex_track_${trackNumber}_${Date?.now()}.${ext}`,
-    );
-    const res = await timedFetch(url);
-    if (!res.ok)
-      throw new Error(
-        `Failed to download audio for track ${trackNumber}: HTTP ${res.status}`,
-      );
-    const buf = Buffer?.from(await res.arrayBuffer());
-    await writeFile(tmpPath, buf);
-    return tmpPath;
+  private getTrackFileName(track: DDEXTrackMetadata): string {
+    const extension = path.extname(track.audioFilePath).slice(1).toLowerCase();
+    if (!/^[a-z0-9]{1,8}$/.test(extension)) {
+      throw new Error(`Track ${track.trackNumber} has no safe package extension`);
+    }
+    return `track_${String(track.trackNumber).padStart(2, "0")}.${extension}`;
   }
 
   async createDDEXPackage(
-    release: ReleaseMetadata,
-    tracks: TrackMetadata[],
+    release: DDEXReleaseMetadata,
+    tracks: DDEXTrackMetadata[],
     outputPath: string,
   ): Promise<string> {
-    // Resolve audio file paths BEFORE generating XML so calculateMD5 works on local files.
-    const tempFiles: string[] = [];
-    const resolvedTracks = await Promise?.all(
-      tracks?.map(async (track) => {
-        let audioFilePath = track?.audioFilePath;
-        if (audioFilePath && audioFilePath?.startsWith("http")) {
-          try {
-            audioFilePath = await this.downloadAudioToTemp(
-              audioFilePath,
-              track?.trackNumber,
-            );
-            tempFiles?.push(audioFilePath);
-          } catch (err) {
-            logger.warn(
-              { err: err },
-              `[DDEX] Could not download audio for track ${track?.trackNumber} — file will be omitted from package:`,
-            );
-            audioFilePath = "";
-          }
-        }
-        return { ...track, audioFilePath };
-      }),
-    );
-
-    // Generate XML with resolved (local) file paths so MD5 checksums are accurate.
-    const xml = await this.generateDDEXXML(release, resolvedTracks);
-
-    // Create ZIP archive
+    const xml = await this.generateDDEXXML(release, tracks);
     const archive = archiver("zip", {
-      zlib: { level: 9 },
+      // Audio and artwork are already compressed formats; level 1 avoids
+      // burning CPU attempting to recompress them at level 9.
+      zlib: { level: 1 },
     });
-
-    const { createWriteStream } = require("fs");
     const output = createWriteStream(outputPath);
 
-    try {
-      await new Promise<void>((resolve, reject) => {
-        let settled = false;
-        const settle = (fn: () => void) => {
-          if (!settled) {
-            settled = true;
-            fn();
-          }
-        };
-        output?.on("close", () => settle(resolve));
-        output?.on("error", (err: Error) => settle(() => reject(err)));
-        archive?.on("error", (err: Error) => settle(() => reject(err)));
-        archive?.pipe(output);
-
-        // Add XML file
-        archive?.append(xml, { name: "release.xml" });
-
-        // Add audio files (local paths only — remote URLs already resolved above)
-        for (const track of resolvedTracks) {
-          if (track?.audioFilePath && !track?.audioFilePath.startsWith("http")) {
-            archive?.file(track?.audioFilePath, {
-              name: `track_${track?.trackNumber}.flac`,
-            });
-          }
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const settle = (fn: () => void) => {
+        if (!settled) {
+          settled = true;
+          fn();
         }
-
-        // Add cover art
-        if (release?.coverArtPath && !release?.coverArtPath.startsWith("http")) {
-          archive?.file(release?.coverArtPath, { name: "cover.jpg" });
+      };
+      output.once("close", () => settle(resolve));
+      output.once("error", (error) => settle(() => reject(error)));
+      archive.once("error", (error) => settle(() => reject(error)));
+      archive.pipe(output);
+      archive.append(xml, { name: "release.xml" });
+      for (const track of tracks) {
+        archive.file(track.audioFilePath, {
+          name: this.getTrackFileName(track),
+        });
+      }
+      if (release.coverArtPath) {
+        const extension = path.extname(release.coverArtPath).slice(1).toLowerCase();
+        if (!/^[a-z0-9]{1,8}$/.test(extension)) {
+          settle(() => reject(new Error("Cover art has no safe package extension")));
+          archive.abort();
+          output.destroy();
+          return;
         }
-
-        archive?.finalize();
-      });
-    } finally {
-      // Clean up temp audio files regardless of success or failure
-      await Promise?.all(tempFiles?.map((f) => unlink(f).catch(() => {})));
-    }
+        archive.file(release.coverArtPath, { name: `cover.${extension}` });
+      }
+      archive.finalize();
+    }).catch((error) => {
+      archive.abort();
+      output.destroy();
+      throw error;
+    });
 
     return outputPath;
   }
@@ -464,27 +540,30 @@ export class DDEXPackageService {
       }
 
       // Validate ISRC format (2 letters + 3 alphanumeric + 2 digits + 5 digits)
-      const isrcPattern = /[A-Z]{2}[A-Z0-9]{3}\d{7}/g;
+      const isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{7}$/;
       const isrcMatches = xml?.match(/<ISRC>([^<]+)<\/ISRC>/g);
       if (isrcMatches) {
         isrcMatches?.forEach((match) => {
           const isrc = match?.replace(/<\/?ISRC>/g, "");
-          if (!isrcPattern?.test(isrc)) {
+          if (!isrcPattern.test(isrc)) {
             errors?.push(`Invalid ISRC format: ${isrc}`);
           }
         });
+      } else {
+        errors.push("No ISRC elements were found");
       }
 
-      // Validate UPC format (12 or 13 digits)
-      const upcPattern = /^\d{12,13}$/;
+      // Validate UPC/EAN format and GS1 check digit.
       const upcMatches = xml?.match(/<ICPN[^>]*>([^<]+)<\/ICPN>/g);
       if (upcMatches) {
         upcMatches?.forEach((match) => {
           const upc = match?.replace(/<\/?ICPN[^>]*>/g, "");
-          if (!upcPattern?.test(upc)) {
-            errors?.push(`Invalid UPC format: ${upc}`);
+          if (!hasValidGs1CheckDigit(upc)) {
+            errors?.push("UPC/EAN has an invalid GS1 check digit");
           }
         });
+      } else {
+        errors.push("No UPC/EAN element was found");
       }
 
       return {
@@ -522,13 +601,13 @@ export class DDEXPackageService {
   }
 
   private async calculateMD5(filePath: string): Promise<string> {
-    try {
-      const fileBuffer = await readFile(filePath);
-      return createHash("md5").update(fileBuffer).digest("hex");
-    } catch (error: unknown) {
-      logger.warn({ err: error }, `Error calculating MD5 for ${filePath}:`);
-      return "";
+    const fileInfo = await stat(filePath);
+    if (!fileInfo.isFile() || fileInfo.size === 0) {
+      throw new Error("DDEX asset is empty or unavailable");
     }
+    const hash = createHash("md5");
+    for await (const chunk of createReadStream(filePath)) hash.update(chunk);
+    return hash.digest("hex");
   }
 }
 

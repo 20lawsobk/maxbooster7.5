@@ -37,10 +37,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { validateMusicIdentifier } from "@/lib/musicIdentifierValidation";
 import { Hash, Plus, Copy, Search, CheckCircle, XCircle, RefreshCw, Download, History, Music, Disc, Trash2, Edit } from "lucide-react";
 
 interface ISRCCode {
@@ -79,10 +80,14 @@ interface CodeGenerationRequest {
 
 interface ISRCManagerProps {
   releaseId?: string;
-  onCodeAssigned?: (code: string, type: "isrc" | "upc") => void;
 }
 
-export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
+interface ProvisionalCodeOutput {
+  code: string;
+  type: "isrc" | "upc";
+}
+
+export function ISRCManager({ _releaseId }: ISRCManagerProps) {
   const [activeTab, setActiveTab] = useState("isrc");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
@@ -95,6 +100,9 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
     message: string;
   } | null>(null);
   const [codeToValidate, setCodeToValidate] = useState("");
+  const [provisionalCodes, setProvisionalCodes] = useState<
+    ProvisionalCodeOutput[]
+  >([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -109,12 +117,8 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
   });
 
   const { data: codeStats } = useQuery<{
-    totalISRC: number;
-    usedISRC: number;
-    availableISRC: number;
-    totalUPC: number;
-    usedUPC: number;
-    availableUPC: number;
+    isrcGenerated: number;
+    upcGenerated: number;
   }>({
     queryKey: ["/api/distribution/codes/stats"],
   });
@@ -129,23 +133,27 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
       return response.json();
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/distribution/codes/isrc"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/distribution/codes/upc"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/distribution/codes/stats"],
-      });
+      const generated = Array.isArray(data.codes)
+        ? data.codes.filter(
+            (code: unknown): code is string =>
+              typeof code === "string" && code.length > 0,
+          )
+        : typeof data.code === "string" && data.code.length > 0
+          ? [data.code]
+          : [];
+      setProvisionalCodes((previous) =>
+        [
+          ...generated.map((code) => ({ code, type: variables.type })),
+          ...previous,
+        ].slice(0, 100),
+      );
       setIsGenerateOpen(false);
       toast({
-        title: "Codes Generated",
-        description: `Successfully generated ${variables.count} ${variables.type.toUpperCase()} code(s)`,
+        title: "Provisional codes generated",
+        description:
+          data.note ||
+          `Generated ${generated.length} provisional ${variables.type.toUpperCase()} code(s). They are not officially assigned or stored.`,
       });
-      if (data.code && onCodeAssigned) {
-        onCodeAssigned(data.code, variables.type);
-      }
     },
     onError: () => {
       toast({
@@ -235,14 +243,7 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
     },
   });
 
-  const dormantStats = codeStats || {
-    totalISRC: 0,
-    usedISRC: 0,
-    availableISRC: 0,
-    totalUPC: 0,
-    usedUPC: 0,
-    availableUPC: 0,
-  };
+  const trackedStats = codeStats || { isrcGenerated: 0, upcGenerated: 0 };
 
   const filteredISRC = isrcCodes.filter(
     (code) =>
@@ -273,43 +274,29 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
       revoked: "bg-red-500/10 text-red-500 border-red-500/20",
       expired: "bg-gray-500/10 text-gray-500 border-gray-500/20",
     };
-    return <Badge className={styles[status] || styles.pending}>{status}</Badge>;
+    const label =
+      status === "active"
+        ? "Account record"
+        : status === "pending"
+          ? "Pending"
+          : status;
+    return (
+      <Badge
+        className={styles[status] || styles.pending}
+        title={
+          status === "active"
+            ? "Saved in this account only; issuing-authority assignment is not verified."
+            : undefined
+        }
+      >
+        {label}
+      </Badge>
+    );
   };
 
   const validateCode = (code: string) => {
-    const type =
-      code.length === 12
-        ? "isrc"
-        : code.length === 12 || code.length === 13
-          ? "upc"
-          : null;
-
-    if (!type) {
-      setValidationResult({ valid: false, message: "Invalid code length" });
-      return;
-    }
-
-    if (type === "isrc") {
-      const isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{7}$/;
-      if (isrcPattern.test(code)) {
-        setValidationResult({ valid: true, message: "Valid ISRC format" });
-      } else {
-        setValidationResult({
-          valid: false,
-          message: "Invalid ISRC format. Expected: CC-XXX-YY-NNNNN",
-        });
-      }
-    } else {
-      const upcPattern = /^\d{12,13}$/;
-      if (upcPattern.test(code)) {
-        setValidationResult({ valid: true, message: "Valid UPC format" });
-      } else {
-        setValidationResult({
-          valid: false,
-          message: "Invalid UPC format. Expected: 12-13 digits",
-        });
-      }
-    }
+    const result = validateMusicIdentifier(code);
+    setValidationResult({ valid: result.valid, message: result.message });
   };
 
   return (
@@ -322,7 +309,9 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
               ISRC &amp; UPC Manager
             </CardTitle>
             <CardDescription>
-              Generate, manage, and track ISRC and UPC codes for your releases
+              Registry entries are account-local records. Values generated here
+              without an issuing-authority allocation remain provisional and
+              must not be submitted as official identifiers.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -337,7 +326,8 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
                 <DialogHeader>
                   <DialogTitle>Generate New Codes</DialogTitle>
                   <DialogDescription>
-                    Generate ISRC codes for tracks or UPC codes for releases
+                    Generate provisional format examples only. They are not
+                    assigned identifiers and cannot be used for distribution.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -375,10 +365,8 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
                       }
                     />
                     <p className="text-xs text-muted-foreground">
-                      Available:{" "}
-                      {generateType === "isrc"
-                        ? dormantStats.availableISRC
-                        : dormantStats.availableUPC}
+                      Generated values remain provisional until an issuing
+                      authority or authorized distributor assigns them.
                     </p>
                   </div>
                 </div>
@@ -418,53 +406,58 @@ export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        {provisionalCodes.length > 0 && (
+          <Alert>
+            <AlertTitle>Provisional outputs — not official identifiers</AlertTitle>
+            <AlertDescription>
+              These temporary values were not assigned by an ISRC agency or GS1,
+              are not saved to the registry, and must not be used for release
+              submission.
+              <div className="mt-3 space-y-2">
+                {provisionalCodes.map((entry, index) => (
+                  <div
+                    key={`${entry.type}-${entry.code}-${index}`}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <code className="font-mono">
+                      {entry.type.toUpperCase()}: {entry.code}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(entry.code)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">
-                {dormantStats.totalISRC}
+                {trackedStats.isrcGenerated}
               </div>
-              <p className="text-xs text-muted-foreground">Total ISRC</p>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">
-                {dormantStats.usedISRC}
-              </div>
-              <p className="text-xs text-muted-foreground">Used ISRC</p>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-500">
-                {dormantStats.availableISRC}
-              </div>
-              <p className="text-xs text-muted-foreground">Available ISRC</p>
+              <p className="text-xs text-muted-foreground">ISRC records in this account</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">
-                {dormantStats.totalUPC}
+                {trackedStats.upcGenerated}
               </div>
-              <p className="text-xs text-muted-foreground">Total UPC</p>
+              <p className="text-xs text-muted-foreground">UPC records in this account</p>
             </div>
           </Card>
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">
-                {dormantStats.usedUPC}
+              <div className="text-2xl font-bold text-amber-500">
+                {provisionalCodes.length}
               </div>
-              <p className="text-xs text-muted-foreground">Used UPC</p>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-500">
-                {dormantStats.availableUPC}
-              </div>
-              <p className="text-xs text-muted-foreground">Available UPC</p>
+              <p className="text-xs text-muted-foreground">Provisional outputs this session</p>
             </div>
           </Card>
         </div>
