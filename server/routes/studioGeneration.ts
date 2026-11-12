@@ -11,11 +11,8 @@ import {
   persistMaxCoreAudio,
 } from "../services/aiAudioGeneratorService.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
-import {
-  getMaxcoreGenerationKey,
-  getMaxcoreOriginOrDefault,
-} from "../services/maxcoreConnector.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import { maxCoreStudioJson } from "../services/studioMaxCoreTransport.js";
 import { db } from "../db.js";
 import { studioSamples } from "../../shared/schema.js";
 import os from "os";
@@ -233,30 +230,7 @@ async function maxCoreOwnedJson<T>(
   userId: string,
   body?: Record<string, unknown>,
 ): Promise<T> {
-  const response = await fetch(`${getMaxcoreOriginOrDefault()}${pathName}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${getMaxcoreGenerationKey()}`,
-      "X-MaxCore-User-Id": userId,
-      ...(body ? { "Content-Type": "application/json" } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(method === "POST" ? 60_000 : 30_000),
-  }).catch((error) => {
-    throw new AIUnavailableError(
-      `studio generation: ${(error as Error).message}`,
-    );
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new AIUnavailableError(
-      `studio generation returned HTTP ${response.status}${detail ? `: ${detail.slice(0, 160)}` : ""}`,
-    );
-  }
-  if (!(response.headers.get("content-type") ?? "").includes("application/json")) {
-    throw new AIUnavailableError("studio generation returned non-JSON");
-  }
-  return (await response.json()) as T;
+  return maxCoreStudioJson<T>(pathName, method, userId, body);
 }
 
 async function generateMaxCorePattern(

@@ -1482,6 +1482,7 @@ router.get(
       const ai = await getUnifiedAI();
       const mcResult = await Promise.race([
         ai?.generateContent({
+          userId,
           topic: "trending music hashtags for social media marketing",
           platform: "instagram",
           tone: "energetic",
@@ -5610,7 +5611,7 @@ router.post(
         direction,
         context,
         awareness,
-      });
+      }, req.user!.id);
       const raw = generatedImageUrl(imgData);
       if (!raw) throw new AIUnavailableError("Image generation did not return an image file");
       const media = await persistGeneratedImage(raw, req.user!.id);
@@ -5974,6 +5975,7 @@ router.post(
       const content = await (
         await getUnifiedAI()
       ).generateContent({
+        userId: req.user!.id,
         type: "social_post",
         platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
         topic: seed.topic,
@@ -6059,6 +6061,7 @@ router.post(
       const content = await (
         await getUnifiedAI()
       ).generateContent({
+        userId: req.user!.id,
         type: "social_post",
         platform: platform as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
         topic: `${analysis.mood} visual aesthetic, ${analysis.genre_hint} music`,

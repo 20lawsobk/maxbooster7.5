@@ -1,11 +1,14 @@
 import { randomBytes } from "crypto";
 import { unifiedAIController } from "./unifiedAIController.js";
-import { AIUnavailableError } from "../lib/aiSource.js";
+import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import {
   generateSocialDirect,
   getSocialAutopilotDirect,
 } from "./maxcoreDomainAdapter.js";
 import { renderVideo as renderAdvancedVideo } from "./advancedVideoRendererService.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { generatedImageUrl, persistGeneratedImage } from "./generatedImageAsset.js";
+import { generateFromText as generateMaxCoreAudio } from "./aiAudioGeneratorService.js";
 import { db } from "../db";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
@@ -25,26 +28,13 @@ import { aiModels, aiModelVersions, inferenceRuns, explanationLogs, userBrandVoi
 import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 
-// Sharp-based image generation (production-ready, replaces Canvas)
-import { sharpImageService } from "./sharpImageService.js";
-
-import { synthesizeToWAV, generateChordProgression, generateMelody, type MusicParameters } from "./musicGenerationService.js";
-
 import { dynamicTrendsService } from "./dynamicTrendsService";
 import type { Platform, ContentTone } from "../../shared/ml/nlp/ContentGenerator.js";
 
-// Sharp image service is automatically initialized on import
-
 export interface ContentGenerationOptions {
-  userId?: string;
+  userId: string;
   prompt: string;
-  platform:
-    | "twitter"
-    | "instagram"
-    | "youtube"
-    | "tiktok"
-    | "facebook"
-    | "linkedin";
+  platform: string;
   format: "text" | "image" | "video" | "audio";
   tone?: "professional" | "casual" | "energetic" | "creative" | "promotional";
   length?: "short" | "medium" | "long";
@@ -144,6 +134,7 @@ export class AIContentService {
 
     const enrichedOptions = {
       ...options,
+      userId,
       tone: (preferences?.contentTone as unknown) || options?.tone || "casual",
       artistName: preferences!.artistName,
       genre: preferences!.genre,
@@ -313,13 +304,62 @@ export class AIContentService {
   }
 
   async generateMultilingualContent(
-    _prompt: string,
-    _targetLanguages: string[],
-    _options?: { headline?: string; hashtags?: string[]; platform?: string },
+    prompt: string,
+    targetLanguages: string[],
+    userId: string,
+    options: { headline?: string; hashtags?: string[]; platform?: string } = {},
   ): Promise<MultilingualContent[]> {
-    throw new AIUnavailableError(
-      "multilingual content: MaxCore has no translation inference contract",
-    );
+    if (!userId?.trim()) {
+      throw new AIUnavailableError("multilingual generation requires an authenticated owner");
+    }
+    const languages = [...new Set(targetLanguages.map(language => language.trim()))];
+    if (
+      !prompt.trim() ||
+      languages.length < 1 ||
+      languages.length > 8 ||
+      languages.some(language => !/^[a-z]{2,3}(?:-[A-Z]{2,4})?$/i.test(language))
+    ) {
+      throw new AIUnavailableError("multilingual generation received invalid content or language codes");
+    }
+
+    const translated: MultilingualContent[] = [];
+    for (let index = 0; index < languages.length; index += 2) {
+      const batch = await Promise.all(languages.slice(index, index + 2).map(async language => {
+        const response = await MaxCoreAIClient.generate<Record<string, unknown>>(
+          "/api/generate/content",
+          {
+            topic: prompt,
+            platform: options.platform || "instagram",
+            tone: "authentic",
+            headline: options.headline,
+            hashtags: options.hashtags,
+            extra_context: [
+              `Translate and culturally adapt the user's source content into ${language}.`,
+              "Preserve the meaning, artist voice, and promotional intent.",
+              "Do not add claims or facts absent from the source.",
+              "Return only the adapted content in the requested language.",
+            ].join(" "),
+          },
+          userId,
+        );
+        const result = requireMaxCore(response, "multilingual content");
+        const content = [
+          result.caption,
+          result.content,
+          result.text,
+          [result.hook, result.body, result.cta].filter(Boolean).join("\n\n"),
+        ].find(value => typeof value === "string" && value.trim());
+        if (typeof content !== "string") {
+          throw new AIUnavailableError("MaxCore returned no translated content");
+        }
+        const adaptations = Array.isArray(result.cultural_adaptations)
+          ? result.cultural_adaptations.filter((item: unknown): item is string => typeof item === "string")
+          : [];
+        return { language, content: content.trim(), culturalAdaptations: adaptations };
+      }));
+      translated.push(...batch);
+    }
+    return translated;
   }
 
   async analyzeBrandVoice(
@@ -348,6 +388,7 @@ export class AIContentService {
         return await this.generateText({
           prompt,
           platform: "instagram",
+          userId,
           format: "text",
         }).then((r) => (Array.isArray(r?.content) ? r?.content[0] : r?.content));
       }
@@ -664,39 +705,42 @@ export class AIContentService {
   }
 
   /**
-   * Main content generation method - dispatches to appropriate in-house generator
-   * 100% custom built, no external APIs
+   * Dispatch all generated content through MaxCore-backed modality services.
    */
   async generateContent(
     options: ContentGenerationOptions,
   ): Promise<GeneratedContent> {
     const { format, prompt, platform, tone, length } = options;
+    if (!options.userId?.trim()) {
+      throw new AIUnavailableError("content generation requires an authenticated owner");
+    }
 
     switch (format) {
       case "text":
-        return this.generateTextContent(prompt, platform, tone, length);
+        return this.generateTextContent(prompt, platform, options.userId, tone, length);
       case "image":
-        return this.generateImageContent(prompt, platform, tone);
+        return this.generateImageContent(prompt, platform, options.userId, tone, options.style);
       case "video":
-        return this.generateVideoContent(prompt, platform, tone);
+        return this.generateVideoContent(prompt, platform, options.userId, tone);
       case "audio":
-        return this.generateAudioContent(prompt, platform, tone, options.userId);
+        return this.generateAudioContent(prompt, platform, options.userId, tone);
       default:
-        return this.generateTextContent(prompt, platform, tone, length);
+        return this.generateTextContent(prompt, platform, options.userId, tone, length);
     }
   }
 
   /**
-   * Generate text content — routes through full advanced AI pipeline:
-   * MaxCore (trained) → Python AI → ContentGenerator (in-house JS)
+   * Generate text content through MaxCore's current generation pipeline.
    */
   private async generateTextContent(
     prompt: string,
     platform: string,
+    userId: string,
     tone?: string,
     length?: string,
   ): Promise<GeneratedContent> {
     const aiResult = await unifiedAIController?.generateContent({
+      userId,
       platform: platform as Platform,
       tone: (tone || "energetic") as ContentTone,
       topic: prompt || "new music",
@@ -711,8 +755,20 @@ export class AIContentService {
     }
     const d2 = aiResult?.data as unknown as Record<string, unknown>;
     const caption2 =
-      (d2?.caption as string) || [d2?.hook, d2?.body, d2?.cta].filter(Boolean).join("\n\n");
-    const content: string[] = caption2 ? [caption2] : (d2?.content as string[]) || [];
+      (typeof d2.caption === "string" && d2.caption.trim()) ||
+      [d2.hook, d2.body, d2.cta]
+        .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
+        .join("\n\n");
+    const content = caption2
+      ? [caption2]
+      : typeof d2.content === "string" && d2.content.trim()
+        ? [d2.content.trim()]
+        : Array.isArray(d2.content)
+          ? d2.content.filter((part): part is string => typeof part === "string" && part.trim().length > 0)
+          : [];
+    if (content.length === 0) {
+      throw new AIUnavailableError("MaxCore returned no usable text content");
+    }
 
     return {
       id: `txt_${randomBytes(8).toString("hex")}`,
@@ -724,40 +780,49 @@ export class AIContentService {
   }
 
   /**
-   * In-house image generation using Sharp
-   * Creates platform-optimized promotional graphics
+   * Route generated images through MaxCore and persist the verified bytes
+   * under the authenticated account before returning a browser URL.
    */
   async generateImageContent(
     prompt: string,
     platform: string,
+    userId: string,
     tone?: string,
+    style?: string,
   ): Promise<GeneratedContent> {
-    try {
-      // Use Sharp-based image generation service
-      const result = await sharpImageService?.generateImage({
+    if (!userId?.trim()) {
+      throw new AIUnavailableError("image generation requires an authenticated owner");
+    }
+    const generated = await MaxCoreAIClient.infer<Record<string, unknown>>(
+      "/api/generate/image",
+      {
         prompt,
         platform,
-        tone: (tone || "creative") as "professional" | "casual" | "energetic" | "creative" | "promotional",
-      });
-
-      return {
-        id: `img_${randomBytes(8).toString("hex")}`,
-        type: "image",
-        content: prompt,
-        url: result.publicUrl,
-        metadata: {
-          platform,
-          dimensions: result.dimensions,
-          tone,
-          fileSize: result.buffer.length,
-          generator: "sharp",
-        },
-        createdAt: new Date(),
-      };
-    } catch (error) {
-      logger.warn(`Image generation failed: ${(error as any)?.message}`);
-      throw error;
+        tone: tone || "creative",
+        style,
+      },
+      userId,
+    );
+    const rawUrl = generatedImageUrl(generated);
+    if (!rawUrl) {
+      throw new AIUnavailableError("MaxCore returned no image artifact");
     }
+    const image = await persistGeneratedImage(rawUrl, userId);
+    return {
+      id: `img_${randomBytes(8).toString("hex")}`,
+      type: "image",
+      content: prompt,
+      url: image.url,
+      metadata: {
+        platform,
+        dimensions: { width: image.width, height: image.height },
+        tone,
+        format: image.format,
+        source: "MaxCoreAI",
+        validation: image.validation,
+      },
+      createdAt: new Date(),
+    };
   }
 
   /**
@@ -768,12 +833,17 @@ export class AIContentService {
   async generateVideoContent(
     prompt: string,
     platform: string,
+    userId: string,
     tone?: string,
   ): Promise<GeneratedContent> {
+    if (!userId?.trim()) {
+      throw new AIUnavailableError("video generation requires an authenticated owner");
+    }
     // Step 1 — Generate script (hook/body/cta) via full AI pipeline
     // MaxCore is the sole source for the video script — no silent fallback
     // to using the raw topic as the script.
     const scriptResult = await unifiedAIController?.generateContent({
+      userId,
       platform: platform as Platform,
       tone: (tone || "energetic") as ContentTone,
       topic: prompt || "new music",
@@ -785,9 +855,20 @@ export class AIContentService {
       throw new AIUnavailableError("video script generation");
     }
     const d = scriptResult?.data as unknown as Record<string, unknown>;
-    const hook = ((d?.hook || d?.caption || "") as any).slice(0, 80);
-    const body = ((d?.body || d?.caption || "") as any).split("\n")[0].slice(0, 120);
-    const cta = ((d?.cta || "") as any).slice(0, 60);
+    const caption = typeof d.caption === "string" ? d.caption.trim() : "";
+    const hookValue = [d.hook, caption].find(
+      (value): value is string => typeof value === "string" && value.trim().length > 0,
+    ) || "";
+    const bodyValue = [d.body, caption.split("\n")[0]].find(
+      (value): value is string => typeof value === "string" && value.trim().length > 0,
+    ) || "";
+    const ctaValue = typeof d.cta === "string" ? d.cta.trim() : "";
+    const hook = hookValue.trim().slice(0, 80);
+    const body = bodyValue.trim().slice(0, 120);
+    const cta = ctaValue.slice(0, 60);
+    if (!hook && !body && !cta) {
+      throw new AIUnavailableError("MaxCore returned no usable video script");
+    }
 
     // Step 2 — Render through MaxCore (the only renderer)
     const result = await renderAdvancedVideo({
@@ -799,6 +880,7 @@ export class AIContentService {
       cta,
       template: "cinematic_promo",
       quality: "cinematic",
+      userId,
     });
 
     if (!result?.success || !result?.url) {
@@ -821,79 +903,39 @@ export class AIContentService {
   }
 
   /**
-   * In-house audio generation using musicGenerationService
-   * Creates promotional audio clips with synthesized music
+   * Route generated audio through MaxCore's audio job API and persist the
+   * resulting bytes under the authenticated account.
    */
   async generateAudioContent(
     prompt: string,
     platform: string,
+    userId: string,
     tone?: string,
-    userId?: string,
   ): Promise<GeneratedContent> {
-    try {
-      // Use in-house music generation service
-      const musicParams = this.promptToMusicParams(prompt, tone);
-      const chords = generateChordProgression(musicParams);
-      const melody = generateMelody(musicParams, chords);
-      // synthesizeToWAV uploads to PDIM-backed storage itself and returns
-      // the servable URL directly — no local file ever exists for this
-      // caller to read back.
-      const { url, sizeBytes } = await synthesizeToWAV(melody, chords, musicParams, userId);
-
-      logger.info(`✅ Generated audio: ${url} (${sizeBytes} bytes)`);
-
-      return {
-        id: `aud_${randomBytes(8).toString("hex")}`,
-        type: "audio",
-        content: prompt,
-        url,
-        metadata: {
-          platform,
-          musicParams,
-          fileSize: sizeBytes,
-        },
-        createdAt: new Date(),
-      };
-    } catch (error) {
-      logger.warn(`Audio generation failed: ${(error as any)?.message}`);
-      throw error;
+    if (!userId?.trim()) {
+      throw new AIUnavailableError("audio generation requires an authenticated owner");
     }
-  }
-
-  // ============================================================================
-  // IN-HOUSE IMAGE GENERATION HELPERS
-  // ============================================================================
-
-
-
-
-
-
-  // ============================================================================
-  // IN-HOUSE AUDIO GENERATION HELPERS
-  // ============================================================================
-
-  private promptToMusicParams(
-    _prompt: string,
-    tone?: string,
-  ): MusicParameters {
-    const moodMap: Record<string, string> = {
-      professional: "calm",
-      casual: "happy",
-      energetic: "upbeat",
-      creative: "bright",
-      promotional: "energetic",
-    };
-
-    const mood = moodMap[tone || "creative"] || "happy";
-
+    const generated = await generateMaxCoreAudio({
+      text: prompt,
+      userId,
+      intent: "autopilot promotional audio",
+      context: { platform, tone },
+    });
+    if (!generated.success || !generated.audioFilePath) {
+      throw new AIUnavailableError("MaxCore returned no audio artifact");
+    }
     return {
-      key: "C",
-      scale: mood === "sad" || mood === "dark" ? "minor" : "major",
-      tempo: mood === "upbeat" || mood === "energetic" ? 130 : 100,
-      mood,
-      genre: "pop",
-      structure: 8, // 8 bars
+      id: `aud_${randomBytes(8).toString("hex")}`,
+      type: "audio",
+      content: prompt,
+      url: generated.audioFilePath,
+      metadata: {
+        platform,
+        parameters: generated.parameters,
+        duration: generated.duration,
+        source: "MaxCoreAI",
+      },
+      createdAt: new Date(),
     };
   }
 
@@ -901,12 +943,15 @@ export class AIContentService {
   async generateImage(options: {
     prompt: string;
     platform: string;
+    userId: string;
     style?: string;
     dimensions?: { width: number; height: number };
   }): Promise<GeneratedContent> {
     return this.generateImageContent(
       options?.prompt,
       options?.platform,
+      options?.userId,
+      options?.style,
       options?.style,
     );
   }
@@ -914,24 +959,26 @@ export class AIContentService {
   async generateVideo(options: {
     prompt: string;
     platform: string;
+    userId: string;
     duration?: number;
     style?: string;
   }): Promise<GeneratedContent> {
     return this.generateVideoContent(
       options?.prompt,
       options?.platform,
+      options?.userId,
       options?.style,
     );
   }
 
   async generateAudio(options: {
     text: string;
-    userId?: string;
+    userId: string;
     voice?: string;
     language?: string;
     speed?: number;
   }): Promise<GeneratedContent> {
-    return this.generateAudioContent(options?.text, "instagram", "creative", options.userId);
+    return this.generateAudioContent(options?.text, "instagram", options.userId, "creative");
   }
 
   async generateVariations(

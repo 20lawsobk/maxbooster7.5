@@ -1903,6 +1903,7 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
       await MaxCoreAIClient.infer<Record<string, unknown>>(
         "/api/optimize/ad",
         buildAdOptimizationRequest(campaign),
+        userId,
       ),
       "advertising campaign optimization",
     );
@@ -2202,6 +2203,7 @@ router.post(
         await MaxCoreAIClient.infer<Record<string, unknown>>(
           "/api/platform/ads/generate",
           campaignRequest,
+          userId,
         ),
         "advertising campaign generation",
       );
@@ -2537,7 +2539,7 @@ router.post(
             context,
             awareness,
           }),
-        }),
+        }, req.user!.id),
         "advertising image generation",
       );
 

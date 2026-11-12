@@ -352,7 +352,11 @@ export async function getAdsAudienceDirect(
 }
 
 const defaultTransport: MaxCoreTransport = (path, body) =>
-  MaxCoreAIClient.generate(path, body);
+  MaxCoreAIClient.generate(
+    path,
+    body,
+    typeof body.user_id === "string" ? body.user_id : undefined,
+  );
 
 function requiredText(value: unknown, field: string): string {
   if (typeof value !== "string" || value.trim() === "") {

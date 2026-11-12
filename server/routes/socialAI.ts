@@ -816,9 +816,20 @@ router.post(
           .status(400)
           .json({ error: "targetLanguages (or language) must be provided" });
       }
+      if (
+        targetLanguages.length > 8 ||
+        targetLanguages.some((language) =>
+          !/^[a-z]{2,3}(?:-[A-Z]{2,4})?$/i.test(String(language).trim()),
+        )
+      ) {
+        return res.status(400).json({
+          error: "Provide no more than eight supported language codes.",
+        });
+      }
       const translations = await aiContentService.generateMultilingualContent(
         content,
         targetLanguages.map(String),
+        req.user!.id,
         { headline, hashtags, platform },
       );
       // Return in a shape that satisfies both callers:
@@ -1338,6 +1349,7 @@ router.post(
       }
 
       const result = await unifiedAIController.generateContent({
+        userId,
         tone: resolvedTone as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
         platform: resolvedPlatform as import("../../shared/ml/models/SocialAutopilotEngine.js").Platform,
         topic: metadataTopic,

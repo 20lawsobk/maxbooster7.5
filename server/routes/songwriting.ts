@@ -304,6 +304,7 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
 
     const [lyricResult, rhymeResult] = await Promise.allSettled([
       unifiedAIController.generateContent({
+        userId: req.user!.id,
         topic: `${genreNorm} song lyric ideas about "${prompt || "music"}", ${moodNorm} mood${existing ? ", continuing: " + existing.slice(0, 200) : ""}`,
         contentType: "engagement",
         tone: "energetic",
@@ -314,6 +315,7 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
       }),
       prompt
         ? unifiedAIController.generateContent({
+            userId: req.user!.id,
             topic: `${genreNorm} lyrics with words that rhyme with "${prompt}"`,
             contentType: "engagement",
             tone: "casual",

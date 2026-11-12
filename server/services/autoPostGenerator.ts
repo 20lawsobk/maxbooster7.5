@@ -20,7 +20,8 @@ async function translateViaMaxCore(
   headline: string | undefined,
   hashtags: string[],
   targetLanguages: string[],
-  platform?: string,
+  platform: string | undefined,
+  userId: string,
 ): Promise<TranslatedContent[]> {
   const results: TranslatedContent[] = [];
   for (const lang of targetLanguages) {
@@ -39,7 +40,7 @@ async function translateViaMaxCore(
       platform: platform || "instagram",
       tone: "authentic",
       extra_context: `Translate and culturally adapt the following music social media post to ${lang}. Maintain the artist's voice, energy, and promotional intent. Adapt hashtags for ${lang}-speaking audiences where appropriate. Return the translated post content.`,
-    });
+    }, userId);
 
     // MaxCore is the ONLY source — throw explicitly if it returns nothing
     // rather than silently returning the untranslated original content.
@@ -194,6 +195,7 @@ class AutoPostGenerator {
           combinedHashtags,
           request.targetLanguages,
           primaryPlatform,
+          userId,
         );
       }
 
@@ -293,6 +295,7 @@ class AutoPostGenerator {
       primary.headline,
       primary.hashtags,
       languages,
+      userId,
     );
 
     return { primary, translations };
@@ -339,7 +342,7 @@ class AutoPostGenerator {
         platform: platforms[0],
         tone,
         artist_name: artistName,
-      }),
+      }, userId),
       "auto-post social content",
     );
 
@@ -418,7 +421,7 @@ class AutoPostGenerator {
         platform: platforms[0],
         tone: request.tone || "energetic",
         artist_name: artistName,
-      }),
+      }, userId),
       "auto-post viral content",
     );
 

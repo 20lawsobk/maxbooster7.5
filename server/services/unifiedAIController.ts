@@ -487,6 +487,7 @@ export class UnifiedAIController {
       const mcRaw = await MaxCoreAIClient?.infer<unknown>(
         "/api/generate/content",
         mcPayload,
+        options.userId,
       );
 
       // MaxCore is the ONLY source — throw explicitly (HTTP 503) when it returns

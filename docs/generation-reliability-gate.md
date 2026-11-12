@@ -1,6 +1,6 @@
 # Generation reliability gate
 
-The checked-in route matrix is `tests/e2e/generation-path-matrix.json`. It records the user-facing entry point, MaxBooster route, MaxCore/provider boundary, expected real output, and whether the flow can create media. Keep this inventory aligned with route registration and the page/component that submits each request.
+The live-runner matrix is `tests/e2e/generation-path-matrix.json`. The broader source-traced UI inventory is `tests/e2e/generation-surface-inventory.json`; it records reachable creative flows, their backend and MaxCore paths, ownership, output class, linked checks, and non-creative operations that should not be mislabeled as model generation. Keep both files aligned with route registration and the page/component that submits each request.
 
 ## Current URL-generation failure behavior
 
@@ -44,7 +44,7 @@ Exit codes are `0` only when every path in scope passes, `1` for a real assertio
 
 The route matrix covers URL-to-social-copy, manual social text, shared text, advertising text, URL-to-image/audio/video, and shared image/audio/video. Audio/video jobs are bounded-polled and registered for owner-only cleanup. Studio's long-running audio-job path remains listed but is not executed until its job and artifact lifecycle exposes a verified delete contract.
 
-The broader matrix includes all known UI/API paths so new callers are not mistaken for tested paths. A matrix row the runner does not execute remains `BLOCKED`; source wiring or a mocked browser fixture is not counted as a real provider-generated result. A modality may be ready in live-awareness or procedural mode while `model_loaded=false`; readiness and learned-checkpoint state are recorded separately.
+The source inventory covers 21 client-reachable creation/rewrite/rendering flows and classifies seven adjacent non-creative operations. The live-runner matrix is narrower: a row the runner does not execute or whose safe preflight is missing remains `BLOCKED`; source wiring or a mocked browser fixture is not counted as a real provider-generated result. A modality may be ready in live-awareness or procedural mode while `model_loaded=false`; readiness and learned-checkpoint state are recorded separately.
 
 On 2026-11-12, after restarting the development workflow, `/api/health` and `/api/ready` returned HTTP 200 and the app readiness payload reported a fresh unified awareness snapshot. MaxCore's `/api/ready` reported `ready=true`, `generation_ready=true`, `live_awareness_generation_ready=true`, `model_loaded=false`, and `trained_checkpoint_ready=false`; text was live-awareness serving and image/audio/video were untrained procedural renderers. This is runtime readiness evidence, not a successful generated media artifact or trained-model claim.
 
