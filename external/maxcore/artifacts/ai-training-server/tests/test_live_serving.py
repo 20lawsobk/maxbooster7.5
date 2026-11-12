@@ -52,6 +52,37 @@ class LiveServingTests(unittest.TestCase):
             self.model.generate("prompt")
         self.assertNotIn('"text"', (Path(self.temp.name) / "live-learning.json").read_text())
 
+    def test_internal_owner_and_simulation_source_uses_existing_candidate_worker(self):
+        from ai_model.training.internal_training_sources import (
+            collect_internal_training_bundle,
+        )
+
+        class Storage:
+            is_available = True
+            _local_canonical = True
+
+            def __init__(self):
+                self.values = {}
+
+            def get(self, key):
+                return self.values.get(key)
+
+            def set(self, key, value):
+                self.values[key] = value
+                return True
+
+            def lrange(self, *_args):
+                return []
+
+        with patch.dict(os.environ, {"AI_SERVER_KEY": "test-internal-source-key"}):
+            bundle = collect_internal_training_bundle(Storage(), now=120)
+            loop = self.loop(internal_source=lambda: bundle)
+            status = loop.tick()
+            self.assertEqual(status["training"], "candidate_trained_unreviewed")
+            self.assertEqual(status["internal_source"]["simulation_horizon_days_per_track"], 3650)
+            self.assertEqual(self.trainer.call_args.kwargs["internal_bundle"]["id"], bundle["id"])
+            self.assertFalse(self.trainer.call_args.kwargs["peak_content"])
+
     def test_awareness_use_wakes_the_existing_worker_with_bounded_coalescing(self):
         loop = self.loop()
         loop.poll = 10

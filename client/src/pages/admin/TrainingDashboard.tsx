@@ -238,6 +238,16 @@ export default function TrainingDashboard() {
   });
 
   const {
+    data: internalCandidates,
+    error: internalCandidatesError,
+  } = useQuery({
+    queryKey: ["maxcore-internal-learning-candidates"],
+    queryFn: () => apiFetch("/api/training/candidates/internal"),
+    refetchInterval: 15_000,
+    retry: false,
+  });
+
+  const {
     data: generationCapabilities,
     error: generationCapabilitiesQueryError,
     isError: generationCapabilitiesError,
@@ -484,6 +494,42 @@ export default function TrainingDashboard() {
                     {liveLearning?.learning?.running === true ? "Running" : "Not running"}
                     {" · "}
                     {liveLearning?.learning?.training || "state not reported"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Ten-year simulation source</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.internal_source?.simulation_cycle
+                      ? `Cycle ${liveLearning.learning.internal_source.simulation_cycle} · ` +
+                        `${liveLearning.learning.internal_source.simulation_horizon_days_per_track} days per track`
+                      : liveLearning?.learning?.internal_source_error
+                        ? `Unavailable · ${liveLearning.learning.internal_source_error}`
+                        : "Waiting for first persisted cycle"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Internal training data</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.internal_source?.training_records_selected ?? "—"}
+                    {" selected · "}
+                    {liveLearning?.learning?.internal_source?.owner_admin_records_eligible ?? 0}
+                    {" owner-admin"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Internal candidates</div>
+                  <div className="mt-1 text-white">
+                    {internalCandidatesError
+                      ? "Status unavailable"
+                      : `${internalCandidates?.runs?.length ?? 0} · ` +
+                        `${internalCandidates?.runs?.[0]?.status ?? "no candidate"}`}
+                  </div>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <div className="text-xs text-gray-400">Simulation durability</div>
+                  <div className="mt-1 break-all text-white">
+                    {liveLearning?.learning?.internal_source?.storage_authority ??
+                      "Canonical PDIM status not yet verified"}
                   </div>
                 </div>
                 <div>

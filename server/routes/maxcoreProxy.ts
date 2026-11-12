@@ -117,6 +117,7 @@ generatedArtifactRouter.post("/api/internal/generated-artifacts/commit",
 const ADMIN_PATH_SUFFIXES = [
   "/awareness/unified/admin/source-status",
   "/training/live/status",
+  "/training/candidates/internal",
   "/platform/model/reload",
   "/training/start",
   "/training/stop",
@@ -221,7 +222,7 @@ async function proxyToMaxCore(
   // Enforce identity binding: a caller may only address their own user id in
   // path params (admins may address any). Prevents IDOR on routes like
   // /api/platform/ads/performance/:userId and /api/storage/artist/:profileId.
-  const authUser = req.user as { id?: string; role?: string } | undefined;
+  const authUser = req.user as { id?: string; role?: string; email?: string } | undefined;
   const paramId = req.params.userId || req.params.profileId;
   if (paramId && authUser?.role !== "admin" && paramId !== authUser?.id) {
     res.status(403).json({
@@ -241,8 +242,11 @@ async function proxyToMaxCore(
   const method = req.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD" && method !== "DELETE";
 
+  const ownerEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const isOwnerAdmin = authUser?.id && authUser.role === "admin" && ownerEmail &&
+    authUser.email?.trim().toLowerCase() === ownerEmail;
   const headers: Record<string, string> = {
-    ...getMaxcoreGenerationHeaders(),
+    ...(isOwnerAdmin ? getMaxcoreAdminHeaders() : getMaxcoreGenerationHeaders()),
     Accept: "application/json, */*",
   };
   if (authUser?.id) {
@@ -592,6 +596,8 @@ router.get("/api/models/content/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/engagement/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/training/status", requireAdmin, proxyToMaxCore);
 router.get("/api/training/live/status", requireAdmin, proxyToMaxCore);
+router.get("/api/training/candidates/internal", requireAdmin, proxyToMaxCore);
+router.get("/api/training/candidates/internal/:runId", requireAdmin, proxyToMaxCore);
 router.get("/api/training/logs", requireAdmin, proxyToMaxCore);
 router.get("/api/training/datasets", requireAdmin, proxyToMaxCore);
 router.get("/api/training/continuous/status", requireAdmin, proxyToMaxCore);

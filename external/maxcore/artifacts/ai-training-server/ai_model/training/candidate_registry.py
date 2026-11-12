@@ -284,6 +284,23 @@ def verify_bundle(run):
             raise ValueError("Resumed training weights do not match public parent")
     if data.get("holdout_sha256") != report.get("holdout_sha256"):
         raise ValueError("Checkpoint holdout binding mismatch")
+    if run.name.startswith("internal-"):
+        if report.get("holdout_sha256") is None:
+            raise ValueError("Internal candidate requires frozen holdout evidence")
+        holdout_path = run / "holdout.manifest.json"
+        if sha256(holdout_path) != report["holdout_sha256"]:
+            raise ValueError("Frozen holdout artifact fingerprint mismatch")
+        holdout = json.loads(holdout_path.read_text())
+        if (holdout.get("schema") != 1 or holdout.get("frozen") is not True
+                or not isinstance(holdout.get("cases"), list)
+                or not 1 <= len(holdout["cases"]) <= 64):
+            raise ValueError("Invalid frozen holdout artifact")
+        for key in ("holdout_initial_loss", "holdout_loss"):
+            value = report.get(key)
+            if type(value) not in (int, float) or not math.isfinite(value):
+                raise ValueError("Independent holdout evaluation missing")
+        if type(report.get("holdout_tokens")) is not int or report["holdout_tokens"] <= 0:
+            raise ValueError("Independent holdout token count missing")
     if data.get("training_backend_scope") != report.get("training_backend_scope"):
         raise ValueError("Checkpoint training-backend scope mismatch")
     if report.get("training_backend_scope") == "manual-digital-v1":

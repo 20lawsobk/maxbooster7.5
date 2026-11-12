@@ -97,7 +97,7 @@ def train_from_manifest(corpus, corpus_sha256, holdout=None, holdout_sha256=None
     result = train_validated(run_id, steps, seed, "public-content" if stream else "transformer", manifest,
                              holdout_sha256=holdout_sha256, input_sha256=corpus_sha256, lr=lr,
                              manual_backward=manual_backward, context_tokens=context_tokens,
-                             learning_stream=stream)
+                             learning_stream=stream, holdout_texts=holdouts if holdout is not None else None)
     from ai_model.training.candidate_lifecycle import CANDIDATES
     # Preserve exact approved input bytes so the data fingerprint is verifiable.
     raw = Path(corpus).read_bytes()

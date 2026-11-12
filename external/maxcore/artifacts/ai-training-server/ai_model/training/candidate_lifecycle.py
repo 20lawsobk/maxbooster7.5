@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 from unittest.mock import patch
@@ -49,8 +50,36 @@ def train_smoke(run_id, steps=24, seed=1729, architecture="mlp"):
                            build_manifest(smoke_records(), [], smoke_only=True))
 
 
+def evaluate_candidate_texts(model, texts):
+    """Measure next-byte loss on frozen text without changing model weights."""
+    if not texts or not hasattr(model, "sequence_logits"):
+        raise ValueError("Transformer and non-empty holdout text required")
+    total_loss, total_tokens = 0.0, 0
+    model.eval()
+    with torch.no_grad():
+        for text in texts:
+            ids = [257] + model.tokenizer.encode(text) + [258]
+            for start in range(0, len(ids) - 1, model.context):
+                chunk = ids[start:start + model.context + 1]
+                if len(chunk) < 2:
+                    continue
+                x = torch.tensor([chunk[:-1]])
+                y = torch.tensor(chunk[1:])
+                logits = model.sequence_logits(x).reshape(-1, 259)
+                loss = model.backend.cross_entropy(logits, y)
+                value = float(loss.detach())
+                if not math.isfinite(value):
+                    raise ValueError("Nonfinite holdout inference loss")
+                total_loss += value * y.numel()
+                total_tokens += y.numel()
+    if not total_tokens:
+        raise ValueError("Holdout contained no measurable tokens")
+    return {"loss": total_loss / total_tokens, "tokens": total_tokens}
+
+
 def train_validated(run_id, steps, seed, architecture, manifest, *, holdout_sha256=None,
-                    input_sha256=None, lr=0.2, manual_backward=False, context_tokens=128, learning_stream=None):
+                    input_sha256=None, lr=0.2, manual_backward=False, context_tokens=128,
+                    learning_stream=None, holdout_texts=None):
     if not run_id or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-_" for c in run_id):
         raise ValueError("run-id must contain lowercase letters, digits, - or _")
     if not 1 <= steps <= 64:
@@ -129,6 +158,12 @@ def train_validated(run_id, steps, seed, architecture, manifest, *, holdout_sha2
     initial_weights = {k: v.detach().clone() for k, v in model.state_dict().items()}
     from .public_resume import weights_digest
     initial_weights_sha256 = weights_digest(initial_weights)
+    initial_holdout = None
+    if holdout_texts is not None:
+        if not transformer or not holdout_sha256:
+            raise ValueError("Frozen holdout evaluation requires a pinned transformer input")
+        initial_holdout = evaluate_candidate_texts(model, holdout_texts)
+        model.train()
     coverage = None
     if transformer:
         start_step = parent.get("coverage_steps", 0) if parent else 0
@@ -192,6 +227,10 @@ def train_validated(run_id, steps, seed, architecture, manifest, *, holdout_sha2
                    if not model.backend.dispatch("equal", array(v), array(initial_weights[k]))]
         if backward_calls == 0 or not changed:
             raise ValueError("No backend backward computation or weight updates")
+        final_holdout = (
+            evaluate_candidate_texts(model, holdout_texts)
+            if holdout_texts is not None else None
+        )
         checkpoint = destination / "candidate.pt"
         torch.save({"architecture": model.architecture, "context_tokens": model.context,
                     "smoke_only": manifest["smoke_only"],
@@ -206,6 +245,9 @@ def train_validated(run_id, steps, seed, architecture, manifest, *, holdout_sha2
                     "initial_weights_sha256": initial_weights_sha256,
                     "state_dict": model.state_dict(),
                     "holdout_sha256": holdout_sha256,
+                     "holdout_initial_loss": initial_holdout["loss"] if initial_holdout else None,
+                     "holdout_loss": final_holdout["loss"] if final_holdout else None,
+                     "holdout_tokens": final_holdout["tokens"] if final_holdout else 0,
                     "training_backend_scope": "manual-digital-v1" if manual_backward else "torch-autograd-v1",
                     "optimizer": {"type": "candidate-dispatched-adamw" if learning_stream else "candidate-dispatched-sgd", "lr": lr}}, checkpoint)
         after = protected_hashes()
@@ -218,6 +260,9 @@ def train_validated(run_id, steps, seed, architecture, manifest, *, holdout_sha2
                   "curriculum": curriculum,
                   "final_weights_sha256": weights_digest(model.state_dict()), "schema": 1, "smoke_only": manifest["smoke_only"], "seed": seed, "steps": steps,
                   "holdout_sha256": holdout_sha256, "input_sha256": input_sha256,
+                   "holdout_initial_loss": initial_holdout["loss"] if initial_holdout else None,
+                   "holdout_loss": final_holdout["loss"] if final_holdout else None,
+                   "holdout_tokens": final_holdout["tokens"] if final_holdout else 0,
                   "backend_exclusive": manual_backward, "trained_tokens": trained_tokens,
                   "training_backend_scope": "manual-digital-v1" if manual_backward else "torch-autograd-v1",
                   "inference_backend_scope": "manual-digital-v1" if transformer else "torch-storage-autograd-disabled",

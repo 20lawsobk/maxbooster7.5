@@ -339,7 +339,7 @@ class LiveLearningLoop:
                                for row in observations["records"]]
                     content.sort(key=lambda row: json.dumps(row, sort_keys=True))
                 identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
-                bootstrap = not self.model.available
+                bootstrap = (self.peak_content or internal_training) and not self.model.available
                 if identity == state.get("trained_content_sha256") and not bootstrap:
                     self._status = {**self._status, "training": "unchanged_observations"}
                     return self.status()

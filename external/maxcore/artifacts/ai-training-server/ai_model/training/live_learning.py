@@ -373,6 +373,16 @@ def validate_report(run_id, corpus_hash, holdout_hash):
             or file_hash(candidate / "input.manifest.json") != corpus_hash
             or (candidate / "FAILED").exists()):
         raise ValueError("Checkpoint or input evidence mismatch")
+    if holdout_hash is not None:
+        if file_hash(candidate / "holdout.manifest.json") != holdout_hash:
+            raise ValueError("Frozen holdout artifact mismatch")
+        for key in ("holdout_initial_loss", "holdout_loss"):
+            value = report.get(key)
+            if type(value) not in (int, float) or not math.isfinite(value):
+                raise ValueError("Missing finite independent holdout measurement")
+        if (type(report.get("holdout_tokens")) is not int
+                or report["holdout_tokens"] <= 0):
+            raise ValueError("Missing independent holdout token count")
     return {"checkpoint_sha256": checkpoint_hash, "report_sha256": file_hash(report_path)}
 
 
@@ -588,6 +598,8 @@ def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
             elif completed.returncode != 0:
                 result["status"] = "failed_training"
             else:
+                if holdout_bytes is not None:
+                    write_new(candidate_path(run_id) / "holdout.manifest.json", holdout_bytes)
                 result.update(validate_report(run_id, corpus_hash, holdout_hash))
                 result["status"] = "candidate_trained_unreviewed"
         except subprocess.TimeoutExpired:

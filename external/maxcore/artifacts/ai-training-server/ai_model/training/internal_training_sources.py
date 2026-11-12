@@ -16,6 +16,8 @@ from .rights_receipts import (
     SIMULATION_GRANT,
     make_training_record,
     verify_training_record,
+    sign_simulation_segment,
+    verify_simulation_segment,
 )
 
 STATE_KEY = "mb:maxcore:simulation:v1:state"
@@ -25,6 +27,8 @@ SIMULATED_DAYS_PER_TRACK = 3650
 MAX_TRAINING_RECORDS = 512
 MAX_OWNER_RECORDS = 128
 _cycle_lock = threading.Lock()
+_EVENTS = ("release_window", "audience_growth", "platform_shift", "cash_pressure")
+_ACTIONS = ("release", "collaborate", "promote", "preserve_budget")
 
 
 def _canonical(value):
@@ -89,8 +93,7 @@ def _choice(state, event, rng, *, rolling):
 
 def _simulate_day(state, *, day, cycle, track, rolling, seed):
     rng = random.Random(seed)
-    event_types = ("release_window", "audience_growth", "platform_shift", "cash_pressure")
-    event = event_types[int(_stable_unit(f"{seed}:event") * len(event_types))]
+    event = _EVENTS[int(_stable_unit(f"{seed}:event") * len(_EVENTS))]
     action = _choice(state, event, rng, rolling=rolling)
 
     baseline = {
@@ -121,16 +124,32 @@ def _simulate_day(state, *, day, cycle, track, rolling, seed):
         state["action_rewards"][action] = (
             state["action_rewards"].get(action, 0.0) + outcome
         )
+    return [
+        _EVENTS.index(event), _ACTIONS.index(action),
+        int(state["followers"]), int(state["cash"]), int(state["catalog"]),
+        int(round(state["engagement"] * 1_000_000)),
+        int(round(state["fatigue"] * 1000)), int(round(outcome * 1000)),
+    ]
+
+
+def _render_decision(row, *, day, cycle, track):
+    if not isinstance(row, list) or len(row) != 8:
+        raise ValueError("Invalid compact simulation decision")
+    event_id, action_id, followers, cash, catalog, engagement, fatigue, reward = row
+    if (type(event_id) is not int or not 0 <= event_id < len(_EVENTS)
+            or type(action_id) is not int or not 0 <= action_id < len(_ACTIONS)
+            or any(type(value) is not int or value < 0 for value in row[2:])):
+        raise ValueError("Invalid simulation decision values")
     text = (
-        f"Synthetic music-business decision. Track {track}; year {(day - 1) // 365 + 1}; "
-        f"day {(day - 1) % 365 + 1}; event {event}; followers {state['followers']}; "
-        f"catalog {state['catalog']}; cash {state['cash']:.0f}; engagement "
-        f"{state['engagement']:.4f}; fatigue {state['fatigue']:.3f}. "
-        f"Decision {action}; simulated outcome score {outcome:.3f}."
+        f"Synthetic music-business choice, track={track}, year={(day - 1) // 365 + 1}, "
+        f"day={(day - 1) % 365 + 1}, event={_EVENTS[event_id]}, followers={followers}, "
+        f"catalog={catalog}, cash={cash}, engagement={engagement / 1_000_000:.4f}, "
+        f"fatigue={fatigue / 1000:.3f}; decision={_ACTIONS[action_id]}, "
+        f"simulated outcome={reward / 1000:.3f}."
     )
     source_id = (
         f"simulation:{track}:cycle:{cycle}:day:{day}"
-        if rolling else f"simulation:baseline:day:{day}"
+        if track == "rolling" else f"simulation:baseline:day:{day}"
     )
     return make_training_record(
         text, source_id=source_id,
@@ -178,14 +197,17 @@ def _make_cycle(state):
             rolling=True, seed=f"maxcore-rolling-v1:{cycle}:{day}",
         ))
     holdouts = _make_holdouts(cycle)
-    segment = {
+    segment_body = {
         "schema": 1,
         "simulation_version": "daily-music-decisions-v1",
         "cycle": cycle,
         "horizon_days": SIMULATED_DAYS_PER_TRACK,
-        "tracks": {"baseline": baseline, "rolling": rolling},
+        "tracks": {"baseline": baseline if cycle == 1 else [], "rolling": rolling},
+        "baseline_reference_cycle": None if cycle == 1 else 1,
+        "rolling_state_after": rolling_state,
         "holdout": holdouts,
     }
+    segment = {**segment_body, "integrity": sign_simulation_segment(segment_body)}
     return segment, {
         "schema": 1, "cycle": cycle,
         "rolling": rolling_state,
@@ -227,7 +249,8 @@ def _owner_records(storage):
         for sample in samples or []:
             if isinstance(sample, str):
                 sample = _read_json(sample)
-            if not isinstance(sample, dict) or sample.get("key_id") != "env-admin":
+            if (not isinstance(sample, dict) or sample.get("key_id") != "env-admin"
+                    or sample.get("owner_admin_authenticated") is not True):
                 continue
             if sample.get("training_rights_excluded") is True:
                 continue
@@ -256,8 +279,9 @@ def collect_internal_training_bundle(storage=None, *, now=None):
     now = time.time() if now is None else float(now)
     if not math.isfinite(now):
         raise ValueError("Invalid simulation clock")
-    if storage is None or not storage.is_available:
-        raise RuntimeError("Canonical PDIM storage is required for simulation learning")
+    if (storage is None or not getattr(storage, "_local_canonical", False)
+            or not storage.is_available):
+        raise RuntimeError("Canonical local PDIM storage is required for simulation learning")
 
     with _cycle_lock:
         state = _read_json(storage.get(STATE_KEY)) or _state_default()
@@ -287,14 +311,33 @@ def collect_internal_training_bundle(storage=None, *, now=None):
 
         encoded = storage.get(_segment_key(state["cycle"])) if state["cycle"] else None
         segment = _decode_segment(encoded) if encoded else None
-        if not isinstance(segment, dict) or segment.get("cycle") != state["cycle"]:
+        if (not isinstance(segment, dict) or segment.get("cycle") != state["cycle"]
+                or not verify_simulation_segment(segment)
+                or segment.get("rolling_state_after") != state["rolling"]
+                or hashlib.sha256(encoded.encode()).hexdigest()
+                != state.get("last_segment_sha256")):
             raise RuntimeError("Verified simulation segment is unavailable")
 
         selected = []
-        for track in ("baseline", "rolling"):
-            rows = segment["tracks"][track]
+        baseline_segment = segment
+        if state["cycle"] > 1:
+            baseline_encoded = storage.get(_segment_key(1))
+            baseline_segment = _decode_segment(baseline_encoded) if baseline_encoded else None
+            if (not isinstance(baseline_segment, dict)
+                    or not verify_simulation_segment(baseline_segment)
+                    or baseline_segment.get("cycle") != 1):
+                raise RuntimeError("Immutable fixed-baseline segment is unavailable")
+        for track, source_segment in (("baseline", baseline_segment), ("rolling", segment)):
+            rows = source_segment["tracks"][track]
             stride = max(1, len(rows) // 192)
-            selected.extend(rows[::stride][:192])
+            cycle = source_segment["cycle"]
+            for day, row in enumerate(rows[::stride][:192], start=1):
+                # The sampled rows are re-indexed below to preserve their exact
+                # original simulated day in both provenance and prompt.
+                actual_day = min((day - 1) * stride + 1, SIMULATED_DAYS_PER_TRACK)
+                selected.append(_render_decision(
+                    row, day=actual_day, cycle=cycle, track=track,
+                ))
         selected.extend(_owner_records(storage))
         unique, hashes = [], set()
         for record in selected:
@@ -329,6 +372,7 @@ def collect_internal_training_bundle(storage=None, *, now=None):
                 "simulation_horizon_days_per_track": SIMULATED_DAYS_PER_TRACK,
                 "baseline_records_generated": SIMULATED_DAYS_PER_TRACK,
                 "rolling_records_generated": SIMULATED_DAYS_PER_TRACK,
+                "baseline_storage_policy": "one immutable replay segment, referenced thereafter",
                 "owner_admin_records_eligible": sum(
                     r["internal_provenance"]["grant"] == OWNER_ADMIN_GRANT
                     for r in unique
@@ -336,6 +380,7 @@ def collect_internal_training_bundle(storage=None, *, now=None):
                 "training_records_selected": len(unique),
                 "last_cycle_at": state["last_cycle_at"],
                 "segment_sha256": state.get("last_segment_sha256"),
+                "storage_authority": "canonical_local_pdim_readback_verified",
                 "synthetic_data_is_public_observation": False,
             },
         }

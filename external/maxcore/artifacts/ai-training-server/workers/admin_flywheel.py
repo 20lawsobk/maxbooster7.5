@@ -99,13 +99,17 @@ class FlywheelIngestor:
         payload: dict[str, Any],
         meta: dict[str, Any],
         key_id: str = "admin",
+        *,
+        owner_admin: bool = False,
     ) -> None:
         """
         Fire-and-forget: submit a storage job to the background executor.
         Returns immediately; never raises.
         """
         try:
-            self._executor.submit(self._store, content_type, payload, meta, key_id)
+            self._executor.submit(
+                self._store, content_type, payload, meta, key_id, owner_admin
+            )
         except Exception as exc:
             _fw_logger.debug("[flywheel] submit error (type=%s): %s", content_type, exc)
 
@@ -115,6 +119,7 @@ class FlywheelIngestor:
         payload: dict[str, Any],
         meta: dict[str, Any],
         key_id: str,
+        owner_admin: bool = False,
     ) -> None:
         """Background worker — pushes one sample to pdim and updates the manifest."""
         try:
@@ -140,11 +145,12 @@ class FlywheelIngestor:
             "payload": _sanitise(payload),
         }
         sample["training_records"] = _owner_training_records(
-            content_type, sample["payload"], meta, key_id
+            content_type, sample["payload"], meta, key_id, owner_admin=owner_admin
         )
         sample["training_rights_excluded"] = (
-            key_id == "env-admin" and not sample["training_records"]
+            owner_admin and not sample["training_records"]
         )
+        sample["owner_admin_authenticated"] = bool(owner_admin)
 
         list_key = f"mb:dataset:flywheel:{content_type}"
         meta_key = f"mb:dataset:flywheel:{content_type}:meta"
@@ -266,15 +272,17 @@ def _owner_training_records(
     payload: dict[str, Any],
     meta: dict[str, Any],
     key_id: str,
+    *,
+    owner_admin: bool = False,
 ) -> list[dict[str, Any]]:
     """Attest only clean owner-admin outputs, never mixed awareness material."""
-    if key_id != "env-admin":
+    if key_id != "env-admin" or not owner_admin:
         return []
     if not isinstance(meta, dict) or not isinstance(payload, dict):
         return []
-    if meta.get("awareness") or payload.get("source") == "live_awareness":
+    if payload.get("source") == "live_awareness" or payload.get("input_resolution"):
         return []
-    if any(meta.get(key) for key in ("source_url", "citation", "external_source")):
+    if _contains_external_context(meta) or _contains_external_context(payload):
         return []
 
     texts: list[str] = []
@@ -297,6 +305,7 @@ def _owner_training_records(
         from ai_model.training.rights_receipts import (
             OWNER_ADMIN_GRANT, make_training_record,
         )
+        from ai_model.training.candidate_corpus import SECRET
     except Exception:
         return []
     records, seen = [], set()
@@ -304,7 +313,7 @@ def _owner_training_records(
         if not isinstance(value, str):
             continue
         text = " ".join(value.split())
-        if len(text) < 16 or len(text) > 4000:
+        if len(text) < 16 or len(text) > 4000 or SECRET.search(text):
             continue
         text_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
         if text_hash in seen:
@@ -322,6 +331,26 @@ def _owner_training_records(
         except (ValueError, OSError):
             return []
     return records
+
+
+def _contains_external_context(value: Any, depth: int = 0) -> bool:
+    if depth > 8:
+        return True
+    if isinstance(value, dict):
+        for key, child in value.items():
+            normalized = str(key).lower().replace("-", "_")
+            if any(marker in normalized for marker in (
+                "awareness", "citation", "url", "external_source",
+                "source_context", "input_resolution",
+            )) and child:
+                return True
+            if _contains_external_context(child, depth + 1):
+                return True
+    elif isinstance(value, (list, tuple)):
+        if len(value) > 64:
+            return True
+        return any(_contains_external_context(child, depth + 1) for child in value)
+    return False
 
 
 # ── Module-level singleton ─────────────────────────────────────────────────────

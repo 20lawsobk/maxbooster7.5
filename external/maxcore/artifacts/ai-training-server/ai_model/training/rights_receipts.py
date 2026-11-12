@@ -21,6 +21,34 @@ def _receipt_key():
     return os.environ.get("AI_SERVER_KEY", "").encode()
 
 
+def sign_simulation_segment(segment):
+    key = _receipt_key()
+    if not key:
+        raise ValueError("AI_SERVER_KEY is required to attest simulation data")
+    body = _canonical(segment).encode()
+    body_hash = hashlib.sha256(body).hexdigest()
+    claims = {"schema": 1, "source": "maxcore-simulation",
+              "cycle": segment["cycle"], "body_sha256": body_hash}
+    signature = hmac.new(key, _canonical(claims).encode(), hashlib.sha256).hexdigest()
+    return {**claims, "signature": signature}
+
+
+def verify_simulation_segment(segment):
+    if not isinstance(segment, dict) or not isinstance(segment.get("integrity"), dict):
+        return False
+    integrity = segment["integrity"]
+    body = {key: value for key, value in segment.items() if key != "integrity"}
+    try:
+        expected = sign_simulation_segment(body)
+    except (ValueError, KeyError, TypeError):
+        return False
+    return (
+        set(integrity) == set(expected)
+        and all(hmac.compare_digest(str(integrity.get(key, "")), str(value))
+                for key, value in expected.items())
+    )
+
+
 def make_training_record(text, *, source_id, provenance_type, grant, key_id, author):
     """Build a record whose origin claim is verifiable by the candidate gate."""
     if not isinstance(text, str) or not text.strip() or not _SOURCE_ID.fullmatch(source_id):

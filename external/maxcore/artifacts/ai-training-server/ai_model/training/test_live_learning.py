@@ -178,6 +178,47 @@ class LiveLearningTests(unittest.TestCase):
         self.assertEqual(error.exception.code, "blocked_training_rights")
         self.assertFalse(any(path.name.startswith("live-") for path in live.JOBS.iterdir()))
 
+    def test_signed_internal_bundle_is_admitted_as_review_only_candidate(self):
+        from ai_model.training.internal_training_sources import (
+            collect_internal_training_bundle,
+        )
+
+        class Storage:
+            is_available = True
+            _local_canonical = True
+            def __init__(self):
+                self.values = {}
+            def get(self, key):
+                return self.values.get(key)
+            def set(self, key, value):
+                self.values[key] = value
+                return True
+            def lrange(self, *_args):
+                return []
+
+        with patch.dict(os.environ, {"AI_SERVER_KEY": "test-internal-training-key"}):
+            bundle = collect_internal_training_bundle(Storage(), now=240)
+
+            def worker(command, **kwargs):
+                holdout_hash = command[command.index("--holdout-sha256") + 1]
+                return self.fake_worker(
+                    command,
+                    lambda report, _candidate: {**report, "holdout_sha256": holdout_hash},
+                    **kwargs,
+                )
+
+            with patch.object(live.subprocess, "run", side_effect=worker):
+                result = live.execute(
+                    None, steps=1, context_tokens=128, peak_content=False,
+                    worker_timeout=30, internal_bundle=bundle,
+                )
+        self.assertTrue(result["run_id"].startswith("internal-"))
+        self.assertEqual(result["training_source"], "maxcore_internal_owner_and_simulation")
+        self.assertEqual(result["status"], "candidate_trained_unreviewed")
+        self.assertTrue(result["holdout_sha256"])
+        self.assertFalse(result["promotion_performed"])
+        self.assertTrue((live.admission_path(result["run_id"]) / "certified.json").is_file())
+
     def test_candidate_registry_rechecks_operator_rights_manifest(self):
         from ai_model.training.candidate_registry import _verify_live_training_rights
 
@@ -224,10 +265,17 @@ class LiveLearningTests(unittest.TestCase):
         corpus_path = Path(command[command.index("--corpus") + 1])
         (candidate / "input.manifest.json").write_bytes(corpus_path.read_bytes())
         (candidate / "candidate.pt").write_bytes(b"test-only-not-a-model")
+        holdout_hash = (
+            command[command.index("--holdout-sha256") + 1]
+            if "--holdout-sha256" in command else None
+        )
         report = {"schema": 1, "protected_unchanged": True, "smoke_only": False,
                   "backend_exclusive": True, "training_backend_scope": "manual-digital-v1",
                   "input_sha256": command[command.index("--corpus-sha256") + 1],
-                  "holdout_sha256": None,
+                  "holdout_sha256": holdout_hash,
+                  "holdout_initial_loss": 5.0 if holdout_hash else None,
+                  "holdout_loss": 4.8 if holdout_hash else None,
+                  "holdout_tokens": 32 if holdout_hash else 0,
                   "gemm_forward_calls": 1, "gemm_backward_calls": 1,
                   "changed_parameters": ["test"], "training_loss": [1.0],
                   "candidate_dispatch_counts": {"transformer_backward": 1},

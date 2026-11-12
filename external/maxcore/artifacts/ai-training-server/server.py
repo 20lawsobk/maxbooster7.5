@@ -1163,8 +1163,6 @@ ADMIN_KEY_ENV          = os.environ.get("ADMIN_KEY")
 AI_TRAINING_KEY_PROD   = os.environ.get("AI_TRAINING_KEY_PROD")
 AI_SERVER_KEY          = os.environ.get("AI_SERVER_KEY")
 
-_ENV_BYPASS_KEYS: set = {k for k in [ADMIN_KEY_ENV, AI_TRAINING_KEY_PROD, AI_SERVER_KEY] if k}
-
 def verify_api_key(x_api_key: str = Header(None), x_admin_key: str = Header(None),
                    authorization: str = Header(None), request: Request = None):
     """Verify API key from X-Api-Key, X-Admin-Key, or Authorization: Bearer."""
@@ -1189,9 +1187,16 @@ def verify_api_key(x_api_key: str = Header(None), x_admin_key: str = Header(None
             raise HTTPException(status_code=403, detail="Private channel requires loopback peer")
         return {"id": "local-supervisor", "scopes": ["read", "write", "generate"]}
 
-    # Allow env-based admin override for ADMIN_KEY and AI_TRAINING_KEY_PROD
-    if raw_key in _ENV_BYPASS_KEYS:
-        return {"id": "env-admin", "scopes": ["read", "write", "train", "admin", "generate"]}
+    # Keep the owner account distinct from machine credentials even though both
+    # are allowed to administer service routes.
+    if ADMIN_KEY_ENV and secrets.compare_digest(raw_key, ADMIN_KEY_ENV):
+        return {"id": "env-admin", "principal": "owner-admin",
+                "owner_admin_authenticated": True,
+                "scopes": ["read", "write", "train", "admin", "generate"]}
+    if raw_key in {AI_TRAINING_KEY_PROD, AI_SERVER_KEY} - {None}:
+        return {"id": "env-admin", "principal": "service",
+                "owner_admin_authenticated": False,
+                "scopes": ["read", "write", "train", "admin", "generate"]}
 
     key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
     conn = None
@@ -1221,7 +1226,9 @@ def verify_api_key(x_api_key: str = Header(None), x_admin_key: str = Header(None
         conn.commit()
         cur.close()
         _release(conn)
-        return dict(key_record)
+        result = dict(key_record)
+        result["owner_admin_authenticated"] = False
+        return result
     except HTTPException:
         if conn:
             _release(conn)
@@ -1338,7 +1345,10 @@ def _fw_ingest(key: dict, content_type: str, payload: dict, meta: dict) -> None:
     if fw is None:
         return
     try:
-        fw.ingest(content_type, payload, meta, str(key.get("id", "admin")))
+        fw.ingest(
+            content_type, payload, meta, str(key.get("id", "admin")),
+            owner_admin=key.get("owner_admin_authenticated") is True,
+        )
     except Exception as e:
         _srv_logger.debug(f"[Flywheel] ingest error ({content_type}): {e}")
 
