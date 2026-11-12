@@ -1079,14 +1079,7 @@ class ScriptAgent:
             # template fallback. It composes from the caller's authored brief
             # and a currently bound awareness snapshot; it never copies source
             # post text or claims checkpoint inference.
-            response = self._awareness_compose(req)
-            from ai_model.safety import enforce
-            response.hook = enforce(response.hook)
-            response.body = enforce(response.body)
-            response.cta = enforce(response.cta)
-            if not all(self._is_meaningful(value) for value in
-                       (response.hook, response.body, response.cta)):
-                raise ValueError("Live-awareness composition failed copy validation")
+            response = self._validated_live_awareness_script(req)
             with self._live_model_unavailable_log_lock:
                 self._live_model_unavailable_logged = False
             return response
@@ -1094,6 +1087,30 @@ class ScriptAgent:
             logger.exception("ScriptAgent checkpoint generation failed")
             raise
         raise ValueError("Checkpoint did not generate a meaningful script")
+
+    @generation_guard
+    def run_live_awareness(self, req: ScriptRequest) -> ScriptResponse:
+        """Compose only from caller input and the request's fresh snapshot."""
+        from dataclasses import replace
+        from ai_model.generation.awareness import ensure_context_once
+
+        req = replace(
+            req,
+            awareness=ensure_context_once(req.awareness, req.platform, "text"),
+        )
+        return self._validated_live_awareness_script(req)
+
+    def _validated_live_awareness_script(self, req: ScriptRequest) -> ScriptResponse:
+        response = self._awareness_compose(req)
+        from ai_model.safety import enforce
+
+        response.hook = enforce(response.hook)
+        response.body = enforce(response.body)
+        response.cta = enforce(response.cta)
+        if not all(self._is_meaningful(value) for value in
+                   (response.hook, response.body, response.cta)):
+            raise ValueError("Live-awareness composition failed copy validation")
+        return response
 
     def _is_meaningful(self, text: str) -> bool:
         if not text or len(text) < 10:
@@ -1127,6 +1144,7 @@ class ScriptAgent:
         if platform in {"x", "twitter"}:
             platform = "twitter"
         tone = _clean_text((req.tone or "authentic").strip())[:32] or "authentic"
+        tone_article = "an" if tone[0].lower() in "aeiou" else "a"
         genre = _clean_text(
             (req.genre or _detect_genre_from_awareness(req.awareness)).strip()
         )[:32]
@@ -1146,14 +1164,21 @@ class ScriptAgent:
             strategy = "Keep the focus on the musical idea and the feeling behind it."
 
         if genre:
-            hook = f"{idea} — a {tone} point of view on {genre}."
+            hook = f"{idea} — {tone_article} {tone} point of view on {genre}."
             audience_line = (
                 f"Made for {audience} who connect with {genre}."
-                if audience else f"For listeners drawn to {genre} and a {tone} feel."
+                if audience
+                else (
+                    f"For listeners drawn to {genre} and "
+                    f"{tone_article} {tone} feel."
+                )
             )
-            body = f"{idea} puts {genre} at the center, with a {tone} direction. {audience_line} {strategy}"
+            body = (
+                f"{idea} puts {genre} at the center, with "
+                f"{tone_article} {tone} direction. {audience_line} {strategy}"
+            )
         else:
-            hook = f"{idea} — expressed with a {tone} point of view."
+            hook = f"{idea} — expressed with {tone_article} {tone} point of view."
             audience_line = (
                 f"Made for {audience}."
                 if audience else "Made for listeners who value a distinct musical point of view."

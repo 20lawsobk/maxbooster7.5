@@ -19,7 +19,7 @@ from ai_model.awareness import AwarenessUnavailable, Snapshot, bound_snapshot
 from ai_model.awareness.engine import DOMAINS, canonical
 from ai_model.agents.script_agent import ScriptAgent
 from ai_model.generation.live_serving import LiveServingModel
-from ai_model.generation.plan import active_plan
+from ai_model.generation.plan import active_plan, live_awareness_generation
 
 
 SERVER = Path(__file__).parents[1] / "server.py"
@@ -64,7 +64,8 @@ def planner_app(model, learning_loop=None, script_agent=None):
               "_generation_runtime_dependencies", "_generation_endpoint_catalog",
               "generation_readiness", "unified_awareness_context",
              "_merged_awareness_for",
-             "_merged_awareness_legacy", "_planned_generation", "MaxcoreTextRequest",
+             "_merged_awareness_legacy", "_planned_generation",
+             "_is_live_awareness_text_request", "MaxcoreTextRequest",
              "ApiGenerateTextRequest", "ApiGenerateContentRequest", "_planner_inputs",
              "_require_model_script", "_script_provenance", "maxcore_generate_text",
              "api_generate_text", "api_generate_content"}
@@ -193,6 +194,7 @@ class LiveAwarenessPlannerHTTP(unittest.IsolatedAsyncioTestCase):
 
     def assert_clean_context(self):
         self.assertIsNone(active_plan.get())
+        self.assertFalse(live_awareness_generation.get())
         with self.assertRaises(AwarenessUnavailable):
             bound_snapshot()
 

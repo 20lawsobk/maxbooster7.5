@@ -1,4 +1,5 @@
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { MaxCoreControlError } from "./maxcoreControlTransport.js";
 
 export const SOCIAL_URL_MAXCORE_ENDPOINT = "/api/platform/social/generate";
 
@@ -122,6 +123,13 @@ export function normalizeSocialUrlMaxCoreResponse(
     : [];
 
   return { hook, body, cta, caption, hashtags };
+}
+
+export function isSocialUrlSourceRejection(error: unknown): boolean {
+  return (
+    error instanceof MaxCoreControlError &&
+    (error.status === 400 || error.status === 422)
+  );
 }
 
 export async function generateSocialUrlWithMaxCore(

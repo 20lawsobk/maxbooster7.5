@@ -4727,7 +4727,12 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
     """Apply the same immutable contract to direct and HTTP handler calls."""
     import functools
     import inspect
-    from ai_model.generation.plan import GenerationPlan, active_plan, validate_output
+    from ai_model.generation.plan import (
+        GenerationPlan,
+        active_plan,
+        live_awareness_generation as live_awareness_generation_context,
+        validate_output,
+    )
 
     def decorate(handler):
         signature = inspect.signature(handler, eval_str=True)
@@ -4755,9 +4760,17 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                     == "live-awareness"
                 )
                 live_text_generation = (
-                    live_release and not _model_ready and live_awareness_text
-                    and not specification and not deterministic_planner
-                    and modality in {"text", "content"}
+                    live_release and not _model_ready
+                    and not specification
+                    and (
+                        # Preserve the established text endpoints whose
+                        # request explicitly selects real content generation.
+                        (modality == "text"
+                         and getattr(req, "mode", None) == "content")
+                        # Some native text paths (for example social copy)
+                        # have no mode field and opt in at their route.
+                        or (live_awareness_text and modality in {"text", "content"})
+                    )
                 )
                 live_media_generation = (
                     live_release and not _model_ready and dedicated_media
@@ -4807,6 +4820,9 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                 scope.close()
                 raise
             token = active_plan.set(plan)
+            live_mode_token = live_awareness_generation_context.set(
+                live_awareness_generation
+            )
             from ai_model.generation.release import candidate_errors
             previous_failures = candidate_errors.get()
             failure_token = candidate_errors.set(previous_failures if previous_failures is not None else [])
@@ -4969,11 +4985,19 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                 return result
             finally:
                 candidate_errors.reset(failure_token)
+                live_awareness_generation_context.reset(live_mode_token)
                 active_plan.reset(token)
                 scope.close()
         wrapped.__signature__ = signature
         return wrapped
     return decorate
+
+
+def _is_live_awareness_text_request() -> bool:
+    """Return the immutable serving mode selected by this request's gate."""
+    from ai_model.generation.plan import live_awareness_generation
+
+    return live_awareness_generation.get()
 
 
 @app.get("/api/generation/capabilities")
@@ -5015,20 +5039,22 @@ async def generate_content(req: ContentRequest, _key = Depends(require_scope("ge
     topic = _resolve_topic_from_url(req.topic)
     effective_awareness = _effective_awareness(platform, _merged_awareness_for(req))
 
-    live_awareness_mode = (
-        not _model_ready
-        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
-        == "live-awareness"
-    )
+    live_awareness_mode = _is_live_awareness_text_request()
     if not live_awareness_mode:
         await _wait_for_model_ready()
 
     def _build_result(_request=None):
         from ai_model.agents.script_agent import ScriptRequest, ScriptResponse
-        sr = _script_agent.run(ScriptRequest(
+        script_request = ScriptRequest(
             idea=topic, platform=platform, goal=req.goal,
             tone=req.tone, awareness=effective_awareness,
-        ))
+        )
+        script_runner = (
+            _script_agent.run_live_awareness
+            if live_awareness_mode
+            else _script_agent.run
+        )
+        sr = script_runner(script_request)
 
         _require_model_script(sr)
         from ai_model.request_intelligence import looks_garbled
@@ -5616,11 +5642,7 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
     )
 
     variants = []
-    live_awareness_mode = (
-        not _model_ready
-        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
-        == "live-awareness"
-    )
+    live_awareness_mode = _is_live_awareness_text_request()
     if not live_awareness_mode:
         await _wait_for_model_ready()
 
@@ -5631,7 +5653,7 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
 
             _vidx = i   # capture loop variable before async boundary
             async def _run_variant(vidx=_vidx):
-                s = await _in_thread(lambda: _script_agent.run(ScriptRequest(
+                script_request = ScriptRequest(
                     idea=_social_topic, platform=platform,
                     goal=req.goal, tone=personalized_tone,
                     awareness=effective_awareness,
@@ -5641,7 +5663,13 @@ async def platform_social_generate(req: PlatformSocialRequest, _key = Depends(re
                      caption_length=req.caption_length or "optimal",
                      cta_strength=req.call_to_action_strength or "medium",
                      genre=req.genre or "",
-                )))
+                )
+                script_runner = (
+                    _script_agent.run_live_awareness
+                    if live_awareness_mode
+                    else _script_agent.run
+                )
+                s = await _in_thread(lambda: script_runner(script_request))
                 _require_model_script(s)
                 distribution_request = DistributionRequest(
                     script=f"{s.hook}\n{s.body}\n{s.cta}",
@@ -6341,11 +6369,7 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
     topic = (normalized.get("semantic") or {}).get("topic") or normalized.get("payload_summary", "content")
     intent = (normalized.get("semantic") or {}).get("intent", "engagement")
     outputs = []
-    live_awareness_mode = (
-        not _model_ready
-        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
-        == "live-awareness"
-    )
+    live_awareness_mode = _is_live_awareness_text_request()
     if not _script_agent or (
         not live_awareness_mode and not (_model_ready and _distribution_agent)
     ):
@@ -6368,10 +6392,16 @@ async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_
         if not live_awareness_mode:
             from ai_model.agents.distribution_agent import DistributionRequest
         try:
-            script = await _in_thread(lambda: _script_agent.run(ScriptRequest(
+            script_request = ScriptRequest(
                 idea=topic, platform=platform, goal=intent, tone=tone,
                 awareness=effective_awareness,
-            )))
+            )
+            script_runner = (
+                _script_agent.run_live_awareness
+                if live_awareness_mode
+                else _script_agent.run
+            )
+            script = await _in_thread(lambda: script_runner(script_request))
             _require_model_script(script)
             hook_line, body_line, cta_line = script.hook, script.body, script.cta
             full_script = f"{hook_line}\n{body_line}\n{cta_line}".strip()
@@ -9211,11 +9241,7 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
     idea     = _resolve_topic_from_url(req.topic or req.prompt or (str(inputs) if inputs else intent))
     platform = normalize_platform(req.platform) if req.platform else "general"
     tone     = req.tone or "authentic"
-    live_awareness_mode = (
-        not _model_ready
-        and os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
-        == "live-awareness"
-    )
+    live_awareness_mode = _is_live_awareness_text_request()
     if not _script_agent or (not _model_ready and not live_awareness_mode):
         raise HTTPException(
             status_code=503,
@@ -9244,10 +9270,16 @@ async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_sc
         from ai_model.agents.script_agent import ScriptRequest
 
         # Keep `idea` clean: internal directives are not real-world awareness.
-        sr = _script_agent.run(ScriptRequest(
+        script_request = ScriptRequest(
             idea=idea, platform=platform, goal=intent, tone=brief.tone,
             awareness=_effective_awareness(platform, _ctx.awareness),
-        ))
+        )
+        script_runner = (
+            _script_agent.run_live_awareness
+            if live_awareness_mode
+            else _script_agent.run
+        )
+        sr = script_runner(script_request)
         _require_model_script(sr)
         model_text = "\n".join(
             part for part in (sr.hook, sr.body, sr.cta) if isinstance(part, str) and part.strip()

@@ -21,8 +21,10 @@ import {
   SOCIAL_URL_MAXCORE_ENDPOINT,
   buildSocialUrlMaxCoreRequest,
   generateSocialUrlWithMaxCore,
+  isSocialUrlSourceRejection,
   normalizeSocialUrlMaxCoreResponse,
 } from "../../server/services/socialUrlMaxCoreTransport.js";
+import { MaxCoreControlError } from "../../server/services/maxcoreControlTransport.js";
 
 describe("social URL to MaxCore transport contract", () => {
   beforeEach(() => vi.resetAllMocks());
@@ -114,6 +116,12 @@ describe("social URL to MaxCore transport contract", () => {
     ).toBeNull();
   });
 
+  it("distinguishes unsafe or unanalyzable URLs from MaxCore outages", () => {
+    expect(isSocialUrlSourceRejection(new MaxCoreControlError("rejected", 400))).toBe(true);
+    expect(isSocialUrlSourceRejection(new MaxCoreControlError("unavailable", 503))).toBe(false);
+    expect(isSocialUrlSourceRejection(new Error("transport error"))).toBe(false);
+  });
+
   it("constructs caption only from actual structured MaxCore fields", () => {
     expect(
       normalizeSocialUrlMaxCoreResponse({
@@ -181,6 +189,8 @@ describe("mounted Social Media URL UI wiring", () => {
     expect(handler).toContain("verifiedSourceContext");
     expect(handler).toContain("Untrusted source-page metadata");
     expect(handler).toContain("failedPlatforms");
+    expect(handler).toContain("isSocialUrlSourceRejection");
+    expect(handler).toContain("SOURCE_NOT_ANALYZABLE");
     expect(handler).not.toContain("firstPartySource && format !==");
     expect(handler).not.toContain("supports text drafts only");
     expect(handler).not.toContain("getUnifiedAI()");

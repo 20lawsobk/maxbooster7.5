@@ -47,7 +47,10 @@ import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { generatedImageUrl, persistGeneratedImage } from "../services/generatedImageAsset.js";
-import { generateSocialUrlWithMaxCore } from "../services/socialUrlMaxCoreTransport.js";
+import {
+  generateSocialUrlWithMaxCore,
+  isSocialUrlSourceRejection,
+} from "../services/socialUrlMaxCoreTransport.js";
 import { resolveFirstPartySocialSource } from "../services/firstPartySocialSource.js";
 import { generateSocialDirect } from "../services/maxcoreDomainAdapter.js";
 import {
@@ -3812,6 +3815,19 @@ router.post(
       }
 
       if (generatedContent?.length === 0) {
+        const sourceRejected = platformResults.some(
+          (settled) =>
+            settled.status === "rejected" &&
+            isSocialUrlSourceRejection(settled.reason),
+        );
+        if (sourceRejected) {
+          return res.status(422).json({
+            success: false,
+            code: "SOURCE_NOT_ANALYZABLE",
+            error:
+              "MaxCore could not safely retrieve analyzable content from this URL. Use a publicly accessible source URL.",
+          });
+        }
         logger.warn(
           `[generate-from-url] MaxCore returned no usable social variants for ${requestedPlatforms.length} platform(s)`,
         );

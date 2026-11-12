@@ -63,7 +63,7 @@ def _fresh_snapshot():
         "expires_at": now + 600,
         "domains": domains,
         "source_health": health,
-        "ranking": "test:v1",
+        "ranking": "digital_gpu_awareness_software:v1;stable-id-ties;seed=0",
         "secondary": {},
     }
     document["id"] = sha256(canonical(document).encode()).hexdigest()
@@ -223,13 +223,17 @@ def test_social_route_generates_from_live_awareness_without_trained_candidate(mo
     model.pin = lambda *args, **kwargs: (_ for _ in ()).throw(
         AssertionError("live-awareness text must not require a trained release pin")
     )
+    class NoCheckpointGeneration:
+        def generate(self, *_args, **_kwargs):
+            raise AssertionError("live-awareness social copy must use its pinned snapshot composer")
+
     engine = SimpleNamespace(current_snapshot=lambda: snapshot)
     monkeypatch.setattr("ai_model.awareness.engine.get_engine", lambda: engine)
     monkeypatch.setattr(server, "_model_ready", False)
     monkeypatch.setattr(server, "_model_init_error", "no certified candidate")
     monkeypatch.setattr(server, "_live_serving_model", model)
-    monkeypatch.setattr(server, "_script_agent", ScriptAgent(model))
-    monkeypatch.setattr(server, "_distribution_agent", DistributionAgent(model))
+    monkeypatch.setattr(server, "_script_agent", ScriptAgent(NoCheckpointGeneration()))
+    monkeypatch.setattr(server, "_distribution_agent", DistributionAgent(NoCheckpointGeneration()))
     monkeypatch.setattr(server, "_build_personalized_tone", lambda _user, _platform, tone: tone)
     monkeypatch.setattr(server, "_request_live_learning_check", lambda: True)
     monkeypatch.setattr(server, "_fw_ingest", lambda *args, **kwargs: None)
@@ -261,6 +265,7 @@ def test_social_route_generates_from_live_awareness_without_trained_candidate(mo
     assert variant["hook"].strip()
     assert variant["body"].strip()
     assert variant["cta"].strip()
+    assert "a authentic" not in variant["caption"].lower()
 
 
 def test_live_report_payload_conditions_real_agent_without_metadata_leak():
