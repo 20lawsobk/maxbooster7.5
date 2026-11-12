@@ -121,8 +121,14 @@ def verify_bundle(run):
         raise ValueError("Failed training run")
     report = json.loads((run / "report.json").read_text())
     manifest = json.loads((run / "corpus.manifest.json").read_text())
-    if (run.name.startswith("live-")
-            or any("live_provenance" in r for r in manifest.get("records", []))):
+    records = manifest.get("records", [])
+    internal_records = [
+        r for r in records
+        if isinstance(r, dict) and "internal_provenance" in r
+    ]
+    if (run.name.startswith(("live-", "internal-"))
+            or any("live_provenance" in r for r in records)
+            or internal_records):
         # Sidecar admission predates trainer directory creation. Only the parent
         # can commit certification after worker exit and evidence verification.
         # Missing sidecars are fail-closed, including pre-migration live runs.
@@ -139,13 +145,18 @@ def verify_bundle(run):
                     or result["status"] != "candidate_trained_unreviewed"):
                 raise ValueError("Invalid live candidate certification")
         except (OSError, ValueError, TypeError, KeyError) as exc:
-            raise ValueError("Live candidate pending or uncertified") from exc
+                raise ValueError("Candidate pending or uncertified") from exc
     fingerprint = canonical_hash({k: v for k, v in manifest.items() if k != "sha256"})
     if fingerprint != manifest.get("sha256") or fingerprint != report.get("manifest_sha256"):
         raise ValueError("Corpus manifest fingerprint mismatch")
     if (run.name.startswith("live-")
             or any("live_provenance" in record for record in manifest.get("records", []))):
         _verify_live_training_rights(manifest["records"])
+    if run.name.startswith("internal-") or internal_records:
+        from .rights_receipts import verify_training_record
+        if (not records or len(internal_records) != len(records)
+                or not all(verify_training_record(record) for record in records)):
+            raise ValueError("Internal candidate lacks valid owner/simulation rights receipts")
     checkpoint = run / "candidate.pt"
     if sha256(checkpoint) != report.get("checkpoint_sha256"):
         raise ValueError("Checkpoint fingerprint mismatch")

@@ -14,12 +14,16 @@ import stat
 from datetime import datetime, timezone
 
 from ai_model.awareness.engine import canonical
-from ai_model.training.candidate_corpus import build_manifest, LICENSES, _valid_live_awareness_record
+from ai_model.training.candidate_corpus import (
+    build_manifest, LICENSES, _valid_live_awareness_record,
+)
+from ai_model.training.rights_receipts import verify_training_record
 from ai_model.training.public_curriculum import PEAK_POLICY, peak_stream, validate_peak_record
 
 ROOT = Path(__file__).resolve().parents[2]
 from ai_model.training.storage import training_root
 JOBS = training_root(ROOT) / "live_learning_runs"
+RUN_ID_RE = re.compile(r"(?:live|internal)-[0-9a-f]{32}\Z")
 
 
 class Blocked(Exception):
@@ -86,6 +90,60 @@ def eligible_records(observation_set):
     if not records:
         raise Blocked("blocked_observations", "No recent validated source observations are available")
     return records, excluded
+
+
+def eligible_internal_bundle(bundle):
+    """Validate simulator/owner records and an isolated frozen synthetic holdout."""
+    if (not isinstance(bundle, dict) or bundle.get("schema") != 1
+            or bundle.get("source_type") != "maxcore_internal_owner_and_simulation"
+            or not isinstance(bundle.get("records"), list)
+            or not 1 <= len(bundle["records"]) <= 512
+            or not isinstance(bundle.get("holdout"), dict)):
+        raise Blocked("blocked_internal_corpus", "Internal learning bundle is malformed")
+    holdout = bundle["holdout"]
+    cases = holdout.get("cases")
+    if (holdout.get("schema") != 1 or holdout.get("frozen") is not True
+            or holdout.get("source") != "separate-synthetic-holdout-v1"
+            or type(holdout.get("cycle")) is not int
+            or not isinstance(cases, list) or not 1 <= len(cases) <= 64):
+        raise Blocked("blocked_holdout", "Independent synthetic holdout is malformed")
+    seen, records = set(), []
+    for record in bundle["records"]:
+        if (not verify_training_record(record)
+                or "live_provenance" in record
+                or record.get("provenance_type") not in {
+                    "maxcore_owner_admin_output", "maxcore_simulated_choice",
+                }):
+            raise Blocked("blocked_training_rights", "Internal record rights receipt is invalid")
+        digest = hashlib.sha256(record["text"].encode()).hexdigest()
+        if digest in seen:
+            continue
+        seen.add(digest)
+        records.append(record)
+    holdout_ids, holdout_text = set(), []
+    for case in cases:
+        if (not isinstance(case, dict)
+                or not isinstance(case.get("id"), str)
+                or case["id"] in holdout_ids
+                or not isinstance(case.get("prompt"), str)
+                or not case["prompt"].strip()
+                or not isinstance(case.get("expected"), str)
+                or not case["expected"].strip()):
+            raise Blocked("blocked_holdout", "Independent synthetic holdout case is invalid")
+        holdout_ids.add(case["id"])
+        holdout_text.extend((case["prompt"], case["expected"]))
+    identity = {
+        "schema": 1,
+        "cycle": holdout["cycle"],
+        "records": sorted(
+            record["internal_provenance"]["text_sha256"] for record in records
+        ),
+        "holdout_ids": [case["id"] for case in cases],
+    }
+    if (not isinstance(bundle.get("id"), str)
+            or hashlib.sha256(canonical(identity).encode()).hexdigest() != bundle["id"]):
+        raise Blocked("blocked_internal_corpus", "Internal training fingerprint is invalid")
+    return records, holdout_text
 
 
 
@@ -337,7 +395,7 @@ def reconcile_locked():
     them. Existing success without its final certificate is also interrupted.
     """
     for folder in JOBS.iterdir():
-        if not folder.is_dir() or not re.fullmatch(r"live-[0-9a-f]{32}", folder.name):
+        if not folder.is_dir() or not RUN_ID_RE.fullmatch(folder.name):
             continue
         marker = admission_path(folder.name)
         if (marker / "certified.json").is_file():
@@ -370,7 +428,7 @@ def list_runs():
             reconcile_locked()
         results = []
         for folder in sorted(JOBS.iterdir()):
-            if not folder.is_dir() or not re.fullmatch(r"live-[0-9a-f]{32}", folder.name):
+            if not folder.is_dir() or not RUN_ID_RE.fullmatch(folder.name):
                 continue
             result = {"run_id": folder.name, "status": "running", "promotion_performed": False}
             for name in ("reconciled.json", "result.json", "admission.json"):
@@ -389,7 +447,7 @@ def list_runs():
 
 
 def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
-            model_config=None, worker_timeout=120):
+            model_config=None, worker_timeout=120, internal_bundle=None):
     """One bounded subprocess globally; serving process never imports the trainer."""
     if type(steps) is not int or not 1 <= steps <= 64:
         raise Blocked("blocked_bounds", "steps must be an integer in 1..64", 422)
@@ -413,15 +471,26 @@ def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
             raise Blocked("blocked_bounds", "Learning retained run limit must be 100..100000", 422)
         if sum(p.is_dir() for p in JOBS.iterdir()) >= maximum_runs:
             raise Blocked("blocked_capacity", "Learning audit capacity reached; operator archival required", 507)
-        if peak_content:
+        holdout_document = None
+        if internal_bundle is not None:
+            observation_set = internal_bundle
+            records, holdout_texts = eligible_internal_bundle(observation_set)
+            excluded = 0
+            holdout_document = observation_set["holdout"]
+            if peak_content:
+                raise Blocked("blocked_policy", "Internal and public curricula cannot be conflated")
+        elif peak_content:
             if not callable(getattr(engine, "peak_training_observations", None)):
                 raise Blocked("waiting_for_public_peak_content", "Public peak-content scanner unavailable", 503)
             observation_set = engine.peak_training_observations()
             if observation_set.get("policy") != PEAK_POLICY:
                 raise Blocked("waiting_for_public_peak_content", "Public peak-content policy required", 503)
+            records, excluded = eligible_records(observation_set)
+            holdout_texts = []
         else:
             observation_set = engine.training_observations()
-        records, excluded = eligible_records(observation_set)
+            records, excluded = eligible_records(observation_set)
+            holdout_texts = []
         # Every row from this collector is source-authored awareness text,
         # regardless of domain, metric, or caller-selected curriculum.
         has_live_text = any(
@@ -435,19 +504,19 @@ def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
             require_live_training_eligibility(records)
         try:
             manifest = build_manifest(
-                records, [], smoke_only=False, allow_live_without_holdout=False,
+                records, holdout_texts, smoke_only=False, allow_live_without_holdout=False,
             )
             if any(r["reason"] != "duplicate" for r in manifest["rejected"]):
-                raise ValueError("Live corpus failed privacy or sensitive-data screening")
+                raise ValueError("Training corpus failed privacy or sensitive-data screening")
         except ValueError as exc:
-            raise Blocked("blocked_corpus", "Validated live corpus failed data screening") from exc
-        run_id = "live-" + uuid.uuid4().hex
+            raise Blocked("blocked_corpus", "Validated corpus failed data screening") from exc
+        run_id = ("internal-" if internal_bundle is not None else "live-") + uuid.uuid4().hex
         folder = JOBS / run_id
         folder.mkdir(mode=0o700)
         sync_directory(JOBS)
         # Separate sidecar exists durably BEFORE trainer creates its own directory.
-        # Registry requires certification for every live-* ID even if this marker
-        # is lost, so there is no candidate-directory creation race.
+        # Internal candidates remain review-only; public live candidates retain
+        # their existing stricter registry certification path.
         marker = admission_path(run_id)
         marker.mkdir(parents=True, mode=0o700)
         if marker.resolve() != marker:
@@ -461,21 +530,39 @@ def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
             corpus_document["learning_stream"] = stream
         corpus = canonical(corpus_document).encode()
         corpus_hash = hashlib.sha256(corpus).hexdigest()
+        holdout_hash = None
+        holdout_bytes = None
+        if holdout_document is not None:
+            holdout_bytes = canonical(holdout_document).encode()
+            holdout_hash = hashlib.sha256(holdout_bytes).hexdigest()
         observation_manifest = {
             "schema": 1, "id": observation_set["id"],
             "collected_at": observation_set["collected_at"],
             "sources": observation_set["sources"], "domains": observation_set["domains"],
-            "records": [{"id": row["id"], "source": row["source"],
-                         "domain": row["domain"], "observed_at": row["observed_at"]}
-                        for row in observation_set["records"]],
+            "records": (
+                [{"id": row["internal_provenance"]["text_sha256"],
+                  "source": row["internal_provenance"]["grant"],
+                  "domain": "music", "observed_at": observation_set["collected_at"]}
+                 for row in records]
+                if internal_bundle is not None else
+                [{"id": row["id"], "source": row["source"],
+                  "domain": row["domain"], "observed_at": row["observed_at"]}
+                 for row in observation_set["records"]]
+            ),
         }
-        for name, raw in (("corpus.json", corpus),
-                          ("observation_set.json", canonical(observation_manifest).encode())):
+        files = [("corpus.json", corpus),
+                 ("observation_set.json", canonical(observation_manifest).encode())]
+        if holdout_bytes is not None:
+            files.append(("holdout.json", holdout_bytes))
+        for name, raw in files:
             write_new(folder / name, raw)
         result = {"run_id": run_id, "observation_set_id": observation_set["id"],
                   "observed_sources": observation_set["sources"],
                   "observation_count": len(observation_set["records"]),
-                  "holdout_sha256": None,
+                  "holdout_sha256": holdout_hash,
+                  "training_source": observation_set.get(
+                      "source_type", "validated_public_awareness"
+                  ),
                   "corpus_sha256": corpus_hash, "eligible_records": len(manifest["records"]),
                   "excluded_unlicensed_records": excluded, "status": "running",
                   "quality_claim": "none", "promotion_performed": False}
@@ -485,6 +572,9 @@ def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
                    "--corpus", str(folder / "corpus.json"), "--corpus-sha256", corpus_hash,
                    "--run-id", run_id, "--steps", str(steps),
                    "--context-tokens", str(context_tokens), "--manual-backward"]
+        if holdout_hash is not None:
+            command.extend(["--holdout", str(folder / "holdout.json"),
+                            "--holdout-sha256", holdout_hash])
         command.extend(["--worker-timeout", str(worker_timeout)])
         try:
             # Output stays off the HTTP surface. Trainer has no network/source fetch
@@ -498,7 +588,7 @@ def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
             elif completed.returncode != 0:
                 result["status"] = "failed_training"
             else:
-                result.update(validate_report(run_id, corpus_hash, None))
+                result.update(validate_report(run_id, corpus_hash, holdout_hash))
                 result["status"] = "candidate_trained_unreviewed"
         except subprocess.TimeoutExpired:
             result["status"] = "blocked_timeout"
@@ -539,11 +629,24 @@ def create_router(authorize, engine_factory, *, peak_content=True):
 
     @router.get("/api/training/candidates/live")
     def listing(_admin=Depends(authorize)):
-        return {"runs": list_runs()}
+        return {"runs": [run for run in list_runs()
+                         if run["run_id"].startswith("live-")]}
+
+    @router.get("/api/training/candidates/internal")
+    def internal_listing(_admin=Depends(authorize)):
+        return {"runs": [run for run in list_runs()
+                         if run["run_id"].startswith("internal-")]}
 
     @router.get("/api/training/candidates/live/{run_id}")
     def status(run_id: str, _admin=Depends(authorize)):
         if not re.fullmatch(r"live-[0-9a-f]{32}", run_id):
+            return JSONResponse({"status": "not_found"}, status_code=404)
+        return next((r for r in list_runs() if r["run_id"] == run_id),
+                    JSONResponse({"status": "not_found"}, status_code=404))
+
+    @router.get("/api/training/candidates/internal/{run_id}")
+    def internal_status(run_id: str, _admin=Depends(authorize)):
+        if not re.fullmatch(r"internal-[0-9a-f]{32}", run_id):
             return JSONResponse({"status": "not_found"}, status_code=404)
         return next((r for r in list_runs() if r["run_id"] == run_id),
                     JSONResponse({"status": "not_found"}, status_code=404))

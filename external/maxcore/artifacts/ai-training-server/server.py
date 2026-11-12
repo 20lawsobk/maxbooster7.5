@@ -816,9 +816,15 @@ def _init_live_awareness_model():
         "expansion": int(os.environ.get("MAXCORE_PUBLIC_MODEL_EXPANSION", "4")),
     }
     _model_config = {"release": "live-awareness", "automatic_learning": True,
-                     "learning_policy": "public-peak-shortform-v1",
-                     "training_architecture": "public-content-transformer-v2",
+                     "learning_policy": "signed-owner-and-dual-track-simulation-v1",
+                     "training_architecture": "candidate-transformer-review-required",
                      "training_model_config": public_model_config}
+
+    def internal_learning_source():
+        from ai_model.training.internal_training_sources import (
+            collect_internal_training_bundle,
+        )
+        return collect_internal_training_bundle()
 
     def changed(ready, status):
         global _model_ready, _model_init_error, _serving_release_status, _tokenizer
@@ -837,6 +843,7 @@ def _init_live_awareness_model():
         steps=int(os.environ.get("MAXCORE_LIVE_LEARNING_STEPS", "4")),
         context_tokens=int(os.environ.get("MAXCORE_LIVE_CONTEXT_TOKENS", "2048")),
         peak_content=True,
+        internal_source=internal_learning_source,
         model_config=public_model_config,
         bootstrap_steps=int(os.environ.get("MAXCORE_BOOTSTRAP_STEPS", "8")),
         bootstrap_cooldown=int(os.environ.get("MAXCORE_BOOTSTRAP_COOLDOWN_SECONDS", "300")),

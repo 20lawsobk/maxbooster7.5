@@ -81,6 +81,7 @@ class LiveLearningLoop:
     def __init__(self, engine_factory, model, state_dir, *, notify=None,
                  interval=900, poll=30, steps=4, context_tokens=1024,
                  trainer=None, loader=None, clock=time.time, peak_content=True,
+                 internal_source=None,
                  model_config=None, bootstrap_steps=16, bootstrap_cooldown=300,
                  bootstrap_window=3600, bootstrap_max_runs=12, worker_timeout=120):
         if not 60 <= interval <= 86400 or not 1 <= poll <= 300:
@@ -102,6 +103,7 @@ class LiveLearningLoop:
         self.bootstrap_window, self.bootstrap_max_runs = bootstrap_window, bootstrap_max_runs
         self.worker_timeout = worker_timeout
         self.engine_factory, self.model = engine_factory, model
+        self.internal_source = internal_source
         self.directory = Path(state_dir)
         self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         if self.directory.is_symlink() or self.directory.resolve() != self.directory:
@@ -135,7 +137,11 @@ class LiveLearningLoop:
                 "interval_seconds": self.interval,
                 "reload_seconds": self.poll, "steps": self.steps,
                 "context_tokens": self.context_tokens, "review_required": True,
-                "learning_policy": "public-peak-shortform-v1" if self.peak_content else "legacy-context-v1",
+                 "learning_policy": (
+                     "signed-owner-and-dual-track-simulation-v1"
+                     if self.internal_source else
+                     ("public-peak-shortform-v1" if self.peak_content else "legacy-context-v1")
+                 ),
                 "model_config": self.model_config,
                 "training_admission": {
                     "policy": "source-specific-rights-v1",
@@ -277,6 +283,21 @@ class LiveLearningLoop:
                     return self.status()
                 state = self._read_state()
                 now = self.clock()
+                internal_bundle = None
+                if self.internal_source is not None:
+                    try:
+                        internal_bundle = self.internal_source()
+                        if isinstance(internal_bundle, dict):
+                            self._status = {
+                                **self._status,
+                                "internal_source": internal_bundle.get("source_status", {}),
+                                "internal_source_error": None,
+                            }
+                    except Exception as exc:
+                        self._status = {
+                            **self._status,
+                            "internal_source_error": type(exc).__name__,
+                        }
                 if state.get("last_result"):
                     restored = state["last_result"]
                     if restored == "running":
@@ -286,9 +307,15 @@ class LiveLearningLoop:
                                     "next_training_at": state.get("next_training_at")}
                 if now < state.get("next_training_at", 0):
                     return self.status()
-                from ai_model.training.live_learning import execute, eligible_records, Blocked
+                from ai_model.training.live_learning import (
+                    execute, eligible_records, eligible_internal_bundle, Blocked,
+                )
                 engine = self.engine_factory()
-                if self.peak_content:
+                internal_training = internal_bundle is not None
+                if internal_training:
+                    observations = internal_bundle
+                    records, _holdout = eligible_internal_bundle(observations)
+                elif self.peak_content:
                     from ai_model.training.public_curriculum import PEAK_POLICY
                     try:
                         observations = engine.peak_training_observations()
@@ -298,14 +325,21 @@ class LiveLearningLoop:
                         raise Blocked("waiting_for_public_peak_content", "Public peak-content policy required", 503)
                 else:
                     observations = engine.training_observations()
-                eligible_records(observations)
+                    records, _excluded = eligible_records(observations)
+                if not internal_training and self.peak_content:
+                    eligible_records(observations)
                 # Refresh timestamps alone must not repeatedly retrain the same
                 # content. Store only this fingerprint, never source text.
-                content = [{k: row[k] for k in ("source", "domain", "text", "citation", "value", "metric")}
-                           for row in observations["records"]]
-                content.sort(key=lambda row: json.dumps(row, sort_keys=True))
+                if internal_training:
+                    content = sorted(
+                        row["internal_provenance"]["text_sha256"] for row in records
+                    )
+                else:
+                    content = [{k: row[k] for k in ("source", "domain", "text", "citation", "value", "metric")}
+                               for row in observations["records"]]
+                    content.sort(key=lambda row: json.dumps(row, sort_keys=True))
                 identity = hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
-                bootstrap = self.peak_content and not self.model.available
+                bootstrap = not self.model.available
                 if identity == state.get("trained_content_sha256") and not bootstrap:
                     self._status = {**self._status, "training": "unchanged_observations"}
                     return self.status()
@@ -330,8 +364,12 @@ class LiveLearningLoop:
                 if self._stop.is_set():
                     return self.status()
                 self._status = {**self._status, "training": "running", "training_error": None}
-                options = {"context_tokens": self.context_tokens, "peak_content": self.peak_content}
-                if self.peak_content:
+                options = {"context_tokens": self.context_tokens,
+                           "peak_content": self.peak_content and not internal_training}
+                if internal_training:
+                    options.update(internal_bundle=observations,
+                                   worker_timeout=self.worker_timeout)
+                elif self.peak_content:
                     options.update(model_config=self.model_config, worker_timeout=self.worker_timeout)
                 try:
                     result = (self.trainer or execute)(

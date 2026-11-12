@@ -21,6 +21,7 @@ Storage pattern (mirrors audio dataset convention):
 from __future__ import annotations
 
 import logging
+import hashlib
 import os
 import threading
 import time
@@ -138,6 +139,12 @@ class FlywheelIngestor:
             "meta": meta,
             "payload": _sanitise(payload),
         }
+        sample["training_records"] = _owner_training_records(
+            content_type, sample["payload"], meta, key_id
+        )
+        sample["training_rights_excluded"] = (
+            key_id == "env-admin" and not sample["training_records"]
+        )
 
         list_key = f"mb:dataset:flywheel:{content_type}"
         meta_key = f"mb:dataset:flywheel:{content_type}:meta"
@@ -252,6 +259,69 @@ def _sanitise(payload: dict[str, Any]) -> dict[str, Any]:
             v = v[:20_000]
         out[k] = v
     return out
+
+
+def _owner_training_records(
+    content_type: str,
+    payload: dict[str, Any],
+    meta: dict[str, Any],
+    key_id: str,
+) -> list[dict[str, Any]]:
+    """Attest only clean owner-admin outputs, never mixed awareness material."""
+    if key_id != "env-admin":
+        return []
+    if not isinstance(meta, dict) or not isinstance(payload, dict):
+        return []
+    if meta.get("awareness") or payload.get("source") == "live_awareness":
+        return []
+    if any(meta.get(key) for key in ("source_url", "citation", "external_source")):
+        return []
+
+    texts: list[str] = []
+    if content_type == "scripts":
+        texts.extend(payload.get(key) for key in ("hook", "body", "cta"))
+    elif content_type == "social":
+        for variant in (payload.get("variants") or [])[:8]:
+            if isinstance(variant, dict):
+                texts.append(variant.get("caption"))
+    elif content_type == "daw":
+        texts.extend(payload.get(key) for key in ("hook", "lyrics"))
+    elif content_type == "video":
+        for scene in (payload.get("scenes") or [])[:12]:
+            if isinstance(scene, dict):
+                texts.append(scene.get("narration"))
+    elif content_type == "distribution":
+        texts.extend(payload.get(key) for key in ("pitch", "release_plan"))
+
+    try:
+        from ai_model.training.rights_receipts import (
+            OWNER_ADMIN_GRANT, make_training_record,
+        )
+    except Exception:
+        return []
+    records, seen = [], set()
+    for value in texts:
+        if not isinstance(value, str):
+            continue
+        text = " ".join(value.split())
+        if len(text) < 16 or len(text) > 4000:
+            continue
+        text_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        if text_hash in seen:
+            continue
+        seen.add(text_hash)
+        try:
+            records.append(make_training_record(
+                text,
+                source_id=f"owner-admin:{content_type}:{text_hash}",
+                provenance_type="maxcore_owner_admin_output",
+                grant=OWNER_ADMIN_GRANT,
+                key_id=key_id,
+                author="MaxCore owner-admin",
+            ))
+        except (ValueError, OSError):
+            return []
+    return records
 
 
 # ── Module-level singleton ─────────────────────────────────────────────────────
