@@ -1,5 +1,5 @@
 [[ports]]
-localPort = 53
+localPort = 1053
 
 [[ports]]
 localPort = 5000

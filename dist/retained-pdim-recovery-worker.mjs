@@ -5338,7 +5338,7 @@ var init_pdimClient = __esm({
     PdimRedisClient = class _PdimRedisClient extends EventEmitter2 {
       constructor(execUrl, bearerToken) {
         super();
-        this.status = "ready";
+        this.status = "connecting";
         this.disconnected = false;
         this.lifecycleController = new AbortController();
         this.disconnectedError = Object.assign(
@@ -5420,12 +5420,6 @@ var init_pdimClient = __esm({
         if (!this.execUrl) {
           throw new Error("PDIM_HTTP_EXEC_URL is required for PdimRedisClient");
         }
-        setImmediate(() => {
-          if (this.disconnected) return;
-          this.emit("connect");
-          this.emit("ready");
-          logger.info("\u2705 [PDIM] Connected via HTTP exec endpoint");
-        });
       }
       assertConnected() {
         if (this.disconnected) throw this.disconnectedError;
@@ -5691,7 +5685,8 @@ var init_pdimClient = __esm({
               // circuit breaker rather than silently following into an HTML page.
               redirect: "manual"
             });
-            const res = cmd.toUpperCase() === "HSET" ? await retryTransientStorageOperation(request, { delaysMs: [100] }) : await request();
+            const normalizedCommand = cmd.toUpperCase();
+            const res = normalizedCommand === "GET" || normalizedCommand === "HSET" ? await retryTransientStorageOperation(request, { delaysMs: [100] }) : await request();
             if (!res.ok) {
               const text3 = await res.text().catch(() => "");
               if (res.status === 429) {
@@ -5946,8 +5941,7 @@ var init_pdimClient = __esm({
       // Required by BullMQ's isRedisInstance() check: ['connect', 'disconnect', 'duplicate']
       async connect() {
         this.assertConnected();
-        this.emit("connect");
-        this.emit("ready");
+        await this.ping();
       }
       async quit() {
         await this.disconnect();
@@ -6556,10 +6550,23 @@ var init_pdimClient = __esm({
       }
       // ── Server commands ───────────────────────────────────────────────────────
       async ping() {
+        this.assertConnected();
         try {
-          return await this.exec(["PING"]);
-        } catch {
-          return "PONG";
+          const result = await this.exec(["PING"]);
+          this.assertConnected();
+          if (result !== "PONG") {
+            throw new Error("[PDIM] Health probe returned an invalid PING response");
+          }
+          if (this.status !== "ready") {
+            this.status = "ready";
+            this.emit("connect");
+            this.emit("ready");
+            logger.info("\u2705 [PDIM] Connected after a successful HTTP PING");
+          }
+          return result;
+        } catch (error) {
+          if (!this.disconnected) this.status = "reconnecting";
+          throw error;
         }
       }
       async info(_section) {
@@ -17913,6 +17920,10 @@ var init_env = __esm({
       SESSION_SECRET: z2.string().min(32),
       // ── Stripe ────────────────────────────────────────────────────────────────
       STRIPE_SECRET_KEY: z2.string().min(1).optional(),
+      STRIPE_TEST_SECRET: z2.string().min(1).optional(),
+      STRIPE_TEST_CLIENT: z2.string().min(1).optional(),
+      STRIPE_PUBLISHABLE_KEY: z2.string().min(1).optional(),
+      VITE_STRIPE_PUBLIC_KEY: z2.string().min(1).optional(),
       STRIPE_WEBHOOK_SECRET: z2.string().startsWith("whsec_").optional(),
       STRIPE_PRICE_ID_PRO_MONTHLY: z2.string().optional(),
       STRIPE_PRICE_ID_PRO_ANNUAL: z2.string().optional(),

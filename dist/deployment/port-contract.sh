@@ -6,7 +6,14 @@
 set -euo pipefail
 
 export PORT="${PORT:-5000}"
-export DNS_AUTHORITY_PORT="${DNS_AUTHORITY_PORT:-53}"
+if [[ "${MAXBOOSTER_DEV_PORTS:-0}" == "1" ]]; then
+  # Replit workspaces are unprivileged; keep the private DNS authority
+  # listener testable without CAP_NET_BIND_SERVICE. Production can explicitly
+  # retain port 53 on hosts that support privileged ports.
+  export DNS_AUTHORITY_PORT="${DNS_AUTHORITY_PORT:-1053}"
+else
+  export DNS_AUTHORITY_PORT="${DNS_AUTHORITY_PORT:-53}"
+fi
 export DNS_NODE_LOCAL_PORT="${DNS_NODE_LOCAL_PORT:-5353}"
 export DNS_API_PORT="${DNS_API_PORT:-8080}"
 export LOCAL_PDIM_PORT="${LOCAL_PDIM_PORT:-5556}"

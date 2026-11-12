@@ -8,8 +8,10 @@ describe("bounded retry for transient storage transport failures", () => {
   it("recognizes wrapped connection resets but not data or authorization failures", () => {
     const reset = Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" });
     const wrapped = new Error("PDIM request failed", { cause: reset });
+    const timeout = new Error("operation timed out", { cause: new DOMException("Timed out", "TimeoutError") });
 
     expect(isTransientStorageTransportError(wrapped)).toBe(true);
+    expect(isTransientStorageTransportError(timeout)).toBe(true);
     expect(isTransientStorageTransportError(new Error("invalid pocket metadata"))).toBe(false);
     expect(isTransientStorageTransportError(
       Object.assign(new Error("unauthorized"), { code: "EACCES" }),

@@ -1179,6 +1179,7 @@ class Engine:
                 "records": selected}
 
     def _loop(self):
+        retry_delay = 5
         try:
             while not self._stop.is_set():
                 try:
@@ -1193,12 +1194,21 @@ class Engine:
                         self._release_ownership()
                         if not self._acquire_ownership():
                             self._phase = "waiting_for_ingest_lease"
+                            retry_delay = 5
                             self._stop.wait(5)
                             continue  # Followers load canonical snapshots, never ingest.
                     self.refresh()
                     self._last_error = None
+                    retry_delay = 5
                 except Exception as exc:
                     self._last_error = _safe_failure_code(exc)
+                    if not self._phase.startswith("failed:"):
+                        self._phase = f"failed:{self._phase}"
+                    self._release_ownership()
+                    if self._stop.wait(retry_delay):
+                        break
+                    retry_delay = min(retry_delay * 2, 60)
+                    continue
                 for _ in range(60):
                     if self._stop.wait(5) or self._lease_lost.is_set():
                         break

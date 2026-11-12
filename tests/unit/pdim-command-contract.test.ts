@@ -44,6 +44,50 @@ describe("PDIM command argument contract (PdimRedisClient)", () => {
     expect(body).toEqual({ cmd: "GET", args: ["some-key"] });
   });
 
+  it("reports ready only after a real PING succeeds", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ result: "PONG" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+    const events: string[] = [];
+    client.on("connect", () => events.push("connect"));
+    client.on("ready", () => events.push("ready"));
+
+    expect(client.status).toBe("connecting");
+    await expect(client.connect()).resolves.toBeUndefined();
+    expect(client.status).toBe("ready");
+    expect(events).toEqual(["connect", "ready"]);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as [
+      string | URL,
+      RequestInit,
+    ];
+    expect(String(requestUrl)).toBe(EXEC_URL);
+    expect(JSON.parse(String(requestInit.body))).toEqual({
+      cmd: "PING",
+      args: [],
+    });
+  });
+
+  it("propagates an unavailable PING instead of reporting a false PONG", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: "service temporarily unavailable" }), {
+        status: 503,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const client = new PdimRedisClient(EXEC_URL, TOKEN);
+    const events: string[] = [];
+    client.on("connect", () => events.push("connect"));
+    client.on("ready", () => events.push("ready"));
+
+    await expect(client.ping()).rejects.toThrow();
+    expect(client.status).toBe("reconnecting");
+    expect(events).toEqual([]);
+  });
+
   it("retries a transport reset once for idempotent HSET only", async () => {
     fetchMock
       .mockRejectedValueOnce(Object.assign(new Error("fetch failed"), {

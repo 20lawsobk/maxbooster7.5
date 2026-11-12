@@ -143,6 +143,38 @@ class AwarenessTests(unittest.TestCase):
         self.assertNotIn("profile_sourcing", result)
         self.assertEqual(result["snapshot_id"], self.snapshot.id)
 
+    def test_worker_reports_and_retries_transient_lease_failures_with_bounded_backoff(self):
+        class FlakyStore(MemoryStore):
+            def __init__(self):
+                super().__init__()
+                self.acquire_attempts = 0
+
+            def acquire(self, _owner):
+                self.acquire_attempts += 1
+                if self.acquire_attempts < 4:
+                    raise RuntimeError("storage transport unavailable")
+                return True
+
+        store = FlakyStore()
+        engine = Engine(sources={}, store=store)
+        engine.refresh = lambda: setattr(engine, "_phase", "idle")
+        waits = []
+
+        def controlled_wait(seconds):
+            waits.append(seconds)
+            if len(waits) == 4:
+                engine._stop.set()
+                return True
+            return False
+
+        engine._stop.wait = controlled_wait
+        engine._loop()
+
+        self.assertEqual(store.acquire_attempts, 4)
+        self.assertEqual(waits, [5, 10, 20, 5])
+        self.assertEqual(engine._phase, "idle")
+        self.assertIsNone(engine._last_error)
+
     def test_public_source_failure_classification_is_actionable_and_redacted(self):
         from ai_model.native_analysis.safe_http import (
             ResponseTooLarge, SafeHTTPError, UnsupportedContentType,

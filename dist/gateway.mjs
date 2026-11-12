@@ -18,6 +18,10 @@ var envSchema = z.object({
   SESSION_SECRET: z.string().min(32),
   // ── Stripe ────────────────────────────────────────────────────────────────
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_TEST_SECRET: z.string().min(1).optional(),
+  STRIPE_TEST_CLIENT: z.string().min(1).optional(),
+  STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  VITE_STRIPE_PUBLIC_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
   STRIPE_PRICE_ID_PRO_MONTHLY: z.string().optional(),
   STRIPE_PRICE_ID_PRO_ANNUAL: z.string().optional(),
@@ -439,6 +443,32 @@ var config = {
   }
 };
 
+// shared/stripeCredentials.ts
+function configured(value) {
+  return typeof value === "string" && value.length > 0 && value === value.trim() && !/[\r\n]/.test(value);
+}
+function selectStripeSecretKey(bindings, production) {
+  if (production) {
+    return configured(bindings.STRIPE_SECRET_KEY) ? bindings.STRIPE_SECRET_KEY : void 0;
+  }
+  if (configured(bindings.STRIPE_TEST_SECRET)) return bindings.STRIPE_TEST_SECRET;
+  if (configured(bindings.TESTING_STRIPE_SECRET_KEY)) return bindings.TESTING_STRIPE_SECRET_KEY;
+  if (bindings.NODE_ENV === "test" && configured(bindings.STRIPE_SECRET_KEY)) {
+    return bindings.STRIPE_SECRET_KEY;
+  }
+  return void 0;
+}
+function selectStripePublishableKey(bindings, production) {
+  if (production) {
+    if (configured(bindings.STRIPE_PUBLISHABLE_KEY)) return bindings.STRIPE_PUBLISHABLE_KEY;
+    return configured(bindings.VITE_STRIPE_PUBLIC_KEY) ? bindings.VITE_STRIPE_PUBLIC_KEY : void 0;
+  }
+  return configured(bindings.STRIPE_TEST_CLIENT) ? bindings.STRIPE_TEST_CLIENT : void 0;
+}
+
+// server/lib/envHelpers.ts
+var isProductionEnv = () => process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
+
 // server/config/index.ts
 import { createHmac, randomBytes } from "node:crypto";
 var p = process.env;
@@ -506,9 +536,9 @@ var config2 = {
   baseDomain: p.BASE_DOMAIN || "",
   corsOrigin: p.CORS_ORIGIN || "",
   // Stripe
-  stripeSecretKey: p.STRIPE_SECRET_KEY || "",
+  stripeSecretKey: selectStripeSecretKey(p, isProductionEnv()) || "",
   stripeWebhookSecret: p.STRIPE_WEBHOOK_SECRET || "",
-  stripePublishableKey: p.STRIPE_PUBLISHABLE_KEY || p.VITE_STRIPE_PUBLIC_KEY || "",
+  stripePublishableKey: selectStripePublishableKey(p, isProductionEnv()) || "",
   // Email
   sendgridApiKey: p.SENDGRID_API_KEY || "",
   sendgridFrom: p.SENDGRID_FROM_EMAIL || "",

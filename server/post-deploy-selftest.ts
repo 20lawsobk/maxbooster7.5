@@ -387,13 +387,9 @@ class PostDeploySelfTest {
 
   // Schedule periodic self-tests (every 30 minutes)
   startPeriodicTests(intervalMs = 30 * 60 * 1000): NodeJS.Timeout {
-    // Run initial test after 60 seconds
-    setTimeout(() => {
-      this.runAllTests().catch((err) => {
-        logger.warn({ err: err }, "Self-test error:");
-      });
-    }, 60000);
-
+    // server/index.ts runs the initial self-test once immediately after routes
+    // are installed. Do not repeat it 60 seconds later while cold-start
+    // migrations and storage warmup may still be contending for resources.
     // Schedule periodic tests
     return setInterval(() => {
       this.runAllTests().catch((err) => {

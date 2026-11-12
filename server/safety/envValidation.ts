@@ -723,33 +723,9 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     description: "GitHub repo (owner/repo format)",
   },
 
-  // ── Distribution / LabelGrid ──────────────────────────────────────────────
-  {
-    name: "LABELGRID_API_URL",
-    required: false,
-    category: "distribution",
-    description: "LabelGrid API base URL",
-    validator: (v) => v?.startsWith("http"),
-  },
-  {
-    name: "LABELGRID_API_TOKEN",
-    required: false,
-    category: "distribution",
-    description: "LabelGrid API token scoped to the dev workspace URL",
-  },
-  {
-    name: "LABELGRID_API_TOKEN1",
-    required: false,
-    category: "distribution",
-    description: "LabelGrid API token scoped to the production URL",
-  },
-  {
-    name: "LABELGRID_WEBHOOK_URL",
-    required: false,
-    category: "distribution",
-    description: "LabelGrid webhook callback URL",
-    validator: (v) => v?.startsWith("http"),
-  },
+  // Too Lost is the active distribution provider. LabelGrid identifiers and
+  // readers remain for historical catalog migration, but its credentials are
+  // not a startup dependency and must not be reported as missing live config.
   {
     name: "TOOLOST_CLIENT_ID",
     required: false,

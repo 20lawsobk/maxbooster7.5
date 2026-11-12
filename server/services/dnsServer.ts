@@ -547,7 +547,7 @@ export async function startDNSServer(): Promise<void> {
   const portAvailable = await checkPortAvailable(DNS_PORT);
   if (!portAvailable) {
     logger.info(
-      `[DNS] Port ${DNS_PORT} unavailable (EACCES or already in use) — DNS server not started. In dev: set DNS_PORT=5353.`,
+      `[DNS] Port ${DNS_PORT} unavailable (EACCES or already in use) — DNS server not started. In development, set DNS_AUTHORITY_PORT to an available unprivileged port.`,
     );
     return;
   }

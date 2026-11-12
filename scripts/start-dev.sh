@@ -2,6 +2,9 @@
 set -euo pipefail
 
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${_SCRIPT_DIR}/process-ownership.sh"
+dev_acquire_instance_lock "$(cd "${_SCRIPT_DIR}/.." && pwd)"
+export MAXBOOSTER_DEV_PORTS=1
 source "${_SCRIPT_DIR}/port-contract.sh"
 source "${_SCRIPT_DIR}/redis-supervisor.sh"
 
@@ -17,12 +20,7 @@ _APP_PID=""
 _DIFFUSION_PID=""
 _AI_SIDECAR_PID=""
 _stop_owned() {
-  local pid="$1"
-  [ -n "$pid" ] || return 0
-  if kill -0 "$pid" 2>/dev/null; then
-    kill -TERM "$pid" 2>/dev/null || true
-    wait "$pid" 2>/dev/null || true
-  fi
+  dev_stop_owned_tree "$1"
 }
 cleanup() {
   _stop_owned "$_APP_PID"

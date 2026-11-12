@@ -1,14 +1,16 @@
 import { type Express } from "express";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
+import { createClientViteConfig } from "../vite.config";
 import fs from "fs";
 import path from "path";
 
 const viteLogger = createLogger();
 
 export async function createViteRuntime(server: Server) {
+  const clientViteConfig = createClientViteConfig("development");
   const serverOptions = {
+    ...clientViteConfig.server,
     middlewareMode: true,
     hmr: {
       server,
@@ -18,8 +20,8 @@ export async function createViteRuntime(server: Server) {
     allowedHosts: true as const,
   };
 
-  const vite = await createViteServer({
-    ...viteConfig,
+  const inlineConfig = {
+    ...clientViteConfig,
     configFile: false,
     customLogger: {
       ...viteLogger,
@@ -29,7 +31,8 @@ export async function createViteRuntime(server: Server) {
     },
     server: serverOptions,
     appType: "custom",
-  });
+  } as Parameters<typeof createViteServer>[0];
+  const vite = await createViteServer(inlineConfig);
 
   return {
     middleware: vite.middlewares,

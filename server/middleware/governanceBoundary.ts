@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import path from "node:path";
 import { enforceMaintenance } from "../services/governancePolicyService.js";
 import { enforceAssurance } from "./authAssurance.js";
+import { hasBearerSecret } from "../lib/internalServiceAuth.js";
 import {
   ensureDnsSyncSecret,
   hasValidDnsSyncSecret,
@@ -49,6 +50,19 @@ export const governanceBoundary: RequestHandler = async (req, res, next) => {
   if (isDnsZoneSyncRequest(method, path) && ensureDnsSyncSecret()) {
     if (!hasValidDnsSyncSecret(req.get("x-dns-sync-secret"))) {
       return res.status(401).json({ error: "Authenticated DNS zone sync required" });
+    }
+    return next();
+  }
+  // The diffusion gateway uses a dedicated service credential for this exact
+  // callback. Authenticate it before the private-launch admin-only gate; the
+  // route repeats this check before triggering the privileged weight sync.
+  if (method === "POST" && path === "/api/training/internal/session-complete") {
+    const secret = process.env.BOOSTERSTATE_SECRET;
+    if (!secret) {
+      return res.status(503).json({ error: "Internal training sync authentication is not configured" });
+    }
+    if (!hasBearerSecret(req.get("authorization"), secret)) {
+      return res.status(401).json({ error: "Authenticated internal training sync required" });
     }
     return next();
   }

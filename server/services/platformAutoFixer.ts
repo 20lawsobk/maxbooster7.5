@@ -150,6 +150,17 @@ interface TrendSnapshot {
   degradedCount: number;
 }
 
+export function summarizeActiveResourceTypes(resourceTypes: readonly string[]): {
+  count: number;
+  countsByType: Record<string, number>;
+} {
+  const countsByType: Record<string, number> = {};
+  for (const type of resourceTypes) {
+    countsByType[type] = (countsByType[type] ?? 0) + 1;
+  }
+  return { count: resourceTypes.length, countsByType };
+}
+
 export class PlatformAutoFixer extends EventEmitter {
   private probeResults = new Map<SubsystemName, ProbeResult>();
   private patches = new Map<string, ActivePatch>();
@@ -1012,23 +1023,32 @@ export class PlatformAutoFixer extends EventEmitter {
         /* non-Linux or /proc unavailable */
       }
 
-      // 3. Check EventEmitter listener leak (too many listeners = probable leak)
-      // Threshold is set high because this app runs many autonomous systems, BullMQ workers,
-      // DB keep-alive intervals, autopilot schedulers, and realtime servers that each hold handles.
-      // A baseline of 1200 handles is normal at runtime. Alarm at 3000 (genuine leak territory).
-      const listenerCount =
-        (
-          process as unknown as {
-            _getActiveHandles?: () => unknown[];
-          }
-        )._getActiveHandles?.().length ?? 0;
-      details.activeHandles = listenerCount;
-      if (listenerCount > 3000) {
-        status = status === "healthy" ? "degraded" : status;
-        message =
-          message === "OK"
-            ? `High active handle count: ${listenerCount}`
-            : message;
+      // 3. Use Node's supported resource diagnostic instead of the private
+      // _getActiveHandles() API, which can report inflated/duplicate handles.
+      // File descriptors and RSS above remain independent leak indicators.
+      const getActiveResourcesInfo = (
+        process as NodeJS.Process & { getActiveResourcesInfo?: () => string[] }
+      ).getActiveResourcesInfo;
+      if (typeof getActiveResourcesInfo === "function") {
+        const resourceSummary = summarizeActiveResourceTypes(
+          getActiveResourcesInfo.call(process),
+        );
+        details.activeResourceCount = resourceSummary.count;
+        details.activeResourceTypes = resourceSummary.countsByType;
+        if (resourceSummary.count > 3000) {
+          status = status === "healthy" ? "degraded" : status;
+          const largestTypes = Object.entries(resourceSummary.countsByType)
+            .sort((left, right) => right[1] - left[1])
+            .slice(0, 3)
+            .map(([type, count]) => `${type}:${count}`)
+            .join(", ");
+          message =
+            message === "OK"
+              ? `High active resource count: ${resourceSummary.count} (${largestTypes})`
+              : message;
+        }
+      } else {
+        details.activeResourceCount = "unsupported";
       }
 
       // 4. RSS growth check — if RSS > 2× heap limit, we have external memory pressure

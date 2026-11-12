@@ -145,23 +145,24 @@ test("maintenance permits exact recovery and verified webhooks, not header spoof
     entryPoints: ["server/middleware/governanceBoundary.ts"], bundle: true, write: false,
     format: "cjs", platform: "node", packages: "external",
     plugins: [{ name: "governance-boundaries", setup(builder) {
-      builder.onResolve({ filter: /(?:governancePolicyService|stripeWebhookSecurity|emailTrackingService)\.js$/ },
+      builder.onResolve({ filter: /(?:governancePolicyService|stripeWebhookSecurity|emailTrackingService|internalServiceAuth)\.js$/ },
         args => ({ path: args.path, namespace: "policy" }));
       builder.onLoad({ filter: /.*/, namespace: "policy" }, ({ path }) => ({
         loader: "js", contents: path.includes("governancePolicy")
           ? `export const enforceMaintenance = (req,res,next) => req.user?.role === "admin" ? next() : res.status(503).json({error:"maintenance"});`
           : path.includes("stripe") ? `export const stripeWebhookMiddleware = (req,res,next) => req.headers["stripe-signature"] === "verified-test-boundary" ? next() : res.status(401).json({error:"invalid signature"});`
+          : path.includes("internalServiceAuth") ? `export const hasBearerSecret = (authorization, secret) => Boolean(secret && authorization === "Bearer " + secret);`
           : `export const emailTrackingService = { verifySendGridSignature: () => false };`,
       }));
     } }],
   });
   const module = { exports: {} };
-  const runtimeProcess = { env: { NODE_ENV: "production" } };
+  const runtimeProcess = { env: { NODE_ENV: "production", BOOSTERSTATE_SECRET: "internal-test-secret" } };
   runInNewContext(output.outputFiles[0].text, { module, exports: module.exports,
     require: createRequire(import.meta.url), Buffer, Date, process: runtimeProcess });
   const check = async (path, method = "GET", headers = {}, user) => {
     let next = false; let status = 200;
-    const req = { path, method, headers, user, get: name => headers[name] };
+    const req = { path, method, headers, user, get: name => headers[name] ?? headers[name.toLowerCase()] };
     const res = { status(value) { status = value; return res; }, json() {} };
     await module.exports.governanceBoundary(req, res, () => { next = true; });
     return { next, status };
@@ -186,4 +187,13 @@ test("maintenance permits exact recovery and verified webhooks, not header spoof
   assert.equal((await check("/api/webhooks/stripe", "POST", { "stripe-signature": "fake" })).status, 401);
   assert.equal((await check("/api/webhooks/stripe", "POST", { "stripe-signature": "verified-test-boundary" })).next, true);
   assert.equal((await check("/api/webhooks/stripe/evil", "POST")).status, 503);
+  assert.equal((await check("/api/training/internal/session-complete", "POST",
+    { authorization: "Bearer internal-test-secret" })).next, true);
+  assert.equal((await check("/api/training/internal/session-complete", "POST",
+    { authorization: "Bearer wrong-secret" })).status, 401);
+  assert.equal((await check("/api/training/internal/session-complete/evil", "POST",
+    { authorization: "Bearer internal-test-secret" })).status, 503);
+  runtimeProcess.env.BOOSTERSTATE_SECRET = "";
+  assert.equal((await check("/api/training/internal/session-complete", "POST",
+    { authorization: "Bearer internal-test-secret" })).status, 503);
 });

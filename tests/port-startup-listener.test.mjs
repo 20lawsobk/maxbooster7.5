@@ -46,18 +46,24 @@ function listenHttp(statusCode = 200) {
 }
 
 test("dev and production readiness cover all twelve configured local listeners", () => {
-  const ports = configuredPortSpecs({});
-  assert.equal(ports.length, 12);
+  const devPorts = configuredPortSpecs({ DNS_AUTHORITY_PORT: "1053" });
+  const productionPorts = configuredPortSpecs({});
+  assert.equal(devPorts.length, 12);
+  assert.equal(productionPorts.length, 12);
   assert.deepEqual(
-    ports.map(({ port }) => port).sort((a, b) => a - b),
+    devPorts.map(({ port }) => port).sort((a, b) => a - b),
+    [1053, 5000, 5353, 5380, 5556, 8008, 8090, 8080, 9877, 9878, 9879, 9880].sort((a, b) => a - b),
+  );
+  assert.deepEqual(
+    productionPorts.map(({ port }) => port).sort((a, b) => a - b),
     [53, 5000, 5353, 5380, 5556, 8008, 8090, 8080, 9877, 9878, 9879, 9880].sort((a, b) => a - b),
   );
   assert.deepEqual(
-    ports.find(({ name }) => name === "DNS API"),
+    devPorts.find(({ name }) => name === "DNS API"),
     { name: "DNS API", port: 8080, httpPath: "/ready" },
   );
   assert.deepEqual(
-    ports.find(({ name }) => name === "local DNS health"),
+    devPorts.find(({ name }) => name === "local DNS health"),
     { name: "local DNS health", port: 5380, httpPath: "/health" },
   );
 });

@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import type { UserConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
@@ -7,11 +8,11 @@ import { selectStripePublishableKey } from "./shared/stripeCredentials.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({ mode }) => {
+export function createClientViteConfig(mode: string): UserConfig {
   const stripePublishableKey =
     selectStripePublishableKey(process.env, mode === "production") ?? "";
 
-  return {
+  const config: UserConfig = {
   base: "/",
   plugins: [react(), tailwindcss()],
   define: {
@@ -263,4 +264,7 @@ export default defineConfig(({ mode }) => {
     exclude: ["@tensorflow/tfjs-node", "sharp", "bcrypt", "pg", "drizzle-orm"],
   },
   };
-});
+  return config;
+}
+
+export default defineConfig(({ mode }) => createClientViteConfig(mode));

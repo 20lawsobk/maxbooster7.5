@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { hasBearerSecret } from "../lib/internalServiceAuth.js";
 import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { syncWeightsNow } from "../services/maxcoreSync.js";
@@ -257,9 +258,12 @@ const _INTERNAL_SECRET_HOOK = process.env.BOOSTERSTATE_SECRET || "";
 router.post(
   "/internal/session-complete",
   async (req: Request, res: Response) => {
-    const auth = (req.headers["authorization"] as string | undefined) ?? "";
-    const token = auth?.startsWith("Bearer ") ? auth?.slice(7) : "";
-    if (!_INTERNAL_SECRET_HOOK || token !== _INTERNAL_SECRET_HOOK) {
+    if (!_INTERNAL_SECRET_HOOK) {
+      return res.status(503).json({
+        error: "Internal training sync authentication is not configured",
+      });
+    }
+    if (!hasBearerSecret(req.get("authorization"), _INTERNAL_SECRET_HOOK)) {
       return res.status(401).json({ error: "Unauthorized" });
     }
     const { session_label, simulated_years, total_sessions } = req.body ?? {};

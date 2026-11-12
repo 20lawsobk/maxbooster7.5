@@ -741,7 +741,7 @@ interface Pipeline {
 type PdimPubSubCallback = (error: Error | null, count: number) => void;
 
 export class PdimRedisClient extends EventEmitter {
-  public status: string = "ready";
+  public status: string = "connecting";
   private execUrl: string;
   private bearerToken: string;
   private disconnected = false;
@@ -1018,13 +1018,6 @@ export class PdimRedisClient extends EventEmitter {
     if (!this.execUrl) {
       throw new Error("PDIM_HTTP_EXEC_URL is required for PdimRedisClient");
     }
-
-    setImmediate(() => {
-      if (this.disconnected) return;
-      this.emit("connect");
-      this.emit("ready");
-      logger.info("✅ [PDIM] Connected via HTTP exec endpoint");
-    });
   }
 
   // Static rate-limit deadline — shared across ALL PdimRedisClient instances.
@@ -1452,9 +1445,7 @@ export class PdimRedisClient extends EventEmitter {
   // Required by BullMQ's isRedisInstance() check: ['connect', 'disconnect', 'duplicate']
   async connect(): Promise<void> {
     this.assertConnected();
-    // PDIM is HTTP-based — already "connected" on construction; no-op here
-    this.emit("connect");
-    this.emit("ready");
+    await this.ping();
   }
 
   async quit(): Promise<"OK"> {
@@ -2259,10 +2250,23 @@ export class PdimRedisClient extends EventEmitter {
 
   // ── Server commands ───────────────────────────────────────────────────────
   async ping(): Promise<"PONG"> {
+    this.assertConnected();
     try {
-      return await this.exec<"PONG">(["PING"]);
-    } catch {
-      return "PONG";
+      const result = await this.exec<"PONG">(["PING"]);
+      this.assertConnected();
+      if (result !== "PONG") {
+        throw new Error("[PDIM] Health probe returned an invalid PING response");
+      }
+      if (this.status !== "ready") {
+        this.status = "ready";
+        this.emit("connect");
+        this.emit("ready");
+        logger.info("✅ [PDIM] Connected after a successful HTTP PING");
+      }
+      return result;
+    } catch (error) {
+      if (!this.disconnected) this.status = "reconnecting";
+      throw error;
     }
   }
   async info(_section?: string): Promise<string> {
