@@ -100,6 +100,12 @@ test("private owner aggregates reach actual MaxCore statistics without model or 
     assert.deepEqual(result.metrics, { streams: 280, revenue: 7, listeners: 84 });
     assert.match(result.insight, /280 recorded streams/); assert.match(result.insight, /not a unique audience count/);
     assert.equal(result.method.causalInference, false);
+    const dashboard = subject.toDashboardInsightsEnvelope(result);
+    assert.equal(dashboard.success, true);
+    assert.equal(dashboard.data.insights.length, 1);
+    assert.equal(dashboard.data.insights[0].source, "maxcore_account_analytics");
+    assert.equal(dashboard.data.insights[0].description, result.insight);
+    assert.equal(dashboard.data.insights[0].method.trainedModelRequired, false);
     const revenue = await service.predict("owner-a", { metric: "revenue", timeframe: "7d" });
     assert.equal(revenue.predictions[0].value, 2);
   });
@@ -116,6 +122,10 @@ test("private owner aggregates reach actual MaxCore statistics without model or 
     const insight = await service.insights("empty-owner", "7d");
     assert.equal(insight.status, "insufficient_history"); assert.deepEqual(insight.metrics, { streams: null, revenue: null, listeners: null });
     assert.match(insight.insight, /missing observations are not zero/);
+    const dashboard = subject.toDashboardInsightsEnvelope(insight);
+    assert.equal(dashboard.data.insights[0].status, "insufficient_history");
+    assert.equal(dashboard.data.insights[0].actionable, true);
+    assert.match(dashboard.data.insights[0].description, /missing observations are not zero/);
   });
   await t.test("lifetime post counters cannot masquerade as timestamped daily engagement history", async () => {
     await cluster.pool.query(`INSERT INTO posts VALUES

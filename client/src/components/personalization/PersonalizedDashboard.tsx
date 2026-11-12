@@ -10,6 +10,12 @@ import {
   WidgetConfig,
 } from "@/hooks/usePersonalizedLayout";
 import { SmartActionBar } from "./SmartActionBar";
+import {
+  normalizeDashboardAIInsights,
+  readDashboardJson,
+  type DashboardAIInsights,
+} from "@/components/dashboard/dashboardDataContracts";
+import { apiRequest } from "@/lib/queryClient";
 import { Music, DollarSign, TrendingUp, Users, Upload, Calendar, Trophy, Bell, Brain, Zap, BarChart3, MessageSquare, GripVertical } from "lucide-react";
 
 interface PersonalizedDashboardProps {
@@ -263,33 +269,39 @@ function NextReleaseWidget({ size }: { size: "small" | "medium" | "large" }) {
 }
 
 function AICoachWidget({ _size }: { size: "small" | "medium" | "large" }) {
-  const { data: insights } = useQuery({
+  const { data: insights, isLoading, isError } = useQuery<DashboardAIInsights>({
     queryKey: ["/api/ai/insights"],
     staleTime: 10 * 60 * 1000,
+    retry: false,
+    meta: { silentError: true },
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/ai/insights");
+      return normalizeDashboardAIInsights(await readDashboardJson(response));
+    },
   });
 
-  const topInsight = (insights as Record<string, unknown>)
-    ?.recommendations?.[0];
+  const topInsight = insights?.insights[0];
 
   return (
     <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-blue-600" />
-          AI Career Coach
+          Account Insights
         </CardTitle>
       </CardHeader>
       <CardContent>
         {topInsight ? (
-          <div className="space-y-3">
-            <p className="text-sm">{topInsight.message}</p>
-            <Button size="sm" variant="outline">
-              Learn More
-            </Button>
-          </div>
+          <p className="text-sm">{topInsight.description}</p>
+        ) : isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading your recorded account insights…</p>
+        ) : isError ? (
+          <p className="text-sm text-muted-foreground">
+            Account analytics is unavailable right now. No estimates are being shown.
+          </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Your AI coach is analyzing your career trajectory...
+            No account insights are available yet.
           </p>
         )}
       </CardContent>

@@ -39,7 +39,6 @@ import {
   buildTrustProxyValue,
 } from "./middleware/cloudflare.js";
 import path from "path";
-import fs from "fs";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import type { ViteRuntime } from "./vite.js";
 

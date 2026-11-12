@@ -187,4 +187,17 @@ describe("Dashboard paid entitlement contract", () => {
     expect(auth).toContain('code: "PAID_SUBSCRIPTION_REQUIRED"');
     expect(auth).toContain('upgradeUrl: "/pricing"');
   });
+
+  it("uses owner-scoped MaxCore account analytics and skips hidden dashboard requests", () => {
+    const dashboard = read("client/src/pages/Dashboard.tsx");
+    const aiRoutes = read("server/routes/ai.ts");
+
+    expect(dashboard).toContain(
+      "enabled: hasPaidSubscription && !showSimplified && !showOnboarding",
+    );
+    expect(dashboard).toContain("meta: { silentError: true }");
+    expect(aiRoutes).toContain("accountAnalyticsService.insights(");
+    expect(aiRoutes).toContain("toDashboardInsightsEnvelope(insights)");
+    expect(aiRoutes).not.toContain("unifiedAIController?.generateInsights()");
+  });
 });

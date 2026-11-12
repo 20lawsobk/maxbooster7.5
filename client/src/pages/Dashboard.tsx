@@ -322,9 +322,10 @@ function DashboardContent({ user }: { user: User }) {
     error: aiInsightsError,
   } = useQuery<DashboardAIInsights>({
     queryKey: ["/api/ai/insights"],
-    enabled: hasPaidSubscription,
+    enabled: hasPaidSubscription && !showSimplified && !showOnboarding,
     staleTime: 5 * 60 * 1000,
     retry: false,
+    meta: { silentError: true },
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/ai/insights");
       return normalizeDashboardAIInsights(await readDashboardJson(response));
@@ -896,7 +897,7 @@ function DashboardContent({ user }: { user: User }) {
             <TabsTrigger data-testid="tab-overview" value="overview">Overview</TabsTrigger>
             <TabsTrigger data-testid="tab-growth" value="growth">Growth</TabsTrigger>
             <TabsTrigger data-testid="tab-analytics" value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger data-testid="tab-ai-insights" value="ai-insights">AI Insights</TabsTrigger>
+            <TabsTrigger data-testid="tab-ai-insights" value="ai-insights">Account Insights</TabsTrigger>
             <TabsTrigger data-testid="tab-projects" value="projects">Projects</TabsTrigger>
             <TabsTrigger data-testid="tab-activity" value="activity">Activity</TabsTrigger>
           </TabsList>
@@ -1103,9 +1104,9 @@ function DashboardContent({ user }: { user: User }) {
               <Card>
                 <CardContent className="p-12 text-center">
                   <Brain className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">AI Insights Unavailable</h3>
+                  <h3 className="text-lg font-semibold mb-2">Account Insights Unavailable</h3>
                   <p className="text-muted-foreground">
-                    The current MaxCore analytics contract does not provide supported insight data. No invented scores or forecasts are shown.
+                    MaxCore could not return verified account analytics. No estimates or unverified scores are shown.
                   </p>
                 </CardContent>
               </Card>
@@ -1114,7 +1115,7 @@ function DashboardContent({ user }: { user: User }) {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Lightbulb className="w-5 h-5 mr-2 text-yellow-600" />
-                    AI Insights
+                    Account Insights
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
