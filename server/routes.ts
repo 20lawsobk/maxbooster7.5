@@ -3009,11 +3009,10 @@ export async function registerRoutes(
         studioProjects,
         releases,
         socialAccounts,
-        subscriptions: subscriptionsTable,
       } = await import("@shared/schema");
       const { count, eq, and } = await import("drizzle-orm");
 
-      const [trackCount, releaseCount, socialCount, subResult] =
+      const [trackCount, releaseCount, socialCount] =
         await Promise.all([
           db
             .select({ count: count() })
@@ -3032,22 +3031,12 @@ export async function registerRoutes(
                 eq(socialAccounts.isActive, true),
               ),
             ),
-          db
-            .select()
-            .from(subscriptionsTable)
-            .where(
-              and(
-                eq(subscriptionsTable.userId, userId),
-                eq(subscriptionsTable.status, "active"),
-              ),
-            )
-            .limit(1),
         ]);
 
       const tracks = trackCount[0]?.count ?? 0;
       const releasesCount = releaseCount[0]?.count ?? 0;
       const socials = socialCount[0]?.count ?? 0;
-      const hasActiveSub = subResult.length > 0;
+      const hasActiveSub = hasPaidFeatureAccess(req.user!);
 
       if (!hasActiveSub) {
         return res.json({
