@@ -48,8 +48,8 @@ import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { generatedImageUrl, persistGeneratedImage } from "../services/generatedImageAsset.js";
 import {
+  classifySocialUrlGenerationFailure,
   generateSocialUrlWithMaxCore,
-  isSocialUrlSourceRejection,
 } from "../services/socialUrlMaxCoreTransport.js";
 import { resolveFirstPartySocialSource } from "../services/firstPartySocialSource.js";
 import { generateSocialDirect } from "../services/maxcoreDomainAdapter.js";
@@ -3815,12 +3815,8 @@ router.post(
       }
 
       if (generatedContent?.length === 0) {
-        const sourceRejected = platformResults.some(
-          (settled) =>
-            settled.status === "rejected" &&
-            isSocialUrlSourceRejection(settled.reason),
-        );
-        if (sourceRejected) {
+        const failure = classifySocialUrlGenerationFailure(platformResults);
+        if (failure === "source_rejected") {
           return res.status(422).json({
             success: false,
             code: "SOURCE_NOT_ANALYZABLE",
@@ -3828,13 +3824,26 @@ router.post(
               "MaxCore could not safely retrieve analyzable content from this URL. Use a publicly accessible source URL.",
           });
         }
+        const failureMessages = {
+          service_unavailable:
+            "MaxCore is unavailable for URL-based generation. Check MaxCore readiness, then retry.",
+          authorization_failed:
+            "MaxCore rejected its configured generation authorization. Check the MaxCore connection, then retry.",
+          empty_generation:
+            "MaxCore responded without a usable social variant. Check text-generation readiness, then retry.",
+          transport_failed:
+            "MaxCore could not complete URL-based generation. Check MaxCore health, then retry.",
+          source_rejected: "The source URL could not be analyzed.",
+        } as const;
         logger.warn(
-          `[generate-from-url] MaxCore returned no usable social variants for ${requestedPlatforms.length} platform(s)`,
+          { failure, platformCount: requestedPlatforms.length },
+          "[generate-from-url] MaxCore produced no usable variants",
         );
         return res.status(503).json({
           success: false,
-          code: "AI_UNAVAILABLE",
-          error: "MaxCore did not return usable social content",
+          code: `MAXCORE_${failure.toUpperCase()}`,
+          error: failureMessages[failure],
+          failedPlatforms: requestedPlatforms,
         });
       }
 

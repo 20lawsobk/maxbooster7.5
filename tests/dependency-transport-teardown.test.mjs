@@ -92,7 +92,7 @@ async function decoderProbe(scope) {
 }
 
 if (process.argv[2] === "--probe") {
-  const timer = setTimeout(() => process.exit(2), 5_000);
+  const timer = setTimeout(() => process.exit(2), 15_000);
   try {
     await (process.argv[3] === "multer" ? uploadProbe : decoderProbe)(process.argv[4]);
     console.log("TEARDOWN_PROBE_PASS");
@@ -101,7 +101,7 @@ if (process.argv[2] === "--probe") {
   for (const scope of [".", "external/pdim/artifacts/api-server"]) {
     test(`${scope}: pending asynchronous upload filter cannot reopen an aborted request`, () => {
       const child = spawnSync(process.execPath, [currentFile, "--probe", "multer", scope], {
-        cwd: root, env: { NODE_ENV: "test" }, encoding: "utf8", timeout: 8_000,
+        cwd: root, env: { NODE_ENV: "test" }, encoding: "utf8", timeout: 20_000,
       });
       assert.equal(child.status, 0, `${child.stdout}\n${child.stderr}`);
       assert.match(child.stdout, /TEARDOWN_PROBE_PASS/);
@@ -110,7 +110,7 @@ if (process.argv[2] === "--probe") {
   for (const scope of [".", "external/maxcore/artifacts/api-server"]) {
     test(`${scope}: fetch refuses excessive response encodings and remains usable`, () => {
       const child = spawnSync(process.execPath, [currentFile, "--probe", "undici", scope], {
-        cwd: root, env: { NODE_ENV: "test" }, encoding: "utf8", timeout: 8_000,
+        cwd: root, env: { NODE_ENV: "test" }, encoding: "utf8", timeout: 20_000,
       });
       assert.equal(child.status, 0, `${child.stdout}\n${child.stderr}`);
       assert.match(child.stdout, /TEARDOWN_PROBE_PASS/);

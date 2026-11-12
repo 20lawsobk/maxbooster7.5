@@ -18,6 +18,7 @@ vi.mock("../../server/services/maxcoreClient.js", () => ({
 }));
 
 import {
+  classifySocialUrlGenerationFailure,
   SOCIAL_URL_MAXCORE_ENDPOINT,
   buildSocialUrlMaxCoreRequest,
   generateSocialUrlWithMaxCore,
@@ -25,6 +26,7 @@ import {
   normalizeSocialUrlMaxCoreResponse,
 } from "../../server/services/socialUrlMaxCoreTransport.js";
 import { MaxCoreControlError } from "../../server/services/maxcoreControlTransport.js";
+import { AIUnavailableError } from "../../server/lib/aiSource.js";
 
 describe("social URL to MaxCore transport contract", () => {
   beforeEach(() => vi.resetAllMocks());
@@ -122,6 +124,33 @@ describe("social URL to MaxCore transport contract", () => {
     expect(isSocialUrlSourceRejection(new Error("transport error"))).toBe(false);
   });
 
+  it("classifies URL generation failures without exposing upstream diagnostics", () => {
+    expect(classifySocialUrlGenerationFailure([
+      { status: "rejected", reason: new MaxCoreControlError("private source URL", 422) },
+      { status: "rejected", reason: new MaxCoreControlError("private source URL", 400) },
+    ])).toBe("source_rejected");
+    expect(classifySocialUrlGenerationFailure([
+      { status: "rejected", reason: new MaxCoreControlError("private provider response", 503) },
+    ])).toBe("service_unavailable");
+    expect(classifySocialUrlGenerationFailure([
+      { status: "rejected", reason: new AIUnavailableError("private feature detail") },
+    ])).toBe("service_unavailable");
+    expect(classifySocialUrlGenerationFailure([
+      { status: "rejected", reason: new MaxCoreControlError("credential detail", 401) },
+    ])).toBe("authorization_failed");
+    expect(classifySocialUrlGenerationFailure([
+      { status: "fulfilled", value: { result: null } },
+    ])).toBe("empty_generation");
+    expect(classifySocialUrlGenerationFailure([
+      { status: "fulfilled", value: { result: null } },
+      { status: "rejected", reason: new MaxCoreControlError("source details", 422) },
+    ])).toBe("empty_generation");
+    expect(classifySocialUrlGenerationFailure([
+      { status: "fulfilled", value: { result: null } },
+      { status: "rejected", reason: new Error("private transport diagnostic") },
+    ])).toBe("transport_failed");
+  });
+
   it("constructs caption only from actual structured MaxCore fields", () => {
     expect(
       normalizeSocialUrlMaxCoreResponse({
@@ -186,14 +215,24 @@ describe("mounted Social Media URL UI wiring", () => {
     );
     const handler = backendSource.slice(handlerStart, handlerEnd);
     expect(handler).toContain("generateSocialUrlWithMaxCore");
+    expect(handler).toContain("classifySocialUrlGenerationFailure");
     expect(handler).toContain("verifiedSourceContext");
     expect(handler).toContain("Untrusted source-page metadata");
     expect(handler).toContain("failedPlatforms");
-    expect(handler).toContain("isSocialUrlSourceRejection");
     expect(handler).toContain("SOURCE_NOT_ANALYZABLE");
+    expect(handler).toContain("MAXCORE_${failure.toUpperCase()}");
+    expect(handler).toContain("Check MaxCore readiness, then retry");
     expect(handler).not.toContain("firstPartySource && format !==");
     expect(handler).not.toContain("supports text drafts only");
     expect(handler).not.toContain("getUnifiedAI()");
+
+    const urlFailureHandlerStart = source.indexOf("const generateFromUrlMutation = useMutation");
+    const urlFailureHandlerEnd = source.indexOf("const deletePostMutation", urlFailureHandlerStart);
+    const urlFailureHandler = source.slice(urlFailureHandlerStart, urlFailureHandlerEnd);
+    expect(urlFailureHandler).toContain('onError: (error: Error) =>');
+    expect(urlFailureHandler).toContain("description:\n          error.message");
+    expect(urlFailureHandler).toContain("setIsGeneratingFromUrl(false)");
+    expect(source).toContain('data-testid="button-generate-from-url"');
   });
 });
 
