@@ -339,10 +339,11 @@ app.use((req, res, next) => {
 // after boot.  During that window, any browser request to GET / (or any non-API
 // route) falls through with no handler and returns 404.
 //
-// This middleware fires BEFORE all API routes.  It serves dist/index?.html for
-// non-API GET requests during the startup window only.  Once Vite or
-// serveStatic registers its own catch-all (_spaHandlerReady = true), this
-// middleware calls next() immediately and is completely transparent.
+// This middleware fires BEFORE all API routes. During the startup window it
+// serves only a small boot page that waits for the live SPA handler. Serving a
+// previous dist/index.html here can load stale client code while auth/routes
+// still return boot-phase responses. Once Vite or serveStatic registers its
+// catch-all (_spaHandlerReady = true), this middleware becomes transparent.
 //
 // Why not call setupVite earlier?  setupVite awaits createViteServer() which
 // itself performs heavy I/O; calling it before route registration would stall
@@ -353,13 +354,6 @@ let _spaHandlerReady = false;
 // The early-boot stubs check this flag and call next() once routes are loaded,
 // handing off to the real handlers in routes?.ts.
 let _routesReady = false;
-const _spaFallbackIndexPath = path?.resolve(
-  process.cwd(),
-  "dist",
-  "public",
-  "index.html",
-);
-
 // Lightweight boot-status endpoint — always available, no proxy/header issues.
 // The boot loading page polls this instead of sniffing response headers.
 app.get("/api/boot-status", (_req: Request, res: Response) => {
@@ -472,15 +466,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const assetExt =
     /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|map|json)$/i;
   if (req.path.startsWith("/assets/") || assetExt?.test(req.path)) return next();
-  // Serve the pre-built SPA shell if it exists.  In development this is the
-  // last production build; in production it is the freshly built dist/.
-  if (fs?.existsSync(_spaFallbackIndexPath)) {
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("X-Boot-Fallback", "1");
-    return res.sendFile(_spaFallbackIndexPath);
-  }
-  // In dev mode (no built index?.html) serve a minimal loading page so mobile
-  // browsers see something instead of a white screen during the boot window.
+  // Never serve an old SPA bundle before the live handler is ready. This
+  // minimal page polls boot-status and reloads into the current runtime once
+  // the API routes and SPA handler are both registered.
   res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("X-Boot-Fallback", "1");

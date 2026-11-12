@@ -28,7 +28,13 @@ vi.mock("vite", () => ({
   createLogger: () => ({ error: vi.fn() }),
 }));
 
-vi.mock("../../vite.config", () => ({ default: {} }));
+vi.mock("../../vite.config", () => ({
+  createClientViteConfig: () => ({
+    root: process.cwd(),
+    server: { host: "0.0.0.0", port: 5000, allowedHosts: true },
+  }),
+  default: {},
+}));
 
 describe("Vite development middleware", () => {
   beforeEach(() => {
@@ -76,9 +82,12 @@ describe("Vite development middleware", () => {
 
       const spaResponse = await fetch(`${origin}/dashboard`);
       expect(spaResponse.status).toBe(200);
-      expect(await spaResponse.text()).toContain(
+      const spaHtml = await spaResponse.text();
+      expect(spaHtml).toContain(
         "Max Booster - AI Music Career Management Platform",
       );
+      expect(spaHtml).toContain('src="/src/main.tsx"');
+      expect(spaHtml).not.toMatch(/src="\/src\/main\.tsx\?v=/);
       expect(sessionMiddleware).toHaveBeenCalledTimes(2);
     } finally {
       await new Promise<void>((resolve, reject) => {

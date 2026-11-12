@@ -49,11 +49,10 @@ export async function createViteRuntime(server: Server) {
           );
 
           // Always read the current template so source edits remain visible.
+          // Keep the Vite entry URL stable: a timestamp query creates a new
+          // module-graph identity on every navigation/reload and retains stale
+          // transformed entry modules in the long-lived dev server.
           let template = await fs.promises.readFile(clientTemplate, "utf-8");
-          template = template.replace(
-            `src="/src/main.tsx"`,
-            `src="/src/main.tsx?v=${Date.now()}"`,
-          );
           const page = await vite.transformIndexHtml(url, template);
           res.status(200).set({ "Content-Type": "text/html" }).end(page);
         } catch (e) {
