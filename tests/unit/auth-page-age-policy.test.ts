@@ -6,6 +6,10 @@ import ts from "typescript";
 import { ACCOUNT_AGE_REQUIREMENT, MINIMUM_ACCOUNT_AGE, calculateAgeUtc, getAccountEligibilityError, parseBirthdate } from "../../shared/agePolicy";
 import { createCheckoutSessionSchema, registerSchema } from "../../server/schemas/index";
 import { getNewPasswordError } from "../../shared/passwordPolicy";
+import {
+  GovernancePolicyUnavailableError,
+  RegistrationDisabledError,
+} from "../../server/services/governancePolicyService";
 
 const birthday = new Date("2026-06-15T00:00:00.000Z");
 
@@ -102,6 +106,7 @@ function backendHarness(existingAccount = false) {
   };
   const scope: Record<string, any> = {
     Date, Number, URLSearchParams, AbortSignal, getAccountEligibilityError, MINIMUM_ACCOUNT_AGE, getNewPasswordError,
+    GovernancePolicyUnavailableError, RegistrationDisabledError,
     process: { env: { GOOGLE_CLIENT_ID: "unit-id", GOOGLE_CLIENT_SECRET: "unit-not-a-secret", APP_URL: "https://unit.example.test" } },
     crypto: { randomBytes: () => ({ toString: () => "unit-oauth-state" }) },
     logger: { info() {}, warn() {} },
@@ -215,6 +220,28 @@ describe("Registration password and paid consent boundaries (offline route fixtu
 });
 
 describe("Actual account-creation route eligibility gates (offline stubs)", () => {
+  it("returns a forbidden response when registration is deliberately disabled", async () => {
+    const h = backendHarness();
+    h.scope.assertRegistrationEnabled = async () => { throw new RegistrationDisabledError(); };
+    const result = await h.invoke("post", "/api/auth/register", {
+      email: "closed@example.test", username: "closed_user", password: "Password1!", birthdate: "1990-06-15",
+    });
+    expect(result.statusCode).toBe(403);
+    expect(result.body).toEqual({ message: "New registrations are disabled" });
+    expect(h.created).toEqual([]);
+  });
+
+  it("reports an unavailable registration policy as service unavailable without creating an account", async () => {
+    const h = backendHarness();
+    h.scope.assertRegistrationEnabled = async () => { throw new GovernancePolicyUnavailableError(); };
+    const result = await h.invoke("post", "/api/auth/register", {
+      email: "policy@example.test", username: "policy_user", password: "Password1!", birthdate: "1990-06-15",
+    });
+    expect(result.statusCode).toBe(503);
+    expect(result.body).toEqual({ message: "Registration policy unavailable" });
+    expect(h.created).toEqual([]);
+  });
+
   it.each([undefined, "2010-02-30", "2999-01-01", "2020-01-01"])(
     "password signup and public checkout reject ineligible DOB %j before creation/payment", async birthdate => {
       const h = backendHarness();

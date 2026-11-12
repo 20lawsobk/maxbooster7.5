@@ -29,6 +29,8 @@ import {
   assertRegistrationEnabled,
   isAdminOnlyMode,
   readGovernancePolicy,
+  GovernancePolicyUnavailableError,
+  RegistrationDisabledError,
 } from "./services/governancePolicyService.js";
 import { issueAdminApiToken, revokeAdminApiToken } from "./services/adminApiTokenService.js";
 import { consumeTotp } from "./services/totpReplay.js";
@@ -504,6 +506,12 @@ export async function registerRoutes(
         return res.json({ ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences) });
       } catch (error) {
         logger.warn({ err: error }, "Registration error");
+        if (error instanceof RegistrationDisabledError) {
+          return res.status(error.statusCode).json({ message: error.message });
+        }
+        if (error instanceof GovernancePolicyUnavailableError) {
+          return res.status(error.statusCode).json({ message: "Registration policy unavailable" });
+        }
         return res.status(500).json({ message: "Registration failed" });
       }
     },

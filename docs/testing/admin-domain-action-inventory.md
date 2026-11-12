@@ -1,7 +1,7 @@
 # Admin-visible domain action inventory
 
-Generated from `docs/testing/admin-gap-inventory.json` at source revision `c8fe48fbd1f5a01797b4427a70baa4673cfc7423`.
-Inventory SHA-256: `b86f82dc85c246ee88f93b44567da5fc2337de88ad6fa2e8adeeaca9776e2998`.
+Generated from `docs/testing/admin-gap-inventory.json` at source revision `16e53e0d64ceba3b10165dc99eeb65e619365bf4`.
+Inventory SHA-256: `94e78bfb6909d7a7d257ea2d577853f3f8bef9147c7014eb5776e7f93aa65c0f`.
 
 This is a source inventory, not evidence that each operation succeeds. Page files identify admin-visible surfaces; registered route declarations show their server entry points. Service, storage, schema, and worker imports are listed where statically resolvable. Provider-dependent operations remain blocked unless an acceptance receipt says otherwise.
 
@@ -9,7 +9,7 @@ This is a source inventory, not evidence that each operation succeeds. Page file
 
 ### artists
 
-Source acceptance: **UNVERIFIED**. Inventory contains 3 UI page files, 3 route/worker source files, 41 declared handlers, and 0 unresolved declarations.
+Source acceptance: **UNVERIFIED**. Inventory contains 3 UI page files, 5 route/worker source files, 41 declared handlers, and 0 unresolved declarations.
 
 UI pages:
 - `client/src/pages/PressKit.tsx` — UI API references: `/api/press-kit`, `/api/storage/upload`
@@ -17,6 +17,10 @@ UI pages:
 - `client/src/pages/PublicPressKit.tsx` — UI API references: `/api/press-kit/public`, `/api/press-kit/public/${slug}`
 
 Server route and worker actions:
+
+- `external/maxcore/artifacts/ai-training-server/ai_model/awareness/profile_observatory.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
+
+- `external/maxcore/artifacts/ai-training-server/ai_model/awareness/profile_quality.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
 - `server/routes/artistProfiles.ts` (mounted at `/api/artist-profiles`) — 29 declared action(s).
   - `GET /api/artist-profiles/:id/discovery-job`
@@ -68,7 +72,7 @@ Server route and worker actions:
   - `POST /api/press-kit/publish`
   - Local service/schema/storage dependencies: `server/db.ts`, `server/logger.ts`, `server/middleware/apiCache.ts`, `server/middleware/auth.ts`, `server/services/storageService.ts`, `shared/schema.ts`
 
-Inventory source files: 6.
+Inventory source files: 8.
 
 ### fans
 
@@ -385,7 +389,7 @@ Server route and worker actions:
   - `POST /api/studio/generation/pattern/chords`
   - `POST /api/studio/generation/pattern/arrangement`
   - `POST /api/studio/generation/audio-to-melody`
-  - Local service/schema/storage dependencies: `server/db.ts`, `server/lib/aiSource.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/middleware/rateLimiter.ts`, `server/middleware/uploadHandler.ts`, `server/services/aiAudioGeneratorService.ts`, `server/services/maxcoreClient.ts`, `server/services/maxcoreConnector.ts`, `server/services/maxcoreControlTransport.ts`, `shared/schema.ts`
+  - Local service/schema/storage dependencies: `server/db.ts`, `server/lib/aiSource.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/middleware/rateLimiter.ts`, `server/middleware/uploadHandler.ts`, `server/services/aiAudioGeneratorService.ts`, `server/services/maxcoreClient.ts`, `server/services/maxcoreControlTransport.ts`, `server/services/studioMaxCoreTransport.ts`, `shared/schema.ts`
 
 - `server/routes/studioMarkers.ts` (mounted at `/api/studio`) — 4 declared action(s).
   - `GET /api/studio/projects/:projectId/markers`
@@ -478,7 +482,7 @@ Inventory source files: 29.
 Source acceptance: **UNVERIFIED**. Inventory contains 3 UI page files, 8 route/worker source files, 174 declared handlers, and 1 unresolved declarations.
 
 UI pages:
-- `client/src/pages/Distribution.tsx` — UI API references: `/api/analytics/dashboard`, `/api/distribution/analytics/growth`, `/api/distribution/codes/isrc`, `/api/distribution/codes/upc`, `/api/distribution/earnings/breakdown`, `/api/distribution/earnings/summary`, `/api/distribution/export-report`, `/api/distribution/geographic`, `/api/distribution/hyperfollow`, `/api/distribution/hyperfollow/analytics`, `/api/distribution/payout-history`, `/api/distribution/platform-earnings`, `/api/distribution/platform/apple`, `/api/distribution/platform/spotify`, `/api/distribution/platform/youtube`, `/api/distribution/platforms`, `/api/distribution/releases`, `/api/distribution/releases/${id}`, `/api/distribution/streaming-trends`, `/api/distribution/toolost/connect`, `/api/distribution/toolost/status`, `/api/distribution/upload`, `/api/label-submissions`, `/api/label-submissions/${id}`, `/api/label-submissions/stats`, `/api/music-videos`, `/api/playlist-pitching`, `/api/playlist-pitching/stats`, `/api/sample-clearances`, `/api/sample-clearances/${id}`, `/api/sample-clearances/stats`, `/api/shows`, `/api/shows/stats`, `/api/social/generate-music-video`, `/api/social/voice-profiles`, `/api/sync-licensing`, `/api/sync-licensing/stats`, `/api/venues`, `/api/venues/stats`
+- `client/src/pages/Distribution.tsx` — UI API references: `/api/analytics/dashboard`, `/api/distribution/analytics/growth`, `/api/distribution/codes/isrc`, `/api/distribution/codes/upc`, `/api/distribution/earnings/breakdown`, `/api/distribution/earnings/summary`, `/api/distribution/export-report`, `/api/distribution/geographic`, `/api/distribution/hyperfollow`, `/api/distribution/hyperfollow/analytics`, `/api/distribution/payout-history`, `/api/distribution/platform-earnings`, `/api/distribution/platform/apple`, `/api/distribution/platform/spotify`, `/api/distribution/platform/youtube`, `/api/distribution/platforms`, `/api/distribution/releases`, `/api/distribution/releases/${encodeURIComponent(release.id)}/ddex/download`, `/api/distribution/releases/${encodeURIComponent(release.id)}/ddex/preview`, `/api/distribution/releases/${id}`, `/api/distribution/streaming-trends`, `/api/distribution/toolost/connect`, `/api/distribution/toolost/status`, `/api/distribution/upload`, `/api/label-submissions`, `/api/label-submissions/${id}`, `/api/label-submissions/stats`, `/api/music-videos`, `/api/playlist-pitching`, `/api/playlist-pitching/stats`, `/api/sample-clearances`, `/api/sample-clearances/${id}`, `/api/sample-clearances/stats`, `/api/shows`, `/api/shows/stats`, `/api/social/generate-music-video`, `/api/social/voice-profiles`, `/api/sync-licensing`, `/api/sync-licensing/stats`, `/api/venues`, `/api/venues/stats`
 - `client/src/pages/Publishing.tsx` — UI API references: `/api/publishing`, `/api/publishing/${id}`, `/api/publishing/stats`
 - `client/src/pages/ReleaseCountdown.tsx` — UI API references: `/api/countdowns`, `/api/countdowns/${releaseId}/tasks/${taskId}`, `/api/countdowns/${selectedRelease?.id}`
 
@@ -654,7 +658,7 @@ Server route and worker actions:
   - `GET /api/distribution/packages/:id/export`
   - `GET /api/distribution/submission/:releaseId`
   - `POST /api/distribution/catalog-export`
-  - Local service/schema/storage dependencies: `server/db.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/middleware/uploadHandler.ts`, `server/routes/distribution-release-schemas.ts`, `server/routes/distribution-toolost-submission.ts`, `server/services/audioFingerprint.ts`, `server/services/audioMetadataService.ts`, `server/services/catalogImporter.ts`, `server/services/ddexPackageService.ts`, `server/services/distributionCodeGenerationService.ts`, `server/services/distributionDataTransferService.ts`, `server/services/distributionSubmissionRepository.ts`, `server/services/dspPolicyChecker.ts`, `server/services/identifierService.ts`, `server/services/labelCopyLinter.ts`, `server/services/labelgrid-service.ts`, `server/services/musicCodes.ts`, `server/services/notificationService.ts`, `server/services/releaseScheduler.ts`, `server/services/releaseWorkflow.ts`, `server/services/releaseWorkflowService.ts`, `server/services/storageService.ts`, `server/services/toolost-service.ts`, `server/services/toolostEnvironment.ts`, `server/services/toolostRuntimeConfig.ts`, `server/storage`
+  - Local service/schema/storage dependencies: `server/db.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/middleware/uploadHandler.ts`, `server/routes/distribution-release-schemas.ts`, `server/routes/distribution-toolost-submission.ts`, `server/services/audioFingerprint.ts`, `server/services/audioMetadataService.ts`, `server/services/audioSourceResolver.ts`, `server/services/catalogImporter.ts`, `server/services/ddexPackageService.ts`, `server/services/distributionCodeGenerationService.ts`, `server/services/distributionDataTransferService.ts`, `server/services/distributionFileDigest.ts`, `server/services/distributionSubmissionRepository.ts`, `server/services/dspPolicyChecker.ts`, `server/services/identifierService.ts`, `server/services/labelCopyLinter.ts`, `server/services/labelgrid-service.ts`, `server/services/musicCodes.ts`, `server/services/notificationService.ts`, `server/services/releaseScheduler.ts`, `server/services/releaseWorkflow.ts`, `server/services/releaseWorkflowService.ts`, `server/services/storageService.ts`, `server/services/toolost-service.ts`, `server/services/toolostEnvironment.ts`, `server/services/toolostRuntimeConfig.ts`, `server/storage`
 
 - `server/routes/publishing.ts` (mounted at `/api/publishing`) — 6 declared action(s).
   - `GET /api/publishing/`
@@ -985,7 +989,7 @@ Inventory source files: 23.
 
 ### revenue
 
-Source acceptance: **UNVERIFIED**. Inventory contains 14 UI page files, 10 route/worker source files, 94 declared handlers, and 0 unresolved declarations.
+Source acceptance: **UNVERIFIED**. Inventory contains 14 UI page files, 10 route/worker source files, 96 declared handlers, and 0 unresolved declarations.
 
 UI pages:
 - `client/src/pages/Analytics.tsx` — UI API references: `/api/analytics-alerts/alerts`, `/api/analytics-alerts/alerts/${alertId}/dismiss`, `/api/analytics-alerts/alerts/summary`, `/api/analytics-alerts/cross-platform-comparison`, `/api/analytics-alerts/playlist-changes/track`, `/api/analytics-alerts/trigger-cities`, `/api/analytics/anomalies`, `/api/analytics/anomalies/${anomalyId}/acknowledge`, `/api/analytics/anomalies/summary`, `/api/analytics/anomalies?${params.toString()}`, `/api/analytics/dashboard`, `/api/analytics/export`
@@ -1012,9 +1016,11 @@ Server route and worker actions:
 
 - `external/maxcore/artifacts/ai-training-server/ai_model/director/analytics.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
-- `external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py` (no mount found in the route registry or direct-mount list) — 3 declared action(s).
+- `external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py` (no mount found in the route registry or direct-mount list) — 5 declared action(s).
   - `GET /api/training/candidates/live`
+  - `GET /api/training/candidates/internal`
   - `GET /api/training/candidates/live/{run_id}`
+  - `GET /api/training/candidates/internal/{run_id}`
   - `POST /api/training/candidates/live`
 
 - `external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py` (no mount found in the route registry or direct-mount list) — 2 declared action(s).
@@ -1129,7 +1135,7 @@ Inventory source files: 24.
 
 ### assistant
 
-Source acceptance: **UNVERIFIED**. Inventory contains 3 UI page files, 281 route/worker source files, 313 declared handlers, and 2 unresolved declarations.
+Source acceptance: **UNVERIFIED**. Inventory contains 3 UI page files, 290 route/worker source files, 358 declared handlers, and 2 unresolved declarations.
 
 UI pages:
 - `client/src/pages/Assistant.tsx` — UI API references: `/api/assistant/chat`, `/api/assistant/history`, `/api/assistant/history?before=${encodeURIComponent(oldestId)}`
@@ -1188,6 +1194,17 @@ Server route and worker actions:
 - `external/maxcore/artifacts/ai-training-server/ai_model/awareness/engine.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
 - `external/maxcore/artifacts/ai-training-server/ai_model/awareness/lease.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
+
+- `external/maxcore/artifacts/ai-training-server/ai_model/awareness/platform_discovery.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
+
+- `external/maxcore/artifacts/ai-training-server/ai_model/awareness/profile_observatory.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
+
+- `external/maxcore/artifacts/ai-training-server/ai_model/awareness/profile_quality.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
+
+- `external/maxcore/artifacts/ai-training-server/ai_model/awareness/public_access.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
+
+- `external/maxcore/artifacts/ai-training-server/ai_model/awareness/source_review.py` (no mount found in the route registry or direct-mount list) — 1 declared action(s).
+  - `POST /api/awareness/unified/admin/source-review`
 
 - `external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
@@ -1554,9 +1571,13 @@ Server route and worker actions:
 
 - `external/maxcore/artifacts/ai-training-server/ai_model/training/dataset.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
-- `external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py` (no mount found in the route registry or direct-mount list) — 3 declared action(s).
+- `external/maxcore/artifacts/ai-training-server/ai_model/training/internal_training_sources.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
+
+- `external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py` (no mount found in the route registry or direct-mount list) — 5 declared action(s).
   - `GET /api/training/candidates/live`
+  - `GET /api/training/candidates/internal`
   - `GET /api/training/candidates/live/{run_id}`
+  - `GET /api/training/candidates/internal/{run_id}`
   - `POST /api/training/candidates/live`
 
 - `external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py` (no mount found in the route registry or direct-mount list) — 2 declared action(s).
@@ -1566,6 +1587,8 @@ Server route and worker actions:
 - `external/maxcore/artifacts/ai-training-server/ai_model/training/public_curriculum.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
 - `external/maxcore/artifacts/ai-training-server/ai_model/training/public_resume.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
+
+- `external/maxcore/artifacts/ai-training-server/ai_model/training/rights_receipts.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
 - `external/maxcore/artifacts/ai-training-server/ai_model/training/storage.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
@@ -1716,10 +1739,13 @@ Server route and worker actions:
 
 - `external/maxcore/artifacts/ai-training-server/scripts/run-maxcore-original-quality.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
-- `external/maxcore/artifacts/ai-training-server/server.py` (no mount found in the route registry or direct-mount list) — 138 declared action(s).
+- `external/maxcore/artifacts/ai-training-server/server.py` (no mount found in the route registry or direct-mount list) — 141 declared action(s).
   - `GET /api/awareness/unified/status`
+  - `GET /api/awareness/unified/ready`
+  - `GET /api/awareness/unified/admin/source-status`
   - `GET /api/training/live/status`
   - `POST /api/awareness/unified/context`
+  - `POST /api/awareness/unified/profile-discover`
   - `GET /ready`
   - `GET /api/ready`
   - `GET /health`
@@ -1916,7 +1942,7 @@ Server route and worker actions:
   - `GET /api/ai/diffusion/status`
   - `GET /api/ai/simulator/status`
   - `GET /api/ai/diffusion/ready`
-  - Local service/schema/storage dependencies: `server/config/ports.ts`, `server/db.ts`, `server/lib/aiSource.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/middleware/rateLimiter.ts`, `server/services/accountAnalyticsService.ts`, `server/services/maxcoreControlTransport.ts`, `server/services/notificationService.ts`, `server/services/unifiedAIController.ts`, `shared/schema.ts`
+  - Local service/schema/storage dependencies: `server/config/ports.ts`, `server/db.ts`, `server/lib/AppError.ts`, `server/lib/aiSource.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/middleware/rateLimiter.ts`, `server/services/accountAnalyticsService.ts`, `server/services/maxcoreControlTransport.ts`, `server/services/notificationService.ts`, `server/services/unifiedAIController.ts`, `shared/schema.ts`
 
 - `server/routes/assistant.ts` (mounted at `/api/assistant`) — 3 declared action(s).
   - `GET /api/assistant/history`
@@ -1961,9 +1987,53 @@ Server route and worker actions:
   - `POST /api/maxcore/ai-jobs/push-all`
   - Local service/schema/storage dependencies: `server/logger.ts`
 
-- `server/routes/maxcoreProxy.ts` (mounted at the application root) — 39 declared action(s).
+- `server/routes/maxcoreCognitive.ts` (no mount found in the route registry or direct-mount list) — 29 declared action(s).
+  - `GET /status`
+  - `GET /identity`
+  - `GET /organization`
+  - `POST /entities`
+  - `POST /memory`
+  - `POST /project`
+  - `POST /goal`
+  - `POST /task`
+  - `POST /agent`
+  - `POST /department`
+  - `POST /tool`
+  - `POST /workflow`
+  - `POST /document`
+  - `POST /knowledge-node`
+  - `POST /event`
+  - `POST /tasks/:id/execute`
+  - `GET /events`
+  - `GET /expansion/status`
+  - `GET /tools/catalog`
+  - `POST /tools/database/execute`
+  - `GET /entities`
+  - `GET /entities/:id`
+  - `PATCH /entities/:id`
+  - `DELETE /entities/:id`
+  - `POST /relationships`
+  - `GET /relationships`
+  - `DELETE /relationships/:id`
+  - `GET /context`
+  - `POST /context`
+  - Local service/schema/storage dependencies: `server/logger.ts`, `server/middleware/auth.ts`, `server/routes/maxcoreCognitiveGraphql.ts`, `server/services/maxcoreClient.ts`, `server/services/maxcoreCognitiveService.ts`, `shared/maxcore-cognitive.ts`
+
+- `server/routes/maxcoreCognitiveGraphql.ts` (no mount found in the route registry or direct-mount list) — 1 declared action(s).
+  - `POST /`
+  - Local service/schema/storage dependencies: `server/logger.ts`, `server/middleware/auth.ts`, `server/services/maxcoreClient.ts`, `server/services/maxcoreCognitiveService.ts`
+
+- `server/routes/maxcoreProxy.ts` (mounted at the application root) — 48 declared action(s).
   - `GET /api/awareness/unified/status`
+  - `GET /api/awareness/unified/ready`
+  - `GET /api/generation/capabilities`
+  - `GET /api/admin/maxcore/health`
+  - `GET /api/admin/maxcore/readiness`
+  - `GET /api/admin/maxcore/warm/status`
+  - `GET /api/awareness/unified/admin/source-status`
+  - `POST /api/awareness/unified/admin/source-review`
   - `POST /api/awareness/unified/context`
+  - `POST /api/awareness/unified/profile-discover`
   - `POST /api/internal/generated-artifacts/commit`
   - `POST /api/internal/generated-artifacts/commit`
   - `GET /api/maxcore-media/*mediaPath`
@@ -1982,13 +2052,14 @@ Server route and worker actions:
   - `GET /api/files/stems/:jobId/:filename`
   - `GET /api/storage/artist/:profileId`
   - `GET /api/platform/model/info`
-  - `GET /api/generation/capabilities`
   - `GET /api/models/social/state`
   - `GET /api/models/advertising/state`
   - `GET /api/models/content/state`
   - `GET /api/models/engagement/state`
   - `GET /api/training/status`
   - `GET /api/training/live/status`
+  - `GET /api/training/candidates/internal`
+  - `GET /api/training/candidates/internal/:runId`
   - `GET /api/training/logs`
   - `GET /api/training/datasets`
   - `GET /api/training/continuous/status`
@@ -2017,9 +2088,9 @@ Server route and worker actions:
   - `POST /api/studio/generation/pattern/chords`
   - `POST /api/studio/generation/pattern/arrangement`
   - `POST /api/studio/generation/audio-to-melody`
-  - Local service/schema/storage dependencies: `server/db.ts`, `server/lib/aiSource.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/middleware/rateLimiter.ts`, `server/middleware/uploadHandler.ts`, `server/services/aiAudioGeneratorService.ts`, `server/services/maxcoreClient.ts`, `server/services/maxcoreConnector.ts`, `server/services/maxcoreControlTransport.ts`, `shared/schema.ts`
+  - Local service/schema/storage dependencies: `server/db.ts`, `server/lib/aiSource.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/middleware/rateLimiter.ts`, `server/middleware/uploadHandler.ts`, `server/services/aiAudioGeneratorService.ts`, `server/services/maxcoreClient.ts`, `server/services/maxcoreControlTransport.ts`, `server/services/studioMaxCoreTransport.ts`, `shared/schema.ts`
 
-Inventory source files: 284.
+Inventory source files: 293.
 
 ### collaboration
 
@@ -2290,7 +2361,7 @@ Inventory source files: 3.
 
 ### administration
 
-Source acceptance: **UNVERIFIED**. Inventory contains 12 UI page files, 14 route/worker source files, 109 declared handlers, and 0 unresolved declarations.
+Source acceptance: **UNVERIFIED**. Inventory contains 12 UI page files, 14 route/worker source files, 110 declared handlers, and 0 unresolved declarations.
 
 UI pages:
 - `client/src/pages/Admin.tsx` — UI API references: `/api/admin/analytics`, `/api/admin/financial-config/label-settings`, `/api/admin/financial-config/label-settings/${key}`, `/api/admin/financial-config/royalty-rates`, `/api/admin/financial-config/royalty-rates/${id}`, `/api/admin/financial-config/tax-treaties`, `/api/admin/financial-config/tax-treaties/${id}`, `/api/admin/moderation/reports`, `/api/admin/moderation/reports/${reportId}/review`, `/api/admin/payment-bypass/activate`, `/api/admin/payment-bypass/deactivate`, `/api/admin/payment-bypass/extend`, `/api/admin/payment-bypass/status`, `/api/admin/settings`, `/api/admin/system-health`, `/api/admin/users`, `/api/admin/users/${userId}`, `/api/admin/users/${userId}/reactivate`, `/api/admin/users/${userId}/suspend`, `/api/admin/users/export`, `/api/dns/resolver/status`, `/api/kill-switch/kill-all`, `/api/kill-switch/resume-all`
@@ -2304,7 +2375,7 @@ UI pages:
 - `client/src/pages/admin/SecurityDashboard.tsx` — UI API references: `/api/security/anomaly-detection`, `/api/security/behavioral-alerts`, `/api/security/behavioral-alerts/${alertId}/resolve`, `/api/security/metrics`, `/api/security/pentest-results`
 - `client/src/pages/admin/SupportDashboard.tsx` — UI API references: `/api/support/stats`, `/api/support/tickets/${ticketId}`, `/api/support/tickets/all?${params.toString()}`
 - `client/src/pages/admin/SupportTicketDetail.tsx` — UI API references: `/api/support/tickets/${ticketId}`, `/api/support/tickets/${ticketId}/messages`, `/api/support/tickets/${ticketId}/tags`, `/api/support/tickets/${ticketId}/tags/${encodeURIComponent(tag)}`
-- `client/src/pages/admin/TrainingDashboard.tsx` — UI API references: `/api/training/datasets`, `/api/training/schedule`, `/api/training/start`, `/api/training/status`, `/api/training/stop`
+- `client/src/pages/admin/TrainingDashboard.tsx` — UI API references: `/api/admin/maxcore/health`, `/api/admin/maxcore/readiness`, `/api/admin/maxcore/warm/status`, `/api/generation/capabilities`, `/api/training/candidates/internal`, `/api/training/datasets`, `/api/training/live/status`, `/api/training/schedule`, `/api/training/start`, `/api/training/status`, `/api/training/stop`, `/api/warm/status`
 
 Server route and worker actions:
 
@@ -2312,7 +2383,7 @@ Server route and worker actions:
 
 - `external/maxcore/artifacts/ai-training-server/workers/admin_flywheel.py` (no mount found in the route registry or direct-mount list) — 0 declared action(s).
 
-- `server/routes/admin.ts` (mounted at `/api/admin`) — 54 declared action(s).
+- `server/routes/admin.ts` (mounted at `/api/admin`) — 55 declared action(s).
   - `POST /api/admin/tokens`
   - `POST /api/admin/tokens/revoke`
   - `GET /api/admin/dashboard`
@@ -2333,6 +2404,7 @@ Server route and worker actions:
   - `GET /api/admin/analytics`
   - `GET /api/admin/metrics`
   - `GET /api/admin/settings`
+  - `PUT /api/admin/settings`
   - `POST /api/admin/settings/notifications`
   - `POST /api/admin/settings/maintenance`
   - `POST /api/admin/settings/registration`
@@ -2367,7 +2439,7 @@ Server route and worker actions:
   - `GET /api/admin/intelligence/events`
   - `POST /api/admin/intelligence/analyze`
   - `POST /api/admin/sentry-test`
-  - Local service/schema/storage dependencies: `server/config/env.ts`, `server/db.ts`, `server/instrument.ts`, `server/lib/paymentPreferencePrivacy.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/safety/killSwitch.ts`, `server/services/adminApiTokenService.ts`, `server/services/chainErrorAutoFixer.ts`, `server/services/moderationDecisionService.ts`, `server/services/permanentFixRegistry.ts`, `server/services/platformAutoFixer.ts`, `server/services/systemIntelligence.ts`, `shared/schema.ts`
+  - Local service/schema/storage dependencies: `server/config/env.ts`, `server/db.ts`, `server/instrument.ts`, `server/lib/paymentPreferencePrivacy.ts`, `server/lib/stripeClient.ts`, `server/logger.ts`, `server/middleware/auth.ts`, `server/safety/killSwitch.ts`, `server/services/adminApiTokenService.ts`, `server/services/adminHealthTelemetry.ts`, `server/services/chainErrorAutoFixer.ts`, `server/services/governancePolicyService.ts`, `server/services/moderationDecisionService.ts`, `server/services/permanentFixRegistry.ts`, `server/services/platformAutoFixer.ts`, `server/services/systemIntelligence.ts`, `shared/schema.ts`
 
 - `server/routes/admin/auditLog.ts` (mounted at `/api/admin/audit-log`) — 2 declared action(s).
   - `GET /api/admin/audit-log/`

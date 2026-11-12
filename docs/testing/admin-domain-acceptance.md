@@ -99,3 +99,106 @@ The static inventory also includes an `admin/intelligence.ts` source file whose
 six declarations are not mounted; the active admin intelligence handlers are
 registered in `server/routes/admin.ts`. The unmounted declarations are listed
 for visibility but are not counted as reachable UI actions.
+
+## Current-source reconciliation (2026-11-12)
+
+The source inventory and navigation ledger were refreshed after syncing with
+main. The source inventory now covers 524 tracked candidate files, including
+88 UI pages, 2,530 declared handlers, 11 unresolved
+declarations, and 123 unclassified candidates. See
+[admin-domain-action-inventory.md](admin-domain-action-inventory.md) for page
+API references, mounts, handler declarations, and local service dependencies,
+and [admin-navigation-flow-ledger.md](admin-navigation-flow-ledger.md) for the
+79 router patterns, 30 shared sidebar destinations, six admin-only sidebar
+links, four mobile shortcuts, More-menu behavior, and route-only distinctions.
+These are reviewed source maps, not blanket acceptance.
+
+### Current-source verification
+
+- `node --test tests/layout-navigation-accessibility-browser.test.mjs`:
+  **12 passed, 0 failed** after the rebase, in Chromium using the production
+  stylesheet. The
+  ordinary-user fixture verified mobile menu accessible names, closed-drawer
+  focus exclusion, Enter/Escape behavior, focus restoration, and desktop resize.
+  It did not exercise admin links or business operations.
+- `tests/unit/auth-page-age-policy.test.ts` and
+  `tests/unit/private-admin-boundaries.test.ts` plus
+  `tests/unit/admin-health-telemetry.test.ts`: **90 passed, 0 failed**. These
+  include the actual registration route callback with explicit closed policy
+  and unavailable-policy errors, account-creation denial, policy boundaries,
+  and telemetry calculation.
+- `npm run check`: passed for server and client TypeScript.
+- `node --check scripts/testing/page80-acceptance.mjs` and
+  `git diff --check`: passed.
+- The isolated page-acceptance harness had two setup failures before the final
+  rerun: first it inherited the intended closed-launch policy; after making its
+  local opt-in explicit, it still lacked the persisted registration setting.
+  After the rebase, its current-source run at
+  `16e53e0d64ceba3b10165dc99eeb65e619365bf4` returned
+  **PASS_WITH_UNTESTED_CATEGORIES** with no failed routes:
+  42 authenticated, 11 administrator, and 27 public routes rendered in real
+  Chromium. The real form-login/session/logout flow, synthetic-user cleanup,
+  2FA setup and TOTP verification, project CRUD and cross-owner denial,
+  preferences reload, workspace persistence/owner checks, and press-kit form
+  save/reload/public projection/cache invalidation/unpublish passed. The report
+  is `reports/admin-gap-audit/2026-11-12/page80-rebased/page80.json`.
+  Its app and PostgreSQL were isolated, external networking and provider
+  credentials were absent, readiness correctly remained degraded at HTTP 503
+  for missing MaxCore/model, and process/database cleanup passed. The temporary
+  account received a paid entitlement in the disposable database and its role
+  was changed to admin only there; this is not the intended administrator or
+  separate representative paid/free-account acceptance. Route rendering does
+  not prove each page's material workflow.
+- The private-admin and ordinary paid/free HTTP suites were not rerun against
+  this source snapshot. Their isolated runner requires
+  `.pythonlibs/lib/python3.12/site-packages`, which is absent in this workspace.
+  The current shell has Python 3.12.13 but not the matching test dependency
+  directory. Previous receipts remain revision-bound and are not treated as
+  current acceptance.
+
+### Confirmed shared-path correction
+
+The password-registration route previously translated the explicit
+`RegistrationDisabledError` (403) and `GovernancePolicyUnavailableError` (503)
+into a generic HTTP 500. It now preserves those safe policy outcomes and does
+not create an account on either failure. The two real-route callback regressions
+passed in the unit run above. This does not enable registration in production;
+the disposable page fixture opts in only within its isolated process/database.
+
+### Remaining acceptance blockers
+
+- **Intended administrator and ordinary accounts:** No designated non-production
+  acceptance environment or authorized existing sessions were supplied to this
+  isolated workspace. The browser fixture's administrator is a synthetic row
+  whose role is changed only inside disposable PostgreSQL. It is useful for
+  route rendering, but cannot stand in for the intended admin, representative
+  paid account, or representative free account.
+- **Shared workflows:** The source ledger identifies endpoints and expected
+  saved/generated states, but there is no current-source, real-account UI
+  journey for each of the 30 shared navigation destinations. Prior scoped HTTP
+  receipts are not elevated to full UI acceptance.
+- **Provider-dependent actions:** No charges, settlement, fan/customer messages,
+  OAuth writes, publishing, distribution submission, KYC decision, or other
+  external mutations were performed. Where no genuine sandbox receipt exists,
+  these remain blocked, not passed.
+- **MaxCore/model service:** The isolated browser harness deliberately starts
+  without MaxCore or a loaded model. Separate older evidence found local
+  MaxCore health without a loaded model; the configured remote probe returned
+  HTTP 404 for health and awareness paths. Neither proves current model-serving
+  readiness.
+- **Awareness/native discovery:** The retained direct source scan saw 28
+  configured observations with 16 healthy and 12 failed (five access-denied,
+  five not-found, one DNS failure, one unsafe feed). It does not prove lawful
+  native discovery on all eight approved platforms or provide eight-platform
+  attributable results. Respect the reported access denials; do not scrape
+  around them.
+- **Storage, training, and generated media:** Existing storage/restart receipts
+  are scoped and task-specific. This acceptance run supplies no current
+  checkpoint/restart proof, actual training receipt, or genuine attributable
+  text, image, audio, and video model outputs. Those requirements remain open
+  alongside their already-active task references.
+
+The final page-acceptance verdict and cleanup are recorded in the linked
+2026-11-12 report directory. Overall acceptance and `productionReady` remain
+**false** until each blocked flow has its own authorized, current-source
+evidence.

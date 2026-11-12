@@ -1101,8 +1101,9 @@ try {
   const appEnv = {
     ...baseEnv,
     NODE_ENV: "production",
-    // This opt-in exists only in the disposable acceptance process and DB.
-    // Production remains private/admin-only by default.
+    // This opt-in is limited to the disposable acceptance process and database.
+    // Production remains private/admin-only unless its own launch configuration
+    // explicitly enables public access.
     MAXBOOSTER_ADMIN_ONLY_MODE: "false",
     MAXBOOSTER_PUBLIC_LAUNCH_ENABLED: "true",
     PORT: String(appPort),
@@ -1200,6 +1201,7 @@ try {
   );
   evidence.registrationPolicyFixture =
     "public registration enabled only in disposable PostgreSQL; production configuration is unchanged";
+  evidence.registrationPolicy = evidence.registrationPolicyFixture;
 
   if (httpLoadOnly) {
     evidence.browser = "intentionally skipped only for explicit --http-load mode";

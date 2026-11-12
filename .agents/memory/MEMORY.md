@@ -6,18 +6,19 @@
 - [Packaged restart fixtures](packaged-restart-fixture.md) — keep generated schema baselines separate from overlapping migrations; require readiness on every restart cycle.
 - [Python scan version attribution](python-scan-version-attribution.md) — resolve reported versions from current constraints before changing pins when scan results disagree.
 - [Portable Python publishing](portable-python-build.md) — isolated runtime installs must override builder-level pip user mode and enforce both AI-server and diffusion requirements.
-- [Local PDIM AOF recovery](local-pdim-aof-conflicting-sequences.md) — verify checksums, discard only snapshot-covered frames, require contiguous newer records, and fence every local writer with one lease.
+- [Local PDIM AOF recovery](local-pdim-aof-conflicting-sequences.md) — verify checksums, ignore snapshot-covered frames, require contiguous records, and fence each writer with one lease.
 - [Awareness profile sources](awareness-profile-sources.md) — collect public music-profile content by platform; topic categories are analysis metadata, not source targets.
 - [Simulation cycle semantics](simulation-cycle-semantics.md) — repeat a fixed ten-year horizon indefinitely with both rolling-state and fixed-baseline tracks.
 - [Live-awareness serving readiness](live-awareness-serving-readiness.md) — serve current awareness before a trained checkpoint, while reporting checkpoint status separately.
 - [Provider error logging](provider-error-logging.md) — do not log raw provider messages; they can embed unlabelled credentials that generic redaction cannot reliably identify.
+- [Weave rebase build conflicts](weave-rebase-build-conflicts.md) — generated `dist` conflicts can retain markers; restore clean target-branch output or rebuild.
 - [Whole-product acceptance](whole-product-acceptance.md) — cover every role and journey; MaxCore also has owner-defined memory, graph, agent, tool, expansion, and data-model requirements.
 - [Publishing SIGTERM boundary](publishing-sigterm-boundary.md) — honor supervisor termination; a deployment log may not identify its source, and application code cannot prevent an external stop.
 - [Automation side-effect serialization](automation-side-effect-serialization.md) — serialize workflow steps and lifecycle transitions; retries of external actions need durable idempotency evidence.
 - [Python test interpreter alignment](python-test-interpreter-alignment.md) — ensure coverage and test tools are importable in the exact interpreter selected by the runner.
 - [Vitest timeout and sharding hygiene](vitest-cli-subprocess-contention.md) — distinguish runner timeouts from test failures and merge coverage shards before enforcing global thresholds.
 - [Nested Max Booster copy](nested-maxbooster-copy.md) — the owner identified `maxbooster7.5` as a nested duplicate, not the active app source.
-- [Embedded Vite configuration](embedded-vite-configuration.md) — resolve environment config callbacks before building middleware servers; object-spreading one can silently default to the workspace root.
+- [Embedded Vite configuration](embedded-vite-configuration.md) — resolve env callbacks before middleware builds; object-spreading one can silently default to the workspace root.
 - [Neon session startup race](neon-session-startup-race.md) — initialize authoritative sessions before parallel DB probes; bounded retries should cover transient connection failures only.
 - [Stuck preview boot shell](stuck-preview-boot-shell.md) — verify the active preview host and Node/Vite health before changing client loading behavior.
 - [Owner training and generation rights](owner-admin-training-rights.md) — owner-controlled content is authorized; third-party awareness content still needs separate permission.
