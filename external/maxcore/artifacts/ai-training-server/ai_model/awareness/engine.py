@@ -5,6 +5,7 @@ import calendar
 import hashlib
 import html
 import json
+import logging
 import math
 import queue
 import re
@@ -19,12 +20,15 @@ DOMAINS = frozenset(("music", "social", "advertising", "culture"))
 POINTER = "awareness:v1:current"
 BLOB = "awareness:v1:snapshot:"
 OBSERVATIONS_PREFIX = "awareness:v1:source-observations:"
-SOURCE_REVIEW_KEY = "awareness:v1:admin-source-review"
+SOURCE_REVIEW_KEY = "awareness:v2:admin-source-review-items"
+LEGACY_SOURCE_REVIEW_KEY = "awareness:v1:admin-source-review"
+SOURCE_REVIEW_MIGRATION_FIELD = "__legacy_v1_migrated__"
 TTL = 3600
 MAX_OBSERVATION_TEXT = 4096
 MAX_SOURCE_OBSERVATIONS = 240
 MAX_DOMAIN_TRAINING_OBSERVATIONS = 60
 _bound = contextvars.ContextVar("maxcore_awareness", default=None)
+_logger = logging.getLogger(__name__)
 
 
 class AwarenessUnavailable(RuntimeError):
@@ -528,9 +532,76 @@ class PDIM:
         raw = self._command("GET", get_storage()._ns(key))
         return json.loads(raw) if isinstance(raw, str) else raw
 
+    def source_review_migration_complete(self):
+        """Report whether the v1 JSON review ledger was safely imported."""
+        from storage_client import get_storage
+        store = get_storage()
+        marker = self._command(
+            "HGET", store._ns(SOURCE_REVIEW_KEY), SOURCE_REVIEW_MIGRATION_FIELD,
+        )
+        if marker is None:
+            return False
+        if marker != "1":
+            raise AwarenessUnavailable(
+                "Source review migration marker is invalid",
+                code="source_review_ledger_invalid",
+            )
+        return True
+
+    def migrate_source_reviews(self, entries):
+        """Copy valid v1 reviews into the v2 hash without deleting v1 evidence."""
+        return self._write_source_reviews(entries, mark_migrated=True)
+
+    def source_review_states(self, item_ids):
+        """Read only requested review annotations from the durable hash."""
+        if not isinstance(item_ids, (list, tuple)) or len(item_ids) > 1000:
+            raise AwarenessUnavailable(
+                "Invalid source review lookup",
+                code="source_review_storage_unavailable",
+            )
+        if not item_ids:
+            return {}
+        from storage_client import get_storage
+        store = get_storage()
+        fields = list(item_ids)
+        if any(not isinstance(item_id, str) for item_id in fields):
+            raise AwarenessUnavailable(
+                "Invalid source review identifier",
+                code="source_review_storage_unavailable",
+            )
+        values = self._command(
+            "HMGET", store._ns(SOURCE_REVIEW_KEY), *fields,
+        )
+        if not isinstance(values, list) or len(values) != len(fields):
+            raise AwarenessUnavailable(
+                "Source review readback was incomplete",
+                code="source_review_storage_unavailable",
+            )
+        result = {}
+        for item_id, raw in zip(fields, values):
+            if raw is None:
+                continue
+            if not isinstance(raw, str):
+                raise AwarenessUnavailable(
+                    "Source review value was invalid",
+                    code="source_review_storage_unavailable",
+                )
+            try:
+                entry = json.loads(raw)
+            except (TypeError, ValueError) as exc:
+                raise AwarenessUnavailable(
+                    "Source review value was invalid",
+                    code="source_review_storage_unavailable",
+                ) from exc
+            result[item_id] = entry
+        return result
+
     def approve_source_reviews(self, entries):
         """Atomically add immutable admin review evidence to the canonical store."""
-        if not isinstance(entries, dict) or not 1 <= len(entries) <= 1000:
+        return self._write_source_reviews(entries, mark_migrated=False)
+
+    def _write_source_reviews(self, entries, *, mark_migrated):
+        if not isinstance(entries, dict) or len(entries) > 1000:
             raise AwarenessUnavailable(
                 "Invalid source review batch",
                 code="source_review_write_unavailable",
@@ -546,35 +617,50 @@ class PDIM:
                 )
             args.extend((item_id, canonical(entry)))
         script = """
-local raw = redis.call('GET', KEYS[1])
-local doc = {schema = 1, items = {}}
-if raw then
-  local ok, parsed = pcall(cjson.decode, raw)
-  if not ok or type(parsed) ~= 'table' or parsed.schema ~= 1
-      or type(parsed.items) ~= 'table' then
-    return -1
-  end
-  doc = parsed
-end
-local inserted = 0
-for i = 1, #ARGV, 2 do
+local marker = ARGV[1]
+local mark_migrated = ARGV[2] == '1'
+local start = 3
+if marker ~= '__legacy_v1_migrated__' then return -1 end
+if (#ARGV - start + 1) % 2 ~= 0 then return -2 end
+local validated = {}
+for i = start, #ARGV, 2 do
   local item_id = ARGV[i]
   local ok, entry = pcall(cjson.decode, ARGV[i + 1])
-  if not ok or type(entry) ~= 'table' or entry.item_id ~= item_id
-      or entry.note ~= 'Admin approved' then
-    return -2
-  end
-  if doc.items[item_id] == nil then
-    doc.items[item_id] = entry
-    inserted = inserted + 1
-  end
+  if not ok or entry == nil or entry == false then return -3 end
+  local fields_ok, entry_id, note, approver, reviewed_at = pcall(function()
+    return entry.item_id, entry.note, entry.approver_id, entry.reviewed_at
+  end)
+  if not fields_ok then return -4 end
+  if entry_id ~= item_id then return -5 end
+  if note ~= 'Admin approved' then return -6 end
+  if type(approver) ~= 'string' then return -7 end
+  if type(reviewed_at) ~= 'number' or reviewed_at <= 0 then return -8 end
+  local adapter = string.match(item_id, '^adapter:[%w_-]+$')
+  local record = string.match(item_id, '^record:%x+$')
+  if not adapter and not record then return -9 end
+  table.insert(validated, {item_id, ARGV[i + 1]})
 end
-redis.call('SET', KEYS[1], cjson.encode(doc))
+local inserted = 0
+for _, pair in ipairs(validated) do
+  inserted = inserted + redis.call('HSETNX', KEYS[1], pair[1], pair[2])
+end
+if mark_migrated then
+  redis.call('HSETNX', KEYS[1], marker, '1')
+end
 return inserted
 """
+        script_args = [SOURCE_REVIEW_MIGRATION_FIELD, "1" if mark_migrated else "0", *args[1:]]
         try:
-            result = self._command("EVAL", script, 1, *args)
+            result = self._command(
+                "EVAL", script, 1, args[0], *script_args,
+            )
             if type(result) not in (int, str) or int(result) < 0:
+                _logger.warning(
+                    "Canonical source-review atomic command rejected "
+                    "(result_type=%s, result_code=%s)",
+                    type(result).__name__,
+                    str(result) if type(result) is int else "invalid",
+                )
                 raise AwarenessUnavailable(
                     "Atomic source review write rejected",
                     code="source_review_write_unavailable",
@@ -583,6 +669,13 @@ return inserted
         except AwarenessUnavailable:
             raise
         except Exception as exc:
+            status_match = re.search(r"\bHTTP\s+(\d{3})\b", str(exc))
+            _logger.warning(
+                "Canonical source-review storage command failed "
+                "(error_type=%s, http_status=%s)",
+                type(exc).__name__,
+                status_match.group(1) if status_match else "unknown",
+            )
             raise AwarenessUnavailable(
                 "Canonical source review storage unavailable",
                 code="source_review_write_unavailable",

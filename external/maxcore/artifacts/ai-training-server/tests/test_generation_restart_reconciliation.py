@@ -28,7 +28,8 @@ class RestartTests(unittest.TestCase):
         names = {"_job_path", "_job_write", "_job_read", "_job_update",
                  "_persist_generation_job", "_journal_records", "_journal_job_id", "_job_gc",
                  "recover_dedicated_delivery", "_live_awareness_capability",
-                 "_generation_readiness", "generation_readiness"}
+                 "_generation_readiness", "_generation_endpoint_catalog",
+                 "generation_readiness"}
         tree = ast.parse((ROOT / "server.py").read_text())
         nodes = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
                  and n.name in names]
@@ -43,6 +44,7 @@ class RestartTests(unittest.TestCase):
             "_model_init_error": None, "_serving_release_status": {},
             "_script_agent": SimpleNamespace(run_live_awareness=lambda _request: None),
             "_live_learning_loop": None, "_live_serving_model": None,
+            "_generation_runtime_dependencies": lambda _modality: {},
         }
         exec(compile(ast.Module(body=nodes, type_ignores=[]), str(ROOT / "server.py"), "exec"),
              self.scope)
@@ -136,8 +138,14 @@ class RestartTests(unittest.TestCase):
             self.scope["_model_ready"] = model
             engine = Mock()
             engine.readiness_status.return_value = {"ready": awareness}
+            renderers = {
+                "image": {"renderer": "test-image"},
+                "audio": {"renderer": "test-audio"},
+                "video": {"renderer": "test-video"},
+            }
             with patch.dict(os.environ, {"MAXCORE_SERVING_RELEASE": "live-awareness"}), \
-                 patch("ai_model.awareness.get_engine", return_value=engine):
+                 patch("ai_model.awareness.get_engine", return_value=engine), \
+                 patch("ai_model.capabilities.capabilities", return_value=renderers):
                 response = asyncio.run(self.scope["generation_readiness"]())
             self.assertEqual(response.status_code, expected)
             body = json.loads(response.body)

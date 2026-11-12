@@ -2768,8 +2768,9 @@ def _generation_endpoint_catalog(generation, awareness_ready, renderers):
             "route_and_runtime_prerequisites_ready" if online
             else "fresh_awareness_snapshot_unavailable" if awareness_ready is not True
             else "renderer_not_configured" if modality != "text" and not renderer.get("renderer")
+            else "text_composer_or_checkpoint_unavailable" if modality == "text"
             else "runtime_dependencies_missing" if missing_dependencies
-            else "text_composer_or_checkpoint_unavailable"
+            else "renderer_not_configured"
         )
         generation_routes[modality] = {
             "method": "POST",

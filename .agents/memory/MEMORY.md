@@ -21,3 +21,4 @@
 - [Neon session startup race](neon-session-startup-race.md) — initialize authoritative sessions before parallel DB probes; bounded retries should cover transient connection failures only.
 - [Stuck preview boot shell](stuck-preview-boot-shell.md) — verify the active preview host and Node/Vite health before changing client loading behavior.
 - [Owner-generated training rights](owner-admin-training-rights.md) — owner-admin-authored outputs are authorized for candidate training; awareness-derived third-party content still needs separate rights.
+- [PDIM Lua JSON values](pdim-lua-json-values.md) — the embedded Wasmoon Redis bridge may expose decoded JSON objects as userdata, so validate fields rather than requiring Lua `table` type.

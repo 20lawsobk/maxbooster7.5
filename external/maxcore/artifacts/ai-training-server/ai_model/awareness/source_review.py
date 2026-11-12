@@ -10,10 +10,11 @@ import json
 import math
 import re
 import time
-from datetime import datetime, timezone
 
+from .engine import LEGACY_SOURCE_REVIEW_KEY, SOURCE_REVIEW_KEY
 
-REVIEW_KEY = "awareness:v1:admin-source-review"
+REVIEW_KEY = LEGACY_SOURCE_REVIEW_KEY
+REVIEW_HASH_KEY = SOURCE_REVIEW_KEY
 REVIEW_NOTE = "Admin approved"
 MAX_ADAPTERS = 500
 MAX_RECORDS = 500
@@ -53,7 +54,7 @@ def _entry(item_id, value):
     }
 
 
-def _document(engine):
+def _legacy_document(engine):
     try:
         document = engine.store.get(REVIEW_KEY)
     except Exception as exc:
@@ -81,6 +82,31 @@ def _document(engine):
     return document
 
 
+def _review_states(engine, item_ids):
+    try:
+        store = engine.store
+        migration_check = getattr(store, "source_review_migration_complete", None)
+        migrate = getattr(store, "migrate_source_reviews", None)
+        read_states = getattr(store, "source_review_states", None)
+        if not callable(migration_check) or not callable(migrate) or not callable(read_states):
+            raise SourceReviewError("source_review_storage_not_writable")
+        if not migration_check():
+            legacy = _legacy_document(engine)
+            migrate(legacy["items"])
+        states = read_states(item_ids)
+    except SourceReviewError:
+        raise
+    except Exception as exc:
+        raise SourceReviewError("source_review_storage_unavailable") from exc
+    if not isinstance(states, dict):
+        raise SourceReviewError("source_review_ledger_invalid")
+    for item_id, value in states.items():
+        if item_id not in item_ids:
+            raise SourceReviewError("source_review_ledger_invalid")
+        _entry(item_id, value)
+    return states
+
+
 def _items(engine):
     adapters = sorted(engine.sources)
     if len(adapters) > MAX_ADAPTERS:
@@ -89,20 +115,18 @@ def _items(engine):
         records = engine.discovery_observations(limit=MAX_RECORDS)
     except Exception as exc:
         raise SourceReviewError("source_review_records_unavailable") from exc
-    ledger = _document(engine)["items"]
-    adapter_items = []
+    adapter_candidates = []
     for source in adapters:
         item_id = f"adapter:{source}"
         if not _ITEM_ID.fullmatch(item_id):
             raise SourceReviewError("source_review_adapter_id_invalid")
-        adapter_items.append({
+        adapter_candidates.append({
             "id": item_id,
             "source_id": source,
             "kind": "adapter",
-            **_entry(item_id, ledger.get(item_id)),
         })
 
-    record_items = []
+    record_candidates = []
     for row in records:
         source = row.get("source")
         citation = row.get("citation")
@@ -125,8 +149,7 @@ def _items(engine):
             ).encode("utf-8")
         ).hexdigest()
         item_id = f"record:{record_digest}"
-        review = _entry(item_id, ledger.get(item_id))
-        record_items.append({
+        record_candidates.append({
             "id": item_id,
             "kind": "record",
             "source_id": source,
@@ -137,8 +160,18 @@ def _items(engine):
             "source_type": discovery.get("source_type"),
             "reuse_rights": discovery.get("reuse_rights"),
             "training_eligible": discovery.get("training_eligible") is True,
-            **review,
         })
+    candidates = adapter_candidates + record_candidates
+    states = _review_states(engine, [item["id"] for item in candidates])
+    reviewed = [
+        {
+            **item,
+            **_entry(item["id"], states.get(item["id"])),
+        }
+        for item in candidates
+    ]
+    adapter_items = reviewed[:len(adapter_candidates)]
+    record_items = reviewed[len(adapter_candidates):]
     return adapter_items, record_items
 
 
@@ -147,7 +180,7 @@ def inventory(engine):
     adapters, records = _items(engine)
     return {
         "schema": 1,
-        "storage_authority": "canonical_pdim_readback",
+        "storage_authority": "canonical_pdim_hash_readback",
         "adapter_count": len(adapters),
         "record_count": len(records),
         "pending_count": sum(item["needs_to_be_reviewed"] for item in adapters + records),
@@ -178,14 +211,21 @@ def approve_current_inventory(engine, approver_id, *, now=None):
         for item in current
         if item["needs_to_be_reviewed"]
     }
+    approved_count = 0
     if entries:
         writer = getattr(engine.store, "approve_source_reviews", None)
         if not callable(writer):
             raise SourceReviewError("source_review_storage_not_writable")
         try:
-            writer(entries)
+            approved_count = writer(entries)
         except Exception as exc:
             raise SourceReviewError("source_review_write_unavailable") from exc
+        if (
+            type(approved_count) is not int
+            or approved_count < 0
+            or approved_count > len(entries)
+        ):
+            raise SourceReviewError("source_review_write_unavailable")
 
     result = inventory(engine)
     all_items = result["adapters"] + result["records"]
@@ -195,31 +235,20 @@ def approve_current_inventory(engine, approver_id, *, now=None):
         if item["note"] != REVIEW_NOTE or not item["approver_id"] or not item["reviewed_at"]:
             raise SourceReviewError("source_review_readback_mismatch")
     return {
-        "approved_count": len(entries),
-        "already_approved_count": len(current) - len(entries),
+        "approved_count": approved_count,
+        "already_approved_count": len(current) - approved_count,
         "inventory": result,
     }
-
-
-def reviewed_at_label(value):
-    """Format a validated timestamp for logs/UI without altering stored evidence."""
-    if type(value) not in (int, float) or not math.isfinite(value):
-        return None
-    return datetime.fromtimestamp(value, timezone.utc).isoformat()
 
 
 def create_router(verify_admin, engine_factory):
     """Create an authenticated approval route for the current inventory."""
     from fastapi import APIRouter, Depends, HTTPException
-    from pydantic import BaseModel, ConfigDict
-
-    class ReviewRequest(BaseModel):
-        model_config = ConfigDict(extra="forbid")
 
     router = APIRouter()
 
     @router.post("/api/awareness/unified/admin/source-review")
-    async def approve_sources(_request: ReviewRequest, admin=Depends(verify_admin)):
+    async def approve_sources(admin=Depends(verify_admin)):
         engine = engine_factory()
         try:
             result = approve_current_inventory(
