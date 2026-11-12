@@ -342,5 +342,93 @@ describe("MaxCore local supervisor", () => {
         groupKill.mockRestore();
       }
     });
+
+    it("retries when the child process emits a spawn error without an exit event", async () => {
+      const existsSyncMock = vi.fn((p) => String(p) === TSX_BIN);
+      vi.doMock("node:fs", async () => {
+        const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+        return {
+          ...actual,
+          default: { ...actual.default, existsSync: existsSyncMock },
+        };
+      });
+      vi.doMock("pg", () => ({
+        default: {
+          Client: class {
+            connect = vi.fn().mockResolvedValue(undefined);
+            query = vi.fn().mockResolvedValue({});
+            end = vi.fn().mockResolvedValue(undefined);
+          },
+        },
+      }));
+      const failedProc = fakeProc();
+      const recoveredProc = fakeProc();
+      recoveredProc.pid = 424243;
+      const spawnMock = vi.fn()
+        .mockReturnValueOnce(failedProc)
+        .mockReturnValueOnce(recoveredProc);
+      vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
+
+      const { startMaxcoreLocal, getMaxcoreLocalStatus, stopMaxcoreLocal } =
+        await import("../../server/services/maxcoreLocalSupervisor.js");
+
+      vi.useFakeTimers();
+      const groupKill = vi.spyOn(process, "kill").mockReturnValue(true);
+      try {
+        await startMaxcoreLocal();
+        failedProc.emit("error", Object.assign(new Error("private spawn detail"), { code: "ENOENT" }));
+        failedProc.emit("close", -2, null);
+
+        expect(getMaxcoreLocalStatus().running).toBe(false);
+        expect(getMaxcoreLocalStatus().error).toBe("MaxCore child failed to spawn (ENOENT)");
+        expect(spawnMock).toHaveBeenCalledTimes(1);
+
+        // The supervisor must recover on its own, not require a manual
+        // second start call. The successful owner also clears the old error.
+        await vi.advanceTimersByTimeAsync(2_000);
+        expect(spawnMock).toHaveBeenCalledTimes(2);
+        expect(getMaxcoreLocalStatus().running).toBe(true);
+        expect(getMaxcoreLocalStatus().pid).toBe(424243);
+        expect(getMaxcoreLocalStatus().error).toBeNull();
+        stopMaxcoreLocal();
+      } finally {
+        vi.clearAllTimers();
+        vi.useRealTimers();
+        groupKill.mockRestore();
+      }
+    });
+
+    it("schedules recovery when setup throws before a child can be created", async () => {
+      const existsSyncMock = vi.fn((p) => String(p) === TSX_BIN);
+      vi.doMock("node:fs", async () => {
+        const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+        return {
+          ...actual,
+          default: { ...actual.default, existsSync: existsSyncMock },
+        };
+      });
+      const spawnMock = vi.fn(() => {
+        throw Object.assign(new Error("do not expose connection strings"), { code: "EADDRINUSE" });
+      });
+      vi.doMock("node:child_process", () => ({ spawn: spawnMock }));
+      vi.doMock("pg", () => ({
+        default: {
+          Client: class {
+            connect = vi.fn().mockResolvedValue(undefined);
+            query = vi.fn().mockResolvedValue({});
+            end = vi.fn().mockResolvedValue(undefined);
+          },
+        },
+      }));
+
+      const { startMaxcoreLocal, getMaxcoreLocalStatus, stopMaxcoreLocal } =
+        await import("../../server/services/maxcoreLocalSupervisor.js");
+
+      await startMaxcoreLocal();
+      expect(spawnMock).toHaveBeenCalledTimes(1);
+      expect(getMaxcoreLocalStatus().running).toBe(false);
+      expect(getMaxcoreLocalStatus().error).toBe("MaxCore startup attempt failed (EADDRINUSE)");
+      stopMaxcoreLocal();
+    });
   });
 });

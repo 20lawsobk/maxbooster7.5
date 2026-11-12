@@ -443,6 +443,7 @@ async function spawnChild(): Promise<void> {
     // as a tree if the primary dies uncleanly (SIGKILL leaves orphans).
     detached: true,
   });
+  startupError = null;
 
   const prefixPipe = (data: Buffer) => {
     const text = data.toString().trimEnd();
@@ -451,13 +452,11 @@ async function spawnChild(): Promise<void> {
   child.stdout?.on("data", prefixPipe);
   child.stderr?.on("data", prefixPipe);
 
-  child.on("error", (err) => {
-    startupError = err.message;
-    logger.error(`[MaxCoreLocal] spawn error: ${err.message}`);
-  });
-
   const childPid = child.pid;
-  child.on("exit", (code, signal) => {
+  let childFinalized = false;
+  const finalizeChild = (code: number | null, signal: NodeJS.Signals | null) => {
+    if (childFinalized) return;
+    childFinalized = true;
     child = null;
     // The subsystem is gone — drop the cached readiness right away rather
     // than serving a stale `ready:true` for up to READY_TTL_MS.
@@ -488,7 +487,19 @@ async function spawnChild(): Promise<void> {
       void spawnChild();
     }, delay);
     restartTimer.unref();
+  };
+
+  child.on("error", (err) => {
+    const code = (err as NodeJS.ErrnoException).code;
+    const safeCode = code && /^[A-Z0-9_]{1,32}$/.test(code) ? code : "SPAWN_ERROR";
+    startupError = `MaxCore child failed to spawn (${safeCode})`;
+    logger.error(`[MaxCoreLocal] ${startupError}`);
   });
+  // `exit` handles normal termination promptly. `close` also handles spawn
+  // failures, which emit `error` and may never emit `exit`; the guard prevents
+  // both events from scheduling duplicate restarts.
+  child.once("exit", finalizeChild);
+  child.once("close", finalizeChild);
 }
 
 /** Install the nested MaxCore workspace on a clean checkout so the normal
@@ -562,6 +573,8 @@ export async function startMaxcoreLocal(): Promise<void> {
       if (!fs.existsSync(entry)) {
         startupError = "MaxCore production bundle is missing; run npm run build before starting";
         logger.error(`[MaxCoreLocal] ${startupError}`);
+        provisionAttempts++;
+        scheduleProvisionRetry(provisionBackoffMs());
         return;
       }
       workspaceWaitStartedAt = 0;
@@ -625,6 +638,18 @@ export async function startMaxcoreLocal(): Promise<void> {
     provisionAttempts = 0;
     startupError = null;
     await spawnChild();
+  } catch (err) {
+    if (shuttingDown) return;
+    const errorCode = err && typeof err === "object" && "code" in err
+      && typeof (err as NodeJS.ErrnoException).code === "string"
+      && /^[A-Z0-9_]{1,32}$/.test((err as NodeJS.ErrnoException).code!)
+      ? (err as NodeJS.ErrnoException).code!
+      : err instanceof Error ? err.name : "STARTUP_ERROR";
+    provisionAttempts++;
+    const delay = provisionBackoffMs();
+    startupError = `MaxCore startup attempt failed (${errorCode})`;
+    logger.error(`[MaxCoreLocal] ${startupError} — retrying in ${delay}ms`);
+    scheduleProvisionRetry(delay);
   } finally {
     startInFlight = false;
   }
