@@ -37,8 +37,12 @@ export class PdimBucketObjects implements PdimObjectStore {
   }
 }
 
+export function configuredPdimBucketId(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  return env.Replit_storage_bucket_id || env.DATABASE_RECOVERY_BUCKET_ID || env.REPLIT_BUCKET_ID;
+}
+
 export async function configuredPdimBucketObjects(): Promise<PdimBucketObjects> {
-  const bucketId = process.env.DATABASE_RECOVERY_BUCKET_ID || process.env.REPLIT_BUCKET_ID;
+  const bucketId = configuredPdimBucketId();
   if (!bucketId) throw new Error("PDIM App Storage bucket is not configured");
   const { bucket } = await createRecoveryStorage({ bucketId });
   return new PdimBucketObjects(bucket);

@@ -138,6 +138,14 @@ class InternalTrainingSourcesTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "segment is unavailable"):
             sources.collect_internal_training_bundle(self.storage, now=301)
 
+    def test_storage_authority_reports_bucket_backed_pdim_when_enabled(self):
+        with patch.dict(os.environ, {"PDIM_PERSISTENCE": "app-storage"}):
+            bundle = sources.collect_internal_training_bundle(self.storage, now=360)
+        self.assertEqual(
+            bundle["source_status"]["storage_authority"],
+            "canonical_pdim_app_storage_generation_fenced_readback_verified",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

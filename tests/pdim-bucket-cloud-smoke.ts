@@ -23,7 +23,8 @@ let httpOwner: typeof import("../server/lib/localPdimServer") | undefined;
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "pdim-http-bucket-test-"));
 try {
   ({ bucket } = await createRecoveryStorage({
-    bucketId: process.env.DATABASE_RECOVERY_BUCKET_ID || process.env.REPLIT_BUCKET_ID,
+    bucketId: process.env.Replit_storage_bucket_id ||
+      process.env.DATABASE_RECOVERY_BUCKET_ID || process.env.REPLIT_BUCKET_ID,
   }));
   const objects = new PdimBucketObjects(bucket);
   const source = new PdimBucketJournal(objects, prefix, isBucketTransaction);

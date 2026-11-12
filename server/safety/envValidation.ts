@@ -342,6 +342,12 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     description: "Pocket Dimension auth key alias",
   },
   {
+    name: "Replit_storage_bucket_id",
+    required: false,
+    category: "storage",
+    description: "Private Replit App Storage bucket for durable PDIM",
+  },
+  {
     name: "REPLIT_BUCKET_ID",
     required: false,
     category: "storage",

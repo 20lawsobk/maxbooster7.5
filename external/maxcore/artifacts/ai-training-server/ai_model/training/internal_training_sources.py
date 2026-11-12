@@ -7,6 +7,7 @@ import gzip
 import hashlib
 import json
 import math
+import os
 import random
 import threading
 import time
@@ -380,7 +381,11 @@ def collect_internal_training_bundle(storage=None, *, now=None):
                 "training_records_selected": len(unique),
                 "last_cycle_at": state["last_cycle_at"],
                 "segment_sha256": state.get("last_segment_sha256"),
-                "storage_authority": "canonical_local_pdim_readback_verified",
+                "storage_authority": (
+                    "canonical_pdim_app_storage_generation_fenced_readback_verified"
+                    if os.environ.get("PDIM_PERSISTENCE") == "app-storage"
+                    else "canonical_local_pdim_aof_readback_verified"
+                ),
                 "synthetic_data_is_public_observation": False,
             },
         }

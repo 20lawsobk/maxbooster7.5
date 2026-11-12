@@ -25,7 +25,8 @@ process.env.PDIM_EXEC_URL = owner.getLocalPdimUrl();
 let started = false;
 try {
   const storage = await createRecoveryStorage({
-    bucketId: process.env.DATABASE_RECOVERY_BUCKET_ID || process.env.REPLIT_BUCKET_ID,
+    bucketId: process.env.Replit_storage_bucket_id ||
+      process.env.DATABASE_RECOVERY_BUCKET_ID || process.env.REPLIT_BUCKET_ID,
   });
   await verifyManagedPrivateStorage(storage);
   console.log(JSON.stringify({ phase: "restore-local-source" }));

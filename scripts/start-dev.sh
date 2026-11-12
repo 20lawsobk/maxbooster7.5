@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Development PDIM is durable in the app's private Replit bucket. The offline
+# migration initializes this isolated namespace before this workflow is restarted.
+if [[ -z "${Replit_storage_bucket_id:-}" ]]; then
+  echo "[start-dev] FATAL: Replit_storage_bucket_id is required for bucket-backed PDIM" >&2
+  exit 1
+fi
+export PDIM_PERSISTENCE="app-storage"
+export PDIM_BUCKET_NAMESPACE="${PDIM_BUCKET_NAMESPACE:-maxbooster-dev-pdim-v1}"
+
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${_SCRIPT_DIR}/process-ownership.sh"
 dev_acquire_instance_lock "$(cd "${_SCRIPT_DIR}/.." && pwd)"
