@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 import time
+from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
@@ -39,7 +40,8 @@ class RestartTests(unittest.TestCase):
             "_api_jobs_lock": threading.Lock(), "_active_jobs_lock": threading.Lock(),
             "_active_jobs": {}, "_JOB_TTL_S": 600, "_render_manager": None,
             "_model_ready": False, "_create_durable_render_manager": Mock(return_value=object()),
-            "_model_init_error": None, "_serving_release_status": {}, "_script_agent": object(),
+            "_model_init_error": None, "_serving_release_status": {},
+            "_script_agent": SimpleNamespace(run_live_awareness=lambda _request: None),
             "_live_learning_loop": None, "_live_serving_model": None,
         }
         exec(compile(ast.Module(body=nodes, type_ignores=[]), str(ROOT / "server.py"), "exec"),

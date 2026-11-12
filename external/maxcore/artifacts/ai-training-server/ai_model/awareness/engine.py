@@ -19,6 +19,7 @@ DOMAINS = frozenset(("music", "social", "advertising", "culture"))
 POINTER = "awareness:v1:current"
 BLOB = "awareness:v1:snapshot:"
 OBSERVATIONS_PREFIX = "awareness:v1:source-observations:"
+SOURCE_REVIEW_KEY = "awareness:v1:admin-source-review"
 TTL = 3600
 MAX_OBSERVATION_TEXT = 4096
 MAX_SOURCE_OBSERVATIONS = 240
@@ -526,6 +527,66 @@ class PDIM:
         from storage_client import get_storage
         raw = self._command("GET", get_storage()._ns(key))
         return json.loads(raw) if isinstance(raw, str) else raw
+
+    def approve_source_reviews(self, entries):
+        """Atomically add immutable admin review evidence to the canonical store."""
+        if not isinstance(entries, dict) or not 1 <= len(entries) <= 1000:
+            raise AwarenessUnavailable(
+                "Invalid source review batch",
+                code="source_review_write_unavailable",
+            )
+        from storage_client import get_storage
+        store = get_storage()
+        args = [store._ns(SOURCE_REVIEW_KEY)]
+        for item_id, entry in sorted(entries.items()):
+            if not isinstance(item_id, str) or not isinstance(entry, dict):
+                raise AwarenessUnavailable(
+                    "Invalid source review record",
+                    code="source_review_write_unavailable",
+                )
+            args.extend((item_id, canonical(entry)))
+        script = """
+local raw = redis.call('GET', KEYS[1])
+local doc = {schema = 1, items = {}}
+if raw then
+  local ok, parsed = pcall(cjson.decode, raw)
+  if not ok or type(parsed) ~= 'table' or parsed.schema ~= 1
+      or type(parsed.items) ~= 'table' then
+    return -1
+  end
+  doc = parsed
+end
+local inserted = 0
+for i = 1, #ARGV, 2 do
+  local item_id = ARGV[i]
+  local ok, entry = pcall(cjson.decode, ARGV[i + 1])
+  if not ok or type(entry) ~= 'table' or entry.item_id ~= item_id
+      or entry.note ~= 'Admin approved' then
+    return -2
+  end
+  if doc.items[item_id] == nil then
+    doc.items[item_id] = entry
+    inserted = inserted + 1
+  end
+end
+redis.call('SET', KEYS[1], cjson.encode(doc))
+return inserted
+"""
+        try:
+            result = self._command("EVAL", script, 1, *args)
+            if type(result) not in (int, str) or int(result) < 0:
+                raise AwarenessUnavailable(
+                    "Atomic source review write rejected",
+                    code="source_review_write_unavailable",
+                )
+            return int(result)
+        except AwarenessUnavailable:
+            raise
+        except Exception as exc:
+            raise AwarenessUnavailable(
+                "Canonical source review storage unavailable",
+                code="source_review_write_unavailable",
+            ) from exc
 
     def write_source_observations(self, source, document, owner):
         """Write one bounded source ledger only while this process owns ingestion."""

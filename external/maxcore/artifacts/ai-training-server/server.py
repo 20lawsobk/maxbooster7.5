@@ -2658,7 +2658,8 @@ def _live_awareness_capability(awareness_ready):
         "live_awareness_serving": mode == "live-awareness" and awareness_ready is True,
         "live_text_composer_ready": (
             mode == "live-awareness" and awareness_ready is True
-            and _script_agent is not None and _model_ready is not True
+            and callable(getattr(_script_agent, "run_live_awareness", None))
+            and _model_ready is not True
         ),
         "trained_model_loaded": _model_ready is True,
         "trained_candidate_serving": bool(serving and serving.available),
@@ -2673,10 +2674,13 @@ def _generation_readiness(awareness_ready: bool) -> dict:
     """The active serving contract may be live awareness before trained weights."""
     mode = os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
     trained_ready = _model_ready is True and awareness_ready is True
+    live_runtime_ready = callable(
+        getattr(_script_agent, "run_live_awareness", None)
+    )
     live_ready = (
         mode == "live-awareness"
         and awareness_ready is True
-        and _script_agent is not None
+        and live_runtime_ready
     )
     ready = trained_ready or live_ready
     return {
@@ -2727,7 +2731,11 @@ def _generation_endpoint_catalog(generation, awareness_ready, renderers):
         dependencies = (
             _generation_runtime_dependencies(modality)
             if modality != "text"
-            else {"script_agent": _script_agent is not None}
+            else {
+                "script_agent": callable(
+                    getattr(_script_agent, "run_live_awareness", None)
+                )
+            }
         )
         missing_dependencies = [
             name for name, available in dependencies.items() if available is not True
@@ -2740,7 +2748,7 @@ def _generation_endpoint_catalog(generation, awareness_ready, renderers):
         if modality == "text":
             online = bool(
                 awareness_ready is True
-                and _script_agent is not None
+                and callable(getattr(_script_agent, "run_live_awareness", None))
                 and generation.get("ready") is True
             )
             serving_mode = generation.get("generation_mode", "unavailable")
@@ -2830,11 +2838,13 @@ async def unified_awareness_readiness(_key=Depends(require_scope("generate"))):
     from ai_model.awareness import get_engine
     from fastapi.responses import JSONResponse
     awareness = get_engine().readiness_status()
-    live_model = _live_awareness_capability(awareness.get("ready") is True)
-    generation = _generation_readiness(awareness.get("ready") is True)
-    ready = awareness.get("ready") is True
+    awareness_ready = awareness.get("ready") is True
+    live_model = _live_awareness_capability(awareness_ready)
+    generation = _generation_readiness(awareness_ready)
+    ready = generation["ready"] is True
     return JSONResponse(status_code=200 if ready else 503, content={
         "ready": ready,
+        "awareness_ready": awareness_ready,
         "capability": "live-awareness",
         "live_model": live_model,
         "generation_mode": generation["generation_mode"],
@@ -2850,8 +2860,14 @@ async def unified_awareness_admin_source_status(_admin=Depends(verify_admin)):
     """Admin-only, redacted source diagnostics; never returns source snippets."""
     from ai_model.awareness import get_engine
     from ai_model.awareness.platform_discovery import provider_state
+    from ai_model.awareness.source_review import SourceReviewError, inventory
 
-    status = get_engine().status()
+    engine = get_engine()
+    status = engine.status()
+    try:
+        source_reviews = inventory(engine)
+    except SourceReviewError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     return {
         "ready": status.get("ready") is True,
         "source_scan_state": status.get("source_scan_state"),
@@ -2859,6 +2875,7 @@ async def unified_awareness_admin_source_status(_admin=Depends(verify_admin)):
         "snapshot_expires_at": status.get("expires_at"),
         "provider_policy": provider_state(),
         "platforms": status.get("profile_sourcing", {}).get("platforms", {}),
+        "source_reviews": source_reviews,
     }
 
 
@@ -2867,6 +2884,8 @@ async def unified_awareness_admin_source_status(_admin=Depends(verify_admin)):
 from ai_model.training.live_learning import create_router as _live_learning_router
 from ai_model.awareness import get_engine as _live_learning_engine
 app.include_router(_live_learning_router(verify_admin, _live_learning_engine))
+from ai_model.awareness.source_review import create_router as _source_review_router
+app.include_router(_source_review_router(verify_admin, _live_learning_engine))
 
 
 @app.get("/api/training/live/status")

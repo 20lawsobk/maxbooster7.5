@@ -43,14 +43,15 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
         names = {"_live_awareness_capability", "_generation_readiness",
                  "_generation_runtime_dependencies", "_generation_endpoint_catalog",
                  "generation_capabilities", "generation_readiness",
-                 "live_learning_status", "health", "api_warm_status"}
+                 "unified_awareness_readiness", "live_learning_status",
+                 "health", "api_warm_status"}
         nodes = [node for node in ast.parse(SERVER.read_text()).body
                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in names]
         self.assertEqual({node.name for node in nodes}, names,
                          "production capability and progress functions must exist")
         self.serving = {"active": None, "candidate_quality": "not_selected"}
         self.model_ready = False
-        self.script_agent = object()
+        self.script_agent = SimpleNamespace(run_live_awareness=lambda _request: None)
         self.learning_loop = SimpleNamespace(status=lambda: {
             "running": True, "training": "waiting_for_observations",
             "awareness_endpoint_usage": {"uses": 7, "learning_check_signals": 2},
@@ -60,7 +61,9 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
             status=lambda: {"candidate_quality": "awaiting_operational_public_live_candidate"},
         )
         scope = {
-            "app": app, "Depends": Depends, "verify_admin": lambda: {"role": "admin"},
+            "app": app, "Depends": Depends,
+            "require_scope": lambda _scope: lambda: {"scope": "generate"},
+            "verify_admin": lambda: {"role": "admin"},
             "_serving_release_status": self.serving, "_model_ready": self.model_ready,
             "_model_init_error": None,
             "_script_agent": self.script_agent, "_live_learning_loop": self.learning_loop,
@@ -191,6 +194,28 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
             endpoint["online"] is False and endpoint["status"] == "blocked"
             for endpoint in result["endpoint_routes"]["generation"].values()
         ))
+
+    async def test_live_awareness_readiness_fails_when_text_runtime_is_missing(self):
+        self.scope["_script_agent"] = None
+        status, result = await get_capabilities(self.app, "/ready")
+        self.assertEqual(status, 503, result)
+        self.assertFalse(result["generation_ready"])
+        self.assertFalse(result["ready"])
+        self.assertFalse(result["endpoint_routes"]["generation"]["text"]["online"])
+        self.assertEqual(
+            result["endpoint_routes"]["generation"]["text"]["readiness_reason"],
+            "text_composer_or_checkpoint_unavailable",
+        )
+
+    async def test_awareness_ready_route_does_not_claim_generation_ready_without_runtime(self):
+        self.scope["_script_agent"] = None
+        status, result = await get_capabilities(
+            self.app, "/api/awareness/unified/ready",
+        )
+        self.assertEqual(status, 503, result)
+        self.assertTrue(result["awareness_ready"])
+        self.assertFalse(result["ready"])
+        self.assertFalse(result["generation_ready"])
 
     async def test_ready_exposes_each_generation_route_and_actual_renderer_gate(self):
         status, result = await get_capabilities(self.app, "/ready")

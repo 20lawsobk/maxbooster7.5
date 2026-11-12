@@ -52,6 +52,11 @@ router.get(
   requireAdmin,
   proxyToMaxCore,
 );
+router.post(
+  "/api/awareness/unified/admin/source-review",
+  requireAdmin,
+  proxyToMaxCore,
+);
 router.post("/api/awareness/unified/context", requireAuthOnly, proxyToMaxCore);
 router.post("/api/awareness/unified/profile-discover", requireAuthOnly, proxyToMaxCore);
 
@@ -116,6 +121,7 @@ generatedArtifactRouter.post("/api/internal/generated-artifacts/commit",
 // required before Max Booster supplies that trusted credential upstream.
 const ADMIN_PATH_SUFFIXES = [
   "/awareness/unified/admin/source-status",
+  "/awareness/unified/admin/source-review",
   "/training/live/status",
   "/training/candidates/internal",
   "/platform/model/reload",
