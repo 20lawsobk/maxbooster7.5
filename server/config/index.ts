@@ -19,6 +19,11 @@ export {
   getBaseUrl,
 } from "./defaults.js";
 import { dnsNodeLocalHealthPort, runtimePorts } from "./ports.js";
+import {
+  selectStripePublishableKey,
+  selectStripeSecretKey,
+} from "../../shared/stripeCredentials.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 // ─── Unified config object (self-confinement spec) ───────────────────────────
 
@@ -117,9 +122,10 @@ export const config = {
   corsOrigin: p.CORS_ORIGIN || "",
 
   // Stripe
-  stripeSecretKey: p.STRIPE_SECRET_KEY || "",
+  stripeSecretKey: selectStripeSecretKey(p, isProductionEnv()) || "",
   stripeWebhookSecret: p.STRIPE_WEBHOOK_SECRET || "",
-  stripePublishableKey: p.STRIPE_PUBLISHABLE_KEY || p.VITE_STRIPE_PUBLIC_KEY || "",
+  stripePublishableKey:
+    selectStripePublishableKey(p, isProductionEnv()) || "",
 
   // Email
   sendgridApiKey: p.SENDGRID_API_KEY || "",

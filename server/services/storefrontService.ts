@@ -9,14 +9,15 @@ import {
   users,
 } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { createStripeClient, hasStripeCredential } from "../lib/stripeClient";
+import { createStripeClient, getStripeSecretKey } from "../lib/stripeClient";
 
 import { logger } from "../logger.js";
 import { getDistinctBeatMoneyLoopPreviewUrl } from "./beatMoneyLoopAudioAccess.js";
 import { getStorefrontPathUrl } from "../config/storefrontUrls.js";
 
-const stripe = hasStripeCredential(process.env.STRIPE_SECRET_KEY)
-  ? createStripeClient(process.env.STRIPE_SECRET_KEY, {
+const stripeSecretKey = getStripeSecretKey();
+const stripe = stripeSecretKey
+  ? createStripeClient(stripeSecretKey, {
       apiVersion: "2025-08-27.basil",
     })
   : null;

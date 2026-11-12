@@ -27,7 +27,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { billingAccountStatus } from "../services/billingAccountStatus";
 import Stripe from "stripe";
-import { createStripeClient } from "../lib/stripeClient";
+import { createStripeClient, getStripeSecretKey } from "../lib/stripeClient";
 import { db, pool } from "../db";
 import { users, workspaceAuditLog } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -56,7 +56,7 @@ const router = Router();
 // Per-user billing limits run after authentication resolves session or JWT.
 // Public plan discovery has the application IP limiter.
 
-const stripeSecretKey = env?.STRIPE_SECRET_KEY;
+const stripeSecretKey = getStripeSecretKey();
 if (!stripeSecretKey) {
   logger.warn(
     "[Billing] STRIPE_SECRET_KEY not configured. Billing endpoints will return errors.",

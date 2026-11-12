@@ -14,6 +14,7 @@ import { chainErrorAutoFixer } from "../services/chainErrorAutoFixer.js";
 import { platformAutoFixer } from "../services/platformAutoFixer.js";
 import { permanentFixRegistry } from "../services/permanentFixRegistry.js";
 import { env } from "../config/env.js";
+import { getStripeSecretKey } from "../lib/stripeClient.js";
 import { require2FA } from "../middleware/auth.js";
 import { systemIntelligence } from "../services/systemIntelligence.js";
 import { moderate } from "../services/moderationDecisionService.js";
@@ -477,7 +478,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
     };
 
     const apiChecks = await Promise.allSettled([
-      env?.STRIPE_SECRET_KEY
+      getStripeSecretKey()
         ? pingApi("https://api.stripe.com/v1")
         : Promise.resolve({
             status: "not_configured" as const,

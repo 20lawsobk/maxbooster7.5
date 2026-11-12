@@ -1,10 +1,9 @@
 // @ts-nocheck
 import Stripe from "stripe";
-import { createStripeClient, hasStripeCredential } from "../lib/stripeClient";
+import { createStripeClient, getStripeSecretKey, hasStripeCredential } from "../lib/stripeClient";
 import { logger } from "../logger.js";
 
-const stripeKey =
-  process.env.STRIPE_SECRET_KEY || process.env.TESTING_STRIPE_SECRET_KEY;
+const stripeKey = getStripeSecretKey();
 
 if (!hasStripeCredential(stripeKey)) {
   logger.warn("⚠️  Stripe setup skipped - invalid API key");
@@ -21,6 +20,13 @@ export interface StripePriceIds {
   monthly: string;
   yearly: string;
   lifetime: string;
+}
+
+class StripeCatalogConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "StripeCatalogConfigurationError";
+  }
 }
 
 let cachedPriceIds: StripePriceIds | null = null;
@@ -56,7 +62,7 @@ export async function ensureStripeProductsAndPrices(
     // Create product if it doesn't exist
     if (!product) {
       if (!allowCreate) {
-        throw new Error("Stripe subscription catalog is missing; explicitly provision it before accepting subscription checkout");
+        throw new StripeCatalogConfigurationError("Stripe subscription catalog is missing; explicitly provision it before accepting subscription checkout");
       }
       product = await stripe?.products.create({
         name: "Max Booster Subscription",
@@ -103,7 +109,7 @@ export async function ensureStripeProductsAndPrices(
 
       // Create new price
       if (!allowCreate) {
-        throw new Error(`Stripe ${type} subscription price is missing; explicitly provision the catalog before checkout`);
+        throw new StripeCatalogConfigurationError(`Stripe ${type} subscription price is missing; explicitly provision the catalog before checkout`);
       }
       const priceParams: Stripe.PriceCreateParams = {
         product: product!.id,
@@ -149,6 +155,9 @@ export async function ensureStripeProductsAndPrices(
     // Provider messages can contain credential fragments or request metadata.
     // Keep the operational category, but never write the raw upstream message.
     const errorType =
+      error instanceof StripeCatalogConfigurationError
+        ? "StripeCatalogIncomplete"
+        :
       error instanceof Error && error.name === "StripeAuthenticationError"
         ? "StripeAuthenticationError"
         : error instanceof Error && error.name === "StripeRateLimitError"

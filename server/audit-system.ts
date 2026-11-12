@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { logger } from "./logger.js";
+import { getStripeSecretKey } from "./lib/stripeClient.js";
 
 const execAsync = promisify(exec);
 
@@ -476,7 +477,7 @@ export class AuditSystem {
 
   private async checkFinancialControls(): Promise<boolean> {
     // Real: payments routed through Stripe with webhook signature verification.
-    const hasStripe = !!process.env.STRIPE_SECRET_KEY;
+    const hasStripe = !!getStripeSecretKey();
     const hasWebhookSecret = !!process.env.STRIPE_WEBHOOK_SECRET;
     return hasStripe && hasWebhookSecret;
   }

@@ -3,12 +3,20 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { fileURLToPath } from "url";
+import { selectStripePublishableKey } from "./shared/stripeCredentials";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const stripePublishableKey =
+    selectStripePublishableKey(process.env, mode === "production") ?? "";
+
+  return {
   base: "/",
   plugins: [react(), tailwindcss()],
+  define: {
+    "import.meta.env.VITE_STRIPE_PUBLIC_KEY": JSON.stringify(stripePublishableKey),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
@@ -254,4 +262,5 @@ export default defineConfig({
     // Exclude server-only or native packages from browser pre-bundling
     exclude: ["@tensorflow/tfjs-node", "sharp", "bcrypt", "pg", "drizzle-orm"],
   },
+  };
 });

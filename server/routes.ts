@@ -34,7 +34,7 @@ import { issueAdminApiToken, revokeAdminApiToken } from "./services/adminApiToke
 import { consumeTotp } from "./services/totpReplay.js";
 import { requireUUIDParam } from "./middleware/requestValidation.js";
 import Stripe from "stripe";
-import { createStripeClient } from "./lib/stripeClient";
+import { createStripeClient, getStripeSecretKey } from "./lib/stripeClient";
 import { getStripePriceIds } from "./services/stripeSetup.js";
 import {
   createSubscriptionCheckout,
@@ -8108,8 +8108,9 @@ export async function registerRoutes(
   }
 
   // Stripe checkout session creation for subscription plans
-  const stripe = process.env.STRIPE_SECRET_KEY
-    ? createStripeClient(process.env.STRIPE_SECRET_KEY, {
+  const stripeSecretKey = getStripeSecretKey();
+  const stripe = stripeSecretKey
+    ? createStripeClient(stripeSecretKey, {
         apiVersion: "2026-02-25.clover",
       })
     : null;

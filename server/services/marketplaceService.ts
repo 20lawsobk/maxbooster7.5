@@ -7,7 +7,7 @@ import { minorUnits, majorUnits } from "./commerce/contract";
 import { db } from "../db";
 import { randomUUID } from "crypto";
 
-import { createStripeClient, hasStripeCredential } from "../lib/stripeClient";
+import { createStripeClient, getStripeSecretKey } from "../lib/stripeClient";
 import {
   listingLicenseTiers,
   listings,
@@ -25,8 +25,9 @@ import { logger } from "../logger.js";
 import { getBaseUrl } from "../config/defaults.js";
 
 // Initialize Stripe
-const stripe = hasStripeCredential(process.env.STRIPE_SECRET_KEY)
-  ? createStripeClient(process.env.STRIPE_SECRET_KEY, {
+const stripeSecretKey = getStripeSecretKey();
+const stripe = stripeSecretKey
+  ? createStripeClient(stripeSecretKey, {
       apiVersion: "2025-08-27.basil",
     })
   : null;
