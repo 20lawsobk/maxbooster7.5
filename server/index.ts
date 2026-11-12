@@ -478,6 +478,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Max Booster — Starting Up…</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;
