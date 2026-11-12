@@ -18,3 +18,4 @@
 - [Nested Max Booster copy](nested-maxbooster-copy.md) — the owner identified `maxbooster7.5` as a nested duplicate, not the active app source.
 - [Embedded Vite configuration](embedded-vite-configuration.md) — resolve environment config callbacks before building middleware servers; object-spreading one can silently default to the workspace root.
 - [Neon session startup race](neon-session-startup-race.md) — initialize authoritative sessions before parallel DB probes; bounded retries should cover transient connection failures only.
+- [Stuck preview boot shell](stuck-preview-boot-shell.md) — verify the active preview host and Node/Vite health before changing client loading behavior.
