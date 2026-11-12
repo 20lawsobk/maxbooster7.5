@@ -287,9 +287,11 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     }
   }
 
-  public static getInstance(): SelfHealingSecurityEngine {
+  public static getInstance(
+    options: SelfHealingSecurityEngineOptions = {},
+  ): SelfHealingSecurityEngine {
     if (!SelfHealingSecurityEngine?.instance) {
-      SelfHealingSecurityEngine.instance = new SelfHealingSecurityEngine();
+      SelfHealingSecurityEngine.instance = new SelfHealingSecurityEngine(options);
     }
     return SelfHealingSecurityEngine?.instance;
   }
@@ -1128,4 +1130,9 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   }
 }
 
-export const selfHealingEngine = SelfHealingSecurityEngine?.getInstance();
+// The server starts this database-backed policy loader after its authoritative
+// session schema check, avoiding a cold-start connection race. Until then the
+// middleware keeps non-operational requests fail-closed as SECURITY_STATE_UNAVAILABLE.
+export const selfHealingEngine = SelfHealingSecurityEngine?.getInstance({
+  autoStart: false,
+});

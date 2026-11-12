@@ -17,3 +17,4 @@
 - [Vitest timeout and sharding hygiene](vitest-cli-subprocess-contention.md) — distinguish runner timeouts from test failures and merge coverage shards before enforcing global thresholds.
 - [Nested Max Booster copy](nested-maxbooster-copy.md) — the owner identified `maxbooster7.5` as a nested duplicate, not the active app source.
 - [Embedded Vite configuration](embedded-vite-configuration.md) — resolve environment config callbacks before building middleware servers; object-spreading one can silently default to the workspace root.
+- [Neon session startup race](neon-session-startup-race.md) — initialize authoritative sessions before parallel DB probes; bounded retries should cover transient connection failures only.

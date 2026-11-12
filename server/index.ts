@@ -106,12 +106,6 @@ import("./services/maxcoreLocalSupervisor.js")
 // Started after route registration below: its initial zone sync depends on
 // /api/dns/zone/:domain being mounted.
 
-// Kick off readiness probes asynchronously — /ready transitions from
-// "not_ready" → "ready"/"degraded" once DB + Redis + MaxCore have responded.
-startupProbes?.runAllProbes().catch((err) => {
-  logger.warn({ err }, "[startup-probes] runAllProbes failed");
-});
-
 import("./lib/configValidator.js")
   .then(({ validateScaleConfig }) => {
     validateScaleConfig();
@@ -601,16 +595,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     "✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)",
   );
 
-  // Load optional modules in background — they're only used inside setImmediate
-  // blocks that fire after all sync setup completes, so awaiting here just adds
-  // latency without any ordering benefit.
-  const _optionalModulesReady = loadOptionalModules().catch((e) =>
-    logger.warn(
-      "[boot] Optional module load error (non-blocking):",
-      e.message,
-    ),
-  );
-
   // Determine once whether this process is the designated background worker.
   // In cluster mode CLUSTER_WORKER_ID is injected by cluster.ts for each forked
   // worker (0, 1, 2, …).  In single-process mode (dev / DISABLE_CLUSTER) it is
@@ -622,87 +606,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Neon's connection limit when the regular query pool is busy, triggering
   // PG_CODE 53100 retry storms that pollute the logs.  Stdout captures all log
   // output already (pino JSON transport), so DB persistence is redundant.
-
-  // Start system intelligence layer — must be first so it sees all log entries
-  // and events from subsequent service startups.
-  try {
-    const { systemIntelligence } = await import(
-      "./services/systemIntelligence.js"
-    );
-    systemIntelligence?.initialize();
-  } catch (e) {
-    logger.warn(
-      `[SystemIntelligence] Failed to initialize: ${(e as Error).message}`,
-    );
-  }
-
-  // Start chain error auto-fixer — must run early so it catches errors from
-  // autonomous systems, BullMQ workers, and PDIM during their own startup
-  try {
-    const { chainErrorAutoFixer } = await import(
-      "./services/chainErrorAutoFixer.js"
-    );
-    chainErrorAutoFixer?.start();
-  } catch (e) {
-    logger.warn(`[ChainFixer] Failed to start: ${(e as any)?.message}`);
-  }
-
-  // Start platform auto-fixer — proactive subsystem health probing + runtime patching.
-  // The probe loop (DB/PDIM/session queries, MaxCore pings) only runs on worker 0 to
-  // avoid doubling all health-check traffic across every cluster worker.
-  // The middleware (per-route 5xx rate tracker) always runs — it has no external I/O.
-  try {
-    const { platformAutoFixer, platformFixerMiddleware } = await import(
-      "./services/platformAutoFixer.js"
-    );
-    if (isBgWorker) {
-      platformAutoFixer?.start();
-    } else {
-      logger.info(
-        `[PlatformAutoFixer] Worker ${clusterId} — middleware active, probe loop handled by worker 0`,
-      );
-    }
-    app.use(
-      platformFixerMiddleware as unknown as import("express").RequestHandler,
-    );
-  } catch (e) {
-    logger.warn(`[PlatformAutoFixer] Failed to start: ${(e as any)?.message}`);
-  }
-
-  // Directive executor — actually runs the autofix operating directive's
-  // phases (probe subsystems, classify errors via the knowledge base, honest
-  // scorecard). Worker 0 only; first cycle at boot.
-  if (isBgWorker) {
-    try {
-      const { directiveExecutor } = await import(
-        "./services/directiveExecutor.js"
-      );
-      directiveExecutor.start();
-    } catch (e) {
-      logger.warn(`[Directive] Failed to start: ${(e as any)?.message}`);
-    }
-  }
-
-  // LabelGrid is historical data only. Never load its SDK or start its sync.
-
-  // Post-deploy self-test — activates DURING deployment boot, not after.
-  // The first run starts immediately (non-blocking) so a bad deploy is caught
-  // while it is rolling out; periodic re-runs continue afterwards. Worker 0
-  // only, to avoid duplicating probe traffic across cluster workers.
-  if (isBgWorker) {
-    try {
-      const { postDeploySelfTest } = await import("./post-deploy-selftest.js");
-      postDeploySelfTest.runAllTests().catch((e: unknown) => {
-        logger.warn(
-          `[SelfTest] Deployment-time self-test error: ${(e as Error)?.message}`,
-        );
-      });
-      const selfTestTimer = postDeploySelfTest.startPeriodicTests();
-      selfTestTimer.unref?.();
-    } catch (e) {
-      logger.warn(`[SelfTest] Failed to start: ${(e as any)?.message}`);
-    }
-  }
 
   // Load permanent overrides — restores improvements accumulated across prior sessions.
   // Must run after PDIM is connected (fixers start PDIM lazily on first use, so a
@@ -749,7 +652,95 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   app.use(session(sessionConfig));
   const { validateSessionAuthority } = await import("./middleware/sessionAuthority.js");
   app.use(validateSessionAuthority);
-  logger.info("✅ Session store initialized (PDIM)");
+  logger.info("✅ Authoritative PostgreSQL session store initialized");
+
+  // Establish the shared blacklist policy before database-heavy readiness and
+  // diagnostic loops begin. Until it resolves, non-operational requests remain
+  // fail-closed in selfHealingSecurityMiddleware.
+  const { selfHealingEngine } = await import(
+    "./services/selfHealingSecurityEngine.js"
+  );
+  await selfHealingEngine.start();
+
+  // The first readiness pass and diagnostic loops can open several database
+  // connections. Start them only after the authoritative session schema and
+  // security policy have established the primary connection successfully.
+  startupProbes?.runAllProbes().catch((err) => {
+    logger.warn({ err }, "[startup-probes] runAllProbes failed");
+  });
+
+  // Optional monitoring and background diagnostics are deliberately deferred
+  // until required authentication storage is online, avoiding a Neon cold-start
+  // connection burst during the critical session-store handshake.
+  const _optionalModulesReady = loadOptionalModules().catch((e) =>
+    logger.warn("[boot] Optional module load error (non-blocking)", e.message),
+  );
+
+  try {
+    const { systemIntelligence } = await import(
+      "./services/systemIntelligence.js"
+    );
+    systemIntelligence?.initialize();
+  } catch (e) {
+    logger.warn(
+      `[SystemIntelligence] Failed to initialize: ${(e as Error).message}`,
+    );
+  }
+
+  try {
+    const { chainErrorAutoFixer } = await import(
+      "./services/chainErrorAutoFixer.js"
+    );
+    chainErrorAutoFixer?.start();
+  } catch (e) {
+    logger.warn(`[ChainFixer] Failed to start: ${(e as Error)?.message}`);
+  }
+
+  try {
+    const { platformAutoFixer, platformFixerMiddleware } = await import(
+      "./services/platformAutoFixer.js"
+    );
+    if (isBgWorker) {
+      platformAutoFixer?.start();
+    } else {
+      logger.info(
+        `[PlatformAutoFixer] Worker ${clusterId} — middleware active, probe loop handled by worker 0`,
+      );
+    }
+    app.use(
+      platformFixerMiddleware as unknown as import("express").RequestHandler,
+    );
+  } catch (e) {
+    logger.warn(`[PlatformAutoFixer] Failed to start: ${(e as Error)?.message}`);
+  }
+
+  if (isBgWorker) {
+    try {
+      const { directiveExecutor } = await import(
+        "./services/directiveExecutor.js"
+      );
+      directiveExecutor.start();
+    } catch (e) {
+      logger.warn(`[Directive] Failed to start: ${(e as Error)?.message}`);
+    }
+  }
+
+  // LabelGrid is historical data only. Never load its SDK or start its sync.
+
+  if (isBgWorker) {
+    try {
+      const { postDeploySelfTest } = await import("./post-deploy-selftest.js");
+      postDeploySelfTest.runAllTests().catch((e: unknown) => {
+        logger.warn(
+          `[SelfTest] Deployment-time self-test error: ${(e as Error)?.message}`,
+        );
+      });
+      const selfTestTimer = postDeploySelfTest.startPeriodicTests();
+      selfTestTimer.unref?.();
+    } catch (e) {
+      logger.warn(`[SelfTest] Failed to start: ${(e as Error)?.message}`);
+    }
+  }
 
   // distributedCache?.connect() is deferred to the setImmediate block below.
   // Keeping it here would stall route registration for up to ~20 s if PDIM is
@@ -1079,7 +1070,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   // Compose before routes hydrate principals and mount the containment guard.
   const { configureApplicationContainment } = await import("./services/securityContainment.js");
-  const { selfHealingEngine } = await import("./services/selfHealingSecurityEngine.js");
   const { revokeUserSessions } = await import("./middleware/sessionConfig.js");
   configureApplicationContainment(selfHealingEngine, revokeUserSessions);
 
