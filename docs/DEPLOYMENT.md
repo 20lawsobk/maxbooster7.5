@@ -92,6 +92,15 @@ scheduler reservations, not hard memory limits; the live cgroup remains the
 actual process limit. Machine-setting changes require a new publish. See
 [Replit machine configuration](https://docs.replit.com/features/publishing/machine-configuration).
 
+Dependency installation and Rust compilation request elastic CPU allocations up
+to the 16-vCPU ceiling instead of reserving a fixed eight CPUs. The executive
+re-samples live CPU, available memory, and I/O capacity before admitting work.
+If capacity falls, it pauses new admissions without killing already-running
+build phases; once a phase exits its reservations are released, and queued work
+can start again when a later live sample has enough headroom. This adapts to
+resource fluctuations but cannot change the actual machine allocation or
+resize worker counts inside an already-running child process.
+
 `.prepared-release` is optional tooling, not a dependency of this configured
 Publish path. See [prepared-production-releases.md](prepared-production-releases.md).
 There is no `npm run deploy` command: Replit's Publish workflow is the only

@@ -23,6 +23,8 @@ const DEADLINES_SECONDS = Object.freeze({
 });
 
 const ELASTIC_TASKS = new Set([
+  "dependencies",
+  "rust",
   "app_capsule",
   "pack_node",
   "pack_python",
@@ -81,10 +83,10 @@ export function buildPlan() {
       "dependencies",
       ["cleanup", "diffusion"],
       8192,
-      8,
+      1,
     ),
 
-    buildTask("rust", ["cleanup"], 8192, 8),
+    buildTask("rust", ["cleanup"], 8192, 1),
     buildTask("python", ["cleanup"], 2048, 2),
 
     // The updated build script defers actual stripping until prune.
