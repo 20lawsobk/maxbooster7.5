@@ -23,6 +23,7 @@ const DEADLINES_SECONDS = Object.freeze({
 });
 
 const ELASTIC_TASKS = new Set([
+  "cleanup",
   "dependencies",
   "rust",
   "app_capsule",

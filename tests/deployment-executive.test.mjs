@@ -24,6 +24,7 @@ test("deployment resource ceiling matches the configured dedicated machine",()=>
  const live=liveCapacity();
  assert.ok(live.cpus>0&&live.cpus<=16);
  assert.ok(live.memoryMB>0&&live.memoryMB<=65536);
+ assert.ok(live.usedMB>=0&&live.usedMB<=live.memoryMB);
  assert.ok(live.availableMB<=live.memoryMB);
 });
 test("real subprocesses overlap and prerequisites finish before successors",async t=>{
@@ -209,7 +210,7 @@ test("failed prerequisite blocks dependent; invalid graphs rejected before execu
    for(const id of ["app_capsule","source","remainder"]) {
      assert.equal(plan.find(t=>t.id===id).maxCPU,DEDICATED_DEPLOYMENT_LIMITS.cpus,`${id} should use available dedicated CPU`);
    }
-    for (const id of ["dependencies","rust"]) {
+    for (const id of ["cleanup","dependencies","rust"]) {
       const phase=plan.find(t=>t.id===id);
       assert.equal(phase.cpu,1,`${id} should start with a small reservation`);
       assert.equal(phase.maxCPU,DEDICATED_DEPLOYMENT_LIMITS.cpus,`${id} should scale to the configured CPU ceiling`);

@@ -84,17 +84,22 @@ machine. Machine sizing is selected in Publishing and is not encoded in
 `.replit`; the build and startup commands are encoded there. Replit applies the
 selected machine configuration to those commands.
 The shared deployment capacity module is the source of the **16 vCPU / 64 GiB**
-ceiling used by build plans, the executor, and capsule/release helpers. Each
-tool receives its per-task CPU assignment; worker counts cannot exceed either
-that assignment or the live cgroup capacity. The optional prepared-release path
-uses the same detected CPU budget by default. Per-task `memoryMB` values are
-scheduler reservations, not hard memory limits; the live cgroup remains the
-actual process limit. Machine-setting changes require a new publish. See
+ceiling used by build plans, the executor, capsule/release helpers, and runtime
+worker sizing. The admin scaling metrics read cgroup CPU and memory usage
+against the same live capacity; host load average is labeled separately.
+Each build tool receives its per-task CPU assignment; worker counts cannot
+exceed the shared ceiling or live cgroup capacity. The optional prepared-release
+path uses the same detected CPU budget by default. Per-task `memoryMB` values
+are scheduler reservations, not hard memory limits; the live cgroup remains the
+actual process limit. Scaling recommendations do not resize Replit's machine.
+Machine-setting changes require a new publish. See
 [Replit machine configuration](https://docs.replit.com/features/publishing/machine-configuration).
 
-Dependency installation and Rust compilation request elastic CPU allocations up
-to the 16-vCPU ceiling instead of reserving a fixed eight CPUs. The executive
-re-samples live CPU, available memory, and I/O capacity before admitting work.
+Workspace cleanup, dependency installation, and Rust compilation request elastic
+CPU allocations up to the 16-vCPU ceiling instead of reserving a fixed eight
+CPUs. The cleanup phase is I/O-bound, so a larger CPU reservation does not imply
+that filesystem removal scales linearly. The executive re-samples live CPU,
+available memory, and I/O capacity before admitting work.
 If capacity falls, it pauses new admissions without killing already-running
 build phases; once a phase exits its reservations are released, and queued work
 can start again when a later live sample has enough headroom. This adapts to

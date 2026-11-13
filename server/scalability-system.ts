@@ -7,9 +7,10 @@ import {
 import { promisify } from "util";
 import { exec } from "child_process";
 import cluster from "cluster";
-import * as os from "os";
 import { logger } from "./logger.js";
 import { isProductionEnv } from "./lib/envHelpers.js";
+import { computeWorkerSizing } from "./computeSizing.js";
+import { DEDICATED_DEPLOYMENT_LIMITS } from "../script/deployment/capacity.mjs";
 
 const execAsync = promisify(exec);
 
@@ -73,18 +74,25 @@ export class ScalabilitySystem {
 
   // Setup cluster for multi-core processing
   private setupCluster(): void {
-    const numCPUs = os?.cpus().length;
-
     if (cluster?.isMaster) {
       logger.info(`🔄 Master process ${process.pid} is running`);
 
-      // Fork workers — cap at MAX_WORKERS (default 4) to avoid memory exhaustion
-      // on high-core-count hosts.  A 16-core machine forking 16 workers can
-      // easily exhaust the 512 MB container limit.
-      const workerCount = Math.min(
-        numCPUs,
-        parseInt(process.env.MAX_WORKERS || "4", 10),
-      );
+      // Share the same cgroup-aware CPU/RAM allocation as the active app and
+      // MaxCore clusters. MAX_WORKERS is an optional additional cap only.
+      const sizing = computeWorkerSizing({ envOverrideVar: "CLUSTER_WORKERS" });
+      const configuredCap = process.env.MAX_WORKERS === undefined
+        ? sizing.workerCount
+        : Number(process.env.MAX_WORKERS);
+      if (
+        !Number.isSafeInteger(configuredCap) ||
+        configuredCap < 1 ||
+        configuredCap > DEDICATED_DEPLOYMENT_LIMITS.cpus
+      ) {
+        throw new Error(
+          `MAX_WORKERS must be an integer from 1 to ${DEDICATED_DEPLOYMENT_LIMITS.cpus}`,
+        );
+      }
+      const workerCount = Math.min(sizing.workerCount, configuredCap);
       for (let i = 0; i < workerCount; i++) {
         cluster?.fork();
       }
