@@ -1,6 +1,6 @@
 - [Nix dependency editing](nix-dependency-editing.md) — verify custom dependency expressions actually change; the package remover can report success without removing them.
 - [Review after code changes](review-after-code-changes.md) — run the code-review skill after each code change in this project.
-- [User-local Nix constraints](user-local-nix.md) — custom stores avoid platform permissions but do not fix loader issues such as Rust static-TLS crashes.
+- [User-local Nix constraints](user-local-nix.md) — private stores address permissions; preserve LD_AUDIT and reserve 128 KiB optional static TLS for pinned Rust builds.
 - [Private-admin release](admin-first-release-policy.md) — admin use comes first; public rollout remains closed and provider outcomes must be genuine.
 - [Workflow side effects](app-workflow-database-side-effects.md) — startup and preview can write shared data; use isolated fixtures when live writes are not authorized.
 - [Packaged restart fixtures](packaged-restart-fixture.md) — keep generated schema baselines separate from overlapping migrations; require readiness on every restart cycle.
