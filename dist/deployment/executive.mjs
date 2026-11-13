@@ -732,6 +732,9 @@ export async function runExecutive(tasks, {
           `running=${[...active.keys()].join(",") || "none"}; ` +
           `waiting=${[...pending.keys()].join(",") || "none"}; ` +
           `available=${Math.round(cap.availableMB)}MiB; ` +
+          `memoryReserved=${memory}MiB; ` +
+          `memoryUsed=${Math.round(cap.memoryMB - cap.availableMB)}/` +
+            `${Math.round(cap.memoryMB)}MiB; ` +
           `cpu=${cpu}/${cpuLimit}; io=${io}/${cap.ioSlots}; ` +
           (admissionBlock
             ? `admissionBlocked=${admissionBlock.blockedTasks[0].id}:` +

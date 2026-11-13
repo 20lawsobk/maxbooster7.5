@@ -209,8 +209,12 @@ test("failed prerequisite blocks dependent; invalid graphs rejected before execu
    for(const id of ["app_capsule","source","remainder"]) {
      assert.equal(plan.find(t=>t.id===id).maxCPU,DEDICATED_DEPLOYMENT_LIMITS.cpus,`${id} should use available dedicated CPU`);
    }
-   assert.equal(plan.find(t=>t.id==="dependencies").cpu,8);
-   assert.equal(plan.find(t=>t.id==="rust").cpu,8);
+    for (const id of ["dependencies","rust"]) {
+      const phase=plan.find(t=>t.id===id);
+      assert.equal(phase.cpu,1,`${id} should start with a small reservation`);
+      assert.equal(phase.maxCPU,DEDICATED_DEPLOYMENT_LIMITS.cpus,`${id} should scale to the configured CPU ceiling`);
+      assert.equal(phase.elasticCPU,true,`${id} should use elastic CPU allocation`);
+    }
    assert.equal(plan.find(t=>t.id==="dependencies").memoryMB,8192);
    assert.equal(plan.find(t=>t.id==="rust").memoryMB,8192);
    assert.equal(plan.find(t=>t.id==="app_capsule").memoryMB,8192);
@@ -220,6 +224,44 @@ test("admission adapts when available memory recovers",async()=>{
  await runExecutive([task("work")],{capacity:()=>({...capacity(),availableMB:++samples<3?0:8192}),
  pollMs:10,budgetMs:2000,log(){}});
  assert.ok(samples>=3);
+});
+test("live CPU and memory budget fluctuations pause admissions, preserve active work, then resume",async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-budget-fluctuation-"));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const firstStarted=path.join(root,"first-started");
+  const firstFinished=path.join(root,"first-finished");
+  const secondStarted=path.join(root,"second-started");
+  let samples=0;
+  let recoveredAt=Infinity;
+  const logs=[];
+  const fluctuatingCapacity=()=>{
+    samples++;
+    if(samples>=80&&recoveredAt===Infinity)recoveredAt=Date.now();
+    const recovered=samples>=80;
+    return {
+      cpus:recovered?6:samples===1?6:2,
+      memoryMB:4096,
+      availableMB:recovered?400:samples===1?400:128,
+      ioSlots:2,
+    };
+  };
+  const firstCode=`const fs=require("node:fs");fs.writeFileSync(${JSON.stringify(firstStarted)},"started");setTimeout(()=>fs.writeFileSync(${JSON.stringify(firstFinished)},"finished"),150);`;
+  const secondCode=`require("node:fs").writeFileSync(${JSON.stringify(secondStarted)},String(Date.now()));`;
+  await runExecutive([
+    {...task("first",[],firstCode),cpu:3,memoryMB:256},
+    {...task("second",[],secondCode),cpu:3,memoryMB:256},
+  ],{
+    cwd:root,capacity:fluctuatingCapacity,pollMs:5,budgetMs:3000,
+    admissionTimeoutMs:1500,log(line){logs.push(line);},
+  });
+  assert.equal(fs.readFileSync(firstStarted,"utf8"),"started");
+  assert.equal(fs.readFileSync(firstFinished,"utf8"),"finished");
+  assert.notEqual(recoveredAt,Infinity,"capacity should recover during the run");
+  assert.ok(Number(fs.readFileSync(secondStarted,"utf8"))>=recoveredAt,
+    "queued work should wait for recovered capacity");
+  assert.ok(samples>=80,"the scheduler should continue sampling capacity");
+  assert.ok(logs.some(line=>line.includes("memoryReserved=")&&line.includes("memoryUsed=")),
+    "progress should report reserved and observed memory budgets");
 });
 test("startup plan requires all restores before launching app; source deletion is last",()=>{
  assert.deepEqual(startPlan(process.execPath).at(-1).deps.sort(),
@@ -267,9 +309,9 @@ test("actual build.sh pack task removes only its fixture source and restores it"
 });
 test("compression allocation grows with measured capacity, not runtime VM settings",async()=>{
  let allocation="";
- await runExecutive([{...task("compress"),elasticCPU:true,maxCPU:8}],
+  await runExecutive([{...task("compress"),elasticCPU:true,maxCPU:16}],
  {capacity:()=>({...capacity(),cpus:16,ioSlots:4}),pollMs:10,log(line){if(line.includes("starting compress"))allocation=line;}});
- assert.match(allocation,/cpu=8/);
+  assert.match(allocation,/cpu=16/);
 });
 test("portable Python provisioning stages downloads and rejects host-runtime fallback",()=>{
  const build=fs.readFileSync(new URL("../build.sh",import.meta.url),"utf8");
