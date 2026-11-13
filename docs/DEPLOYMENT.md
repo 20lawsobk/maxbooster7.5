@@ -31,6 +31,12 @@ installation. `npm run start` is an equivalent alias. Both production commands
 wait for the complete private listener set before reporting startup success.
 Read [npm-build-start.md](npm-build-start.md) for exact boundaries.
 
+`src/index.ts` is a thin compatibility entry for single-entry esbuild layouts;
+it forwards to the canonical `server/index.ts`. The production build still
+emits all runtime bundles and assets through `script/lib/serverBundles.ts`.
+Do not run a single-entry template that removes or replaces `dist`; that would
+discard required listeners and invalidate the build contract.
+
 The default model mode is `live-awareness`. Its model registry, candidate bundles
 and training audit are private runtime state under `MAXCORE_MODEL_STATE_DIR`,
 which the supervisor defaults to `models` beneath `MAXCORE_PRIVATE_STATE_DIR`

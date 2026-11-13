@@ -22,7 +22,7 @@ function sourceInputs(root) {
                (name.startsWith("shared/") && name.endsWith(".json"))) files.push(name);
     }
   }
-  for (const dir of ["server", "client", "shared", "script", "scripts", "dns-node/src",
+  for (const dir of ["server", "client", "shared", "src", "script", "scripts", "dns-node/src",
     "dns-os/services/dns-api/src"]) walk(dir);
   for (const dir of ["external/maxcore/artifacts/api-server/src", "external/maxcore/lib"]) walk(dir);
   if (fs.existsSync(path.join(root, "external/maxcore/artifacts/api-server/build.ts"))) {

@@ -308,7 +308,7 @@ phase_source() {
   local path
 
   for path in \
-    client server shared script scripts electron \
+    client server shared src script scripts electron \
     attached_assets docs migrations boosterstate; do
     if [[ -d "$path" ]]; then
       source_paths+=("$path")
