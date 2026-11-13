@@ -54,13 +54,16 @@ export function readCgroupCpuUsageMicros(
 export interface CpuUsageSamplerOptions {
   readUsageMicros?: () => number | null;
   nowMilliseconds?: () => number;
+  minimumIntervalMs?: number;
 }
 
 /** Calculate recent utilization against the actual cgroup CPU capacity. */
 export class CgroupCpuUsageSampler {
   private readonly readUsageMicros: () => number | null;
   private readonly nowMilliseconds: () => number;
+  private readonly minimumIntervalMs: number;
   private previous: { usageMicros: number; at: number } | null = null;
+  private lastPercentage: number | null = null;
 
   constructor(options: CpuUsageSamplerOptions = {}) {
     this.readUsageMicros =
@@ -68,6 +71,10 @@ export class CgroupCpuUsageSampler {
     this.nowMilliseconds =
       options.nowMilliseconds ??
       (() => Number(process.hrtime.bigint()) / 1_000_000);
+    this.minimumIntervalMs = options.minimumIntervalMs ?? 1_000;
+    if (!Number.isFinite(this.minimumIntervalMs) || this.minimumIntervalMs < 0) {
+      throw new Error("CPU usage sample interval must be a nonnegative number");
+    }
   }
 
   sample(cpus = liveCapacity().cpus): number | null {
@@ -78,6 +85,7 @@ export class CgroupCpuUsageSampler {
     const usageMicros = this.readUsageMicros();
     if (usageMicros === null) {
       this.previous = null;
+      this.lastPercentage = null;
       return null;
     }
     if (!Number.isSafeInteger(usageMicros) || usageMicros < 0) {
@@ -88,14 +96,25 @@ export class CgroupCpuUsageSampler {
     if (!Number.isFinite(at)) throw new Error("Invalid CPU sample clock");
 
     const previous = this.previous;
-    this.previous = { usageMicros, at };
-    if (!previous) return null;
+    if (!previous) {
+      this.previous = { usageMicros, at };
+      return null;
+    }
 
     const elapsedMs = at - previous.at;
+    if (elapsedMs < this.minimumIntervalMs) return this.lastPercentage;
+    this.previous = { usageMicros, at };
     const elapsedCpuMicros = usageMicros - previous.usageMicros;
-    if (elapsedMs <= 0 || elapsedCpuMicros < 0) return null;
+    if (elapsedMs <= 0 || elapsedCpuMicros < 0) {
+      this.lastPercentage = null;
+      return null;
+    }
 
     const capacityMicros = elapsedMs * MICROS_PER_MILLISECOND * cpus;
-    return Math.min(100, Math.max(0, (elapsedCpuMicros / capacityMicros) * 100));
+    this.lastPercentage = Math.min(
+      100,
+      Math.max(0, (elapsedCpuMicros / capacityMicros) * 100),
+    );
+    return this.lastPercentage;
   }
 }

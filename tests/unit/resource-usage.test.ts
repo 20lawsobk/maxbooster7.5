@@ -46,6 +46,28 @@ describe("container resource usage", () => {
     expect(sampler.sample(8)).toBe(100);
   });
 
+  it("reuses the last sample instead of measuring on every metrics request", () => {
+    let usage = 0;
+    let now = 0;
+    const sampler = new CgroupCpuUsageSampler({
+      readUsageMicros: () => usage,
+      nowMilliseconds: () => now,
+      minimumIntervalMs: 1_000,
+    });
+
+    expect(sampler.sample(1)).toBeNull();
+    usage = 250_000;
+    now = 250;
+    expect(sampler.sample(1)).toBeNull();
+    now = 1_000;
+    expect(sampler.sample(1)).toBe(25);
+    usage += 500_000;
+    now = 1_250;
+    expect(sampler.sample(1)).toBe(25);
+    now = 2_000;
+    expect(sampler.sample(1)).toBe(50);
+  });
+
   it("resets its baseline after missing accounting or a counter reset", () => {
     let usage: number | null = 10_000;
     let now = 100;

@@ -230,6 +230,9 @@ export function liveCapacity() {
   return {
     cpus,
     memoryMB: memoryBytes / MiB,
+    usedMB: used === null
+      ? Math.max(0, memoryBytes / MiB - availableMB)
+      : Math.min(memoryBytes, used) / MiB,
     availableMB,
     ioSlots,
   };

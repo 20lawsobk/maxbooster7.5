@@ -59,6 +59,15 @@ function effectiveCapacity() {
     memoryGB: memory / GiB
   };
 }
+function clampDeploymentCapacity({ cpus, memoryGB }) {
+  if (!Number.isFinite(cpus) || cpus <= 0 || !Number.isFinite(memoryGB) || memoryGB <= 0) {
+    throw new Error("Invalid detected deployment capacity");
+  }
+  return {
+    cpus: Math.min(cpus, DEDICATED_DEPLOYMENT_LIMITS.cpus),
+    memoryGB: Math.min(memoryGB, DEDICATED_DEPLOYMENT_LIMITS.memoryGB)
+  };
+}
 
 // server/computeSizing.ts
 function positiveConfig(name, defaultValue) {
@@ -67,7 +76,7 @@ function positiveConfig(name, defaultValue) {
   return value;
 }
 function computeWorkerSizing(opts = {}) {
-  const capacity = effectiveCapacity();
+  const capacity = clampDeploymentCapacity(effectiveCapacity());
   const numCPUs = capacity.cpus;
   const local = process.env.MAXCORE_LOCAL !== "0";
   const maxcore = opts.envOverrideVar === "MAXCORE_LOCAL_CLUSTER_WORKERS";

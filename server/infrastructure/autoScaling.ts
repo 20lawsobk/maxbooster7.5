@@ -361,10 +361,13 @@ scalingMetricsRouter?.get(
   (_req: Request, res: Response) => {
     try {
       const metrics = autoScalingManager?.getMetrics();
+      const cpuUsage = metrics?.cpu.usage;
       const isHealthy =
-        metrics?.cpu.usage < 90 &&
-        metrics?.memory.percentage < 95 &&
-        metrics?.requests.errorRate < 10;
+        metrics !== undefined &&
+        (cpuUsage === null ||
+          (typeof cpuUsage === "number" && cpuUsage < 90)) &&
+        metrics.memory.percentage < 95 &&
+        metrics.requests.errorRate < 10;
 
       res.status(isHealthy ? 200 : 503).json({
         status: isHealthy ? "healthy" : "unhealthy",
