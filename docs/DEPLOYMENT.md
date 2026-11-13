@@ -70,14 +70,14 @@ Keep all dependency locks; there is no supported tar stub or lock-deletion repai
 
 ## Configured publishing
 
-The tracked `.replit` deployment invokes `npm run deployment:build`, then
-`npm run deployment:start`. These npm entrypoints delegate to `bash build.sh`
-and `bash start.sh`, preserving the guarded deployment executive, portable
-runtimes, capsule packaging/restoration and integrity checks. Replit runs the
-build and start as separate ordered phases; do not combine them into one shell
-command or run destructive packing in the development checkout. A GitHub push
-does not prove a successful publication. The owner-defined target is a Replit
-Reserved VM; historical scaled tests do not measure that production VM's capacity.
+The tracked `.replit` deployment invokes `bash build.sh`, then
+`npm run deployment:start` (which delegates to `bash start.sh`). This preserves
+the guarded deployment executive, portable runtimes, capsule
+packaging/restoration and integrity checks. Replit runs the build and start as
+separate ordered phases; do not combine them into one shell command or run
+destructive packing in the development checkout. A GitHub push does not prove
+a successful publication. The owner-defined target is a Replit Reserved VM;
+historical scaled tests do not measure that production VM's capacity.
 
 The Publishing tool currently selects a dedicated **16 vCPU / 64 GiB RAM**
 machine. Machine sizing is selected in Publishing and is not encoded in

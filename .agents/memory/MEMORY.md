@@ -24,3 +24,4 @@
 - [Stuck preview boot shell](stuck-preview-boot-shell.md) — verify the active preview host and Node/Vite health before changing client loading behavior.
 - [Owner training and generation rights](owner-admin-training-rights.md) — owner-controlled content is authorized; third-party awareness content still needs separate permission.
 - [PDIM Lua JSON values](pdim-lua-json-values.md) — the embedded Wasmoon Redis bridge may expose decoded JSON objects as userdata, so validate fields rather than requiring Lua `table` type.
+- [Max Booster publishing authorization](maxbooster-publishing-authorization.md) — the owner authorizes publishing once release readiness is achieved; this does not make unfinished work ready.

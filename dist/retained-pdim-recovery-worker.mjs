@@ -8973,8 +8973,11 @@ var init_recovery_private_store = __esm({
 });
 
 // server/lib/pdimBucketObjects.ts
+function configuredPdimBucketId(env2 = process.env) {
+  return env2.Replit_storage_bucket_id || env2.DATABASE_RECOVERY_BUCKET_ID || env2.REPLIT_BUCKET_ID;
+}
 async function configuredPdimBucketObjects() {
-  const bucketId = process.env.DATABASE_RECOVERY_BUCKET_ID || process.env.REPLIT_BUCKET_ID;
+  const bucketId = configuredPdimBucketId();
   if (!bucketId) throw new Error("PDIM App Storage bucket is not configured");
   const { bucket } = await createRecoveryStorage({ bucketId });
   return new PdimBucketObjects(bucket);

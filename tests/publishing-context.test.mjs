@@ -58,7 +58,15 @@ test("overlapping publishing is rejected; normal exit releases the lock",async t
 
 test("actual historical entry hands off once with isolated caches and authorized recovery", {timeout:90000}, t=>{
   const options=fixture(t);
-  for (const file of ["build.sh","script/deployment/bootstrap.sh","script/deployment/publishing-context.sh","script/lib/deploymentPackRecovery.mjs"]) {
+  for (const file of [
+    "build.sh",
+    "script/deployment/bootstrap.sh",
+    "script/deployment/publishing-context.sh",
+    "script/deployment/plans.mjs",
+    "script/deployment/capacity.mjs",
+    "script/deployment/owned-processes.mjs",
+    "script/lib/deploymentPackRecovery.mjs",
+  ]) {
     const target=path.join(options.cwd,file);
     fs.mkdirSync(path.dirname(target),{recursive:true});
     fs.copyFileSync(file,target);
@@ -70,17 +78,29 @@ test("actual historical entry hands off once with isolated caches and authorized
   fs.writeFileSync(path.join(options.cwd,"script/deployment/executive.mjs"),`
     import assert from "node:assert/strict";
     import fs from "node:fs";
-    assert.equal(process.argv[2],"build");
-    assert.equal(process.env.PUBLISH_BUILD_ROOT,process.cwd());
-    assert.equal(process.env.PUBLISH_SHELL_PACKS_CAPSULES,"1");
-    for(const key of ["NODE_COMPILE_CACHE","npm_config_cache","PIP_CACHE_DIR","UV_CACHE_DIR"]) {
-      assert.ok(process.env[key].startsWith(process.env.DEPLOY_BOOTSTRAP_DIR+"/cache/"));
-      fs.mkdirSync(process.env[key],{recursive:true});
-      fs.writeFileSync(process.env[key]+"/write","isolated");
+    import path from "node:path";
+    import {fileURLToPath} from "node:url";
+    export function runExecutive() {}
+    export function coordinateBuildPlan(tasks) { return tasks; }
+    if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+      assert.equal(process.argv[2],"build");
+      assert.equal(process.env.PUBLISH_BUILD_ROOT,process.cwd());
+      assert.equal(process.env.PUBLISH_SHELL_PACKS_CAPSULES,"1");
+      for(const key of [
+        "NODE_COMPILE_CACHE",
+        "npm_config_cache",
+        "PIP_CACHE_DIR",
+        "UV_CACHE_DIR",
+        "BOOSTERSTATE_PORTABLE_RUST_DIR",
+      ]) {
+        assert.ok(process.env[key].startsWith(process.env.DEPLOY_BOOTSTRAP_DIR+"/cache/"));
+        fs.mkdirSync(process.env[key],{recursive:true});
+        fs.writeFileSync(process.env[key]+"/write","isolated");
+      }
+      fs.rmSync(".cache",{recursive:true,force:true});
+      console.log("isolated executive handoff verified");
+      fs.rmSync(process.env.DEPLOY_BOOTSTRAP_DIR,{recursive:true,force:true});
     }
-    fs.rmSync(".cache",{recursive:true,force:true});
-    console.log("isolated executive handoff verified");
-    fs.rmSync(process.env.DEPLOY_BOOTSTRAP_DIR,{recursive:true,force:true});
   `);
   fs.mkdirSync(path.join(options.cwd,".cache"));
   const result=spawnSync("bash",["build.sh"],{...options,timeout:85000});

@@ -1,12 +1,12 @@
 entrypoint = "server/index.ts"
 modules = ["nodejs-22", "python-3.11"]
-run = "npm run dev"
+run = "npm run start"
 
 [gitHubImport]
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-build = ["npm", "run", "deployment:build"]
+build = ["bash", "build.sh"]
 run = ["npm", "run", "deployment:start"]
 ignorePorts = false
 deploymentTarget = "gce"
@@ -88,7 +88,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "npm run start"
 waitForPort = 5000
 
 [workflows.workflow.metadata]

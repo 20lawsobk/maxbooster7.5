@@ -28,5 +28,6 @@ isolate_publishing_caches() {
   export npm_config_cache="$tools/cache/npm" NPM_CONFIG_CACHE="$tools/cache/npm"
   export NODE_COMPILE_CACHE="$tools/cache/node"
   export BOOSTERSTATE_CARGO_HOME="$tools/cache/cargo"
+  export BOOSTERSTATE_PORTABLE_RUST_DIR="$tools/cache/rust-toolchain"
   export PIP_CACHE_DIR="$tools/cache/pip" UV_CACHE_DIR="$tools/cache/uv"
 }

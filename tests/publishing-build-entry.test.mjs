@@ -100,9 +100,12 @@ function fixture(t) {
   return {root,state,calls,authorization,write,run,runLegacyPublishing,outsideInterpreter};
 }
 
-test("Replit publishing selects the canonical npm scripts for the capsule-aware pipeline", () => {
+test("Replit uses the direct capsule build and capsule-aware publishing start", () => {
+  const repl = fs.readFileSync(path.join(repo, ".replit"), "utf8");
+  assert.match(repl, /^run = "npm run start"$/m);
+  assert.match(repl, /^args = "npm run start"$/m);
   const command = configuredBuildCommand();
-  assert.deepEqual(command, ["npm", "run", "deployment:build"]);
+  assert.deepEqual(command, ["bash", "build.sh"]);
   const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
     .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
   const publishing = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)[1]);

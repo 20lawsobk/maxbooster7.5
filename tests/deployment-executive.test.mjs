@@ -46,6 +46,35 @@ test("deadline kills hung task instead of admitting its dependent",async()=>{
  {capacity,pollMs:10,budgetMs:150,log(line){if(line.includes("starting dependent"))launched=true;}}),/deadline/);
  assert.equal(launched,false);
 });
+test("resource-starved admission fails with capacity evidence instead of idling to the build deadline",async()=>{
+  let launched=false;
+  const logs=[];
+  await assert.rejects(
+    runExecutive([{
+      ...task("large-stage",[],"process.exit(0)"),
+      memoryMB:512,
+    }],{
+      capacity:()=>({cpus:4,memoryMB:4096,availableMB:256,ioSlots:2}),
+      pollMs:5,
+      budgetMs:5000,
+      admissionTimeoutMs:50,
+      log(line){
+        logs.push(line);
+        if(line.includes("starting large-stage")) launched=true;
+      },
+    }),
+    error=>{
+      assert.equal(error.code,"DEPLOY_CAPACITY_ADMISSION_TIMEOUT");
+      assert.equal(error.taskId,"large-stage");
+      assert.equal(error.requiredMemoryMB,512);
+      assert.equal(error.availableMB,256);
+      assert.match(error.message,/large-stage requires 512 MiB; 256 MiB available/);
+      return true;
+    },
+  );
+  assert.equal(launched,false);
+  assert.ok(logs.every(line=>!line.includes("completed large-stage")));
+});
 test("capsule tasks retry a child-only transient signal after cleanup",async t=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-retry-"));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
@@ -79,6 +108,35 @@ test("executor cancellation stops promptly and is never retried",async t=>{
   assert.equal(fs.readFileSync(attemptsFile,"utf8").trim().split("\n").length,1);
   assert.deepEqual(rejection.runningTasks,["pack"]);
   assert.equal(rejection.taskCheckpoint.find(item=>item.id==="pack").state,"running");
+});
+test("unreasoned abort signals retain an actionable executive interruption error",async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-abort-reason-"));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const started=path.join(root,"started");
+  const controller=new AbortController();
+  const running=runExecutive([task(
+    "work",
+    [],
+    `require("node:fs").writeFileSync(${JSON.stringify(started)},"yes");setInterval(()=>{},1000);`,
+  )],{
+    cwd:root,
+    capacity,
+    pollMs:5,
+    budgetMs:3000,
+    signal:controller.signal,
+    log(){},
+  });
+  const deadline=Date.now()+2000;
+  while(!fs.existsSync(started)&&Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,10));
+  assert.ok(fs.existsSync(started),"the task must be running before abort");
+  controller.abort();
+  await assert.rejects(running,error=>{
+    assert.match(error.message,/Executive interrupted/);
+    assert.equal(error.code,"DEPLOY_EXECUTIVE_ABORT");
+    assert.equal(error.signalOrigin,"abort-signal");
+    assert.equal(error.cause?.name,"AbortError");
+    return true;
+  });
 });
 test("executor binds TERM, INT and HUP with truthful signal metadata and removes handlers",()=>{
   const emitter=new EventEmitter(),controller=new AbortController();

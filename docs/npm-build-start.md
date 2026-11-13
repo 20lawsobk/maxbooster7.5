@@ -15,11 +15,11 @@ runtime services. They are not a standalone `dist`-only installation format.
 Python/MaxCore resources, the Rust sidecar, database, session configuration and
 provider credentials remain operational prerequisites.
 
-The configured Replit publishing path uses `npm run deployment:build` and
-`npm run deployment:start`. Those scripts delegate to `bash build.sh` and
-`bash start.sh`, retaining compression, capsule packaging/restoration and the
-deployment executive. Replit executes them as separate build and run phases.
-Do not run the destructive packing flow in the working checkout.
+The configured Replit preview workflow uses `npm run start`. Publishing calls
+`bash build.sh` directly, then runs `npm run deployment:start`, which delegates
+to `bash start.sh`. This retains compression, capsule packaging/restoration and
+the deployment executive. Replit executes publishing build and run as separate
+phases. Do not run the destructive packing flow in the working checkout.
 
 ## Explicit dependency synchronization
 

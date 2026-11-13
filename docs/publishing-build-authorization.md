@@ -2,20 +2,20 @@
 
 ## Active Replit publishing configuration
 
-The tracked `.replit` file uses one npm-script entrypoint for each required
-platform phase:
+The tracked `.replit` file calls the full publishing builder directly and uses
+the package entrypoint for the runtime phase:
 
 ```
-build: npm run deployment:build
+build: bash build.sh
 run:   npm run deployment:start
 ```
 
-These package scripts delegate to `bash build.sh` and `bash start.sh`. The
-publish build runs the guarded bootstrap/executive, prepares and verifies
-portable runtimes, packages capsules, and applies integrity and image-size
-gates. Startup restores verified capsules before launching the application.
-Replit invokes build and run separately and in order; they must not be joined
-with `&&` or replaced with the ordinary unpacked-production scripts.
+The build runs the guarded bootstrap/executive, prepares and verifies portable
+runtimes, packages capsules, and applies integrity and image-size gates. The
+runtime package script delegates to `bash start.sh`, which restores verified
+capsules before launching the application. Replit invokes build and run
+separately and in order; they must not be joined with `&&` or replaced with the
+ordinary unpacked-production scripts.
 
 **Packing is destructive to the publishing copy. Never execute the complete
 publishing build in the working checkout.** The historical and comparison
@@ -82,7 +82,8 @@ with a tiny build script instead of the full application. It is not evidence
 of a successful full application build or publication.
 
 The wiring regression reads both deployment commands from `.replit`, verifies
-their npm-script delegates, and checks the build-free installer command. Separate installer fixtures exercise verified
+the direct build script and runtime npm-script delegate, and checks the
+build-free installer command. Separate installer fixtures exercise verified
 payload replacement and rejection before mutation. Packing regressions derive
 the preparation command from its real implementation and execute it only inside
 disposable fixtures. They verify one npm build per preparation invocation, the canonical root context, absent

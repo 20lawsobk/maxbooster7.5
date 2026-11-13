@@ -247,6 +247,7 @@ export async function runExecutive(tasks, {
   capacity = liveCapacity,
   budgetMs = 1800000,
   pollMs = 500,
+  admissionTimeoutMs = 120000,
   log = console.log,
   signal,
   readiness,
@@ -258,6 +259,9 @@ export async function runExecutive(tasks, {
   }
   if (!Number.isFinite(pollMs) || pollMs <= 0) {
     throw Error("Invalid poll interval");
+  }
+  if (!Number.isFinite(admissionTimeoutMs) || admissionTimeoutMs <= 0) {
+    throw Error("Invalid admission timeout");
   }
 
   const started = now();
@@ -275,6 +279,8 @@ export async function runExecutive(tasks, {
   let primaryError = null;
   let lastReport = -Infinity;
   let lastProbe = -Infinity;
+  let admissionBlockedAt = null;
+  let admissionBlock = null;
   let ready = false;
   let notify = () => {};
 
@@ -376,9 +382,30 @@ export async function runExecutive(tasks, {
   }
 
   const abort = () => {
-    failure ??= signal?.reason instanceof Error
-      ? signal.reason
-      : Error("Executive interrupted by an external stop request");
+    if (failure) return;
+
+    const reason = signal?.reason;
+    if (
+      reason instanceof Error &&
+      reason.code === "DEPLOY_EXECUTIVE_SIGNAL"
+    ) {
+      failure = reason;
+    } else {
+      const message = reason instanceof Error && reason.message
+        ? `Executive interrupted: ${reason.message}`
+        : "Executive interrupted by an external stop request";
+      failure = Object.assign(
+        new Error(message, reason instanceof Error ? {cause: reason} : {}),
+        {
+          code: typeof reason?.code === "string"
+            ? reason.code
+            : "DEPLOY_EXECUTIVE_ABORT",
+          signal: reason?.signal ?? null,
+          signalOrigin: reason?.signalOrigin ?? "abort-signal",
+        },
+      );
+    }
+
     notify();
   };
 
@@ -638,6 +665,44 @@ export async function runExecutive(tasks, {
       }
 
       if (
+        active.size === 0 &&
+        eligible.length > 0 &&
+        !eligible.some(task => task.memoryMB <= cap.availableMB)
+      ) {
+        admissionBlockedAt ??= now();
+        const blockedTasks = eligible.map(task => ({
+          id: task.id,
+          requiredMemoryMB: task.memoryMB,
+        }));
+        admissionBlock = {
+          availableMB: Math.floor(cap.availableMB),
+          blockedTasks,
+        };
+
+        if (now() - admissionBlockedAt >= admissionTimeoutMs) {
+          const first = blockedTasks[0];
+          throw Object.assign(
+            Error(
+              `No task fits current available memory after ` +
+              `${admissionTimeoutMs}ms: ${first.id} requires ` +
+              `${first.requiredMemoryMB} MiB; ` +
+              `${admissionBlock.availableMB} MiB available`,
+            ),
+            {
+              code: "DEPLOY_CAPACITY_ADMISSION_TIMEOUT",
+              taskId: first.id,
+              requiredMemoryMB: first.requiredMemoryMB,
+              availableMB: admissionBlock.availableMB,
+              blockedTasks,
+            },
+          );
+        }
+      } else {
+        admissionBlockedAt = null;
+        admissionBlock = null;
+      }
+
+      if (
         !ready && readiness && now() - lastProbe >= 1000 &&
         [...active.values()].some(job => job.task.application)
       ) {
@@ -668,7 +733,11 @@ export async function runExecutive(tasks, {
           `waiting=${[...pending.keys()].join(",") || "none"}; ` +
           `available=${Math.round(cap.availableMB)}MiB; ` +
           `cpu=${cpu}/${cpuLimit}; io=${io}/${cap.ioSlots}; ` +
-          (ready ? "ready" : `budgetRemaining=${remainingSeconds}s`),
+          (admissionBlock
+            ? `admissionBlocked=${admissionBlock.blockedTasks[0].id}:` +
+              `${admissionBlock.blockedTasks[0].requiredMemoryMB}MiB>` +
+              `${admissionBlock.availableMB}MiB`
+            : ready ? "ready" : `budgetRemaining=${remainingSeconds}s`),
         );
 
         lastReport = now();

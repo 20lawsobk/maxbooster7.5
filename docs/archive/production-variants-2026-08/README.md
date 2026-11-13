@@ -43,3 +43,84 @@ identified as a separate target; it is not the Replit publishing path.
 The current configured Replit workflow remains authoritative. Historical
 versions are evidence for comparison and recovery, not proof that a local build
 or rehearsal produced a successful published deployment.
+
+## Comparison and verification
+
+The current integration test `tests/august-production-variants.test.mjs`
+validates every archived object against the manifest, confirms historical
+scripts are not executable, and runs syntax/parse checks for each archived
+shell, Node.js, TypeScript, and JSON variant. At archive creation this covers
+68 versions: 22 Bash scripts, 2 Node.js scripts, 17 TypeScript files, and 4
+sanitized JSON projections. The other 23 entries are Docker/Procfile or
+documentation artifacts.
+
+Historical deployment entrypoints are not run as builds: they can compile,
+delete caches, prune dependencies, package large trees, start services, or
+contact cloud providers. Instead, the active deployment path is exercised by
+the isolated publishing, bootstrap, executor, process-ownership, build-path,
+capsule-restore, and startup-readiness tests in the repository.
+
+The evidence favors keeping the current Replit path as the canonical
+implementation: `.replit` invokes `bash build.sh` and
+`npm run deployment:start`; the build enters the capsule-aware bootstrap and
+bounded executor, while the start script restores the verified capsules. This
+keeps the historical fast/portable-runtime and capsule work only where current
+tests verify its contracts, rather than reviving old launchers with obsolete
+runtime assumptions.
+No archived variant has been substituted into the live configuration.
+
+## Full rehearsal result
+
+On 2026-11-13, `node scripts/rehearse-publishing-build.mjs` first ran while the
+preview was using shared workspace resources. Python installation passed, but
+the executor could not admit the next 8192-MiB dependency stage and had no
+eligible work. That rehearsal was stopped through its signal handler; neither
+the rehearsal nor executor reported success for the unfinished build.
+
+After the owner approved pausing the preview, a second rehearsal ran the
+configured `npm run deployment:build` in an isolated disposable copy and
+completed all 18 executor tasks with exit code 0 in 988.7 seconds. The rehearsal
+container reported 8 CPUs and a 16-GiB memory limit. It was a cold, full build:
+the log classified it as `SLOW (full npm run build + npm prune)`, not as the
+three-minute cached path. The Vite production build, dependency stage, checksum-
+verified portable Python runtime, pinned portable Rust toolchain, application
+capsule, Node/Python/MaxCore/PDIM capsules, source archive, application
+remainder, and final size gate all passed. The final measured image footprint
+was 5,914,368,741 bytes against the 8,000,000,000-byte limit. Capsule outputs
+included Node dependencies (70 MB), Python (329 MB), MaxCore (307 MB), PDIM
+(38 MB), source (9.3 MB), and application remainder (275 MB).
+
+The preceding Rust attempt failed because the restricted Nix store was not
+writable in the build environment. The Replit publishing context now selects
+the project's checksum-pinned portable Rust toolchain; that path compiled and
+passed in the successful rehearsal. This retains the Nix path for other
+environments and does not weaken toolchain verification. The rehearsal copied
+the source and kept all generated outputs under `.local`; it did not publish or
+delete files from the working checkout.
+
+The earlier development-workflow restart did not pass: its log shows a
+51.4-second wait for an existing PDIM bucket lease, followed by a generation-
+pinned `HEAD` read returning 404 before any configured listener opened. A
+separate read-only check confirmed the bucket had an owner with a live lease;
+the owning process was not identified. No lease was forced, bucket state
+initialized, or data overwritten. This failure was not represented as a
+successful dev-mode start.
+
+On 2026-11-13, the ordinary project commands were also run directly:
+`npm run build` completed with exit code 0 and its production artifact contract
+validated. A bounded `npm start` runtime check brought all 12 configured
+listeners up; the startup probes, including MaxCore local readiness, passed.
+The process was then sent SIGTERM at the 100-second test limit and reported a
+graceful shutdown. During startup, the app logged a successful 24.50-MB PDIM
+backup. After the owner requested the managed workflow use `npm run start`, the
+workflow was restarted on that command. The current process tree confirms
+`npm run start` → `scripts/start-production.mjs` → `dist/cluster.mjs`.
+Fresh checks returned 200 from `/api/ready`, the model service's `/health` and
+`/ready`, and DNS API `/ready`; all 12 configured listener ports were open,
+including the private DNS health listener. The protected model warm-status
+route returned 401 without credentials, so it was not used as evidence that a
+trained model was loaded. This verifies the current workspace workflow, not
+continuous uptime or a published deployment. The earlier dev-mode PDIM
+failure remains separately unresolved.
+
+No production publish was attempted.
