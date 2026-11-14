@@ -19,6 +19,7 @@
 import { Pool, PoolConfig, type PoolClient } from "pg";
 import { logger } from "../logger.js";
 import { env } from "../config/env.js";
+import { selectApplicationDatabaseUrl } from "../config/databaseTarget.js";
 
 interface PoolStats {
   totalConnections: number;
@@ -46,9 +47,10 @@ class OptimizedConnectionPool {
   private getOptimalConfig(): PoolConfig {
     const isProduction =
       process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
+    const databaseUrl = selectApplicationDatabaseUrl(env);
 
     const baseConfig: PoolConfig = {
-      connectionString: env.NEON_DATABASE_URL || env.DATABASE_URL,
+      connectionString: databaseUrl,
 
       max: isProduction ? 100 : 20,
       min: isProduction ? 10 : 2,
@@ -60,8 +62,8 @@ class OptimizedConnectionPool {
     };
 
     if (
-      env?.DATABASE_URL?.includes("neon") ||
-      env?.DATABASE_URL?.includes("pooler")
+      databaseUrl.includes("neon") ||
+      databaseUrl.includes("pooler")
     ) {
       return {
         ...baseConfig,

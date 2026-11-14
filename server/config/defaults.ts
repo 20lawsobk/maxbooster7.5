@@ -2,6 +2,7 @@ import { logger } from "../logger.js";
 import os from "os";
 import { env } from "./env.js";
 import { runtimePorts } from "./ports.js";
+import { selectApplicationDatabaseUrl } from "./databaseTarget.js";
 
 // VM Reserve auto-sizing: scale queue concurrency proportionally to available CPU cores.
 // Formula: floor(cpuCount / 4) gives a whole-number multiplier:
@@ -171,7 +172,7 @@ export const config: AppConfig = {
   port: runtimePorts.app,
 
   database: {
-    url: env.NEON_DATABASE_URL || env.DATABASE_URL || "",
+    url: selectApplicationDatabaseUrl(env),
     // In production each worker creates its own pool.  With the default of 20
     // connections × N workers we easily exceed Neon's connection limit (53100).
     // Scale the per-worker pool so all workers combined stay ≤ 15 connections:

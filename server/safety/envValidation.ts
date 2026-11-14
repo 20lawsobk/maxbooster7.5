@@ -47,13 +47,6 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     validator: (v) => v?.startsWith("postgres"),
   },
   {
-    name: "NEON_PRIMARY_URL",
-    required: false,
-    category: "critical",
-    description: "Neon primary URL alias",
-    validator: (v) => v?.startsWith("postgres"),
-  },
-  {
     name: "DATABASE_REPLICA_URLS",
     required: false,
     category: "critical",

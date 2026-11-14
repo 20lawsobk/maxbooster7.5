@@ -10,8 +10,8 @@ const LOCK_KEY = [1_977_008_800, 5];
 
 class SafeMigrationError extends Error {}
 
-function databaseUrlFromEnvironment(env = process.env) {
-  return env.NEON_DATABASE_URL || env.NEON_PRIMARY_URL || env.DATABASE_URL || "";
+export function databaseUrlFromEnvironment(env = process.env) {
+  return env.NEON_DATABASE_URL?.trim() || env.DATABASE_URL?.trim() || "";
 }
 
 function isMainModule() {

@@ -24,6 +24,7 @@ import {
   selectStripeSecretKey,
 } from "../../shared/stripeCredentials.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
+import { selectApplicationDatabaseUrl } from "./databaseTarget.js";
 
 // ─── Unified config object (self-confinement spec) ───────────────────────────
 
@@ -57,12 +58,9 @@ export const config = {
   port: runtimePorts.app,
   nodeEnv: (p.NODE_ENV as "development" | "production" | "test") || "development",
 
-  // Database — prefer Neon URL, fall back to DATABASE_URL
-  dbUrl:
-    p.NEON_DATABASE_URL ||
-    p.NEON_PRIMARY_URL ||
-    p.DATABASE_URL ||
-    "",
+  // Database — use the configured app-specific Neon URL; retain DATABASE_URL
+  // only as a compatibility fallback.
+  dbUrl: selectApplicationDatabaseUrl(p),
 
   // MaxCore AI — runs as a LOCAL supervised subsystem by default (the imported
   // repo at external/maxcore). Set MAXCORE_LOCAL=0 to point back at a remote

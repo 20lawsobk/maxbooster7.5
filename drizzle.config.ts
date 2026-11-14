@@ -1,6 +1,7 @@
 import { defineConfig } from "drizzle-kit";
+import { selectApplicationDatabaseUrl } from "./server/config/databaseTarget.js";
 
-const dbUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+const dbUrl = selectApplicationDatabaseUrl(process.env);
 
 if (!dbUrl) {
   throw new Error(
