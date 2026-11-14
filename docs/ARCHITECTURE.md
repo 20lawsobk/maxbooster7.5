@@ -180,7 +180,7 @@ Artist domains (e.g. `b-lawzmusic.max-booster.com`) are proxied by the Cloudflar
 | Runtime | Node.js ≥ 22, tsx (dev), compiled JS (prod) |
 | Framework | Express 5 |
 | ORM | Drizzle ORM |
-| Database | PostgreSQL (Neon — `NEON_DATABASE_URL`) |
+| Database | PostgreSQL (Neon — `NEON_PRIMARY_URL`; `NEON_DATABASE_URL` fallback) |
 | Cache/Sessions | PDIM (Redis-compatible) + pg fallback |
 | Job queues | BullMQ + Redis (port 6379) |
 | Frontend build | Vite 5 |

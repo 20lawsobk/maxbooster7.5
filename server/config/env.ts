@@ -18,8 +18,9 @@ const envSchema = z.object({
   PORT: z.coerce.number().min(1).max(65535).default(5000),
 
   // ── Database ──────────────────────────────────────────────────────────────
-  // Optional here — the app prefers NEON_DATABASE_URL (see config/defaults.ts).
-  // db.ts enforces that at least one is present at pool-creation time.
+  // Optional here — databaseTarget.ts selects the primary Neon URL first,
+  // followed by the app-specific Neon URL and the generic compatibility URL.
+  // db.ts enforces that a target is configured at pool-creation time.
   DATABASE_URL: z.string().url().startsWith("postgresql://").optional(),
 
   // ── Session / Auth ────────────────────────────────────────────────────────
@@ -71,8 +72,17 @@ const envSchema = z.object({
   DOMAIN: z.string().optional(),
   CORS_ORIGIN: z.string().optional(),
 
-  // ── Database aliases ──────────────────────────────────────────────────────
-  NEON_DATABASE_URL: z.string().url().optional(),
+  // ── Database URLs ─────────────────────────────────────────────────────────
+  NEON_PRIMARY_URL: z
+    .string()
+    .url()
+    .startsWith("postgresql://")
+    .optional(),
+  NEON_DATABASE_URL: z
+    .string()
+    .url()
+    .startsWith("postgresql://")
+    .optional(),
 
   // ── Feature flags ─────────────────────────────────────────────────────────
   SKIP_BOOSTERSTATE: z.string().optional(),

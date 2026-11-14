@@ -58,7 +58,7 @@ by the production supervisor. Do not add public port mappings for them.
 
 | Setting | Where to configure it | Requirement |
 | --- | --- | --- |
-| `NEON_DATABASE_URL` or `DATABASE_URL` | Secrets / Production app secrets | The existing Neon PostgreSQL connection string. `NEON_DATABASE_URL` takes precedence. Do not replace it with a newly provisioned Replit database. |
+| `NEON_PRIMARY_URL`, `NEON_DATABASE_URL`, or `DATABASE_URL` | Secrets / Production app secrets | The app selects `NEON_PRIMARY_URL` first, then `NEON_DATABASE_URL`; `DATABASE_URL` is a compatibility fallback. Do not replace the configured Neon database with a newly provisioned Replit database. |
 | `SESSION_SECRET` | Secrets / Production app secrets | A stable random secret of at least 32 characters. |
 | `MAXCORE_LOCAL=1`, `PDIM_FORCE_REMOTE=0` | Committed non-sensitive `.replit` defaults | Use the imported local implementations. |
 | `MAXCORE_SERVING_RELEASE=live-awareness` | Committed non-sensitive `.replit` default | Select the public live-awareness lifecycle. This setting does not certify inference quality. |

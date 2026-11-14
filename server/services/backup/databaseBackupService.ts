@@ -18,9 +18,10 @@ import {
   isSamePostgresDatabase,
   validatePostgresConnectionUrl,
 } from "../subprocessSafety.js";
+import { selectApplicationDatabaseUrl } from "../../config/databaseTarget.js";
 
 function databaseUrl(): string {
-  const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+  const url = selectApplicationDatabaseUrl(process.env);
   if (!url) throw new Error("Database URL not configured");
   return url;
 }

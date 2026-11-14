@@ -137,7 +137,8 @@ for verification of the actual web runtime.
 - MaxCore: the local supervisor owns its imported API and Python processes.
   Running/model-loaded health is different from qualified generation capability.
 - Database: inspect the configured target before any operation. The application
-  prefers `NEON_DATABASE_URL` and supports its documented `DATABASE_URL` fallback.
+  prefers `NEON_PRIMARY_URL`, then `NEON_DATABASE_URL`, with `DATABASE_URL` as a
+  compatibility fallback.
   Never assume a development label means a disposable database.
 - Session/provider configuration: use environment secret bindings and `.env.example`.
   Do not copy credentials into source, logs or release notes.

@@ -11,8 +11,9 @@ var envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test", "staging"]).default("development"),
   PORT: z.coerce.number().min(1).max(65535).default(5e3),
   // ── Database ──────────────────────────────────────────────────────────────
-  // Optional here — the app prefers NEON_DATABASE_URL (see config/defaults.ts).
-  // db.ts enforces that at least one is present at pool-creation time.
+  // Optional here — databaseTarget.ts selects the primary Neon URL first,
+  // followed by the app-specific Neon URL and the generic compatibility URL.
+  // db.ts enforces that a target is configured at pool-creation time.
   DATABASE_URL: z.string().url().startsWith("postgresql://").optional(),
   // ── Session / Auth ────────────────────────────────────────────────────────
   SESSION_SECRET: z.string().min(32),
@@ -55,8 +56,9 @@ var envSchema = z.object({
   APP_URL: z.string().optional(),
   DOMAIN: z.string().optional(),
   CORS_ORIGIN: z.string().optional(),
-  // ── Database aliases ──────────────────────────────────────────────────────
-  NEON_DATABASE_URL: z.string().url().optional(),
+  // ── Database URLs ─────────────────────────────────────────────────────────
+  NEON_PRIMARY_URL: z.string().url().startsWith("postgresql://").optional(),
+  NEON_DATABASE_URL: z.string().url().startsWith("postgresql://").optional(),
   // ── Feature flags ─────────────────────────────────────────────────────────
   SKIP_BOOSTERSTATE: z.string().optional(),
   DEPLOYMENT_PHASES: z.string().optional(),
@@ -300,6 +302,11 @@ function loopbackUrl(port) {
   return `http://127.0.0.1:${port}`;
 }
 
+// server/config/databaseTarget.ts
+function selectApplicationDatabaseUrl(environment) {
+  return environment.NEON_PRIMARY_URL?.trim() || environment.NEON_DATABASE_URL?.trim() || environment.DATABASE_URL?.trim() || "";
+}
+
 // server/config/defaults.ts
 var _vmCpuCount = Math.max(1, os.cpus().length);
 var _vmConcMult = Math.max(1, Math.floor(_vmCpuCount / 4));
@@ -331,7 +338,7 @@ var config = {
   isReplitWorkspace,
   port: runtimePorts.app,
   database: {
-    url: env.NEON_DATABASE_URL || env.DATABASE_URL || "",
+    url: selectApplicationDatabaseUrl(env),
     // In production each worker creates its own pool.  With the default of 20
     // connections × N workers we easily exceed Neon's connection limit (53100).
     // Scale the per-worker pool so all workers combined stay ≤ 15 connections:
@@ -485,8 +492,9 @@ var config2 = {
   // Core
   port: runtimePorts.app,
   nodeEnv: p.NODE_ENV || "development",
-  // Database — prefer Neon URL, fall back to DATABASE_URL
-  dbUrl: p.NEON_DATABASE_URL || p.NEON_PRIMARY_URL || p.DATABASE_URL || "",
+  // Database — use the primary Neon URL first; retain app-specific and generic
+  // URLs as fallbacks for older environments.
+  dbUrl: selectApplicationDatabaseUrl(p),
   // MaxCore AI — runs as a LOCAL supervised subsystem by default (the imported
   // repo at external/maxcore). Set MAXCORE_LOCAL=0 to point back at a remote
   // MaxCore deployment via MAXCORE_URL / AI_SERVER_URL.

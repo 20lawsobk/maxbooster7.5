@@ -18,8 +18,8 @@ Postgres** as the database.
   fast-path registered before session/PDIM middleware so health checks answer
   instantly regardless of load
 - **Client:** React + Vite, React Query, Tailwind
-- **Database:** Neon Postgres (`DATABASE_URL`); schema in `shared/schema.ts`,
-  pushed with `npm run db:push`
+- **Database:** Primary Neon Postgres (`NEON_PRIMARY_URL`); schema in
+  `shared/schema.ts`, pushed with `npm run db:push`
 - **Cache / state:** Redis-compatible layer (`REDIS_URL`); the Pocket
   Dimension (PDIM) subsystem implements Redis-level behavior internally —
   Redis-level semantics are PDIM's domain, not the app server's
@@ -46,7 +46,9 @@ The server binds `0.0.0.0:$PORT`. `GET /api/health` returns service health.
 fill in values. Variables marked **REQUIRED** make the server refuse to start
 when missing; everything else degrades gracefully. Core requirements:
 
-- `DATABASE_URL` — Neon Postgres connection string
+- `NEON_PRIMARY_URL` — primary Neon Postgres connection string
+- `NEON_DATABASE_URL` — Neon compatibility fallback
+- `DATABASE_URL` — legacy compatibility fallback
 - `PORT` — listen port (platform-provided on Replit)
 - Stripe keys for billing/payouts; `REDIS_URL` for the cache layer
 

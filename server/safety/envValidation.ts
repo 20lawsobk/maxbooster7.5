@@ -34,16 +34,23 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
   // ── Critical ──────────────────────────────────────────────────────────────
   {
     name: "DATABASE_URL",
-    required: true,
+    required: false,
     category: "critical",
-    description: "PostgreSQL database connection string",
+    description: "PostgreSQL compatibility database URL",
+    validator: (v) => v?.startsWith("postgres"),
+  },
+  {
+    name: "NEON_PRIMARY_URL",
+    required: false,
+    category: "critical",
+    description: "Primary Neon PostgreSQL URL (main application database)",
     validator: (v) => v?.startsWith("postgres"),
   },
   {
     name: "NEON_DATABASE_URL",
     required: false,
     category: "critical",
-    description: "Neon primary PostgreSQL URL (preferred over DATABASE_URL)",
+    description: "Application Neon PostgreSQL URL fallback",
     validator: (v) => v?.startsWith("postgres"),
   },
   {
@@ -828,6 +835,24 @@ export function validateEnvironment(
 
     valid++;
     logger.info(`   ✓ ${req.name}`);
+  }
+
+  const selectedDatabaseUrl =
+    process.env.NEON_PRIMARY_URL?.trim() ||
+    process.env.NEON_DATABASE_URL?.trim() ||
+    process.env.DATABASE_URL?.trim();
+  if (!selectedDatabaseUrl) {
+    errors.push(
+      "MISSING: NEON_PRIMARY_URL, NEON_DATABASE_URL, or DATABASE_URL - application PostgreSQL database URL",
+    );
+    missing++;
+    logger.warn("   ✗ application database URL - MISSING (required)");
+  } else if (!selectedDatabaseUrl.startsWith("postgres")) {
+    errors.push(
+      "INVALID: selected application database URL must use PostgreSQL",
+    );
+    invalid++;
+    logger.warn("   ✗ application database URL - INVALID format");
   }
 
   const isValid = errors?.length === 0;

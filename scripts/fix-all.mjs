@@ -10,7 +10,7 @@
  *   Phase imports                TS2307 broken relative imports → unique-candidate
  *                                path resolution (existence-verified rewrite).
  *   Phase schema                 Drizzle column drift vs the LIVE Neon DB
- *                                (NEON_DATABASE_URL): missing write-keys removed
+ *                                (primary Neon URL): missing write-keys removed
  *                                (safe single-line literals only), read-sites and
  *                                add-to-schema candidates reported, never guessed.
  *   Phase runtime                HTTP probes of the running app (5xx/refused = fail).
@@ -441,9 +441,14 @@ async function phaseImports() {
 function camelToSnake(s) { return s.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase()); }
 
 async function phaseSchema() {
-  const url = process.env.NEON_DATABASE_URL;
+  const url =
+    process.env.NEON_PRIMARY_URL ||
+    process.env.NEON_DATABASE_URL ||
+    process.env.DATABASE_URL;
   if (!url) {
-    record("schema", "blocked", { note: "NEON_DATABASE_URL not set" });
+    record("schema", "blocked", {
+      note: "NEON_PRIMARY_URL, NEON_DATABASE_URL, or DATABASE_URL not set",
+    });
     process.exitCode = 2;
     return;
   }

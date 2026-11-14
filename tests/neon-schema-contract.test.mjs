@@ -24,7 +24,7 @@ test("additional historical columns are preserved, not reported as removals", ()
   }))), []);
 });
 test("missing Neon configuration fails instead of targeting the managed DB", async () => {
-  await assert.rejects(checkNeonSchema(undefined), /NEON_DATABASE_URL is required/);
+  await assert.rejects(checkNeonSchema(undefined), /A Neon database URL is required/);
 });
 test("prelaunch checks the selected app database schema, not just SELECT 1", () => {
   const source = fs.readFileSync("scripts/pre-launch-check.ts", "utf8");

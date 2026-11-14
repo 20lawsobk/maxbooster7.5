@@ -813,8 +813,9 @@ All validated at startup by `server/config/env.ts` (Zod schema). Required variab
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `SESSION_SECRET` | **Yes** (≥32 chars) | Signs session cookies. Rotating this logs out all users. |
-| `NEON_DATABASE_URL` | **Yes** (one of) | Primary Neon PostgreSQL connection string |
-| `DATABASE_URL` | **Yes** (one of) | Alias; Neon is preferred |
+| `NEON_PRIMARY_URL` | **Yes** (one of) | Primary Neon PostgreSQL connection string |
+| `NEON_DATABASE_URL` | **Yes** (one of) | Secondary Neon fallback |
+| `DATABASE_URL` | **Yes** (one of) | Compatibility fallback |
 | `NODE_ENV` | No (default `development`) | `production` enables secure cookies, HTTPS redirects, stricter error messages |
 | `PORT` | No (default `5000`) | Server listen port |
 | `AI_SERVER_URL` | For AI features | Base URL of the MaxCore Python server (no trailing slash) |

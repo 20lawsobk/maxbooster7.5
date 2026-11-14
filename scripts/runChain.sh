@@ -9,7 +9,7 @@ log() { echo "[$(date '+%H:%M:%S')] $*" >> "$LOG"; }
 db_status() {
   node -e "
 const {neon}=require('@neondatabase/serverless');
-const s=neon(process.env.NEON_DATABASE_URL);
+const s=neon(process.env.NEON_PRIMARY_URL || process.env.NEON_DATABASE_URL || process.env.DATABASE_URL);
 s\`SELECT status FROM beat_money_loop_cycles ORDER BY started_at DESC LIMIT 1\`
   .then(r=>process.stdout.write(r[0]?.status||'unknown'))
   .catch(()=>process.stdout.write('error'));
@@ -58,7 +58,7 @@ fi
 # Count how many cycles already exist (including the manually-fired drill one)
 DONE_COUNT=$(node -e "
 const {neon}=require('@neondatabase/serverless');
-const s=neon(process.env.NEON_DATABASE_URL);
+const s=neon(process.env.NEON_PRIMARY_URL || process.env.NEON_DATABASE_URL || process.env.DATABASE_URL);
 s\`SELECT count(*) as n FROM beat_money_loop_cycles\`
   .then(r=>process.stdout.write(String(r[0]?.n||0)))
   .catch(()=>process.stdout.write('0'));

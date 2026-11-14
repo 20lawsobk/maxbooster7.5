@@ -58,8 +58,8 @@ export const config = {
   port: runtimePorts.app,
   nodeEnv: (p.NODE_ENV as "development" | "production" | "test") || "development",
 
-  // Database — use the configured app-specific Neon URL; retain DATABASE_URL
-  // only as a compatibility fallback.
+  // Database — use the primary Neon URL first; retain app-specific and generic
+  // URLs as fallbacks for older environments.
   dbUrl: selectApplicationDatabaseUrl(p),
 
   // MaxCore AI — runs as a LOCAL supervised subsystem by default (the imported

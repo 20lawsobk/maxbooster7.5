@@ -777,8 +777,11 @@ async function cli() {
   if (apply && !args.has("--apply-commerce-sql-0022-0023")) {
     throw new Error("Apply requires --apply-commerce-sql-0022-0023");
   }
-  const url = process.env.NEON_DATABASE_URL ?? process.env.COMMERCE_MIGRATION_DATABASE_URL;
-  if (!url) throw new Error("NEON_DATABASE_URL is required");
+  const url =
+    process.env.COMMERCE_MIGRATION_DATABASE_URL ??
+    process.env.NEON_PRIMARY_URL ??
+    process.env.NEON_DATABASE_URL;
+  if (!url) throw new Error("A commerce migration database URL is required");
   const { default: pg } = await import("pg");
   const loaded = await loadExactMigrations();
   if (!apply) {

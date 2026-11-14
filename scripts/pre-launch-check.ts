@@ -19,14 +19,15 @@ interface CheckResult {
 }
 
 export interface DatabaseTarget {
-  name: "NEON_DATABASE_URL" | "DATABASE_URL";
+  name: "NEON_PRIMARY_URL" | "NEON_DATABASE_URL" | "DATABASE_URL";
   url: string;
 }
 
-/** Prefer the application's actual Neon database; DATABASE_URL is the CI fallback. */
+/** Prefer primary Neon in live use; DATABASE_URL is only the isolated CI fallback. */
 export function selectDatabaseTarget(
   env: NodeJS.ProcessEnv = process.env,
 ): DatabaseTarget | null {
+  const primaryNeonUrl = env.NEON_PRIMARY_URL?.trim();
   const neonUrl = env.NEON_DATABASE_URL?.trim();
   const fallbackUrl = env.DATABASE_URL?.trim();
   const isolatedCiRun = env.CI === "true" || env.NODE_ENV === "test";
@@ -46,6 +47,9 @@ export function selectDatabaseTarget(
       return null;
     }
     return { name: "DATABASE_URL", url: fallbackUrl };
+  }
+  if (primaryNeonUrl) {
+    return { name: "NEON_PRIMARY_URL", url: primaryNeonUrl };
   }
   if (neonUrl) return { name: "NEON_DATABASE_URL", url: neonUrl };
   if (fallbackUrl) return { name: "DATABASE_URL", url: fallbackUrl };
@@ -124,7 +128,9 @@ async function main(): Promise<void> {
   check(
     "Application database URL",
     !!database,
-    database ? `${database.name} is set` : "NEON_DATABASE_URL or DATABASE_URL is missing",
+      database
+        ? `${database.name} is set`
+        : "NEON_PRIMARY_URL, NEON_DATABASE_URL, or DATABASE_URL is missing",
   );
 
   const sessionSecret = process.env.SESSION_SECRET ?? "";

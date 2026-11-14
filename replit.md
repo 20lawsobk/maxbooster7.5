@@ -120,10 +120,11 @@ Skips the optional Rust `boosterstate` sidecar if not compiled, then starts `ser
 
 | Variable | Notes |
 |---|---|
-| `NEON_DATABASE_URL` | PostgreSQL (Neon) — the app's actual database |
+| `NEON_PRIMARY_URL` | PostgreSQL (Neon) — the app's primary database |
+| `NEON_DATABASE_URL` | PostgreSQL (Neon) — secondary compatibility target |
 | `SESSION_SECRET` | Set as a Replit Secret (min 32 chars) |
 
-> ⚠️ `DATABASE_URL` (Replit-managed PostgreSQL) is a **different** database from `NEON_DATABASE_URL`. All schema/query work targets `NEON_DATABASE_URL`.
+> ⚠️ `DATABASE_URL` (Replit-managed PostgreSQL) is separate from the Neon databases. The app uses `NEON_PRIMARY_URL` first, then `NEON_DATABASE_URL`; use `DATABASE_URL` only as a compatibility fallback.
 
 See `.env.example` for the full list of 300+ optional variables (Stripe, SendGrid, MaxCore, social OAuth, etc.). Features degrade gracefully when absent; AI features return 503 without MaxCore.
 
@@ -142,7 +143,7 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 | `npm run lint:fix` | ESLint auto-fix |
 | `npm run verify:dependency-upgrades` | Exercise upgraded native, archive, spreadsheet, UUID, and storage dependencies |
 | `npm run fix` | ESLint --fix + Prettier --write |
-| `npm run db:push` | Sync Drizzle schema to NEON_DATABASE_URL |
+| `npm run db:push` | Sync Drizzle schema to the selected primary Neon database |
 | `node scripts/fix-all.mjs --phase <p>` | Resumable fix-all pipeline (ts-server/ts-client/verify/imports/schema/runtime/audit/lint/summary); state+reports in `reports/fix-all/`; exits 1 while work is outstanding |
 | `npm run bootstrap:admin` | Create the initial admin user |
 

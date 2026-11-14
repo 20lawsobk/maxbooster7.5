@@ -1,12 +1,12 @@
 # Database Reference
 
 > Selected schema reference. Current declarations and migrations are authoritative.
-> The runtime prefers NEON_DATABASE_URL and supports its documented DATABASE_URL
+> The runtime prefers NEON_PRIMARY_URL, then NEON_DATABASE_URL, and supports its documented DATABASE_URL
 > fallback. Verify the actual selected target before any writes.
 
 ## Connection
 
-The runtime prefers `NEON_DATABASE_URL` and supports the configured `DATABASE_URL` fallback. Determine the actual selected target before any operation; variable names alone do not establish database ownership or isolation.
+The runtime prefers `NEON_PRIMARY_URL`, then `NEON_DATABASE_URL`, and supports `DATABASE_URL` only as a compatibility fallback. Determine the actual selected target before any operation; variable names alone do not establish database ownership or isolation.
 
 - Primary connection: used for all writes and auth reads (to avoid replica lag).
 - Read replica (`READ_REPLICA_URL`): used for analytics, dashboard, and high-volume reads.

@@ -17925,8 +17925,9 @@ var init_env = __esm({
       NODE_ENV: z2.enum(["development", "production", "test", "staging"]).default("development"),
       PORT: z2.coerce.number().min(1).max(65535).default(5e3),
       // ── Database ──────────────────────────────────────────────────────────────
-      // Optional here — the app prefers NEON_DATABASE_URL (see config/defaults.ts).
-      // db.ts enforces that at least one is present at pool-creation time.
+      // Optional here — databaseTarget.ts selects the primary Neon URL first,
+      // followed by the app-specific Neon URL and the generic compatibility URL.
+      // db.ts enforces that a target is configured at pool-creation time.
       DATABASE_URL: z2.string().url().startsWith("postgresql://").optional(),
       // ── Session / Auth ────────────────────────────────────────────────────────
       SESSION_SECRET: z2.string().min(32),
@@ -17969,8 +17970,9 @@ var init_env = __esm({
       APP_URL: z2.string().optional(),
       DOMAIN: z2.string().optional(),
       CORS_ORIGIN: z2.string().optional(),
-      // ── Database aliases ──────────────────────────────────────────────────────
-      NEON_DATABASE_URL: z2.string().url().optional(),
+      // ── Database URLs ─────────────────────────────────────────────────────────
+      NEON_PRIMARY_URL: z2.string().url().startsWith("postgresql://").optional(),
+      NEON_DATABASE_URL: z2.string().url().startsWith("postgresql://").optional(),
       // ── Feature flags ─────────────────────────────────────────────────────────
       SKIP_BOOSTERSTATE: z2.string().optional(),
       DEPLOYMENT_PHASES: z2.string().optional(),
@@ -17979,6 +17981,16 @@ var init_env = __esm({
       POCKET_DIMENSION_KEY: z2.string().optional()
     });
     env = parseEnv();
+  }
+});
+
+// server/config/databaseTarget.ts
+function selectApplicationDatabaseUrl(environment) {
+  return environment.NEON_PRIMARY_URL?.trim() || environment.NEON_DATABASE_URL?.trim() || environment.DATABASE_URL?.trim() || "";
+}
+var init_databaseTarget = __esm({
+  "server/config/databaseTarget.ts"() {
+    "use strict";
   }
 });
 
@@ -18010,6 +18022,7 @@ var init_defaults = __esm({
     init_logger();
     init_env();
     init_ports();
+    init_databaseTarget();
     _vmCpuCount = Math.max(1, os5.cpus().length);
     _vmConcMult = Math.max(1, Math.floor(_vmCpuCount / 4));
     isReplitDeployment = process.env.REPLIT_DEPLOYMENT === "1";
@@ -18021,7 +18034,7 @@ var init_defaults = __esm({
       isReplitWorkspace,
       port: runtimePorts.app,
       database: {
-        url: env.NEON_DATABASE_URL || env.DATABASE_URL || "",
+        url: selectApplicationDatabaseUrl(env),
         // In production each worker creates its own pool.  With the default of 20
         // connections × N workers we easily exceed Neon's connection limit (53100).
         // Scale the per-worker pool so all workers combined stay ≤ 15 connections:
