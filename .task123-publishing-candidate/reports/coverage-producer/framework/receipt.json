@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "/workspace/.cloud-tools/node_modules/.bin/node",
+    "--test",
+    "--test-reporter=tap",
+    "tests/testing/coverage-provenance.test.mjs"
+  ],
+  "start": "2026-10-28T01:19:13.842217+00:00",
+  "end": "2026-10-28T01:19:14.075193+00:00",
+  "exitCode": 0,
+  "sourcesBefore": {
+    "scripts/testing/coverage-provenance.mjs": "5f8d4de311ce4129176bc21d8b67871efe22666b90d973935fb15fc13420d468",
+    "scripts/testing/coverage-node-bootstrap.mjs": "bd1a984cf459aeb3c0c6416bf72091f0d08752628c7cbff47b33d3577805baa4",
+    "scripts/testing/collect-node-coverage.mjs": "501b83d4b36ed64f392ac93a52bfb1418c7e73bbce0630ecfe1996c31c4a11a8",
+    "tests/testing/coverage-provenance.test.mjs": "3aa597895d2f8993591cc4bbf4354e16270a38a744d0acad40b88dae3483d785"
+  },
+  "sourcesAfter": {
+    "scripts/testing/coverage-provenance.mjs": "5f8d4de311ce4129176bc21d8b67871efe22666b90d973935fb15fc13420d468",
+    "scripts/testing/coverage-node-bootstrap.mjs": "bd1a984cf459aeb3c0c6416bf72091f0d08752628c7cbff47b33d3577805baa4",
+    "scripts/testing/collect-node-coverage.mjs": "501b83d4b36ed64f392ac93a52bfb1418c7e73bbce0630ecfe1996c31c4a11a8",
+    "tests/testing/coverage-provenance.test.mjs": "3aa597895d2f8993591cc4bbf4354e16270a38a744d0acad40b88dae3483d785"
+  },
+  "outputSha256": "d3628f048cdbfe507bdb20ccb7e14d8590c015dfd1b96ebfca58c8ccf3540490",
+  "scope": "Eight framework/provenance tests; not platform coverage or launch readiness",
+  "productionReady": false
+}

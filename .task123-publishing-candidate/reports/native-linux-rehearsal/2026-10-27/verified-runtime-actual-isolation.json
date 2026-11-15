@@ -1,0 +1,26 @@
+{
+  "containerId": "fd15bec777821f8e24987061c6febd4f4cd711b0d1e46de4620cc52eada0aa97",
+  "networkMode": "none",
+  "privileged": false,
+  "readOnlyRootfs": true,
+  "user": "1000:1000",
+  "nanoCPUs": 1000000000,
+  "memory": 2147483648,
+  "mounts": [
+    {
+      "source": "/tmp/maxbooster-linux-u3f69z18/out/linux-unpacked",
+      "destination": "/artifact",
+      "rw": false
+    },
+    {
+      "source": "/tmp/maxbooster-linux-u3f69z18/controller",
+      "destination": "/controller",
+      "rw": false
+    },
+    {
+      "source": "/tmp/maxbooster-linux-u3f69z18/runtime-evidence-verified",
+      "destination": "/evidence",
+      "rw": true
+    }
+  ]
+}

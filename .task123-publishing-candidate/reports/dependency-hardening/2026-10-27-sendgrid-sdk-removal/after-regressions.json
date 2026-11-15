@@ -1,0 +1,26 @@
+{
+  "command": [
+    "node",
+    "--import",
+    "tsx",
+    "--test",
+    "--test-reporter=junit",
+    "tests/sendgrid-alert-transport.test.mjs",
+    "tests/legacy-sendgrid-security-coherence.test.mjs",
+    "tests/patent-pdf-runtime.test.mjs",
+    "tests/runtime-artifact-gates.test.mjs",
+    "tests/qs-security-contract.test.mjs",
+    "tests/legacy-security-update.test.mjs",
+    "tests/http-dependency-consumers.test.mjs",
+    "tests/dependency-security-paths.test.mjs",
+    "tests/dependency-advisories.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:33:55.739158+00:00",
+  "durationSeconds": 4.177,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/after-regressions.xml",
+  "logSha256": "e1a0b402e8cb0c1fc21bd6747c24ed147334963f3407c3a3b329d72566463d18"
+}

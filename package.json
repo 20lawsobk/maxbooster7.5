@@ -9,7 +9,7 @@
   },
   "type": "module",
   "license": "MIT",
-  "packageManager": "npm@10.9.9",
+  "packageManager": "npm@11.19.1",
   "main": "electron/main.js",
   "scripts": {
     "dev": "bash scripts/start-dev.sh",
@@ -497,6 +497,6 @@
     "body-parser": "^2.4.0"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24.0.0"
   }
 }

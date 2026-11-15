@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: TLS development consumer uses matching patched esbuild library and native binary
+ok 1 - TLS development consumer uses matching patched esbuild library and native binary
+  ---
+  duration_ms: 70.859116
+  type: 'test'
+  ...
+# Subtest: actual TLS tsx command transpiles and executes an isolated TypeScript fixture
+ok 2 - actual TLS tsx command transpiles and executes an isolated TypeScript fixture
+  ---
+  duration_ms: 214.663558
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 410.327285

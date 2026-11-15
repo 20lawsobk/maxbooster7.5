@@ -1,0 +1,8 @@
+coverage combine (exit 0)
+Combined 3 files, skipped 1
+
+coverage segregate (exit 0)
+{"unmappedDynamicFiles": [], "retainedMeasuredFiles": 334, "contextsPreserved": [""]}
+
+coverage json (exit 0)
+Wrote JSON report to <repo>/reports/aso/isolated-full-20261106T233139Z/rechecks/python-native-libraries/coverage.json

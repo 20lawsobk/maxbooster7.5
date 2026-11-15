@@ -1,0 +1,7 @@
+
+> max-booster@3.0.0 security:audit
+> npm audit --omit=dev --audit-level=high
+
+undefined
+npm error audit endpoint returned an error
+npm error A complete log of this run can be found in: /tmp/maxbooster-test-ucqnshdb/.npm/_logs/2026-10-25T15_36_28_281Z-debug-0.log

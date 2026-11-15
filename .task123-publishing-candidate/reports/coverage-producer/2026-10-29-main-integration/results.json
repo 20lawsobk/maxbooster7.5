@@ -1,0 +1,76 @@
+{
+  "scope": "Current integrated P1 maps remain UNMERGED; framework/types/lint checks, no whole-product Green",
+  "beforeSha256": "a2805c163b3cef97e435b5e78a745b5c8dd2d7118c7f60feed31b7d831f9df62",
+  "afterSha256": "a2805c163b3cef97e435b5e78a745b5c8dd2d7118c7f60feed31b7d831f9df62",
+  "unchanged": true,
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/testing/coverage-provenance.test.mjs",
+        "tests/testing/coverage-coordinate-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T22:14:41.079046+00:00",
+      "durationSeconds": 6.526,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/coverage-producer/2026-10-29-main-integration/framework.txt",
+      "logSha256": "32186a00dfa92f9b06ed20ad379aaaed06d94ddaeca6e5312f6e06c0191d16c7",
+      "id": "framework"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/collect-node-coverage.mjs",
+        "tests/fabric-replica-generation.test.mjs",
+        "reports/coverage-producer/2026-10-29-main-integration/runtime",
+        "/workspace/onboarding-results/c5-shared-producer/canonical-raw-2/raw"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T22:14:41.079645+00:00",
+      "durationSeconds": 13.531,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/coverage-producer/2026-10-29-main-integration/P1.txt",
+      "logSha256": "8f21c31d75dd1415d7ba81786cd877f715255213db982c97d3415838c0e7d6cb",
+      "id": "P1"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T22:14:41.080319+00:00",
+      "durationSeconds": 25.598,
+      "exitCode": 2,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/coverage-producer/2026-10-29-main-integration/types.txt",
+      "logSha256": "cbd483ea35b9fd886703ebf68b9877fb1a4c540c563d5913281c90541475fa58",
+      "id": "types"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-29T22:14:41.080598+00:00",
+      "durationSeconds": 52.444,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/coverage-producer/2026-10-29-main-integration/lint.txt",
+      "logSha256": "080bc3c072f71cd203449f17d5fe564cbc8c24aab2e1907fdb52433f259eed66",
+      "id": "lint"
+    }
+  ],
+  "productionReady": false
+}

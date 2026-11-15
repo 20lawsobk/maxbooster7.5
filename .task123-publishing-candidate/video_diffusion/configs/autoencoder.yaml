@@ -1,0 +1,7 @@
+model:
+  in_ch: 3
+  base_ch: 128
+  ch_mult: [1, 2, 4, 4]
+  temporal_down: [1, 2, 2, 2]
+  latent_ch: 16
+  scale_factor: 8

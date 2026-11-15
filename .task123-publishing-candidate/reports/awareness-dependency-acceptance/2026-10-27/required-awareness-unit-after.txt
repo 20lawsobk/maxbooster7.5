@@ -1,0 +1,80 @@
+
+ RUN  v4.1.12 /workspace/maxbooster7.5
+
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 400 to503 and retains the received upstream cause 89ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 401 to503 and retains the received upstream cause 9ms
+ ✓ tests/unit/maxcore-client-thin-transport.test.ts > MaxCore client is transport, not another AI processing layer > generate fetches canonical context without local planning and returns the unmodified MaxCore output 115ms
+ ✓ tests/unit/maxcore-client-thin-transport.test.ts > MaxCore client is transport, not another AI processing layer > infer fetches canonical context without local planning and returns the unmodified MaxCore output 3ms
+ ✓ tests/unit/maxcore-client-thin-transport.test.ts > MaxCore client is transport, not another AI processing layer > generate propagates required awareness 503 without tripping connectivity breaker 3ms
+ ✓ tests/unit/maxcore-client-thin-transport.test.ts > MaxCore client is transport, not another AI processing layer > infer propagates required awareness 503 without tripping connectivity breaker 1ms
+ ✓ tests/unit/maxcore-client-thin-transport.test.ts > MaxCore client is transport, not another AI processing layer > closes a half-open circuit after authenticated model info proves the local model is ready 13ms
+ ✓ tests/unit/maxcore-client-thin-transport.test.ts > MaxCore client is transport, not another AI processing layer > releases the half-open probe reservation when cached health fast-fails before fetch 7ms
+ ✓ tests/unit/maxcore-client-thin-transport.test.ts > MaxCore client is transport, not another AI processing layer > does not close a half-open circuit on 'boot JSON' 6ms
+ ✓ tests/unit/maxcore-client-thin-transport.test.ts > MaxCore client is transport, not another AI processing layer > does not close a half-open circuit on 'model-not-ready JSON' 4ms
+ ✓ tests/unit/maxcore-client-thin-transport.test.ts > MaxCore client is transport, not another AI processing layer > does not close a half-open circuit on 'generic HTML' 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 403 to503 and retains the received upstream cause 4ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 404 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 405 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 408 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 422 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 429 to503 and retains the received upstream cause 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 500 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 502 to503 and retains the received upstream cause 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 503 to503 and retains the received upstream cause 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot HTTP 504 to503 and retains the received upstream cause 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot network failure to503 without issuing generation 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot timeout failure to503 without issuing generation 4ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot html failure to503 without issuing generation 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate maps required snapshot invalid-json failure to503 without issuing generation 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate keeps required warming receipt rejection fail-closed 3ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate keeps required expired receipt rejection fail-closed 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate keeps required missing-id receipt rejection fail-closed 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate keeps required blank-id receipt rejection fail-closed 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate keeps required empty-text receipt rejection fail-closed 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate keeps required empty-object receipt rejection fail-closed 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate preserves valid required awareness and the caller body for /generate/content 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate preserves valid required awareness and the caller body for /generate/image 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > generate preserves valid required awareness and the caller body for /generate/audio 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 400 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 401 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 403 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 404 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 405 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 408 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 422 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 429 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 500 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 502 to503 and retains the received upstream cause 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 503 to503 and retains the received upstream cause 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot HTTP 504 to503 and retains the received upstream cause 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot network failure to503 without issuing generation 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot timeout failure to503 without issuing generation 3ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot html failure to503 without issuing generation 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer maps required snapshot invalid-json failure to503 without issuing generation 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer keeps required warming receipt rejection fail-closed 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer keeps required expired receipt rejection fail-closed 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer keeps required missing-id receipt rejection fail-closed 2ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer keeps required blank-id receipt rejection fail-closed 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer keeps required empty-text receipt rejection fail-closed 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer keeps required empty-object receipt rejection fail-closed 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer preserves valid required awareness and the caller body for /generate/content 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer preserves valid required awareness and the caller body for /generate/image 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > infer preserves valid required awareness and the caller body for /generate/audio 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > does not request or replace awareness for unrelated private analytics endpoints 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > preserves generic operation HTTP400; snapshot classification never rewrites public/domain policy 1ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > preserves generic operation HTTP401; snapshot classification never rewrites public/domain policy 0ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > preserves generic operation HTTP403; snapshot classification never rewrites public/domain policy 0ms
+ ✓ tests/unit/required-awareness-dependency.test.ts > required generation awareness is a fixed internal dependency > preserves generic operation HTTP404; snapshot classification never rewrites public/domain policy 1ms
+ ✓ server/services/__tests__/unifiedAwarenessContext.test.ts > MaxCore unified awareness facade > preserves caller direction and full snapshot receipt without local planning 3ms
+ ✓ server/services/__tests__/unifiedAwarenessContext.test.ts > MaxCore unified awareness facade > fails closed on an unavailable required snapshot 1ms
+ ✓ server/services/__tests__/unifiedAwarenessContext.test.ts > MaxCore unified awareness facade > rejects absent snapshot receipts rather than returning empty context 1ms
+ ✓ server/services/__tests__/unifiedAwarenessContext.test.ts > MaxCore unified awareness facade > maps the actual Python conditioning-string schema without inventing confidence 1ms
+ ✓ server/services/__tests__/unifiedAwarenessContext.test.ts > MaxCore unified awareness facade > omits optional conditioning while MaxCore is warming 0ms
+ ✓ server/services/__tests__/unifiedAwarenessContext.test.ts > MaxCore unified awareness facade > forwards authoritative status without inferring provider availability 0ms
+
+ Test Files  3 passed (3)
+      Tests  70 passed (70)
+   Start at  02:13:47
+   Duration  676ms (transform 318ms, setup 85ms, import 204ms, tests 349ms, environment 0ms)
+
+JUNIT report written to /workspace/onboarding-results/required-awareness-unit-after.xml

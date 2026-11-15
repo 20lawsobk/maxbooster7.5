@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "d33649d75e7a0dffc80adf40fa410f4ee66b1984",
+  "startedAt": "2026-11-10T15:11:24.461606+00:00",
+  "nodeVersion": "v22.23.4",
+  "boundary": "No inherited application keys, DB URL, NODE_OPTIONS or provider credentials; disposable local SQL only",
+  "commands": [
+    {
+      "id": "beat-loop-lifecycle-postgres.test",
+      "path": "tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/home/runner/workspace/reports/test-verification/commerce-after-fixture/beat-loop-lifecycle-postgres.test.xml",
+        "tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 93.099,
+      "counts": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "beat-loop-lifecycle-postgres.test.txt",
+      "junit": "beat-loop-lifecycle-postgres.test.xml"
+    },
+    {
+      "id": "business-integrity-postgres.test",
+      "path": "tests/payment-processing/business-integrity-postgres.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/home/runner/workspace/reports/test-verification/commerce-after-fixture/business-integrity-postgres.test.xml",
+        "tests/payment-processing/business-integrity-postgres.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 12.149,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "business-integrity-postgres.test.txt",
+      "junit": "business-integrity-postgres.test.xml"
+    },
+    {
+      "id": "business-integrity.test",
+      "path": "tests/payment-processing/business-integrity.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/home/runner/workspace/reports/test-verification/commerce-after-fixture/business-integrity.test.xml",
+        "tests/payment-processing/business-integrity.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.641,
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "business-integrity.test.txt",
+      "junit": "business-integrity.test.xml"
+    }
+  ],
+  "blocked": [],
+  "selection": null
+}

@@ -1,0 +1,354 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const connector = vi.hoisted(() => ({
+  origin: "http://maxcore.internal",
+}));
+
+vi.mock("../../services/maxcoreConnector.js", () => ({
+  absolutizeMaxcoreMediaUrls: (value: unknown) => value,
+  getMaxcoreAdminHeaders: () => ({ "X-Admin-Key": "admin" }),
+  getMaxcoreGenerationHeaders: () => ({ Authorization: "Bearer service" }),
+  getMaxcoreOrigin: () => connector.origin,
+  isAllowedMaxcoreMediaPath: () => true,
+}));
+
+vi.mock("../../middleware/auth.js", () => ({
+  requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireAuthOnly: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+
+vi.mock("../../logger.js", () => ({
+  logger: { warn: vi.fn(), debug: vi.fn() },
+}));
+
+import router from "../maxcoreProxy.js";
+
+type Layer = {
+  route?: {
+    path: string;
+    methods: Record<string, boolean>;
+    stack: Array<{ handle: (req: unknown, res: unknown) => unknown }>;
+  };
+};
+
+function routeHandler(method: string, path: string) {
+  const layer = (router as unknown as { stack: Layer[] }).stack.find(
+    (candidate) =>
+      candidate.route?.path === path &&
+      candidate.route.methods[method.toLowerCase()],
+  );
+  expect(layer, `${method} ${path} should be registered`).toBeDefined();
+  return layer!.route!.stack.at(-1)!.handle;
+}
+
+function responseDouble() {
+  const response = {
+    statusCode: 200,
+    payload: undefined as unknown,
+    headers: {} as Record<string, string>,
+    status(code: number) {
+      response.statusCode = code;
+      return response;
+    },
+    setHeader(name: string, value: string) {
+      response.headers[name] = value;
+      return response;
+    },
+    json(value: unknown) {
+      response.payload = value;
+      return response;
+    },
+    send(value: unknown) {
+      response.payload = value;
+      return response;
+    },
+    end: vi.fn(),
+  };
+  return response;
+}
+
+describe("MaxCore public proxy contract", () => {
+  it("does not let public caller identities authorize private artifact commits", async () => {
+    const previous = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+    process.env.PDIM_LOCAL_CHANNEL_TOKEN = "private-test-peer-token";
+    try {
+      for (const token of ["", "Bearer service", "Bearer admin"]) {
+        const res = responseDouble();
+        await routeHandler("post", "/api/internal/generated-artifacts/commit")({
+          get: () => token, user: { id: "public-owner" },
+          body: { owner_id: "victim" },
+        }, res);
+        expect(res.statusCode).toBe(401);
+      }
+    } finally {
+      if (previous === undefined) delete process.env.PDIM_LOCAL_CHANNEL_TOKEN;
+      else process.env.PDIM_LOCAL_CHANNEL_TOKEN = previous;
+    }
+  });
+  beforeEach(() => {
+    connector.origin = "http://maxcore.internal";
+    vi.restoreAllMocks();
+  });
+
+  it.each([
+    ["post", "/api/generate/campaign"],
+    ["post", "/api/video/extend"],
+    ["post", "/api/optimize/ad"],
+    ["post", "/api/audio/mastering-recommendation"],
+    ["post", "/api/audio/mixing-recommendation"],
+    ["get", "/api/awareness/unified/admin/source-status"],
+    ["get", "/api/awareness/unified/ready"],
+    ["get", "/api/generation/capabilities"],
+    ["get", "/api/admin/maxcore/health"],
+    ["get", "/api/admin/maxcore/readiness"],
+    ["get", "/api/admin/maxcore/warm/status"],
+    ["post", "/api/awareness/unified/profile-discover"],
+    ["get", "/api/models/social/state"],
+    ["post", "/api/train/feedback"],
+    ["get", "/api/training/status"],
+    ["get", "/api/audio/:jobId/stems"],
+    ["post", "/api/audio/upload"],
+  ])("registers %s %s", (method, path) => {
+    routeHandler(method, path);
+  });
+
+  it("registers the generation capability proxy exactly once", () => {
+    const matches = (router as unknown as { stack: Layer[] }).stack.filter(
+      (candidate) =>
+        candidate.route?.path === "/api/generation/capabilities" &&
+        candidate.route.methods.get,
+    );
+    expect(matches).toHaveLength(1);
+  });
+
+  it("forwards authenticated identity and preserves the MaxCore response", async () => {
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ score: 91, reasoning: ["model"] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const req = {
+      method: "POST",
+      originalUrl: "/api/optimize/ad",
+      path: "/api/optimize/ad",
+      params: {},
+      body: {
+        owner_id: "victim",
+        ownerId: "victim",
+        user_id: "victim",
+        userId: "victim",
+        trusted_owner: "victim",
+        auth_context: { owner_id: "victim" },
+        platform: "meta",
+        campaign: { ctr: 0.02 },
+        intent: "improve-retention",
+        direction: { preserve: "headline" },
+        context: { campaignId: "campaign-4" },
+        awareness: { fatigue: "high" },
+      },
+      user: { id: "user-7", role: "artist" },
+      headers: { "x-maxcore-user-id": "victim", authorization: "Bearer attacker" },
+    };
+    const res = responseDouble();
+
+    await routeHandler("post", "/api/optimize/ad")(req, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      "http://maxcore.internal/api/optimize/ad",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "X-MaxCore-User-Id": "user-7",
+        }),
+        body: JSON.stringify({
+          platform: "meta",
+          campaign: { ctr: 0.02 },
+          intent: "improve-retention",
+          direction: { preserve: "headline" },
+          context: { campaignId: "campaign-4" },
+          awareness: { fatigue: "high" },
+          user_id: "user-7",
+          userId: "user-7",
+        }),
+      }),
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual({ score: 91, reasoning: ["model"] });
+  });
+
+  it("forwards local profile discovery through the authenticated app proxy", async () => {
+    const payload = {
+      mode: "native_local_profile_observatory",
+      indexed_observation_count: 12,
+    };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const path = "/api/awareness/unified/profile-discover";
+    const res = responseDouble();
+
+    await routeHandler("post", path)({
+      method: "POST",
+      originalUrl: path,
+      path,
+      params: {},
+      body: { query: "classical violinist", platforms: ["youtube"] },
+      user: { id: "admin-7", role: "admin" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      "http://maxcore.internal/api/awareness/unified/profile-discover",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer service" }),
+      }),
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it("forwards generation capabilities through the authenticated app proxy", async () => {
+    const payload = {
+      serving: {
+        generation_ready: true,
+        generation_mode: "live_awareness",
+        model_loaded: false,
+        awareness_ready: true,
+      },
+      awareness_conditioning: {
+        ready: true,
+        modalities: ["text", "image", "audio", "video"],
+      },
+    };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const path = "/api/generation/capabilities";
+    const res = responseDouble();
+
+    await routeHandler("get", path)({
+      method: "GET",
+      originalUrl: path,
+      path,
+      params: {},
+      user: { id: "artist-7", role: "artist" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      "http://maxcore.internal/api/generation/capabilities",
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({ Authorization: "Bearer service" }),
+      }),
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it.each([
+    ["/api/admin/maxcore/health", "/health", 200],
+    ["/api/admin/maxcore/readiness", "/ready", 503],
+    ["/api/admin/maxcore/warm/status", "/api/warm/status", 200],
+  ])("admin proxy maps %s to the actual MaxCore route and preserves status", async (
+    proxyPath,
+    serverPath,
+    upstreamStatus,
+  ) => {
+    const payload = { status: "healthy", ready: upstreamStatus === 200 };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: upstreamStatus,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const res = responseDouble();
+
+    await routeHandler("get", proxyPath)({
+      method: "GET",
+      originalUrl: `${proxyPath}?probe=admin`,
+      path: proxyPath,
+      params: {},
+      user: { id: "admin-7", role: "admin" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      `http://maxcore.internal${serverPath}?probe=admin`,
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({ "X-Admin-Key": "admin" }),
+      }),
+    );
+    expect(res.statusCode).toBe(upstreamStatus);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it("uses the admin MaxCore credential for the protected source-status route", async () => {
+    const payload = {
+      ready: false,
+      source_scan_state: "complete",
+      platforms: {},
+    };
+    const transport = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const path = "/api/awareness/unified/admin/source-status";
+    const res = responseDouble();
+
+    await routeHandler("get", path)({
+      method: "GET",
+      originalUrl: path,
+      path,
+      params: {},
+      body: undefined,
+      user: { id: "admin-7", role: "admin" },
+      headers: {},
+    }, res);
+
+    expect(transport).toHaveBeenCalledWith(
+      `http://maxcore.internal${path}`,
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({ "X-Admin-Key": "admin" }),
+      }),
+    );
+    const forwardedHeaders = vi.mocked(transport).mock.calls[0]?.[1]?.headers as
+      | Record<string, string>
+      | undefined;
+    expect(forwardedHeaders?.Authorization).toBeUndefined();
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toEqual(payload);
+  });
+
+  it("returns an explicit error when MaxCore is unavailable", async () => {
+    connector.origin = "";
+    const res = responseDouble();
+    await routeHandler("post", "/api/predict/engagement")(
+      {
+        method: "POST",
+        originalUrl: "/api/predict/engagement",
+        path: "/api/predict/engagement",
+        params: {},
+        body: {},
+        user: { id: "user-7", role: "artist" },
+      },
+      res,
+    );
+    expect(res.statusCode).toBe(503);
+    expect(res.payload).toEqual(
+      expect.objectContaining({ error: "MaxCore not configured" }),
+    );
+  });
+});

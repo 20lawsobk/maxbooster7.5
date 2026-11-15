@@ -355,20 +355,14 @@ class PlatformDiscoveryTests(unittest.TestCase):
                 ),
             ) as request:
                 rows = platform_search("tavily", "instagram")
-        self.assertEqual(len(rows), 2)
+        self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["discovery"]["retrieval_method"], "index_snippet")
         self.assertEqual(rows[0]["discovery"]["source_type"],
                          "platform_origin_search_index")
-        self.assertEqual(rows[1]["discovery"]["retrieval_method"],
-                         "third_party_search")
-        self.assertEqual(rows[1]["discovery"]["source_type"],
-                         "third_party_search_index")
-        self.assertIsNone(rows[1]["discovery"]["platform"])
-        self.assertEqual(rows[1]["discovery"]["platform_scope"], "instagram")
-        for row in rows:
-            self.assertFalse(row["discovery"]["training_eligible"])
-            self.assertEqual(row["discovery"]["reuse_rights"], "unknown")
-            self.assertNotIn("engagement", row["metric"])
+        self.assertEqual(rows[0]["discovery"]["platform"], "instagram")
+        self.assertFalse(rows[0]["discovery"]["training_eligible"])
+        self.assertEqual(rows[0]["discovery"]["reuse_rights"], "unknown")
+        self.assertNotIn("engagement", rows[0]["metric"])
         from ai_model.gpu.awareness_kernels import rank_signals
         source = source_name("tavily", "instagram")
         engine = Engine(
@@ -378,14 +372,12 @@ class PlatformDiscoveryTests(unittest.TestCase):
         normalized = engine._normalize_source_records(
             source, rows, time.time(), rank_signals
         )
-        self.assertEqual(len(normalized), 2)
-        self.assertEqual(normalized[1]["discovery"]["platform"], None)
-        self.assertEqual(
-            normalized[1]["discovery"]["platform_scope"], "instagram"
-        )
+        self.assertEqual(len(normalized), 1)
+        self.assertEqual(normalized[0]["discovery"]["platform"], "instagram")
         sent = json.loads(request.call_args.kwargs["body"])
         self.assertEqual(sent["time_range"], "week")
         self.assertEqual(sent["max_results"], 5)
+        self.assertEqual(sent["include_domains"], ["instagram.com"])
         self.assertEqual(request.call_count, 1)
         self.assertEqual(request.call_args.args[1], "https://api.tavily.com/search")
         self.assertNotIn("fixture-never-displayed", repr(rows))
@@ -403,6 +395,11 @@ class PlatformDiscoveryTests(unittest.TestCase):
                     "content": "A public performance accompanies the new music release.",
                     "url": "https://www.facebook.com/artist/videos/456",
                 },
+                {
+                    "title": "Off-platform report",
+                    "content": "A third-party report about music creators.",
+                    "url": "https://news.example.org/music-creators",
+                },
             ]
         }
         env = {
@@ -416,11 +413,13 @@ class PlatformDiscoveryTests(unittest.TestCase):
                 return_value=SimpleNamespace(
                     status=200, body=json.dumps(response_body).encode()
                 ),
-            ):
+            ) as request:
                 rows = platform_search("exa", "facebook")
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["citation"], "https://www.facebook.com/artist/posts/123")
         self.assertEqual(len(rows[0]["discovery"]["content_hash"]), 64)
+        sent = json.loads(request.call_args.kwargs["body"])
+        self.assertEqual(sent["includeDomains"], ["facebook.com", "fb.com"])
 
     def test_search_provider_denial_is_explicit_and_secret_free(self):
         from ai_model.native_analysis.safe_http import SafeHTTPError

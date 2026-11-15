@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-29T22:58:11.303543+00:00",
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "sourceInputsSha256": "afd50ee1ca7c5f5f9391e2b81950478504b62a3af406b70767919082ae479757",
+  "scope": "Independent read-only review of completed actual master; in-memory acceptance digest proposal is not current accepted credit or launch approval",
+  "master": {
+    "sourceInputsUnchanged": true,
+    "actualSourceMatches": true,
+    "startedAt": "2026-10-29T22:27:09.766291+00:00",
+    "finishedAt": "2026-10-29T22:49:33.882036+00:00",
+    "ordinaryCommands": 17,
+    "commandStatuses": {
+      "passed": 14,
+      "failed": 3
+    },
+    "postprocessingStatuses": {
+      "passed": 3,
+      "failed": 2
+    },
+    "failedCommands": [
+      {
+        "id": "coverage",
+        "group": "coverage",
+        "exitCode": 1
+      },
+      {
+        "id": "node",
+        "group": "node",
+        "exitCode": 1
+      },
+      {
+        "id": "python",
+        "group": "python",
+        "exitCode": 1
+      }
+    ],
+    "allTestsPassed": false
+  },
+  "coverage": {
+    "sourceFiles": 2653,
+    "metrics": {
+      "lines": {
+        "total": 224013,
+        "covered": 29344,
+        "skipped": 0,
+        "pct": 13.09
+      },
+      "statements": {
+        "total": 240335,
+        "covered": 31245,
+        "skipped": 0,
+        "pct": 13
+      },
+      "functions": {
+        "total": 47857,
+        "covered": 4150,
+        "skipped": 0,
+        "pct": 8.67
+      },
+      "branches": {
+        "total": 158578,
+        "covered": 13914,
+        "skipped": 0,
+        "pct": 8.77
+      },
+      "branchesTrue": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    "noProfilesMerged": true
+  },
+  "retainedPlan": {
+    "pages": {
+      "before": 80,
+      "after": 80,
+      "missing": [],
+      "added": []
+    },
+    "controls": {
+      "before": 8374,
+      "after": 8374,
+      "missing": [],
+      "added": []
+    },
+    "backend": {
+      "before": 2909,
+      "after": 2909,
+      "missing": [],
+      "added": []
+    },
+    "frontendContracts": {
+      "before": 932,
+      "after": 932,
+      "missing": [],
+      "added": []
+    },
+    "requiredChecks": {
+      "before": 33549,
+      "after": 33549,
+      "missing": [],
+      "added": []
+    },
+    "businessSections": {
+      "before": 2162,
+      "after": 2162,
+      "missing": [],
+      "added": []
+    },
+    "workItems": {
+      "before": 53020,
+      "after": 53033,
+      "missing": [],
+      "added": [
+        "file-025bcbb1b1306311/contract",
+        "file-1d548c61e362d1ce/contract",
+        "file-26f09e00ae7d303c/contract",
+        "file-56a8b20ea6d3ebd8/contract",
+        "file-9acc9258e665cbca/contract",
+        "file-9eaef395994f0695/contract",
+        "file-c94ec4581905adfa/contract",
+        "file-cde5bbe44dc9dca8/contract",
+        "file-e5825aca83a19cf0/contract",
+        "file-e7b435df1b195a6a/contract",
+        "file-eed9e9ad03e485a5/contract",
+        "file-f1681b2016141da5/contract",
+        "file-fc2f2530d752570e/contract"
+      ]
+    },
+    "sourceInputs": {
+      "before": 4242,
+      "after": 4257,
+      "missing": [],
+      "added": [
+        "script/deployment/capacity.d.mts",
+        "scripts/recovery-private-store.d.mts",
+        "scripts/testing/coverage-coordinate-contract.mjs",
+        "scripts/testing/coverage-node-vite-entry.mjs",
+        "scripts/testing/coverage-raw-sidecar-reporter.cjs",
+        "scripts/testing/coverage-shared-provider.d.mts",
+        "scripts/testing/coverage-shared-provider.mjs",
+        "scripts/testing/junit_evidence.py",
+        "scripts/testing/python_factory_mounts.py",
+        "scripts/testing/report-progress.py",
+        "tests/testing/coverage-coordinate-contract.test.mjs",
+        "tests/testing/test_catalog_snapshot_ownership.py",
+        "tests/testing/test_commerce_subject_selector.py",
+        "tests/testing/test_python_factory_mounts.py",
+        "tests/testing/test_report_progress.py"
+      ]
+    }
+  },
+  "currentAcceptedCounts": {
+    "pagesGreen": 0,
+    "pages": 80,
+    "checksPassed": 0,
+    "requiredChecks": 33549,
+    "invalidEvidenceLinks": 9,
+    "unknownMappings": 170,
+    "workItems": 53033
+  },
+  "identityQualification": {
+    "qualifiedCases": 5385,
+    "previouslyRejectedVitestOccurrencesNowQualified": 64,
+    "previouslyRejectedPythonClassMethodsNowQualified": 26,
+    "previouslyUnboundCommerceLeavesNowQualified": 14,
+    "remainingRejectedEvidence": {
+      "unbound-default-file-producer": 12
+    },
+    "remainingTwelveExplained": "The failed test_report_progress.py producer has 12 passing leaves and one failed leaf; its unsuccessful per-file run cannot supply current proof."
+  },
+  "acceptanceMap": {
+    "actualCurrentLinksAccepted": 0,
+    "candidateOnly": true,
+    "reasonAllCurrentLinksRejected": "All9 recorded platformSourceDigest values stale; current source requires exact binding. Actual fresh master HTTP cases remain eligible.",
+    "priorPlatformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+    "currentPlatformSourceDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+    "actualChangedPlatformSourceFiles": {
+      "package.json": {
+        "old": "b5aa58bb5b6fc2263c07855a50c7159ddada8a5a2c9468c6295a77f4b1faa28e",
+        "new": "410446cea7e63d427f1335891cdea3843fa63068de1174da84419f477620514e"
+      },
+      "vitest.platform.config.ts": {
+        "old": "19db3933ad5515138a5831dc7f064f7f2f5622ce027ab76f02a6ed611c6c7438",
+        "new": "b76f7ba10df4bc4f434beff4775984865881ea7e756f77673b94f878a658ac48"
+      }
+    },
+    "inMemoryDigestOnlyProposalResolvesAll": true,
+    "proposalRows": [
+      {
+        "checkId": "api-7f174c69ff83279c/access-policy",
+        "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+        "candidatePlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+        "matchingCaseCount": 1,
+        "proof": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /api/health returns 200",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-2153be5bc8e5692b/access-policy",
+        "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+        "candidatePlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+        "matchingCaseCount": 1,
+        "proof": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /health returns 200",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-50167c08abd2dfe2/access-policy",
+        "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+        "candidatePlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+        "matchingCaseCount": 1,
+        "proof": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /api/ping returns ok:true",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-059a423751b44e6c/access-policy",
+        "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+        "candidatePlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+        "matchingCaseCount": 1,
+        "proof": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /ready reflects the actual admitted dependency set",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-ebf54287f664010e/access-policy",
+        "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+        "candidatePlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+        "matchingCaseCount": 1,
+        "proof": [
+          {
+            "testFile": "tests/health.test.ts",
+            "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+            "caseName": "Liveness and Readiness Endpoints > GET /readyz uses the same truthful readiness contract",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-ef05357bba6ab833/access-policy",
+        "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+        "candidatePlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+        "matchingCaseCount": 3,
+        "proof": [
+          {
+            "testFile": "tests/auth-flows.test.ts",
+            "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+            "caseName": "Full Auth Flow > 4. GET /api/auth/me returns user when authenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/auth-flows.test.ts",
+            "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+            "caseName": "Full Auth Flow > 10. /api/auth/me returns null or 401 after logout",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/api-guards.test.ts",
+            "testSha256": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
+            "caseName": "Unauthenticated route guards > GET /api/auth/me \u2192 200 (public, returns null)",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-3f640ac3745d3b6a/access-policy",
+        "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+        "candidatePlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+        "matchingCaseCount": 7,
+        "proof": [
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > 9. GET /api/billing/subscription returns complete tier shape when authenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > 10. GET /api/billing/subscription returns 401 when unauthenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects suspended session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects banned session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects mfa-required session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects trial-expired session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects subscription-expired session",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-0772b8611dc21e1d/access-policy",
+        "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+        "candidatePlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+        "matchingCaseCount": 7,
+        "proof": [
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > 9. GET /api/storage/quota returns quota info when authenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > 10. GET /api/storage/quota returns 401 or 403 without authentication",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects suspended session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects banned session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects mfa-required session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects trial-expired session",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/file-management.test.ts",
+            "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+            "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects subscription-expired session",
+            "group": "http"
+          }
+        ]
+      },
+      {
+        "checkId": "api-51e06323624f6bc1/access-policy",
+        "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+        "candidatePlatformDigest": "adbf741bffceb3abd09dbb81fd07b5af9ff0fb764bd1372527e65643eb246aa2",
+        "matchingCaseCount": 1,
+        "proof": [
+          {
+            "testFile": "tests/billing-lifecycle.test.ts",
+            "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+            "caseName": "Billing Webhook Lifecycle > 11. GET /api/billing/plans returns a non-empty plan list without auth",
+            "group": "http"
+          }
+        ]
+      }
+    ],
+    "proposalDoesNotGrantCredit": "Root must review refresh together with final source and rerun exact tests in fresh frozen source epoch; no root map or register mutated."
+  },
+  "nodeDiscovery": {
+    "catalogCanonicalFiles": 125,
+    "actuallyExecutedFiles": 126,
+    "unexpectedExecutedFiles": [
+      "scripts/testing/coverage-node-vite-entry.mjs"
+    ],
+    "canonicalFilesOmitted": [],
+    "failureCause": "Operational lifecycle helper scripts/testing/coverage-node-vite-entry.mjs imports node:test hooks but needs collector process contract; heuristic discovery executed it alone as a test."
+  },
+  "pythonDiscovery": {
+    "historicalReportCopyExecuted": [
+      {
+        "file": "reports/mapping-audit/2026-10-28-topology-final/candidate/tests/testing/test_endpoint_mount_resolution.py",
+        "status": "passed",
+        "caseCounts": {
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      }
+    ],
+    "catalogPolicy": "All reports-owned copies are retained snapshots; Python runner still discovers one historical copy. Do not count it as a new canonical test."
+  },
+  "inputSha256": {
+    "reports/test-verification/orchestration/results.json": "1499417f74c3e1744deec28111276a4ead447fce0b43d17c06b479fbf79405b2",
+    "reports/test-verification/orchestration/source-inputs.json": "c4fe76d8e1ea90e08eae1124769154de1d158dd593d35d32ae4c5012a6cea20d",
+    "reports/test-verification/platform-register.json": "52d1b2d0344cf36e42193b63a13b58d79cf36f73ee09b3d4755097c7fd6bf389",
+    "reports/test-verification/completion-plan.json": "29b3cfcefab4cd5c4808e31bd7f67d756815c34f07f944a7f159918ef384eeda",
+    "reports/test-verification/test-inventory.json": "8c27a634c47dffa2b2e8a119195bcbf4c8e7fd042c86a1ae882509bb37d3a7d0",
+    "reports/test-verification/node/results.json": "91b9e8f37f3fe9f26d3d307d79341c3eb4279d6f7cccdebbf50601ade8f8c515",
+    "reports/test-verification/python/results.json": "6cf7d2123aa4a44dfc69ee192dda93c0909514f86e691f6f0eef88a346340f0c",
+    "reports/test-verification/coverage/coverage-summary.json": "cdd8a22736a3c68829429825b88a366f80b0f462b0162e4312d8a5176e27828d",
+    "tests/platform-acceptance-map.json": "fdf034abff7cd2d870cae58f4ed49ee46d9d889772f9e324cf6d9998d3b56553"
+  },
+  "productionReady": false
+}

@@ -2,9 +2,9 @@
   # System dependencies shared by the app, MaxCore, and PDIM.
   # Use plain package attributes for Replit's dependency parser.
   deps = [
+    pkgs.nodejs_24
     pkgs.ffmpeg-full
     # Runtimes and package tools; npm is included with Node.js.
-    pkgs.nodejs_22
     pkgs.python311
     pkgs.nix
 

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="18" failures="0" errors="0" time="1.955006518">
+    <testsuite name="tests/unit/beat-audio-generation-owner.test.ts" timestamp="2026-10-27T04:48:55.491Z" hostname="2fc971e77ddd" tests="7" failures="0" errors="0" skipped="0" time="1.501743265">
+        <testcase classname="tests/unit/beat-audio-generation-owner.test.ts" name="Beat Money Loop private audio identity &gt; binds the existing admin to generation, polling and durable download without starting a cycle" time="1.171435173">
+        </testcase>
+        <testcase classname="tests/unit/beat-audio-generation-owner.test.ts" name="Beat Money Loop private audio identity &gt; does not dispatch or invent an owner when the configured admin does not exist" time="0.054200061">
+        </testcase>
+        <testcase classname="tests/unit/beat-audio-generation-owner.test.ts" name="Beat Money Loop private audio identity &gt; stops cancelled jobs and refuses another user&apos;s durable object" time="0.08399451">
+        </testcase>
+        <testcase classname="tests/unit/beat-audio-generation-owner.test.ts" name="Beat Money Loop private audio identity &gt; rejects a WAV-shaped corrupt payload before publication" time="0.09929983">
+        </testcase>
+        <testcase classname="tests/unit/beat-audio-generation-owner.test.ts" name="Beat Money Loop private audio identity &gt; stops terminal timed_out jobs immediately" time="0.028662171">
+        </testcase>
+        <testcase classname="tests/unit/beat-audio-generation-owner.test.ts" name="Beat Money Loop private audio identity &gt; stops terminal timeout jobs immediately" time="0.035157196">
+        </testcase>
+        <testcase classname="tests/unit/beat-audio-generation-owner.test.ts" name="Beat Money Loop private audio identity &gt; stops terminal expired jobs immediately" time="0.026088951">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/social-url-maxcore-contract.test.ts" timestamp="2026-10-27T04:48:55.493Z" hostname="2fc971e77ddd" tests="11" failures="0" errors="0" skipped="0" time="0.453263253">
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="social URL to MaxCore transport contract &gt; keeps the exact URL as topic and forwards every mounted UI control" time="0.001971313">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="social URL to MaxCore transport contract &gt; calls the dedicated MaxCore social endpoint and reads variants[0]" time="0.002005154">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="social URL to MaxCore transport contract &gt; does not fabricate content when MaxCore returns no usable variant" time="0.0002652">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="social URL to MaxCore transport contract &gt; constructs caption only from actual structured MaxCore fields" time="0.000281024">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="mounted Social Media URL UI wiring &gt; posts the page-level URL composer to its social backend contract" time="0.004273128">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="authenticated async video generation contract &gt; requires an explicit topic and supported platform without synthesizing copy" time="0.002096621">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="authenticated async video generation contract &gt; keeps async video errors private and polling bound to the session owner" time="0.251592636">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="explicit social generation inputs and private failures &gt; keeps one active manual social route on the dedicated MaxCore adapter" time="0.012415732">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="explicit social generation inputs and private failures &gt; requires explicit direction in music-video studio and redacts its failures" time="0.169964269">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="explicit social generation inputs and private failures &gt; does not return or log MaxCore video diagnostics on failed renders" time="0.005921139">
+        </testcase>
+        <testcase classname="tests/unit/social-url-maxcore-contract.test.ts" name="explicit social generation inputs and private failures &gt; uses shared MaxCore transport for video submission and owner-bound polling" time="0.000592183">
+        </testcase>
+    </testsuite>
+</testsuites>

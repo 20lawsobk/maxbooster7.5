@@ -1,0 +1,2935 @@
+{
+  "rows": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+      "line": 255,
+      "method": "GET",
+      "path": "/api/analytics/capability",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "capability",
+      "mountResolved": true,
+      "routerPrefix": "/api/analytics",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "name": "create_router",
+        "line": 252
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1250
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/capability",
+      "declarationSubjectId": "api-e8e4a036051eff3f",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+      "line": 262,
+      "method": "POST",
+      "path": "/api/analytics/predict",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "prediction_endpoint",
+      "mountResolved": true,
+      "routerPrefix": "/api/analytics",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "name": "create_router",
+        "line": 252
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1250
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/predict",
+      "declarationSubjectId": "api-a1f340f59332d78e",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+      "line": 266,
+      "method": "POST",
+      "path": "/api/analytics/insights",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "insights_endpoint",
+      "mountResolved": true,
+      "routerPrefix": "/api/analytics",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+        "name": "create_router",
+        "line": 252
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1250
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/insights",
+      "declarationSubjectId": "api-4f9324aca2b97b4b",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 174,
+      "method": "POST",
+      "path": "/api/director/campaign",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
+      "receiver": "router",
+      "handler": "run_campaign",
+      "mountResolved": false,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/campaign",
+      "declarationSubjectId": "api-9299cfd1c947a1a4",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 222,
+      "method": "POST",
+      "path": "/api/director/feedback",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
+      "receiver": "router",
+      "handler": "submit_feedback",
+      "mountResolved": false,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/feedback",
+      "declarationSubjectId": "api-2f285e0c500f8b0f",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 248,
+      "method": "GET",
+      "path": "/api/director/platforms",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
+      "receiver": "router",
+      "handler": "list_platforms",
+      "mountResolved": false,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/platforms",
+      "declarationSubjectId": "api-b0620d2505196b4d",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 260,
+      "method": "GET",
+      "path": "/api/director/config",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
+      "receiver": "router",
+      "handler": "get_config",
+      "mountResolved": false,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/config",
+      "declarationSubjectId": "api-41570e3eb2bd2da3",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 269,
+      "method": "GET",
+      "path": "/api/director/metrics",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
+      "receiver": "router",
+      "handler": "get_metrics",
+      "mountResolved": false,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/metrics",
+      "declarationSubjectId": "api-f51c6acc6ec5dc3a",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+      "line": 278,
+      "method": "GET",
+      "path": "/api/director/metrics/prometheus",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven conditional factory mount",
+      "receiver": "router",
+      "handler": "get_metrics_prometheus",
+      "mountResolved": false,
+      "routerPrefix": "",
+      "includeRouterPrefix": "/api/director",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+        "name": "create_director_router",
+        "line": 152
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1258
+      },
+      "mountConditions": [
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1257,
+          "kind": "if",
+          "expression": "_director_router is not None"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 158,
+          "kind": "if",
+          "expression": "not _HAS_FASTAPI"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 159,
+          "kind": "factory-may-return-none"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/api.py",
+          "line": 62,
+          "kind": "try"
+        },
+        {
+          "file": "external/maxcore/artifacts/ai-training-server/server.py",
+          "line": 1254,
+          "kind": "try"
+        }
+      ],
+      "mountConditional": true,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/metrics/prometheus",
+      "declarationSubjectId": "api-9dfbb46d34147f13",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 159,
+      "method": "POST",
+      "path": "/api/analysis/image",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "image",
+      "mountResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/image",
+      "declarationSubjectId": "api-42deb4116b2557e0",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 163,
+      "method": "POST",
+      "path": "/api/analysis/video",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "video",
+      "mountResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/video",
+      "declarationSubjectId": "api-5ff5f045652ab661",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 167,
+      "method": "POST",
+      "path": "/api/analysis/text",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "text",
+      "mountResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/text",
+      "declarationSubjectId": "api-6708a28c5a8d26c0",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 178,
+      "method": "POST",
+      "path": "/api/analysis/website",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "website",
+      "mountResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/website",
+      "declarationSubjectId": "api-2c6445d266374190",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+      "line": 201,
+      "method": "POST",
+      "path": "/api/analysis/upload",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "upload",
+      "mountResolved": true,
+      "routerPrefix": "/api/analysis",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/api.py",
+        "name": "create_analysis_router",
+        "line": 78
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 1240
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/upload",
+      "declarationSubjectId": "api-8e623814d5812cf5",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+      "line": 535,
+      "method": "GET",
+      "path": "/api/training/candidates/live",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "listing",
+      "mountResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "name": "create_router",
+        "line": 519
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2616
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/api/training/candidates/live",
+      "declarationSubjectId": "api-f0d401be967e7979",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+      "line": 539,
+      "method": "GET",
+      "path": "/api/training/candidates/live/{run_id}",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "status",
+      "mountResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "name": "create_router",
+        "line": 519
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2616
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/api/training/candidates/live/{run_id}",
+      "declarationSubjectId": "api-a2d5112e6f836b75",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+      "line": 546,
+      "method": "POST",
+      "path": "/api/training/candidates/live",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "learn",
+      "mountResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py",
+        "name": "create_router",
+        "line": 519
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2616
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/api/training/candidates/live",
+      "declarationSubjectId": "api-63c25a5b3c0f3b69",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+      "line": 201,
+      "method": "GET",
+      "path": "/api/training/media/{modality}/preflight",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "capability",
+      "mountResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+        "name": "create_router",
+        "line": 182
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2627
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/api/training/media/{modality}/preflight",
+      "declarationSubjectId": "api-dc501135f7da694a",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+      "line": 205,
+      "method": "POST",
+      "path": "/api/training/media/{modality}/preflight",
+      "processScope": "python-app:external/maxcore/artifacts/ai-training-server/server.py::app",
+      "confidence": "source-proven factory mount; runtime unverified",
+      "receiver": "router",
+      "handler": "validate_corpus",
+      "mountResolved": true,
+      "routerPrefix": "",
+      "includeRouterPrefix": "",
+      "factory": {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/training/media_learning.py",
+        "name": "create_router",
+        "line": 182
+      },
+      "mountSource": {
+        "file": "external/maxcore/artifacts/ai-training-server/server.py",
+        "line": 2627
+      },
+      "mountConditions": [],
+      "mountConditional": false,
+      "runtimeAvailability": "UNVERIFIED",
+      "declaredPath": "/api/training/media/{modality}/preflight",
+      "declarationSubjectId": "api-46c9778776fd3ea7",
+      "pathResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/daemon/control_daemon.py",
+      "line": 69,
+      "method": "GET",
+      "path": "/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/daemon/control_daemon.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/daemon/control_daemon.py",
+      "line": 74,
+      "method": "POST",
+      "path": "/start_download",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/daemon/control_daemon.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "start_download",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/daemon/control_daemon.py",
+      "line": 107,
+      "method": "POST",
+      "path": "/start_training",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/daemon/control_daemon.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "start_training",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 248,
+      "method": "GET",
+      "path": "/health",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "health",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 274,
+      "method": "GET",
+      "path": "/models/list",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "models_list",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 297,
+      "method": "GET",
+      "path": "/models/weights",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_weights",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 308,
+      "method": "GET",
+      "path": "/models/best",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_best",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 320,
+      "method": "POST",
+      "path": "/models/weights",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "post_weights",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 335,
+      "method": "GET",
+      "path": "/knowledge/curriculum",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_curriculum",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 342,
+      "method": "POST",
+      "path": "/knowledge/curriculum",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "post_curriculum",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 349,
+      "method": "GET",
+      "path": "/knowledge/loss-history",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_loss_history",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 356,
+      "method": "GET",
+      "path": "/knowledge/sessions",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_sessions",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 366,
+      "method": "GET",
+      "path": "/datasets/list",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "datasets_list",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 388,
+      "method": "GET",
+      "path": "/datasets/manifest",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "datasets_manifest",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 423,
+      "method": "GET",
+      "path": "/datasets/stream",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "datasets_stream",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 510,
+      "method": "POST",
+      "path": "/train/start",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "train_start",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 525,
+      "method": "POST",
+      "path": "/train/stop",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "train_stop",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 532,
+      "method": "GET",
+      "path": "/train/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "train_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 595,
+      "method": "GET",
+      "path": "/control/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "control_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 634,
+      "method": "GET",
+      "path": "/control/logs",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "control_logs",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 640,
+      "method": "DELETE",
+      "path": "/control/logs",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "control_clear_logs",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 653,
+      "method": "POST",
+      "path": "/control/restart",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "control_restart",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 671,
+      "method": "POST",
+      "path": "/control/shutdown",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "control_shutdown",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 689,
+      "method": "POST",
+      "path": "/control/trigger-session",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "control_trigger_session",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 722,
+      "method": "POST",
+      "path": "/control/set-phase",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "control_set_phase",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 932,
+      "method": "POST",
+      "path": "/api/generate/content",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generate_content",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 960,
+      "method": "POST",
+      "path": "/api/generate/text",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generate_text",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 988,
+      "method": "POST",
+      "path": "/api/content/score",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "content_score",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1004,
+      "method": "POST",
+      "path": "/api/analyze",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "analyze",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1021,
+      "method": "POST",
+      "path": "/api/analyze/sentiment",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "analyze_sentiment",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1057,
+      "method": "POST",
+      "path": "/api/analyze/audio",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "analyze_audio",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1092,
+      "method": "POST",
+      "path": "/api/optimize/ad",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "optimize_ad",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1125,
+      "method": "POST",
+      "path": "/api/predict/engagement",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "predict_engagement",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1165,
+      "method": "POST",
+      "path": "/api/generate/image",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generate_image",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1186,
+      "method": "POST",
+      "path": "/api/generate/audio",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generate_audio",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1229,
+      "method": "GET",
+      "path": "/api/audio-job/{job_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "poll_audio_job",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1251,
+      "method": "GET",
+      "path": "/models/social/state",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "models_social_state",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1257,
+      "method": "GET",
+      "path": "/models/advertising/state",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "models_advertising_state",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1263,
+      "method": "GET",
+      "path": "/models/content/state",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "models_content_state",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1269,
+      "method": "GET",
+      "path": "/models/engagement/state",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "models_engagement_state",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "line": 1283,
+      "method": "POST",
+      "path": "/train/feedback",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/maxcore_server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "train_feedback",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2606,
+      "method": "GET",
+      "path": "/api/awareness/unified/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "unified_awareness_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2619,
+      "method": "GET",
+      "path": "/api/training/live/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "live_learning_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2630,
+      "method": "POST",
+      "path": "/api/awareness/unified/context",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "unified_awareness_context",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2645,
+      "method": "GET",
+      "path": "/ready",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generation_readiness",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2646,
+      "method": "GET",
+      "path": "/api/ready",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generation_readiness",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2657,
+      "method": "GET",
+      "path": "/health",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "health",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2677,
+      "method": "GET",
+      "path": "/api-keys",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "list_api_keys",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2704,
+      "method": "POST",
+      "path": "/api-keys",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "create_api_key",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2739,
+      "method": "DELETE",
+      "path": "/api-keys/{key_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "revoke_api_key",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2756,
+      "method": "POST",
+      "path": "/api-keys/{key_id}/rotate",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "rotate_api_key",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2790,
+      "method": "GET",
+      "path": "/model/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "model_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2817,
+      "method": "GET",
+      "path": "/gpu/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "gpu_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2848,
+      "method": "GET",
+      "path": "/gpu/hyper/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "hyper_gpu_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2894,
+      "method": "GET",
+      "path": "/gpu/silicon/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "silicon_simt_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2923,
+      "method": "GET",
+      "path": "/gpu/capabilities",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "gpu_capabilities",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 2990,
+      "method": "GET",
+      "path": "/training/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_training_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3006,
+      "method": "POST",
+      "path": "/training/start",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "start_training",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3138,
+      "method": "POST",
+      "path": "/admin/train-bpe-scaleup",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "train_bpe_scaleup",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3334,
+      "method": "POST",
+      "path": "/admin/train-hyper-scaleup",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "train_hyper_scaleup",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3363,
+      "method": "POST",
+      "path": "/api/maxcore/pocket-multiply",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_pocket_multiply",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3404,
+      "method": "GET",
+      "path": "/api/gpu/gen-cache/stats",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_gen_cache_stats",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3415,
+      "method": "GET",
+      "path": "/api/gpu/replica-pool/stats",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_replica_pool_stats",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3425,
+      "method": "POST",
+      "path": "/api/gpu/replica-pool/grow",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_replica_pool_grow",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3434,
+      "method": "GET",
+      "path": "/api/gpu/prefix-kv/stats",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_prefix_kv_stats",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3445,
+      "method": "GET",
+      "path": "/api/gpu/digest-cache/stats",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_digest_cache_stats",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3456,
+      "method": "GET",
+      "path": "/api/maxcore/pocket-accelerator/stats",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_pocket_accelerator_stats",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3467,
+      "method": "POST",
+      "path": "/api/awareness/quality/harvest",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_quality_awareness_harvest",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3481,
+      "method": "GET",
+      "path": "/api/awareness/quality/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_quality_awareness_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3668,
+      "method": "GET",
+      "path": "/training/logs",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_training_logs",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3696,
+      "method": "POST",
+      "path": "/training/stop",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "stop_training",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3762,
+      "method": "GET",
+      "path": "/training/datasets",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_training_datasets",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3788,
+      "method": "POST",
+      "path": "/training/schedule",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "schedule_training",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3938,
+      "method": "GET",
+      "path": "/training/continuous/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "continuous_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3947,
+      "method": "POST",
+      "path": "/training/continuous/start",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "continuous_start",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3965,
+      "method": "POST",
+      "path": "/training/continuous/stop",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "continuous_stop",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3977,
+      "method": "GET",
+      "path": "/training/continuous/history",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "continuous_history",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3985,
+      "method": "GET",
+      "path": "/training/puller/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "puller_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 3998,
+      "method": "GET",
+      "path": "/training/puller/sources",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "puller_sources",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4011,
+      "method": "POST",
+      "path": "/training/puller/pull",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "puller_pull",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4021,
+      "method": "POST",
+      "path": "/training/puller/start",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "puller_start_auto",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4030,
+      "method": "POST",
+      "path": "/training/puller/stop",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "puller_stop_auto",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4042,
+      "method": "GET",
+      "path": "/watchdog/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "watchdog_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4051,
+      "method": "GET",
+      "path": "/watchdog/log",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "watchdog_log",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4061,
+      "method": "POST",
+      "path": "/watchdog/reset",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "watchdog_reset",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4073,
+      "method": "GET",
+      "path": "/coverage/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "coverage_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4082,
+      "method": "GET",
+      "path": "/coverage/log",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "coverage_log",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4092,
+      "method": "GET",
+      "path": "/coverage/report",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "coverage_report",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4114,
+      "method": "GET",
+      "path": "/coverage/ingestor",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "coverage_ingestor",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4124,
+      "method": "POST",
+      "path": "/coverage/reset",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "coverage_reset",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4289,
+      "method": "GET",
+      "path": "/api/url-parser/content",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "url_parser_content",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4318,
+      "method": "GET",
+      "path": "/api/url-parser/inspect",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "url_parser_inspect",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4593,
+      "method": "GET",
+      "path": "/api/generation/capabilities",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generation_capabilities",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4602,
+      "method": "POST",
+      "path": "/content/generate",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generate_content",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4690,
+      "method": "GET",
+      "path": "/boostsheets",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "list_boostsheets",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4699,
+      "method": "GET",
+      "path": "/dashboard/stats",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "dashboard_stats",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4769,
+      "method": "GET",
+      "path": "/storage/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "storage_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4791,
+      "method": "POST",
+      "path": "/storage/feedback",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "record_curriculum_feedback",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4804,
+      "method": "GET",
+      "path": "/storage/curriculum/{user_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_curriculum",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4843,
+      "method": "GET",
+      "path": "/storage/artist/{profile_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_artist_profile",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4850,
+      "method": "POST",
+      "path": "/storage/artist/{profile_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "save_artist_profile",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4859,
+      "method": "POST",
+      "path": "/storage/artist/{profile_id}/releases",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "add_artist_release",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4868,
+      "method": "GET",
+      "path": "/storage/datasets",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "list_datasets",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4874,
+      "method": "POST",
+      "path": "/storage/datasets/register",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "register_dataset",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4893,
+      "method": "GET",
+      "path": "/storage/datasets/audio/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_audio_dataset_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4942,
+      "method": "POST",
+      "path": "/storage/datasets/audio/seed",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "seed_audio_dataset",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 4994,
+      "method": "POST",
+      "path": "/storage/checkpoint/save",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "save_checkpoint",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5006,
+      "method": "GET",
+      "path": "/storage/checkpoint/{model_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "load_checkpoint",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5016,
+      "method": "GET",
+      "path": "/storage/checkpoints",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "list_checkpoints",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5132,
+      "method": "POST",
+      "path": "/platform/social/generate",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "platform_social_generate",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5273,
+      "method": "POST",
+      "path": "/platform/social/autopilot",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "platform_social_autopilot",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5360,
+      "method": "POST",
+      "path": "/platform/daw/generate",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "platform_daw_generate",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5445,
+      "method": "POST",
+      "path": "/platform/distribution/plan",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "platform_distribution_plan",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5500,
+      "method": "GET",
+      "path": "/platform/video/generate",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "platform_video_generate_schema",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5543,
+      "method": "POST",
+      "path": "/platform/video/generate",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "platform_video_generate",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5673,
+      "method": "GET",
+      "path": "/platform/model/info",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "platform_model_info",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5719,
+      "method": "POST",
+      "path": "/platform/model/reload",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "platform_model_reload",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5779,
+      "method": "POST",
+      "path": "/analyze",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "maxcore_analyze",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5835,
+      "method": "POST",
+      "path": "/generate/text",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "maxcore_generate_text",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 5982,
+      "method": "POST",
+      "path": "/generate/image",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "maxcore_generate_image",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 6046,
+      "method": "POST",
+      "path": "/generate/audio",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "maxcore_generate_audio",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 6113,
+      "method": "POST",
+      "path": "/generate/video",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "maxcore_generate_video",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 6557,
+      "method": "POST",
+      "path": "/platform/ads/record",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "ads_record_run",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 6579,
+      "method": "POST",
+      "path": "/platform/ads/generate",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "ads_generate",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 6741,
+      "method": "POST",
+      "path": "/platform/ads/autopilot",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "ads_autopilot",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 6871,
+      "method": "POST",
+      "path": "/platform/ads/audience",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "ads_audience",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 6950,
+      "method": "GET",
+      "path": "/platform/ads/performance/{user_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "ads_performance",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 6979,
+      "method": "POST",
+      "path": "/platform/ads/optimize",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "ads_optimize",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 7076,
+      "method": "GET",
+      "path": "/storage/session",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "get_storage_session",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 7092,
+      "method": "GET",
+      "path": "/storage/pipeline/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "pipeline_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 7232,
+      "method": "POST",
+      "path": "/training/start-from-storage",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "start_training_from_storage",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8176,
+      "method": "POST",
+      "path": "/api/generate/content",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_generate_content",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8446,
+      "method": "POST",
+      "path": "/api/generate/campaign",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_generate_campaign",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8626,
+      "method": "POST",
+      "path": "/api/campaigns",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_campaign_save",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8637,
+      "method": "GET",
+      "path": "/api/campaigns",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_campaign_list",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8645,
+      "method": "GET",
+      "path": "/api/campaigns/{campaign_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_campaign_get",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8656,
+      "method": "DELETE",
+      "path": "/api/campaigns/{campaign_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_campaign_delete",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8667,
+      "method": "PATCH",
+      "path": "/api/campaigns/{campaign_id}/posts/{post_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_campaign_edit_post",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8683,
+      "method": "POST",
+      "path": "/api/campaigns/{campaign_id}/schedule",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_campaign_schedule",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8727,
+      "method": "POST",
+      "path": "/api/generate/text",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_generate_text",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8869,
+      "method": "POST",
+      "path": "/api/content/score",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_content_score",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8917,
+      "method": "POST",
+      "path": "/api/analyze",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_analyze",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 8964,
+      "method": "POST",
+      "path": "/api/analyze/sentiment",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_analyze_sentiment",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 9032,
+      "method": "POST",
+      "path": "/api/audio/upload",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_audio_upload",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 9163,
+      "method": "POST",
+      "path": "/api/analyze/audio",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_analyze_audio",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 9171,
+      "method": "POST",
+      "path": "/api/optimize/ad",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_optimize_ad",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 9281,
+      "method": "POST",
+      "path": "/api/predict/engagement",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_predict_engagement",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 9419,
+      "method": "POST",
+      "path": "/api/generate/image",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_generate_image",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 10434,
+      "method": "POST",
+      "path": "/api/generate/audio",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_generate_audio",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 11305,
+      "method": "POST",
+      "path": "/api/generate-video",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_generate_video",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 11403,
+      "method": "POST",
+      "path": "/api/video/extend",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_video_extend",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 11583,
+      "method": "POST",
+      "path": "/api/video/generate-ai",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_video_generate_ai",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 11856,
+      "method": "GET",
+      "path": "/api/video-job/{job_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_poll_video_job",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 11889,
+      "method": "DELETE",
+      "path": "/api/video-job/{job_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_cancel_video_job",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 11922,
+      "method": "GET",
+      "path": "/api/concurrency/stats",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_concurrency_stats",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 11937,
+      "method": "GET",
+      "path": "/api/video-jobs",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_list_video_jobs",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 11980,
+      "method": "GET",
+      "path": "/api/video-job/{job_id}/preview/{scene_idx}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_video_job_preview",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12036,
+      "method": "DELETE",
+      "path": "/api/audio-job/{job_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_cancel_audio_job",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12050,
+      "method": "GET",
+      "path": "/api/audio-job/{job_id}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_poll_audio_job",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12111,
+      "method": "GET",
+      "path": "/api/audio/{job_id}/stems",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_audio_stems",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12165,
+      "method": "GET",
+      "path": "/api/files/stems/{job_id}/{filename}",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_serve_stem_file",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12204,
+      "method": "GET",
+      "path": "/api/audio/{job_id}/midi",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_audio_midi",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12301,
+      "method": "GET",
+      "path": "/api/models/social/state",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "models_social_state",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12307,
+      "method": "GET",
+      "path": "/api/models/advertising/state",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "models_advertising_state",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12313,
+      "method": "GET",
+      "path": "/api/models/content/state",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "models_content_state",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12319,
+      "method": "GET",
+      "path": "/api/models/engagement/state",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "models_engagement_state",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12330,
+      "method": "POST",
+      "path": "/api/train/feedback",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "train_feedback_endpoint",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12354,
+      "method": "GET",
+      "path": "/api/health",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_health",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12376,
+      "method": "POST",
+      "path": "/api/warm",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_warm",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12487,
+      "method": "GET",
+      "path": "/api/warm/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_warm_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12497,
+      "method": "GET",
+      "path": "/api/rta/status",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_rta_status",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12519,
+      "method": "POST",
+      "path": "/api/safety/screen",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_safety_screen",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12534,
+      "method": "POST",
+      "path": "/api/audio/mastering-recommendation",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "audio_mastering_recommendation",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12701,
+      "method": "POST",
+      "path": "/api/audio/mixing-recommendation",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "audio_mixing_recommendation",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12812,
+      "method": "POST",
+      "path": "/api/audio/analyze",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_audio_analyze",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12822,
+      "method": "POST",
+      "path": "/api/infer/viral-score",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_infer_viral_score",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12860,
+      "method": "GET",
+      "path": "/api/video-job/{job_id}/download",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_video_job_download",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12861,
+      "method": "GET",
+      "path": "/api/video-job/{job_id}/file",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_video_job_download",
+      "mountResolved": true
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/server.py",
+      "line": 12862,
+      "method": "GET",
+      "path": "/api/video-job/{job_id}/video",
+      "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "api_video_job_download",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 759,
+      "method": "GET",
+      "path": "/",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "root",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 771,
+      "method": "GET",
+      "path": "/health",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "health",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 776,
+      "method": "GET",
+      "path": "/ready",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "ready",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 788,
+      "method": "GET",
+      "path": "/gpu/status",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "gpu_status_endpoint",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 807,
+      "method": "GET",
+      "path": "/memory/status",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "memory_status",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 823,
+      "method": "GET",
+      "path": "/train/simulator/status",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "simulator_status",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 960,
+      "method": "POST",
+      "path": "/generate-video",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generate_video",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1007,
+      "method": "POST",
+      "path": "/generate",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generate",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1076,
+      "method": "POST",
+      "path": "/generate/keyframe",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generate_keyframe",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1103,
+      "method": "POST",
+      "path": "/generate/stream",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "generate_stream",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1151,
+      "method": "POST",
+      "path": "/train",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "trigger_training",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1178,
+      "method": "GET",
+      "path": "/train/status",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "training_status",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1189,
+      "method": "POST",
+      "path": "/train/pause",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "pause_training",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1198,
+      "method": "POST",
+      "path": "/train/resume",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "resume_training",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1215,
+      "method": "GET",
+      "path": "/dataset/status",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "dataset_status",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1239,
+      "method": "POST",
+      "path": "/sync",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "sync_weights_to_maxcore",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1396,
+      "method": "GET",
+      "path": "/sync/status",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "sync_status",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1473,
+      "method": "POST",
+      "path": "/proxy/generate/text",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "proxy_generate_text",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1485,
+      "method": "POST",
+      "path": "/proxy/generate/image",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "proxy_generate_image",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1497,
+      "method": "POST",
+      "path": "/proxy/generate/content",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "proxy_generate_content",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1509,
+      "method": "POST",
+      "path": "/proxy/audio/analyze",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "proxy_audio_analyze",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1521,
+      "method": "POST",
+      "path": "/proxy/analyze/sentiment",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "proxy_analyze_sentiment",
+      "mountResolved": true
+    },
+    {
+      "file": "server/services/diffusion/api_server_v4.py",
+      "line": 1535,
+      "method": "GET",
+      "path": "/status",
+      "processScope": "python-declared:server/services/diffusion/api_server_v4.py",
+      "confidence": "declared-only; mount prefix unverified",
+      "receiver": "app",
+      "handler": "combined_status",
+      "mountResolved": true
+    }
+  ],
+  "unknown": [],
+  "summary": {
+    "rows": 221,
+    "factoryRows": 19,
+    "conditional": 6,
+    "unconditional": 13,
+    "unknown": 0,
+    "durationSeconds": 4.631
+  }
+}

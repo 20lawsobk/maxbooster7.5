@@ -1,0 +1,53 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_generator_refuses_old_execution_even_when_candidate_digest_is_rewritten _
+
+proof = ({'checkId': 'api-f7c4a318556d934e/access-policy', 'platformSourceDigest': '44136fa355b3678a1146ad16f7e8649e94fb4fc21f...', 'foreign owner receives no protected records'), ('http', 'owner.test.ts', 'owner receives only own records')}, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f8e006d0da0>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_generator_refuses_old_exe0')
+
+    def test_generator_refuses_old_execution_even_when_candidate_digest_is_rewritten(proof, monkeypatch, tmp_path):
+        """Exercise the actual main linker, not a replacement of its acceptance rule."""
+        import json
+        import sys
+        from types import SimpleNamespace
+    
+        mapping, context = proof
+        incoming = tmp_path / "reports/current"
+        incoming.mkdir(parents=True)
+        (tmp_path / "reports/endpoint-audit.json").write_text(json.dumps({"backendRoutes": [{
+            "file": "server/routes.ts", "line": 1, "method": "GET", "fullPath": "/owned",
+            "processScope": "fixture-app", "confidence": "high"}]}))
+        (incoming / "test-inventory.json").write_text(json.dumps({"entries": [
+            {"path": case["testFile"], "category": "test"} for case in mapping["cases"]]}))
+        (incoming / "case-results.json").write_text(json.dumps([
+            {"group": case["group"], "file": case["testFile"], "name": case["caseName"], "status": "passed"}
+            for case in mapping["cases"]]))
+        mapping["checkId"] = MODULE.identifier("api", "server/routes.ts", 1, "GET", "/owned") + "/access-policy"
+        # Updating this editable candidate field must never re-bind old execution.
+        mapping["platformSourceDigest"] = hashlib.sha256(json.dumps({}, sort_keys=True).encode()).hexdigest()
+        acceptance = tmp_path / "acceptance.json"
+        acceptance.write_text(json.dumps({"checks": [mapping]}))
+        monkeypatch.setattr(MODULE, "ROOT", tmp_path)
+        resolver = MODULE.resolve_evidence_cases
+        monkeypatch.setattr(MODULE, "resolve_evidence_cases", lambda mapping, **kwargs: resolver(mapping, root=tmp_path, **kwargs))
+        monkeypatch.setattr(MODULE, "source_paths", lambda: [])
+        parsed = {key: [] for key in ["files", "pages", "interactions", "routes", "mounts", "unknown"]}
+        monkeypatch.setattr(MODULE.subprocess, "run", lambda *a, **k: SimpleNamespace(returncode=0, stdout=json.dumps(parsed)))
+        monkeypatch.setattr(MODULE.subprocess, "check_output", lambda *a, **k: "fixture-head\n" if k.get("text") else b"fixture-head\n")
+        monkeypatch.setattr(sys, "argv", ["platform-register.py", "--input", str(incoming), "--acceptance-map", str(acceptance)])
+        assert MODULE.main() == 0
+        report = json.loads((incoming / "platform-register.json").read_text())
+        check = next(row for row in report["backendRoutes"][0]["requiredChecks"] if row["template"] == "access-policy")
+>       assert check["status"] == "UNVERIFIED"
+E       AssertionError: assert 'PASS' == 'UNVERIFIED'
+E         
+E         - UNVERIFIED
+E         + PASS
+
+tests/testing/test_platform_evidence.py:150: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"gate": "UNVERIFIED", "routedPageDeclarations": 0, "uiInteractionDeclarations": 0, "backendRegistrations": 1, "frontendApiContracts": 0, "scannedTypeScriptJavaScriptFiles": 0, "actualCoverageFiles": 0, "requiredChecks": 5, "unverifiedChecks": 4, "unknownMappings": 0, "invalidEvidenceLinks": 0}
+=========================== short test summary info ============================
+FAILED tests/testing/test_platform_evidence.py::test_generator_refuses_old_execution_even_when_candidate_digest_is_rewritten
+1 failed, 25 deselected in 0.07s

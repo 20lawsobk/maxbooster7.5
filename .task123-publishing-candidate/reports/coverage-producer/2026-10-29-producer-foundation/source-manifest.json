@@ -1,0 +1,27 @@
+{
+  "sourceBaseline": "5eb416a04021f66c9bfc8af93997ec9fe8a55e31",
+  "rootWrites": false,
+  "status": "CANDIDATE_FINAL_PROOF_PASSED",
+  "files": {
+    "scripts/testing/run-all.py": {
+      "sha256": "b64f351c43a24f5e61fea8130baecba352e0fa2036c9b96f8ed2123b630a44d7",
+      "bytes": 26105
+    },
+    "scripts/testing/coverage-outcome-reporter.mjs": {
+      "sha256": "8f98f6ddf10431532d0972157191c3ae96354758fe19b51a0d4636ed537fd219",
+      "bytes": 5699
+    },
+    "tests/testing/test_coverage_command_binding.py": {
+      "sha256": "fcaac833ae622278364e95e797eae3a5638b92541326e2adbbdac6158f1cedd5",
+      "bytes": 13300
+    },
+    "tests/testing/coverage-outcome-reporter.test.mjs": {
+      "sha256": "539fb9ea8fc934ee3dcd26e243697f7bc2bee8320f3736bc4377e39229b0a27b",
+      "bytes": 13083
+    },
+    "docs/testing/coverage-producer-foundation.md": {
+      "sha256": "4e443431a30ce7510e9c96d849e871b0fffd2220307ad69203985bffa4f6be4b",
+      "bytes": 4567
+    }
+  }
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="actual alert service reaches SendGrid, escapes HTML and keeps recipients private" time="0.026232" classname="test"/>
+	<testcase name="provider rejection does not consume cooldown; a subsequent accepted attempt does" time="0.010277" classname="test"/>
+	<testcase name="simultaneous identical alerts share one in-flight admission and later cooldown" time="0.013751" classname="test"/>
+	<testcase name="unconfigured alert email makes no provider request" time="0.008128" classname="test"/>
+	<testcase name="invalid addresses, headers, credential and oversized bodies fail before any request" time="0.007968" classname="test"/>
+	<testcase name="only202 means accepted; redirects and provider bodies never appear in diagnostics" time="0.002660" classname="test"/>
+	<testcase name="owned HTTP server verifies serialization, bounded timeout and redirect refusal" time="0.075504" classname="test"/>
+	<!-- tests 7 -->
+	<!-- suites 0 -->
+	<!-- pass 7 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 368.777637 -->
+</testsuites>

@@ -1,0 +1,6 @@
+
+> max-booster@3.0.0 test:master
+> python3 scripts/testing/run-all.py --python /workspace/.cloud-python/bin/python --rust-toolchain /workspace/.rust-toolchain/1.93.1 --go-path /workspace/.go --go-cache /workspace/.go/cache
+
+passed: checks/build (exit 0)
+Terminated

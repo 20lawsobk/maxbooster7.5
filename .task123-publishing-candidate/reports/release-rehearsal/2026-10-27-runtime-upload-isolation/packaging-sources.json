@@ -1,0 +1,6 @@
+{
+  "scripts/lib/production-simulation-copy.mjs": "be50ab13e1c69ecb93c6aa6f804dff1cbc4e87731ea7a1ed1a0c59b2aed89d02",
+  "script/lib/capsulePack.ts": "3cbaf9ad914192d1e7d34e379ce219a673396f265ea9ca8e74ecc693682e3451",
+  "tests/unit/production-simulation-copy.test.ts": "5aaa923dff8d18620f5f910ecd31bc7c3096ba0212b6512747f169a92b64aec9",
+  "tests/unit/capsule-pack-restore-roundtrip.test.ts": "3036e388abc1274d3f4a2e006d882f86e025511ba58d5fea251eb26fe2f0c5ff"
+}

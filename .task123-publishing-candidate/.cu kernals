@@ -1,0 +1,347 @@
+`cpp
+// flashattentionsm102_optimized.cu
+// Optimized FP8 FlashAttention kernel with tiling, shared memory, and warp-level softmax
+
+include <cuda_fp16.h>
+
+include <cuda_runtime.h>
+
+define WARP_SIZE 32
+
+define FP8_E4M3 0
+
+define FP8_E5M2 1
+
+struct fp8_e4m3 { unsigned char v; };
+struct fp8_e5m2 { unsigned char v; };
+
+device forceinline float fp8e4m3tofloat(fp8e4m3 x) {
+    int i = static_cast<int>(x.v);
+    if (i & 0x80) i |= ~0xFF;
+    return static_cast<float>(i) / 16.0f;
+}
+
+device forceinline float fp8e5m2tofloat(fp8e5m2 x) {
+    int i = static_cast<int>(x.v);
+    if (i & 0x80) i |= ~0xFF;
+    return static_cast<float>(i) / 8.0f;
+}
+
+template<int FP8FORMAT, int TILET, int TILE_D>
+global void flashattnsm102_optimized(
+    const void* restrict Q,
+    const void* restrict K,
+    const void* restrict V,
+    half* restrict O,
+    int B, int H, int T, int D,
+    bool causal
+) {
+    extern shared float smem[];
+    float* scorestile = smem;                      // TILET x TILE_T
+    float mi = scorestile + TILET  TILET;     // TILE_T
+    float* li = mi + TILET;                      // TILET
+    float* acc = li + TILET;                      // TILE_T x D
+
+    int bh = blockIdx.x;
+    int b = bh / H;
+    int h = bh % H;
+
+    int tid = threadIdx.x;
+    int lane = tid % WARP_SIZE;
+
+    int qbase = blockIdx.y * TILET;
+    if (q_base >= T) return;
+
+    // init per-row stats and accumulator
+    if (lane < TILE_T) {
+        m_i[lane] = -INFINITY;
+        l_i[lane] = 0.0f;
+        for (int d = 0; d < D; ++d) {
+            acc[lane * D + d] = 0.0f;
+        }
+    }
+    syncthreads();
+
+    float scale = 1.0f / sqrtf((float)D);
+
+    // iterate over key blocks
+    for (int kbase = 0; kbase < T; kbase += TILET) {
+        int qidx = qbase + lane;
+        int kidx = kbase + threadIdx.y;
+
+        // compute partial scores for this tile
+        if (lane < TILET && threadIdx.y < TILET && qidx < T && kidx < T) {
+            float dot = 0.0f;
+            for (int d0 = 0; d0 < D; d0 += TILE_D) {
+                for (int d = d0; d < d0 + TILE_D && d < D; ++d) {
+                    int qoff = (((b  H + h)  T + qidx) * D + d);
+                    int koff = (((b  H + h)  T + kidx) * D + d);
+                    float qv, kv;
+                    if constexpr (FP8FORMAT == FP8E4M3) {
+                        fp8e4m3 q8 = reinterpretcast<const fp8e4m3*>(Q)[qoff];
+                        fp8e4m3 k8 = reinterpretcast<const fp8e4m3*>(K)[koff];
+                        qv = fp8e4m3to_float(q8);
+                        kv = fp8e4m3to_float(k8);
+                    } else {
+                        fp8e5m2 q8 = reinterpretcast<const fp8e5m2*>(Q)[qoff];
+                        fp8e5m2 k8 = reinterpretcast<const fp8e5m2*>(K)[koff];
+                        qv = fp8e5m2to_float(q8);
+                        kv = fp8e5m2to_float(k8);
+                    }
+                    dot += qv * kv;
+                }
+            }
+            float score = dot * scale;
+            if (causal && qidx < kidx) score = -INFINITY;
+            scorestile[lane * TILET + threadIdx.y] = score;
+        }
+        syncthreads();
+
+        // warp-level softmax update per row
+        if (lane < TILET && qbase + lane < T) {
+            float row_max = -INFINITY;
+            for (int n = 0; n < TILET && kbase + n < T; ++n) {
+                float s = scorestile[lane * TILET + n];
+                rowmax = fmaxf(rowmax, s);
+            }
+            float mnew = fmaxf(mi[lane], row_max);
+            float expmdiff = expf(mi[lane] - mnew);
+
+            float lnew = expmdiff * li[lane];
+            for (int n = 0; n < TILET && kbase + n < T; ++n) {
+                float s = scorestile[lane * TILET + n];
+                float e = expf(s - m_new);
+                l_new += e;
+
+                int voff = (((b  H + h)  T + (kbase + n)) * D);
+                for (int d = 0; d < D; ++d) {
+                    float vv;
+                    if constexpr (FP8FORMAT == FP8E4M3) {
+                        fp8e4m3 v8 = reinterpretcast<const fp8e4m3*>(V)[voff + d];
+                        vv = fp8e4m3to_float(v8);
+                    } else {
+                        fp8e5m2 v8 = reinterpretcast<const fp8e5m2*>(V)[voff + d];
+                        vv = fp8e5m2to_float(v8);
+                    }
+                    float old = acc[lane * D + d];
+                    acc[lane  D + d] = (expmdiff  li[lane]  old + e  vv) / lnew;
+                }
+            }
+            mi[lane] = mnew;
+            li[lane] = lnew;
+        }
+        syncthreads();
+    }
+
+    // write back
+    if (lane < TILET && qbase + lane < T) {
+        int qglobal = qbase + lane;
+        for (int d = 0; d < D; ++d) {
+            int ooff = (((b  H + h)  T + qglobal) * D + d);
+            O[ooff] = _float2half(acc[lane * D + d]);
+        }
+    }
+}
+`
+
+`cpp
+// conv2dim2colwmma_optimized.cu
+// Optimized conv2d via im2col + WMMA with better tiling and memory access
+
+include <cuda_fp16.h>
+
+include <cuda_runtime.h>
+
+include <mma.h>
+
+using namespace nvcuda;
+
+define WARP_SIZE 32
+
+global void im2colsm102optimized(
+    const half* restrict x,
+    half* restrict cols,
+    int N, int C, int H, int W,
+    int K, int stride, int padding,
+    int outh, int outw
+) {
+    int n = blockIdx.x;
+    int c = blockIdx.y;
+    int idx = blockIdx.z * blockDim.x + threadIdx.x;
+    int total = outh * outw;
+    if (idx >= total) return;
+
+    int oh = idx / out_w;
+    int ow = idx % out_w;
+
+    int h_start = oh * stride - padding;
+    int w_start = ow * stride - padding;
+
+    int base_col = (n  (C  K  K) + c  K  K)  total + idx;
+
+    for (int kh = 0; kh < K; ++kh) {
+        int h = h_start + kh;
+        bool h_valid = (h >= 0 && h < H);
+        for (int kw = 0; kw < K; ++kw) {
+            int w = w_start + kw;
+            int colidx = basecol + (kh  K + kw)  total;
+            if (h_valid && w >= 0 && w < W) {
+                int x_idx = ((n  C + c)  H + h) * W + w;
+                cols[colidx] = x[xidx];
+            } else {
+                cols[colidx] = _float2half(0.0f);
+            }
+        }
+    }
+}
+
+global void convwmmasm102_optimized(
+    const half* restrict A,   // (M x K)
+    const half* restrict B,   // (K x N)
+    half* restrict C,         // (M x N)
+    int M, int N, int K
+) {
+    int warpM = (blockIdx.x * blockDim.x + threadIdx.x) / WARP_SIZE;
+    int warpN = blockIdx.y * blockDim.y + threadIdx.y;
+
+    int row = warpM * 16;
+    int col = warpN * 16;
+
+    if (row >= M || col >= N) return;
+
+    wmma::fragment<wmma::matrixa, 16, 16, 16, half, wmma::rowmajor> a_frag;
+    wmma::fragment<wmma::matrixb, 16, 16, 16, half, wmma::colmajor> b_frag;
+    wmma::fragment<wmma::accumulator, 16, 16, 16, half> c_frag;
+
+    wmma::fillfragment(cfrag, float2half(0.0f));
+
+    for (int k0 = 0; k0 < K; k0 += 16) {
+        const half a_tile = A + row  K + k0;
+        const half b_tile = B + col  K + k0;
+
+        wmma::loadmatrixsync(afrag, atile, K);
+        wmma::loadmatrixsync(bfrag, btile, K);
+
+        wmma::mmasync(cfrag, afrag, bfrag, c_frag);
+    }
+
+    half c_tile = C + row  N + col;
+    wmma::storematrixsync(ctile, cfrag, N, wmma::memrowmajor);
+}
+`
+
+`cpp
+// reductionsm102optimized.cu
+// Optimized reduction with full warp utilization and block-level accumulation
+
+include <cuda_runtime.h>
+
+define WARP_SIZE 32
+
+inline device float warpreducesum_opt(float val) {
+    for (int offset = WARP_SIZE / 2; offset > 0; offset >>= 1) {
+        val += shfldownsync(0xffffffff, val, offset);
+    }
+    return val;
+}
+
+global void reductionsm102optimized(
+    const float* restrict x,
+    const float* restrict y,
+    float* restrict out,
+    int n
+) {
+    extern shared float sdata[];
+    int tid = threadIdx.x;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+
+    float sum = 0.0f;
+    for (int i = idx; i < n; i += stride) {
+        sum += x[i] * y[i];
+    }
+
+    sum = warpreducesum_opt(sum);
+
+    if ((tid & (WARP_SIZE - 1)) == 0) {
+        sdata[tid / WARP_SIZE] = sum;
+    }
+    syncthreads();
+
+    int numwarps = blockDim.x / WARPSIZE;
+    if (tid < num_warps) {
+        float block_sum = sdata[tid];
+        blocksum = warpreducesumopt(block_sum);
+        if (tid == 0) {
+            atomicAdd(out, block_sum);
+        }
+    }
+}
+`
+
+`python
+
+aimodel/gpu/digitalkernels_optimized.py
+
+Optimized digital GPU kernels (NumPy) for FlashAttention and conv2d
+
+from future import annotations
+import numpy as np
+from typing import Dict, Any
+from .precision import dequantize_fp8
+
+
+def flashattentionfp8_optimized(
+    Q_fp8: np.ndarray,
+    K_fp8: np.ndarray,
+    V_fp8: np.ndarray,
+    fmt: str = "e4m3",
+    causal: bool = False,
+) -> np.ndarray:
+    B, H, T, D = Q_fp8.shape
+    Q = dequantizefp8(Qfp8, fmt).astype(np.float32)
+    K = dequantizefp8(Kfp8, fmt).astype(np.float32)
+    V = dequantizefp8(Vfp8, fmt).astype(np.float32)
+
+    scale = 1.0 / np.sqrt(D)
+    scores = np.einsum("bhtd,bhtd->bhtt", Q, K) * scale
+
+    if causal:
+        mask = np.triu(np.ones((T, T), dtype=bool), k=1)
+        scores = np.where(mask[None, None, :, :], -np.inf, scores)
+
+    scores = scores - scores.max(axis=-1, keepdims=True)
+    weights = np.exp(scores)
+    weights /= weights.sum(axis=-1, keepdims=True)
+
+    O = np.einsum("bhtt,bhtd->bhtd", weights, V.astype(np.float16)).astype(np.float16)
+    return O
+
+
+def conv2d_optimized(
+    x: np.ndarray,
+    w: np.ndarray,
+    stride: int = 1,
+    padding: int = 0,
+) -> np.ndarray:
+    N, C, H, W = x.shape
+    F, _, KH, KW = w.shape
+    out_h = (H + 2 * padding - KH) // stride + 1
+    out_w = (W + 2 * padding - KW) // stride + 1
+
+    x_pad = np.pad(x, ((0, 0), (0, 0), (padding, padding), (padding, padding)))
+    cols = np.zeros((N, C  KH  KW, outh * outw), dtype=x.dtype)
+
+    idx = 0
+    for oh in range(out_h):
+        for ow in range(out_w):
+            h_start = oh * stride
+            w_start = ow * stride
+            patch = xpad[:, :, hstart:hstart + KH, wstart:w_start + KW]
+            cols[:, :, idx] = patch.reshape(N, C  KH  KW)
+            idx += 1
+
+    w_mat = w.reshape(F, C  KH  KW)
+    y = np.einsum("fc,nck->nfk", w_mat, cols)
+    return y.reshape(N, F, outh, outw)
+`

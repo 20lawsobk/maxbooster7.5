@@ -1,0 +1,1 @@
+{"status":"degraded","timestamp":"2026-08-20T10:55:56.779Z","subsystems":[{"name":"routes","status":"degraded","detail":"boot in progress — route registration incomplete","lastChecked":1787223356779}]}

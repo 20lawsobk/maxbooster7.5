@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="actual alert service reaches SendGrid, escapes HTML and keeps recipients private" time="0.033643" classname="test"/>
+	<testcase name="provider rejection does not consume cooldown; a subsequent accepted attempt does" time="0.012698" classname="test"/>
+	<testcase name="an accepted webhook does not suppress retry of a failed email channel" time="0.013577" classname="test"/>
+	<testcase name="simultaneous identical alerts share one in-flight admission and later cooldown" time="0.008949" classname="test"/>
+	<testcase name="unconfigured alert email makes no provider request" time="0.006769" classname="test"/>
+	<testcase name="invalid addresses, headers, credential and oversized bodies fail before any request" time="0.009396" classname="test"/>
+	<testcase name="only202 means accepted; redirects and provider bodies never appear in diagnostics" time="0.002845" classname="test"/>
+	<testcase name="owned HTTP server verifies serialization, bounded timeout and redirect refusal" time="0.075818" classname="test"/>
+	<testcase name="actual monitoring route reports provider acceptance and cooldown without claiming delivery" time="0.033399" classname="test"/>
+	<testcase name="actual monitoring route reports failed acceptance and permits a later retry" time="0.022005" classname="test"/>
+	<testcase name="actual monitoring route reports missing channel configuration and honors fixture admission" time="0.028967" classname="test"/>
+	<!-- tests 11 -->
+	<!-- suites 0 -->
+	<!-- pass 11 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 501.452264 -->
+</testsuites>

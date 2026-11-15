@@ -1,0 +1,260 @@
+{
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "group": "node",
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "scripts/test-fabric-deletion.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:28:53.212485+00:00",
+      "durationSeconds": 0.167,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/node-followup/scripts__test-fabric-deletion.mjs.txt",
+      "logSha256": "7e291a999c5ae6ce0429f86e6a0a21f3d3c20825b9691326d172e5f8b989c8d5",
+      "file": "scripts/test-fabric-deletion.mjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-deletion-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:28:53.382040+00:00",
+      "durationSeconds": 1.474,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/node-followup/tests__fabric-deletion-postgres.test.mjs.txt",
+      "logSha256": "bcc63b4dd39ca1355cf53b4d2cb9a429e5ff8e854fe9b6b687c08b6904712784",
+      "file": "tests/fabric-deletion-postgres.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-imported-reconcile-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:28:54.859720+00:00",
+      "durationSeconds": 1.376,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/node-followup/tests__fabric-imported-reconcile-postgres.test.mjs.txt",
+      "logSha256": "788e6513e7382622957c631dd9a6fc6824ef3f36f80ec2c5d1f373b9ac031882",
+      "file": "tests/fabric-imported-reconcile-postgres.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-object-lineage.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:28:56.238232+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/node-followup/tests__fabric-object-lineage.test.mjs.txt",
+      "logSha256": "582016d73b027575d91793238e9bf5b58948fc36d532dd953e067f722fcb3eec",
+      "file": "tests/fabric-object-lineage.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-replica-generation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:28:56.556625+00:00",
+      "durationSeconds": 0.421,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/node-followup/tests__fabric-replica-generation.test.mjs.txt",
+      "logSha256": "96ac5d9ae53ef4895ed7038007e7c1a614c4ec349f69597a7dfc8cfda06f27e4",
+      "file": "tests/fabric-replica-generation.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-root-storage-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:28:56.980359+00:00",
+      "durationSeconds": 1.669,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/node-followup/tests__fabric-root-storage-postgres.test.mjs.txt",
+      "logSha256": "4b24842a6c77986fa7af309ccc381adb07b4d838533caaf4ef03e1b7da027830",
+      "file": "tests/fabric-root-storage-postgres.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/patent-pdf-runtime.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:28:58.652140+00:00",
+      "durationSeconds": 1.975,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/node-followup/tests__patent-pdf-runtime.test.mjs.txt",
+      "logSha256": "b894d9926ec0589f0f871d56f2dae0eb03d31de171cbf53426d644a0f40eee7b",
+      "file": "tests/patent-pdf-runtime.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/pocket-durable-delete.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:29:00.630088+00:00",
+      "durationSeconds": 0.517,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/node-followup/tests__pocket-durable-delete.test.mjs.txt",
+      "logSha256": "be73b2e4dc821708ac695677f18c2b8c1672401e9ba2a9181dde039c81fd7bca",
+      "file": "tests/pocket-durable-delete.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/replit-chunk-delete.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:29:01.149623+00:00",
+      "durationSeconds": 0.265,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/node-followup/tests__replit-chunk-delete.test.mjs.txt",
+      "logSha256": "ada27ef81fbba02b6c92a84ea10d48c3c0e0647faeb9e150d74afe68d4372333",
+      "file": "tests/replit-chunk-delete.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    }
+  ],
+  "summary": {
+    "files": 9,
+    "failedFiles": 0,
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  }
+}

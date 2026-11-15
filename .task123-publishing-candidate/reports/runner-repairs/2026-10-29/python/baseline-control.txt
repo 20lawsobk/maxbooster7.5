@@ -1,0 +1,58 @@
+...FFF.                                                                  [100%]
+=================================== FAILURES ===================================
+_ PythonRunnerScheduling.test_reader_waits_for_actual_writer_cleanup_and_result_files _
+
+self = <test_python_runner_scheduling.PythonRunnerScheduling testMethod=test_reader_waits_for_actual_writer_cleanup_and_result_files>
+
+    def test_reader_waits_for_actual_writer_cleanup_and_result_files(self):
+        self.put('tests/test_writer.py', WRITER)
+        self.put(QUIESCENT, READER)
+        result, report = self.run_fixture()
+>       self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+E       AssertionError: 1 != 0 : failed   tests/testing/test_report_progress.py
+E       passed   tests/test_writer.py
+E       {"summary": {"passed": 1, "failed": 1, "timeout": 0, "skipped": 0, "blocked": 0, "empty": 0}, "counts": {"tests": 2, "failures": 1, "errors": 0, "skipped": 0}}
+
+../onboarding-results/python-failure-2026-10-29/candidate/tests/testing/test_python_runner_scheduling.py:84: AssertionError
+_ PythonRunnerScheduling.test_report_owned_and_state_copies_are_retained_without_execution _
+
+self = <test_python_runner_scheduling.PythonRunnerScheduling testMethod=test_report_owned_and_state_copies_are_retained_without_execution>
+
+    def test_report_owned_and_state_copies_are_retained_without_execution(self):
+        historical = ('reports/cohort/tests/test_archived.py',
+                      'reports/cohort/test-archived.py',
+                      '.pdim-backup/tests/test_archived.py')
+        for name in historical:
+            self.put(name, 'raise RuntimeError("historical copy must never execute")\ndef test_old():\n    assert False\n')
+        current = 'reports-archive/tests/test_current.py'
+        self.put(current, 'def test_canonical_source():\n    assert True\n')
+        result, report = self.run_fixture()
+>       self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+E       AssertionError: 1 != 0 : passed   reports-archive/tests/test_current.py
+E       failed   .pdim-backup/tests/test_archived.py
+E       failed   reports/cohort/tests/test_archived.py
+E       {"summary": {"passed": 1, "failed": 2, "timeout": 0, "skipped": 0, "blocked": 0, "empty": 0}, "counts": {"tests": 3, "failures": 0, "errors": 2, "skipped": 0}}
+
+../onboarding-results/python-failure-2026-10-29/candidate/tests/testing/test_python_runner_scheduling.py:139: AssertionError
+_ PythonRunnerScheduling.test_retained_copy_selector_is_rejected_instead_of_running_history _
+
+self = <test_python_runner_scheduling.PythonRunnerScheduling testMethod=test_retained_copy_selector_is_rejected_instead_of_running_history>
+
+    def test_retained_copy_selector_is_rejected_instead_of_running_history(self):
+        historical = 'reports/cohort/tests/test_archived.py'
+        self.put(historical, 'raise RuntimeError("historical copy must never execute")\ndef test_old():\n    assert False\n')
+        self.put('tests/test_current.py', 'def test_current():\n    assert True\n')
+        self.run_fixture(files=('tests/test_current.py',))
+        result = subprocess.run([sys.executable, str(self.root / 'scripts/testing/run-python-suites.py'),
+                                 '--file', historical, '--output', str(self.root / 'denied')],
+                                cwd=self.root, text=True, capture_output=True, timeout=10)
+>       self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+E       AssertionError: 1 != 2 : failed   reports/cohort/tests/test_archived.py
+E       {"summary": {"passed": 0, "failed": 1, "timeout": 0, "skipped": 0, "blocked": 0, "empty": 0}, "counts": {"tests": 1, "failures": 0, "errors": 1, "skipped": 0}}
+
+../onboarding-results/python-failure-2026-10-29/candidate/tests/testing/test_python_runner_scheduling.py:154: AssertionError
+=========================== short test summary info ============================
+FAILED ../onboarding-results/python-failure-2026-10-29/candidate/tests/testing/test_python_runner_scheduling.py::PythonRunnerScheduling::test_reader_waits_for_actual_writer_cleanup_and_result_files
+FAILED ../onboarding-results/python-failure-2026-10-29/candidate/tests/testing/test_python_runner_scheduling.py::PythonRunnerScheduling::test_report_owned_and_state_copies_are_retained_without_execution
+FAILED ../onboarding-results/python-failure-2026-10-29/candidate/tests/testing/test_python_runner_scheduling.py::PythonRunnerScheduling::test_retained_copy_selector_is_rejected_instead_of_running_history
+3 failed, 4 passed in 3.61s

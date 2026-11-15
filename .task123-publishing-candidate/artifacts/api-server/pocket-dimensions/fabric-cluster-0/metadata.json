@@ -1,0 +1,12 @@
+{
+  "id": "fabric-cluster-0",
+  "name": "fabric-cluster-0",
+  "createdAt": "2026-07-29T00:07:13.184Z",
+  "updatedAt": "2026-07-29T00:11:35.648Z",
+  "totalSize": 15239494,
+  "compressedSize": 13927913,
+  "chunkCount": 14,
+  "maxDepth": 0,
+  "encrypted": false,
+  "version": 1
+}

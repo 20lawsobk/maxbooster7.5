@@ -1,0 +1,895 @@
+// Real platform API implementation with OAuth token integration
+import axios from "axios";
+import { TwitterApi } from "twitter-api-v2";
+import { storage } from "./storage.js";
+import { logger } from "./logger.js";
+import { executeSocialApiOperation } from "./services/externalServices.js";
+
+axios.defaults.timeout = 10000;
+
+type PublishResult = {
+  platform: string;
+  success: boolean;
+  postId?: string;
+  error?: string;
+};
+
+type EngagementData = {
+  likes: number;
+  shares: number;
+  comments: number;
+  views?: number;
+  reach?: number;
+  engagementRate?: number;
+  impressions?: number;
+  retweets?: number;
+  replies?: number;
+  not_available?: boolean;
+  not_available_reason?: string;
+};
+
+export const platformAPI = {
+  /**
+   * Publish content to social media platforms using user OAuth tokens
+   * @param content - Content object with text, media URLs, hashtags
+   * @param platforms - Array of platform names (e?.g., ['Twitter', 'Facebook'])
+   * @param userId - Optional user ID to get OAuth tokens (if not provided, simulates)
+   * @returns Array of publish results with success/failure status
+   */
+  async publishContent(
+    content: unknown,
+    platforms: string[],
+    userId?: string,
+  ): Promise<PublishResult[]> {
+    // Backward compatibility: If no userId provided, simulate
+    if (!userId) {
+      logger.warn(
+        "platformAPI.publishContent called without userId - using simulation mode",
+      );
+      return platforms?.map((p) => ({
+        platform: p,
+        success: true,
+        postId: `simulated-${p}-${Date?.now()}`,
+      }));
+    }
+
+    const results: PublishResult[] = [];
+
+    for (const platform of platforms) {
+      try {
+        // Normalize platform name (handle case variations)
+        const normalizedPlatform = platform?.toLowerCase();
+
+        // Get user's OAuth token for this platform
+        const token = await storage.getUserSocialToken(
+          userId,
+          normalizedPlatform,
+        );
+
+        if (!token) {
+          // getUserSocialToken returns null for both missing AND expired tokens.
+          // The storage layer logs a specific expiry warning; here we give the
+          // campaign a clear per-platform failure record.
+          results.push({
+            platform,
+            success: false,
+            error: `No valid OAuth token for ${platform} — either not connected or token expired (reconnect in Social Media Settings)`,
+          });
+          continue;
+        }
+
+        // Extract content data
+        const text = (content as any).body || (content as any).text || (content as Error).message || "";
+        const mediaUrl = (content as any).mediaUrl || (content as any).media || null;
+        // Local file path for platforms that upload bytes (e.g. Twitter);
+        // URL-fetching platforms (IG/FB/TikTok) keep using mediaUrl.
+        const mediaLocalPath = (content as any).mediaLocalPath || null;
+        const hashtags = (content as any).hashtags || [];
+
+        // Add hashtags to text if provided
+        const fullText =
+          hashtags.length > 0
+            ? `${text} ${hashtags.map((h: string) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}`
+            : text;
+
+        let postId: string | undefined;
+
+        // Call platform-specific API
+        switch (normalizedPlatform) {
+          case "twitter":
+            postId = await this.postToTwitter(
+              fullText,
+              mediaLocalPath || mediaUrl,
+              token,
+            );
+            break;
+
+          case "facebook":
+            postId = await this.postToFacebook(fullText, mediaUrl, token);
+            break;
+
+          case "instagram": {
+            // Instagram Business API needs the IG Business Account ID
+            // (stored as platformUserId) alongside the page token.
+            const igDetails = await storage.getUserSocialAccountDetails(
+              userId,
+              "instagram",
+            );
+            postId = await this.postToInstagram(
+              fullText,
+              mediaUrl,
+              token,
+              igDetails?.platformUserId ?? undefined,
+            );
+            break;
+          }
+
+          case "linkedin":
+            postId = await this.postToLinkedIn(
+              fullText,
+              mediaUrl,
+              token,
+              userId,
+            );
+            break;
+
+          case "tiktok":
+            postId = await this.postToTikTok(fullText, mediaUrl, token);
+            break;
+
+          case "threads":
+            postId = await this.postToThreads(fullText, mediaUrl, token);
+            break;
+
+          default:
+            results.push({
+              platform,
+              success: false,
+              error: `Platform ${platform} not yet supported`,
+            });
+            continue;
+        }
+
+        results.push({
+          platform,
+          success: true,
+          postId,
+        });
+
+        logger.info(`✅ Successfully posted to ${platform}: ${postId}`);
+      } catch (error: unknown) {
+        const axiosErr = error as Record<string, any>;
+        const errorMsg =
+          axiosErr?.response?.data?.error?.message ||
+          axiosErr?.response?.data?.error_description ||
+          (error instanceof Error ? error.message : null) ||
+          "Unknown error";
+
+        results.push({
+          platform,
+          success: false,
+          error: errorMsg,
+        });
+
+        logger.warn(`❌ Failed to post to ${platform}:`, errorMsg);
+
+        // Check if token expired
+        if (
+          errorMsg.includes("token") &&
+          (errorMsg.includes("expired") || errorMsg.includes("invalid"))
+        ) {
+          logger.warn(
+            `⚠️  OAuth token for ${platform} may be expired - user needs to reconnect`,
+          );
+        }
+      }
+    }
+
+    return results;
+  },
+
+  /**
+   * Collect engagement analytics from social media platforms
+   * @param postId - The platform-specific post ID
+   * @param platform - Platform name
+   * @param userId - Optional user ID to get OAuth tokens (if not provided, simulates)
+   * @returns Engagement data (likes, shares, comments, etc.)
+   */
+  async collectEngagementData(
+    postId: string,
+    platform: string,
+    userId?: string,
+  ): Promise<EngagementData> {
+    // Backward compatibility: If no userId provided, simulate
+    if (!userId) {
+      logger.warn(
+        "platformAPI.collectEngagementData called without userId - using simulation mode",
+      );
+      return {
+        likes: 0,
+        shares: 0,
+        comments: 0,
+        views: 0,
+        reach: 0,
+        engagementRate: 0,
+      };
+    }
+
+    try {
+      // Normalize platform name
+      const normalizedPlatform = platform.toLowerCase();
+
+      // Get user's OAuth token for this platform
+      const token = await storage?.getUserSocialToken(
+        userId,
+        normalizedPlatform,
+      );
+
+      if (!token) {
+        throw new Error(
+          `User not connected to ${platform} - OAuth token missing`,
+        );
+      }
+
+      // Call platform-specific analytics API
+      switch (normalizedPlatform) {
+        case "twitter":
+          return await this.getTwitterEngagement(postId, token);
+
+        case "facebook":
+          return await this.getFacebookEngagement(postId, token);
+
+        case "instagram":
+          return await this.getInstagramEngagement(postId, token);
+
+        case "linkedin":
+          return await this.getLinkedInEngagement(postId, token);
+
+        case "threads":
+          return await this.getThreadsEngagement(postId, token);
+
+        case "tiktok":
+          return await this.getTikTokEngagement(postId, token);
+
+        case "youtube":
+          return await this.getYouTubeEngagement(postId, token);
+
+        default:
+          logger.warn(`Analytics not available for platform: ${platform}`);
+          return {
+            likes: 0,
+            shares: 0,
+            comments: 0,
+            views: 0,
+            reach: 0,
+            engagementRate: 0,
+            not_available: true,
+            not_available_reason: `Analytics API not supported for ${platform}`,
+          };
+      }
+    } catch (error: unknown) {
+      logger.warn(
+        `Failed to collect engagement data for ${platform}:`,
+        (error as any)?.message,
+      );
+
+      // Return zero metrics on error to prevent crashes
+      return {
+        likes: 0,
+        shares: 0,
+        comments: 0,
+        views: 0,
+        reach: 0,
+        engagementRate: 0,
+      };
+    }
+  },
+
+  // ============================================
+  // PLATFORM-SPECIFIC POSTING METHODS
+  // ============================================
+
+  async postToTwitter(
+    text: string,
+    mediaUrl: string | null,
+    token: string,
+  ): Promise<string> {
+    const result = await executeSocialApiOperation(
+      "twitter",
+      async () => {
+        const twitterClient = new TwitterApi(token);
+
+        let tweetResponse;
+
+        if (mediaUrl) {
+          try {
+            const mediaId = await twitterClient?.v1.uploadMedia(mediaUrl);
+            tweetResponse = await twitterClient?.v2.tweet({
+              text,
+              media: { media_ids: [mediaId] },
+            });
+          } catch (mediaError: unknown) {
+            logger.warn({ detail: mediaError }, "Twitter media upload failed, posting text only:",
+            );
+            tweetResponse = await twitterClient?.v2.tweet({ text });
+          }
+        } else {
+          tweetResponse = await twitterClient?.v2.tweet({ text });
+        }
+
+        return tweetResponse?.data.id;
+      },
+      {
+        queueOnFailure: true,
+        postData: { text, mediaUrl },
+      },
+    );
+
+    if (result?.warning) {
+      logger.warn(`⚠️ Twitter post warning: ${result?.warning}`);
+    }
+
+    return result?.data;
+  },
+
+  async postToFacebook(
+    text: string,
+    mediaUrl: string | null,
+    token: string,
+  ): Promise<string> {
+    const result = await executeSocialApiOperation(
+      "facebook",
+      async () => {
+        const response = await axios?.post(
+          `https://graph.facebook.com/v18.0/me/feed`,
+          {
+            message: text,
+            link: mediaUrl || undefined,
+            access_token: token,
+          },
+        );
+        return response?.data.id;
+      },
+      {
+        queueOnFailure: true,
+        postData: { text, mediaUrl },
+      },
+    );
+
+    if (result?.warning) {
+      logger.warn(`⚠️ Facebook post warning: ${result?.warning}`);
+    }
+
+    return result?.data;
+  },
+
+  async postToInstagram(
+    text: string,
+    mediaUrl: string | null,
+    token: string,
+    igBusinessAccountId?: string,
+  ): Promise<string> {
+    if (!mediaUrl) {
+      throw new Error("Instagram posts require media (image or video)");
+    }
+
+    const result = await executeSocialApiOperation(
+      "instagram",
+      async () => {
+        // Instagram Business API (Graph API) requires posting to the IG
+        // Business Account ID endpoint, not graph.instagram.com/me which
+        // uses the Basic Display API and rejects page tokens.
+        // Fall back to "me" only if no account ID is stored (legacy rows).
+        const igAccountPath = igBusinessAccountId || "me";
+        const baseUrl = `https://graph.facebook.com/v19.0/${igAccountPath}`;
+
+        // Detect media type: MP4/video → REELS container, else IMAGE container.
+        const isVideo = /\.(mp4|mov|avi|webm)(\?|$)/i.test(mediaUrl);
+        const containerPayload = isVideo
+          ? { video_url: mediaUrl, media_type: "REELS", caption: text, access_token: token }
+          : { image_url: mediaUrl, caption: text, access_token: token };
+
+        const mediaResponse = await axios?.post(
+          `${baseUrl}/media`,
+          containerPayload,
+        );
+
+        const creationId = mediaResponse?.data.id;
+
+        // For video containers, Instagram needs time to process — poll until ready.
+        if (isVideo) {
+          for (let i = 0; i < 12; i++) {
+            await new Promise((r) => setTimeout(r, 5_000));
+            const statusRes = await axios?.get(
+              `https://graph.facebook.com/v19.0/${creationId}?fields=status_code&access_token=${token}`,
+            );
+            const sc = statusRes?.data?.status_code;
+            if (sc === "FINISHED") break;
+            if (sc === "ERROR") throw new Error(`Instagram video processing failed: ${statusRes?.data?.status}`);
+          }
+        }
+
+        const publishResponse = await axios?.post(
+          `${baseUrl}/media_publish`,
+          {
+            creation_id: creationId,
+            access_token: token,
+          },
+        );
+
+        return publishResponse?.data.id;
+      },
+      {
+        queueOnFailure: true,
+        postData: { text, mediaUrl },
+      },
+    );
+
+    if (result?.warning) {
+      logger.warn(`⚠️ Instagram post warning: ${result?.warning}`);
+    }
+
+    return result?.data;
+  },
+
+  async postToLinkedIn(
+    text: string,
+    mediaUrl: string | null,
+    token: string,
+    userId: string,
+  ): Promise<string> {
+    const result = await executeSocialApiOperation(
+      "linkedin",
+      async () => {
+        const profileResponse = await axios?.get(
+          "https://api.linkedin.com/v2/me",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+
+        const personUrn = `urn:li:person:${profileResponse?.data.id}`;
+
+        const shareData: Record<string, unknown> = {
+          author: personUrn,
+          lifecycleState: "PUBLISHED",
+          specificContent: {
+            "com.linkedin.ugc.ShareContent": {
+              shareCommentary: {
+                text,
+              },
+              shareMediaCategory: mediaUrl
+            ? (/\.(mp4|mov|avi|webm)(\?|$)/i.test(mediaUrl) ? "VIDEO" : "IMAGE")
+            : "NONE",
+            },
+          },
+          visibility: {
+            "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+          },
+        };
+
+        if (mediaUrl) {
+          (shareData.specificContent as any)["com.linkedin.ugc.ShareContent"].media = [
+            {
+              status: "READY",
+              originalUrl: mediaUrl,
+            },
+          ];
+        }
+
+        const response = await axios?.post(
+          "https://api.linkedin.com/v2/ugcPosts",
+          shareData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              "X-Restli-Protocol-Version": "2.0.0",
+            },
+          },
+        );
+
+        return response?.data.id;
+      },
+      {
+        queueOnFailure: true,
+        postData: { text, mediaUrl, userId },
+      },
+    );
+
+    if (result?.warning) {
+      logger.warn(`⚠️ LinkedIn post warning: ${result?.warning}`);
+    }
+
+    return result?.data;
+  },
+
+  async postToTikTok(
+    text: string,
+    videoUrl: string | null,
+    token: string,
+  ): Promise<string> {
+    if (!videoUrl) {
+      throw new Error("TikTok posts require a video");
+    }
+
+    const result = await executeSocialApiOperation(
+      "tiktok",
+      async () => {
+        const response = await axios?.post(
+          "https://open-api.tiktok.com/share/video/upload/",
+          {
+            video_url: videoUrl,
+            description: text,
+            access_token: token,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+
+        return response?.data.data?.share_id;
+      },
+      {
+        queueOnFailure: true,
+        postData: { text, videoUrl },
+      },
+    );
+
+    if (result?.warning) {
+      logger.warn(`⚠️ TikTok post warning: ${result?.warning}`);
+    }
+
+    return result?.data;
+  },
+
+  async postToThreads(
+    text: string,
+    mediaUrl: string | null,
+    token: string,
+  ): Promise<string> {
+    try {
+      let creationResponse;
+
+      if (mediaUrl) {
+        // Create Threads post with media
+        creationResponse = await axios?.post(
+          `https://graph.threads.net/v1.0/me/threads`,
+          {
+            media_type: "IMAGE",
+            image_url: mediaUrl,
+            text: text,
+            access_token: token,
+          },
+        );
+      } else {
+        // Create text-only Threads post
+        creationResponse = await axios?.post(
+          `https://graph.threads.net/v1.0/me/threads`,
+          {
+            media_type: "TEXT",
+            text: text,
+            access_token: token,
+          },
+        );
+      }
+
+      const creationId = creationResponse?.data.id;
+
+      // Publish the Threads post
+      const publishResponse = await axios?.post(
+        `https://graph.threads.net/v1.0/me/threads_publish`,
+        {
+          creation_id: creationId,
+          access_token: token,
+        },
+      );
+
+      return publishResponse?.data.id;
+    } catch (error: unknown) {
+      if ((error as any)?.response?.status === 401 || (error as any)?.response?.status === 403) {
+        throw new Error("Threads OAuth token expired or invalid");
+      }
+      if ((error as any)?.response?.status === 429) {
+        throw new Error("Threads API rate limit exceeded");
+      }
+      throw error;
+    }
+  },
+
+  // ============================================
+  // PLATFORM-SPECIFIC ANALYTICS METHODS
+  // ============================================
+
+  async getTwitterEngagement(
+    tweetId: string,
+    token: string,
+  ): Promise<EngagementData> {
+    try {
+      const twitterClient = new TwitterApi(token);
+
+      const tweet = await twitterClient?.v2.singleTweet(tweetId, {
+        "tweet.fields": ["public_metrics"],
+      });
+
+      const metrics = tweet?.data.public_metrics;
+
+      return {
+        likes: metrics!.like_count || 0,
+        shares: metrics!.retweet_count || 0,
+        retweets: metrics!.retweet_count || 0,
+        comments: metrics!.reply_count || 0,
+        replies: metrics!.reply_count || 0,
+        impressions: metrics!.impression_count || 0,
+        engagementRate: metrics!.impression_count
+          ? (metrics?.like_count + metrics?.retweet_count + metrics?.reply_count) /
+            metrics?.impression_count
+          : 0,
+      };
+    } catch (error: unknown) {
+      const statusCode =
+        (error as Record<string, any>)?.code ??
+        (error as Record<string, any>)?.status;
+      if (statusCode === 401) {
+        throw new Error("Twitter OAuth token expired or invalid");
+      }
+      throw error;
+    }
+  },
+
+  async getFacebookEngagement(
+    postId: string,
+    token: string,
+  ): Promise<EngagementData> {
+    try {
+      const response = await axios?.get(
+        `https://graph.facebook.com/v18.0/${postId}`,
+        {
+          params: {
+            fields:
+              "likes.summary(true),shares,comments.summary(true),reactions.summary(true)",
+            access_token: token,
+          },
+        },
+      );
+
+      const data = response?.data;
+
+      return {
+        likes:
+          data?.likes?.summary?.total_count ||
+          data?.reactions?.summary?.total_count ||
+          0,
+        shares: data.shares?.count || 0,
+        comments: data.comments?.summary?.total_count || 0,
+        engagementRate: 0, // Facebook doesn't provide impressions in basic API
+      };
+    } catch (error: unknown) {
+      if ((error as any).response.status === 401 || (error as any).response.status === 403) {
+        throw new Error("Facebook OAuth token expired or invalid");
+      }
+      throw error;
+    }
+  },
+
+  async getInstagramEngagement(
+    mediaId: string,
+    token: string,
+  ): Promise<EngagementData> {
+    try {
+      const response = await axios.get(
+        `https://graph.instagram.com/${mediaId}/insights`,
+        {
+          params: {
+            metric: "likes,comments,shares,saved,engagement,impressions,reach",
+            access_token: token,
+          },
+        },
+      );
+
+      const data = response.data.data;
+      const getMetric = (name: string) => {
+        const metric = data.find((m: unknown) => (m as Error).name === name);
+        return metric.values[0].value || 0;
+      };
+
+      const impressions = getMetric("impressions");
+      const engagement = getMetric("engagement");
+
+      return {
+        likes: getMetric("likes"),
+        shares: getMetric("shares"),
+        comments: getMetric("comments"),
+        impressions,
+        reach: getMetric("reach"),
+        engagementRate: impressions > 0 ? engagement / impressions : 0,
+      };
+    } catch (error: unknown) {
+      if ((error as any).response.status === 401 || (error as any).response.status === 403) {
+        throw new Error("Instagram OAuth token expired or invalid");
+      }
+      throw error;
+    }
+  },
+
+  async getLinkedInEngagement(
+    shareId: string,
+    token: string,
+  ): Promise<EngagementData> {
+    try {
+      const response = await axios.get(
+        `https://api.linkedin.com/v2/socialActions/${shareId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const data = response.data;
+
+      return {
+        likes: data.likesSummary.totalLikes || 0,
+        shares: data.sharesSummary.totalShares || 0,
+        comments: data.commentsSummary.totalComments || 0,
+        engagementRate: 0, // LinkedIn doesn't provide impressions in basic API
+      };
+    } catch (error: unknown) {
+      if ((error as any)?.response?.status === 401) {
+        throw new Error("LinkedIn OAuth token expired or invalid");
+      }
+      throw error;
+    }
+  },
+
+  async getThreadsEngagement(
+    mediaId: string,
+    token: string,
+  ): Promise<EngagementData> {
+    try {
+      const response = await axios?.get(
+        `https://graph.threads.net/v1.0/${mediaId}/insights`,
+        {
+          params: {
+            metric: "likes,replies,reposts,views",
+            access_token: token,
+          },
+        },
+      );
+
+      const data = response?.data.data;
+      const getMetric = (name: string) => {
+        const metric = data?.find((m: unknown) => (m as any)?.name === name);
+        return metric?.values?.[0]?.value || 0;
+      };
+
+      return {
+        likes: getMetric("likes"),
+        shares: getMetric("reposts"),
+        comments: getMetric("replies"),
+        views: getMetric("views"),
+        engagementRate: 0,
+      };
+    } catch (error: unknown) {
+      if ((error as any)?.response?.status === 401 || (error as any)?.response?.status === 403) {
+        throw new Error("Threads OAuth token expired or invalid");
+      }
+      throw error;
+    }
+  },
+
+  async getTikTokEngagement(
+    videoId: string,
+    token: string,
+  ): Promise<EngagementData> {
+    try {
+      const response = await axios?.post(
+        "https://open.tiktokapis.com/v2/video/query/",
+        {
+          filters: {
+            video_ids: [videoId],
+          },
+          fields: ["like_count", "comment_count", "share_count", "view_count"],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const video = response?.data?.data?.videos?.[0];
+
+      if (!video) {
+        logger.warn(`TikTok video not found: ${videoId}`);
+        return {
+          likes: 0,
+          shares: 0,
+          comments: 0,
+          views: 0,
+          engagementRate: 0,
+        };
+      }
+
+      const views = video?.view_count || 0;
+      const likes = video?.like_count || 0;
+      const comments = video?.comment_count || 0;
+      const shares = video?.share_count || 0;
+
+      return {
+        likes,
+        shares,
+        comments,
+        views,
+        engagementRate: views > 0 ? (likes + comments + shares) / views : 0,
+      };
+    } catch (error: unknown) {
+      if ((error as any)?.response?.status === 401 || (error as any)?.response?.status === 403) {
+        throw new Error("TikTok OAuth token expired or invalid");
+      }
+      if ((error as any)?.response?.status === 429) {
+        throw new Error("TikTok API rate limit exceeded");
+      }
+      throw error;
+    }
+  },
+
+  async getYouTubeEngagement(
+    videoId: string,
+    token: string,
+  ): Promise<EngagementData> {
+    try {
+      const response = await axios?.get(
+        "https://www.googleapis.com/youtube/v3/videos",
+        {
+          params: {
+            part: "statistics",
+            id: videoId,
+            access_token: token,
+          },
+        },
+      );
+
+      const video = response?.data?.items?.[0];
+
+      if (!video) {
+        logger.warn(`YouTube video not found: ${videoId}`);
+        return {
+          likes: 0,
+          shares: 0,
+          comments: 0,
+          views: 0,
+          engagementRate: 0,
+        };
+      }
+
+      const stats = video?.statistics || {};
+      const views = parseInt(stats?.viewCount, 10) || 0;
+      const likes = parseInt(stats?.likeCount, 10) || 0;
+      const comments = parseInt(stats?.commentCount, 10) || 0;
+
+      return {
+        likes,
+        shares: 0,
+        comments,
+        views,
+        engagementRate: views > 0 ? (likes + comments) / views : 0,
+      };
+    } catch (error: unknown) {
+      if ((error as any)?.response?.status === 401 || (error as any)?.response?.status === 403) {
+        throw new Error("YouTube OAuth token expired or invalid");
+      }
+      if ((error as any)?.response?.status === 429) {
+        throw new Error("YouTube API rate limit exceeded");
+      }
+      throw error;
+    }
+  },
+};

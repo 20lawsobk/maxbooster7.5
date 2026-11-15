@@ -13,7 +13,7 @@ Replit project; commit source changes without resetting live data or private
 configuration. Only port 5000 maps publicly to port 80; sidecars stay private.
 
 `replit.nix` retains PostgreSQL 17 tools, Redis, compression/archive utilities,
-FFmpeg, fonts and narration tools. Node 22 and Python are provided by the app
+FFmpeg, fonts and narration tools. Node 24 and Python are provided by the app
 modules; the publishing pipeline verifies the portable Node distribution.
 Nix closure size and host evaluation still require verification on Replit.
 
@@ -25,7 +25,7 @@ evaluate the explicit entrypoint using `nix-instantiate --eval --strict nix.env
 --arg pkgs 'import <nixpkgs> {}'`. This is not a shell dotenv file and contains
 no secrets or machine-specific store paths.
 
-Regeneration preserves the plain package attributes, Python 3.11 and Node 22,
+Regeneration preserves the plain package attributes, Python 3.11 and Node 24,
 and the existing Replit channel, port and workflow settings. Local parsing and
 entrypoint evaluation do not establish that Replit's separate environment-loader
 error is resolved; that requires a successful startup on the Replit host.

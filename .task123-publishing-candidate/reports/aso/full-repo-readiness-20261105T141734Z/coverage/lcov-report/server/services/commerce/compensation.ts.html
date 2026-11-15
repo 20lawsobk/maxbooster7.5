@@ -1,0 +1,505 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for server/services/commerce/compensation.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../prettify.css" />
+    <link rel="stylesheet" href="../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">server/services/commerce</a> compensation.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0.97% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>1/103</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/93</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/12</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">1.2% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>1/83</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { deferredReversalState, type ReversalState } from "./reversalState";
+import type Stripe from "stripe";
+import { pool } from "../../db";
+import { registerWebhookHandler } from "../../safety/stripeWebhookSecurity";
+import { commerceRepository, commerceEngine, commerceStripe } from "./runtime";
+import { applyVerifiedMerchPayment } from "../merchCheckoutService";
+&nbsp;
+const providerReadOptions={timeout:8_000,maxNetworkRetries:0};
+&nbsp;
+async function <span class="fstat-no" title="function not covered" >reconcileLifetimeCharge(s</span>tripe:Stripe,chargeId:string,paymentIntent:string,customer:string,dispute?:Stripe.Dispute) {
+  const client=<span class="cstat-no" title="statement not covered" >await pool.connect();</span>
+<span class="cstat-no" title="statement not covered" >  try {</span>
+<span class="cstat-no" title="statement not covered" >    await client.query("BEGIN");</span>
+    const users=<span class="cstat-no" title="statement not covered" >await client.query("SELECT id FROM users WHERE stripe_customer_id=$1 FOR UPDATE",[customer]);</span>
+<span class="cstat-no" title="statement not covered" >    if(!users.rows.length) {<span class="cstat-no" title="statement not covered" >await client.query("COMMIT");<span class="cstat-no" title="statement not covered" >r</span>eturn;}</span></span>
+    let timer:ReturnType&lt;typeof setTimeout&gt;|undefined;
+    const read=<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async()=&gt;(<span class="cstat-no" title="statement not covered" >{</span></span></span>
+      charge:await stripe.charges.retrieve(chargeId,providerReadOptions),
+      dispute:dispute?await stripe.disputes.retrieve(dispute.id,providerReadOptions):undefined,
+    });
+    let current:Awaited&lt;ReturnType&lt;typeof read&gt;&gt;;
+<span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      current=await Promise.race([read(),new Promise&lt;never&gt;(<span class="fstat-no" title="function not covered" >(_</span>,reject)=&gt;{</span>
+<span class="cstat-no" title="statement not covered" >        timer=setTimeout(<span class="fstat-no" title="function not covered" >()=&gt;<span class="cstat-no" title="statement not covered" >r</span>eject(new Error("Lifetime reversal state read timed out")),1</span>0_000);</span>
+      })]);
+    } finally {<span class="cstat-no" title="statement not covered" >if(timer)<span class="cstat-no" title="statement not covered" >clearTimeout(timer);}</span></span>
+    const currentPayment=<span class="cstat-no" title="statement not covered" >typeof current.charge.payment_intent==="string"?current.charge.payment_intent:current.charge.payment_intent?.id;</span>
+    const currentCustomer=<span class="cstat-no" title="statement not covered" >typeof current.charge.customer==="string"?current.charge.customer:current.charge.customer?.id;</span>
+    const disputeCharge=<span class="cstat-no" title="statement not covered" >typeof current.dispute?.charge==="string"?current.dispute.charge:current.dispute?.charge?.id;</span>
+<span class="cstat-no" title="statement not covered" >    if(currentPayment!==paymentIntent||currentCustomer!==customer||(current.dispute&amp;&amp;disputeCharge!==chargeId)) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error("Lifetime reversal payment identity changed");</span>
+    }
+<span class="cstat-no" title="statement not covered" >    if(current.charge.amount_refunded===current.charge.amount ||</span>
+        (current.dispute&amp;&amp;!["won","warning_closed"].includes(current.dispute.status))) {
+<span class="cstat-no" title="statement not covered" >      await client.query("UPDATE users SET subscription_tier='free',subscription_status=CASE WHEN subscription_status IN ('suspended','banned') THEN subscription_status ELSE 'refunded' END WHERE stripe_customer_id=$1 AND subscription_tier='lifetime'",[customer]);</span>
+<span class="cstat-no" title="statement not covered" >    } else if(current.charge.paid&amp;&amp;current.charge.amount_refunded===0&amp;&amp;current.dispute?.status==="won") {</span>
+<span class="cstat-no" title="statement not covered" >      await client.query("UPDATE users SET subscription_tier='lifetime',subscription_status='active',subscription_ends_at=NULL WHERE stripe_customer_id=$1 AND subscription_status='refunded'",[customer]);</span>
+    }
+<span class="cstat-no" title="statement not covered" >    await client.query("COMMIT");</span>
+  } catch(error) {<span class="cstat-no" title="statement not covered" >await client.query("ROLLBACK");<span class="cstat-no" title="statement not covered" >t</span>hrow error;}</span>
+  finally {<span class="cstat-no" title="statement not covered" >client.release();}</span>
+}
+&nbsp;
+export async function <span class="fstat-no" title="function not covered" >reconcileCharge(c</span>hargeId:string,dispute?:Stripe.Dispute) {
+  const <span class="cstat-no" title="statement not covered" >stripe=commerceStripe();</span>
+  const charge=<span class="cstat-no" title="statement not covered" >await stripe.charges.retrieve(chargeId);</span>
+  const paymentIntent=<span class="cstat-no" title="statement not covered" >typeof charge.payment_intent==="string"?charge.payment_intent:charge.payment_intent?.id;</span>
+<span class="cstat-no" title="statement not covered" >  if(!paymentIntent) <span class="cstat-no" title="statement not covered" >return;</span></span>
+  const source=<span class="cstat-no" title="statement not covered" >await commerceRepository.sourceByPayment(paymentIntent);</span>
+<span class="cstat-no" title="statement not covered" >  if(!source) {</span>
+    const pi=<span class="cstat-no" title="statement not covered" >await stripe.paymentIntents.retrieve(paymentIntent);</span>
+    const plan=<span class="cstat-no" title="statement not covered" >pi.metadata.planId||pi.metadata.planName||pi.metadata.tier;</span>
+<span class="cstat-no" title="statement not covered" >    if(plan==="lifetime") {</span>
+      const customer=<span class="cstat-no" title="statement not covered" >typeof charge.customer==="string"?charge.customer:charge.customer?.id;</span>
+<span class="cstat-no" title="statement not covered" >      if(!customer) <span class="cstat-no" title="statement not covered" >throw new Error("Lifetime reversal has no customer identity");</span></span>
+<span class="cstat-no" title="statement not covered" >      await reconcileLifetimeCharge(stripe,chargeId,paymentIntent,customer,dispute);</span>
+<span class="cstat-no" title="statement not covered" >      return;</span>
+    }
+<span class="cstat-no" title="statement not covered" >    if(pi.metadata.beatId || pi.metadata.commerceVersion==="2") <span class="cstat-no" title="statement not covered" >throw new Error("Payment has no reconciled commerce source; refund event requires recovery");</span></span>
+    // Not a commerce payment; subscription lifecycle is owned by its handlers.
+<span class="cstat-no" title="statement not covered" >    return;</span>
+  }
+  let currentDispute:Stripe.Dispute|undefined;
+  const held=<span class="cstat-no" title="statement not covered" >dispute?<span class="fstat-no" title="function not covered" >async (l</span>ockedPaymentIntent:string)=&gt;{</span>
+<span class="cstat-no" title="statement not covered" >    if(lockedPaymentIntent!==paymentIntent) <span class="cstat-no" title="statement not covered" >throw new Error("Dispute payment source changed");</span></span>
+    // The repository executes this bounded read under its transaction/source
+    // lock, on the same DB connection as compensation. Fees remain outside it.
+<span class="cstat-no" title="statement not covered" >    currentDispute=await stripe.disputes.retrieve(dispute.id,providerReadOptions);</span>
+    const currentCharge=<span class="cstat-no" title="statement not covered" >typeof currentDispute.charge==="string"?currentDispute.charge:currentDispute.charge?.id;</span>
+<span class="cstat-no" title="statement not covered" >    if(currentCharge!==chargeId) <span class="cstat-no" title="statement not covered" >throw new Error("Dispute charge identity changed");</span></span>
+<span class="cstat-no" title="statement not covered" >    return ["won","warning_closed"].includes(currentDispute.status)?0:currentDispute.amount;</span>
+  }:undefined;
+  let refunds:Stripe.Refund[]=<span class="cstat-no" title="statement not covered" >[],s</span>napshot:ReversalState|undefined;
+  const <span class="cstat-no" title="statement not covered" >read=deferredReversalState(stripe,paymentIntent,{dispute:held,refunds:<span class="fstat-no" title="function not covered" >rows=&gt;{<span class="cstat-no" title="statement not covered" ></span>refunds=rows;}</span>});</span>
+<span class="cstat-no" title="statement not covered" >  await commerceRepository.compensate(source.id,0,<span class="fstat-no" title="function not covered" >async l</span>ockedPayment=&gt;{</span>
+<span class="cstat-no" title="statement not covered" >    snapshot=await read(lockedPayment);<span class="cstat-no" title="statement not covered" >r</span>eturn snapshot;</span>
+  });
+  const succeeded=<span class="cstat-no" title="statement not covered" >snapshot?.refunded??0;</span>
+<span class="cstat-no" title="statement not covered" >  if(currentDispute) <span class="cstat-no" title="statement not covered" >for(const balance of currentDispute.balance_transactions) {</span></span>
+<span class="cstat-no" title="statement not covered" >    await commerceRepository.providerFee(balance.id,balance.fee,balance.currency,source.id);</span>
+  }
+<span class="cstat-no" title="statement not covered" >  if(source.kind==="merch" &amp;&amp; succeeded) <span class="cstat-no" title="statement not covered" >await applyVerifiedMerchPayment({</span></span>
+    eventId:`refund:${paymentIntent}:${succeeded}`,orderId:source.metadata.growthMerchOrderId,
+    checkoutId:source.metadata.sessionId,currency:source.currency,type:"refunded",amountCents:succeeded,
+  });
+  // Complete API refund reservations by provider identity, including events
+  // delivered before the API request persists its response.
+<span class="cstat-no" title="statement not covered" >  for(const refund of refunds) {</span>
+<span class="cstat-no" title="statement not covered" >    if(refund.balance_transaction) {</span>
+      const balance=<span class="cstat-no" title="statement not covered" >typeof refund.balance_transaction==="string"?await stripe.balanceTransactions.retrieve(refund.balance_transaction):refund.balance_transaction;</span>
+<span class="cstat-no" title="statement not covered" >      await commerceRepository.providerFee(balance.id,balance.fee,balance.currency,source.id);</span>
+    }
+    const operation=<span class="cstat-no" title="statement not covered" >refund.metadata?.commerceOperation;</span>
+<span class="cstat-no" title="statement not covered" >    if(operation) {</span>
+      const state=<span class="cstat-no" title="statement not covered" >refund.status==="succeeded"?"completed":refund.status==="failed"||refund.status==="canceled"?"failed":"awaiting";</span>
+<span class="cstat-no" title="statement not covered" >      await pool.query("UPDATE commerce_operations SET provider_id=$2,state=$3,lease_until=NULL WHERE id=$1 AND kind='refund'",[operation,refund.id,state]);</span>
+<span class="cstat-no" title="statement not covered" >      await pool.query("UPDATE refunds SET stripe_refund_id=$2,status=$3,processed_at=CASE WHEN $3='succeeded' THEN now() ELSE processed_at END WHERE id=$1",[operation,refund.id,refund.status]);</span>
+    } else {
+<span class="cstat-no" title="statement not covered" >      await pool.query(`INSERT INTO refunds(id,order_id,user_id,seller_id,amount_cents,currency,status,stripe_refund_id,stripe_charge_id,initiated_by,refund_type)</span>
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'provider_dashboard',$10)
+        ON CONFLICT(id) DO UPDATE SET status=EXCLUDED.status`,
+        [`external:${refund.id}`,source.id,source.metadata.buyerId,source.metadata.sellerId,refund.amount,refund.currency,
+          refund.status,refund.id,charge.id,refund.amount===Number(source.gross_cents)?"full":"partial"]);
+    }
+  }
+}
+&nbsp;
+export function <span class="fstat-no" title="function not covered" >registerCommerceCompensationHandlers() {</span>
+<span class="cstat-no" title="statement not covered" >  registerWebhookHandler("topup.reversed",<span class="fstat-no" title="function not covered" >async e</span>vent=&gt;{</span>
+    const topup=<span class="cstat-no" title="statement not covered" >event.data.object as Stripe.Topup;</span>
+    const current=<span class="cstat-no" title="statement not covered" >await commerceStripe().topups.retrieve(topup.id);</span>
+<span class="cstat-no" title="statement not covered" >    if(current.status!=="reversed") <span class="cstat-no" title="statement not covered" >return {success:true,message:"Top-up reversal superseded"};</span></span>
+    const <span class="cstat-no" title="statement not covered" >sources=(await pool.query("SELECT id,gross_cents FROM commerce_sources WHERE kind='royalty' AND metadata-&gt;&gt;'topupId'=$1",[topup.id])).rows;</span>
+<span class="cstat-no" title="statement not covered" >    for(const source of sources) <span class="cstat-no" title="statement not covered" >await commerceRepository.compensate(source.id,Number(source.gross_cents));</span></span>
+<span class="cstat-no" title="statement not covered" >    return {success:true,message:"Reversed royalty funding compensated"};</span>
+  });
+<span class="cstat-no" title="statement not covered" >  for(const eventType of ["charge.refunded","refund.created","refund.updated","refund.failed","charge.dispute.created","charge.dispute.updated","charge.dispute.closed"]) {</span>
+<span class="cstat-no" title="statement not covered" >    registerWebhookHandler(eventType,<span class="fstat-no" title="function not covered" >async e</span>vent=&gt;{</span>
+      const obj=<span class="cstat-no" title="statement not covered" >event.data.object as any;</span>
+      const chargeId=<span class="cstat-no" title="statement not covered" >event.type==="charge.refunded"?obj.id:typeof obj.charge==="string"?obj.charge:obj.charge?.id;</span>
+<span class="cstat-no" title="statement not covered" >      if(!chargeId) <span class="cstat-no" title="statement not covered" >throw new Error("Commerce reversal event has no charge");</span></span>
+<span class="cstat-no" title="statement not covered" >      await reconcileCharge(chargeId,event.type.startsWith("charge.dispute.")?obj:undefined);</span>
+<span class="cstat-no" title="statement not covered" >      return {success:true,message:"Commerce compensation persisted"};</span>
+    });
+  }
+}
+&nbsp;
+export async function <span class="fstat-no" title="function not covered" >initiateCommerceRefund(o</span>rderId:string,userId:string,cents:number,key:string) {
+<span class="cstat-no" title="statement not covered" >  if(!key) <span class="cstat-no" title="statement not covered" >throw new Error("An Idempotency-Key is required for refunds");</span></span>
+  const op=<span class="cstat-no" title="statement not covered" >await commerceRepository.refundIntent(orderId,userId,cents,key);</span>
+<span class="cstat-no" title="statement not covered" >  await pool.query(`INSERT INTO refunds(id,order_id,user_id,seller_id,amount_cents,currency,status,initiated_by,refund_type)</span>
+    SELECT $1,id,$4,metadata-&gt;&gt;'sellerId',$3,currency,'pending','customer',
+      CASE WHEN gross_cents=$3 THEN 'full' ELSE 'partial' END FROM commerce_sources WHERE id=$2
+    ON CONFLICT (id) DO NOTHING`,[op.id,orderId,cents,userId]);
+<span class="cstat-no" title="statement not covered" >  if(op.state==="pending") {</span>
+<span class="cstat-no" title="statement not covered" >    try { <span class="cstat-no" title="statement not covered" >await commerceEngine().execute(op.id); }</span></span>
+    catch { /* durable retry remains visible and reserved; never submit a new ID */ }
+  }
+  const current=<span class="cstat-no" title="statement not covered" >await commerceRepository.get(op.id);</span>
+<span class="cstat-no" title="statement not covered" >  return {success:true,refundId:op.id,stripeRefundId:current?.provider_id,status:current?.state};</span>
+}</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-05T14:31:30.173Z
+            </div>
+        <script src="../../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../../sorter.js"></script>
+        <script src="../../../block-navigation.js"></script>
+    </body>
+</html>
+    

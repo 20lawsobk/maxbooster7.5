@@ -1,0 +1,1 @@
+{"status": "analysis_completed_profiles_incompatible", "protectedInputsUnchanged": true, "commands": 3, "configuredCredentialsPassedToChildren": false}

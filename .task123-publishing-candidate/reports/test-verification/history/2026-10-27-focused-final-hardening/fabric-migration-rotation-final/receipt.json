@@ -1,0 +1,97 @@
+{
+  "scope": "Disposable Unix-socket-only owned PostgreSQL; actual filesystem bytes and fresh process restarts; canonical local PDIM Lua composed with actual SQL fencing including delayed stale publication, stored corruption and key-rotation SQL rollback. Not deployed migration/provider/global-capacity proof.",
+  "sourceFiles": {
+    "server/pocket-dimension/fabric/control/Rebalancer.ts": "27a7dd3852ff182b56e7a9fc374c9f2dae8342772fab135fe9025c5d427b927a",
+    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts": "9c4c66d80ee0e4369eaae76adbf73752be58b78e90a3c87156be4530a741842e",
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76",
+    "migrations/0099_fabric_migration_journal.sql": "8faa7feabf1ee0151b9eb3085297bbfd9f7743322fff20f215c9a042a5fd6b27",
+    "tests/fabric-migration-outbox-postgres.test.mjs": "131ec89457c694263b6b94dc067f65a668f00c30a54d7e71e89e18523cc058f6",
+    "tests/fabric-replica-generation.test.mjs": "72b5abd3b5c24594ad0d3137c8fa3d59575b4cc4470668f5a873d32ffec6b289",
+    "tests/unit/pdim-canonical-owner.test.ts": "fa9b9ca45054ded762c34a836afd6ddab3ac4bdcdda2e84e8f6a6e45278026f3",
+    "shared/schema.ts": "ce79392f833de48cc9bf3fe1ab6f158558b64824ccdcecce03ba277713bb1411"
+  },
+  "commands": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=junit",
+        "tests/fabric-migration-outbox-postgres.test.mjs",
+        "tests/fabric-replica-generation.test.mjs",
+        "tests/fabric-root-storage-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T10:12:00.351318+00:00",
+      "durationSeconds": 14.468,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fabric-migration-rotation-final/node.xml",
+      "logSha256": "74ce69d6124d376c840ed2ae31ec9412aa18a8a4bf914e4977cdc68af24d07d9"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/eslint/bin/eslint.js",
+        "server/pocket-dimension/fabric/control/Rebalancer.ts",
+        "server/pocket-dimension/fabric/infra/MigrationOutbox.ts",
+        "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+        "tests/fabric-migration-outbox-postgres.test.mjs",
+        "tests/fabric-replica-generation.test.mjs",
+        "tests/unit/pdim-canonical-owner.test.ts",
+        "shared/schema.ts",
+        "--quiet"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T10:12:14.819139+00:00",
+      "durationSeconds": 1.876,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fabric-migration-rotation-final/lint.txt",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "check:server"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T10:12:16.695544+00:00",
+      "durationSeconds": 53.853,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fabric-migration-rotation-final/types.txt",
+      "logSha256": "d3bafa07b0038ad49c07fb79173a2d36cf281a3cb0a37187567d4b739b9d1630"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "tests/unit/pdim-canonical-owner.test.ts",
+        "--reporter=junit",
+        "--outputFile=/workspace/onboarding-results/fabric-migration-rotation-final/unit.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T10:13:10.548566+00:00",
+      "durationSeconds": 2.027,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fabric-migration-rotation-final/unit.txt",
+      "logSha256": "5961ef7755c67589f8ecf375ce8f50b9a401c48be7614f2d5dbc4d5327deabbd"
+    }
+  ],
+  "permanentTombstones": "Replica deletion marks immutable physical keys permanently; metadata retention prevents resurrection by delayed stale writers. Tombstones are control metadata, not content-byte capacity.",
+  "keyRotation": "Only proven target corruption, immutable conflict or retired-key denial rotates targets; transport failures retain the same key. Retirement before key update remains retryable after SQL rollback, preserving one conservative capacity reservation.",
+  "previousReceipt": "/workspace/onboarding-results/fabric-migration-final/receipt.json",
+  "junitCases": 17,
+  "failedCases": 0,
+  "unitCases": 7
+}

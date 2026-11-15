@@ -1,0 +1,182 @@
+{
+  "totals": {
+    "tests": 484,
+    "passed": 267,
+    "failures": 201,
+    "errors": 0,
+    "skipped": 16
+  },
+  "suites": [
+    {
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 13,
+      "file": "tests/ai-analytics-integration.test.ts"
+    },
+    {
+      "tests": 33,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 32,
+      "file": "tests/api-guards.test.ts"
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 3,
+      "file": "tests/audit-persistence.test.ts"
+    },
+    {
+      "tests": 16,
+      "failures": 15,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1,
+      "file": "tests/auth-2fa.test.ts"
+    },
+    {
+      "tests": 27,
+      "failures": 9,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 18,
+      "file": "tests/auth-flows.test.ts"
+    },
+    {
+      "tests": 12,
+      "failures": 5,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 7,
+      "file": "tests/billing-lifecycle.test.ts"
+    },
+    {
+      "tests": 6,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 5,
+      "passed": 0,
+      "file": "tests/cache-invalidation.test.ts"
+    },
+    {
+      "tests": 47,
+      "failures": 34,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 13,
+      "file": "tests/critical-paths.test.ts"
+    },
+    {
+      "tests": 4,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1,
+      "file": "tests/direct-upload.test.ts"
+    },
+    {
+      "tests": 33,
+      "failures": 16,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 17,
+      "file": "tests/feature-catalog-production.test.ts"
+    },
+    {
+      "tests": 42,
+      "failures": 14,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 28,
+      "file": "tests/feature-marketplace-distribution.test.ts"
+    },
+    {
+      "tests": 34,
+      "failures": 18,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 16,
+      "file": "tests/feature-press-pitching-ar.test.ts"
+    },
+    {
+      "tests": 37,
+      "failures": 19,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 18,
+      "file": "tests/feature-revenue-merch.test.ts"
+    },
+    {
+      "tests": 36,
+      "failures": 9,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 27,
+      "file": "tests/feature-storefront-dns.test.ts"
+    },
+    {
+      "tests": 14,
+      "failures": 6,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 8,
+      "file": "tests/file-management.test.ts"
+    },
+    {
+      "tests": 12,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 9,
+      "file": "tests/health.test.ts"
+    },
+    {
+      "tests": 77,
+      "failures": 43,
+      "errors": 0,
+      "skipped": 9,
+      "passed": 25,
+      "file": "tests/paid-user-e2e.test.ts"
+    },
+    {
+      "tests": 24,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 18,
+      "file": "tests/security-hardening.test.ts"
+    },
+    {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 5,
+      "file": "tests/webhook-security.test.ts"
+    },
+    {
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1,
+      "file": "tests/integration/maxcore-local-supervisor.integration.test.ts"
+    },
+    {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 7,
+      "file": "tests/unit/cache-cross-pod.test.ts"
+    }
+  ],
+  "exitCode": 1,
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "productionReady": false
+}

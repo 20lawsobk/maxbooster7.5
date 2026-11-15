@@ -1,0 +1,10 @@
+{
+  "recordedAt": "2026-10-28T01:28:18.031236+00:00",
+  "files": {
+    "package.json": "4b922736b32dec3bff9f630b4482f88dc8f31e32cf39201812dc720be6254aa6",
+    "package-lock.json": "a58bbb3858639cdc236480decfccfc837e1d88d8637899835dba7b07839840d8",
+    "tools/legacy-security-update.json": "5585ffb05e5e2bec4b12a8ade00e02f5b45f2c8df136ab916349a0c69a42f911",
+    "scripts/verify-runtime-artifacts.mjs": "0d68a52fc208599afaad90caeb31cc88bb10ff58334aa122c55f211d411c3230",
+    "tests/runtime-artifact-gates.test.mjs": "05bbd450a72f0181489296370b43744525e2776c8a53ec34c41c73c0fd6633a6"
+  }
+}

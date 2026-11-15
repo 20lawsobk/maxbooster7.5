@@ -1,0 +1,57 @@
+{
+  "checks": {
+    "ci-config": {
+      "weight": 2
+    },
+    "dependency-audit": {
+      "config": {
+        "maxCritical": 0,
+        "maxHigh": 2
+      },
+      "weight": 3
+    },
+    "env-config": {
+      "required": true,
+      "weight": 3
+    },
+    "health-endpoint": {
+      "required": true,
+      "weight": 4
+    },
+    "large-files": {
+      "weight": 2
+    },
+    "migrations": {
+      "required": true,
+      "weight": 4
+    },
+    "port-contract": {
+      "required": true,
+      "weight": 3
+    },
+    "production-build": {
+      "required": true,
+      "weight": 4
+    },
+    "secrets-scan": {
+      "required": true,
+      "weight": 4
+    },
+    "unit-tests": {
+      "required": true,
+      "weight": 3
+    }
+  },
+  "description": "For storefronts and order pipelines. Uptime signals, data migrations, and deployability lead; checkout cannot go down.",
+  "displayName": "E-commerce",
+  "name": "ecommerce",
+  "notes": [
+    "Tune large-files.maxBytes down if your platform bills by image size.",
+    "Add load-test and payment-webhook replay checks for peak-season readiness."
+  ],
+  "thresholds": {
+    "conditionalGo": 70,
+    "go": 88
+  },
+  "version": "1.0.0"
+}

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "scope": "Exact next bounded C5/P1\u2013P2 implementation sequence, preserving the existing C0\u2013C7 and P1\u2013P7 plan",
+  "basis": "All27 map-only persisted controls agree; no actual shared-runtime or coordinate codec implementation has passed.",
+  "status": "PLANNED_NOT_IMPLEMENTED",
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false,
+  "steps": [
+    {
+      "order": 1,
+      "existingLane": "C5/P1 shared transform identity",
+      "implementationPaths": [
+        "scripts/testing/coverage-provenance.mjs",
+        "tests/testing/coverage-provenance.test.mjs"
+      ],
+      "task": "Introduce a versioned transform/converter/coordinate contract and full per-script identity. Pin actual original source, transform result/code/map hashes, tsconfig and compiler options, Vite/SSR/provider versions and file hashes, Node/V8, class-method/ignore-node policy, module URL and observed execution wrapper. Unsupported/mixed contracts reject before conversion.",
+      "dependsOn": [],
+      "validationAndAcceptance": "Pure finite/Unicode/CRLF/astral-source controls, changed options/hash, unsupported provider and authored helper/SSR-lookalike controls reject or retain every original node. No profile is globally admitted by this metadata step.",
+      "status": "PLANNED_NOT_IMPLEMENTED",
+      "rollback": "Revert the new adapter/contract integration on its review branch; preserve original raw evidence, old provider behavior, source scope and100% thresholds. Never rewrite a receipt or silently merge incompatible data."
+    },
+    {
+      "order": 2,
+      "existingLane": "C5/P1 real Node transform boundary",
+      "implementationPaths": [
+        "scripts/testing/coverage-node-bootstrap.mjs",
+        "scripts/testing/collect-node-coverage.mjs",
+        "new bounded Node coverage entry/evaluator adapter"
+      ],
+      "task": "Use the public Vite moduleRunnerTransform/ModuleRunner interfaces for a participating execution experiment instead of patching tsx or node_modules. Capture actual transformed body before it executes and actual Debugger.getScriptSource bytes after compilation. Bind the observed complete wrapper and UTF-16 prefix offset; the canonical Vitest evaluator records codeDefinition.length, while a default Vite evaluator is a different implementation. Keep only the existing in-process P1 suite admitted.",
+      "dependsOn": [
+        1
+      ],
+      "validationAndAcceptance": "A credential-free bounded synthetic runtime executes used functions and leaves untouched originals/branches at zero. Stored wrapper+body reconstruct the exact runtime script, ranges fit its UTF-16 length, body/map/original hashes agree, module identity is unambiguous and owned cleanup completes. Zero-counter remap(...,0,...) controls do not pass this acceptance.",
+      "status": "PLANNED_NOT_IMPLEMENTED",
+      "rollback": "Revert the new adapter/contract integration on its review branch; preserve original raw evidence, old provider behavior, source scope and100% thresholds. Never rewrite a receipt or silently merge incompatible data."
+    },
+    {
+      "order": 3,
+      "existingLane": "C5/P1 exact converter behavior",
+      "implementationPaths": [
+        "scripts/testing/coverage-provenance.mjs",
+        "new version-pinned coverage provider adapter",
+        "tests/testing/coverage-provenance.test.mjs"
+      ],
+      "task": "Load the installed provider through the package getProvider entry and delegate its existing conversion/SSR policy through a guarded adapter. remapCoverage is an implementation hook, so verify its pinned implementation, options and availability rather than treating it as a stable API. Record why each ignored generated node is transform output. Fail collection if an authored helper/SSR lookalike could be hidden; do not delete original arrows or static blocks merely by name.",
+      "dependsOn": [
+        1,
+        2
+      ],
+      "validationAndAcceptance": "Three complete map shapes match for the exact source under the declared policy; original named/anonymous arrows, class members, dynamic imports and uncalled functions retain their correct nodes and zero counts. Changed/missing policy or unknown wrapper rejects. No old V8 ranges are applied to reconstructed code.",
+      "status": "PLANNED_NOT_IMPLEMENTED",
+      "rollback": "Revert the new adapter/contract integration on its review branch; preserve original raw evidence, old provider behavior, source scope and100% thresholds. Never rewrite a receipt or silently merge incompatible data."
+    },
+    {
+      "order": 4,
+      "existingLane": "C5/P1 typed coordinate wire codec",
+      "implementationPaths": [
+        "scripts/testing/coverage-provenance.mjs",
+        "tests/testing/coverage-provenance.test.mjs"
+      ],
+      "task": "Implement separate strict raw validation and typed wire encoding/decoding. Attest positive Infinity only at legitimate mapped end.column origins, and complete four-undefined implicit-else locations only with their actual branch/AST provenance. Preserve IDs, names, node/arm counts, every zero and hit-vector dimension. Keep raw sentinel sidecars hash-bound before serialization.",
+      "dependsOn": [
+        1,
+        2,
+        3
+      ],
+      "validationAndAcceptance": "Reject NaN, negative Infinity, raw null, fractional/negative/boolean/out-of-range positions, arbitrary partial undefined fields, absent/mismatched sidecars and source/hash changes. Tagged legitimate sentinels roundtrip without changing counts. Legacy untyped JSON never acquires the contract through JSON serialization.",
+      "status": "PLANNED_NOT_IMPLEMENTED",
+      "rollback": "Revert the new adapter/contract integration on its review branch; preserve original raw evidence, old provider behavior, source scope and100% thresholds. Never rewrite a receipt or silently merge incompatible data."
+    },
+    {
+      "order": 5,
+      "existingLane": "C5/P1 canonical raw capture",
+      "implementationPaths": [
+        "new custom Vitest coverage provider module",
+        "vitest.platform.config.ts",
+        "tests/testing/coverage-provenance.test.mjs"
+      ],
+      "task": "Use the supported custom coverage-provider lifecycle to wrap the existing V8 provider and retain actual pre-serialization conversion output, moduleExecutionInfo and wrapper/source/code/map provenance. Preserve all existing includes, exclusions, reporters, source files, unexecuted original nodes and all four 100% thresholds. Do not edit installed packages.",
+      "dependsOn": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "validationAndAcceptance": "Focused actual Vitest runs pass unchanged assertions and emit validated raw/typed sidecars; complete map denominator and actual counts remain equivalent to the delegated provider. A source-bound canonical baseline is newly collected under this declared contract; old untyped snapshots remain historical.",
+      "status": "PLANNED_NOT_IMPLEMENTED",
+      "rollback": "Revert the new adapter/contract integration on its review branch; preserve original raw evidence, old provider behavior, source scope and100% thresholds. Never rewrite a receipt or silently merge incompatible data."
+    },
+    {
+      "order": 6,
+      "existingLane": "C5/P2 fresh actual P1 proof",
+      "implementationPaths": [
+        "tests/fabric-replica-generation.test.mjs",
+        "scripts/testing/collect-node-coverage.mjs",
+        "new immutable reports/coverage-producer cohort"
+      ],
+      "task": "Run the actual existing two-assertion suite from a fresh unchanged source freeze under the participating Node execution/typed contract. Compare all nine complete statement/function/branch maps against a same-source fresh canonical producer and preserve runtime bytes/maps/raw counters before cleanup. Never substitute empty control counters for execution.",
+      "dependsOn": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "validationAndAcceptance": "Both actual assertions pass, all originals/maps/runtime hashes and wrapper offsets validate, every complete map agrees under the same decoded typed contract, untouched originals remain zero, snapshots are unique and all owned processes are gone. Any mismatch leaves every affected profile UNMERGED.",
+      "status": "PLANNED_NOT_IMPLEMENTED",
+      "rollback": "Revert the new adapter/contract integration on its review branch; preserve original raw evidence, old provider behavior, source scope and100% thresholds. Never rewrite a receipt or silently merge incompatible data."
+    },
+    {
+      "order": 7,
+      "existingLane": "C5/P2 compatible merge admission",
+      "implementationPaths": [
+        "complete-map compatibility gate",
+        "scripts/testing/run-all.py",
+        "immutable merged-profile receipt"
+      ],
+      "task": "Only after steps1\u20136 pass, admit complete compatible profiles with source/contract identity and explicit snapshot reset/overlap semantics. Preserve the original denominator and zero-hit files; retain native corroboration separately so the same snapshot is not counted twice.",
+      "dependsOn": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "validationAndAcceptance": "Missing/changed files, malformed maps, differing functions/branch arms, duplicate producer/snapshot identities, overlapping windows or unsupported policy fail. Recompute actual coverage from real counters; neither this trace nor a successful P1 collection establishes 100%.",
+      "status": "PLANNED_NOT_IMPLEMENTED",
+      "rollback": "Revert the new adapter/contract integration on its review branch; preserve original raw evidence, old provider behavior, source scope and100% thresholds. Never rewrite a receipt or silently merge incompatible data."
+    },
+    {
+      "order": 8,
+      "existingLane": "Existing P3\u2013P7 and C6/C7 remain",
+      "implementationPaths": [
+        "scripts/testing/helpers-database-postgres.mjs",
+        "scripts/testing/integration-browser.mjs",
+        "scripts/testing/page80-acceptance.mjs",
+        "all existing language/shared/page ledgers"
+      ],
+      "task": "Continue existing SQL daemon ownership before SQL admission, actual server/child coverage before HTTP admission, actual browser/worker/reload coverage and separate Python/Go/Rust/C++ measurement. Then perform the stable integrated master and all exact feature, accessibility, provider, deployed and capacity gates.",
+      "dependsOn": [
+        7
+      ],
+      "validationAndAcceptance": "Keep all80 page declarations,2162 sections,12972 dimensions and all original/global work. No threshold, source exclusion, stale proof, map-only control or startup-only success substitutes for platform acceptance.",
+      "status": "PLANNED_NOT_IMPLEMENTED",
+      "rollback": "Revert the new adapter/contract integration on its review branch; preserve original raw evidence, old provider behavior, source scope and100% thresholds. Never rewrite a receipt or silently merge incompatible data."
+    }
+  ],
+  "criticalPath": "Versioned identity + actual execution/wrapper capture + exact original-node conversion + typed raw codec + both producer capture -> fresh same-source execution -> complete compatibility -> only then merge",
+  "parallelization": "Raw codec regression design and execution-adapter development may proceed in disjoint files/branches after shared identity/schema is agreed. Source freeze, actual profile collection and merge admission are serialized. No source changes during an active master or release rehearsal."
+}

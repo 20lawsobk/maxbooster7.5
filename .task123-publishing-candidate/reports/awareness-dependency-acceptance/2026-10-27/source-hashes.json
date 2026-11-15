@@ -1,0 +1,16 @@
+{
+  "after": {
+    "server/services/generationAwareness.ts": "59efc5d787457263b316dad6ea301cd79368816a668fdf5d18955d25a4f27032",
+    "tests/unit/required-awareness-dependency.test.ts": "273592ffa638e1c87e1e27038263c84e6d08e9c791f3f07e7f91edf2de61513e",
+    "server/services/maxcoreClient.ts": "ad73dd7c7ccfb41ceed3ad45a18b16f9d05c6aeb11d77e5876fa3a64ab27a5d1",
+    "server/services/maxcoreControlTransport.ts": "e698de83a85bd3d7e53e3598ca27814cb3899256963bdf24d48e6ca9ad39e00f",
+    "server/services/awarenessContext.ts": "fce2be35f15e6d1debfe0ad9f1ff763eb6e9a422103b4c274a070a10ffc21e01",
+    "server/routes/careerCoach.ts": "2f78b10846fc394819b01b9d33202e986ca09c1534ffabf65406ed8bf22f905a",
+    "tests/feature-revenue-merch.test.ts": "924f087eb8359799a5cd880087e7cd737eed5caaa86913dc76011b9ed38cc2f7",
+    "tests/ai-analytics-integration.test.ts": "85448e877fe126fb9a195b3c542d053c674dd3cab66e77efa9ae904eacc11aa3",
+    "scripts/testing/integration-browser.mjs": "fb481f18f985d6d7e748d4f00dd067e536980ac03a495bdb2149030b9448f4b6"
+  },
+  "beforeGenerationAwarenessSha256": "6bc5cfbc7792542e6a9910d35222c22e930d0bbc0be14827707b1aaba21071f8",
+  "beforeMatchesTrackedHeadAndReadOnlyProbe": true,
+  "newTestUnchangedAcrossBeforeAndAfter": true
+}

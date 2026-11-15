@@ -1,0 +1,5 @@
+/tmp/maxbooster-python312-test-tools/coverage/core.py:108: CoverageWarning: Couldn't import C tracer: No module named 'coverage.tracer' (no-ctracer); see https://coverage.readthedocs.io/en/7.17.2/messages.html#warning-no-ctracer
+  warn(f"Couldn't import C tracer: {IMPORT_ERROR}", slug="no-ctracer", once=True)
+/tmp/maxbooster-python312-test-tools/coverage/control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.17.2/messages.html#warning-no-data-collected
+  self._warn("No data was collected.", slug="no-data-collected")
+fsspec 2026.9.0: all three template attacks rejected; torch round-trip passed

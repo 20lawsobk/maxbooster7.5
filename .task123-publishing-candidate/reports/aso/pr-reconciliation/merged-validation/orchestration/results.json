@@ -1,0 +1,281 @@
+{
+  "sourceRevision": "253b69cca4c57068494de0d8a6d1b950feb19ec9",
+  "startedAt": "2026-11-07T00:27:35.217935+00:00",
+  "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
+  "testScope": {
+    "policy": "scripts/testing/repo-test-scope.json",
+    "policySha256": "e65fbd7cb154e5fb1130240df53159c8ddbf9c1a2181db1e6dcdcc9fbd93294b",
+    "standaloneAppVariantFilesExcluded": [
+      {
+        "path": ".github/workflows/build-desktop.yml",
+        "variant": "desktop",
+        "reason": "Desktop packaging workflow is not an acceptance target for the web release."
+      },
+      {
+        "path": ".github/workflows/build-mobile.yml",
+        "variant": "mobile",
+        "reason": "Standalone mobile packaging workflow is not an acceptance target for the web release."
+      },
+      {
+        "path": "capacitor.config.json",
+        "variant": "mobile",
+        "reason": "Capacitor packaging configuration is excluded; responsive mobile web behavior remains in scope."
+      },
+      {
+        "path": "capacitor.config.ts",
+        "variant": "mobile",
+        "reason": "Capacitor packaging configuration is excluded; responsive mobile web behavior remains in scope."
+      },
+      {
+        "path": "electron-builder.config.cjs",
+        "variant": "desktop",
+        "reason": "Standalone Electron packaging configuration is not part of the web production-readiness run."
+      },
+      {
+        "path": "electron/assets/entitlements.mac.plist",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/assets/icon.png",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/main.js",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/package.json",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/preload.js",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "electron/runtime-policy.cjs",
+        "variant": "desktop",
+        "reason": "Standalone Electron application packaging/runtime is excluded; the web application and shared backend remain in scope."
+      },
+      {
+        "path": "packages/electron-download-transport/index.cjs",
+        "variant": "desktop",
+        "reason": "Electron-only packaging transport is excluded; shared web download and export services remain in scope."
+      },
+      {
+        "path": "packages/electron-download-transport/package.json",
+        "variant": "desktop",
+        "reason": "Electron-only packaging transport is excluded; shared web download and export services remain in scope."
+      },
+      {
+        "path": "scripts/patch-electron-builder-transport.mjs",
+        "variant": "desktop",
+        "reason": "Desktop packaging patch/setup is not run by the web repository readiness suite."
+      },
+      {
+        "path": "scripts/testing/electron-asar-module-acceptance.mjs",
+        "variant": "desktop",
+        "reason": "Standalone Electron archive acceptance is excluded from the default web readiness run."
+      },
+      {
+        "path": "tests/desktop-runtime-policy.test.mjs",
+        "variant": "desktop",
+        "reason": "Standalone desktop runtime policy test is not required when the desktop app follows the web release."
+      },
+      {
+        "path": "tests/electron-asar-launch-policy.test.mjs",
+        "variant": "desktop",
+        "reason": "Standalone Electron archive-launch test is not required when the desktop app follows the web release."
+      }
+    ],
+    "retainedWebScope": [
+      {
+        "path": "client/src/**",
+        "reason": "All browser routes and responsive desktop/mobile web interfaces remain in scope, including pages named DesktopApp."
+      },
+      {
+        "path": "server/**",
+        "reason": "Shared APIs and backend services remain in scope regardless of which client consumes them."
+      },
+      {
+        "path": "shared/**",
+        "reason": "Shared runtime code remains in scope."
+      }
+    ],
+    "generatedPathPolicy": {
+      "segments": [
+        "reports",
+        "dist",
+        "node_modules",
+        "__pycache__",
+        ".snapshots",
+        "archive-capsules",
+        ".cache",
+        "target"
+      ],
+      "prefixes": [
+        ".pdim-"
+      ],
+      "nonRuntimeSegments": [
+        "docs"
+      ],
+      "reason": "Generated outputs, reports and retained snapshots do not count as active source or execution inputs."
+    }
+  },
+  "requestedGroups": [
+    "root",
+    "http",
+    "checks"
+  ],
+  "selectedGroups": [
+    "checks",
+    "http",
+    "root"
+  ],
+  "targetedValidation": true,
+  "productionReady": false,
+  "allTestsPassed": false,
+  "status": "targeted_groups_passed",
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:27:36.648680+00:00",
+      "durationSeconds": 34.965,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/pr-reconciliation/merged-validation/orchestration/build.txt",
+      "logSha256": "7606fae93572cffa1bfa7ac30ffa8f8d7637f67acb08dc540f9271218344b58d",
+      "group": "checks",
+      "id": "build"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:ci"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:28:11.614101+00:00",
+      "durationSeconds": 200.477,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/pr-reconciliation/merged-validation/orchestration/ci.txt",
+      "logSha256": "11a0d4f98c90c350b5bdc99c41a6260eed05d1fc59794671e4b83b82954489a2",
+      "group": "root",
+      "id": "ci",
+      "unitReportFresh": true
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "vitest.additional.config.ts",
+        "--reporter=verbose",
+        "--reporter=junit",
+        "--outputFile=/home/runner/workspace/reports/aso/pr-reconciliation/merged-validation/root/additional.junit.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:31:32.092956+00:00",
+      "durationSeconds": 1.019,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/pr-reconciliation/merged-validation/orchestration/additional.txt",
+      "logSha256": "1852058e1673d4ddc72a46dbf2a370234875125bc8ec228af18f9e8a701ef860",
+      "group": "root",
+      "id": "additional"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/integration-browser.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:31:33.112906+00:00",
+      "durationSeconds": 182.22,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/pr-reconciliation/merged-validation/orchestration/http.txt",
+      "logSha256": "585eee7f1d69d1139171ce941909dedcefc9096120b5016db632657b79edcec1",
+      "group": "http",
+      "id": "http"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:34:35.335393+00:00",
+      "durationSeconds": 86.176,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/pr-reconciliation/merged-validation/orchestration/types.txt",
+      "logSha256": "eaa3c2f7e8dd8818ea6a01f255a27a62fbf8480a449f74685fd86974a944d9cb",
+      "group": "checks",
+      "id": "types"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:36:01.512459+00:00",
+      "durationSeconds": 54.682,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/pr-reconciliation/merged-validation/orchestration/lint.txt",
+      "logSha256": "06da543667ff102b992477b32f1825628ff2dfc482d6132e417c6e1e0c4501cb",
+      "group": "checks",
+      "id": "lint"
+    },
+    {
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=high",
+        "--json"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-11-07T00:36:56.195113+00:00",
+      "durationSeconds": 1.329,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/aso/pr-reconciliation/merged-validation/orchestration/audit.txt",
+      "logSha256": "5c9b55df7f0b92658c7f948aba398954f3aa512fd657480a879baad7e7fa1e4d",
+      "group": "checks",
+      "id": "audit"
+    }
+  ],
+  "postprocessing": [],
+  "sourceInputsSha256": "59060b8ddb4ddd4a7b622bdcaacad99170b9d871fb9a41ad8ab8a016cda1d94f",
+  "catalog": {
+    "status": "skipped",
+    "exitCode": 0,
+    "reason": "Targeted validation does not produce a platform inventory."
+  },
+  "sourceInputsUnchanged": true,
+  "changedSourceInputs": [],
+  "finishedAt": "2026-11-07T00:37:01.513409+00:00"
+}

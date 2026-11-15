@@ -1,0 +1,696 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="11" skipped="0" tests="22" time="4.953" timestamp="2026-10-25T22:43:50.834279+00:00" hostname="2fc971e77ddd"><testcase classname="tests.test_dedicated_handler_routing" name="test_ads_meta_uses_social_awareness_but_keeps_network_identity" time="2.356"><failure message="fastapi.exceptions.HTTPException: 503: Selected model unavailable">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6e08e060f0&gt;
+
+    def test_ads_meta_uses_social_awareness_but_keeps_network_identity(monkeypatch):
+        import server
+        import storage_client
+    
+        class Ads:
+            def get_winning_formula(self, *_args):
+                return None
+    
+        monkeypatch.setattr(storage_client, "get_ads_client", lambda: Ads())
+        monkeypatch.setattr(storage_client, "get_curriculum_client",
+                            lambda: SimpleNamespace(get_top_performers=lambda *a, **k: []))
+        seen = []
+    
+        async def creative(**kwargs):
+            seen.append(kwargs)
+            return {"content_type": kwargs["ad_type"], "source": "model",
+                    "asset_status": "spec_only"}
+    
+        monkeypatch.setattr(server, "_generate_ad_creative", creative)
+        monkeypatch.setattr(server, "_merged_awareness_for",
+                            lambda req: f"social={req.platform}; {req.awareness}")
+        monkeypatch.setattr(server, "_effective_awareness",
+                            lambda platform, text: f"{text}; buffered={platform}")
+        req = server.AdGenerateRequest(
+            user_id="artist", product="Paper Lanterns", platform="meta",
+            target_subtypes=["video", "audio", "text", "image"],
+            num_creatives=4, awareness={"contextString": "quiet harbor"},
+        )
+&gt;       result = asyncio.run(server.ads_generate(req, _key={}))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_dedicated_handler_routing.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (AdGenerateRequest(seed=None, awareness='{"contextString": "quiet harbor"}', awareness_provenance={'contextString': 'q...ate_peak=True, genre=None, artist_name=None, vary_subtypes=True, target_subtypes=['video', 'audio', 'text', 'image']),)
+kwargs = {'_key': {}}
+
+    @functools.wraps(handler)
+    async def wrapped(*args, **kwargs):
+        from ai_model.awareness import bind, current_snapshot, AwarenessUnavailable
+        from contextlib import ExitStack
+        from ai_model.generation.awareness import sampling_snapshot
+        scope = ExitStack()
+        bound = signature.bind(*args, **kwargs)
+        req = bound.arguments.get("req", bound.arguments.get("body", bound.arguments.get("request")))
+        try:
+            plan_input = (await req.json() if isinstance(req, Request) else
+                          {"operation": handler.__name__} if req is None else req)
+            # Only the explicitly opted-in text entrypoints have this
+            # deterministic branch. It routes requested modality slots;
+            # it never samples a generative checkpoint or produces copy.
+            planning_only = deterministic_planner and getattr(req, "mode", None) == "planner"
+            controls = (plan_input.get("dedicated_controls") if isinstance(plan_input, dict)
+                        else getattr(req, "dedicated_controls", None))
+            rendering_only = dedicated_media and controls is not None
+            if controls is not None:
+                if not dedicated_media or specification or planning_only:
+                    raise HTTPException(status_code=422, detail="This route does not support dedicated media controls")
+                if modality not in {"image", "audio", "video"} or not isinstance(controls, dict):
+                    raise HTTPException(status_code=422, detail="dedicated_controls must be a media controls object")
+                if not _request_job_owner.get():
+                    raise HTTPException(status_code=403, detail="Authenticated private owner required for durable media")
+            model_independent = planning_only or rendering_only
+            snapshot = sampling_snapshot() if active_plan.get() is not None else current_snapshot()
+            if snapshot is not None:
+                try:
+                    scope.enter_context(bind(snapshot))
+                except AwarenessUnavailable:
+                    snapshot = None
+            if (model_independent or globals().get("_live_serving_model") is not None) and snapshot is None:
+                raise AwarenessUnavailable("Live awareness unavailable for generation: fresh public snapshot required")
+            pinned_release = None
+            if not model_independent and globals().get("_live_serving_model") is not None:
+                from ai_model.generation.live_serving import LiveModelUnavailable
+                try:
+                    pinned_release = scope.enter_context(_live_serving_model.pin())
+                except LiveModelUnavailable as exc:
+                    raise HTTPException(status_code=503, detail=str(exc)) from exc
+            if not model_independent and pinned_release is None and not _model_ready:
+&gt;               raise HTTPException(status_code=503, detail="Selected model unavailable")
+E               fastapi.exceptions.HTTPException: 503: Selected model unavailable
+
+server.py:4415: HTTPException</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_ad_script_uses_agent_run_and_exposes_source" time="0.018" /><testcase classname="tests.test_dedicated_handler_routing" name="test_ad_script_failure_is_not_disguised_as_template" time="0.002" /><testcase classname="tests.test_dedicated_handler_routing" name="test_ad_awareness_fallback_is_not_claimed_as_generated" time="0.001" /><testcase classname="tests.test_dedicated_handler_routing" name="test_campaign_passes_platform_specific_awareness_to_builder" time="0.002"><failure message="fastapi.exceptions.HTTPException: 503: Selected model unavailable">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6de2f14e30&gt;
+
+    def test_campaign_passes_platform_specific_awareness_to_builder(monkeypatch):
+        import server
+        import ai_model.generation as generation
+    
+        captured = {}
+    
+        def build_campaign(**kwargs):
+            captured.update(kwargs)
+            return {"phases": []}
+    
+        monkeypatch.setattr(generation, "build_campaign", build_campaign)
+        monkeypatch.setattr(server, "_merged_awareness_for",
+                            lambda req: "quiet harbor")
+        monkeypatch.setattr(server, "_effective_awareness",
+                            lambda platform, raw: f"{raw}; platform={platform}")
+        req = server.ApiGenerateCampaignRequest(
+            title="Paper Lanterns", platforms=["instagram"], weeks=2)
+&gt;       result = asyncio.run(server.api_generate_campaign(req, _key={}))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_dedicated_handler_routing.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (ApiGenerateCampaignRequest(seed=None, awareness='', awareness_provenance=None, description='', prompt_url='', instruc...elease_date=None, mood=None, bpm=None, key=None, artistProfileId=None, generate_images=False, generate_teasers=False),)
+kwargs = {'_key': {}}
+
+    @functools.wraps(handler)
+    async def wrapped(*args, **kwargs):
+        from ai_model.awareness import bind, current_snapshot, AwarenessUnavailable
+        from contextlib import ExitStack
+        from ai_model.generation.awareness import sampling_snapshot
+        scope = ExitStack()
+        bound = signature.bind(*args, **kwargs)
+        req = bound.arguments.get("req", bound.arguments.get("body", bound.arguments.get("request")))
+        try:
+            plan_input = (await req.json() if isinstance(req, Request) else
+                          {"operation": handler.__name__} if req is None else req)
+            # Only the explicitly opted-in text entrypoints have this
+            # deterministic branch. It routes requested modality slots;
+            # it never samples a generative checkpoint or produces copy.
+            planning_only = deterministic_planner and getattr(req, "mode", None) == "planner"
+            controls = (plan_input.get("dedicated_controls") if isinstance(plan_input, dict)
+                        else getattr(req, "dedicated_controls", None))
+            rendering_only = dedicated_media and controls is not None
+            if controls is not None:
+                if not dedicated_media or specification or planning_only:
+                    raise HTTPException(status_code=422, detail="This route does not support dedicated media controls")
+                if modality not in {"image", "audio", "video"} or not isinstance(controls, dict):
+                    raise HTTPException(status_code=422, detail="dedicated_controls must be a media controls object")
+                if not _request_job_owner.get():
+                    raise HTTPException(status_code=403, detail="Authenticated private owner required for durable media")
+            model_independent = planning_only or rendering_only
+            snapshot = sampling_snapshot() if active_plan.get() is not None else current_snapshot()
+            if snapshot is not None:
+                try:
+                    scope.enter_context(bind(snapshot))
+                except AwarenessUnavailable:
+                    snapshot = None
+            if (model_independent or globals().get("_live_serving_model") is not None) and snapshot is None:
+                raise AwarenessUnavailable("Live awareness unavailable for generation: fresh public snapshot required")
+            pinned_release = None
+            if not model_independent and globals().get("_live_serving_model") is not None:
+                from ai_model.generation.live_serving import LiveModelUnavailable
+                try:
+                    pinned_release = scope.enter_context(_live_serving_model.pin())
+                except LiveModelUnavailable as exc:
+                    raise HTTPException(status_code=503, detail=str(exc)) from exc
+            if not model_independent and pinned_release is None and not _model_ready:
+&gt;               raise HTTPException(status_code=503, detail="Selected model unavailable")
+E               fastapi.exceptions.HTTPException: 503: Selected model unavailable
+
+server.py:4415: HTTPException</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_studio_soundtrack_deadline_covers_admission_and_render" time="0.001" /><testcase classname="tests.test_dedicated_handler_routing" name="test_internal_model_and_health_listeners_are_loopback_only" time="0.002" /><testcase classname="tests.test_dedicated_handler_routing" name="test_requested_pathtrace_passes_subject_and_rejects_unsupported" time="0.026"><failure message="AssertionError: assert 503 == 422&#10; +  where 503 = HTTPException(status_code=503, detail='Selected model unavailable').status_code&#10; +    where HTTPException(status_code=503, detail='Selected model unavailable') = &lt;ExceptionInfo HTTPException(status_code=503, detail='Selected model unavailable') tblen=5&gt;.value">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6de2f17bc0&gt;
+
+    def test_requested_pathtrace_passes_subject_and_rejects_unsupported(monkeypatch):
+        import server
+        import ai_model.rta as rta
+        import ai_model.generation as generation
+        import ai_model.request_intelligence as ri
+    
+        subject = []
+    
+        def reject(**kwargs):
+            subject.append(kwargs["prompt"])
+            raise ValueError("RTA tracer cannot represent the requested subject")
+    
+        async def in_thread(fn):
+            return fn()
+    
+        brief = SimpleNamespace(layout="square_1_1", tone="cinematic",
+                                keywords=[], ai_disclosure=False,
+                                to_dict=lambda: {})
+        monkeypatch.setattr(ri, "build_brief", lambda **kwargs: brief)
+        monkeypatch.setattr(ri, "visual_style_from_brief", lambda brief: [])
+        monkeypatch.setattr(ri, "best_image_headline",
+                            lambda *args: ("Lanterns", 0, 0))
+        monkeypatch.setattr(generation, "extract_technique", lambda **kwargs: None)
+        monkeypatch.setattr(server, "_merged_awareness_for", lambda req: "")
+        monkeypatch.setattr(server, "_effective_awareness", lambda *args: "")
+        monkeypatch.setattr(server, "_visual_spec_agent", None)
+        monkeypatch.setattr(server, "_image_engine", None)
+        monkeypatch.setattr(server, "_in_thread", in_thread)
+        monkeypatch.setattr(rta.api, "render_image", reject)
+        req = server.ApiGenerateImageRequest(
+            prompt="Paper lanterns reflected in a quiet harbor",
+            render_engine="pathtraced", slots=[{"platform": "instagram"}])
+        with pytest.raises(HTTPException) as err:
+            asyncio.run(server.api_generate_image(req, _key={}))
+&gt;       assert err.value.status_code == 422
+E       AssertionError: assert 503 == 422
+E        +  where 503 = HTTPException(status_code=503, detail='Selected model unavailable').status_code
+E        +    where HTTPException(status_code=503, detail='Selected model unavailable') = &lt;ExceptionInfo HTTPException(status_code=503, detail='Selected model unavailable') tblen=5&gt;.value
+
+tests/test_dedicated_handler_routing.py:183: AssertionError</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_soundtrack_passes_genre_mood_and_intent_to_isolated_renderer" time="0.005" /><testcase classname="tests.test_dedicated_handler_routing" name="test_dataset_audio_reports_bytes_and_targets_not_invented_measurements" time="0.007"><failure message="ai_model.awareness.engine.AwarenessUnavailable: Generation cache requires an immutable request plan">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6de2f92bd0&gt;
+tmp_path = PosixPath('&lt;scratch&gt;/pytest-of-agent/pytest-0/test_dataset_audio_reports_byt0')
+
+    def test_dataset_audio_reports_bytes_and_targets_not_invented_measurements(
+            monkeypatch, tmp_path):
+        import base64
+        import threading
+        import server
+        import storage_client
+        import ai_model.audio.track_selector as selector
+        import ai_model.audio.producer_tools as producer
+        import ai_model.video.ffmpeg_util as ffmpeg
+    
+        sample = {"idx": 3, "bpm": 126.9, "key": "G major",
+                  "genres": ["hip-hop"]}
+    
+        class Storage:
+            def get(self, key):
+                if key == "mb:dataset:audio:meta":
+                    return {"num_chunks": 1, "index": [sample]}
+                if key == "mb:dataset:audio:chunk:3":
+                    return {**sample, "source": "dataset",
+                            "b64": base64.b64encode(b"source-audio").decode()}
+                return None
+    
+        def fake_ffmpeg(command, **kwargs):
+            from pathlib import Path
+            Path(command[-1]).write_bytes(b"encoded-audio")
+            return SimpleNamespace(returncode=0, stderr="")
+    
+        monkeypatch.setattr(server, "_UPLOADS_PATH", tmp_path)
+        monkeypatch.setattr(server, "_AUDIO_RENDER_CACHE", {})
+        monkeypatch.setattr(server, "_AUDIO_RENDER_CACHE_LOCK", threading.Lock())
+        monkeypatch.setattr(storage_client, "get_storage", lambda: Storage())
+        monkeypatch.setattr(selector, "select_audio_sample",
+                            lambda *args: (sample, False))
+        monkeypatch.setattr(ffmpeg, "run_ffmpeg", fake_ffmpeg)
+        monkeypatch.setattr(producer, "master_export",
+                            lambda src, dst, **kw: dst.write_bytes(b"encoded-audio"))
+&gt;       result = server._render_audio_from_dataset(
+            "audio_test", 92, "C minor", 4,
+            {"preferred_genres": ["hip-hop"], "loudness_lufs": -14})
+
+tests/test_dedicated_handler_routing.py:246: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+server.py:9822: in _render_audio_from_dataset
+    _generation_plan_hash()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _generation_plan_hash():
+        from ai_model.generation.plan import active_plan
+        from ai_model.awareness import AwarenessUnavailable
+        plan = active_plan.get()
+        if plan is None:
+&gt;           raise AwarenessUnavailable("Generation cache requires an immutable request plan")
+E           ai_model.awareness.engine.AwarenessUnavailable: Generation cache requires an immutable request plan
+
+server.py:1601: AwarenessUnavailable</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_model_script_guard_rejects_template_and_awareness" time="0.001" /><testcase classname="tests.test_dedicated_handler_routing" name="test_generic_content_rejects_stale_cached_awareness" time="0.002" /><testcase classname="tests.test_dedicated_handler_routing" name="test_api_content_rejects_cached_fake_score" time="0.053" /><testcase classname="tests.test_dedicated_handler_routing" name="test_api_text_rejects_legacy_cached_score" time="0.002" /><testcase classname="tests.test_dedicated_handler_routing" name="test_api_content_fresh_copy_is_model_text_without_fake_scores" time="0.002"><failure message="AssertionError: assert 'model' == 'ai_model'&#10;  &#10;  - ai_model&#10;  ? ---&#10;  + model">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6de2f15df0&gt;
+
+    def test_api_content_fresh_copy_is_model_text_without_fake_scores(monkeypatch):
+        import server
+        import ai_model.generation as generation
+        import ai_model.request_intelligence as ri
+    
+        brief = SimpleNamespace(
+            tone="authentic", hashtags_target=0, ai_disclosure=False,
+            to_dict=lambda: {})
+    
+        class Agent:
+            def run(self, request):
+                return SimpleNamespace(
+                    source="model", hook="Paper lanterns by the harbor",
+                    body="An instrumental for a quiet night",
+                    cta="Listen to Paper Lanterns")
+    
+        monkeypatch.setattr(server, "_model_ready", True)
+        monkeypatch.setattr(server, "_script_agent", Agent())
+        monkeypatch.setattr(generation, "build_context",
+                            lambda *a, **kw: SimpleNamespace(brief=brief, awareness=""))
+        monkeypatch.setattr(ri, "apply_disclosure", lambda caption, brief: caption)
+        monkeypatch.setattr(server, "_effective_awareness", lambda *args: "")
+        monkeypatch.setattr(server, "_get_storage_mode", lambda: "live")
+        req = server.ApiGenerateContentRequest(
+            platform="instagram", topic="Paper Lanterns", tone="authentic",
+            artistProfileId="bypass-cache", include_hashtags=False)
+        result = asyncio.run(server.api_generate_content(req, _key={}))
+&gt;       assert result["source"] == "ai_model"
+E       AssertionError: assert 'model' == 'ai_model'
+E         
+E         - ai_model
+E         ? ---
+E         + model
+
+tests/test_dedicated_handler_routing.py:374: AssertionError</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_alias_media_endpoints_mark_asset_identifiers_as_specs" time="0.002"><failure message="fastapi.exceptions.HTTPException: 503: Selected model unavailable">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6de2f156d0&gt;
+
+    def test_alias_media_endpoints_mark_asset_identifiers_as_specs(monkeypatch):
+        import server
+    
+        monkeypatch.setattr(server, "_model_ready", False)
+        monkeypatch.setattr(server, "_visual_spec_agent", None)
+        monkeypatch.setattr(server, "_script_agent", None)
+        monkeypatch.setattr(server, "_merged_awareness_for", lambda req: "")
+        monkeypatch.setattr(server, "_effective_awareness", lambda *args: "")
+        req = server.MaxcoreMediaRequest(
+            step={"params": {"slots": [{"id": "cover", "platform": "instagram"}]}},
+            inputs={"normalized": {"semantic": {"topic": "Paper Lanterns"}}})
+        for handler in (server.maxcore_generate_image, server.maxcore_generate_audio,
+                        server.maxcore_generate_video):
+&gt;           result = asyncio.run(handler(req, _key={}))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_dedicated_handler_routing.py:392: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (MaxcoreMediaRequest(seed=None, awareness='', awareness_provenance=None, description='', prompt_url='', instruction=No...ots': [{'id': 'cover', 'platform': 'instagram'}]}}, inputs={'normalized': {'semantic': {'topic': 'Paper Lanterns'}}}),)
+kwargs = {'_key': {}}
+
+    @functools.wraps(handler)
+    async def wrapped(*args, **kwargs):
+        from ai_model.awareness import bind, current_snapshot, AwarenessUnavailable
+        from contextlib import ExitStack
+        from ai_model.generation.awareness import sampling_snapshot
+        scope = ExitStack()
+        bound = signature.bind(*args, **kwargs)
+        req = bound.arguments.get("req", bound.arguments.get("body", bound.arguments.get("request")))
+        try:
+            plan_input = (await req.json() if isinstance(req, Request) else
+                          {"operation": handler.__name__} if req is None else req)
+            # Only the explicitly opted-in text entrypoints have this
+            # deterministic branch. It routes requested modality slots;
+            # it never samples a generative checkpoint or produces copy.
+            planning_only = deterministic_planner and getattr(req, "mode", None) == "planner"
+            controls = (plan_input.get("dedicated_controls") if isinstance(plan_input, dict)
+                        else getattr(req, "dedicated_controls", None))
+            rendering_only = dedicated_media and controls is not None
+            if controls is not None:
+                if not dedicated_media or specification or planning_only:
+                    raise HTTPException(status_code=422, detail="This route does not support dedicated media controls")
+                if modality not in {"image", "audio", "video"} or not isinstance(controls, dict):
+                    raise HTTPException(status_code=422, detail="dedicated_controls must be a media controls object")
+                if not _request_job_owner.get():
+                    raise HTTPException(status_code=403, detail="Authenticated private owner required for durable media")
+            model_independent = planning_only or rendering_only
+            snapshot = sampling_snapshot() if active_plan.get() is not None else current_snapshot()
+            if snapshot is not None:
+                try:
+                    scope.enter_context(bind(snapshot))
+                except AwarenessUnavailable:
+                    snapshot = None
+            if (model_independent or globals().get("_live_serving_model") is not None) and snapshot is None:
+                raise AwarenessUnavailable("Live awareness unavailable for generation: fresh public snapshot required")
+            pinned_release = None
+            if not model_independent and globals().get("_live_serving_model") is not None:
+                from ai_model.generation.live_serving import LiveModelUnavailable
+                try:
+                    pinned_release = scope.enter_context(_live_serving_model.pin())
+                except LiveModelUnavailable as exc:
+                    raise HTTPException(status_code=503, detail=str(exc)) from exc
+            if not model_independent and pinned_release is None and not _model_ready:
+&gt;               raise HTTPException(status_code=503, detail="Selected model unavailable")
+E               fastapi.exceptions.HTTPException: 503: Selected model unavailable
+
+server.py:4415: HTTPException</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool" time="0.003"><failure message="AssertionError: Regex pattern did not match.&#10;  Expected regex: 'stop before media encoding'&#10;  Actual message: 'Generation cache requires an immutable request plan'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6de2f232c0&gt;
+tmp_path = PosixPath('&lt;scratch&gt;/pytest-of-agent/pytest-0/test_audio_explicit_direction_0')
+
+    def test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool(monkeypatch, tmp_path):
+        import server
+        import storage_client
+    
+        class Storage:
+            def get(self, key):
+                if key == "mb:dataset:audio:meta":
+                    return {"num_chunks": 1, "index": [
+                        {"idx": 3, "bpm": 126.9, "key": "G major", "genres": ["hip-hop"]}]}
+                raise AssertionError("explicit piano/calm request must not fetch pool bytes")
+    
+        monkeypatch.setattr(storage_client, "get_storage", lambda: Storage())
+        monkeypatch.setattr(server, "_UPLOADS_PATH", tmp_path)
+        captured = {}
+    
+        def synth(job_id, bpm, key, **kwargs):
+            captured.update({"bpm": bpm, "key": key, **kwargs})
+            raise RuntimeError("stop before media encoding")
+    
+        monkeypatch.setattr(server, "_render_audio_clip", synth)
+&gt;       with pytest.raises(RuntimeError, match="stop before media encoding"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'stop before media encoding'
+E         Actual message: 'Generation cache requires an immutable request plan'
+
+tests/test_dedicated_handler_routing.py:418: AssertionError</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_audio_synth_receives_actual_instrument_and_prompt" time="0.043"><failure message="AssertionError: Regex pattern did not match.&#10;  Expected regex: 'stop before waveform rendering'&#10;  Actual message: 'Generation cache requires an immutable request plan'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6de2f22c90&gt;
+
+    def test_audio_synth_receives_actual_instrument_and_prompt(monkeypatch):
+        import server
+        import ai_model.audio.digital_gpu_synth as synth
+    
+        captured = {}
+    
+        def render(**kwargs):
+            captured.update(kwargs)
+            raise RuntimeError("stop before waveform rendering")
+    
+        monkeypatch.setattr(synth, "render_audio_clip", render)
+&gt;       with pytest.raises(RuntimeError, match="stop before waveform rendering"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'stop before waveform rendering'
+E         Actual message: 'Generation cache requires an immutable request plan'
+
+tests/test_dedicated_handler_routing.py:444: AssertionError</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_audio_reference_mode_rejects_unfulfillable_piano_direction" time="0.002"><failure message="AssertionError: assert 503 == 422&#10; +  where 503 = HTTPException(status_code=503, detail='Selected model unavailable').status_code&#10; +    where HTTPException(status_code=503, detail='Selected model unavailable') = &lt;ExceptionInfo HTTPException(status_code=503, detail='Selected model unavailable') tblen=5&gt;.value">def test_audio_reference_mode_rejects_unfulfillable_piano_direction():
+        import server
+    
+        req = server.ApiGenerateAudioRequest(
+            reference_sample_idx=3, prompt="Mellow piano with soft drums",
+            genre="hip-hop", mood="calm")
+        with pytest.raises(HTTPException) as err:
+            asyncio.run(server.api_generate_audio(req, _key={}))
+&gt;       assert err.value.status_code == 422
+E       AssertionError: assert 503 == 422
+E        +  where 503 = HTTPException(status_code=503, detail='Selected model unavailable').status_code
+E        +    where HTTPException(status_code=503, detail='Selected model unavailable') = &lt;ExceptionInfo HTTPException(status_code=503, detail='Selected model unavailable') tblen=5&gt;.value
+
+tests/test_dedicated_handler_routing.py:462: AssertionError</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_audio_handler_caller_mood_and_targets_beat_fast_priors[calm-calm]" time="0.002"><failure message="fastapi.exceptions.HTTPException: 503: Selected model unavailable">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6de29f6150&gt;
+request_mood = 'calm', expected_mood = 'calm'
+
+    @pytest.mark.parametrize(("request_mood", "expected_mood"), [
+        ("calm", "calm"), (None, "mellow"),
+    ])
+    def test_audio_handler_caller_mood_and_targets_beat_fast_priors(
+            monkeypatch, request_mood, expected_mood):
+        import server
+        import ai_model.request_intelligence as ri
+        import ai_model.generation as generation
+        import ai_model.isolated_audio as isolated
+        import ai_model.media_contract as contract
+    
+        jobs = {}
+        seen = {}
+        monkeypatch.setattr(server, "_active_jobs", {})
+        monkeypatch.setattr(server, "_model_ready", False)
+        monkeypatch.setattr(server, "_merged_awareness_for", lambda req: "")
+        monkeypatch.setattr(server, "_effective_awareness", lambda *args: "")
+        monkeypatch.setattr(server, "_extract_awareness_genres", lambda text: ["dance"])
+        monkeypatch.setattr(server, "_extract_awareness_moods", lambda text: ["vibrant"])
+        monkeypatch.setattr(server, "_job_write", lambda key, data: jobs.update({key: data}))
+        monkeypatch.setattr(server, "_job_read", lambda key: jobs.get(key))
+        monkeypatch.setattr(server, "_job_update",
+                            lambda key, data: jobs[key].update(data))
+        monkeypatch.setattr(server, "_fw_ingest_audio_render", lambda *args: None)
+    
+        class Thread:
+            def __init__(self, target, name=None, **kwargs):
+                self.target, self.name = target, name
+    
+            def start(self):
+                if self.name and self.name.startswith("ApiAudioJob-"):
+                    self.target()
+    
+            def join(self, **kwargs):
+                pass
+    
+        monkeypatch.setattr(server.threading, "Thread", Thread)
+        brief = SimpleNamespace(tempo="fast", mood="vibrant", tone="vibrant",
+                                to_dict=lambda: {
+                                    "producer_metadata": {"mood": "vibrant", "energy": 0.9}})
+        monkeypatch.setattr(ri, "build_brief", lambda **kw: brief)
+        monkeypatch.setattr(generation, "extract_technique",
+                            lambda **kw: SimpleNamespace(tempo=130, key="G major",
+                                                         to_dict=lambda: {"energy": 0.9}))
+        monkeypatch.setattr(contract, "render_with_budget", lambda render, **kw: render())
+    
+        def render(exports, request, path, **kwargs):
+            seen.update(request["opts"])
+            return {"url": "/uploads/audio_test.mp3", "waveform_source": "digital_gpu_synthesis"}
+    
+        monkeypatch.setattr(isolated, "render_isolated", render)
+        req = server.ApiGenerateAudioRequest(
+            prompt="Mellow piano instrumental with soft drums", genre="hip-hop",
+            mood=request_mood, target_bpm=82, target_key="C minor",
+            duration=4, instrument="piano")
+&gt;       result = asyncio.run(server.api_generate_audio(req, _key={}))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_dedicated_handler_routing.py:520: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (ApiGenerateAudioRequest(seed=None, awareness='', awareness_provenance=None, description='', prompt_url='', instructio..., format=None, sample_rate=None, bit_depth=None, loudness_lufs=None, loudness_preset=None, stems=False, arrange=None),)
+kwargs = {'_key': {}}
+
+    @functools.wraps(handler)
+    async def wrapped(*args, **kwargs):
+        from ai_model.awareness import bind, current_snapshot, AwarenessUnavailable
+        from contextlib import ExitStack
+        from ai_model.generation.awareness import sampling_snapshot
+        scope = ExitStack()
+        bound = signature.bind(*args, **kwargs)
+        req = bound.arguments.get("req", bound.arguments.get("body", bound.arguments.get("request")))
+        try:
+            plan_input = (await req.json() if isinstance(req, Request) else
+                          {"operation": handler.__name__} if req is None else req)
+            # Only the explicitly opted-in text entrypoints have this
+            # deterministic branch. It routes requested modality slots;
+            # it never samples a generative checkpoint or produces copy.
+            planning_only = deterministic_planner and getattr(req, "mode", None) == "planner"
+            controls = (plan_input.get("dedicated_controls") if isinstance(plan_input, dict)
+                        else getattr(req, "dedicated_controls", None))
+            rendering_only = dedicated_media and controls is not None
+            if controls is not None:
+                if not dedicated_media or specification or planning_only:
+                    raise HTTPException(status_code=422, detail="This route does not support dedicated media controls")
+                if modality not in {"image", "audio", "video"} or not isinstance(controls, dict):
+                    raise HTTPException(status_code=422, detail="dedicated_controls must be a media controls object")
+                if not _request_job_owner.get():
+                    raise HTTPException(status_code=403, detail="Authenticated private owner required for durable media")
+            model_independent = planning_only or rendering_only
+            snapshot = sampling_snapshot() if active_plan.get() is not None else current_snapshot()
+            if snapshot is not None:
+                try:
+                    scope.enter_context(bind(snapshot))
+                except AwarenessUnavailable:
+                    snapshot = None
+            if (model_independent or globals().get("_live_serving_model") is not None) and snapshot is None:
+                raise AwarenessUnavailable("Live awareness unavailable for generation: fresh public snapshot required")
+            pinned_release = None
+            if not model_independent and globals().get("_live_serving_model") is not None:
+                from ai_model.generation.live_serving import LiveModelUnavailable
+                try:
+                    pinned_release = scope.enter_context(_live_serving_model.pin())
+                except LiveModelUnavailable as exc:
+                    raise HTTPException(status_code=503, detail=str(exc)) from exc
+            if not model_independent and pinned_release is None and not _model_ready:
+&gt;               raise HTTPException(status_code=503, detail="Selected model unavailable")
+E               fastapi.exceptions.HTTPException: 503: Selected model unavailable
+
+server.py:4415: HTTPException</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_audio_handler_caller_mood_and_targets_beat_fast_priors[None-mellow]" time="0.002"><failure message="fastapi.exceptions.HTTPException: 503: Selected model unavailable">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6de29f7a70&gt;
+request_mood = None, expected_mood = 'mellow'
+
+    @pytest.mark.parametrize(("request_mood", "expected_mood"), [
+        ("calm", "calm"), (None, "mellow"),
+    ])
+    def test_audio_handler_caller_mood_and_targets_beat_fast_priors(
+            monkeypatch, request_mood, expected_mood):
+        import server
+        import ai_model.request_intelligence as ri
+        import ai_model.generation as generation
+        import ai_model.isolated_audio as isolated
+        import ai_model.media_contract as contract
+    
+        jobs = {}
+        seen = {}
+        monkeypatch.setattr(server, "_active_jobs", {})
+        monkeypatch.setattr(server, "_model_ready", False)
+        monkeypatch.setattr(server, "_merged_awareness_for", lambda req: "")
+        monkeypatch.setattr(server, "_effective_awareness", lambda *args: "")
+        monkeypatch.setattr(server, "_extract_awareness_genres", lambda text: ["dance"])
+        monkeypatch.setattr(server, "_extract_awareness_moods", lambda text: ["vibrant"])
+        monkeypatch.setattr(server, "_job_write", lambda key, data: jobs.update({key: data}))
+        monkeypatch.setattr(server, "_job_read", lambda key: jobs.get(key))
+        monkeypatch.setattr(server, "_job_update",
+                            lambda key, data: jobs[key].update(data))
+        monkeypatch.setattr(server, "_fw_ingest_audio_render", lambda *args: None)
+    
+        class Thread:
+            def __init__(self, target, name=None, **kwargs):
+                self.target, self.name = target, name
+    
+            def start(self):
+                if self.name and self.name.startswith("ApiAudioJob-"):
+                    self.target()
+    
+            def join(self, **kwargs):
+                pass
+    
+        monkeypatch.setattr(server.threading, "Thread", Thread)
+        brief = SimpleNamespace(tempo="fast", mood="vibrant", tone="vibrant",
+                                to_dict=lambda: {
+                                    "producer_metadata": {"mood": "vibrant", "energy": 0.9}})
+        monkeypatch.setattr(ri, "build_brief", lambda **kw: brief)
+        monkeypatch.setattr(generation, "extract_technique",
+                            lambda **kw: SimpleNamespace(tempo=130, key="G major",
+                                                         to_dict=lambda: {"energy": 0.9}))
+        monkeypatch.setattr(contract, "render_with_budget", lambda render, **kw: render())
+    
+        def render(exports, request, path, **kwargs):
+            seen.update(request["opts"])
+            return {"url": "/uploads/audio_test.mp3", "waveform_source": "digital_gpu_synthesis"}
+    
+        monkeypatch.setattr(isolated, "render_isolated", render)
+        req = server.ApiGenerateAudioRequest(
+            prompt="Mellow piano instrumental with soft drums", genre="hip-hop",
+            mood=request_mood, target_bpm=82, target_key="C minor",
+            duration=4, instrument="piano")
+&gt;       result = asyncio.run(server.api_generate_audio(req, _key={}))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_dedicated_handler_routing.py:520: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (ApiGenerateAudioRequest(seed=None, awareness='', awareness_provenance=None, description='', prompt_url='', instructio..., format=None, sample_rate=None, bit_depth=None, loudness_lufs=None, loudness_preset=None, stems=False, arrange=None),)
+kwargs = {'_key': {}}
+
+    @functools.wraps(handler)
+    async def wrapped(*args, **kwargs):
+        from ai_model.awareness import bind, current_snapshot, AwarenessUnavailable
+        from contextlib import ExitStack
+        from ai_model.generation.awareness import sampling_snapshot
+        scope = ExitStack()
+        bound = signature.bind(*args, **kwargs)
+        req = bound.arguments.get("req", bound.arguments.get("body", bound.arguments.get("request")))
+        try:
+            plan_input = (await req.json() if isinstance(req, Request) else
+                          {"operation": handler.__name__} if req is None else req)
+            # Only the explicitly opted-in text entrypoints have this
+            # deterministic branch. It routes requested modality slots;
+            # it never samples a generative checkpoint or produces copy.
+            planning_only = deterministic_planner and getattr(req, "mode", None) == "planner"
+            controls = (plan_input.get("dedicated_controls") if isinstance(plan_input, dict)
+                        else getattr(req, "dedicated_controls", None))
+            rendering_only = dedicated_media and controls is not None
+            if controls is not None:
+                if not dedicated_media or specification or planning_only:
+                    raise HTTPException(status_code=422, detail="This route does not support dedicated media controls")
+                if modality not in {"image", "audio", "video"} or not isinstance(controls, dict):
+                    raise HTTPException(status_code=422, detail="dedicated_controls must be a media controls object")
+                if not _request_job_owner.get():
+                    raise HTTPException(status_code=403, detail="Authenticated private owner required for durable media")
+            model_independent = planning_only or rendering_only
+            snapshot = sampling_snapshot() if active_plan.get() is not None else current_snapshot()
+            if snapshot is not None:
+                try:
+                    scope.enter_context(bind(snapshot))
+                except AwarenessUnavailable:
+                    snapshot = None
+            if (model_independent or globals().get("_live_serving_model") is not None) and snapshot is None:
+                raise AwarenessUnavailable("Live awareness unavailable for generation: fresh public snapshot required")
+            pinned_release = None
+            if not model_independent and globals().get("_live_serving_model") is not None:
+                from ai_model.generation.live_serving import LiveModelUnavailable
+                try:
+                    pinned_release = scope.enter_context(_live_serving_model.pin())
+                except LiveModelUnavailable as exc:
+                    raise HTTPException(status_code=503, detail=str(exc)) from exc
+            if not model_independent and pinned_release is None and not _model_ready:
+&gt;               raise HTTPException(status_code=503, detail="Selected model unavailable")
+E               fastapi.exceptions.HTTPException: 503: Selected model unavailable
+
+server.py:4415: HTTPException</failure></testcase><testcase classname="tests.test_dedicated_handler_routing" name="test_daw_and_social_model_failures_are_service_unavailable" time="0.002" /></testsuite></testsuites>

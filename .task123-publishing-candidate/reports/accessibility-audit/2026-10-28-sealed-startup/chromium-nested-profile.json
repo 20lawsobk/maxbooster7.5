@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/usr/bin/chromium",
+    "--headless=new",
+    "--no-sandbox",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--disable-background-networking",
+    "--no-first-run",
+    "--remote-debugging-port=0",
+    "--user-data-dir=/tmp/maxbooster-test-b7pyb73q/layout-a11y-o0dcc5ex",
+    "about:blank"
+  ],
+  "profilePathLength": 50,
+  "exitCode": 0,
+  "listening": true,
+  "terminatedByFixtureAfter4s": true,
+  "credentialEnvironment": false
+}

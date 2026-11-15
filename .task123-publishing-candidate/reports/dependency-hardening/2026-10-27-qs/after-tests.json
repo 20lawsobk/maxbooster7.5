@@ -1,0 +1,20 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=junit",
+    "tests/qs-security-contract.test.mjs",
+    "tests/legacy-security-update.test.mjs",
+    "tests/http-dependency-consumers.test.mjs",
+    "tests/dependency-security-paths.test.mjs",
+    "tests/dependency-advisories.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-27T22:21:22.878906+00:00",
+  "durationSeconds": 2.588,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/after-tests.xml",
+  "logSha256": "d7425d1f3fc441e2db2723c00cbbde1538e5427b86df44bfbfa8f27463688607"
+}

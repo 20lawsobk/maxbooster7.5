@@ -1,0 +1,16 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=junit",
+    "tests/qs-security-contract.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-27T22:16:57.868770+00:00",
+  "durationSeconds": 0.421,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/before-tests.xml",
+  "logSha256": "528512fd54c7ad660db959094085c3128e395706ddfdaff3466746eefc49c0b8"
+}

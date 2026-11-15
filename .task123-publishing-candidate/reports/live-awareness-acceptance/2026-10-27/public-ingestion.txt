@@ -1,0 +1,29 @@
+{
+  "check": "public-read-only-ingestion",
+  "sources": [
+    {
+      "source": "apple_charts",
+      "domain": "music",
+      "rows": 50,
+      "passed": true
+    },
+    {
+      "source": "mastodon_trending",
+      "domain": "social",
+      "rows": 20,
+      "passed": false
+    },
+    {
+      "source": "marketing_dive",
+      "domain": "advertising",
+      "rows": 10,
+      "passed": true
+    },
+    {
+      "source": "guardian_culture",
+      "domain": "culture",
+      "rows": 26,
+      "passed": true
+    }
+  ]
+}

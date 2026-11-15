@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T02:25:02.142747+00:00",
+  "status": "passed_targeted_packaging_and_isolation",
+  "scope": "Exact MaxCore runtime upload exclusion, real tar roundtrip and owned temporary canonical retrieval tests; full platform/release/deployment gates remain separate",
+  "productionReady": false,
+  "sources": {
+    "scripts/lib/production-simulation-copy.mjs": "be50ab13e1c69ecb93c6aa6f804dff1cbc4e87731ea7a1ed1a0c59b2aed89d02",
+    "script/lib/capsulePack.ts": "3cbaf9ad914192d1e7d34e379ce219a673396f265ea9ca8e74ecc693682e3451",
+    "tests/unit/production-simulation-copy.test.ts": "5aaa923dff8d18620f5f910ecd31bc7c3096ba0212b6512747f169a92b64aec9",
+    "tests/unit/capsule-pack-restore-roundtrip.test.ts": "3036e388abc1274d3f4a2e006d882f86e025511ba58d5fea251eb26fe2f0c5ff",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py": "443598baf5030e0fe136804507492f1e1a9bb08dd4abe9937ca17ed530d0dfa2",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py": "5a960476962079db68d39fcb414cd8a0ae67beba7214fddf8385fd9426595534"
+  },
+  "packagingBefore": {
+    "tests": 11,
+    "failures": 2,
+    "errors": 0,
+    "skips": 0
+  },
+  "packagingAfter": {
+    "tests": 14,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "pythonEvidence": "python/receipt.json",
+  "newReleasePrepared": false,
+  "coldStartupRun": false,
+  "noSourceUploadDeletion": true,
+  "cachePolicyBypass": false
+}

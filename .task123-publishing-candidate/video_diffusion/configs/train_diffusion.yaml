@@ -1,0 +1,46 @@
+vae:
+  in_ch: 3
+  base_ch: 128
+  ch_mult: [1, 2, 4, 4]
+  temporal_down: [1, 2, 2, 2]
+  latent_ch: 16
+
+vae_ckpt: checkpoints/autoencoder/ae_best.pt
+
+dit:
+  in_ch: 16
+  embed_dim: 1024
+  depth: 24
+  n_heads: 16
+  pt: 2
+  ph: 4
+  pw: 4
+  time_dim: 256
+
+text:
+  dim: 768
+
+diffusion:
+  num_steps: 1000
+  schedule: cosine
+
+data:
+  root: /data/video_dataset
+  n_frames: 16
+  height: 256
+  width: 256
+  text_dim: 768
+  text_len: 77
+
+train:
+  total_steps: 500000
+  batch_size: 8
+  num_workers: 8
+  lr: 1.0e-4
+  weight_decay: 0.01
+  cfg_dropout: 0.1
+  warmup_steps: 5000
+  log_every: 100
+  ckpt_every: 5000
+  out_dir: checkpoints/diffusion
+  resume: ""

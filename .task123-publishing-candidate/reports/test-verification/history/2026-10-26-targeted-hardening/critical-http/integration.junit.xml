@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="50" failures="0" errors="0" time="3.123596632">
+    <testsuite name="tests/critical-paths.test.ts" timestamp="2026-10-26T12:49:02.491Z" hostname="2fc971e77ddd" tests="50" failures="0" errors="0" skipped="3" time="3.123596632">
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should register a new user" time="0.459837247">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject duplicate email registration" time="0.05961871">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject invalid email format" time="0.053255806">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject short password" time="0.040143062">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should login with correct credentials" time="0.323748253">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject login with wrong password" time="0.303887524">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should return user from /api/auth/me when authenticated" time="0.031926164">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should return null from /api/auth/me when unauthenticated" time="0.02580156">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 2. Profile Management &gt; should get user profile" time="0.027146338">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 2. Profile Management &gt; should update profile" time="0.028199627">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 2. Profile Management &gt; should strip XSS from profile fields" time="0.073137602">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should list live distribution platforms through a connected Too Lost account" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; requires a connected distributor before claiming a live DSP catalog" time="0.031445353">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should create a release" time="0.032575728">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should reject a release draft without its required title" time="0.030964377">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should list user releases" time="0.036976978">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should get provider-confirmed earnings for an owned distributor connection" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; does not present shared or missing provider earnings as personal revenue" time="0.030737199">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should get HyperFollow links" time="0.029705458">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should schedule a post" time="0.437838909">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should reject post without required fields" time="0.02821468">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should list user posts" time="0.029641006">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; does not claim publication before a platform connection and provider confirmation" time="0.071739488">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should reject publishing non-existent post" time="0.031721099">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should get social metrics" time="0.030848232">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should get hashtags from available MaxCore generation" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; reports unavailable hashtag generation without invented trend metrics" time="0.038931395">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should get inbox messages" time="0.042356622">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should generate AI content" time="0.035753531">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should get subscription status" time="0.059651058">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should list billing plans" time="0.059256003">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should get billing history" time="0.050873758">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should get invoices" time="0.055520613">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 6. Studio - DAW Features &gt; should list projects" time="0.034670904">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 6. Studio - DAW Features &gt; should get sample library" time="0.030646047">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 6. Studio - DAW Features &gt; should get project templates" time="0.033383866">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 7. Search &amp; Discovery &gt; should perform unified search" time="0.043351778">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 7. Search &amp; Discovery &gt; should handle empty search gracefully" time="0.031552575">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 8. Career Coach &gt; should read an owned saved recommendation without claiming fresh generation" time="0.038584912">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 8. Career Coach &gt; should get goals" time="0.029146861">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 9. Contracts &amp; Collaborations &gt; should list contract templates" time="0.028139632">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 9. Contracts &amp; Collaborations &gt; should list collaboration connections" time="0.027103528">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 10. Analytics &gt; should get analytics dashboard" time="0.043232372">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should provide CSRF token" time="0.024182487">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should reject malformed JSON" time="0.004234507">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should handle SQL injection attempt safely" time="0.031167884">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should return 404 for non-existent API routes" time="0.03020349">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 12. OAuth Connection Graceful Failures &gt; should return error for unsupported platform" time="0.031468182">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 13. Logout &gt; should logout successfully" time="0.029785378">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 13. Logout &gt; should not access protected routes after logout" time="0.031504563">
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -1,0 +1,51 @@
+{
+  "observedAt": "2026-10-29T22:58:18.451154+00:00",
+  "scope": "Outside-only narrow candidate; not landed; no production approval",
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "rootFilesUnchangedAgainstHead": true,
+  "candidateFiles": {
+    "scripts/testing/run-node-suites.py": "30733c63ca033859719f576df6277e7b88fd895bcbb5510b592c58db7431ec7e",
+    "tests/testing/test_catalog_snapshot_ownership.py": "1d366498a40f609f10f00dea4d615a69c3192f44e0897e23d4ad7fd1137a3d32",
+    "docs/testing/node-coverage-producer.md": "d63d3f0600ea1dec675bf831fefa5bb2ae4f29f186a6b2443ae6e6dfa301da15"
+  },
+  "rootFiles": {
+    "scripts/testing/run-node-suites.py": "bdae9321758f45e4eb1c857918bbc000e50565c6b2b7acb50ba9ab7fa778998e",
+    "tests/testing/test_catalog_snapshot_ownership.py": "ab062f6aba7079b7b2bf87f74ffdbf534d5a4efb45b4ff9b12964add2bca5883",
+    "docs/testing/node-coverage-producer.md": "144afca2a0b0dc9c5137fb5c24eccd3ddd9b3b00968ac6cd037a5a8120009cbf"
+  },
+  "rootUnitAssertionsChanged": false,
+  "globalThresholdsChanged": false,
+  "testScopesChanged": false,
+  "regressionTests": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "baselineNegativeControl": {
+    "exitCode": 1,
+    "expectedFailure": "Parent-owned child incorrectly appears among canonical standalone files"
+  },
+  "discovery": {
+    "beforeFiles": 126,
+    "afterFiles": 125,
+    "removedRealSuites": 0,
+    "removedSupportFiles": [
+      "scripts/testing/coverage-node-vite-entry.mjs"
+    ],
+    "newFiles": 0,
+    "exactCatalogParity": true
+  },
+  "actualP1": {
+    "exitCode": 0,
+    "assertionsPassed": 2,
+    "assertionsSkipped": 0,
+    "originalProfiles": 9,
+    "completeMapComparisonsPassed": 27,
+    "sourceInputsUnchanged": true,
+    "globalCoverageUnchanged": true,
+    "remainingLiveOwnedPids": 0,
+    "mergedIntoGlobalCoverage": false
+  },
+  "patchApplyCheck": true,
+  "knownFirstAttempt": "p1-command.txt records missing copied coverage-provenance.mjs setup dependency; producer output not created. Original dependency then copied byte-for-byte, successful retry retained."
+}

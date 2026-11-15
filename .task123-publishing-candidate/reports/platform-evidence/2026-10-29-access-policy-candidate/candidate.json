@@ -1,0 +1,30 @@
+{
+  "status": "CANDIDATE_NOT_LANDED",
+  "scope": "Three access-policy links only; two require all actual five denied account states, authenticated success and anonymous exact body; public plans require genuinely anonymous request",
+  "files": [
+    {
+      "file": "tests/billing-lifecycle.test.ts",
+      "beforeSha256": "4fa8ee102099997981b1f1370e8b5162a494dec1c2835db1e47559920e143bfe",
+      "afterSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421"
+    },
+    {
+      "file": "tests/file-management.test.ts",
+      "beforeSha256": "65e4c00bd698becb27406b4fa804cedfc9b92d3d023b13c80f72bd7ad8cb04dc",
+      "afterSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392"
+    },
+    {
+      "file": "tests/helpers-http-fixture.ts",
+      "beforeSha256": "bfd04e3007011c9d4950a678c60f4916a7462239bfb3ff1433223e325dfdf451",
+      "afterSha256": "040ef393ee8d1122815424be716794c3b57331521420a4131afd93a0f2824837"
+    },
+    {
+      "file": "tests/platform-acceptance-map.json",
+      "beforeSha256": "3762913a9145117de82cce57ef5232978093e8d8a79c99dc8b24f5fb8e402315",
+      "afterSha256": "fdf034abff7cd2d870cae58f4ed49ee46d9d889772f9e324cf6d9998d3b56553"
+    }
+  ],
+  "links": 9,
+  "newDeniedStateCases": 10,
+  "executionStatus": "PENDING_ACTUAL_ISOLATED_HTTP",
+  "fixtureClientIdentity": "Existing owned-loopback per-client selector; warm/denied/restored requests share one stable TEST-NET client per policy state, with real rate/abuse gates retained"
+}

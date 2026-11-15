@@ -1,0 +1,51 @@
+{
+  "checks": {
+    "health-endpoint": {
+      "weight": 2
+    },
+    "env-config": {
+      "config": {
+        "excludeVars": [
+          "CLUSTER_WORKER_ID",
+          "NODE_OPTIONS",
+          "PATH",
+          "npm_package_version",
+          "READINESS_EGRESS_GUARD",
+          "READINESS_ISOLATED_PG"
+        ]
+      },
+      "required": true
+    },
+    "port-contract": {
+      "weight": 2
+    },
+    "production-build": {
+      "required": true,
+      "weight": 3
+    },
+    "secrets-scan": {
+      "required": true,
+      "weight": 3
+    },
+    "typecheck": {
+      "required": true,
+      "weight": 2
+    },
+    "unit-tests": {
+      "required": true,
+      "weight": 3
+    }
+  },
+  "description": "Balanced baseline for any production service. No industry-specific weighting.",
+  "displayName": "Generic",
+  "name": "generic",
+  "notes": [
+    "Start here, then copy this file and re-weight for your industry.",
+    "env-config excludes only OS/Node metadata, the launcher-assigned cluster worker ID, and the two guarded isolated-readiness test switches."
+  ],
+  "thresholds": {
+    "conditionalGo": 65,
+    "go": 85
+  },
+  "version": "1.0.0"
+}

@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: cancellation reason is written in the same release transaction without replacing other metadata
+ok 1 - cancellation reason is written in the same release transaction without replacing other metadata
+  ---
+  duration_ms: 1.651542
+  type: 'test'
+  ...
+# Subtest: actual engine preserves reservations through pending bank payout, completes only on paid
+ok 2 - actual engine preserves reservations through pending bank payout, completes only on paid
+  ---
+  duration_ms: 0.625314
+  type: 'test'
+  ...
+# Subtest: actual engine keeps ambiguous provider failures reserved under the same operation ID
+ok 3 - actual engine keeps ambiguous provider failures reserved under the same operation ID
+  ---
+  duration_ms: 0.655669
+  type: 'test'
+  ...
+# Subtest: actual engine reverses a failed bank transfer before releasing reservations
+ok 4 - actual engine reverses a failed bank transfer before releasing reservations
+  ---
+  duration_ms: 0.502568
+  type: 'test'
+  ...
+# Subtest: actual engine does not fund a new withdrawal after source refund hold
+ok 5 - actual engine does not fund a new withdrawal after source refund hold
+  ---
+  duration_ms: 0.472132
+  type: 'test'
+  ...
+# Subtest: actual engine reconciles refund totals and retries failed recovery without imaginary cash
+ok 6 - actual engine reconciles refund totals and retries failed recovery without imaginary cash
+  ---
+  duration_ms: 0.428767
+  type: 'test'
+  ...
+# Subtest: actual allocation contract conserves all cents and rejects invalid contracts
+ok 7 - actual allocation contract conserves all cents and rejects invalid contracts
+  ---
+  duration_ms: 7.043325
+  type: 'test'
+  ...
+# Subtest: actual Stripe adapter recovers transfers beyond key TTL, uses account-scoped bank keys
+ok 8 - actual Stripe adapter recovers transfers beyond key TTL, uses account-scoped bank keys
+  ---
+  duration_ms: 0.660746
+  type: 'test'
+  ...
+# Subtest: actual repository books conserved fee/net journals and order fulfillment in one transaction
+ok 9 - actual repository books conserved fee/net journals and order fulfillment in one transaction
+  ---
+  duration_ms: 8.268594
+  type: 'test'
+  ...
+# Subtest: actual repository rolls back ledger booking when fulfillment persistence fails
+ok 10 - actual repository rolls back ledger booking when fulfillment persistence fails
+  ---
+  duration_ms: 0.839086
+  type: 'test'
+  ...
+# Subtest: actual engine resolves an ambiguous bank request before acting on a later refund
+ok 11 - actual engine resolves an ambiguous bank request before acting on a later refund
+  ---
+  duration_ms: 0.301775
+  type: 'test'
+  ...
+# Subtest: actual repository reopens returned bank funds, but holds overlapping refund recoveries
+ok 12 - actual repository reopens returned bank funds, but holds overlapping refund recoveries
+  ---
+  duration_ms: 0.548388
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 249.924077

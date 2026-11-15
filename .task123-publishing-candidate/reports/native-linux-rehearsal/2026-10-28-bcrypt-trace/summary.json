@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "status": "CONFIRMED_NATIVE_PACKAGING_DEFECTS_FIXED_DESKTOP_LAUNCH_UNVERIFIED",
+  "productionReady": false,
+  "policyBefore": {
+    "cases": 9,
+    "failures": 3
+  },
+  "combinedPolicyLegacyAfter": {
+    "cases": 18,
+    "failures": 0,
+    "skips": 0
+  },
+  "configuredLinuxDirPackagingPassed": true,
+  "actualDefaultBcryptPasswordChecksPassed": true,
+  "globalPrebuildEnvironmentOverrideUsedInAcceptance": false,
+  "bcryptHostRebuildExcluded": true,
+  "publishedPlatformBinariesRetained": 10,
+  "actualZodTensorFlowSharpOperationsPassed": true,
+  "sharpWarningsRetained": true,
+  "expectedPrivateConfigurationGuardObserved": true,
+  "configurationRejectionIsNotAReplitMissingKeyClaim": true,
+  "completeApplicationReadinessVerified": false,
+  "normalGuiSandboxVerified": false,
+  "namedContainerRemoved": true,
+  "sourceInputs": {
+    "electron/main.js": "7dfcb67b36f2d3f62b85a6c30310cf5919f3a5dc47046b74da80a382de2c779b",
+    "electron/runtime-policy.cjs": "00584c7e0d272ac6eb44c3cab9d5a487c91def15f27d6343289fec11db5edee2",
+    "package.json": "b5aa58bb5b6fc2263c07855a50c7159ddada8a5a2c9468c6295a77f4b1faa28e",
+    "tools/legacy-security-update.json": "52ab4886723189d43d5916fc0ebbd974603d0c2fb76c53da379bbe32909bda4d",
+    "scripts/testing/electron-asar-module-acceptance.mjs": "6b638eb50c83ee8f8bdc1883cf51ae8951c281e7f5aa6453721dd25ea2cf2f44",
+    "tests/electron-asar-launch-policy.test.mjs": "099a9ab4babb0d38ba8fec9e224cec5e0f2b34cd4d102dd377e9af8c7137994f"
+  },
+  "postReviewCleanup": {
+    "artifactsVerifiedBeforeCleanup": 138,
+    "latestSourceHashesMatched": 6,
+    "knownGeneratedTreesRemoved": 6,
+    "observedTmpFreeIncreaseBytes": 7192363008,
+    "electronZipAndCachesPreserved": true,
+    "allTrackedNativeBuildProcessesAbsent": true,
+    "existingContainerMountReferences": 0,
+    "procInspectionLimitExplicit": true
+  }
+}

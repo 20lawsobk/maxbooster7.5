@@ -6,7 +6,7 @@ it does not establish the state of a running deployment.
 
 ## Development and ordinary production compilation
 
-Use the configured Node 24 runtime and pinned npm 10.9.9 for the root checkout.
+Use Node 24 and the pinned npm 11.19.1 for the root checkout:
 The source requires Node 22.12 or newer; Replit selects Node 24 in `.replit`:
 
 ```sh
@@ -90,9 +90,11 @@ The Publishing tool currently selects a dedicated **16 vCPU / 64 GiB RAM**
 machine. Machine sizing is selected in Publishing and is not encoded in
 `.replit`; the build and startup commands are encoded there. Replit applies the
 selected machine configuration to those commands.
-The shared deployment capacity module is the source of the **16 vCPU / 64 GiB**
-ceiling used by build plans, the executor, capsule/release helpers, and runtime
-worker sizing. The admin scaling metrics read cgroup CPU and memory usage
+The project requests a **16 vCPU / 64 GiB** Reserved VM. Confirm the selected
+machine size and region in Publishing settings; source configuration does not
+prove the live selection. The shared deployment capacity module is the source
+of the **16 vCPU / 64 GiB** ceiling used by build plans, the executor,
+capsule/release helpers, and runtime worker sizing. The admin scaling metrics read cgroup CPU and memory usage
 against the same live capacity; host load average is labeled separately.
 Each build tool receives its per-task CPU assignment; worker counts cannot
 exceed the shared ceiling or live cgroup capacity. The optional prepared-release

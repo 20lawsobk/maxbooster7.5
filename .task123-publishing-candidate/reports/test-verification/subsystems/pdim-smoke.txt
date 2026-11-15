@@ -1,0 +1,100 @@
+
+PDIM Smoke + Load Test Suite
+Target: http://127.0.0.1:<ephemeral>/api
+
+
+── Infrastructure Health
+  ✓ GET /healthz → 200 ok (33ms)
+  ✓ GET /autopush/status → running + progress (3ms)
+  ✓ GET /monitor/scale → rate-limit + lua pool present (5ms)
+  ✓ GET /redis/instances → lists system instances (3ms)
+
+── Instance Lifecycle
+  ✓ POST /redis/instances → create test instance (234ms)
+  ✓ GET /redis/instances/:id → instance info (2ms)
+
+── Auth
+  ✓ No token → 401 (5ms)
+  ✓ Wrong token → 403 (3ms)
+
+── String Commands
+  ✓ PING (4ms)
+  ✓ SET / GET (7ms)
+  ✓ SET EX / TTL (4ms)
+  ✓ SET NX (only if not exists) (6ms)
+  ✓ INCR / INCRBY / DECR / DECRBY (35ms)
+  ✓ APPEND / STRLEN / GETRANGE (6ms)
+  ✓ MSET / MGET (3ms)
+  ✓ EXISTS / DEL (6ms)
+  ✓ EXPIRE / PERSIST / PTTL (7ms)
+  ✓ TYPE command (1ms)
+
+── List Commands
+  ✓ RPUSH / LPUSH / LRANGE / LLEN (9ms)
+  ✓ LPOP / RPOP (5ms)
+  ✓ LINDEX / LSET (4ms)
+  ✓ LINSERT / LREM / LTRIM (10ms)
+  ✓ LMOVE (6ms)
+
+── Hash Commands
+  ✓ HSET / HGET / HGETALL / HLEN (7ms)
+  ✓ HMGET / HEXISTS / HDEL (6ms)
+  ✓ HKEYS / HVALS / HINCRBY (8ms)
+
+── Set Commands
+  ✓ SADD / SMEMBERS / SCARD / SISMEMBER / SREM (9ms)
+  ✓ SUNION / SINTER / SDIFF (7ms)
+
+── Sorted Set Commands
+  ✓ ZADD / ZSCORE / ZRANK / ZCARD (6ms)
+  ✓ ZRANGE / ZREVRANGE / ZINCRBY / ZCOUNT (5ms)
+  ✓ ZRANGEBYSCORE / ZREM (4ms)
+
+── Stream Commands
+  ✓ XADD / XLEN / XRANGE (9ms)
+  ✓ XREAD (1ms)
+  ✓ XADD MAXLEN / XTRIM (15ms)
+
+── Key Commands
+  ✓ KEYS / DBSIZE / SCAN (4ms)
+  ✓ RENAME (6ms)
+  ✓ TYPE reflects data structure (7ms)
+
+── Lua Scripting (EVAL)
+  ✓ EVAL basic return (11ms)
+  ✓ EVAL with KEYS and ARGV (6ms)
+  ✓ EVAL redis.call SET + GET round-trip (5ms)
+  ✓ EVAL table return (4ms)
+  ✓ EVAL pcall error handling (4ms)
+
+── Pipeline
+  ✓ Pipeline: 10 mixed commands (2ms)
+    1000 cmds in 14ms (71429 cmd/s)
+  ✓ Pipeline: 1000 SET commands (max batch) (14ms)
+
+── Keys + Flush Endpoints
+  ✓ GET /:id/keys lists keys (3ms)
+  ✓ GET /:id/keys?pattern= filters keys (4ms)
+  ✓ POST /:id/flush clears all keys (3ms)
+
+── Load Tests
+    50 parallel SETs in 78ms (641 req/s)
+  ✓ 50 concurrent SET requests (79ms)
+    50 parallel GETs in 35ms (1429 req/s)
+  ✓ 50 concurrent GET requests (36ms)
+    10,000 cmds in 90ms → 111,111 cmd/s
+  ✓ 10 × 1000-command pipelines back-to-back (throughput) (101ms)
+    100 parallel mixed ops in 65ms (1538 req/s)
+  ✓ 100 concurrent mixed read/write requests (74ms)
+    500 sequential SETs in 614ms (814 req/s)
+  ✓ 500 sequential writes (sustained throughput) (614ms)
+
+── Cleanup
+  ✓ DELETE test instance (765ms)
+  ✓ Deleted instance returns 403 on exec (4ms)
+
+────────────────────────────────────────────────────────────
+Results: 54/54 passed  (2224ms total)
+
+All tests passed.
+

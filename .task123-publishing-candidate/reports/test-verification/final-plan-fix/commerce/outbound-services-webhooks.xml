@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="StripeService refunds enforce buyer scope and pass validated exact cents and stable key to commerce" time="0.056903" classname="test"/>
+	<testcase name="refund request orchestration persists one idempotent operation and leaves failed execution retryable" time="0.012953" classname="test"/>
+	<testcase name="Connect onboarding creates an Express account with requested capabilities and exact return URLs" time="0.038100" classname="test"/>
+	<testcase name="charge refund/dispute reconciliation sums provider states, releases won holds, and writes operation identities" time="0.008614" classname="test"/>
+	<testcase name="actual webhook signature middleware preserves raw-byte signature boundary and rejects invalid, missing, or unconfigured signatures" time="0.015115" classname="test"/>
+	<testcase name="webhook receipt transaction retries failed settlement and ignores a successfully replayed duplicate" time="0.024617" classname="test"/>
+	<testcase name="repository payout idempotency cannot silently move a reserved withdrawal to a different Connect account" time="0.030316" classname="test"/>
+	<testcase name="refund provider failure preserves the same operation key for retry" time="0.008633" classname="test"/>
+	<!-- tests 8 -->
+	<!-- suites 0 -->
+	<!-- pass 8 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 281.903287 -->
+</testsuites>

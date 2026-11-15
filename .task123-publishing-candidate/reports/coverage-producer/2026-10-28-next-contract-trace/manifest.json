@@ -1,0 +1,388 @@
+{
+  "schemaVersion": 1,
+  "scope": "Read-only C5 complete-map/typed-coordinate/installed-wrapper trace; no executed subject counters, codec adoption or global merge",
+  "recordedAt": "2026-10-28T18:01:03.554118+00:00",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "sourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 9333,
+      "sha256": "8b63bae704cf74ed3548f4810e07b06067fd7a635422c3dbf5c0c9ca489fd163"
+    },
+    {
+      "path": "baseline-a160-selected.json",
+      "bytes": 2184178,
+      "sha256": "6e35016ece0e0be2cce27e125f1b3679f13cb40dd9929d10a3673989a78e67aa"
+    },
+    {
+      "path": "baseline-immutable-selected.json",
+      "bytes": 2184186,
+      "sha256": "384f6c2eec0fce5619585914bb4cae16421b8cff1ffdd031c868e430509b5f49"
+    },
+    {
+      "path": "baseline-preservation.json",
+      "bytes": 1463,
+      "sha256": "4a6d00bc664edc704a025788bd49901dfe4a698e1a68610f4625e5e21fd35ddf"
+    },
+    {
+      "path": "complete-serialized-map-differences.json",
+      "bytes": 235755,
+      "sha256": "1af619a975323aee952aadd737bce453795fa07591d3583a6526bdfc4a9f2457"
+    },
+    {
+      "path": "controls/external__pdim__artifacts__api-server__src__redis__store.ts.vite-tsconfig-ssr.js",
+      "bytes": 145157,
+      "sha256": "01b6e8092ad66d429709a5133265fc59ee6f71c99591214525b9f2918bfa60fb"
+    },
+    {
+      "path": "controls/external__pdim__artifacts__api-server__src__redis__store.ts.vite-tsconfig-ssr.js.map",
+      "bytes": 274586,
+      "sha256": "58932f3fdc2b0fcdc6616c5e6845caada84bf6d2644180300b644a1353d293ad"
+    },
+    {
+      "path": "controls/external__pdim__artifacts__api-server__src__redis__store.ts.vite-tsconfig-ssr.profile.json",
+      "bytes": 1526405,
+      "sha256": "25d0727d92731f2ec01ad7009eb7aefbe39dff1a57a71eee95dd5ccb739b1e00"
+    },
+    {
+      "path": "controls/external__pdim__artifacts__api-server__src__workers__lua-pool.ts.vite-tsconfig-ssr.js",
+      "bytes": 3579,
+      "sha256": "682667ae5f55742aa5b3a785ede4cc7e4e722e90249a646b0afba4d98f88fd81"
+    },
+    {
+      "path": "controls/external__pdim__artifacts__api-server__src__workers__lua-pool.ts.vite-tsconfig-ssr.js.map",
+      "bytes": 7800,
+      "sha256": "58410b3bdf781a75a3d259dcef7dbdf1e48314a7cdb74fe1dca1e09189347eef"
+    },
+    {
+      "path": "controls/external__pdim__artifacts__api-server__src__workers__lua-pool.ts.vite-tsconfig-ssr.profile.json",
+      "bytes": 28204,
+      "sha256": "d949ffeb5a5131f1418e2ade7d2654d725b9224bb52b571d2a917213fb3d93f7"
+    },
+    {
+      "path": "controls/server__config__ports.ts.vite-tsconfig-ssr.js",
+      "bytes": 2247,
+      "sha256": "fa1289d1fc15a06b43f1022aa769b2408806833f5692c2f2a4b24f2943f2e90a"
+    },
+    {
+      "path": "controls/server__config__ports.ts.vite-tsconfig-ssr.js.map",
+      "bytes": 4125,
+      "sha256": "a2277658dd3f6f8e18f16820b8a7f80c5b547769f1b9b1acf20ab382be70c250"
+    },
+    {
+      "path": "controls/server__config__ports.ts.vite-tsconfig-ssr.profile.json",
+      "bytes": 9782,
+      "sha256": "7244909cf602deb569588d7e6e667d0741b59ee07ba706efaaae60aa6c2fea89"
+    },
+    {
+      "path": "controls/server__lib__luaExecutor.ts.vite-tsconfig-ssr.js",
+      "bytes": 17399,
+      "sha256": "9c4c99d337fe7b144082ce80d008a6cc433b61ef11046abab611239789bb6a43"
+    },
+    {
+      "path": "controls/server__lib__luaExecutor.ts.vite-tsconfig-ssr.js.map",
+      "bytes": 42164,
+      "sha256": "7c3cfc7db475c07502917c63eab1d0bc5305497ea523c990c66abc97ddfebee4"
+    },
+    {
+      "path": "controls/server__lib__luaExecutor.ts.vite-tsconfig-ssr.profile.json",
+      "bytes": 84579,
+      "sha256": "0b3d156c46e81282b01e70869614ed13b881822f73aaed4235089e606ddfce76"
+    },
+    {
+      "path": "controls/server__lib__pdimCircuitBreaker.ts.vite-tsconfig-ssr.js",
+      "bytes": 6168,
+      "sha256": "ed690fc910409bc6861b3d913aba380167b9a31bd8e3f77f83ead1aea16c2dcc"
+    },
+    {
+      "path": "controls/server__lib__pdimCircuitBreaker.ts.vite-tsconfig-ssr.js.map",
+      "bytes": 16513,
+      "sha256": "f17f6f251e0480a7c75f65a0a35519b578a8503c6c05d2635a73f9a5e303ecc5"
+    },
+    {
+      "path": "controls/server__lib__pdimCircuitBreaker.ts.vite-tsconfig-ssr.profile.json",
+      "bytes": 49711,
+      "sha256": "243dce14e58009327aa534ef04ca77bd839b76194eb1bbb0005b7dcbede08b53"
+    },
+    {
+      "path": "controls/server__lib__pdimClient.ts.vite-tsconfig-ssr.js",
+      "bytes": 60899,
+      "sha256": "91f97aae46a1eb65269dbab6fb0087eb21333fe3f7b4dd00e388549c31a8300f"
+    },
+    {
+      "path": "controls/server__lib__pdimClient.ts.vite-tsconfig-ssr.js.map",
+      "bytes": 145310,
+      "sha256": "a55d636a4daa6e52c98fa42a2d9256fc833d622a1f1fec4af96cc745adb0c0a5"
+    },
+    {
+      "path": "controls/server__lib__pdimClient.ts.vite-tsconfig-ssr.profile.json",
+      "bytes": 459923,
+      "sha256": "328d441067fe1084a13f5abf3816f970849d4762e6e539f962cf62683eccbe52"
+    },
+    {
+      "path": "controls/server__logSanitizer.ts.vite-tsconfig-ssr.js",
+      "bytes": 2955,
+      "sha256": "3c71f83dfbfccd32e382392b9a243968c739904b80455a2da2946afb956a35e1"
+    },
+    {
+      "path": "controls/server__logSanitizer.ts.vite-tsconfig-ssr.js.map",
+      "bytes": 5016,
+      "sha256": "40e42739da8f4480fe1e9e5e089856d84afbccbf5441d04044f50a6d9ae0a794"
+    },
+    {
+      "path": "controls/server__logSanitizer.ts.vite-tsconfig-ssr.profile.json",
+      "bytes": 25158,
+      "sha256": "5b6742d74b4618de05b821b755a563bb1b082c9b3bedf9253348a3f79f1bce42"
+    },
+    {
+      "path": "controls/server__logger.ts.vite-tsconfig-ssr.js",
+      "bytes": 2964,
+      "sha256": "0f1f23dfec95b865204ac09d12da63c67c88b8f3e69dc6f34cb87a0b4a76618f"
+    },
+    {
+      "path": "controls/server__logger.ts.vite-tsconfig-ssr.js.map",
+      "bytes": 4762,
+      "sha256": "aab9aba4626a0805858d9d3621f105f9f0d74dcebe4d0f094b61f88574e95748"
+    },
+    {
+      "path": "controls/server__logger.ts.vite-tsconfig-ssr.profile.json",
+      "bytes": 12408,
+      "sha256": "299d8eed32bea9098c125e66ba1d50d874679a96173eaab1e68333bc215d2b3d"
+    },
+    {
+      "path": "controls/server__pocket-dimension__fabric__storage__PocketDimensionChunkStore.ts.vite-tsconfig-ssr.js",
+      "bytes": 4217,
+      "sha256": "1d5edf787246d982d39c2dd278a340121f04bb08365ee3d503c3bab5d70c223d"
+    },
+    {
+      "path": "controls/server__pocket-dimension__fabric__storage__PocketDimensionChunkStore.ts.vite-tsconfig-ssr.js.map",
+      "bytes": 7545,
+      "sha256": "ac4b2a740115a4fb19c0e4ec02e87dd9f2fa73c2dedf16037927260c37d5d776"
+    },
+    {
+      "path": "controls/server__pocket-dimension__fabric__storage__PocketDimensionChunkStore.ts.vite-tsconfig-ssr.profile.json",
+      "bytes": 26995,
+      "sha256": "158a836388b4ae78ebfb05da5715ad082f510120288f697f1bbfcca519330ca6"
+    },
+    {
+      "path": "coordinate-policy/README.md",
+      "bytes": 2466,
+      "sha256": "fa73af8bd26fa55659ca1acb300e9c00c9880c3f9f960b5c85553b084b51e806"
+    },
+    {
+      "path": "coordinate-policy/coordinate-contract-proposal.json",
+      "bytes": 8054,
+      "sha256": "5f67e6ae1397583ebf5f52c3bd896830b6923f3c05ea9afa531b9cef1a059dbc"
+    },
+    {
+      "path": "coordinate-policy/library-evidence.json",
+      "bytes": 28396,
+      "sha256": "e41845419cf8c013c25bca38480264b39973430182b62d62e50625451f6abe19"
+    },
+    {
+      "path": "coordinate-policy/manifest.json",
+      "bytes": 751,
+      "sha256": "afe2e457298f6016ab551bd28b3de00bb99bc80e949c0ec3b60d08eff4bc5963"
+    },
+    {
+      "path": "coordinate-policy/validation.json",
+      "bytes": 504,
+      "sha256": "28a0afef97fb2c9c9cfd571e2005d6d0ff12127717704cfac383a504c338106c"
+    },
+    {
+      "path": "current-10d-map-comparison.json",
+      "bytes": 4732,
+      "sha256": "7d252ef77d835f898fde5c7497194403e6c9f7b44edc2d6f2b18b61df5efb184"
+    },
+    {
+      "path": "independent-review.json",
+      "bytes": 869,
+      "sha256": "64a6a730fb47a508616b07ec8113a209abb32f776b43c3f8ef31d8a9b8ab6132"
+    },
+    {
+      "path": "next-patch-spec.json",
+      "bytes": 11596,
+      "sha256": "6781381784105d2bd5e89692c0f5ed23a9d02a1e4d3b9c60450f24575735c719"
+    },
+    {
+      "path": "node-bca-selected.json",
+      "bytes": 1093088,
+      "sha256": "0a751904cb767f5fcd13cadea7393ed7d64629605e5c3e3fc7fccccf33cb3742"
+    },
+    {
+      "path": "recipes-and-original-observations/map-only-control.json",
+      "bytes": 3036,
+      "sha256": "2d49493d5d4fddbf6ba5f06d182799c239344bf8fc906e06fad3fe3def23afb9"
+    },
+    {
+      "path": "recipes-and-original-observations/map-only-control.mjs",
+      "bytes": 2870,
+      "sha256": "0ff0ac90381e5e901266cdd770ddb326c056644cc90f90a28791cc69309f2e3c"
+    },
+    {
+      "path": "recipes-and-original-observations/map-only-control.txt",
+      "bytes": 2134,
+      "sha256": "0ec1e91d8d4755ecbd04b9aa9b0ec8ea51ecda4ac8eae638b8039bc38fe3f638"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logSanitizer.ts.map-control.js",
+      "bytes": 2623,
+      "sha256": "6b3afbef9eb4b82c2ae30e34c228aaaa06ec5e1477da116d78490fb7801663e6"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logSanitizer.ts.map-control.js.map",
+      "bytes": 4970,
+      "sha256": "be8f9c3bcb28259b232dd7abb8b9c197ab32947e1f85710519ed6e257741db52"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logSanitizer.ts.map-control.profile.json",
+      "bytes": 25162,
+      "sha256": "c141569a0c017e0e2e3c8d8b6080052f7042018a9dc8fa3b1ad0133dbaa65f5c"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logSanitizer.ts.ssr-map-control.js",
+      "bytes": 2955,
+      "sha256": "99a92cb8a624f80310f54549c7ebcb63aa3231f84be8771592c8eb4b6f178ccb"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logSanitizer.ts.ssr-map-control.js.map",
+      "bytes": 5016,
+      "sha256": "40e42739da8f4480fe1e9e5e089856d84afbccbf5441d04044f50a6d9ae0a794"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logSanitizer.ts.ssr-map-control.profile.json",
+      "bytes": 25158,
+      "sha256": "5b6742d74b4618de05b821b755a563bb1b082c9b3bedf9253348a3f79f1bce42"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logger.ts.map-control.js",
+      "bytes": 2387,
+      "sha256": "75b15b9c454f2a63f778ab1763f2be2716ec82052e80854d4d45a95a71c8f3bc"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logger.ts.map-control.js.map",
+      "bytes": 4754,
+      "sha256": "8be3aa96827cd70b9608ad8c672244ce282c4179cdfe205629ca0620dbec6d6a"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logger.ts.map-control.profile.json",
+      "bytes": 12408,
+      "sha256": "491a2a7619e04ac22091485a20b006332044b57559b7c66a4e420f00b53db595"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logger.ts.ssr-map-control.js",
+      "bytes": 2964,
+      "sha256": "3ea0b04d1b9fcf980238ef226441b86928fcd7738235f7bdfb15aaceb2c0e176"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logger.ts.ssr-map-control.js.map",
+      "bytes": 4762,
+      "sha256": "aab9aba4626a0805858d9d3621f105f9f0d74dcebe4d0f094b61f88574e95748"
+    },
+    {
+      "path": "recipes-and-original-observations/server__logger.ts.ssr-map-control.profile.json",
+      "bytes": 12408,
+      "sha256": "299d8eed32bea9098c125e66ba1d50d874679a96173eaab1e68333bc215d2b3d"
+    },
+    {
+      "path": "recipes-and-original-observations/ssr-map-only-control.json",
+      "bytes": 3671,
+      "sha256": "d27216b5487405471a21375cce3473281a1c800d1f19d12a487564790fd2b0ed"
+    },
+    {
+      "path": "recipes-and-original-observations/ssr-map-only-control.mjs",
+      "bytes": 3522,
+      "sha256": "2899e66e19dc0cac09c472e0bc8a3aa4289c776754f908a7c48765d554f0edff"
+    },
+    {
+      "path": "recipes-and-original-observations/ssr-map-only-control.txt",
+      "bytes": 2685,
+      "sha256": "5ccf1e1fbe669dc32506497288c60f4dee82a3eeaa47c0ae56d941b7dac80c26"
+    },
+    {
+      "path": "recipes-and-original-observations/supported-vite-ssr-controls.json",
+      "bytes": 12355,
+      "sha256": "495d01e7492a4d29bfc605d56e028089e2266da8f9cae9ae72fcce96c66040a4"
+    },
+    {
+      "path": "recipes-and-original-observations/supported-vite-ssr-controls.mjs",
+      "bytes": 3796,
+      "sha256": "9bd7d1b253423b3e98609fc5963aa813c7ea79857f81658d87f03328db4c3bc0"
+    },
+    {
+      "path": "recipes-and-original-observations/supported-vite-ssr-controls.txt",
+      "bytes": 3419,
+      "sha256": "ad23879073e0f67e57589d87790dac75797804c4c9ad88ba3b5ec9b5555d41bd"
+    },
+    {
+      "path": "recipes-and-original-observations/trace-runtime.mjs",
+      "bytes": 5007,
+      "sha256": "446998923ca529e1dd72c25760c09c5ed0a77627b30fca3f0e4cd21dac4cb3a6"
+    },
+    {
+      "path": "runtime-ast-witnesses.json",
+      "bytes": 314705,
+      "sha256": "7bc8775c424e0c24355df69a75df1a7df981b727e385df14ea3ada539a9ee2ed"
+    },
+    {
+      "path": "runtime-wrapper-and-public-api-evidence.json",
+      "bytes": 8234,
+      "sha256": "2a55dc867bda0ab8a560a293cdc9d2e399d12f1face49c1681ee2067cf20594f"
+    },
+    {
+      "path": "transform-library-evidence.json",
+      "bytes": 12467,
+      "sha256": "193b897535b6ea4f81291b786806892ea35bedcc8e227e1f04ed794fe3315955"
+    },
+    {
+      "path": "typed-review/execution-receipt.json",
+      "bytes": 940,
+      "sha256": "667c185556e0e1640a5a96cbadfe264fc8c5fd0f77b02052aeb140cb9e1d0bf9"
+    },
+    {
+      "path": "typed-review/supported-vite-ssr-controls.json",
+      "bytes": 12345,
+      "sha256": "a57a0c15c748db9d43ca1d000f51f96c0b6a7f1b77119be69b0b25eb62fb76c9"
+    },
+    {
+      "path": "typed-review/typed-differences.json",
+      "bytes": 3445826,
+      "sha256": "8895d1f7067eab122123522786d06a315e83a6da70c01d8ade311781cf230eda"
+    },
+    {
+      "path": "typed-review/typed-map-control.mjs",
+      "bytes": 5774,
+      "sha256": "c6c6fe54e48044995999624c14cfda46d67089669eb676261f5bbb101a4c8418"
+    },
+    {
+      "path": "typed-review/typed-replay.txt",
+      "bytes": 3411,
+      "sha256": "8194d8a1763c0c7c09fc7c9db98ed582e4f7c51a61ef24724d444399c4b136aa"
+    },
+    {
+      "path": "typed-summary.json",
+      "bytes": 2075,
+      "sha256": "7afbaab964bd3964f3c0caa94b9fdce95fe382846b0b8241d64e80f285ecd8de"
+    },
+    {
+      "path": "validate-trace.py",
+      "bytes": 4953,
+      "sha256": "79f7034b620248f5b7b34945c17154702b4eeb44db6309fd810510055ea893ba"
+    },
+    {
+      "path": "validation.json",
+      "bytes": 434,
+      "sha256": "b74fc3ab36d2251e292d702348e26a570b02299035f30ae86938d67b8ab07058"
+    },
+    {
+      "path": "witness-summary.json",
+      "bytes": 14828,
+      "sha256": "bbc3a3c8be47642162a7475ee3c1638c4b64ced3fb9729a5515d6ab939822dcf"
+    }
+  ],
+  "fileCount": 75,
+  "bytes": 12715996,
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

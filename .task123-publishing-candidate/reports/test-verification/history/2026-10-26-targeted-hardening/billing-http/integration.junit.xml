@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="12" failures="0" errors="0" time="1.591953515">
+    <testsuite name="tests/billing-lifecycle.test.ts" timestamp="2026-10-26T12:22:01.998Z" hostname="2fc971e77ddd" tests="12" failures="0" errors="0" skipped="0" time="1.591953515">
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 1. registers and logs in test user; captures user ID and stripeCustomerId" time="0.848317485">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 2. webhook endpoint exists (not 404)" time="0.032445858">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 3. rejects webhook with no stripe-signature header" time="0.031643397">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 4. rejects webhook with an invalid stripe-signature header" time="0.028633598">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 5. a signed subscription event cannot grant entitlement without current provider verification" time="0.076217825">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 6. checkout.session.completed (subscription mode) updates subscription_tier" time="0.058175936">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 7. idempotency: same event ID fired twice — second response is idempotent, tier unchanged" time="0.197390784">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 8. a valid signed event cannot replace a user&apos;s tier from unverified payload metadata" time="0.058914771">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 9. GET /api/billing/subscription returns complete tier shape when authenticated" time="0.117571342">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 10. GET /api/billing/subscription returns 401 when unauthenticated" time="0.029156356">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 11. GET /api/billing/plans returns a non-empty plan list without auth" time="0.043855026">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 12. POST /api/billing/create-checkout-session rejects invalid plan" time="0.064116086">
+        </testcase>
+    </testsuite>
+</testsuites>

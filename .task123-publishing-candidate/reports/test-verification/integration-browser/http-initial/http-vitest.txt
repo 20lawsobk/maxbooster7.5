@@ -1,0 +1,82 @@
+
+[globalSetup] Server ready at http://127.0.0.1:46013 ✅  (0s elapsed)
+[15:20:52.939] [32mINFO[39m (92122): [36m[PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms[39m
+[15:20:54.794] [33mWARN[39m (92122): [36m[RateLimiter] PDIM not configured — global rate limiter disabled (dev mode)[39m
+[15:20:54.794] [33mWARN[39m (92122): [36m[RateLimiter] PDIM not configured — api rate limiter disabled (dev mode)[39m
+[15:20:54.794] [33mWARN[39m (92122): [36m[RateLimiter] PDIM not configured — ai rate limiter disabled (dev mode)[39m
+[15:20:54.794] [33mWARN[39m (92122): [36m[RateLimiter] PDIM not configured — auth rate limiter disabled (dev mode)[39m
+(node:94403) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[15:21:23.657] [32mINFO[39m (94464): [36m[MaxCoreLocal] Starting MaxCore api-server (port 8091, model port 9891)…[39m
+[15:21:24.433] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Cluster] Primary 94521 — forking 1 workers on port 8091[39m
+[15:21:24.434] [32mINFO[39m (94464): [36m[MaxCoreLocal] [WarmService] Polling /api/warm/status until deep-warm completes…[39m
+[15:21:24.867] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Cluster] Worker 94539 listening on port 8091[39m
+[15:21:30.472] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:21:30.634] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>[39m
+[15:21:30.637] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:21:30.657] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #1 in 2000ms…[39m
+[15:21:32.667] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:21:32.878] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>
+    import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:21:32.933] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #2 in 4000ms…[39m
+[15:21:36.935] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:21:37.096] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>[39m
+[15:21:37.100] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:21:37.119] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #3 in 8000ms…[39m
+[15:21:45.125] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:21:45.339] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>[39m
+[15:21:45.339] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:21:45.370] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #4 in 16000ms…[39m
+[15:22:01.375] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:22:01.582] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>[39m
+[15:22:01.583] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:22:01.602] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #5 in 30000ms…[39m
+[15:22:15.634] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Warning: server did not respond in time — requests will be retried by proxy.[39m
+[15:22:31.604] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:22:31.752] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>
+[Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:22:31.766] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #6 in 30000ms…[39m
+[15:23:01.768] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:23:01.921] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>[39m
+[15:23:01.921] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:23:01.936] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #7 in 30000ms…[39m
+[15:23:31.937] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:23:32.082] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>
+[Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:23:32.096] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #8 in 30000ms…[39m
+[15:24:02.103] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:24:02.270] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>[39m
+[15:24:02.270] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:24:02.285] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #9 in 30000ms…[39m
+[15:24:24.651] [32mINFO[39m (94464): [36m[MaxCoreLocal] [WarmService] Deep-warm settled: timeout[39m
+[15:24:32.291] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
+[15:24:32.455] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Traceback (most recent call last):
+  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 73, in <module>[39m
+[15:24:32.455] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python]     import psycopg2
+ModuleNotFoundError: No module named 'psycopg2'[39m
+[15:24:32.471] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Python] Server exited (code 1, signal none). Restart #10 in 30000ms…[39m
+[15:24:54.036] [32mINFO[39m (94464): [36m[MaxCoreLocal] Stopping MaxCore api-server…[39m
+[15:24:54.040] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Cluster] Primary shutting down…
+[Keepalive] Stopped[39m
+[15:24:54.047] [32mINFO[39m (94464): [36m[MaxCoreLocal] [Cluster] Worker 94539 died (code=0, signal=none) — respawning…[39m
+JSON report written to /workspace/maxbooster7.5/test-results-integration.xml
+JUNIT report written to /workspace/maxbooster7.5/test-results-integration.xml
+[globalTeardown] No test users to clean up

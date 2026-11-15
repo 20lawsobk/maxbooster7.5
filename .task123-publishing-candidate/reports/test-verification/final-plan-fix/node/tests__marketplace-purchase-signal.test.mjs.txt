@@ -1,0 +1,47 @@
+TAP version 13
+# Fri, 06 Nov 2026 11:40:04 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+# Subtest: clients cannot fabricate a paid purchase signal
+ok 1 - clients cannot fabricate a paid purchase signal
+  ---
+  duration_ms: 217.687139
+  type: 'test'
+  ...
+# Subtest: ordinary unpaid interactions retain authenticated user identity
+ok 2 - ordinary unpaid interactions retain authenticated user identity
+  ---
+  duration_ms: 55.519372
+  type: 'test'
+  ...
+# Subtest: checkout initiation returns the provider session without claiming a paid purchase
+ok 3 - checkout initiation returns the provider session without claiming a paid purchase
+  ---
+  duration_ms: 33.129308
+  type: 'test'
+  ...
+# Subtest: an analytics outage cannot strand an already-created checkout session
+ok 4 - an analytics outage cannot strand an already-created checkout session
+  ---
+  duration_ms: 22.649509
+  type: 'test'
+  ...
+# Subtest: failed checkout initiation does not emit a purchase signal
+ok 5 - failed checkout initiation does not emit a purchase signal
+  ---
+  duration_ms: 25.488389
+  type: 'test'
+  ...
+# Subtest: unauthenticated interaction and purchase attempts cannot mutate signals or create sessions
+ok 6 - unauthenticated interaction and purchase attempts cannot mutate signals or create sessions
+  ---
+  duration_ms: 21.886406
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1470.077426

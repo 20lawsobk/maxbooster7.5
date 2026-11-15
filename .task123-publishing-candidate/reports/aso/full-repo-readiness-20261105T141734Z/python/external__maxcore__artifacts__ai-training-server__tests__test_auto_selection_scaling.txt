@@ -1,0 +1,20 @@
+
+==================================== ERRORS ====================================
+____________ ERROR collecting tests/test_auto_selection_scaling.py _____________
+ImportError while importing test module '<repo>/external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+tests/test_auto_selection_scaling.py:10: in <module>
+    from ai_model.training import auto_selection as selection
+ai_model/training/__init__.py:2: in <module>
+    from .dataset import CreativeDataset
+ai_model/training/dataset.py:6: in <module>
+    import torch
+../../../../.pythonlibs/lib/python3.12/site-packages/torch/__init__.py:505: in <module>
+    from torch._C import *  # noqa: F403
+    ^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
+=========================== short test summary info ============================
+ERROR tests/test_auto_selection_scaling.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.30s

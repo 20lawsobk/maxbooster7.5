@@ -1,0 +1,5 @@
+
+> max-booster@3.0.0 check
+> tsc -p tsconfig.server.json && tsc -p tsconfig.client.json
+
+vitest.platform.config.ts(5,32): error TS7016: Could not find a declaration file for module './scripts/testing/coverage-shared-provider.mjs'. '/workspace/maxbooster7.5/scripts/testing/coverage-shared-provider.mjs' implicitly has an 'any' type.

@@ -1,0 +1,1 @@
+Provider exact-byte signatures, verified fan dispatcher, and storage decryption tests passed

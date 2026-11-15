@@ -1,0 +1,41 @@
+{
+  "scope": "Current-source continuation evidence integrity; no launch approval",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1948,
+      "sha256": "72d3a11488200fdaa9400ce31bcc958bd8ab01203445f42601805781ddb417a8"
+    },
+    {
+      "path": "documentation-validation.json",
+      "bytes": 2426,
+      "sha256": "d5da9aa975b474eac9548b740646a7670a6e2307d68dd0e48d0bf7beec18fd1a"
+    },
+    {
+      "path": "persistence-audit.json",
+      "bytes": 1937,
+      "sha256": "ec6ce74f37b45d1ef33b25b4f434b72a144db20d5c2dc570cfe36fa3863e6a75"
+    },
+    {
+      "path": "persistence-audit.py",
+      "bytes": 4684,
+      "sha256": "b283066ca6a2401166bad849bb7cacf7bc340ba62c558f46a9487c231b4a5f14"
+    },
+    {
+      "path": "post-staging-audit.json",
+      "bytes": 1348,
+      "sha256": "3560e2a5420cbcbe6dc065691ab796f3703fe0b9f0ebff49b757cf95ec092385"
+    },
+    {
+      "path": "staged-document-links.json",
+      "bytes": 95,
+      "sha256": "800bf66b93195ecb72d4a470cec8ee36978c4b289fb70bbc407b4412c6601b80"
+    },
+    {
+      "path": "status.json",
+      "bytes": 3736,
+      "sha256": "9647b51ce8b294265dbdb9633f7c1a60086daba5a3f0d584b3b0efd0d9e33715"
+    }
+  ],
+  "productionReady": false
+}

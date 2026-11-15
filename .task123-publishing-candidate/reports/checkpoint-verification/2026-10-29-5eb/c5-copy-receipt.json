@@ -1,0 +1,22 @@
+{
+  "initialVerification": "failed because candidate safe-copy plans list383/99manifestmembers but omit their own manifest metadata",
+  "repair": "Copied and hash-verified original manifests and copy plans explicitly; no original evidence rewritten",
+  "metadata": [
+    {
+      "path": "reports/coverage-producer/2026-10-29-producer-foundation/manifest.json",
+      "sha256": "2245069cb67d9cf49b92af4cc7be15365208ecbcb6ac713fb075c9c72a071829"
+    },
+    {
+      "path": "reports/coverage-producer/2026-10-29-producer-foundation/safe-copy-plan.json",
+      "sha256": "759c1f5585cfe8ff145432a131878ab00aa8e42c2e9e78ad64d844fa7cb78438"
+    },
+    {
+      "path": "reports/coverage-producer/2026-10-29-p2-review-blocked/manifest.json",
+      "sha256": "01c1e63a1f8eec56ccd45a44bfed093eaeb02d9231bd539091d758ae90c191f4"
+    },
+    {
+      "path": "reports/coverage-producer/2026-10-29-p2-review-blocked/safe-copy-plan.json",
+      "sha256": "1c0868635549864b8beaf0bb335f05655df516a815aaa3f502566378242c2cd8"
+    }
+  ]
+}

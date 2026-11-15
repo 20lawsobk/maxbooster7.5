@@ -1,0 +1,361 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-28T02:33:11.469610+00:00",
+  "finishedAt": "2026-10-28T02:33:42.259480+00:00",
+  "sourceRevision": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "interpreter": "/workspace/.cloud-python/bin/python",
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "timeout": 0,
+    "skipped": 0,
+    "blocked": 0,
+    "empty": 0
+  },
+  "counts": {
+    "tests": 48,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "enabled": false,
+    "status": "not_requested"
+  },
+  "isolation": "Fresh interpreter and disposable HOME/state per file; no application credentials; only ephemeral loopback networking; child process group cleanup",
+  "limits": "Blocked/skip/timeout are not passes; fixture training does not establish generation quality or production readiness",
+  "duplicateSnapshots": [
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py"
+  ],
+  "suites": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+      "description": "Tests for Phase 4 \u2014 brand identity centroid, embedding cache, seeded-render\ndedupe, and the generated-asset ingestor.\n\nRun:\n    cd artifacts/ai-training-server\n    uv run python -u -m ai_model.retrieval.test_phase4\n\nBoth pytest and the module entrypoint render into owned temporary uploads.",
+      "cases": [
+        {
+          "name": "test_brand_centroid_mean",
+          "description": "brand centroid mean"
+        },
+        {
+          "name": "test_brand_centroid_replace_matches_rebuild",
+          "description": "brand centroid replace matches rebuild"
+        },
+        {
+          "name": "test_brand_centroid_survives_state_roundtrip",
+          "description": "brand centroid survives state roundtrip"
+        },
+        {
+          "name": "test_brand_centroid_remove_recomputes",
+          "description": "brand centroid remove recomputes"
+        },
+        {
+          "name": "test_embedding_cache_hit_and_copy",
+          "description": "embedding cache hit and copy"
+        },
+        {
+          "name": "test_embedding_cache_bypass",
+          "description": "embedding cache bypass"
+        },
+        {
+          "name": "test_seeded_render_reuses_file",
+          "description": "seeded render reuses file"
+        },
+        {
+          "name": "test_seeded_render_concurrent_dedupe",
+          "description": "seeded render concurrent dedupe"
+        },
+        {
+          "name": "test_ingestor_enqueue_dedupe_and_drain",
+          "description": "ingestor enqueue dedupe and drain"
+        },
+        {
+          "name": "test_ingestor_bad_path_retries_then_drops",
+          "description": "ingestor bad path retries then drops"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "60ef70f61dc4c3b629aa3803739f394db77bf929f9ddd53fb269b4404836362e",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py --output /workspace/maxbooster7.5/reports/python-oracle-acceptance/2026-10-27/canonical-all-five-and-oracles",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 4.803,
+      "counts": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_phase4.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_phase4.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+      "description": "Tests for the retrieval real-asset pipeline (image features + anchor/seed library\n+ gap ingestion). Renders REAL images via the in-house ImageEngine, so it is a\nslower integration test than test_retrieval.py.\n\nRun:\n    cd artifacts/ai-training-server\n    uv run python -u -m ai_model.retrieval.test_pipeline\n\nBoth pytest and the module entrypoint render into owned temporary uploads.",
+      "cases": [
+        {
+          "name": "test_features_deterministic_and_dim",
+          "description": "features deterministic and dim"
+        },
+        {
+          "name": "test_seeded_render_is_idempotent_file",
+          "description": "seeded render is idempotent file"
+        },
+        {
+          "name": "test_features_total_on_garbage",
+          "description": "features total on garbage"
+        },
+        {
+          "name": "test_ensure_library_idempotent",
+          "description": "ensure library idempotent"
+        },
+        {
+          "name": "test_coverage_gate_healthy_after_library",
+          "description": "coverage gate healthy after library"
+        },
+        {
+          "name": "test_decode_scheme_valid",
+          "description": "decode scheme valid"
+        },
+        {
+          "name": "test_ingest_gaps_adds_real_asset",
+          "description": "ingest gaps adds real asset"
+        },
+        {
+          "name": "test_ingest_generated_asset",
+          "description": "ingest generated asset"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "7f23051b2a4c66a03e5e20ab581bc7faffbda5ce972e18d5a8224635753be087",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py --output /workspace/maxbooster7.5/reports/python-oracle-acceptance/2026-10-27/canonical-all-five-and-oracles",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 15.056,
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_pipeline.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_pipeline.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+      "description": "Tests for the live RCGS query path: the probe ring buffer, retrieval-conditioned\nbackground compositing, and the CoverageWatchdog's context-carrying probe\nhandling.\n\nRun:\n    cd artifacts/ai-training-server\n    uv run python -u -m ai_model.retrieval.test_rcgs\n\nBoth pytest and the module entrypoint use owned temporary upload files.",
+      "cases": [
+        {
+          "name": "test_probes",
+          "description": "probes"
+        },
+        {
+          "name": "test_path_resolution",
+          "description": "path resolution"
+        },
+        {
+          "name": "test_condition_background",
+          "description": "condition background"
+        },
+        {
+          "name": "test_watchdog_probe_context",
+          "description": "watchdog probe context"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "fe0c63324c0c7f84cdedcee00d840e0f0720394c87621650aea1d3b3a8396d06",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py --output /workspace/maxbooster7.5/reports/python-oracle-acceptance/2026-10-27/canonical-all-five-and-oracles",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 1.905,
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_rcgs.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_rcgs.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+      "description": "Tests for the retrieval spine (AssetIndex) and the self-healing CoverageWatchdog.\n\nRun:\n    uv run python -m ai_model.retrieval.test_retrieval",
+      "cases": [
+        {
+          "name": "test_cascade_rungs",
+          "description": "cascade rungs"
+        },
+        {
+          "name": "test_never_empty_when_nonempty",
+          "description": "never empty when nonempty"
+        },
+        {
+          "name": "test_totality",
+          "description": "totality"
+        },
+        {
+          "name": "test_determinism",
+          "description": "determinism"
+        },
+        {
+          "name": "test_coverage_gate",
+          "description": "coverage gate"
+        },
+        {
+          "name": "test_serialization_roundtrip",
+          "description": "serialization roundtrip"
+        },
+        {
+          "name": "test_watchdog_heals_missing_anchors",
+          "description": "watchdog heals missing anchors"
+        },
+        {
+          "name": "test_watchdog_enqueues_coverage_gaps",
+          "description": "watchdog enqueues coverage gaps"
+        },
+        {
+          "name": "test_watchdog_drains_via_ingestion",
+          "description": "watchdog drains via ingestion"
+        },
+        {
+          "name": "test_exact_key_replacement",
+          "description": "exact key replacement"
+        },
+        {
+          "name": "test_drain_atomic_no_loss",
+          "description": "drain atomic no loss"
+        },
+        {
+          "name": "test_drain_requeue_on_failure",
+          "description": "drain requeue on failure"
+        },
+        {
+          "name": "test_watchdog_check_isolation",
+          "description": "watchdog check isolation"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "d02d7e7d77884fc0bdf461957a96535ac0f68decb22f4322b51754d9d47c6e22",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py --output /workspace/maxbooster7.5/reports/python-oracle-acceptance/2026-10-27/canonical-all-five-and-oracles",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 2.032,
+      "counts": {
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+      "description": "Regression tests for the RTA-1 fabric's strict correctness contracts.\n\nThese guard three properties that were bugs found and fixed during the build and\nthat are easy to silently re-break in future edits:\n\n  1. Cross-process determinism \u2014 the same inputs must produce byte-identical\n     images across fresh processes with *different* ``PYTHONHASHSEED`` values.\n     (Seeding must never fall back to Python's per-process-salted ``hash()``.)\n\n  2. Spectral tail reconstruction \u2014 the ARC overlap-add pass must reconstruct the\n     tail of a non-hop-aligned clip as faithfully as the rest of the signal.\n\n  3. Fabric self-test smoke \u2014 all three mediums (image / video / audio) render\n     and the Digital-GPU GEMM counter actually increments.\n\nRun standalone:\n    cd artifacts/ai-training-server\n    uv run python -u -m ai_model.rta.test_render_contracts",
+      "cases": [
+        {
+          "name": "test_image_bytes_identical_across_processes",
+          "description": "Same inputs \u2192 byte-identical image across processes with different hash seeds."
+        },
+        {
+          "name": "test_spectral_tail_reconstruction_non_hop_aligned",
+          "description": "The reconstructed tail of a non-hop-aligned clip is as accurate as the whole.\n\nWith ``reduction_db=0`` the gate is the identity, so ``denoise`` reduces to a\npure STFT\u2192iSTFT overlap-add round-trip. The tail must be fully reconstructed\n(the ``_frame`` padding bug left it under-covered), so the mean error over the\nlast window should not exceed the whole-signal mean error."
+        },
+        {
+          "name": "test_fabric_self_test_all_mediums_and_gpu",
+          "description": "All three mediums render and the Digital-GPU GEMM counter increments."
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "7a2511e3ddd699be46a6998c6ad2107248b64e2993300cf678edeaf49a5d975e",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py --output /workspace/maxbooster7.5/reports/python-oracle-acceptance/2026-10-27/canonical-all-five-and-oracles",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 4.765,
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.txt"
+    },
+    {
+      "file": "tests/testing/test_assertion_oracles.py",
+      "description": "Real pytest must reject false checks in canonical custom assertion helpers.\n\nOnly each actual helper's AST is compiled; full model modules, upload state,\nnetwork transports and their import-time initialization are not admitted here.\nThe child probes are test-oracle regressions, not product acceptance cases.",
+      "cases": [
+        {
+          "name": "test_false_condition_is_one_real_pytest_assertion_failure",
+          "description": "false condition is one real pytest assertion failure"
+        },
+        {
+          "name": "test_true_condition_passes_without_recording_a_failure",
+          "description": "true condition passes without recording a failure"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "c8159df05deb60637b53e8e06f9b70e8082e69f515b6c055fca36973162889da",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file tests/testing/test_assertion_oracles.py --output /workspace/maxbooster7.5/reports/python-oracle-acceptance/2026-10-27/canonical-all-five-and-oracles",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 2.225,
+      "counts": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "tests__testing__test_assertion_oracles.xml",
+      "log": "tests__testing__test_assertion_oracles.txt"
+    }
+  ]
+}

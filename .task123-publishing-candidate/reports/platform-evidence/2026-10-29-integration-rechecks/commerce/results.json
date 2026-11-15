@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+  "startedAt": "2026-10-29T08:52:25.498148+00:00",
+  "nodeVersion": "v22.23.3",
+  "boundary": "No inherited application keys, DB URL, NODE_OPTIONS or provider credentials; disposable local SQL only",
+  "commands": [
+    {
+      "id": "legacy-beat",
+      "path": "tests/unit/beat-sale-money-loop.test.ts",
+      "command": [
+        "scripts/testing/commerce-legacy-fixture.mjs",
+        "/workspace/maxbooster7.5/reports/platform-evidence/2026-10-29-integration-rechecks/commerce/legacy-beat.xml",
+        "--subject-file",
+        "tests/unit/beat-sale-money-loop.test.ts"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 5.232,
+      "counts": {
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "legacy-beat.txt",
+      "junit": "legacy-beat.xml"
+    }
+  ],
+  "blocked": [
+    {
+      "path": "tests/payment-processing/real-stripe-api.mjs",
+      "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    },
+    {
+      "path": "tests/payment-processing/inbound-real-stripe.mjs",
+      "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    },
+    {
+      "path": "tests/payment-processing/real-stripe-topup.mjs",
+      "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    },
+    {
+      "path": "tests/payment-processing/browser-fixture.mjs",
+      "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    }
+  ],
+  "selection": "legacy-beat",
+  "finishedAt": "2026-10-29T08:52:30.735624+00:00",
+  "summary": {
+    "passed": 1,
+    "failed": 0,
+    "timeout": 0,
+    "remoteNotRun": 4
+  },
+  "productionReady": false
+}

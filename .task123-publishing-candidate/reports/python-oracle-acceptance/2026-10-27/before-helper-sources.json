@@ -1,0 +1,17 @@
+{
+  "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py": {
+    "source": "def _check(name: str, cond: bool) -> None:\n    status = \"ok  \" if cond else \"FAIL\"\n    print(f\"  [{status}] {name}\")\n    if not cond:\n        _FAILS.append(name)",
+    "fullFileSha256": "5ff1cb401b06d2698e6c1646792139fa2bcf47d13197fadf5a1722b8e8d6b980",
+    "matchesActualBeforeProbe": true
+  },
+  "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py": {
+    "source": "def _check(name: str, cond: bool) -> None:\n    global _failures\n    status = \"ok\" if cond else \"FAILED\"\n    if not cond:\n        _failures += 1\n    print(f\"  {status}: {name}\")",
+    "fullFileSha256": "47b1c544e0313b543864e42c58b3ade9832b1b00009981a64253d46415317abe",
+    "matchesActualBeforeProbe": true
+  },
+  "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py": {
+    "source": "def _check(name: str, cond: bool, detail: str = \"\") -> None:\n    status = \"ok  \" if cond else \"FAIL\"\n    line = f\"  [{status}] {name}\"\n    if detail:\n        line += f\" \u2014 {detail}\"\n    print(line)\n    if not cond:\n        _FAILS.append(name)",
+    "fullFileSha256": "c13146406c9004754892750d08157495e0b8986e38d5ca128686ba100e31ae8f",
+    "matchesActualBeforeProbe": true
+  }
+}

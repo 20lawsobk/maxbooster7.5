@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: pins exact commerce migration filenames and file digests
+ok 1 - pins exact commerce migration filenames and file digests
+  ---
+  duration_ms: 7.487102
+  type: 'test'
+  ...
+# Subtest: recovery gate validates evidence, not a pass boolean
+ok 2 - recovery gate validates evidence, not a pass boolean
+  ---
+  duration_ms: 0.633846
+  type: 'test'
+  ...
+# Subtest: apply stays fail-closed before making any SQL change
+ok 3 - apply stays fail-closed before making any SQL change
+  ---
+  duration_ms: 0.818374
+  type: 'test'
+  ...
+# Subtest: diagnostics redact database URLs and keyword credentials
+ok 4 - diagnostics redact database URLs and keyword credentials
+  ---
+  duration_ms: 0.314905
+  type: 'test'
+  ...
+# Subtest: isolated PostgreSQL daemon redirects output so spawnSync can return
+ok 5 - isolated PostgreSQL daemon redirects output so spawnSync can return
+  ---
+  duration_ms: 0.500775
+  type: 'test'
+  ...
+# Subtest: catalog signature compares indexes instead of dropping them as indexe
+ok 6 - catalog signature compares indexes instead of dropping them as indexe
+  ---
+  duration_ms: 0.405301
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 356.236543

@@ -1,0 +1,868 @@
+{
+  "id": "campaign",
+  "case": {
+    "id": "campaign",
+    "handler": "api_generate_campaign",
+    "request_class": "ApiGenerateCampaignRequest",
+    "kind": "campaign",
+    "body": {
+      "title": "Paper Lantern Harbor",
+      "artist_name": "Fictional Harbor Artist",
+      "platforms": [
+        "instagram"
+      ],
+      "weeks": 2,
+      "generate_images": false,
+      "generate_teasers": false
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "returned",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/generation/orchestrator.py:<genexpr>": 3,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1,
+    "ai_model/quality_awareness.py:<module>": 1,
+    "ai_model/quality_awareness.py:platform_awareness_string": 16,
+    "ai_model/quality_awareness.py:self_sufficiency": 92,
+    "ai_model/quality_awareness.py:_own_corpus_size": 92,
+    "ai_model/quality_awareness.py:_store": 2,
+    "ai_model/quality_awareness.py:_modality_retire_threshold": 92,
+    "ai_model/quality_awareness.py:retire_threshold": 92,
+    "ai_model/quality_awareness.py:get_doc": 46,
+    "ai_model/quality_awareness.py:_doc_age_seconds": 1,
+    "ai_model/quality_awareness.py:_max_age_seconds": 1,
+    "ai_model/generation/campaign.py:build_campaign": 1,
+    "ai_model/generation/campaign.py:<genexpr>": 167,
+    "ai_model/generation/campaign.py:_art_direction": 1,
+    "ai_model/generation/technique.py:extract_technique": 1,
+    "ai_model/generation/technique.py:_prior_dna": 1,
+    "ai_model/generation/technique.py:_clamp": 3,
+    "ai_model/generation/technique.py:_real_descriptors": 1,
+    "ai_model/generation/technique.py:_query_swatch": 1,
+    "ai_model/generation/technique.py:_D": 1,
+    "ai_model/generation/technique.py:_hex": 3,
+    "ai_model/gpu/torch_backend.py:__init__": 1,
+    "ai_model/gpu/digital_gpu.py:__init__": 6,
+    "ai_model/gpu/digital_gpu.py:gemm": 1,
+    "ai_model/gpu/digital_gpu.py:alloc": 3,
+    "ai_model/gpu/digital_gpu.py:h_gemm": 1,
+    "ai_model/gpu/digital_gpu.py:get": 5,
+    "ai_model/gpu/digital_gpu.py:add": 1,
+    "ai_model/gpu/digital_gpu.py:run": 1,
+    "ai_model/gpu/digital_gpu.py:_validate_handles": 1,
+    "ai_model/gpu/digital_gpu.py:meta": 3,
+    "ai_model/gpu/digital_gpu.py:gemm_tiled": 1,
+    "ai_model/gpu/digital_gpu.py:_check_matmul_shapes": 1,
+    "ai_model/gpu/digital_gpu.py:_model": 1,
+    "ai_model/generation/technique.py:color_scheme": 1,
+    "ai_model/generation/technique.py:mood": 1,
+    "ai_model/generation/technique.py:dna_dict": 1,
+    "ai_model/generation/campaign.py:_hook_for": 15,
+    "ai_model/generation/campaign.py:_compose_body_cta": 15,
+    "ai_model/request_intelligence.py:build_brief": 15,
+    "ai_model/request_intelligence.py:_norm": 10843,
+    "ai_model/request_intelligence.py:_narrative_clause": 60,
+    "ai_model/request_intelligence.py:load_brand_voice": 15,
+    "ai_model/request_intelligence.py:_profile_for": 15,
+    "ai_model/request_intelligence.py:classify_intent": 15,
+    "ai_model/request_intelligence.py:<lambda>": 8325,
+    "ai_model/request_intelligence.py:extract_keywords": 15,
+    "ai_model/request_intelligence.py:infer_audience": 15,
+    "ai_model/request_intelligence.py:_resolve_tone": 15,
+    "ai_model/request_intelligence.py:_producer_energy": 15,
+    "ai_model/request_intelligence.py:_build_directives": 15,
+    "ai_model/quality_awareness.py:brief_enrichment": 15,
+    "ai_model/request_intelligence.py:compose_caption": 15,
+    "ai_model/request_intelligence.py:_weave_active": 15,
+    "ai_model/request_intelligence.py:best_hook": 15,
+    "ai_model/request_intelligence.py:hook_variants": 15,
+    "ai_model/quality_awareness.py:hook_candidates": 15,
+    "ai_model/quality_awareness.py:scene_phrases": 15,
+    "ai_model/request_intelligence.py:rank_candidates": 15,
+    "ai_model/request_intelligence.py:score_candidate": 8175,
+    "ai_model/request_intelligence.py:<genexpr>": 328936,
+    "ai_model/request_intelligence.py:garble_reason": 8175,
+    "ai_model/quality_awareness.py:graduate_hook": 15,
+    "ai_model/quality_awareness.py:_graduate": 15,
+    "ai_model/request_intelligence.py:_body_candidates": 15,
+    "ai_model/request_intelligence.py:_skel": 1068,
+    "ai_model/request_intelligence.py:_echoes_hook": 300,
+    "ai_model/request_intelligence.py:_shared_prefix": 300,
+    "ai_model/request_intelligence.py:_cta_candidates": 15,
+    "ai_model/generation/campaign.py:_pick_distinct_body": 15,
+    "ai_model/generation/campaign.py:_apply_disclosure": 15,
+    "ai_model/request_intelligence.py:apply_disclosure": 15,
+    "ai_model/generation/campaign.py:_post_date": 15,
+    "ai_model/generation/campaign.py:_body_similarity": 60,
+    "ai_model/generation/campaign.py:_countdown_phrase": 2,
+    "ai_model/gpu/hyper_backend.py:status": 1,
+    "ai_model/gpu/hyper_core.py:status": 12,
+    "ai_model/gpu/hyper_core.py:<genexpr>": 10,
+    "ai_model/gpu/hyper_core.py:used_bytes": 1,
+    "ai_model/gpu/hyper_core.py:silicon_report": 1
+  },
+  "exceptions": [],
+  "agent_outputs": [],
+  "awareness": [
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    },
+    {
+      "function": "brief_enrichment",
+      "nonempty": true
+    },
+    {
+      "function": "get_doc",
+      "nonempty": true
+    }
+  ],
+  "files": [],
+  "runner_sha256": "323069a2a56a7bbb0f161fbbb294cd63a78d57ff9a4b634cc17ad357c872532f",
+  "server_sha256": "f4f480f54c21d0ba289b75b3ecf6e48bd537fdb7a0c8af5f051dc39400c2f03e",
+  "job_storage": "evaluation-local job metadata; not PDIM/client durability",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 0.9,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 19.0,
+      "silicon": null
+    }
+  },
+  "request": {
+    "title": "Paper Lantern Harbor",
+    "artist_name": "Fictional Harbor Artist",
+    "platforms": [
+      "instagram"
+    ],
+    "weeks": 2,
+    "generate_images": false,
+    "generate_teasers": false,
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": null,
+    "title": "Paper Lantern Harbor",
+    "artist_name": "Fictional Harbor Artist",
+    "artist": null,
+    "genre": null,
+    "tone": null,
+    "brand_voice": null,
+    "target_audience": null,
+    "platforms": [
+      "instagram"
+    ],
+    "weeks": 2,
+    "release_date": null,
+    "mood": null,
+    "bpm": null,
+    "key": null,
+    "artistProfileId": null,
+    "generate_images": false,
+    "generate_teasers": false
+  },
+  "elapsed_seconds": 20.80458540199993,
+  "response": {
+    "release": {
+      "artist": "Fictional Harbor Artist",
+      "title": "Paper Lantern Harbor",
+      "genre": null,
+      "weeks": 2,
+      "platforms": [
+        "instagram"
+      ],
+      "release_date": null
+    },
+    "art_direction": {
+      "color_scheme": "dark_neon",
+      "mood": "cinematic",
+      "energy": 0.65,
+      "dna": {
+        "energy": 0.65,
+        "darkness": 0.6,
+        "warmth": 0.45,
+        "saturation": 0.65
+      },
+      "source": "prior",
+      "note": "Use this palette/energy across cover art, teasers and video so the whole rollout looks like one release."
+    },
+    "phases": [
+      {
+        "phase": "announce",
+        "label": "Announcement",
+        "description": "Reveal the release exists and start the story.",
+        "posts": [
+          {
+            "day_offset": -12,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "announcement",
+            "format": "post",
+            "goal": "awareness",
+            "brief": "Announce the new single is coming and reveal the title.",
+            "hook": "New single incoming \u2014 'Paper Lantern Harbor' \ud83c\udfb6",
+            "body": "New single announcement meets paper \u2014 cinematic music for millennials & Gen-Z (18-34).",
+            "cta": "First listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "caption": "New single incoming \u2014 'Paper Lantern Harbor' \ud83c\udfb6\n\nNew single announcement meets paper \u2014 cinematic music for millennials & Gen-Z (18-34).\n\nFirst listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 185
+          },
+          {
+            "day_offset": -11,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "teaser",
+            "format": "reel",
+            "goal": "awareness",
+            "brief": "Hint that something new is on the way \u2014 leave them curious.",
+            "hook": "Something new from Fictional Harbor Artist is on the way\u2026",
+            "body": "First time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.",
+            "cta": "Add Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "caption": "Something new from Fictional Harbor Artist is on the way\u2026\n\nFirst time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.\n\nAdd Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 290
+          },
+          {
+            "day_offset": -9,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "story",
+            "format": "post",
+            "goal": "connection",
+            "brief": "Share the story and inspiration behind the song.",
+            "hook": "The story behind 'Paper Lantern Harbor'",
+            "body": "Paper Lantern Harbor is Fictional Harbor Artist at their most the story behind the song \u2014 paper in every bar.",
+            "cta": "First listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "caption": "The story behind 'Paper Lantern Harbor'\n\nPaper Lantern Harbor is Fictional Harbor Artist at their most the story behind the song \u2014 paper in every bar.\n\nFirst listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 201
+          }
+        ]
+      },
+      {
+        "phase": "tease",
+        "label": "Teaser",
+        "description": "Give tasters of the sound to build anticipation.",
+        "posts": [
+          {
+            "day_offset": -7,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "audio_teaser",
+            "format": "reel",
+            "goal": "anticipation",
+            "brief": "Post the catchiest 8 seconds of the hook.",
+            "hook": "First listen \u2014 the hook from 'Paper Lantern Harbor' \ud83d\udd0a",
+            "body": "First snippet of the hook meets paper \u2014 playful music for millennials & Gen-Z (18-34).",
+            "cta": "Limited window. Stream, save, and get the merch before it's everywhere \u2014 link in bio! \ud83d\uded2",
+            "caption": "First listen \u2014 the hook from 'Paper Lantern Harbor' \ud83d\udd0a\n\nFirst snippet of the hook meets paper \u2014 playful music for millennials & Gen-Z (18-34).\n\nLimited window. Stream, save, and get the merch before it's everywhere \u2014 link in bio! \ud83d\uded2",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 230
+          },
+          {
+            "day_offset": -6,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "lyric_tease",
+            "format": "reel",
+            "goal": "anticipation",
+            "brief": "Spotlight a single lyric that makes people feel something.",
+            "hook": "This line from 'Paper Lantern Harbor' hits different\u2026",
+            "body": "Paper Lantern Harbor is a different experience at different volumes.\n\nQuiet, it's intimate.\n\nLoud, it's something else entirely. Try it both ways.",
+            "cta": "Add Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "caption": "This line from 'Paper Lantern Harbor' hits different\u2026\n\nPaper Lantern Harbor is a different experience at different volumes.\n\nQuiet, it's intimate.\n\nLoud, it's something else entirely. Try it both ways.\n\nAdd Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 257
+          },
+          {
+            "day_offset": -5,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "bts",
+            "format": "reel",
+            "goal": "connection",
+            "brief": "Behind the scenes making the track in the studio.",
+            "hook": "Behind the scenes making 'Paper Lantern Harbor'",
+            "body": "First time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.",
+            "cta": "Stay close: everything behind Paper Lantern Harbor drops here first! \ud83c\udfb5",
+            "caption": "Behind the scenes making 'Paper Lantern Harbor'\n\nFirst time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.\n\nStay close: everything behind Paper Lantern Harbor drops here first! \ud83c\udfb5",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 296
+          }
+        ]
+      },
+      {
+        "phase": "presave",
+        "label": "Pre-save",
+        "description": "Convert anticipation into pre-saves and countdown hype.",
+        "posts": [
+          {
+            "day_offset": -4,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "presave_push",
+            "format": "post",
+            "goal": "conversion",
+            "brief": "Invite pre-saves; include a link only if the artist has supplied a live one.",
+            "hook": "'Paper Lantern Harbor' is on the way \u2014 pre-save if available",
+            "body": "Paper Lantern Harbor is Fictional Harbor Artist at their most pre-save invitation \u2014 paper in every bar.",
+            "cta": "First listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "caption": "'Paper Lantern Harbor' is on the way \u2014 pre-save if available\n\nPaper Lantern Harbor is Fictional Harbor Artist at their most pre-save invitation \u2014 paper in every bar.\n\nFirst listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 216
+          },
+          {
+            "day_offset": -2,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "countdown",
+            "format": "story",
+            "goal": "anticipation",
+            "brief": "One week to go \u2014 build countdown energy.",
+            "hook": "2 days to go until 'Paper Lantern Harbor' \ud83d\udd25",
+            "body": "Countdown meets paper \u2014 playful music for millennials & Gen-Z (18-34).",
+            "cta": "First listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "caption": "2 days to go until 'Paper Lantern Harbor' \ud83d\udd25\n\nCountdown meets paper \u2014 playful music for millennials & Gen-Z (18-34).\n\nFirst listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 166
+          },
+          {
+            "day_offset": -1,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "countdown",
+            "format": "reel",
+            "goal": "conversion",
+            "brief": "Last push to pre-save before the drop.",
+            "hook": "1 day to go until 'Paper Lantern Harbor' \ud83d\udd25",
+            "body": "First time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.",
+            "cta": "Add Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "caption": "1 day to go until 'Paper Lantern Harbor' \ud83d\udd25\n\nFirst time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.\n\nAdd Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 275
+          }
+        ]
+      },
+      {
+        "phase": "release",
+        "label": "Release",
+        "description": "The drop \u2014 drive streams and thank early fans.",
+        "posts": [
+          {
+            "day_offset": 0,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "out_now",
+            "format": "post",
+            "goal": "conversion",
+            "brief": "It's out now \u2014 celebrate and send them to stream.",
+            "hook": "'Paper Lantern Harbor' is OUT NOW \ud83d\ude80",
+            "body": "First time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.",
+            "cta": "Add Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "caption": "'Paper Lantern Harbor' is OUT NOW \ud83d\ude80\n\nFirst time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.\n\nAdd Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 268
+          },
+          {
+            "day_offset": 0,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "out_now",
+            "format": "reel",
+            "goal": "conversion",
+            "brief": "The wait is over \u2014 the song is live, use the full hook.",
+            "hook": "The wait is over \u2014 'Paper Lantern Harbor' is live everywhere \ud83c\udfa7",
+            "body": "Paper Lantern Harbor is a different experience at different volumes.\n\nQuiet, it's intimate.\n\nLoud, it's something else entirely. Try it both ways.",
+            "cta": "Add Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "caption": "The wait is over \u2014 'Paper Lantern Harbor' is live everywhere \ud83c\udfa7\n\nPaper Lantern Harbor is a different experience at different volumes.\n\nQuiet, it's intimate.\n\nLoud, it's something else entirely. Try it both ways.\n\nAdd Paper Lantern Harbor to the playlist \u2014 link in bio",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 266
+          },
+          {
+            "day_offset": 2,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "thank_you",
+            "format": "post",
+            "goal": "connection",
+            "brief": "Thank fans for the first listens and shares.",
+            "hook": "Thank you for the love on 'Paper Lantern Harbor' \ud83d\ude4f",
+            "body": "Thank you fans meets paper \u2014 playful music for millennials & Gen-Z (18-34).",
+            "cta": "First listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "caption": "Thank you for the love on 'Paper Lantern Harbor' \ud83d\ude4f\n\nThank you fans meets paper \u2014 playful music for millennials & Gen-Z (18-34).\n\nFirst listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 178
+          }
+        ]
+      },
+      {
+        "phase": "sustain",
+        "label": "Sustain",
+        "description": "Keep the release alive long after day one.",
+        "posts": [
+          {
+            "day_offset": 5,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "reaction",
+            "format": "reel",
+            "goal": "engagement",
+            "brief": "Invite reactions or duets; feature existing reactions only with permission.",
+            "hook": "What do you think of 'Paper Lantern Harbor'? Show us your take",
+            "body": "First time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.",
+            "cta": "Stay close: everything behind Paper Lantern Harbor drops here first! \ud83c\udfb5",
+            "caption": "What do you think of 'Paper Lantern Harbor'? Show us your take\n\nFirst time you play Paper Lantern Harbor, you'll catch the hook and the production.\n\nSecond time, you'll hear what's underneath.\n\nThird time, you'll understand why it matters.\n\nStay close: everything behind Paper Lantern Harbor drops here first! \ud83c\udfb5",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 311
+          },
+          {
+            "day_offset": 10,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "acoustic",
+            "format": "reel",
+            "goal": "engagement",
+            "brief": "Plan a stripped-back version; share it only if one has actually been recorded.",
+            "hook": "How would 'Paper Lantern Harbor' sound stripped back? \ud83c\udfb8",
+            "body": "Alternate version idea meets paper \u2014 playful music for millennials & Gen-Z (18-34).",
+            "cta": "First listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "caption": "How would 'Paper Lantern Harbor' sound stripped back? \ud83c\udfb8\n\nAlternate version idea meets paper \u2014 playful music for millennials & Gen-Z (18-34).\n\nFirst listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 191
+          },
+          {
+            "day_offset": 18,
+            "date": null,
+            "platform": "instagram",
+            "content_type": "milestone",
+            "format": "post",
+            "goal": "engagement",
+            "brief": "Share an update; cite streams or playlist milestones only if verified.",
+            "hook": "Checking in on the journey of 'Paper Lantern Harbor'",
+            "body": "Paper Lantern Harbor is Fictional Harbor Artist at their most release journey \u2014 paper in every bar.",
+            "cta": "First listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "caption": "Checking in on the journey of 'Paper Lantern Harbor'\n\nPaper Lantern Harbor is Fictional Harbor Artist at their most release journey \u2014 paper in every bar.\n\nFirst listeners get first access \u2014 link in bio! \ud83d\udd25",
+            "hashtags": [
+              "#PaperLanternHarbor",
+              "#instagram",
+              "#music",
+              "#newrelease",
+              "#artist"
+            ],
+            "char_count": 204
+          }
+        ]
+      }
+    ],
+    "summary": {
+      "total_posts": 15,
+      "by_platform": {
+        "instagram": 15
+      },
+      "by_phase": {
+        "announce": 3,
+        "tease": 3,
+        "presave": 3,
+        "release": 3,
+        "sustain": 3
+      },
+      "images_generated": 0,
+      "teasers_queued": 0
+    },
+    "notes": [
+      "Rollout works backward from release day; negative day_offset = days before release, 0 = release day, positive = after.",
+      "Captions are ready to post; pair each with visuals following art_direction so the whole campaign looks cohesive."
+    ],
+    "source": "campaign_composer",
+    "processing_time_ms": 18075.2
+  },
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

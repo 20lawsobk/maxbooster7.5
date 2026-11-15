@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "scope": "Read-only independent completed5eb review, not launch approval",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 2905,
+      "sha256": "008af832d1d78cb7d7655206a5a92d9775915ed5a96b14124a6e1902386bb282"
+    },
+    {
+      "path": "hygiene.json",
+      "bytes": 166,
+      "sha256": "e38a3042872a0955c789913e48377e77e4b01513f32fbee98b3d1f886b5fb182"
+    },
+    {
+      "path": "identity/final-identity-review.json",
+      "bytes": 2843,
+      "sha256": "09e27ac9f9554280540ae06a1179f4490559400f0a6663939333d3f4057a4d63"
+    },
+    {
+      "path": "identity/review-after-master.py",
+      "bytes": 6820,
+      "sha256": "2696093d43bb36950f89cdd36e3d14aa6252c11a191baceea5e6d51d3964c904"
+    },
+    {
+      "path": "reconcile-final.py",
+      "bytes": 8796,
+      "sha256": "39db96d8914872e854e9fef0df362916cbc852fe19a13794dda93fa703e79f3c"
+    },
+    {
+      "path": "reconciliation.json",
+      "bytes": 16318,
+      "sha256": "67cf238a64a64f0b07b06ee13075dd01719477202fc372bd4831de966258c37a"
+    },
+    {
+      "path": "retention-and-raw-baseline.json",
+      "bytes": 9467,
+      "sha256": "9fbe90cc7d5bbb32823015ca2ce9da08a4308321ba2cf4a71ba3ce5a02db3763"
+    },
+    {
+      "path": "review-retention.py",
+      "bytes": 7913,
+      "sha256": "474eda790fcb249811e3f7daabce15eeb73bdf2ea949d14d515dab26a38754e2"
+    }
+  ],
+  "productionReady": false
+}

@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.7.0
+rootdir: /workspace
+plugins: anyio-4.14.2
+collected 7 items
+
+../onboarding-results/topology-candidate/tests/testing/test_endpoint_mount_resolution.py . [ 14%]
+......                                                                   [100%]
+
+- generated xml file: /workspace/onboarding-results/topology-candidate/consumer-final.xml -
+============================== 7 passed in 0.06s ===============================

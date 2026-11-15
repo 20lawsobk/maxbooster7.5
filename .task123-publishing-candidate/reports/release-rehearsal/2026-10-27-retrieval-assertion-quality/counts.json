@@ -1,0 +1,23 @@
+{
+  "negativeBefore": {
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "negativeAfter": {
+    "tests": 2,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "canonicalAfter": {
+    "tests": 18,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "pipelineDirectOkChecks": 37,
+  "phase4DirectOkChecks": 40,
+  "sourceSyntaxAstParse": true
+}

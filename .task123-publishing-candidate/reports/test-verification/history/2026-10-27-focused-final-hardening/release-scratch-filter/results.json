@@ -1,0 +1,59 @@
+[
+  {
+    "id": "unit",
+    "command": [
+      "node",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "tests/unit/production-simulation-copy.test.ts",
+      "--coverage.enabled=false",
+      "--reporter=junit",
+      "--outputFile=/workspace/onboarding-results/release-scratch-filter/unit.xml"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-27T09:54:48.035406+00:00",
+    "durationSeconds": 0.721,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "/workspace/onboarding-results/release-scratch-filter/unit.txt",
+    "logSha256": "fa797b16280d42deb33cb2de0e0ea697c3c27100345dbebfc02c89aec8f469eb"
+  },
+  {
+    "id": "node",
+    "command": [
+      "node",
+      "--test",
+      "--test-reporter=junit",
+      "tests/deployment-remainder-contract.test.mjs"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-27T09:54:48.035665+00:00",
+    "durationSeconds": 0.217,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "/workspace/onboarding-results/release-scratch-filter/node.xml",
+    "logSha256": "540f8a6a3f05ced30c88ff5bd3805beb48b80d98b3e6ea87e18a5baa8f3b9a4d"
+  },
+  {
+    "id": "lint",
+    "command": [
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "scripts/lib/production-simulation-copy.mjs",
+      "script/lib/dockerignoreScan.ts",
+      "tests/unit/production-simulation-copy.test.ts",
+      "tests/deployment-remainder-contract.test.mjs",
+      "--quiet"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-27T09:54:48.036019+00:00",
+    "durationSeconds": 1.277,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "/workspace/onboarding-results/release-scratch-filter/lint.txt",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

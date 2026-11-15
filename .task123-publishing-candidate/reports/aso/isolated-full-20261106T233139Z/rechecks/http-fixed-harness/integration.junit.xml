@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="22.317027034">
+    <testsuite name="tests/integration/maxcore-local-supervisor.integration.test.ts" timestamp="2026-11-07T00:15:44.084Z" hostname="repl" tests="2" failures="0" errors="0" skipped="0" time="22.317027034">
+        <testcase classname="tests/integration/maxcore-local-supervisor.integration.test.ts" name="MaxCore local subsystem (real spawn) &gt; launches real Python and storage and reports provider-aware generation readiness" time="22.302263714">
+        </testcase>
+        <testcase classname="tests/integration/maxcore-local-supervisor.integration.test.ts" name="MaxCore local subsystem (real spawn) &gt; stops cleanly and the port is released" time="0.004292188">
+        </testcase>
+    </testsuite>
+</testsuites>

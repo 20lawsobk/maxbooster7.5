@@ -1,0 +1,6 @@
+[09:56:05.538] INFO (477789): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+JUNIT report written to /workspace/onboarding-results/hybrid-coverage-closure-final/vitest.xml
+ERROR: Coverage for lines (98.55%) does not meet global threshold (100%)
+ERROR: Coverage for functions (94.11%) does not meet global threshold (100%)
+ERROR: Coverage for statements (98.51%) does not meet global threshold (100%)
+ERROR: Coverage for branches (97.62%) does not meet global threshold (100%)

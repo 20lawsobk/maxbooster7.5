@@ -1,0 +1,110 @@
+{
+  "command": [
+    "/workspace/.cloud-tools/node_modules/.bin/node",
+    "/workspace/maxbooster7.5/node_modules/vitest/vitest.mjs",
+    "run",
+    "--config",
+    "/tmp/c5-bound-jhs00lmn/vitest.config.mjs",
+    "--reporter=junit",
+    "--reporter=/workspace/onboarding-results/c5-producer-foundation/reporter/scripts/testing/coverage-outcome-reporter.mjs",
+    "--outputFile=/tmp/c5-bound-jhs00lmn/evidence/root/coverage-unit.junit.xml"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-29T23:11:52.411227+00:00",
+  "durationSeconds": 0.622,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "/tmp/c5-bound-jhs00lmn/evidence/command.txt",
+  "logSha256": "5069427495686bb097b8aff13e7e0008771b7a221701e1efaefd591f6ea560c7",
+  "coverageEvidence": {
+    "schemaVersion": 1,
+    "kind": "parent-bound-coverage-command-artifacts",
+    "runId": "dd078aaf-45af-4305-b8b7-d377b1d524a1",
+    "parentWindow": {
+      "startedAtNs": "1793315512411214108",
+      "finishedAtNs": "1793315513033334208"
+    },
+    "reporter": {
+      "path": "/workspace/onboarding-results/c5-producer-foundation/reporter/scripts/testing/coverage-outcome-reporter.mjs",
+      "sha256": "7a940fc6505a21eb98c522a6250160ea7e84abf044bd470f9e5728edb5193f54"
+    },
+    "status": "bound",
+    "validForAdmission": true,
+    "junit": {
+      "path": "/tmp/c5-bound-jhs00lmn/evidence/root/coverage-unit.junit.xml",
+      "sha256": "833aa3fac15432efb42a394f2cb132e343b34678acc85f0ba614a0d1207e519f",
+      "bytes": 558,
+      "mtimeNs": "1793315512981501457",
+      "fresh": true,
+      "counts": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "outcome": {
+      "path": "/tmp/c5-bound-jhs00lmn/evidence/coverage/command-outcome.json",
+      "sha256": "4a0bf9e0a73703df4df543db1aa234f12f23d0a09ff9ecc8b884742da407c562",
+      "bytes": 1307,
+      "mtimeNs": "1793315512961500933",
+      "fresh": true,
+      "data": {
+        "schemaVersion": 1,
+        "kind": "actual-public-Vitest-onTestRunEnd",
+        "runId": "dd078aaf-45af-4305-b8b7-d377b1d524a1",
+        "repositoryRoot": "/tmp/c5-bound-jhs00lmn",
+        "runtime": {
+          "node": "22.23.3",
+          "v8": "12.4.254.21-node.57"
+        },
+        "reporterSha256": "7a940fc6505a21eb98c522a6250160ea7e84abf044bd470f9e5728edb5193f54",
+        "initializedAt": "2026-10-29T23:11:52.782Z",
+        "startedAt": "2026-10-29T23:11:52.789Z",
+        "finishedAt": "2026-10-29T23:11:52.966Z",
+        "reason": "passed",
+        "unhandledErrorCount": 0,
+        "testCaseCounts": {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "pending": 0
+        },
+        "testModuleCount": 1,
+        "moduleStates": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "pending": 0,
+          "queued": 0
+        },
+        "moduleErrorCount": 0,
+        "testCaseErrorCount": 0,
+        "selectedModules": [
+          "actual.test.ts"
+        ],
+        "missingModules": [],
+        "unexpectedModules": [],
+        "modules": [
+          {
+            "file": "actual.test.ts",
+            "state": "passed",
+            "testCaseCounts": {
+              "total": 2,
+              "passed": 2,
+              "failed": 0,
+              "skipped": 0,
+              "pending": 0
+            },
+            "errorCount": 0
+          }
+        ],
+        "scope": "Actual public reporter arguments; counts only, no error messages or private data. Not a coverage threshold or launch decision."
+      }
+    }
+  },
+  "scope": "Actual installed Vitest plus candidate parent byte binding, owned fixture only; no application execution/coverage admission."
+}

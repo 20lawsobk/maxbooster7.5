@@ -1,0 +1,5 @@
+libasound2:amd64	1.2.8-1+b1
+libgbm1:amd64	22.3.6-1+deb12u2
+libgtk-3-0:amd64	3.24.38-2~deb12u3
+libnss3:amd64	2:3.87.1-1+deb12u4
+xvfb	2:21.1.7-3+deb12u13

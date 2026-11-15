@@ -1,0 +1,106 @@
+{
+  "startedAt": "2026-10-27T21:49:37.809218+00:00",
+  "scope": "Fresh credential-free publicbuildprofile; prepared portable payload and disposable local cold startup; no Replit deployment or global capacity claim",
+  "productionReady": false,
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "release:prepare"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T21:49:38.050353+00:00",
+      "durationSeconds": 173.102,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-27-published-guard-final/prepare.txt",
+      "logSha256": "7caf20af9f767f41ae7d99ed6400213d7fc6b2fd9657493e3887066a9c8a6a5a",
+      "id": "prepare"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "release:verify"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T21:52:31.152699+00:00",
+      "durationSeconds": 3.15,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-27-published-guard-final/verify.txt",
+      "logSha256": "777bb8b19e58a39fa4702df6ff481c255ec2f1866b95abefd30a4429a3d1d486",
+      "id": "verify"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/readiness-packed-acceptance.mjs",
+        "/tmp/maxbooster-empty-public-state-wehq49ea",
+        "/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-published-guard-final/cold"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T21:52:34.323273+00:00",
+      "durationSeconds": 37.155,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-27-published-guard-final/cold-runner.txt",
+      "logSha256": "7add66abc87a7448f4f9493cce529389d95d6667b6d99700740b630373e5cb90",
+      "id": "cold"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "release:verify"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T21:53:11.478615+00:00",
+      "durationSeconds": 2.182,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/release-rehearsal/2026-10-27-published-guard-final/verify-after-cold.txt",
+      "logSha256": "777bb8b19e58a39fa4702df6ff481c255ec2f1866b95abefd30a4429a3d1d486",
+      "id": "verify-after-cold"
+    }
+  ],
+  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
+  "previousAttempt": "reports/release-rehearsal/2026-10-27-platform-final/summary.json",
+  "retainedAttempts": [
+    "reports/release-rehearsal/2026-10-26/summary.json",
+    "reports/release-rehearsal/2026-10-27/summary.json",
+    "reports/release-rehearsal/2026-10-27-final/summary.json",
+    "reports/release-rehearsal/2026-10-27-platform-final/summary.json"
+  ],
+  "inputScope": "Credential-free live-awareness public build; application/provider/database secrets are not forwarded",
+  "executionDriverSha256": "43c56685a9b684117b763e56b42669c4c348c84ab08322a0057b42121f4b755e",
+  "sourceInputsSha256": "1bffd19f52e0e03535fefca06a40e4b712fd235491423f4525862acea730fbc4",
+  "release": {
+    "createdAt": "2026-10-27T21:52:30.018Z",
+    "sourceSha256": "b4a3646d379377213190f0daac2e401365dee00fa63ecc7071b08d5503727934",
+    "sourceEntries": 4554,
+    "payloadEntries": 37,
+    "payloadBytes": 804554617,
+    "buildEnvironment": "51e58334ae1096531e056a6f8ee642b8d13f07f2a9fcc617617e98c55ebed3d0",
+    "modelServing": {
+      "mode": "live-awareness",
+      "state": "runtime-managed",
+      "readinessRequired": true
+    }
+  },
+  "coldStartup": "pass",
+  "readinessScope": {
+    "accepted": true,
+    "scope": "cold-startup-with-ml-unavailable",
+    "productionReady": false,
+    "unverifiedNonMl": []
+  },
+  "preparedArtifactCurrentAfterCold": true,
+  "status": "passed_cold_payload_scope",
+  "finishedAt": "2026-10-27T21:53:13.660798+00:00"
+}

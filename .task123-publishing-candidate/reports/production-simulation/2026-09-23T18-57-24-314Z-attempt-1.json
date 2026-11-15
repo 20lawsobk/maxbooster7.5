@@ -1,0 +1,1787 @@
+{
+  "runId": "2026-09-23T18-57-24-314Z",
+  "workspace": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z (disposable isolated copy; remove with --cleanup)",
+  "commands": {
+    "build": "DEPLOY_PACK=1 npm run build",
+    "start": "bash start.sh"
+  },
+  "safety": {
+    "sourceRoot": "/home/runner/workspace",
+    "sourceRootUsedAsBuildCwd": false,
+    "sourceFilesMutated": false,
+    "excluded": [
+      ".replit",
+      ".git",
+      "data",
+      "logs",
+      "attached_assets",
+      "*.env secrets",
+      "dns-node/keys"
+    ],
+    "networkCredentialsProvided": false,
+    "thirdPartyOrLiveDatabaseTargeted": false,
+    "runtimeIsolationPolicy": {
+      "required": true,
+      "transport": "Unprivileged Linux user+network namespace; only namespace-local loopback is reachable by the app and every native/Python descendant",
+      "filesystem": "all build and runtime writes are rooted in the disposable copy; source credentials, data, logs, media, and VCS metadata are excluded",
+      "credentials": "env-i style allowlist; generated simulation-only secrets; ephemeral local PostgreSQL only"
+    },
+    "hostNetworkNamespace": "net:[4026532714]",
+    "runtimeNetworkNamespace": "net:[4026532864]",
+    "runtimeIsolationEnforced": true,
+    "deployPackOnSourceWorkspace": false,
+    "networkNamespacePreflight": {
+      "available": true,
+      "exitCode": 0,
+      "signal": null,
+      "error": "",
+      "classification": "supported unprivileged user+network namespace with namespace-local loopback"
+    }
+  },
+  "resourceProfile": {
+    "configured": {
+      "cpu": 4,
+      "memoryBytes": 8589934592,
+      "imageHardLimitBytes": 8589934592
+    },
+    "observed": {
+      "cpuQuota": 4,
+      "logicalCpuCount": 4,
+      "memoryLimitBytes": 8589934592,
+      "memoryCurrentBytes": 1203585024,
+      "memoryHeadroomBytes": 7386349568,
+      "diskAvailableBytes": 235445456896
+    },
+    "admission": {
+      "safe": true,
+      "reasons": [],
+      "estimatedScratchBytes": 74526483140
+    }
+  },
+  "sourceSnapshot": {
+    "capturedAt": "2026-09-23T19:00:12.471Z",
+    "note": "All build/start stages use the immutable disposable copy captured at copy stage; source edits after that point are intentionally excluded.",
+    "synchronizedAt": "2026-09-23T19:06:16.395Z",
+    "synchronization": {
+      "mode": "explicit small-path refresh after the owned-MaxCore cluster/readiness fix; no recopy",
+      "paths": [
+        {
+          "path": "scripts/simulate-production.mjs",
+          "bytes": 73056,
+          "sha256": "c19eb6789b36844fe45008582372c2006b408feb3c868648e417c9844080760e"
+        },
+        {
+          "path": "server/cluster.ts",
+          "bytes": 27457,
+          "sha256": "4ddb21d3f4593971612eedc82a8f3000ee4aee5c3877e3d6bd3a36608231f879"
+        },
+        {
+          "path": "server/index.ts",
+          "bytes": 83874,
+          "sha256": "0e44311f2fe6a01145d88b73a8db567e69e6b955e2b0ca922ecc322e7b51838e"
+        },
+        {
+          "path": "server/lib/healthRegistry.ts",
+          "bytes": 9835,
+          "sha256": "48556f64b3374fd41ec8e49fcfab86b56457a1b1204a7a4fc7764c5bbb4e15b5"
+        },
+        {
+          "path": "server/services/maxcoreLocalSupervisor.ts",
+          "bytes": 27119,
+          "sha256": "aa82183fd719f25b0fd1b57f76247bf7d62b07ff76829347c09efcef22136166"
+        },
+        {
+          "path": "server/startup-probes.ts",
+          "bytes": 18736,
+          "sha256": "51a80470165e312402f4cf68b946e3d969a77f91156c3c4588c8972e2bafa263"
+        },
+        {
+          "path": "tests/unit/maxcore-cluster-ownership.test.ts",
+          "bytes": 4412,
+          "sha256": "db5d20fcb9d727264284377ce943a2c95fb18dd41dea1f42992ca1e54ce11086"
+        },
+        {
+          "path": "tests/unit/maxcore-local-supervisor.test.ts",
+          "bytes": 10049,
+          "sha256": "b6ed9de4c12e9588ffa11734885ae5d1ae22df26d71cc97f883a6e40c47ae8e6"
+        },
+        {
+          "path": "tests/unit/maxcore-readiness-gate.test.ts",
+          "bytes": 2118,
+          "sha256": "656c2facb8636c20428335e09da5c22036e3301b1b55197d77f87fcac6bb8fea"
+        }
+      ]
+    }
+  },
+  "nodeResolution": {
+    "bundledNodePresentInCopy": false,
+    "pathNodeProbe": {
+      "exitCode": 0,
+      "output": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node\nv24.13.0\n",
+      "error": ""
+    },
+    "startScriptEvidence": []
+  },
+  "copyIntegrity": {
+    "checked": [
+      {
+        "path": "node_modules/@sentry/core/build/esm/logs/public-api.js",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 986,
+        "copyBytes": 986,
+        "sourceSha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b",
+        "copySha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b"
+      },
+      {
+        "path": "node_modules/vite/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 5158,
+        "copyBytes": 5158,
+        "sourceSha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0",
+        "copySha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0"
+      },
+      {
+        "path": "node_modules/tsx/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1601,
+        "copyBytes": 1601,
+        "sourceSha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659",
+        "copySha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659"
+      },
+      {
+        "path": "python_runtime/bin/python3.12",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 100186336,
+        "copyBytes": 100186336,
+        "sourceSha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929",
+        "copySha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929"
+      },
+      {
+        "path": "python_runtime/lib/python3.12/site-packages/pip/_vendor/certifi/cacert.pem",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 270954,
+        "copyBytes": 270954,
+        "sourceSha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9",
+        "copySha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
+      },
+      {
+        "path": ".dockerignore",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 6086,
+        "copyBytes": 6086,
+        "sourceSha256": "537f917d31f522e7842f57330116264d1c3aa67b799812887d6ef5603d014cf1",
+        "copySha256": "537f917d31f522e7842f57330116264d1c3aa67b799812887d6ef5603d014cf1"
+      },
+      {
+        "path": "build.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 28910,
+        "copyBytes": 28910,
+        "sourceSha256": "709523f38b15e80bb465d5ef637e24abf293f2fdb4a50639e1a5c0c39cb16d9e",
+        "copySha256": "709523f38b15e80bb465d5ef637e24abf293f2fdb4a50639e1a5c0c39cb16d9e"
+      },
+      {
+        "path": "package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 14943,
+        "copyBytes": 14943,
+        "sourceSha256": "3b85c61e5b4fd82712c4fb3ee695cae383294cf397f4e13b7a4c0c1c216d3639",
+        "copySha256": "3b85c61e5b4fd82712c4fb3ee695cae383294cf397f4e13b7a4c0c1c216d3639"
+      },
+      {
+        "path": "script/build.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 25954,
+        "copyBytes": 25954,
+        "sourceSha256": "bebd77f7f8959d90a23887573208f31cea7b47c72f8e1e8cfd9efe746a31a1d9",
+        "copySha256": "bebd77f7f8959d90a23887573208f31cea7b47c72f8e1e8cfd9efe746a31a1d9"
+      },
+      {
+        "path": "scripts/boosterstate-toolchain.nix",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 326,
+        "copyBytes": 326,
+        "sourceSha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02",
+        "copySha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02"
+      },
+      {
+        "path": "scripts/build-boosterstate.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2004,
+        "copyBytes": 2004,
+        "sourceSha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090",
+        "copySha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090"
+      },
+      {
+        "path": "scripts/lib/productionSimulationPolicy.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 3107,
+        "copyBytes": 3107,
+        "sourceSha256": "cd422bf4cdb6d6f8eb6241d9653fa79754743508c1ed7145754a4d9442bbdb9a",
+        "copySha256": "cd422bf4cdb6d6f8eb6241d9653fa79754743508c1ed7145754a4d9442bbdb9a"
+      },
+      {
+        "path": "server/routes/distribution.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 271443,
+        "copyBytes": 271443,
+        "sourceSha256": "b6f9d59a3d43bc6417bc7478fcc0f0a542ccd40f6880297bf1365d114a78002e",
+        "copySha256": "b6f9d59a3d43bc6417bc7478fcc0f0a542ccd40f6880297bf1365d114a78002e"
+      },
+      {
+        "path": "server/services/toolostRuntimeConfig.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 688,
+        "copyBytes": 688,
+        "sourceSha256": "977a334254f47c54857ca1a8f8a57eee9245919e754e157ed7abf15d9eb9bcd3",
+        "copySha256": "977a334254f47c54857ca1a8f8a57eee9245919e754e157ed7abf15d9eb9bcd3"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/server.py",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 546965,
+        "copyBytes": 546965,
+        "sourceSha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7",
+        "copySha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 444,
+        "copyBytes": 444,
+        "sourceSha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+        "copySha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 109368185,
+        "copyBytes": 109368185,
+        "sourceSha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+        "copySha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419"
+      },
+      {
+        "path": "external/pdim/artifacts/api-server/src/index.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 11270,
+        "copyBytes": 11270,
+        "sourceSha256": "05ac55ce86c45094b2b4ad3e5d255981c07168179cef170ac93e8cc03017495d",
+        "copySha256": "05ac55ce86c45094b2b4ad3e5d255981c07168179cef170ac93e8cc03017495d"
+      },
+      {
+        "path": "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1207,
+        "copyBytes": 1207,
+        "sourceSha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47",
+        "copySha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47"
+      },
+      {
+        "path": "tests/unit/retained-pdim-recovery-simulation.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 8266,
+        "copyBytes": 8266,
+        "sourceSha256": "c8b050136e588fc1fa4f6815614cf021254b1bc9d206798c6ff6f8823bc7464a",
+        "copySha256": "c8b050136e588fc1fa4f6815614cf021254b1bc9d206798c6ff6f8823bc7464a"
+      },
+      {
+        "path": "tests/unit/toolost-runtime-config.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 910,
+        "copyBytes": 910,
+        "sourceSha256": "074329442e67447953b6962a47bad522dab306542eb10d9a0d7bd80c36f0d6fd",
+        "copySha256": "074329442e67447953b6962a47bad522dab306542eb10d9a0d7bd80c36f0d6fd"
+      },
+      {
+        "path": "scripts/simulate-production.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 73056,
+        "copyBytes": 73056,
+        "sourceSha256": "c19eb6789b36844fe45008582372c2006b408feb3c868648e417c9844080760e",
+        "copySha256": "c19eb6789b36844fe45008582372c2006b408feb3c868648e417c9844080760e"
+      },
+      {
+        "path": "server/cluster.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 27457,
+        "copyBytes": 27457,
+        "sourceSha256": "4ddb21d3f4593971612eedc82a8f3000ee4aee5c3877e3d6bd3a36608231f879",
+        "copySha256": "4ddb21d3f4593971612eedc82a8f3000ee4aee5c3877e3d6bd3a36608231f879"
+      },
+      {
+        "path": "server/index.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 83874,
+        "copyBytes": 83874,
+        "sourceSha256": "0e44311f2fe6a01145d88b73a8db567e69e6b955e2b0ca922ecc322e7b51838e",
+        "copySha256": "0e44311f2fe6a01145d88b73a8db567e69e6b955e2b0ca922ecc322e7b51838e"
+      },
+      {
+        "path": "server/lib/healthRegistry.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 9835,
+        "copyBytes": 9835,
+        "sourceSha256": "48556f64b3374fd41ec8e49fcfab86b56457a1b1204a7a4fc7764c5bbb4e15b5",
+        "copySha256": "48556f64b3374fd41ec8e49fcfab86b56457a1b1204a7a4fc7764c5bbb4e15b5"
+      },
+      {
+        "path": "server/services/maxcoreLocalSupervisor.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 27119,
+        "copyBytes": 27119,
+        "sourceSha256": "aa82183fd719f25b0fd1b57f76247bf7d62b07ff76829347c09efcef22136166",
+        "copySha256": "aa82183fd719f25b0fd1b57f76247bf7d62b07ff76829347c09efcef22136166"
+      },
+      {
+        "path": "server/startup-probes.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 18736,
+        "copyBytes": 18736,
+        "sourceSha256": "51a80470165e312402f4cf68b946e3d969a77f91156c3c4588c8972e2bafa263",
+        "copySha256": "51a80470165e312402f4cf68b946e3d969a77f91156c3c4588c8972e2bafa263"
+      },
+      {
+        "path": "tests/unit/maxcore-cluster-ownership.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 4412,
+        "copyBytes": 4412,
+        "sourceSha256": "db5d20fcb9d727264284377ce943a2c95fb18dd41dea1f42992ca1e54ce11086",
+        "copySha256": "db5d20fcb9d727264284377ce943a2c95fb18dd41dea1f42992ca1e54ce11086"
+      },
+      {
+        "path": "tests/unit/maxcore-local-supervisor.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 10049,
+        "copyBytes": 10049,
+        "sourceSha256": "b6ed9de4c12e9588ffa11734885ae5d1ae22df26d71cc97f883a6e40c47ae8e6",
+        "copySha256": "b6ed9de4c12e9588ffa11734885ae5d1ae22df26d71cc97f883a6e40c47ae8e6"
+      },
+      {
+        "path": "tests/unit/maxcore-readiness-gate.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2118,
+        "copyBytes": 2118,
+        "sourceSha256": "656c2facb8636c20428335e09da5c22036e3301b1b55197d77f87fcac6bb8fea",
+        "copySha256": "656c2facb8636c20428335e09da5c22036e3301b1b55197d77f87fcac6bb8fea"
+      }
+    ],
+    "passed": true
+  },
+  "configValidation": {
+    "checked": [
+      {
+        "path": "package.json",
+        "present": true,
+        "bytes": 14943
+      },
+      {
+        "path": "start.sh",
+        "present": true,
+        "bytes": 16196
+      },
+      {
+        "path": "script/build.ts",
+        "present": true,
+        "bytes": 25954
+      },
+      {
+        "path": "dist/pdim-restore.mjs",
+        "present": true,
+        "bytes": 31525
+      }
+    ],
+    "passed": true
+  },
+  "build": {
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 771151,
+    "artifacts": {
+      "dist/index.mjs": {
+        "present": false,
+        "packedIntoAppRemainder": true
+      },
+      "dist/cluster.mjs": {
+        "present": false,
+        "packedIntoAppRemainder": true
+      },
+      "dist/public/index.html": {
+        "present": false,
+        "packedIntoAppRemainder": true
+      },
+      "dist/pdim-restore.mjs": {
+        "present": true,
+        "bytes": 31525
+      },
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 153672389
+      },
+      "node_modules.manifest.json": {
+        "present": true,
+        "bytes": 160
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 7464821
+      },
+      "app_remainder.manifest.json": {
+        "present": true,
+        "bytes": 156
+      }
+    },
+    "outputTail": [
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 119.8 MB/s  0:00:00",
+      "Collecting python-dotenv==1.2.2 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 13))",
+      "  Downloading python_dotenv-1.2.2-py3-none-any.whl (22 kB)",
+      "Collecting pyyaml==6.0.3 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 14))",
+      "  Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)",
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 807.9/807.9 kB 706.2 MB/s  0:00:00",
+      "Collecting scipy==1.17.1 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 15))",
+      "  Downloading scipy-1.17.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (35.2 MB)",
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.2/35.2 MB 91.7 MB/s  0:00:00",
+      "Collecting starlette==1.6.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 16))",
+      "  Downloading starlette-1.6.0-py3-none-any.whl (75 kB)",
+      "Collecting typing-extensions==4.16.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 17))",
+      "  Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)",
+      "Collecting typing-inspection==0.4.2 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 18))",
+      "  Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)",
+      "Collecting uvicorn==0.44.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 19))",
+      "  Downloading uvicorn-0.44.0-py3-none-any.whl (69 kB)",
+      "Collecting uvloop==0.22.1 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 20))",
+      "  Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.4 MB)",
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.4/4.4 MB 232.4 MB/s  0:00:00",
+      "Collecting watchfiles==1.1.1 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 21))",
+      "  Downloading watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (456 kB)",
+      "Collecting websockets==16.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/python_runtime/requirements.lock (line 22))",
+      "  Downloading websockets-16.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (184 kB)",
+      "Installing collected packages: websockets, uvloop, typing-extensions, pyyaml, python-dotenv, pillow, numpy, idna, httptools, h11, click, annotated-types, annotated-doc, uvicorn, typing-inspection, scipy, pydantic-core, anyio, watchfiles, starlette, pydantic, fastapi",
+      "Successfully installed annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.15.1 click-8.3.3 fastapi-0.136.0 h11-0.16.0 httptools-0.7.1 idna-3.20 numpy-2.4.4 pillow-12.3.0 pydantic-2.13.2 pydantic-core-2.46.2 python-dotenv-1.2.2 pyyaml-6.0.3 scipy-1.17.1 starlette-1.6.0 typing-extensions-4.16.0 typing-inspection-0.4.2 uvicorn-0.44.0 uvloop-0.22.1 watchfiles-1.1.1 websockets-16.0",
+      "   ✅ Portable Python runtime ready → python_runtime/",
+      "==> Packing 4 capsule(s) concurrently across 4 CPU(s) → 1 zstd thread(s) each",
+      "==> Packing python_runtime/ → python_runtime.pdim (zstd-19, -T1, Extract & Boot)...",
+      "==> Packing node_modules/ → node_modules.pdim (zstd-19, -T1, Extract & Boot)...",
+      "==> Packing external/maxcore/ → external_maxcore.pdim (zstd-19, -T1, Extract & Boot)...",
+      "==> Packing external/pdim/ → external_pdim.pdim (zstd-19, -T1, Extract & Boot)...",
+      "   ✅ external/pdim/ packed (40MB) and removed from image",
+      "   ✅ python_runtime/ packed (112MB) and removed from image",
+      "   ✅ external/maxcore/ packed (546MB) and removed from image",
+      "   ✅ node_modules/ packed (147MB) and removed from image",
+      "==> Scanned .dockerignore-survivor payload: 2134 file(s) remaining outside the four existing capsules and the boot bootstrap set (start.sh, .node_bin, scripts/boot-stub-server.mjs, scripts/port-contract.sh, scripts/check-port-contract.ts, dist/pdim-restore.mjs, dist/.db-indexes-ok, .replit, .git, node_modules, python_runtime, external/maxcore, external/pdim, node_modules.pdim, node_modules.manifest.json, python_runtime.pdim, python_runtime.manifest.json, external_maxcore.pdim, external_maxcore.manifest.json, external_pdim.pdim, external_pdim.manifest.json)",
+      "==> Packing 2134 remaining app files → app_remainder.pdim (zstd-19, -T4, Extract & Boot)...",
+      "   ✅ 2134 files packed (7MB) and removed from image",
+      "==> Pre-flight image size check: 1.28 GiB (0.98 GiB Repl payload + 0.31 GiB deduplicated Nix closure; 10/10 Nix roots accounted for; safety budget 7.5 GiB, hard limit 8 GiB)"
+    ],
+    "nixPreflight": {
+      "totalGiB": 1.28,
+      "payloadGiB": 0.98,
+      "nixClosureGiB": 0.31,
+      "rootsAccounted": 10,
+      "rootsDiscovered": 10,
+      "scope": "sanitized simulation PATH/environment only; not a target image closure claim"
+    },
+    "toolchain": {
+      "nix-shell": "/nix/store/s39027q39rd1qzi2m6cmf455kljn6l7p-replit-runtime-path/bin/nix-shell",
+      "curl": "/nix/store/s39027q39rd1qzi2m6cmf455kljn6l7p-replit-runtime-path/bin/curl",
+      "tar": "/nix/store/7nilh5hvnfbsx3vn020pkjkgx9rgsizb-gnutar-1.35/bin/tar",
+      "zstd": "/nix/store/ddap6dm3fjdm0zmw4m3rls73a0gml3xd-zstd-1.5.7-bin/bin/zstd"
+    },
+    "gitIndexPreparation": {
+      "method": "source tracked index copy plus explicit required source anchors; no work-tree add and no LFS filtering",
+      "indexedPathCount": 5999,
+      "requiredIndexAnchors": [
+        ".gitattributes",
+        "script/lib/modelRelease.ts",
+        "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+        "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "scripts/boosterstate-toolchain.nix",
+        "scripts/build-boosterstate.sh",
+        "server/services/toolostRuntimeConfig.ts",
+        "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+        "tests/unit/maxcore-cluster-ownership.test.ts",
+        "tests/unit/maxcore-readiness-gate.test.ts",
+        "tests/unit/retained-pdim-recovery-simulation.test.ts",
+        "tests/unit/toolost-runtime-config.test.ts"
+      ],
+      "boundedTimeouts": true
+    }
+  },
+  "pythonCapability": {
+    "status": "production_build_imports_passed",
+    "note": "The production build recreates the pinned portable Python runtime. No provider credentials are available; package and fixed runtime downloads are build-time only."
+  },
+  "capsuleRestore": {
+    "buildCapsules": {
+      "nodeModules": {
+        "present": true,
+        "bytes": 153672389
+      },
+      "appRemainder": {
+        "present": true,
+        "bytes": 7464821
+      },
+      "pythonRuntime": {
+        "present": true,
+        "bytes": 117178302
+      },
+      "nodeModulesRemovedBeforeColdBoot": true,
+      "freshSourceBuild": true
+    },
+    "manifestValidation": [
+      {
+        "capsule": "node_modules.pdim",
+        "manifest": "node_modules.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "94790449f193af7cb4c6b894fdc312160d15918bc65fde184902992e6deb9e8a",
+        "actualSha256": "94790449f193af7cb4c6b894fdc312160d15918bc65fde184902992e6deb9e8a",
+        "bytes": 153672389,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "app_remainder.pdim",
+        "manifest": "app_remainder.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "0d9da073b70af3f349348eb4149a8aeac9e2b2d8517723ad6a5a43f30a606b5a",
+        "actualSha256": "0d9da073b70af3f349348eb4149a8aeac9e2b2d8517723ad6a5a43f30a606b5a",
+        "bytes": 7464821,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "python_runtime.pdim",
+        "manifest": "python_runtime.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "dc4f3674cfb60429d9b2154ea5c8193eba1a052e74489154fa7512f3ca25d08c",
+        "actualSha256": "dc4f3674cfb60429d9b2154ea5c8193eba1a052e74489154fa7512f3ca25d08c",
+        "bytes": 117178302,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "external_maxcore.pdim",
+        "manifest": "external_maxcore.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "68964faa380f15919da0742e90a165c3c83d7af86c07144600bea1f6be2dc1b8",
+        "actualSha256": "68964faa380f15919da0742e90a165c3c83d7af86c07144600bea1f6be2dc1b8",
+        "bytes": 572908345,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "external_pdim.pdim",
+        "manifest": "external_pdim.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "2f9bedcc186b198f9647e9603b17dd06268b5f807c5b300851f1edc475a86416",
+        "actualSha256": "2f9bedcc186b198f9647e9603b17dd06268b5f807c5b300851f1edc475a86416",
+        "bytes": 41988346,
+        "provenance": "current-source build artifact"
+      }
+    ],
+    "historicalCompatibility": [],
+    "coldCriticalRestore": {
+      "exitCode": 0,
+      "nodeModulesSentinel": true,
+      "appRemainderSentinel": true,
+      "appEntryPointsPresentAfterRestore": true,
+      "outputTail": [
+        "[pdim-restore] Extracting node_modules.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-node_modules-14586/ (staging for node_modules/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for node_modules.pdim",
+        "[pdim-restore] Extracting app_remainder.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-__app_remainder__-14586/ (staging app remainder) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for app_remainder.pdim",
+        "[pdim-restore] Extracting python_runtime.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-python_runtime-14586/ (staging for python_runtime/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for python_runtime.pdim",
+        "[pdim-restore] ✅ app remainder restored from app_remainder.pdim (87 top-level entries)",
+        "[pdim-restore] ✅ python_runtime/ restored from python_runtime.pdim",
+        "[pdim-restore] ✅ node_modules/ restored from node_modules.pdim",
+        "[pdim-restore] Critical capsules (node_modules, app remainder, Python) restored."
+      ]
+    },
+    "coldBackgroundRestore": {
+      "exitCode": 0,
+      "maxcoreSentinel": true,
+      "pdimSentinel": true,
+      "outputTail": [
+        "[pdim-restore] Extracting external_maxcore.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-external_maxcore-14620/ (staging for external/maxcore/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for external_maxcore.pdim",
+        "[pdim-restore] Extracting external_pdim.pdim (zstd-19) → /home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/.pdim-scratch-external_pdim-14620/ (staging for external/pdim/) ...",
+        "[pdim-restore] bsdtar not found — falling back to GNU tar for external_pdim.pdim",
+        "[pdim-restore] ✅ external/pdim/ restored from external_pdim.pdim",
+        "[pdim-restore] ✅ external/maxcore/ restored from external_maxcore.pdim",
+        "[pdim-restore] Background capsules processed."
+      ],
+      "historicalInputs": false,
+      "securityReadiness": "current captured source restored with manifest verification"
+    },
+    "warmIdempotentRestore": {
+      "exitCode": 0,
+      "outputTail": [
+        "[pdim-restore] node_modules/ already restored — skipping",
+        "[pdim-restore] python_runtime/ already restored — skipping",
+        "[pdim-restore] external/maxcore/ already restored — skipping",
+        "[pdim-restore] external/pdim/ already restored — skipping",
+        "[pdim-restore] app remainder already restored — skipping",
+        "[pdim-restore] All capsules processed."
+      ],
+      "skippedExistingSentinels": true
+    }
+  },
+  "imageSize": {
+    "totalBytes": 4736159446,
+    "totalGiB": 4.411,
+    "nixPreflight": {
+      "totalGiB": 1.28,
+      "payloadGiB": 0.98,
+      "nixClosureGiB": 0.31,
+      "rootsAccounted": 10,
+      "rootsDiscovered": 10,
+      "scope": "sanitized simulation PATH/environment only; not a target image closure claim"
+    },
+    "capsules": {
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 153672389
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 7464821
+      },
+      "python_runtime.pdim": {
+        "present": true,
+        "bytes": 117178302
+      },
+      "external_maxcore.pdim": {
+        "present": true,
+        "bytes": 572908345
+      },
+      "external_pdim.pdim": {
+        "present": true,
+        "bytes": 41988346
+      }
+    },
+    "underHardLimit": true,
+    "note": "Disposable simulation image footprint built from the captured current source. Nix preflight scope is the sanitized PATH/environment and may differ from the target image."
+  },
+  "productionReadiness": {
+    "publishReady": false,
+    "reason": "Not evaluated yet; a passing run requires current-source MaxCore/PDIM capsules and namespace-isolated runtime evidence."
+  },
+  "startup": {
+    "exitCode": 143,
+    "signal": null,
+    "liveness": {
+      "observed": true,
+      "transportOnly": true,
+      "realServer": true,
+      "jsonObserved": true,
+      "earlyAppResponse": true,
+      "startupResponseObserved": true,
+      "samples": [
+        {
+          "atMs": 38,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 291,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 544,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 797,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 1049,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 1301,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 1555,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 1806,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 2059,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 2312,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 2570,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 2823,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3074,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3326,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3578,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 3931,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 4186,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 4438,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 4693,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 4953,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 5208,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 5462,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 5715,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 5970,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 6223,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 6476,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 6730,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 6983,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 7238,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 7490,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 7743,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 7995,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 8248,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 8500,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 8753,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 9005,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 9258,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 9510,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 9763,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 10015,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 10268,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 10521,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 10774,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 11028,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 11282,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 11535,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 11787,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 12040,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 12293,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 12569,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 12822,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 13078,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 13330,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 13582,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 13837,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 14089,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 14341,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 14593,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 14845,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 15098,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 15350,
+          "status": 200,
+          "body": "starting up"
+        },
+        {
+          "atMs": 15603,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 15855,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 16108,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 16358,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 16610,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 16862,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 17114,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 17366,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 17620,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 17871,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 18125,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 18379,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 18631,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 18883,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 19134,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 19385,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 19641,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 19895,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 20147,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 20403,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 20654,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 20907,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 21159,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 21411,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 21663,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 21916,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 22168,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 22419,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 22691,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 22942,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 23194,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 23446,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 23698,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 23950,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 24213,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 24466,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 24718,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 24971,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 25224,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 25474,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 25726,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 25977,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 26237,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 26489,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 26741,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 26993,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 27246,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 27498,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 27750,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 28002,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 28263,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 28515,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 28768,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 29022,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 29279,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 29533,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 29785,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 30037,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 30288,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 30540,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 30791,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 31043,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 31295,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 31547,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 31798,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 32050,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 32304,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 32557,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 32809,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 33061,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 33313,
+          "status": null,
+          "body": ""
+        },
+        {
+          "atMs": 35307,
+          "status": 200,
+          "body": {
+            "status": "ok",
+            "buildId": "production-simulation"
+          }
+        }
+      ]
+    },
+    "readiness": {
+      "observed": true,
+      "fullReady": false,
+      "statusCodes": [
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503,
+        503
+      ],
+      "lastBody": {
+        "status": "degraded",
+        "subsystemStatuses": [
+          {
+            "name": "database",
+            "status": "ok"
+          },
+          {
+            "name": "redis",
+            "status": "ok"
+          },
+          {
+            "name": "routes",
+            "status": "ok"
+          },
+          {
+            "name": "audit",
+            "status": "ok"
+          },
+          {
+            "name": "automation",
+            "status": "ok"
+          },
+          {
+            "name": "maxcore",
+            "status": "degraded"
+          }
+        ]
+      },
+      "note": "JSON liveness was observed; /api/ready was not observed and the app exited during required database startup probes. DB/Redis/MaxCore/storage target inaccessible loopback mocks. No live credentials or shared Neon target was used."
+    },
+    "attempts": [],
+    "postgres": {
+      "isolated": true,
+      "port": 36461,
+      "auth": "trust inside network namespace only",
+      "schema": {
+        "command": "node scripts/db-push.js --force",
+        "exitCode": 0,
+        "outputTail": [
+          "No config path provided, using default 'drizzle.config.ts'",
+          "Reading config file '/home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/app/drizzle.config.ts'",
+          "Using 'pg' driver for database querying",
+          "[⣷] Pulling schema from database...",
+          "\u001b[2K\u001b[1G[⣯] Pulling schema from database...",
+          "\u001b[2K\u001b[1G[✓] Pulling schema from database...",
+          "[✓] Changes applied"
+        ]
+      }
+    },
+    "currentLogPath": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/logs/start-1.log",
+    "redis": {
+      "isolated": true,
+      "port": 44443,
+      "dataDir": "/home/runner/workspace/.local/production-simulation/runs/2026-09-23T18-57-24-314Z/transient/redis",
+      "serverBinary": "/nix/store/pnc74r60iz1g5bpqv4qh76a8cc3g0n97-redis-7.2.10/bin/redis-server",
+      "readinessExitCode": 0,
+      "readinessResponse": "PONG",
+      "ready": true
+    },
+    "dependencyEvidence": {
+      "database": "isolated PostgreSQL was started on namespace-local port 36461",
+      "redis": "owned Redis returned PONG on namespace-local port 44443",
+      "maxcore": "MAXCORE_LOCAL=1; packed current-source MaxCore startup was requested",
+      "storage": "loopback mock endpoint only; no third-party storage target"
+    }
+  },
+  "failures": [],
+  "result": "STARTUP_BLOCKED_BY_MOCK_DEPENDENCIES",
+  "completedStages": [
+    "copy",
+    "build",
+    "size",
+    "restore",
+    "startup"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T13:01:22.610627+00:00",
+  "sourceRevision": "bca5f4e1f632db835dc90b1e57d85f919ed6e0aa",
+  "sourceRevisionAfter": "bca5f4e1f632db835dc90b1e57d85f919ed6e0aa",
+  "sourceInputsSha256Before": "c44c8f0c44b183eae69c52af00f56265c9de3e2fc9eabc846753faf71226f8e4",
+  "sourceInputsSha256After": "c44c8f0c44b183eae69c52af00f56265c9de3e2fc9eabc846753faf71226f8e4",
+  "sourceInputsUnchanged": true,
+  "canonicalCoverage": {
+    "beforeSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+    "afterSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+    "unchanged": true
+  },
+  "commands": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/testing/coverage-provenance.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T13:01:06.025036+00:00",
+      "durationSeconds": 3.494,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/coverage-producer/2026-10-28-keepnames-final/framework.txt",
+      "logSha256": "8d9ea0ae8e7e27546d710efb44d49794d58c7d39d7b30fba09a7373cceb4ea82"
+    },
+    {
+      "command": [
+        "node",
+        "scripts/testing/collect-node-coverage.mjs",
+        "tests/fabric-replica-generation.test.mjs",
+        "reports/coverage-producer/2026-10-28-keepnames-final/profile"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T13:01:09.519273+00:00",
+      "durationSeconds": 12.778,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/coverage-producer/2026-10-28-keepnames-final/collector.txt",
+      "logSha256": "7c88fe74b232e67af9af83c8cc39a840ffaec49ca6b833f4bc21fd946a6014ef"
+    }
+  ],
+  "environment": "common.clean_environment credential-free outer wrapper; collector constructs narrower internal environment",
+  "scope": "Existing full framework and actual allowlisted P1 canonical suite; separate unmerged coverage only",
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false,
+  "independentAudit": {
+    "command": [
+      "node",
+      "reports/coverage-producer/2026-10-28-keepnames-final/audit-profile.mjs"
+    ],
+    "observedExitCode": 0,
+    "result": "profile-audit.json",
+    "scope": "Read-only raw manifest/code/map/counter validation and independent exact reconversion; comparison diagnostics never used for merge"
+  }
+}

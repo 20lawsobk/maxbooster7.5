@@ -7,6 +7,9 @@ particular use is lawful.
 
 ## Enforced handling
 
+- MaxCore server awareness source registration is limited to the eight canonical
+  platforms in the matrix below. Charts, editorial/news feeds, Mastodon, Bluesky,
+  and generic landscape endpoints are not registered awareness sources.
 - Public visibility does not establish permission to automate collection,
   retain content, redistribute it, or train a model. No personal owner consent
   is required merely to read a public page in a browser, but this server's
@@ -25,6 +28,10 @@ particular use is lawful.
   or override a platform contract. Separately, MaxCore-authored owner output and
   simulator records can use the existing signed internal training receipts;
   those receipts do not cover third-party posts.
+
+The owner selected this eight-platform boundary for MaxCore server awareness.
+This source-scope approval does not override each platform's access, terms,
+robots, retention, or reuse restrictions.
 
 ## Platform matrix
 

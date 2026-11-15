@@ -1,0 +1,19 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=junit",
+    "/tmp/maxbooster-linux-u3f69z18/project/tests/electron-asar-launch-policy.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T02:29:47.816376+00:00",
+  "durationSeconds": 0.169,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "reports/native-linux-rehearsal/2026-10-27/asar-policy-source-check/policy.xml",
+  "logSha256": "a3e9ca0bb545acc610bc54a49df1fcb91f5ac2a225ab5c1bd0eb246f9a5feee9",
+  "testSha256": "e7927b4696436170046a206105e07f67a7d81a078e1935e65a88739e68f4b14c",
+  "testedHelperSha256": "00584c7e0d272ac6eb44c3cab9d5a487c91def15f27d6343289fec11db5edee2",
+  "scope": "Actual owned prototype helper with exact canonical test copy; no production helper execution claim until hashes match final source"
+}

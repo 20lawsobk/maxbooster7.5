@@ -1,0 +1,463 @@
+{
+  "runtime": {
+    "node": "22.23.3",
+    "v8": "12.4.254.21-node.57"
+  },
+  "source": "const first = 1; function used(flag) { if (flag) return \"😀\"; return \"unexecuted arm\"; } function untouched() { return \"uncalled original\"; } globalThis.result = used(true);",
+  "executedCode": "var __defProp=Object.defineProperty;var __name=(target,value)=>__defProp(target,\"name\",{value,configurable:true});const first=1;function used(flag){if(flag)return\"\\u{1F600}\";return\"unexecuted arm\"}__name(used,\"used\");function untouched(){return\"uncalled original\"}__name(untouched,\"untouched\");globalThis.result=used(true);\n",
+  "sourceMap": {
+    "version": 3,
+    "sources": [
+      "/tmp/c5-synthetic-2Ua6Ox/original.js"
+    ],
+    "sourcesContent": [
+      "const first = 1; function used(flag) { if (flag) return \"😀\"; return \"unexecuted arm\"; } function untouched() { return \"uncalled original\"; } globalThis.result = used(true);"
+    ],
+    "mappings": "kHAAA,MAAM,MAAQ,EAAG,SAAS,KAAK,KAAM,CAAE,GAAI,KAAM,MAAO,YAAM,MAAO,gBAAkB,CAA7D,oBAA+D,SAAS,WAAY,CAAE,MAAO,mBAAqB,CAA1C,8BAA4C,WAAW,OAAS,KAAK,IAAI",
+    "names": []
+  },
+  "rawSelectedRuntimeCoverage": {
+    "scriptId": "269",
+    "url": "file:///tmp/c5-synthetic-2Ua6Ox/executed.js",
+    "functions": [
+      {
+        "functionName": "",
+        "ranges": [
+          {
+            "startOffset": 0,
+            "endOffset": 324,
+            "count": 1
+          }
+        ],
+        "isBlockCoverage": true
+      },
+      {
+        "functionName": "__name",
+        "ranges": [
+          {
+            "startOffset": 47,
+            "endOffset": 113,
+            "count": 2
+          }
+        ],
+        "isBlockCoverage": true
+      },
+      {
+        "functionName": "used",
+        "ranges": [
+          {
+            "startOffset": 128,
+            "endOffset": 197,
+            "count": 1
+          },
+          {
+            "startOffset": 174,
+            "endOffset": 196,
+            "count": 0
+          }
+        ],
+        "isBlockCoverage": true
+      },
+      {
+        "functionName": "untouched",
+        "ranges": [
+          {
+            "startOffset": 217,
+            "endOffset": 264,
+            "count": 0
+          }
+        ],
+        "isBlockCoverage": false
+      }
+    ]
+  },
+  "generatedPolicy": {
+    "schemaVersion": 1,
+    "policy": "esbuild-keep-names-proven-prefix-v1",
+    "executedCodeSha256": "fcf2b39e670513b8716e095ada06012d2b3e285c57ca030801d2c7b5620cc589",
+    "originalParser": {
+      "package": "typescript",
+      "version": "5.9.3"
+    },
+    "ignoredGeneratedNodes": [
+      {
+        "type": "VariableDeclarator",
+        "start": 4,
+        "end": 35,
+        "sha256": "5ed1f0e67c582862434f1f4421a4f42b05447a3149b9cd88717d43459463a444",
+        "reason": "Exact unmapped compiler Object.defineProperty binding absent from all original identifiers"
+      },
+      {
+        "type": "VariableDeclarator",
+        "start": 40,
+        "end": 113,
+        "sha256": "cda51237e5b0a58d1e8cde2f3f492489b273ce375aabc30000f50954c521a9e7",
+        "reason": "Exact unmapped keepNames helper binding absent from all original identifiers"
+      },
+      {
+        "type": "ExpressionStatement",
+        "start": 197,
+        "end": 217,
+        "sha256": "293691dfeffd6dd653aafed01276036bb1a41a9ce99955773c6b58559101c182",
+        "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+        "originalDeclaration": {
+          "source": "/tmp/c5-synthetic-2Ua6Ox/original.js",
+          "line": 1,
+          "column": 26,
+          "name": "used"
+        }
+      },
+      {
+        "type": "ExpressionStatement",
+        "start": 264,
+        "end": 294,
+        "sha256": "307ae53dc021e9e7ec107ff07afd5e2714566e061af57ca9ea5aa8324e938af2",
+        "reason": "Standalone compiler-only helper call mapped exclusively to an actual original declaration name",
+        "originalDeclaration": {
+          "source": "/tmp/c5-synthetic-2Ua6Ox/original.js",
+          "line": 1,
+          "column": 98,
+          "name": "untouched"
+        }
+      }
+    ],
+    "compatibleMapClaim": false,
+    "sourceMapSha256": "ef2a456d3733b397fbafaeb4d280bd55cf9a7db42b8764009338a0d3fb19f814",
+    "originalSources": [
+      {
+        "source": "/tmp/c5-synthetic-2Ua6Ox/original.js",
+        "sha256": "584ef27b955fa73a0419ec2f2e3262aec1437e57184dca3125985231b3643c51"
+      }
+    ]
+  },
+  "candidate": {
+    "path": "/tmp/c5-synthetic-2Ua6Ox/original.js",
+    "statementMap": {
+      "0": {
+        "start": {
+          "line": 1,
+          "column": 14
+        },
+        "end": {
+          "line": 1,
+          "column": 17
+        }
+      },
+      "1": {
+        "start": {
+          "line": 1,
+          "column": 39
+        },
+        "end": {
+          "line": 1,
+          "column": 62
+        }
+      },
+      "2": {
+        "start": {
+          "line": 1,
+          "column": 49
+        },
+        "end": {
+          "line": 1,
+          "column": 62
+        }
+      },
+      "3": {
+        "start": {
+          "line": 1,
+          "column": 62
+        },
+        "end": {
+          "line": 1,
+          "column": 87
+        }
+      },
+      "4": {
+        "start": {
+          "line": 1,
+          "column": 112
+        },
+        "end": {
+          "line": 1,
+          "column": 140
+        }
+      },
+      "5": {
+        "start": {
+          "line": 1,
+          "column": 142
+        },
+        "end": {
+          "line": 1,
+          "column": null
+        }
+      }
+    },
+    "fnMap": {
+      "0": {
+        "name": "used",
+        "decl": {
+          "start": {
+            "line": 1,
+            "column": 26
+          },
+          "end": {
+            "line": 1,
+            "column": 31
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 37
+          },
+          "end": {
+            "line": 1,
+            "column": 89
+          }
+        },
+        "line": 1
+      },
+      "1": {
+        "name": "untouched",
+        "decl": {
+          "start": {
+            "line": 1,
+            "column": 98
+          },
+          "end": {
+            "line": 1,
+            "column": 110
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 110
+          },
+          "end": {
+            "line": 1,
+            "column": 142
+          }
+        },
+        "line": 1
+      }
+    },
+    "branchMap": {
+      "0": {
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 39
+          },
+          "end": {
+            "line": 1,
+            "column": 62
+          }
+        },
+        "type": "if",
+        "locations": [
+          {
+            "start": {
+              "line": 1,
+              "column": 39
+            },
+            "end": {
+              "line": 1,
+              "column": 62
+            }
+          },
+          {
+            "start": {},
+            "end": {}
+          }
+        ],
+        "line": 1
+      }
+    },
+    "s": {
+      "0": 1,
+      "1": 1,
+      "2": 1,
+      "3": 0,
+      "4": 0,
+      "5": 1
+    },
+    "f": {
+      "0": 1,
+      "1": 0
+    },
+    "b": {
+      "0": [
+        1,
+        0
+      ]
+    },
+    "meta": {
+      "lastBranch": 1,
+      "lastFunction": 2,
+      "lastStatement": 6,
+      "seen": {
+        "s:1:14:1:17": 0,
+        "f:1:26:1:31": 0,
+        "b:1:39:1:62:undefined:undefined:undefined:undefined": 0,
+        "s:1:39:1:62": 1,
+        "s:1:49:1:62": 2,
+        "s:1:62:1:87": 3,
+        "f:1:98:1:110": 1,
+        "s:1:112:1:140": 4,
+        "s:1:142:1:Infinity": 5
+      },
+      "fnNames": {}
+    }
+  },
+  "denominatorControl": {
+    "statementMap": {
+      "0": {
+        "start": {
+          "line": 1,
+          "column": 14
+        },
+        "end": {
+          "line": 1,
+          "column": 17
+        }
+      },
+      "1": {
+        "start": {
+          "line": 1,
+          "column": 39
+        },
+        "end": {
+          "line": 1,
+          "column": 62
+        }
+      },
+      "2": {
+        "start": {
+          "line": 1,
+          "column": 49
+        },
+        "end": {
+          "line": 1,
+          "column": 62
+        }
+      },
+      "3": {
+        "start": {
+          "line": 1,
+          "column": 62
+        },
+        "end": {
+          "line": 1,
+          "column": 87
+        }
+      },
+      "4": {
+        "start": {
+          "line": 1,
+          "column": 112
+        },
+        "end": {
+          "line": 1,
+          "column": 140
+        }
+      },
+      "5": {
+        "start": {
+          "line": 1,
+          "column": 142
+        },
+        "end": {
+          "line": 1,
+          "column": null
+        }
+      }
+    },
+    "fnMap": {
+      "0": {
+        "name": "used",
+        "decl": {
+          "start": {
+            "line": 1,
+            "column": 26
+          },
+          "end": {
+            "line": 1,
+            "column": 31
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 37
+          },
+          "end": {
+            "line": 1,
+            "column": 89
+          }
+        },
+        "line": 1
+      },
+      "1": {
+        "name": "untouched",
+        "decl": {
+          "start": {
+            "line": 1,
+            "column": 98
+          },
+          "end": {
+            "line": 1,
+            "column": 110
+          }
+        },
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 110
+          },
+          "end": {
+            "line": 1,
+            "column": 142
+          }
+        },
+        "line": 1
+      }
+    },
+    "branchMap": {
+      "0": {
+        "loc": {
+          "start": {
+            "line": 1,
+            "column": 39
+          },
+          "end": {
+            "line": 1,
+            "column": 62
+          }
+        },
+        "type": "if",
+        "locations": [
+          {
+            "start": {
+              "line": 1,
+              "column": 39
+            },
+            "end": {
+              "line": 1,
+              "column": 62
+            }
+          },
+          {
+            "start": {},
+            "end": {}
+          }
+        ],
+        "line": 1
+      }
+    }
+  },
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

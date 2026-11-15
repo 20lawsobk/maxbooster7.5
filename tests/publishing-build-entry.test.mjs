@@ -102,8 +102,8 @@ function fixture(t) {
 
 test("Replit uses the direct capsule build and capsule-aware publishing start", () => {
   const repl = fs.readFileSync(path.join(repo, ".replit"), "utf8");
-  assert.match(repl, /^run = "npm run start"$/m);
-  assert.match(repl, /^args = "npm run start"$/m);
+  assert.match(repl, /^run = "npm run dev"$/m);
+  assert.match(repl, /^args = "npm run dev"$/m);
   const command = configuredBuildCommand();
   assert.deepEqual(command, ["bash", "build.sh"]);
   const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")

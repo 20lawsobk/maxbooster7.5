@@ -1,0 +1,586 @@
+{
+  "path": "/workspace/maxbooster7.5/server/config/ports.ts",
+  "statementMap": {
+    "0": {
+      "start": {
+        "line": 9,
+        "column": 17
+      },
+      "end": {
+        "line": 9,
+        "column": null
+      }
+    },
+    "1": {
+      "start": {
+        "line": 10,
+        "column": 17
+      },
+      "end": {
+        "line": 10,
+        "column": null
+      }
+    },
+    "2": {
+      "start": {
+        "line": 12,
+        "column": 28
+      },
+      "end": {
+        "line": 21,
+        "column": null
+      }
+    },
+    "3": {
+      "start": {
+        "line": 28,
+        "column": 14
+      },
+      "end": {
+        "line": 28,
+        "column": null
+      }
+    },
+    "4": {
+      "start": {
+        "line": 29,
+        "column": 2
+      },
+      "end": {
+        "line": 29,
+        "column": null
+      }
+    },
+    "5": {
+      "start": {
+        "line": 29,
+        "column": 46
+      },
+      "end": {
+        "line": 29,
+        "column": null
+      }
+    },
+    "6": {
+      "start": {
+        "line": 31,
+        "column": 2
+      },
+      "end": {
+        "line": 35,
+        "column": null
+      }
+    },
+    "7": {
+      "start": {
+        "line": 32,
+        "column": 4
+      },
+      "end": {
+        "line": 34,
+        "column": null
+      }
+    },
+    "8": {
+      "start": {
+        "line": 37,
+        "column": 16
+      },
+      "end": {
+        "line": 37,
+        "column": null
+      }
+    },
+    "9": {
+      "start": {
+        "line": 38,
+        "column": 2
+      },
+      "end": {
+        "line": 42,
+        "column": null
+      }
+    },
+    "10": {
+      "start": {
+        "line": 39,
+        "column": 4
+      },
+      "end": {
+        "line": 41,
+        "column": null
+      }
+    },
+    "11": {
+      "start": {
+        "line": 44,
+        "column": 2
+      },
+      "end": {
+        "line": 44,
+        "column": null
+      }
+    },
+    "12": {
+      "start": {
+        "line": 48,
+        "column": 17
+      },
+      "end": {
+        "line": 48,
+        "column": null
+      }
+    },
+    "13": {
+      "start": {
+        "line": 49,
+        "column": 2
+      },
+      "end": {
+        "line": 58,
+        "column": null
+      }
+    },
+    "14": {
+      "start": {
+        "line": 50,
+        "column": 21
+      },
+      "end": {
+        "line": 50,
+        "column": null
+      }
+    },
+    "15": {
+      "start": {
+        "line": 51,
+        "column": 4
+      },
+      "end": {
+        "line": 56,
+        "column": null
+      }
+    },
+    "16": {
+      "start": {
+        "line": 52,
+        "column": 6
+      },
+      "end": {
+        "line": 55,
+        "column": null
+      }
+    },
+    "17": {
+      "start": {
+        "line": 57,
+        "column": 4
+      },
+      "end": {
+        "line": 57,
+        "column": null
+      }
+    },
+    "18": {
+      "start": {
+        "line": 59,
+        "column": 2
+      },
+      "end": {
+        "line": 59,
+        "column": null
+      }
+    },
+    "19": {
+      "start": {
+        "line": 62,
+        "column": 28
+      },
+      "end": {
+        "line": 83,
+        "column": null
+      }
+    },
+    "20": {
+      "start": {
+        "line": 86,
+        "column": 2
+      },
+      "end": {
+        "line": 86,
+        "column": null
+      }
+    }
+  },
+  "fnMap": {
+    "0": {
+      "name": "readPort",
+      "decl": {
+        "start": {
+          "line": 27,
+          "column": 9
+        },
+        "end": {
+          "line": 27,
+          "column": 18
+        }
+      },
+      "loc": {
+        "start": {
+          "line": 27,
+          "column": 62
+        },
+        "end": {
+          "line": 45,
+          "column": null
+        }
+      },
+      "line": 27
+    },
+    "1": {
+      "name": "assertUniquePorts",
+      "decl": {
+        "start": {
+          "line": 47,
+          "column": 9
+        },
+        "end": {
+          "line": 47,
+          "column": 27
+        }
+      },
+      "loc": {
+        "start": {
+          "line": 47,
+          "column": 62
+        },
+        "end": {
+          "line": 60,
+          "column": null
+        }
+      },
+      "line": 47
+    },
+    "2": {
+      "name": "loopbackUrl",
+      "decl": {
+        "start": {
+          "line": 85,
+          "column": 16
+        },
+        "end": {
+          "line": 85,
+          "column": 28
+        }
+      },
+      "loc": {
+        "start": {
+          "line": 85,
+          "column": 50
+        },
+        "end": {
+          "line": 87,
+          "column": null
+        }
+      },
+      "line": 85
+    }
+  },
+  "branchMap": {
+    "0": {
+      "loc": {
+        "start": {
+          "line": 29,
+          "column": 2
+        },
+        "end": {
+          "line": 29,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 29,
+            "column": 2
+          },
+          "end": {
+            "line": 29,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 29
+    },
+    "1": {
+      "loc": {
+        "start": {
+          "line": 29,
+          "column": 6
+        },
+        "end": {
+          "line": 29,
+          "column": 46
+        }
+      },
+      "type": "binary-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 29,
+            "column": 6
+          },
+          "end": {
+            "line": 29,
+            "column": 27
+          }
+        },
+        {
+          "start": {
+            "line": 29,
+            "column": 27
+          },
+          "end": {
+            "line": 29,
+            "column": 46
+          }
+        }
+      ],
+      "line": 29
+    },
+    "2": {
+      "loc": {
+        "start": {
+          "line": 31,
+          "column": 2
+        },
+        "end": {
+          "line": 35,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 31,
+            "column": 2
+          },
+          "end": {
+            "line": 35,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 31
+    },
+    "3": {
+      "loc": {
+        "start": {
+          "line": 38,
+          "column": 2
+        },
+        "end": {
+          "line": 42,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 38,
+            "column": 2
+          },
+          "end": {
+            "line": 42,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 38
+    },
+    "4": {
+      "loc": {
+        "start": {
+          "line": 38,
+          "column": 6
+        },
+        "end": {
+          "line": 38,
+          "column": 76
+        }
+      },
+      "type": "binary-expr",
+      "locations": [
+        {
+          "start": {
+            "line": 38,
+            "column": 6
+          },
+          "end": {
+            "line": 38,
+            "column": 38
+          }
+        },
+        {
+          "start": {
+            "line": 38,
+            "column": 38
+          },
+          "end": {
+            "line": 38,
+            "column": 58
+          }
+        },
+        {
+          "start": {
+            "line": 38,
+            "column": 58
+          },
+          "end": {
+            "line": 38,
+            "column": 76
+          }
+        }
+      ],
+      "line": 38
+    },
+    "5": {
+      "loc": {
+        "start": {
+          "line": 51,
+          "column": 4
+        },
+        "end": {
+          "line": 56,
+          "column": null
+        }
+      },
+      "type": "if",
+      "locations": [
+        {
+          "start": {
+            "line": 51,
+            "column": 4
+          },
+          "end": {
+            "line": 56,
+            "column": null
+          }
+        },
+        {
+          "start": {},
+          "end": {}
+        }
+      ],
+      "line": 51
+    }
+  },
+  "s": {
+    "0": 0,
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0,
+    "11": 0,
+    "12": 0,
+    "13": 0,
+    "14": 0,
+    "15": 0,
+    "16": 0,
+    "17": 0,
+    "18": 0,
+    "19": 0,
+    "20": 0
+  },
+  "f": {
+    "0": 0,
+    "1": 0,
+    "2": 0
+  },
+  "b": {
+    "0": [
+      0,
+      0
+    ],
+    "1": [
+      0,
+      0
+    ],
+    "2": [
+      0,
+      0
+    ],
+    "3": [
+      0,
+      0
+    ],
+    "4": [
+      0,
+      0,
+      0
+    ],
+    "5": [
+      0,
+      0
+    ]
+  },
+  "meta": {
+    "lastBranch": 6,
+    "lastFunction": 3,
+    "lastStatement": 21,
+    "seen": {
+      "s:9:17:9:Infinity": 0,
+      "s:10:17:10:Infinity": 1,
+      "s:12:28:21:Infinity": 2,
+      "f:27:9:27:18": 0,
+      "s:28:14:28:Infinity": 3,
+      "b:29:2:29:Infinity:undefined:undefined:undefined:undefined": 0,
+      "s:29:2:29:Infinity": 4,
+      "b:29:6:29:27:29:27:29:46": 1,
+      "s:29:46:29:Infinity": 5,
+      "b:31:2:35:Infinity:undefined:undefined:undefined:undefined": 2,
+      "s:31:2:35:Infinity": 6,
+      "s:32:4:34:Infinity": 7,
+      "s:37:16:37:Infinity": 8,
+      "b:38:2:42:Infinity:undefined:undefined:undefined:undefined": 3,
+      "s:38:2:42:Infinity": 9,
+      "b:38:6:38:38:38:38:38:58:38:58:38:76": 4,
+      "s:39:4:41:Infinity": 10,
+      "s:44:2:44:Infinity": 11,
+      "f:47:9:47:27": 1,
+      "s:48:17:48:Infinity": 12,
+      "s:49:2:58:Infinity": 13,
+      "s:50:21:50:Infinity": 14,
+      "b:51:4:56:Infinity:undefined:undefined:undefined:undefined": 5,
+      "s:51:4:56:Infinity": 15,
+      "s:52:6:55:Infinity": 16,
+      "s:57:4:57:Infinity": 17,
+      "s:59:2:59:Infinity": 18,
+      "s:62:28:83:Infinity": 19,
+      "f:85:16:85:28": 2,
+      "s:86:2:86:Infinity": 20
+    },
+    "fnNames": {}
+  }
+}

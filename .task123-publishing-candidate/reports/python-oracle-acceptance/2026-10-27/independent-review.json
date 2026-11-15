@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T08:54:47.349239+00:00",
+  "scope": "Independent read-only receipt, current-source, JUnit, retained-baseline and current-upload verification. No test rerun; no platform-readiness claim.",
+  "checks": {
+    "allSixCurrentSourceHashesMatchFinalReceipt": true,
+    "allFinalLogHashesMatchReceipts": true,
+    "allFourFinalCommandsExitZero": true,
+    "exactFinalCanonical48PassNoFailureErrorSkip": true,
+    "currentUploadInventoryMatchesAllFinalSnapshots": true,
+    "allDirectOwnedHomesRemovedAndZeroRecordedUploadDirs": true,
+    "beforeFullFileHashesMatchRetainedBaseline": true,
+    "beforeAndAfterNegativeProbeLogsMatchReceipts": true,
+    "baselineThreeFalseConditionsActuallyPassWithExitZero": true,
+    "repairedThreeFalseConditionsFailOnlyByExpectedAssertion": true
+  },
+  "status": "passed",
+  "finalCanonicalCounts": {
+    "tests": 48,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "suites": [
+    {
+      "file": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_phase4.xml",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_pipeline.xml",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_rcgs.xml",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__retrieval__test_retrieval.xml",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "final/canonical-python/external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.xml",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "final/canonical-python/tests__testing__test_assertion_oracles.xml",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "currentSourceFiles": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py": "7f23051b2a4c66a03e5e20ab581bc7faffbda5ce972e18d5a8224635753be087",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py": "60ef70f61dc4c3b629aa3803739f394db77bf929f9ddd53fb269b4404836362e",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py": "fe0c63324c0c7f84cdedcee00d840e0f0720394c87621650aea1d3b3a8396d06",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py": "d02d7e7d77884fc0bdf461957a96535ac0f68decb22f4322b51754d9d47c6e22",
+    "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py": "7a2511e3ddd699be46a6998c6ad2107248b64e2993300cf678edeaf49a5d975e",
+    "tests/testing/test_assertion_oracles.py": "df12b732f7fb48ef8d7a39bed771ece79d6f0aabeb4c25f7a0c47a5196ac8c8f"
+  },
+  "currentSourceUploads": {
+    "files": 36,
+    "bytes": 93474975,
+    "modes": [
+      384
+    ],
+    "inventorySha256": "2f8c7eb6491d636777a29d631354fb4b8521fe7298c98533947dc6afa0823b66"
+  },
+  "productionReady": false
+}

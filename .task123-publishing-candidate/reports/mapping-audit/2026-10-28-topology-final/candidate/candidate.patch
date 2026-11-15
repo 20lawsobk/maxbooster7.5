@@ -1,0 +1,635 @@
+diff --git a/scripts/audit-endpoints.mjs b/scripts/audit-endpoints.mjs
+--- a/scripts/audit-endpoints.mjs
++++ b/scripts/audit-endpoints.mjs
+@@ -50,6 +50,7 @@
+ import { readFileSync, readdirSync, existsSync, statSync, mkdirSync, writeFileSync } from "node:fs";
+ import { join, relative, extname, dirname, resolve as pathResolve } from "node:path";
+ import { stripRouteTypeArguments } from "./lib/route-call-source.mjs";
++import { resolveFiniteTemplatePath } from "./lib/finite-route-paths.mjs";
+ 
+ const ROOT = process.cwd();
+ const SERVER_DIR = join(ROOT, "server");
+@@ -135,7 +136,25 @@
+ // ---------------------------------------------------------------------------
+ 
+ function buildMountPrefixMap(serverFiles) {
+-  const prefixMap = new Map(); // resolvedFile -> { prefix, mountedFrom: [file:line,...] }
++  const prefixMap = new Map(); // resolvedFile -> all finite source-proven mount contexts
++  const mountEdges = [];
++  const diagnostics = [];
++  const joinPrefix = (base, extra) => (base.replace(/\/$/, "") + "/" + extra.replace(/^\//, "")).replace(/\/{2,}/g, "/").replace(/\/$/, "");
++  const processFor = (file, source) => relative(ROOT, file) !== "server/index.ts" &&
++    /\b(?:const|let|var)\s+\w+\s*=\s*express\s*\(\s*\)/.test(source) && /\.\s*listen\s*\(/.test(source)
++      ? `standalone:${relative(ROOT, file)}` : "main-app";
++  const addContext = (target, context) => {
++    let entry = prefixMap.get(target);
++    if (!entry) { entry = { prefix: context.prefix, mountedFrom: [], contexts: [] }; prefixMap.set(target, entry); }
++    for (const location of context.mountedFrom) if (!entry.mountedFrom.includes(location)) entry.mountedFrom.push(location);
++    const existing = entry.contexts.find(row => row.prefix === context.prefix && row.processScope === context.processScope);
++    if (existing) {
++      for (const location of context.mountedFrom) if (!existing.mountedFrom.includes(location)) existing.mountedFrom.push(location);
++      return false;
++    }
++    entry.contexts.push(context);
++    return true;
++  };
+ 
+   for (const file of serverFiles) {
+     const src = readFileSync(file, "utf8");
+@@ -203,11 +222,22 @@
+       const resolved = localImports.get(ident);
+       if (!resolved) continue;
+       const loc = `${relative(ROOT, file)}:${lineAt(src, m.index)}`;
+-      if (!prefixMap.has(resolved)) {
+-        prefixMap.set(resolved, { prefix, mountedFrom: [loc] });
+-      } else {
+-        prefixMap.get(resolved).mountedFrom.push(loc);
+-      }
++      const receiver = m[1];
++      const isLocalRouter = [...src.matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*(?:express\.)?Router\s*\(/g)]
++        .some(declaration => declaration[1] === receiver);
++      const isLocalApp = [...src.matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*express\s*\(/g)]
++        .some(declaration => declaration[1] === receiver);
++      if (m[2] === "`" && prefix.includes("${")) {
++        diagnostics.push({method: "USE", file: relative(ROOT, file), line: lineAt(src, m.index), rawExpr: m[0], reason: "unresolved-template-mount-prefix"});
++        continue;
++      }
++      if (isLocalRouter) {
++        mountEdges.push({ from: file, target: resolved, prefix, location: loc, line: lineAt(src, m.index) });
++      } else if (receiver === "app" || isLocalApp) {
++        addContext(resolved, { prefix, processScope: processFor(file, src), mountedFrom: [loc], chain: [file, resolved] });
++      }
++      // Imported/opaque receivers do not prove a root mount. They remain
++      // unmounted instead of inventing a complete relative URL.
+     }
+ 
+     // lazy-loader registry: { path: "<prefix>", ..., loader: () => import("<spec>") }
+@@ -221,11 +251,9 @@
+       const resolved = resolveSpecifier(file, lazy.specifier);
+       if (!resolved) continue;
+       const loc = `${relative(ROOT, file)}:${lineAt(src, lazy.index)}`;
+-      if (!prefixMap.has(resolved)) {
+-        prefixMap.set(resolved, { prefix: lazy.prefix, mountedFrom: [loc] });
+-      } else {
+-        prefixMap.get(resolved).mountedFrom.push(loc);
+-      }
++      const localRouterFile = isRouterFile(src);
++      if (localRouterFile) mountEdges.push({ from: file, target: resolved, prefix: lazy.prefix, location: loc, line: lineAt(src, lazy.index) });
++      else addContext(resolved, { prefix: lazy.prefix, processScope: processFor(file, src), mountedFrom: [loc], chain: [file, resolved] });
+     }
+   }
+   // Route entrypoints may forward their default router to an implementation
+@@ -241,6 +269,25 @@
+       prefixMap.set(target, { ...mount, mountedFrom: [...mount.mountedFrom, `${relative(ROOT, file)} (default re-export)`] });
+     }
+   }
++  // Compose relative child mounts only after their parent's complete context
++  // is known. A repeated router file terminates a cycle explicitly; no source
++  // code is evaluated and there is no guessed root prefix for unresolved edges.
++  const pending = [...prefixMap].flatMap(([file, value]) => value.contexts.map(context => ({file, context})));
++  const seenCycles = new Set();
++  while (pending.length) {
++    const {file, context} = pending.shift();
++    for (const edge of mountEdges.filter(row => row.from === file)) {
++      if (context.chain.includes(edge.target) || context.chain.length >= 13) {
++        const key = `${edge.location}:${edge.target}`;
++        if (!seenCycles.has(key)) { seenCycles.add(key); diagnostics.push({ method: "USE", file: relative(ROOT, edge.from), line: edge.line, rawExpr: edge.location, reason: "mount-cycle-or-depth-limit" }); }
++        continue;
++      }
++      const next = {prefix: joinPrefix(context.prefix, edge.prefix), processScope: context.processScope,
++        mountedFrom: [...context.mountedFrom, edge.location], chain: [...context.chain, edge.target]};
++      if (addContext(edge.target, next)) pending.push({file: edge.target, context: next});
++    }
++  }
++  prefixMap.diagnostics = diagnostics;
+   return prefixMap;
+ }
+ 
+@@ -367,6 +414,17 @@
+     const strMatch = after.match(
+       /^\s*(?:(?:\/\/[^\n]*\n)|(?:\/\*[\s\S]*?\*\/\s*))*(['"`])((?:\\.|(?!\1)[^\\])*)\1/,
+     );
++    if (strMatch?.[1] === "`" && strMatch[2].includes("${")) {
++      const paths = resolveFiniteTemplatePath(src, file, callOffset);
++      if (paths) {
++        for (const rawPath of paths) routes.push({ method, rawPath, file: rel, line,
++          resolvedVia: "finite-loop-template", registeredOn,
++          hasAuthMarker: AUTH_MARKERS.some(marker => argsWindow.includes(marker)), callsNext });
++      } else {
++        unresolved.push({method, file: rel, line, rawExpr: after.slice(0, 60).split("\n")[0].trim(), reason: "unresolved-template-path"});
++      }
++      continue;
++    }
+     if (strMatch) {
+       routes.push({
+         method,
+@@ -467,7 +525,7 @@
+   const prefixMap = buildMountPrefixMap(files);
+ 
+   const inventory = [];
+-  const unresolvedDynamic = [];
++  const unresolvedDynamic = [...prefixMap.diagnostics];
+ 
+   for (const file of files) {
+     const src = readFileSync(file, "utf8");
+@@ -489,6 +547,8 @@
+         : "main-app";
+ 
+     for (const r of routes) {
++      const contexts = mountInfo?.contexts?.length ? mountInfo.contexts : [null];
++      for (const context of contexts) {
+       let fullPath;
+       let confidence;
+       // "/health", "/ready", "/status" are only unambiguously absolute when
+@@ -506,8 +566,8 @@
+         fullPath = r.rawPath;
+         confidence = "high";
+       } else if (router && mountInfo) {
+-        fullPath = (mountInfo.prefix + r.rawPath).replace(/\/{2,}/g, "/");
+-        confidence = mountInfo.mountedFrom.length === 1 ? "high" : "medium";
++        fullPath = ((context?.prefix ?? mountInfo.prefix) + r.rawPath).replace(/\/{2,}/g, "/");
++        confidence = context ? "high" : "medium";
+       } else if (router && !mountInfo) {
+         fullPath = r.rawPath;
+         confidence = "unmounted-or-unresolved";
+@@ -515,7 +575,8 @@
+         fullPath = r.rawPath;
+         confidence = "high";
+       }
+-      inventory.push({ ...r, fullPath, confidence, mountedFrom: mountInfo?.mountedFrom, processScope });
++      inventory.push({ ...r, fullPath, confidence, mountedFrom: context?.mountedFrom ?? mountInfo?.mountedFrom, processScope: context?.processScope ?? processScope });
++      }
+     }
+   }
+   return { inventory, unresolvedDynamic, prefixMap };
+@@ -1442,6 +1503,7 @@
+     file: relative(ROOT, file),
+     prefix: info.prefix,
+     mountedFrom: info.mountedFrom || [],
++    contexts: (info.contexts || []).map(context => ({prefix: context.prefix, processScope: context.processScope, mountedFrom: context.mountedFrom})),
+   }));
+ }
+ 
+diff --git a/scripts/lib/finite-route-paths.mjs b/scripts/lib/finite-route-paths.mjs
+new file mode 100644
+--- /dev/null
++++ b/scripts/lib/finite-route-paths.mjs
+@@ -0,0 +1,159 @@
++import ts from "typescript";
++
++const LIMIT = 64;
++const MAX_LENGTH = 2048;
++const METHODS = new Set(["get", "post", "put", "patch", "delete", "head", "options", "all"]);
++
++function unwrap(node) {
++  while (node && (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isTypeAssertionExpression(node) || ts.isSatisfiesExpression(node))) node = node.expression;
++  return node;
++}
++
++function binds(node, name) {
++  if (!node) return false;
++  if (ts.isIdentifier(node)) return node.text === name;
++  return (ts.isObjectBindingPattern(node) || ts.isArrayBindingPattern(node)) && node.elements.some(element => ts.isBindingElement(element) && binds(element.name, name));
++}
++
++function directBindings(scope, name) {
++  const declarations = [];
++  const statements = ts.isCaseBlock(scope) ? scope.clauses.flatMap(clause => [...clause.statements]) : scope.statements ?? [];
++  for (const statement of statements) {
++    if (ts.isVariableStatement(statement)) {
++      for (const declaration of statement.declarationList.declarations) {
++        if (binds(declaration.name, name)) declarations.push({ declaration, list: statement.declarationList });
++      }
++    } else if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement) || ts.isEnumDeclaration(statement) || ts.isModuleDeclaration(statement) || ts.isImportEqualsDeclaration(statement)) && statement.name?.text === name) {
++      declarations.push({ declaration: statement });
++    } else if (ts.isImportDeclaration(statement)) {
++      const clause = statement.importClause;
++      if (clause?.name?.text === name || (clause?.namedBindings && ts.isNamedImports(clause.namedBindings) && clause.namedBindings.elements.some(element => element.name.text === name))) declarations.push({ declaration: statement });
++    }
++  }
++  return declarations;
++}
++
++function isStatementScope(node) {
++  return ts.isBlock(node) || ts.isSourceFile(node) || ts.isCaseBlock(node) || ts.isModuleBlock(node);
++}
++
++function loopBinds(scope, name) {
++  if (!ts.isForStatement(scope) && !ts.isForInStatement(scope) && !ts.isForOfStatement(scope)) return false;
++  const list = scope.initializer;
++  return !!list && ts.isVariableDeclarationList(list) && list.declarations.some(declaration => binds(declaration.name, name));
++}
++
++function isWrite(node, name) {
++  if (ts.isBinaryExpression(node) && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment) {
++    let found = false;
++    function visit(left) { if (ts.isIdentifier(left) && left.text === name) found = true; ts.forEachChild(left, visit); }
++    visit(node.left);
++    if (found) return true;
++  }
++  return (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) && ts.isIdentifier(node.operand) && node.operand.text === name && [ts.SyntaxKind.PlusPlusToken, ts.SyntaxKind.MinusMinusToken].includes(node.operator);
++}
++
++function containsWrite(scope, name) {
++  let written = false;
++  function visit(node) { if (isWrite(node, name)) written = true; if (!written) ts.forEachChild(node, visit); }
++  visit(scope);
++  return written;
++}
++
++function arrayValues(expression, at, sourceFile) {
++  const value = unwrap(expression);
++  if (ts.isArrayLiteralExpression(value)) {
++    if (!value.elements.length || value.elements.length > LIMIT) return null;
++    const strings = [];
++    for (const element of value.elements) {
++      const item = unwrap(element);
++      if (!item || !(ts.isStringLiteral(item) || ts.isNoSubstitutionTemplateLiteral(item)) || item.text.length > MAX_LENGTH) return null;
++      strings.push(item.text);
++    }
++    return [...new Set(strings)];
++  }
++  if (!value || !ts.isIdentifier(value)) return null;
++  for (let scope = at.parent; scope; scope = scope.parent) {
++    if (ts.isWithStatement(scope) || ((ts.isClassExpression(scope) || ts.isClassDeclaration(scope)) && scope.name?.text === value.text) || loopBinds(scope, value.text) ||
++        (ts.isCatchClause(scope) && binds(scope.variableDeclaration?.name, value.text)) ||
++        (ts.isFunctionLike(scope) && scope.parameters.some(parameter => binds(parameter.name, value.text)))) return null;
++    if (!isStatementScope(scope)) continue;
++    const found = directBindings(scope, value.text);
++    if (!found.length) continue;
++    if (found.length !== 1) return null;
++    const { declaration, list } = found[0];
++    if (!list || !(list.flags & ts.NodeFlags.Const) || declaration.getStart(sourceFile) >= at.getStart(sourceFile)) return null;
++    const literal = unwrap(declaration.initializer);
++    if (!literal || !ts.isArrayLiteralExpression(literal)) return null;
++    // A const binding does not freeze an array. Reject aliases, calls, writes,
++    // property access and other uses that could change its iteration values.
++    let unsafe = false;
++    function uses(node) {
++      if (ts.isIdentifier(node) && node.text === value.text && node !== declaration.name) {
++        const parent = node.parent;
++        if (!(ts.isForOfStatement(parent) && unwrap(parent.expression) === node)) unsafe = true;
++      }
++      ts.forEachChild(node, uses);
++    }
++    uses(scope);
++    return unsafe ? null : arrayValues(literal, at, sourceFile);
++  }
++  return null;
++}
++
++function loopValues(identifier, sourceFile) {
++  for (let scope = identifier.parent; scope; scope = scope.parent) {
++    // Do not specialize a deferred nested function using the caller's loop.
++    if (ts.isFunctionLike(scope) || ts.isWithStatement(scope) ||
++        ((ts.isClassExpression(scope) || ts.isClassDeclaration(scope)) && scope.name?.text === identifier.text)) return null;
++    if (isStatementScope(scope)) {
++      if (directBindings(scope, identifier.text).length) return null;
++    }
++    if (ts.isCatchClause(scope) && binds(scope.variableDeclaration?.name, identifier.text)) return null;
++    if (!ts.isForOfStatement(scope)) {
++      if (loopBinds(scope, identifier.text)) return null;
++      continue;
++    }
++    const list = scope.initializer;
++    if (!ts.isVariableDeclarationList(list) || list.declarations.length !== 1) return null;
++    const declaration = list.declarations[0];
++    if (!binds(declaration.name, identifier.text)) continue;
++    if (!(list.flags & ts.NodeFlags.Const) || !ts.isIdentifier(declaration.name) || containsWrite(scope.statement, identifier.text)) return null;
++    return arrayValues(scope.expression, scope, sourceFile);
++  }
++  return null;
++}
++
++/** Resolve a source-proven finite loop template without importing/evaluating it.
++ * null means unsupported/ambiguous, never a literal '${...}' route.
++ */
++export function resolveFiniteTemplatePath(source, file, callOffset) {
++  if (typeof source !== "string" || !Number.isInteger(callOffset) || callOffset < 0 || callOffset >= source.length) return null;
++  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, file.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
++  if (sourceFile.parseDiagnostics.length) return null;
++  let target;
++  function visit(node) {
++    if (ts.isCallExpression(node) && node.getStart(sourceFile) === callOffset && ts.isPropertyAccessExpression(node.expression) && METHODS.has(node.expression.name.text)) target = node;
++    ts.forEachChild(node, visit);
++  }
++  visit(sourceFile);
++  const template = unwrap(target?.arguments[0]);
++  if (!template || !ts.isTemplateExpression(template)) return null;
++  const values = new Map();
++  for (const span of template.templateSpans) {
++    const expression = unwrap(span.expression);
++    if (!expression || !ts.isIdentifier(expression)) return null;
++    if (!values.has(expression.text)) {
++      const possible = loopValues(expression, sourceFile);
++      if (!possible) return null;
++      values.set(expression.text, possible);
++    }
++  }
++  let environments = [new Map()];
++  for (const [name, options] of values) {
++    if (environments.length * options.length > LIMIT) return null;
++    environments = environments.flatMap(environment => options.map(option => new Map([...environment, [name, option]])));
++  }
++  const paths = environments.map(environment => template.head.text + template.templateSpans.map(span => environment.get(unwrap(span.expression).text) + span.literal.text).join(""));
++  return paths.some(path => path.length > MAX_LENGTH) ? null : [...new Set(paths)];
++}
+diff --git a/scripts/testing/platform-register.py b/scripts/testing/platform-register.py
+--- a/scripts/testing/platform-register.py
++++ b/scripts/testing/platform-register.py
+@@ -195,6 +195,21 @@
+     return resolved
+ 
+ 
++def audit_route_identity(route, scopes):
++    path = route.get("fullPath") or route.get("rawPath")
++    parts = (route["file"], route["line"], route["method"], path)
++    # Preserve existing IDs unless the source declaration really represents
++    # identical URLs in distinct application processes.
++    if len(scopes.get(parts, ())) > 1:
++        parts += (route.get("processScope"),)
++    return identifier("api", *parts)
++
++
++def audit_mount_resolved(route):
++    """A fallback raw path does not establish a mounted endpoint."""
++    return bool(route.get("fullPath")) and route.get("confidence") in {"high", "medium"}
++
++
+ def location(file, line):
+     return {"file": file, "line": line}
+ 
+@@ -453,11 +468,14 @@
+     for item in interactions: interactions_by_file[item["source"]["file"]].append(item["id"])
+ 
+     registered = set()
++    route_scopes = defaultdict(set)
++    for raw in audit.get("backendRoutes", []):
++        route_scopes[(raw["file"], raw["line"], raw["method"], raw.get("fullPath") or raw.get("rawPath"))].add(raw.get("processScope"))
+     for raw in audit.get("backendRoutes", []):
+         file = raw["file"]; line = raw["line"]; path = raw.get("fullPath") or raw.get("rawPath")
+-        item = {"id": identifier("api", file, line, raw["method"], path), "method": raw["method"], "path": path,
++        item = {"id": audit_route_identity(raw, route_scopes), "method": raw["method"], "path": path,
+                 "source": location(file, line), "processScope": raw.get("processScope"), "confidence": raw.get("confidence"),
+-                "mountResolved": bool(raw.get("fullPath")), "hasAuthMarker": raw.get("hasAuthMarker"), "origin": "main-endpoint-audit"}
++                "mountResolved": audit_mount_resolved(raw), "hasAuthMarker": raw.get("hasAuthMarker"), "origin": "main-endpoint-audit"}
+         routes.append(item); registered.add((file, line, raw["method"]))
+     # Resolve declared imported TypeScript mount graphs without pretending that
+     # a router lacking an entrypoint is definitely mounted at the root.
+diff --git a/tests/endpoint-topology.test.mjs b/tests/endpoint-topology.test.mjs
+new file mode 100644
+--- /dev/null
++++ b/tests/endpoint-topology.test.mjs
+@@ -0,0 +1,101 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import {execFileSync} from 'node:child_process';
++const REPO=process.cwd();
++const SCANNER=process.env.ENDPOINT_AUDIT_CANDIDATE ?? path.join(REPO,'scripts/audit-endpoints.mjs');
++
++function fixture(t, files) {
++  const root=fs.mkdtempSync(path.join(os.tmpdir(),'topology-candidate-'));
++  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
++  fs.mkdirSync(path.join(root,'client/src'),{recursive:true});
++  for(const[name,source]of Object.entries(files)) {
++    const target=path.join(root,name);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,source);
++  }
++  execFileSync(process.execPath,[SCANNER,'--static'],{cwd:root,env:{PATH:process.env.PATH,HOME:root,TMPDIR:root},encoding:'utf8',timeout:20000});
++  assert.equal(fs.existsSync(path.join(root,'SOURCE_EXECUTED')),false,'Discovery must not evaluate source');
++  return JSON.parse(fs.readFileSync(path.join(root,'reports/endpoint-audit.json'),'utf8'));
++}
++const actualFiles={
++ 'server/routes.ts':`import {writeFileSync} from 'node:fs';writeFileSync('SOURCE_EXECUTED','unsafe');const groups=[{path:'/api/export',loader:()=>import('./routes/export.js')},{path:'/api/fan-hub',loader:()=>import('./routes/fanHub.js')}];`,
++ ...Object.fromEntries(['export','durableExports','fanHub'].map(name=>['server/routes/'+name+'.ts',fs.readFileSync(path.join(REPO,'server/routes',name+'.ts'),'utf8')])),
++};
++
++test('Actual durable exports inherit their canonical nested /api/export mount',t=>{
++ const report=fixture(t,actualFiles);
++ for(const[method,rawPath]of [['POST','/jobs/:jobId/:action'],['DELETE','/history/:id']]) {
++  const rows=report.backendRoutes.filter(row=>row.file==='server/routes/durableExports.ts'&&row.method===method&&row.rawPath===rawPath);
++  assert.equal(rows.length,1);assert.equal(rows[0].fullPath,'/api/export'+rawPath);assert.equal(rows[0].processScope,'main-app');
++ }
++});
++
++test('Actual Fan Hub finite template yields all four concrete public method/action paths',t=>{
++ const report=fixture(t,actualFiles);
++ const rows=report.backendRoutes.filter(row=>row.file==='server/routes/fanHub.ts'&&row.resolvedVia==='finite-loop-template');
++ assert.deepEqual(rows.map(row=>`${row.method} ${row.fullPath}`).sort(),[
++  'GET /api/fan-hub/consent/:token','GET /api/fan-hub/unsubscribe/:token',
++  'POST /api/fan-hub/consent/:token','POST /api/fan-hub/unsubscribe/:token',
++ ]);
++ assert.equal(report.backendRoutes.some(row=>row.fullPath.includes('${')),false);
++});
++
++test('Every source-proven alias of a nested child router is preserved',t=>{
++ const report=fixture(t,{
++  'server/index.ts':`import r from './routes/root';const app=express();app.use('/one',r);app.use('/two',r);`,
++  'server/routes/root.ts':`import c from './child';const router=Router();router.use('/nested',c);export default router;`,
++  'server/routes/child.ts':`const router=Router();router.get('/leaf',handler);export default router;`,
++ });
++ assert.deepEqual(report.backendRoutes.filter(row=>row.file.endsWith('/child.ts')).map(row=>row.fullPath).sort(),['/one/nested/leaf','/two/nested/leaf']);
++ assert.deepEqual(report.mountedRouters.find(row=>row.file==='server/routes/child.ts').contexts.map(row=>row.prefix).sort(),['/one/nested','/two/nested']);
++});
++
++test('Identical shared-router paths in separate application processes remain distinct',t=>{
++ const report=fixture(t,{
++  'server/index.ts':`import r from './routes/child';const app=express();app.use('/same',r);app.listen(5000);`,
++  'server/sidecar.ts':`import r from './routes/child';const serviceApp=express();serviceApp.use('/same',r);serviceApp.listen(9000);`,
++  'server/routes/child.ts':`const router=Router();router.get('/leaf',handler);export default router;`,
++ });
++ assert.deepEqual(report.backendRoutes.filter(row=>row.file.endsWith('/child.ts')).map(row=>({path:row.fullPath,scope:row.processScope})).sort((a,b)=>a.scope.localeCompare(b.scope)),[
++  {path:'/same/leaf',scope:'main-app'},{path:'/same/leaf',scope:'standalone:server/sidecar.ts'},
++ ]);
++});
++
++test('Cycles terminate with an explicit mount diagnostic rather than unlimited invented paths',t=>{
++ const report=fixture(t,{
++  'server/index.ts':`import r from './routes/root';const app=express();app.use('/api',r);`,
++  'server/routes/root.ts':`import c from './child';const router=Router();router.use('/nested',c);router.get('/root',handler);export default router;`,
++  'server/routes/child.ts':`import r from './root';const router=Router();router.use('/again',r);router.get('/leaf',handler);export default router;`,
++ });
++ assert.ok(report.backendRoutes.length<10);
++ assert.ok(report.unresolvedDynamic.some(row=>row.reason==='mount-cycle-or-depth-limit'));
++});
++
++test('Unknown runtime templates and shadowed loop names never become literal high-confidence routes',t=>{
++ const report=fixture(t,{
++  'server/index.ts':`import r from './routes/root';const app=express();app.use('/api',r);`,
++  'server/routes/root.ts':`const router=Router();router.get(\`/\${runtimeValue}/:id\`,handler);for(const action of ['safe'] as const){function deferred(action){router.post(\`/\${action}/:id\`,handler)}}export default router;`,
++ });
++ assert.equal(report.backendRoutes.some(row=>row.fullPath.includes('${')),false);
++ assert.equal(report.unresolvedDynamic.filter(row=>row.reason==='unresolved-template-path').length,2);
++});
++
++test('Unmounted child modules are retained with explicit unresolved topology',t=>{
++ const report=fixture(t,{
++  'server/routes/root.ts':`import c from './child';const router=Router();router.use('/relative',c);export default router;`,
++  'server/routes/child.ts':`const router=Router();router.get('/leaf',handler);export default router;`,
++ });
++ const row=report.backendRoutes.find(row=>row.file.endsWith('/child.ts'));
++ assert.equal(row.confidence,'unmounted-or-unresolved');assert.equal(row.fullPath,'/leaf');
++});
++
++test('Unknown interpolated mount prefixes remain explicit rather than literal complete URLs',t=>{
++ const report=fixture(t,{
++  'server/index.ts':`import r from './routes/child';const app=express();app.use(\`/api/\${runtimePrefix}\`,r);`,
++  'server/routes/child.ts':`const router=Router();router.get('/leaf',handler);export default router;`,
++ });
++ const row=report.backendRoutes.find(row=>row.file.endsWith('/child.ts'));
++ assert.equal(row.confidence,'unmounted-or-unresolved');
++ assert.ok(report.unresolvedDynamic.some(row=>row.reason==='unresolved-template-mount-prefix'));
++});
+diff --git a/tests/finite-route-paths.test.mjs b/tests/finite-route-paths.test.mjs
+new file mode 100644
+--- /dev/null
++++ b/tests/finite-route-paths.test.mjs
+@@ -0,0 +1,70 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import fs from "node:fs";
++import path from "node:path";
++import { resolveFiniteTemplatePath } from "../scripts/lib/finite-route-paths.mjs";
++
++function paths(source, occurrence = 0) {
++  const offsets = [...source.matchAll(/router\.(?:get|post)\s*\(/g)].map(match => match.index);
++  return resolveFiniteTemplatePath(source, "fixture.ts", offsets[occurrence]);
++}
++
++test("actual Fan Hub declarations produce GET/POST consent/unsubscribe routes", () => {
++  const source = fs.readFileSync(path.resolve("server/routes/fanHub.ts"), "utf8");
++  const calls = [...source.matchAll(/router\.(get|post)\(`\/\$\{action\}\/:token`/g)];
++  assert.equal(calls.length, 2);
++  assert.deepEqual(calls.flatMap(match => resolveFiniteTemplatePath(source, "fanHub.ts", match.index).map(path => [match[1].toUpperCase(), path])), [
++    ["GET", "/consent/:token"], ["GET", "/unsubscribe/:token"], ["POST", "/consent/:token"], ["POST", "/unsubscribe/:token"],
++  ]);
++});
++
++test("const named literal arrays and repeated template variables retain correlation", () => {
++  assert.deepEqual(paths('const actions=["a","b"] as const;for(const action of actions){router.get(`/${action}/${action}`,h)}'), ["/a/a", "/b/b"]);
++});
++
++test("independent nested finite loops expand within a fixed bound", () => {
++  assert.deepEqual(paths('for(const a of ["x","y"]){for(const b of ["1","2"] as const){router.get(`/${a}/${b}`,h)}}'), ["/x/1", "/x/2", "/y/1", "/y/2"]);
++});
++
++for (const [name, source] of [
++  ["runtime array", 'for(const action of loadActions()){router.get(`/${action}`,h)}'],
++  ["let loop binding", 'for(let action of ["a","b"]){router.get(`/${action}`,h)}'],
++  ["mutated named array", 'const actions=["a"];actions.push("b");for(const action of actions){router.get(`/${action}`,h)}'],
++  ["aliased named array", 'const actions=["a"];const other=actions;for(const action of actions){router.get(`/${action}`,h)}'],
++  ["shadowed local constant", 'for(const action of ["a","b"]){ { const action="private";router.get(`/${action}`,h)} }'],
++  ["shadowed parameter", 'for(const action of ["a","b"]){function register(action){router.get(`/${action}`,h)}}'],
++  ["shadowed catch binding", 'for(const action of ["a","b"]){try{fail()}catch(action){router.get(`/${action}`,h)}}'],
++  ["deferred closure", 'for(const action of ["a","b"]){const register=()=>router.get(`/${action}`,h)}'],
++  ["reassignment", 'for(const action of ["a","b"]){action="c";router.get(`/${action}`,h)}'],
++  ["runtime interpolation", 'for(const action of ["a","b"]){router.get(`/${action.toUpperCase()}`,h)}'],
++  ["unknown interpolation", 'router.get(`/${action}`,h)'],
++  ["empty finite array", 'for(const action of []){router.get(`/${action}`,h)}'],
++  ["spread element", 'for(const action of ["a",...other]){router.get(`/${action}`,h)}'],
++]) test(`unsupported ${name} stays unresolved`, () => assert.equal(paths(source), null));
++
++test("large finite products stay unresolved instead of truncating paths", () => {
++  const entries = Array.from({ length: 9 }, (_, index) => JSON.stringify(String(index))).join(",");
++  assert.equal(paths(`for(const a of [${entries}]){for(const b of [${entries}]){router.get(\`/\${a}/\${b}\`,h)}}`), null);
++});
++
++test("excessive path lengths stay unresolved", () => {
++  assert.equal(paths('for(const action of ["' + 'x'.repeat(2048) + '"]){router.get(`/${action}`,h)}'), null);
++});
++
++for (const [name, source] of [
++  ["classic for binding", 'for(const action of ["outer"]){for(let action="inner";true;){router.get(`/${action}`,h);break}}'],
++  ["for-in binding", 'for(const action of ["outer"]){for(const action in {inner:1}){router.get(`/${action}`,h)}}'],
++  ["switch-case binding", 'for(const action of ["outer"]){switch(1){case 1:const action="inner";router.get(`/${action}`,h);break}}'],
++  ["enum binding", 'for(const action of ["outer"]){enum action {inner};router.get(`/${action}`,h)}'],
++  ["namespace binding", 'for(const action of ["outer"]){namespace action {export const inner=1};router.get(`/${action}`,h)}'],
++  ["named class expression", 'for(const action of ["outer"]){const x=class action {static {router.get(`/${action}`,h)}}}'],
++  ["with scope", 'for(const action of ["outer"]){with({action:"inner"}){router.get(`/${action}`,h)}}'],
++  ["destructuring write", 'for(const action of ["outer"]){[action]=["inner"];router.get(`/${action}`,h)}'],
++  ["outer named array hidden by classic for", 'const actions=["outer"];for(let actions=["inner"];true;){for(const action of actions){router.get(`/${action}`,h)}break}'],
++  ["outer named array hidden by for-of", 'const actions=["outer"];for(const actions of [["inner"]]){for(const action of actions){router.get(`/${action}`,h)}}'],
++  ["outer named array hidden by class name", 'const actions=["outer"];const x=class actions {static {for(const action of actions){router.get(`/${action}`,h)}}}'],
++]) test(`unsupported lexical ${name} stays unresolved`, () => assert.equal(paths(source), null));
++
++test("a switch-local finite const array resolves its actual binding", () => {
++  assert.deepEqual(paths('const actions=["outer"];switch(1){case 1:const actions=["inner"];for(const action of actions){router.get(`/${action}`,h)}break}'), ["/inner"]);
++});
+diff --git a/tests/testing/test_endpoint_mount_resolution.py b/tests/testing/test_endpoint_mount_resolution.py
+new file mode 100644
+--- /dev/null
++++ b/tests/testing/test_endpoint_mount_resolution.py
+@@ -0,0 +1,71 @@
++"""The actual registry consumer must retain source topology uncertainty."""
++import ast
++import importlib.util
++import os
++from pathlib import Path
++import unittest
++
++
++ROOT = Path(__file__).resolve().parents[2]
++SOURCE = Path(os.environ.get('PLATFORM_REGISTER_CANDIDATE', ROOT / 'scripts/testing/platform-register.py'))
++TREE = ast.parse(SOURCE.read_text())
++SPEC = importlib.util.spec_from_file_location('endpoint_mount_candidate', SOURCE)
++MODULE = importlib.util.module_from_spec(SPEC)
++SPEC.loader.exec_module(MODULE)
++
++
++def actual_consumer_predicate(field='mountResolved', scopes=None):
++    for loop in ast.walk(TREE):
++        if not isinstance(loop, ast.For) or ast.unparse(loop.target) != 'raw':
++            continue
++        if ast.unparse(loop.iter) != "audit.get('backendRoutes', [])":
++            continue
++        for statement in loop.body:
++            if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Dict):
++                continue
++            for key, value in zip(statement.value.keys, statement.value.values):
++                if isinstance(key, ast.Constant) and key.value == field:
++                    prelude = ast.parse("file=raw['file'];line=raw['line'];path=raw.get('fullPath')or raw.get('rawPath')").body if field == 'id' else []
++                    function = ast.FunctionDef(name='actual', args=ast.arguments(posonlyargs=[], args=[ast.arg(arg='raw')], kwonlyargs=[], kw_defaults=[], defaults=[]), body=prelude+[ast.Return(value=value)], decorator_list=[])
++                    compiled = compile(ast.fix_missing_locations(ast.Module(body=[function], type_ignores=[])), str(SOURCE), 'exec')
++                    namespace = {'bool': bool, 'identifier': MODULE.identifier, 'route_scopes': scopes or {}}
++                    if hasattr(MODULE, 'audit_mount_resolved'):
++                        namespace['audit_mount_resolved'] = MODULE.audit_mount_resolved
++                    if hasattr(MODULE, 'audit_route_identity'):
++                        namespace['audit_route_identity'] = MODULE.audit_route_identity
++                    exec(compiled, namespace)
++                    return namespace['actual']
++    raise AssertionError('Actual backend audit ingestion predicate was not found')
++
++
++class MountResolutionConsumer(unittest.TestCase):
++    def test_high_confidence_mounted_path_is_retained(self):
++        self.assertIs(actual_consumer_predicate()({'fullPath': '/api/export/jobs/:id', 'confidence': 'high'}), True)
++
++    def test_medium_confidence_mounted_path_is_retained(self):
++        self.assertIs(actual_consumer_predicate()({'fullPath': '/api/alias', 'confidence': 'medium'}), True)
++
++    def test_unmounted_fallback_path_never_becomes_a_resolved_mount(self):
++        self.assertIs(actual_consumer_predicate()({'fullPath': '/leaf', 'rawPath': '/leaf', 'confidence': 'unmounted-or-unresolved'}), False)
++
++    def test_unknown_confidence_cannot_claim_a_verified_mount(self):
++        self.assertIs(actual_consumer_predicate()({'fullPath': '/computed', 'confidence': 'unknown'}), False)
++
++    def test_missing_full_path_remains_unresolved(self):
++        self.assertIs(actual_consumer_predicate()({'rawPath': '/leaf', 'confidence': 'high'}), False)
++
++    def test_existing_unique_source_route_identity_is_unchanged(self):
++        raw = {'file': 'server/routes/child.ts', 'line': 5, 'method': 'GET', 'fullPath': '/same/leaf', 'processScope': 'main-app'}
++        scopes = {(raw['file'], raw['line'], raw['method'], raw['fullPath']): {'main-app'}}
++        self.assertEqual(actual_consumer_predicate('id', scopes)(raw), MODULE.identifier('api', raw['file'], raw['line'], raw['method'], raw['fullPath']))
++
++    def test_same_source_url_in_distinct_processes_has_distinct_actual_consumer_ids(self):
++        main = {'file': 'server/routes/child.ts', 'line': 5, 'method': 'GET', 'fullPath': '/same/leaf', 'processScope': 'main-app'}
++        sidecar = {**main, 'processScope': 'standalone:server/sidecar.ts'}
++        scopes = {(main['file'], main['line'], main['method'], main['fullPath']): {'main-app', sidecar['processScope']}}
++        consume = actual_consumer_predicate('id', scopes)
++        self.assertNotEqual(consume(main), consume(sidecar))
++
++
++if __name__ == '__main__':
++    unittest.main()

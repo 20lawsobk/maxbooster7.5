@@ -1,0 +1,24 @@
+{
+  "command": [
+    "npm",
+    "audit",
+    "--audit-level=low",
+    "--json"
+  ],
+  "cwd": "dns-os",
+  "startedAt": "2026-10-28T01:30:44.787889+00:00",
+  "durationSeconds": 0.796,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/audit-dns-all.txt",
+  "logSha256": "7ec265aca9e7448a03341ca2baf5ea370ab7da018d41427e82a51486bd0a6e52",
+  "vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  }
+}

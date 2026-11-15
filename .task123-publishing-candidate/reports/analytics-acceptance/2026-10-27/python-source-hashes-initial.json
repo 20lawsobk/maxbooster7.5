@@ -1,0 +1,17 @@
+[
+  {
+    "path": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+    "sha256": "f870b4bd97afc51fc51f3a744e03438340b20f759344f0d7e1e25d1efaa44cae",
+    "bytes": 12900
+  },
+  {
+    "path": "external/maxcore/artifacts/ai-training-server/server.py",
+    "sha256": "9c892a5bdbc677c441a09964dd6a94c0b12b86731a3792f5367413732fce26b2",
+    "bytes": 592385
+  },
+  {
+    "path": "tests/testing/test_maxcore_analytics.py",
+    "sha256": "4917c4c5a383157d061fec543a3ffb92d160032c47de9a3f123aaefd8086c16f",
+    "bytes": 16447
+  }
+]

@@ -1,0 +1,54 @@
+{
+  "recordedAt": "2026-10-28T02:04:18.141987+00:00",
+  "scope": "Read-only feasibility observation followed by separately authorized owned runtime acquisition and bounded Linux DIR attempt; no production readiness claim",
+  "productionReady": false,
+  "sourceFilesSha256": {
+    ".github/workflows/build-desktop.yml": "7e332e55df2d9fb169511fdac9478a2befe12f65011e40b2dae794296f43244c",
+    "package.json": "02bd05b1f4c1462e72025cb3e55b590d96d2ce062ac822e36456b3a53fd22083",
+    "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad",
+    "electron/package.json": "60886f2327efef5b58c9e3cf9e45b3241c36934b3a0a567dd40ee3f2018cc00b",
+    "electron/main.js": "f3bc7d559d62233498ebed533d139a70d68c2b5b5b112dd6cca89711256a4ed2",
+    "electron/preload.js": "0fe4d5d7527b217baee25bdfbc71f00cdfc7e918df23db30abe9a23ea642e8c2",
+    "electron/runtime-policy.cjs": "361135660c827fbcf3b4802e49018cf4332674ec91d8615f7b3c2a44245c616f",
+    "script/build.ts": "28db52444066527c5e9b4ef4c79a14dcfc30628dce9e4639ac659a10c9ef2402",
+    "script/lib/serverBundles.ts": "3bbd2161a97e190010f7a549f16a86e10aebe52ad69d77ab54fc6990cd436fb1",
+    "scripts/start-production.mjs": "4d40098b9773db4d0a755b59384c5d811c52996302a8d104dddb981e199d740d"
+  },
+  "electron": {
+    "installedVersion": "43.8.3",
+    "zipBytes": 127277783,
+    "lockedPackageZipSha256": "73d7d6fe120c998db75834c23c8ce7ce8390607c198b2e167a28acd7937bef22",
+    "publicHEADStatus": 200,
+    "originalExecutableInstalled": false,
+    "sourceInstallScriptMustNotExecute": true
+  },
+  "runtimePrerequisites": {
+    "hostXvfb": false,
+    "hostGtkNssGbmX11Libraries": true,
+    "cachedBuilder7zip": false,
+    "cachedAppImageFpm": false,
+    "managedLocalDockerVersion": "28.4.0",
+    "cachedGuiProbe": "cached-runner-prerequisites.json",
+    "cachedBaseOS": "Debian12bookworm",
+    "cachedBaseGuiToolsFound": false,
+    "hostUserNetworkNamespace": "blocked: /proc/self/uid_map read-only; no escalation attempted"
+  },
+  "resources": {
+    "cpuEquivalents": 4,
+    "nativeJobCPUCeiling": 1,
+    "tmpFreeAtInitialReviewGiB": 17,
+    "regularCopyEstimateGiB": 2.6,
+    "temporaryBudgetGiB": "6-9",
+    "originalWorkspaceMutationAllowed": false
+  },
+  "suspicionsNotConfirmed": [
+    "External-server package imports may not resolve from chosen unpacked asar entry.",
+    "Root packaging allowlist omits imported runtime resources; actual server launch needed to establish effects."
+  ],
+  "knownScopeLimits": [
+    "Linuxx64DIRonly; not DEB/AppImage/Windows/macOS/nativeplugin/deviceproof",
+    "No appcredentialsorproductionconnections; offlineUI isnot configuredbackendacceptance",
+    "No sourcefixwhileintegratedsourcefreezeinforce"
+  ],
+  "coordination": "Root authorized pinned runtime download and heavy owned copy/build after dependency compression finished. Source/config/tests/locks/installed original graph remain frozen."
+}

@@ -1,0 +1,1255 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for client/src/components/content/productionWorkbenchModel.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../../prettify.css" />
+    <link rel="stylesheet" href="../../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">client/src/components/content</a> productionWorkbenchModel.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">83.62% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>189/226</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">75.09% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>199/265</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">98% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>49/50</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">98.22% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>166/169</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a>
+<a name='L229'></a><a href='#L229'>229</a>
+<a name='L230'></a><a href='#L230'>230</a>
+<a name='L231'></a><a href='#L231'>231</a>
+<a name='L232'></a><a href='#L232'>232</a>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a>
+<a name='L240'></a><a href='#L240'>240</a>
+<a name='L241'></a><a href='#L241'>241</a>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a>
+<a name='L247'></a><a href='#L247'>247</a>
+<a name='L248'></a><a href='#L248'>248</a>
+<a name='L249'></a><a href='#L249'>249</a>
+<a name='L250'></a><a href='#L250'>250</a>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a>
+<a name='L267'></a><a href='#L267'>267</a>
+<a name='L268'></a><a href='#L268'>268</a>
+<a name='L269'></a><a href='#L269'>269</a>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a>
+<a name='L281'></a><a href='#L281'>281</a>
+<a name='L282'></a><a href='#L282'>282</a>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a>
+<a name='L289'></a><a href='#L289'>289</a>
+<a name='L290'></a><a href='#L290'>290</a>
+<a name='L291'></a><a href='#L291'>291</a>
+<a name='L292'></a><a href='#L292'>292</a>
+<a name='L293'></a><a href='#L293'>293</a>
+<a name='L294'></a><a href='#L294'>294</a>
+<a name='L295'></a><a href='#L295'>295</a>
+<a name='L296'></a><a href='#L296'>296</a>
+<a name='L297'></a><a href='#L297'>297</a>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a>
+<a name='L300'></a><a href='#L300'>300</a>
+<a name='L301'></a><a href='#L301'>301</a>
+<a name='L302'></a><a href='#L302'>302</a>
+<a name='L303'></a><a href='#L303'>303</a>
+<a name='L304'></a><a href='#L304'>304</a>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a>
+<a name='L308'></a><a href='#L308'>308</a>
+<a name='L309'></a><a href='#L309'>309</a>
+<a name='L310'></a><a href='#L310'>310</a>
+<a name='L311'></a><a href='#L311'>311</a>
+<a name='L312'></a><a href='#L312'>312</a>
+<a name='L313'></a><a href='#L313'>313</a>
+<a name='L314'></a><a href='#L314'>314</a>
+<a name='L315'></a><a href='#L315'>315</a>
+<a name='L316'></a><a href='#L316'>316</a>
+<a name='L317'></a><a href='#L317'>317</a>
+<a name='L318'></a><a href='#L318'>318</a>
+<a name='L319'></a><a href='#L319'>319</a>
+<a name='L320'></a><a href='#L320'>320</a>
+<a name='L321'></a><a href='#L321'>321</a>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a>
+<a name='L328'></a><a href='#L328'>328</a>
+<a name='L329'></a><a href='#L329'>329</a>
+<a name='L330'></a><a href='#L330'>330</a>
+<a name='L331'></a><a href='#L331'>331</a>
+<a name='L332'></a><a href='#L332'>332</a>
+<a name='L333'></a><a href='#L333'>333</a>
+<a name='L334'></a><a href='#L334'>334</a>
+<a name='L335'></a><a href='#L335'>335</a>
+<a name='L336'></a><a href='#L336'>336</a>
+<a name='L337'></a><a href='#L337'>337</a>
+<a name='L338'></a><a href='#L338'>338</a>
+<a name='L339'></a><a href='#L339'>339</a>
+<a name='L340'></a><a href='#L340'>340</a>
+<a name='L341'></a><a href='#L341'>341</a>
+<a name='L342'></a><a href='#L342'>342</a>
+<a name='L343'></a><a href='#L343'>343</a>
+<a name='L344'></a><a href='#L344'>344</a>
+<a name='L345'></a><a href='#L345'>345</a>
+<a name='L346'></a><a href='#L346'>346</a>
+<a name='L347'></a><a href='#L347'>347</a>
+<a name='L348'></a><a href='#L348'>348</a>
+<a name='L349'></a><a href='#L349'>349</a>
+<a name='L350'></a><a href='#L350'>350</a>
+<a name='L351'></a><a href='#L351'>351</a>
+<a name='L352'></a><a href='#L352'>352</a>
+<a name='L353'></a><a href='#L353'>353</a>
+<a name='L354'></a><a href='#L354'>354</a>
+<a name='L355'></a><a href='#L355'>355</a>
+<a name='L356'></a><a href='#L356'>356</a>
+<a name='L357'></a><a href='#L357'>357</a>
+<a name='L358'></a><a href='#L358'>358</a>
+<a name='L359'></a><a href='#L359'>359</a>
+<a name='L360'></a><a href='#L360'>360</a>
+<a name='L361'></a><a href='#L361'>361</a>
+<a name='L362'></a><a href='#L362'>362</a>
+<a name='L363'></a><a href='#L363'>363</a>
+<a name='L364'></a><a href='#L364'>364</a>
+<a name='L365'></a><a href='#L365'>365</a>
+<a name='L366'></a><a href='#L366'>366</a>
+<a name='L367'></a><a href='#L367'>367</a>
+<a name='L368'></a><a href='#L368'>368</a>
+<a name='L369'></a><a href='#L369'>369</a>
+<a name='L370'></a><a href='#L370'>370</a>
+<a name='L371'></a><a href='#L371'>371</a>
+<a name='L372'></a><a href='#L372'>372</a>
+<a name='L373'></a><a href='#L373'>373</a>
+<a name='L374'></a><a href='#L374'>374</a>
+<a name='L375'></a><a href='#L375'>375</a>
+<a name='L376'></a><a href='#L376'>376</a>
+<a name='L377'></a><a href='#L377'>377</a>
+<a name='L378'></a><a href='#L378'>378</a>
+<a name='L379'></a><a href='#L379'>379</a>
+<a name='L380'></a><a href='#L380'>380</a>
+<a name='L381'></a><a href='#L381'>381</a>
+<a name='L382'></a><a href='#L382'>382</a>
+<a name='L383'></a><a href='#L383'>383</a>
+<a name='L384'></a><a href='#L384'>384</a>
+<a name='L385'></a><a href='#L385'>385</a>
+<a name='L386'></a><a href='#L386'>386</a>
+<a name='L387'></a><a href='#L387'>387</a>
+<a name='L388'></a><a href='#L388'>388</a>
+<a name='L389'></a><a href='#L389'>389</a>
+<a name='L390'></a><a href='#L390'>390</a>
+<a name='L391'></a><a href='#L391'>391</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">29x</span>
+<span class="cline-any cline-yes">29x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">26x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">34x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+ * Pure model for the Production workspace: validation, portable project
+ * serialization, request construction, script/caption export and history.
+ * No network, no DOM. Everything here is unit-testable.
+ */
+&nbsp;
+export const PROJECT_FORMAT = "maxbooster.production-project";
+export const PROJECT_VERSION = 1;
+export const FPS = 24;
+export const MAX_SCENES = 8;
+export const MIN_SCENES = 1;
+export const MAX_SCENE_TEXT = 280;
+export const MIN_SCENE_SEC = 0.5;
+export const MAX_SCENE_SEC = 30;
+export const MIN_TOTAL_SEC = 0.5;
+export const MAX_TOTAL_SEC = 60;
+export const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+export const MAX_TOTAL_IMAGE_BYTES = 8 * 1024 * 1024;
+export const MAX_IMAGE_PIXELS = 4096 * 4096;
+export const MAX_NARRATION_CHARS = 3000;
+export const MAX_BRIEF_CHARS = 2000;
+export const MAX_PROJECT_FILE_BYTES = 16 * 1024 * 1024;
+&nbsp;
+export const IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
+export type ImageMime = (typeof IMAGE_MIME_TYPES)[number];
+export const TRANSITIONS = ["fade", "dissolve", "wipeleft", "fadeblack"] as const;
+export type Transition = (typeof TRANSITIONS)[number];
+export const COLOR_GRADES = ["none", "warm", "cool", "cinematic", "neon"] as const;
+export type ColorGrade = (typeof COLOR_GRADES)[number];
+export const VOICES = ["en-us", "en-gb"] as const;
+export type Voice = (typeof VOICES)[number];
+export const INSTRUMENTS = ["ensemble", "piano", "synth", "bass", "drums"] as const;
+export type Instrument = (typeof INSTRUMENTS)[number];
+export const ARRANGEMENTS = ["structured", "loop"] as const;
+export type Arrangement = (typeof ARRANGEMENTS)[number];
+export const MUSIC_KEYS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+  .flatMap(note =&gt; [`${note} minor`, `${note} major`]);
+export const ASPECTS = {
+  portrait: { label: "Vertical 9:16", width: 360, height: 640 },
+  square: { label: "Square 1:1", width: 640, height: 640 },
+  landscape: { label: "Landscape 16:9", width: 640, height: 360 },
+} as const;
+export type AspectId = keyof typeof ASPECTS;
+&nbsp;
+export interface MediaAsset {
+  /** Raw base64, no data: prefix. */
+  b64: string;
+  mime: ImageMime;
+  name: string;
+  bytes: number;
+  width: number;
+  height: number;
+}
+&nbsp;
+export interface Scene {
+  id: string;
+  text: string;
+  durationSec: number;
+  image?: MediaAsset;
+}
+&nbsp;
+export interface ProductionProject {
+  brief: string;
+  platform: string;
+  aspect: AspectId;
+  scenes: Scene[];
+  transition: Transition;
+  colorGrade: ColorGrade;
+  logo?: MediaAsset;
+  narration: { enabled: boolean; text: string; voice: Voice; wpm: number };
+  music: { enabled: boolean; bpm: number; key: string; instrument: Instrument; arrangement: Arrangement };
+}
+&nbsp;
+let sceneCounter = 0;
+export function newSceneId(): string {
+  sceneCounter += 1;
+  return `scene-${Date.now().toString(36)}-${sceneCounter}`;
+}
+&nbsp;
+export function createScene(text = "", durationSec = 3): Scene {
+  return { id: newSceneId(), text, durationSec };
+}
+&nbsp;
+export function createEmptyProject(platform = "instagram"): ProductionProject {
+  return {
+    brief: "",
+    platform,
+    aspect: platform === "youtube" || platform === "twitter" ? <span class="branch-0 cbranch-no" title="branch not covered" >"landscape" : p</span>latform === "tiktok" ? <span class="branch-0 cbranch-no" title="branch not covered" >"portrait" : "</span>square",
+    scenes: [createScene()],
+    transition: "fade",
+    colorGrade: "none",
+    narration: { enabled: false, text: "", voice: "en-us", wpm: 150 },
+    music: { enabled: false, bpm: 100, key: "C minor", instrument: "piano", arrangement: "structured" },
+  };
+}
+&nbsp;
+// ── Scene operations (immutable) ──────────────────────────────────────────────
+export function addScene(p: ProductionProject): ProductionProject {
+  if (p.scenes.length &gt;= MAX_SCENES) return p;
+  return { ...p, scenes: [...p.scenes, createScene()] };
+}
+export function removeScene(p: ProductionProject, id: string): ProductionProject {
+  if (p.scenes.length &lt;= MIN_SCENES) return p;
+  return { ...p, scenes: p.scenes.filter(s =&gt; s.id !== id) };
+}
+export function moveScene(p: ProductionProject, id: string, delta: -1 | 1): ProductionProject {
+  const i = p.scenes.findIndex(s =&gt; s.id === id);
+  const j = i + delta;
+  if (i &lt; 0 || j &lt; 0 || j &gt;= p.scenes.length) return p;
+  const scenes = [...p.scenes];
+  [scenes[i], scenes[j]] = [scenes[j], scenes[i]];
+  return { ...p, scenes };
+}
+export function updateScene(p: ProductionProject, id: string, patch: Partial&lt;Omit&lt;Scene, "id"&gt;&gt;): ProductionProject {
+  return { ...p, scenes: p.scenes.map(s =&gt; (s.id === id ? { ...s, ...patch } : s)) };
+}
+&nbsp;
+// ── Validation ────────────────────────────────────────────────────────────────
+/** Backend contract: frames = floor(duration_sec * 24 + 0.5). */
+export function sceneFrames(durationSec: number): number {
+  return Number.isFinite(durationSec) ? Math.floor(durationSec * FPS + 0.5) : <span class="branch-1 cbranch-no" title="branch not covered" >0;</span>
+}
+/** Requested total = sum of rounded scene frames / 24 (not the raw duration sum). */
+export function totalDuration(scenes: Array&lt;{ durationSec: number }&gt;): number {
+  return scenes.reduce((sum, s) =&gt; sum + sceneFrames(s.durationSec), 0) / FPS;
+}
+&nbsp;
+export function base64ByteLength(b64: string): number {
+  const clean = b64.replace(/\s/g, "");
+  const pad = clean.endsWith("==") ? 2 : <span class="branch-1 cbranch-no" title="branch not covered" >clean.endsWith("=") ? 1 : 0;</span>
+  return Math.floor((clean.length * 3) / 4) - pad;
+}
+&nbsp;
+/** Pre-read check of a picked file. Returns an error message or null. */
+export function checkImageFile(file: { type: string; size: number }): string | null {
+  if (!(IMAGE_MIME_TYPES as readonly string[]).includes(file.type)) return "Use a PNG, JPEG or WebP image.";
+  if (file.size &gt; MAX_IMAGE_BYTES) return "Each image must be 4 MiB or smaller.";
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (file.size &lt;= 0) <span class="cstat-no" title="statement not covered" >return "That image file is empty.";</span>
+  return null;
+}
+&nbsp;
+export function checkImageDimensions(width: number, height: number): string | null {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!Number.isInteger(width) || !Number.isInteger(height) || width &lt; 1 || height &lt; 1) <span class="cstat-no" title="statement not covered" >return "The image dimensions could not be read.";</span>
+  if (width * height &gt; MAX_IMAGE_PIXELS) return "Images must be at most 4096 x 4096 pixels.";
+  return null;
+}
+&nbsp;
+export function totalMediaBytes(p: ProductionProject): number {
+  return p.scenes.reduce((sum, s) =&gt; sum + (s.image?.bytes ?? 0), 0) + (p.logo?.bytes ?? 0);
+}
+&nbsp;
+function validAsset(a: unknown): a is MediaAsset {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!a || typeof a !== "object") <span class="cstat-no" title="statement not covered" >return false;</span>
+  const v = a as Record&lt;string, unknown&gt;;
+  return typeof v.b64 === "string" &amp;&amp; /^[A-Za-z0-9+/]+={0,2}$/.test(v.b64) &amp;&amp;
+    typeof v.mime === "string" &amp;&amp; (IMAGE_MIME_TYPES as readonly string[]).includes(v.mime) &amp;&amp;
+    typeof v.name === "string" &amp;&amp; v.name.length &lt;= 255 &amp;&amp;
+    typeof v.bytes === "number" &amp;&amp; v.bytes === base64ByteLength(v.b64) &amp;&amp; v.bytes &gt; 0 &amp;&amp; v.bytes &lt;= MAX_IMAGE_BYTES &amp;&amp;
+    typeof v.width === "number" &amp;&amp; typeof v.height === "number" &amp;&amp; checkImageDimensions(v.width, v.height) === null;
+}
+&nbsp;
+export function validateProject(p: ProductionProject): string[] {
+  const errors: string[] = [];
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (p.scenes.length &lt; MIN_SCENES || p.scenes.length &gt; MAX_SCENES) <span class="cstat-no" title="statement not covered" >errors.push(`Use ${MIN_SCENES} to ${MAX_SCENES} scenes.`);</span>
+  p.scenes.forEach((s, i) =&gt; {
+    const t = s.text.trim();
+    if (!t) errors.push(`Scene ${i + 1} needs on-screen text.`<span class="missing-if-branch" title="if path not taken" >I</span>);
+    else if (t.length &gt; MAX_SCENE_TEXT) <span class="cstat-no" title="statement not covered" >errors.push(`Scene ${i + 1} text is over ${MAX_SCENE_TEXT} characters.`);</span>
+    if (!Number.isFinite(s.durationSec) || s.durationSec &lt; MIN_SCENE_SEC || s.durationSec &gt; MAX_SCENE_SEC) {
+      errors.push(`Scene ${i + 1} duration must be ${MIN_SCENE_SEC} to ${MAX_SCENE_SEC} seconds.`);
+    }
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (s.image &amp;&amp; !validAsset(s.image)) <span class="cstat-no" title="statement not covered" >errors.push(`Scene ${i + 1} image is not a valid PNG, JPEG or WebP under 4 MiB.`);</span>
+  });
+  const total = totalDuration(p.scenes);
+  if (total &lt; MIN_TOTAL_SEC || total &gt; MAX_TOTAL_SEC) errors.push(`Total length must be ${MIN_TOTAL_SEC} to ${MAX_TOTAL_SEC} seconds (now ${total}s).`);
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (p.logo &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >!validAsset(p.logo)) <span class="cstat-no" title="statement not covered" >e</span>rrors.push("The logo is not a valid PNG, JPEG or WebP under 4 MiB.");</span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (totalMediaBytes(p) &gt; MAX_TOTAL_IMAGE_BYTES) <span class="cstat-no" title="statement not covered" >errors.push("Scene images and logo together must be 8 MiB or smaller.");</span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!Object.hasOwn(ASPECTS, p.aspect)) <span class="cstat-no" title="statement not covered" >errors.push("Choose a supported aspect ratio.");</span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!TRANSITIONS.includes(p.transition)) <span class="cstat-no" title="statement not covered" >errors.push("Choose a supported transition.");</span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!COLOR_GRADES.includes(p.colorGrade)) <span class="cstat-no" title="statement not covered" >errors.push("Choose a supported color grade.");</span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (p.brief.length &gt; MAX_BRIEF_CHARS) <span class="cstat-no" title="statement not covered" >errors.push(`Brief must be ${MAX_BRIEF_CHARS} characters or fewer.`);</span>
+  if (p.narration.enabled) {
+    const t = p.narration.text.trim();
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!t || t.length &gt; MAX_NARRATION_CHARS) <span class="cstat-no" title="statement not covered" >errors.push(`Narration script must be 1 to ${MAX_NARRATION_CHARS} characters.`);</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!VOICES.includes(p.narration.voice)) <span class="cstat-no" title="statement not covered" >errors.push("Choose a supported narration voice.");</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!Number.isInteger(p.narration.wpm) || p.narration.wpm &lt; 100 || p.narration.wpm &gt; 220) <span class="cstat-no" title="statement not covered" >errors.push("Narration pace must be a whole number from 100 to 220 words per minute.");</span>
+  }
+  if (p.music.enabled) {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!Number.isFinite(p.music.bpm) || p.music.bpm &lt; 60 || p.music.bpm &gt; 200) <span class="cstat-no" title="statement not covered" >errors.push("Music tempo must be 60 to 200 BPM.");</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!MUSIC_KEYS.includes(p.music.key)) <span class="cstat-no" title="statement not covered" >errors.push("Choose a supported musical key.");</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!INSTRUMENTS.includes(p.music.instrument)) <span class="cstat-no" title="statement not covered" >errors.push("Choose a supported instrument.");</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!ARRANGEMENTS.includes(p.music.arrangement)) <span class="cstat-no" title="statement not covered" >errors.push("Choose a supported arrangement.");</span>
+  }
+  return errors;
+}
+&nbsp;
+/** Rough spoken length estimate for the narration script, in seconds. */
+export function <span class="fstat-no" title="function not covered" >estimateNarrationSec(t</span>ext: string, wpm: number): number {
+  const words = <span class="cstat-no" title="statement not covered" >text.trim() ? text.trim().split(/\s+/).length : 0;</span>
+<span class="cstat-no" title="statement not covered" >  return wpm &gt; 0 ? Math.round((words / wpm) * 600) / 10 : 0;</span>
+}
+&nbsp;
+// ── Request construction ──────────────────────────────────────────────────────
+export function buildProductionRequest(p: ProductionProject) {
+  const errors = validateProject(p);
+  if (errors.length) throw new Error(errors[0]);
+  const { width, height } = ASPECTS[p.aspect];
+  const scenes = p.scenes.map(s =&gt; ({
+    text: s.text.trim(),
+    duration_sec: s.durationSec,
+    ...(s.image ? { image_b64: s.image.b64 } : {}),
+  }));
+  const brief = p.brief.trim();
+  return {
+    endpoint: "/api/generate-video" as const,
+    body: {
+      idea: brief || scenes.map(s =&gt; s.text).join("\n"),
+      platform: p.platform,
+      dedicated_controls: {
+        width, height, fps: FPS,
+        duration_sec: totalDuration(p.scenes),
+        headline: "",
+        production: {
+          version: 1 as const,
+          scenes,
+          transition: p.transition,
+          color_grade: p.colorGrade,
+          ...(p.logo ? <span class="branch-0 cbranch-no" title="branch not covered" >{ logo_b64: p.logo.b64 } : {</span>}),
+          ...(p.narration.enabled ? { narration: { text: p.narration.text.trim(), voice: p.narration.voice, wpm: p.narration.wpm } } : <span class="branch-1 cbranch-no" title="branch not covered" >{}),</span>
+          ...(p.music.enabled ? { music: { bpm: p.music.bpm, key: p.music.key, instrument: p.music.instrument, arrangement: p.music.arrangement } } : <span class="branch-1 cbranch-no" title="branch not covered" >{}),</span>
+        },
+      },
+    },
+  };
+}
+&nbsp;
+/** Stable identity of everything that affects a render (used for stale marking). */
+export function projectFingerprint(p: ProductionProject): string {
+  return JSON.stringify({
+    platform: p.platform, aspect: p.aspect, brief: p.brief.trim(),
+    scenes: p.scenes.map(s =&gt; [s.text.trim(), s.durationSec, s.image ? `${s.image.bytes}:${s.image.b64.slice(0, 64)}:${s.image.b64.slice(-64)}` : null]),
+    t: p.transition, g: p.colorGrade,
+    logo: p.logo ? <span class="branch-0 cbranch-no" title="branch not covered" >`${p.logo.bytes}:${p.logo.b64.slice(0, 64)}:${p.logo.b64.slice(-64)}` : n</span>ull,
+    n: p.narration.enabled ? <span class="branch-0 cbranch-no" title="branch not covered" >[p.narration.text.trim(), p.narration.voice, p.narration.wpm] : n</span>ull,
+    m: p.music.enabled ? <span class="branch-0 cbranch-no" title="branch not covered" >[p.music.bpm, p.music.key, p.music.instrument, p.music.arrangement] : n</span>ull,
+  });
+}
+&nbsp;
+// ── Receipt reading ───────────────────────────────────────────────────────────
+export interface TimelineScene { text: string; durationSec: number; imageHash?: string }
+function rec(v: unknown): v is Record&lt;string, unknown&gt; {
+  return Boolean(v) &amp;&amp; typeof v === "object" &amp;&amp; !Array.isArray(v);
+}
+/** Reads the server's echoed timeline (hashes instead of base64). Null when absent or malformed. */
+/** Image digests are metadata only; never used for previews. */
+export function readProductionTimeline(data: unknown): TimelineScene[] | null {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!rec(data) || !rec(data.receipt)) <span class="cstat-no" title="statement not covered" >return null;</span>
+  const r = data.receipt;
+  const source = rec(r.effective_controls) &amp;&amp; rec(r.effective_controls.production) ? r.effective_controls.production
+    : rec(r.production_timeline) ? r.production_timeline : null;
+  if (!source || !Array.isArray(source.scenes)) return null;
+  const out: TimelineScene[] = [];
+  for (const s of source.scenes) {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!rec(s) || typeof s.text !== "string" || typeof s.duration_sec !== "number") <span class="cstat-no" title="statement not covered" >return null;</span>
+    const d = s.image_b64 ?? s.image_sha256 ?? s.image_hash;
+    const hash = typeof d === "string" ? d : rec(d) &amp;&amp; typeof d.sha256 === "string" ? d.sha256 : undefined;
+    out.push({ text: s.text, durationSec: s.duration_sec, ...(hash ? { imageHash: hash } : {}) });
+  }
+  return out;
+}
+&nbsp;
+// ── Script and captions ───────────────────────────────────────────────────────
+export function buildScriptText(p: ProductionProject): string {
+  const lines: string[] = [];
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (p.brief.trim()) <span class="cstat-no" title="statement not covered" >lines.push("BRIEF", p.brief.trim(), "");</span>
+  lines.push("SCENES");
+  let f = 0;
+  p.scenes.forEach((s, i) =&gt; {
+    const end = f + sceneFrames(s.durationSec);
+    lines.push(`${i + 1}. [${(f / FPS).toFixed(2)}s - ${(end / FPS).toFixed(2)}s] ${s.text.trim()}`);
+    f = end;
+  });
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (p.narration.enabled &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >p.narration.text.trim()) <span class="cstat-no" title="statement not covered" >l</span>ines.push("", `NARRATION (${p.narration.voice}, ${p.narration.wpm} wpm)`, p.narration.text.trim());</span>
+  return lines.join("\n") + "\n";
+}
+&nbsp;
+export function formatSrtTime(frames: number): string {
+  const ms = Math.round((frames * 1000) / FPS);
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  const s = Math.floor((ms % 60_000) / 1000);
+  const r = ms % 1000;
+  const pad = (n: number, w = 2) =&gt; String(n).padStart(w, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)},${pad(r, 3)}`;
+}
+&nbsp;
+/** Scene captions (authored on-screen text), boundaries rounded to 24 fps frames. Not a speech transcript. */
+export function buildSceneSrt(scenes: Array&lt;{ text: string; durationSec: number }&gt;): string {
+  let frames = 0;
+  return scenes.map((s, i) =&gt; {
+    const start = frames;
+    frames += sceneFrames(s.durationSec);
+    const end = Math.max(start + 1, frames);
+    return `${i + 1}\n${formatSrtTime(start)} --&gt; ${formatSrtTime(end)}\n${s.text.trim()}\n`;
+  }).join("\n");
+}
+&nbsp;
+// ── Portable project file ─────────────────────────────────────────────────────
+export function serializeProject(p: ProductionProject): string {
+  return JSON.stringify({
+    format: PROJECT_FORMAT, version: PROJECT_VERSION, savedAt: new Date().toISOString(),
+    project: { ...p, scenes: p.scenes.map(({ id: _id, ...rest }) =&gt; rest) },
+  }, null, 2);
+}
+&nbsp;
+function pick&lt;T extends string&gt;(list: readonly T[], v: unknown): T {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof v !== "string" || !list.includes(v as T)) <span class="cstat-no" title="statement not covered" >throw new Error("Project file contains an unsupported setting.");</span>
+  return v as T;
+}
+function num(v: unknown, label: string): number {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof v !== "number" || !Number.isFinite(v)) <span class="cstat-no" title="statement not covered" >throw new Error(`Project file has an invalid ${label}.`);</span>
+  return v;
+}
+function str(v: unknown, label: string, max: number): string {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof v !== "string" || v.length &gt; max) <span class="cstat-no" title="statement not covered" >throw new Error(`Project file has an invalid ${label}.`);</span>
+  return v;
+}
+&nbsp;
+/** Parse and fully validate an imported project. Throws a user-readable error. */
+export function parseProject(text: string): ProductionProject {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (text.length &gt; MAX_PROJECT_FILE_BYTES * 1.4) <span class="cstat-no" title="statement not covered" >throw new Error("Project file is too large.");</span>
+  let raw: unknown;
+  try { raw = JSON.parse(text); } catch { throw new Error("That file is not valid JSON."); }
+  if (!rec(raw) || raw.format !== PROJECT_FORMAT) throw new Error("That file is not a Max Booster production project.");
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (raw.version !== PROJECT_VERSION) <span class="cstat-no" title="statement not covered" >throw new Error("This project was saved by an unsupported version.");</span>
+  const p = raw.project;
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!rec(p) || !Array.isArray(p.scenes)) <span class="cstat-no" title="statement not covered" >throw new Error("Project file is missing its scenes.");</span>
+  if (p.scenes.length &lt; MIN_SCENES || p.scenes.length &gt; MAX_SCENES) throw new Error(`Project must have ${MIN_SCENES} to ${MAX_SCENES} scenes.`);
+  const scenes: Scene[] = p.scenes.map((s: unknown, i: number) =&gt; {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!rec(s)) <span class="cstat-no" title="statement not covered" >throw new Error(`Scene ${i + 1} is malformed.`);</span>
+    if (s.image !== undefined &amp;&amp; !validAsset(s.image)) throw new Error(`Scene ${i + 1} image is invalid or too large.`);
+    const img = s.image as MediaAsset | undefined;
+    return {
+      id: newSceneId(), text: str(s.text, `scene ${i + 1} text`, MAX_SCENE_TEXT), durationSec: num(s.durationSec, `scene ${i + 1} duration`),
+      ...(img ? { image: { b64: img.b64, mime: img.mime, name: img.name, bytes: img.bytes, width: img.width, height: img.height } } : {}),
+    };
+  });
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (p.logo !== undefined &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >!validAsset(p.logo)) <span class="cstat-no" title="statement not covered" >t</span>hrow new Error("Project logo is invalid or too large.");</span>
+  const n = rec(p.narration) ? p.narration : <span class="branch-1 cbranch-no" title="branch not covered" >{};</span>
+  const m = rec(p.music) ? p.music : <span class="branch-1 cbranch-no" title="branch not covered" >{};</span>
+  const logo = p.logo as MediaAsset | undefined;
+  const project: ProductionProject = {
+    brief: str(p.brief ?? <span class="branch-1 cbranch-no" title="branch not covered" >"", "</span>brief", MAX_BRIEF_CHARS),
+    platform: str(p.platform ?? <span class="branch-1 cbranch-no" title="branch not covered" >"instagram", "</span>platform", 40),
+    aspect: pick(Object.keys(ASPECTS) as AspectId[], p.aspect),
+    scenes,
+    transition: pick(TRANSITIONS, p.transition),
+    colorGrade: pick(COLOR_GRADES, p.colorGrade),
+    ...(logo ? <span class="branch-0 cbranch-no" title="branch not covered" >{ logo: { b64: logo.b64, mime: logo.mime, name: logo.name, bytes: logo.bytes, width: logo.width, height: logo.height } } : {</span>}),
+    narration: { enabled: n.enabled === true, text: str(n.text ?? <span class="branch-1 cbranch-no" title="branch not covered" >"", "</span>narration", MAX_NARRATION_CHARS), voice: pick(VOICES, n.voice ?? <span class="branch-1 cbranch-no" title="branch not covered" >"en-us")</span>, wpm: num(n.wpm ?? <span class="branch-1 cbranch-no" title="branch not covered" >150, "</span>narration pace") },
+    music: { enabled: m.enabled === true, bpm: num(m.bpm ?? <span class="branch-1 cbranch-no" title="branch not covered" >100, "</span>tempo"), key: str(m.key ?? <span class="branch-1 cbranch-no" title="branch not covered" >"C minor", "</span>key", 12), instrument: pick(INSTRUMENTS, m.instrument ?? <span class="branch-1 cbranch-no" title="branch not covered" >"piano")</span>, arrangement: pick(ARRANGEMENTS, m.arrangement ?? <span class="branch-1 cbranch-no" title="branch not covered" >"structured")</span> },
+  };
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (totalMediaBytes(project) &gt; MAX_TOTAL_IMAGE_BYTES) <span class="cstat-no" title="statement not covered" >throw new Error("Project images exceed the 8 MiB total limit.");</span>
+  return project;
+}
+&nbsp;
+/** True when the project holds authored work worth confirming before replacement. */
+export function hasAuthoredWork(p: ProductionProject): boolean {
+  return Boolean(p.brief.trim() || p.logo || p.narration.text.trim() || p.scenes.length &gt; 1 ||
+    p.scenes.some(s =&gt; s.text.trim() || s.image));
+}
+&nbsp;
+// ── Undo/redo history ─────────────────────────────────────────────────────────
+export interface History&lt;T&gt; { past: T[]; present: T; future: T[] }
+export const HISTORY_LIMIT = 50;
+export function historyInit&lt;T&gt;(present: T): History&lt;T&gt; { return { past: [], present, future: [] }; }
+export function historyPush&lt;T&gt;(h: History&lt;T&gt;, next: T): History&lt;T&gt; {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (next === h.present) <span class="cstat-no" title="statement not covered" >return h;</span>
+  return { past: [...h.past, h.present].slice(-HISTORY_LIMIT), present: next, future: [] };
+}
+/** Replace present without a new snapshot (coalesces keystrokes in the same field). */
+export function historyReplace&lt;T&gt;(h: History&lt;T&gt;, next: T): History&lt;T&gt; { return { ...h, present: next, future: [] }; }
+export function historyUndo&lt;T&gt;(h: History&lt;T&gt;): History&lt;T&gt; {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!h.past.length) <span class="cstat-no" title="statement not covered" >return h;</span>
+  return { past: h.past.slice(0, -1), present: h.past[h.past.length - 1], future: [h.present, ...h.future] };
+}
+export function historyRedo&lt;T&gt;(h: History&lt;T&gt;): History&lt;T&gt; {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!h.future.length) <span class="cstat-no" title="statement not covered" >return h;</span>
+  return { past: [...h.past, h.present], present: h.future[0], future: h.future.slice(1) };
+}
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-06T11:36:23.920Z
+            </div>
+        <script src="../../../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../../../sorter.js"></script>
+        <script src="../../../../block-navigation.js"></script>
+    </body>
+</html>
+    

@@ -1,0 +1,8 @@
+coverage combine (exit 0)
+Combined 115 files, skipped 20
+
+coverage segregate (exit 0)
+{"unmappedDynamicFiles": [{"file": "<repo>/external/maxcore/artifacts/ai-training-server/job-update", "reason": "missing_non_python_runtime_filename", "executedLines": [7687, 7689, 7690, 7691, 7692, 7693, 7695, 7696, 7697, 7698, 7699], "arcs": [[-7687, 7689], [-1, 7687], [7687, -1], [7689, 7690], [7690, -7687], [7690, 7691], [7691, 7692], [7692, 7693], [7693, 7695], [7695, 7696], [7696, 7697], [7696, 7698], [7697, 7690], [7698, 7699], [7699, 7690]]}, {"file": "<repo>/external/maxcore/artifacts/ai-training-server/startup", "reason": "missing_non_python_runtime_filename", "executedLines": [851, 856, 857, 858, 859, 860, 861, 862, 865, 866, 867, 868, 869, 910, 912, 913, 914, 915, 916], "arcs": [[-851, 856], [-1, 851], [851, -1], [856, 857], [857, 858], [858, 859], [859, 860], [860, 861], [860, 865], [861, 862], [862, -851], [865, 866], [866, 867], [867, 868], [867, 910], [868, 869], [869, 867], [910, 912], [912, 913], [913, 915], [914, -851], [915, 916], [916, 914]]}], "retainedMeasuredFiles": 334, "contextsPreserved": [""]}
+
+coverage json (exit 0)
+Wrote JSON report to <repo>/reports/test-verification/python/coverage.json

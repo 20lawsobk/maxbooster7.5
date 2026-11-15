@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "scope": "Every retained source-trace cohort artifact; not runtime application acceptance",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 1516,
+      "sha256": "5605831de6999df99ac619d765c081a8660599670b9c9577d5693887bd03527b"
+    },
+    {
+      "path": "build-trace-output.txt",
+      "bytes": 893,
+      "sha256": "e38e3196d8c976b26919e42da834cb6a416dc521129ac3a18662580df4437730"
+    },
+    {
+      "path": "build-trace.py",
+      "bytes": 26855,
+      "sha256": "db3d9e948afd4587d5fcea23649f587fd010639c511e8b6b22b669535217411c"
+    },
+    {
+      "path": "confirmed-findings.json",
+      "bytes": 10013,
+      "sha256": "5b941db7dcb86c15270284ad05bac8051bc745df83585473bad284a9156eaaf8"
+    },
+    {
+      "path": "cross-process-example.json",
+      "bytes": 5756,
+      "sha256": "c3e4e9de75216d436c235d89c5decc652b111f3dc44a64962de2b9b944cafd31"
+    },
+    {
+      "path": "entries.json",
+      "bytes": 546416,
+      "sha256": "d26b8e33e25f37cd73d822548a89a8152e3aa1ddf5fb9be4c9c0e32c42163f13"
+    },
+    {
+      "path": "next-patch-spec.json",
+      "bytes": 8846,
+      "sha256": "358752cfbb48488a7f7635cfe12a3a6d23739f3b7ce6922a3ee5906cd5c26998"
+    },
+    {
+      "path": "python-router-trace.json",
+      "bytes": 148951,
+      "sha256": "8ed96978d629d3290425caabcb243b384930e3287e8b2a19c40df7dfb1ca0658"
+    },
+    {
+      "path": "source-hashes.json",
+      "bytes": 4392,
+      "sha256": "94ea14c15d714121716d37f4332e2d0e0f874b3d0d1ed9500a865d9c6e019c16"
+    },
+    {
+      "path": "trace-matrix.md",
+      "bytes": 19323,
+      "sha256": "0e1829d176f4f5286a891110c73c1471a70576dfda04abc517ec77def6d788a7"
+    },
+    {
+      "path": "validate-trace.py",
+      "bytes": 6385,
+      "sha256": "856bb9071a2d3f72ac89d7a58de068a26c6e1c716909a01eca122ae576ac730e"
+    },
+    {
+      "path": "validation-initial-schema-error.txt",
+      "bytes": 710,
+      "sha256": "a722af9f5a1b887919277e87eb28eeda0da540c3297deb527c250f4b192d738e"
+    },
+    {
+      "path": "validation.json",
+      "bytes": 2126,
+      "sha256": "c5b2d18ce7bdb3197390030508730cd3ffba14961ee99d74dbddbb92f938675b"
+    }
+  ]
+}

@@ -1,6 +1,9 @@
 import unittest
 from unittest.mock import patch
 from ai_model.awareness.sources import APP_RSS, configured_sources, rss, youtube
+from ai_model.awareness.platform_discovery import source_specs
+from ai_model.platform_optimization import PLATFORMS
+from workers import quality_harvester as legacy
 
 
 class SourceCoverageTests(unittest.TestCase):
@@ -187,21 +190,51 @@ class SourceCoverageTests(unittest.TestCase):
             restored_report["quality_cohort"]["candidate_observations"], 1
         )
 
-    def test_all_ten_original_feeds_are_retained_without_keys(self):
+    def test_default_registry_contains_only_selected_platform_sources(self):
         with patch.dict("os.environ", {}, clear=True):
             configured = configured_sources()
-        self.assertEqual(len(APP_RSS), 10)
-        for name, domain, url in APP_RSS:
-            self.assertEqual(configured[name][:2], (domain, url))
-        self.assertFalse(any(n.startswith(("exa_", "tavily_")) for n in configured))
+        youtube_sources = {
+            "youtube_" + feed["name"] for feed in legacy.YOUTUBE_FEEDS
+        }
+        self.assertEqual(set(configured), youtube_sources)
+        self.assertFalse(
+            set(configured) & {name for name, _, _ in APP_RSS}
+        )
 
-    def test_inherited_search_credentials_enable_both_providers(self):
-        # Fixture credentials never leave the test: only source configuration.
-        with patch.dict("os.environ", {"TAVILY_API_KEY": "fixture", "EXA_API_KEY": "fixture"}, clear=True):
+    def test_opted_in_discovery_registers_only_the_selected_platforms(self):
+        env = {
+            "MAXCORE_AWARENESS_PLATFORM_DISCOVERY": "1",
+            "MAXCORE_AWARENESS_PLATFORM_DISCOVERY_PROVIDER": "exa",
+            "TAVILY_API_KEY": "fixture",
+            "EXA_API_KEY": "fixture",
+        }
+        with patch.dict("os.environ", env, clear=True):
             configured = configured_sources()
-        for provider in ("tavily", "exa"):
-            for domain in ("music", "social", "advertising", "culture"):
-                self.assertEqual(configured[provider + "_" + domain][0], domain)
+        youtube_sources = {
+            "youtube_" + feed["name"] for feed in legacy.YOUTUBE_FEEDS
+        }
+        expected_discovery = source_specs(env)
+        self.assertEqual(set(configured), youtube_sources | set(expected_discovery))
+        self.assertEqual(len(expected_discovery), len(PLATFORMS))
+        self.assertTrue(
+            all(configured[name][0] == "social" for name in expected_discovery)
+        )
+
+    def test_unapproved_feeds_stay_unregistered_with_other_endpoints_configured(self):
+        env = {
+            "SOCIAL_LANDSCAPE_URL": "https://example.org/landscape",
+            "TAVILY_API_KEY": "fixture",
+            "EXA_API_KEY": "fixture",
+        }
+        with patch.dict("os.environ", env, clear=True):
+            configured = configured_sources()
+        youtube_sources = {
+            "youtube_" + feed["name"] for feed in legacy.YOUTUBE_FEEDS
+        }
+        self.assertEqual(set(configured), youtube_sources)
+        self.assertFalse(any(name.startswith("landscape_") for name in configured))
+        self.assertFalse(any(name.startswith(("exa_", "tavily_")) for name in configured))
+        self.assertFalse(set(configured) & {name for name, _, _ in APP_RSS})
 
     def test_atom_editorial_feed_is_not_invented_engagement(self):
         xml = b"""<feed xmlns="http://www.w3.org/2005/Atom"><entry>
@@ -250,18 +283,6 @@ class LandscapeSourceTests(unittest.TestCase):
             with patch("ai_model.awareness.sources.legacy._fetch",
                        side_effect=RuntimeError("fetch failed")):
                 self.assertEqual(landscape_feed("formats"), [])
-
-    def test_configured_sources_registers_landscape(self):
-        from ai_model.awareness.sources import configured_sources
-        env = {"SOCIAL_LANDSCAPE_URL": "https://example.org/t",
-               "TAVILY_API_KEY": "fixture"}
-        with patch.dict("os.environ", env, clear=True):
-            configured = configured_sources()
-        for kind in ("hashtags", "sounds", "formats"):
-            self.assertEqual(configured[f"landscape_{kind}"][0], "social")
-        landscape_search = [n for n in configured if n.startswith("tavily_social_landscape_")]
-        self.assertEqual(len(landscape_search), 3)
-        self.assertTrue(all(configured[n][0] == "social" for n in landscape_search))
 
     def test_configured_sources_omits_landscape_without_config(self):
         from ai_model.awareness.sources import configured_sources

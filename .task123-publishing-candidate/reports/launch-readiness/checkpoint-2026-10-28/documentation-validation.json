@@ -1,0 +1,1122 @@
+{
+  "reviewedAt": "2026-10-28T12:57:17.771744+00:00",
+  "scope": "Documentation reconciliation, relative file links, retained cohort artifact hashes/sizes and unchanged honest launch status; no product acceptance granted",
+  "sourceRevision": "cb783f1f9b34719a214dd7f9203a31dea64c051e",
+  "productionReady": false,
+  "manifests": [
+    {
+      "manifest": "reports/release-rehearsal/2026-10-28-cb783f1f-final/manifest.json",
+      "artifactsVerified": 23,
+      "status": "PASS"
+    },
+    {
+      "manifest": "reports/test-rechecks/2026-10-28-node-final/manifest.json",
+      "artifactsVerified": 127,
+      "status": "PASS"
+    },
+    {
+      "manifest": "reports/accessibility-audit/2026-10-28/manifest.json",
+      "artifactsVerified": 19,
+      "status": "PASS"
+    },
+    {
+      "manifest": "reports/accessibility-audit/2026-10-28-sealed-startup/manifest.json",
+      "artifactsVerified": 18,
+      "status": "PASS"
+    },
+    {
+      "manifest": "reports/coverage-producer/2026-10-28-compatibility-trace/manifest.json",
+      "artifactsVerified": 21,
+      "status": "PASS"
+    },
+    {
+      "manifest": "reports/mapping-audit/2026-10-28/manifest.json",
+      "artifactsVerified": 13,
+      "status": "PASS"
+    },
+    {
+      "manifest": "reports/launch-readiness/current/manifest.json",
+      "artifactsVerified": 6,
+      "status": "PASS"
+    }
+  ],
+  "artifactCount": 227,
+  "documents": [
+    {
+      "path": "docs/testing/release-rehearsal.md",
+      "sha256": "fa3b504ab58942164f11bf7948697801367df753354992b8393cc8c8c9dc6462"
+    },
+    {
+      "path": "docs/testing/completion-execution-plan.md",
+      "sha256": "8be6d441ed400e1bac61c846c1ee84b520098b3cf3c969a5f7314a8b18348ebb"
+    },
+    {
+      "path": "docs/testing/global-launch-readiness.md",
+      "sha256": "ce8d76a46cae399cca72ebcb9c034007dea016326b40e12b4df4de20b7ee20fd"
+    },
+    {
+      "path": "docs/testing/README.md",
+      "sha256": "c14792250f85c5cc26991dac02fb0ef9fce94bbddb15184d75fe76b2b913457d"
+    },
+    {
+      "path": "docs/testing/accessibility-launch-audit.md",
+      "sha256": "f7d6562d304b6e7d3b64fe4385bcbd03de072d18ddd8bfa44db37f9e736e1e22"
+    },
+    {
+      "path": "docs/testing/node-coverage-producer.md",
+      "sha256": "176016b2037f134fc6e190292fdb8d30eec523c47aa33832d89bd87f589d8674"
+    },
+    {
+      "path": "reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md",
+      "sha256": "b329600a36780f145beaa581bd9ab8ca920613888025873bcd1209ecc3e0bb99"
+    },
+    {
+      "path": "reports/test-rechecks/2026-10-28-node-final/README.md",
+      "sha256": "0d56435ef2674a008088940f238e1c4a94aa8f818da4c6b31165b5393a944ace"
+    }
+  ],
+  "relativeFileLinksChecked": 207,
+  "relativeFileLinks": [
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../replit-production-deployment.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-28-cb783f1f-final/summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-28-cb783f1f-final/hygiene-audit.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-26/summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-27/summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-27-final/summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-27-platform-final/summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-27-published-guard-final/summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-27-analytics-dependencies-final/summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-27-analytics-dependencies-final/source-drift-diagnosis.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "../../reports/release-rehearsal/2026-10-27-runtime-upload-isolation/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "test-oracle-review.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/release-rehearsal.md",
+      "target": "scale-evidence.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "platform-completion-plan.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "platform-work-schedule.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "launch-critical-path.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "launch-readiness-audit.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/test-verification/history/2026-10-26-integrated-before-rechecks/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/test-verification/history/2026-10-28-a1603b13-master/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/test-rechecks/2026-10-28-node-final/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "mapping-blocker-trace.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "current-storage-joint-recovery.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "node-coverage-producer.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "acceptance-link-review.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "release-rehearsal.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "test-oracle-review.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/test-verification/platform-register.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/test-verification/remediation.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "coverage-producer-implementation-plan.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "coverage-compatibility-trace.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/test-verification/coverage/coverage-final.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/test-verification/coverage/coverage-summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "../../reports/test-verification/python/coverage.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/completion-execution-plan.md",
+      "target": "README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../../reports/test-verification/history/2026-10-28-a1603b13-master/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "results.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../../reports/test-rechecks/2026-10-28-node-final/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "launch-readiness-audit.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "platform-completion-plan.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "platform-work-schedule.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "launch-critical-path.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../../reports/launch-readiness/current/matrix.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../../reports/launch-readiness/review-2026-10-28/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../replit-production-deployment.md#editor-and-publishing-commands",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "coverage-compatibility-trace.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "accessibility-launch-audit.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../../reports/deployment-observations/2026-10-28/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "completion-execution-plan.md#execution-sequence-toward-100-coverage",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "platform-completion-plan.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "platform-work-schedule.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "storage-and-archives.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../../reports/live-awareness-acceptance/2026-10-27/canonical-public-pipeline-README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "scale-evidence.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "../../reports/provider-acceptance/stripe-test-api-2026-10-26.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "mapping-blocker-trace.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "coverage-compatibility-trace.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/global-launch-readiness.md",
+      "target": "launch-critical-path.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "catalog.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "results.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "../../reports/test-verification/history/2026-10-28-a1603b13-master/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "../../reports/test-rechecks/2026-10-28-node-final/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "global-launch-readiness.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "remediation.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "completion-execution-plan.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "platform-completion-plan.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "global-launch-readiness.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "release-rehearsal.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "storage-release-runbook.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "launch-critical-path.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "launch-readiness-audit.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "platform-coverage.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "completion-execution-plan.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "coverage-producer-implementation-plan.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "node-coverage-producer.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "coverage-compatibility-trace.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "mapping-blocker-trace.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "account-analytics.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "monitoring-alerts.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "current-storage-joint-recovery.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "test-oracle-review.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "electron-asar-module-acceptance.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "accessibility-launch-audit.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "../../reports/accessibility-audit/2026-10-28-sealed-startup/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "release-rehearsal.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "../../reports/deployment-observations/2026-10-28/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "subsystems.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "catalog.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "platform-coverage.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "catalog.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "python.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "commerce.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "commerce-cases.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "subsystems.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "integration-browser.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "integration-browser.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "integration-browser.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "scale-evidence.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "catalog.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "results.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "commerce.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/README.md",
+      "target": "catalog.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "../../reports/accessibility-audit/2026-10-28-sealed-startup/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "../../reports/test-rechecks/2026-10-28-node-final/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "../../reports/accessibility-audit/2026-10-28/page-matrix.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/01-page-cf4f3530c8ccde8f.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/02-page-23ce7c7e997981d4.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/03-page-7f17f36f4a6d3aed.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/04-page-2a2c17c232b5fcd5.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/05-page-9da19c6eee5bd969.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/06-page-a60277a4e056b8ab.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/07-page-75dbcc7fada78c89.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/08-page-f754bab3b8d528f4.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/09-page-dc3bfa7924ddde50.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/10-page-df5f01b0d874ceee.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/11-page-aeb90701dc33c8a1.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/12-page-ad4acc42ba6a751c.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/13-page-3cfc55ed26d03472.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/14-page-a0ed6ee11074e449.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/15-page-e56b9766f2945aa7.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/16-page-0f978b2bf973cf34.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/17-page-3e2b4173745cfa8c.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/18-page-02a207e3438be3a7.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/19-page-58f548116a3234eb.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/20-page-635fc99b3b741b66.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/21-page-ed7827b964a45e80.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/22-page-026dde28daf442a3.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/23-page-c36c8bd3a09d63ad.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/24-page-0126aa06ffb28787.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/25-page-8d22e7cc7b3446a6.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/26-page-c6d13b43c7cc4e76.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/27-page-b8b0cddfa14cdfd8.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/28-page-fc92c038f0b85867.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/29-page-5bce414955386b94.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/30-page-5c7b3ab32229f8ec.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/31-page-560c7763a9e7fb51.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/32-page-8a9ccd0f03ea5557.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/33-page-e3111bc7fe578d2b.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/34-page-8b397f43d79dce6f.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/35-page-0fda85c2efe41c4f.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/36-page-55dfad22454614e1.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/37-page-715e8f99c3094ef7.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/38-page-012f330aa8bcebbd.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/39-page-dcf4f11657afd2e8.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/40-page-2893f5cb89784c41.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/41-page-1ab9e38dce5a27a6.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/42-page-8fbf33216fa51488.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/43-page-6d90853e7d127d50.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/44-page-11667d7488854b85.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/45-page-ff5f662c60cf94de.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/46-page-16afca09e75cb31a.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/47-page-4876fa83f37dea71.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/48-page-c2e85ad263dd6056.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/49-page-bc81104f0950b549.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/50-page-8701ce23cc0ec64d.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/51-page-d13f0763357fd628.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/52-page-d7d0ea0e035959d6.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/53-page-b35c432dacd654e6.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/54-page-cfdecadd0884ff0b.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/55-page-09185942073c1f46.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/56-page-2b833f3df51626a9.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/57-page-c034adbaa56b9257.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/58-page-ead45c538b390b5e.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/59-page-1b2415b660b26090.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/60-page-99d4f7970ff660eb.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/61-page-a1c10f86781e3d23.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/62-page-5625b47daf44c540.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/63-page-ab75b2cc5959692e.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/64-page-1b23e8ec1db53b5f.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/65-page-df08d75ba4d0bf2b.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/66-page-63589cd4ecb0fe7e.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/67-page-7af4f1aeb5f034dc.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/68-page-5c924cf1d9d52f74.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/69-page-f029c2cf04b24a04.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/70-page-bcd2ea6a168949e5.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/71-page-f23716ac1d13c11e.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/72-page-ac42bdc76322f85e.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/73-page-823d585c797a15c2.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/74-page-25ba331df6c4bb6f.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/75-page-baeb2a65a1758f27.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/76-page-f7b5f6c0875c088f.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/77-page-1a0c0cf086ddf173.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/78-page-35864bad10b44dc7.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/79-page-cbeaedba40fda3f6.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "platform-pages/80-page-226db30da46a5ec6.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "../../reports/accessibility-audit/2026-10-28/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "../../reports/accessibility-audit/2026-10-28/focused-receipt.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "../../reports/accessibility-audit/2026-10-28/after-final.junit.xml",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "../../reports/accessibility-audit/2026-10-28/page-matrix.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "../../reports/accessibility-audit/2026-10-28/summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/accessibility-launch-audit.md",
+      "target": "../../reports/accessibility-audit/2026-10-28/manifest.json",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/node-coverage-producer.md",
+      "target": "coverage-producer-implementation-plan.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/node-coverage-producer.md",
+      "target": "../../reports/coverage-producer/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/node-coverage-producer.md",
+      "target": "../../reports/coverage-producer/2026-10-28-a1603b13-node/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "docs/testing/node-coverage-producer.md",
+      "target": "coverage-compatibility-trace.md",
+      "status": "PASS"
+    },
+    {
+      "document": "reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md",
+      "target": "../2026-10-27-analytics-dependencies-final/summary.json",
+      "status": "PASS"
+    },
+    {
+      "document": "reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md",
+      "target": "../2026-10-27-runtime-uploads-final/audit-receipt.py",
+      "status": "PASS"
+    },
+    {
+      "document": "reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md",
+      "target": "../../../docs/testing/release-rehearsal.md",
+      "status": "PASS"
+    },
+    {
+      "document": "reports/test-rechecks/2026-10-28-node-final/README.md",
+      "target": "../../test-verification/history/2026-10-28-a1603b13-master/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "reports/test-rechecks/2026-10-28-node-final/README.md",
+      "target": "../../accessibility-audit/2026-10-28-sealed-startup/README.md",
+      "status": "PASS"
+    },
+    {
+      "document": "reports/test-rechecks/2026-10-28-node-final/README.md",
+      "target": "../../../docs/testing/README.md",
+      "status": "PASS"
+    }
+  ],
+  "pageAccessibilityRows": 80,
+  "launchPages": 80,
+  "greenPages": 0,
+  "fullMasterSourceFreshness": "STALE",
+  "whitespace": "PASS",
+  "status": "PASS"
+}

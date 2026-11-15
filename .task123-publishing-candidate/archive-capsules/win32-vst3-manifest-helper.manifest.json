@@ -1,0 +1,9 @@
+{
+  "compression": "gzip-9",
+  "sha256": "227b76c1462d311f4661ccfb87829327b4c833214004c47fe630861b01619a93",
+  "paths": [
+    "Win32"
+  ],
+  "restoreAtBoot": false,
+  "note": "Archival only, not part of the deploy/runtime capsule system in script/build.ts. Windows MSVC/JUCE build output for the VST3 manifest-helper tool used when building the Max Booster VST3 plugin. Nothing in server/ or client/ reads this (it cannot run on the Linux production VM). Restore with scripts/restore-archive-capsule.sh if resuming that Windows build."
+}

@@ -11,7 +11,7 @@ Postgres** as the database.
 
 ## Stack
 
-- **Runtime:** Node.js 22 (pinned; `start.sh` locates or provisions the right
+- **Runtime:** Node.js 24 (pinned; `start.sh` locates or provisions the right
   binary — it verifies Node by executing it, not by stat-ing paths, because
   the deployment container lazy-loads filesystem layers)
 - **Server:** Express + Drizzle ORM, session auth, early `/api/health`

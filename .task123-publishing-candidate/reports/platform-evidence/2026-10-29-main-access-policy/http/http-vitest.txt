@@ -1,0 +1,5 @@
+
+[globalSetup] Server ready at http://127.0.0.1:44247 ✅  (0s elapsed)
+JUNIT report written to /workspace/maxbooster7.5/reports/platform-evidence/2026-10-29-main-access-policy/http/integration.junit.xml
+[globalTeardown] Removing 4 test user(s)...
+[globalTeardown] Cleanup complete — removed 4 test user(s)

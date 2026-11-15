@@ -1,0 +1,30 @@
+{
+  "scope": "Actual installed producer/transform implementation read-only observation; no compiler policy changes",
+  "files": {
+    "node_modules/tsx/dist/index-DQtFPMc2.mjs": {
+      "sha256": "58dbdda360329e6077831c323fe99e84bbf4f25ef13e4e41641078759b0f6c49"
+    },
+    "node_modules/@vitest/coverage-v8/dist/provider.js": {
+      "sha256": "9f7848b27aabc311e867d9a034b4f569892e68533b837116ab932e05fa20558f"
+    },
+    "scripts/testing/collect-node-coverage.mjs": {
+      "sha256": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3"
+    },
+    "scripts/testing/coverage-provenance.mjs": {
+      "sha256": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030"
+    }
+  },
+  "tsxOptionsSnippet": "Er(Lr),Ne={...Or,sourcemap:!0,sourcesContent:!!process.env.NODE_V8_COVERAGE||Ar,minifyWhitespace:!0,keepNames:!0},Re=u(s=>{const e=s.sourcefile;if(e){const n=J.extname(e.",
+  "canonicalOptions": [
+    "ignoreClassMethods",
+    "wrapperLength",
+    "provider-specific ignoreNode"
+  ],
+  "standaloneOptions": [
+    "actual executed code",
+    "actual sourceMap",
+    "parseAstAsync(actual code)",
+    "actual V8 functions"
+  ],
+  "productionReady": false
+}

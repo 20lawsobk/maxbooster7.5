@@ -1,0 +1,19 @@
+{
+  "command": [
+    "npm",
+    "audit",
+    "--omit=dev",
+    "--audit-level=low",
+    "--json",
+    "--cache",
+    "/workspace/.npm-cache"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-27T22:19:46.985046+00:00",
+  "durationSeconds": 2.115,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/audit-root-prod.txt",
+  "logSha256": "c8b23610c1ace8b5735ec36c7d4752a3d39f5a15588dc25bc6be613f1caf2e7a"
+}

@@ -1,0 +1,8 @@
+{
+  "scope": "Isolated faithful reproduction of candidate lexical output guard, not full CLI; all writes confined to independent outside scratch",
+  "guardAccepted": true,
+  "lexicalOwnedBase": "/workspace/onboarding-results/c5-admission-independent-review/path-control-owned",
+  "selectedOutput": "/workspace/onboarding-results/c5-admission-independent-review/path-control-owned/link/new-output",
+  "actualOutput": "/workspace/onboarding-results/c5-admission-independent-review/path-control-escaped/new-output",
+  "realOutputWithinOwner": false
+}

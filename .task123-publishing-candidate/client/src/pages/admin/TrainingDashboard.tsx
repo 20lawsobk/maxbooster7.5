@@ -1,0 +1,1414 @@
+// @ts-nocheck
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { trainingApiFetch as apiFetch } from "@/lib/trainingApi";
+import { AppLayout } from "@/components/layout/AppLayout";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useRequireAdmin } from "@/hooks/useRequireAuth";
+import {
+  Brain,
+  Play,
+  Square,
+  RefreshCw,
+  Database,
+  Activity,
+  Cpu,
+  Clock,
+  TrendingDown,
+  CheckCircle,
+  AlertTriangle,
+  Layers,
+  BarChart2,
+  HardDrive,
+} from "lucide-react";
+
+interface TrainStatus {
+  status: "idle" | "running" | "stopping" | "stopped" | "error";
+  phase: number;
+  phase_name: string;
+  epoch: number;
+  step: number;
+  loss: number | null;
+  loss_history: Array<{
+    session: number;
+    loss: number;
+    phase: number;
+    ts: number;
+  }>;
+  total_samples: number;
+  session_count: number;
+  start_time: number | null;
+  elapsed_sec: number;
+  error: string | null;
+  weights_path: string | null;
+  last_save: number | null;
+  dataset_stats: Record<string, number | boolean | string>;
+}
+
+interface DatasetInfo {
+  success: boolean;
+  stats: {
+    hmdb51_clips: number;
+    ucf101_clips: number;
+    musiccaps_captions: number;
+    audiocaps_captions: number;
+    fma_tracks: number;
+    has_video_data: boolean;
+    has_prompt_data: boolean;
+    total_video_clips: number;
+    total_text_items: number;
+  };
+  disk_gb: Record<string, number>;
+  total_gb: number;
+}
+
+interface ScheduleInfo {
+  success: boolean;
+  schedule: Array<{
+    id: string;
+    name: string;
+    description: string;
+    loss_target: number;
+    epochs: number;
+    datasets: string[];
+  }>;
+  current_status: {
+    current_day: number;
+    current_phase: number;
+    phase_name: string;
+    progress_pct: number;
+  };
+}
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function formatEpochTimestamp(value: unknown): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "Not recorded";
+  const date = new Date(value * 1000);
+  return Number.isNaN(date.getTime()) ? "Not recorded" : date.toLocaleString();
+}
+
+function StatusBadge({ status }: { status: TrainStatus["status"] }) {
+  const map: Record<
+    TrainStatus["status"],
+    { label: string; className: string }
+  > = {
+    idle: { label: "Idle", className: "bg-gray-500/20 text-gray-400" },
+    running: {
+      label: "Training",
+      className: "bg-green-500/20 text-green-400 animate-pulse",
+    },
+    stopping: {
+      label: "Stopping",
+      className: "bg-yellow-500/20 text-yellow-400",
+    },
+    stopped: { label: "Stopped", className: "bg-blue-500/20 text-blue-400" },
+    error: { label: "Error", className: "bg-red-500/20 text-red-400" },
+  };
+  const { label, className } = map[status] ?? map.idle;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${className}`}
+    >
+      {status === "running" && (
+        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
+      )}
+      {label}
+    </span>
+  );
+}
+
+function MiniLossChart({ history }: { history: TrainStatus["loss_history"] }) {
+  if (history.length < 2) {
+    return (
+      <div className="flex items-center justify-center h-24 text-gray-500 text-xs">
+        No loss data yet — start training to see the curve
+      </div>
+    );
+  }
+
+  const maxLoss = Math.max(...history.map((h) => h.loss));
+  const minLoss = Math.min(...history.map((h) => h.loss));
+  const range = maxLoss - minLoss || 1;
+  const W = 400,
+    H = 80,
+    pad = 4;
+
+  const pts = history
+    .map((h, i) => {
+      const x = pad + (i / ((history.length - 1 || 1))) * (W - pad * 2);
+      const y = pad + (1 - (h.loss - minLoss) / range) * (H - pad * 2);
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  return (
+    <div className="w-full overflow-hidden">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-20">
+        <defs>
+          <linearGradient id="lossGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polyline
+          points={pts}
+          fill="none"
+          stroke="#6366f1"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <text x={pad} y={H - 2} fontSize="8" fill="#6b7280">
+          s{history[0].session}
+        </text>
+        <text x={W - pad - 20} y={H - 2} fontSize="8" fill="#6b7280">
+          s{history[history.length - 1].session}
+        </text>
+        <text x={pad} y={10} fontSize="8" fill="#6b7280">
+          {maxLoss.toFixed(4)}
+        </text>
+        <text x={pad} y={H - 12} fontSize="8" fill="#6b7280">
+          {minLoss.toFixed(4)}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+export default function TrainingDashboard() {
+  const {  isLoading: authLoading } = useRequireAdmin();
+  const qc = useQueryClient();
+  const [mode, setMode] = useState<"session" | "day" | "continuous">("session");
+  const [nSessions, setNSessions] = useState(3);
+
+  const {
+    data: status,
+    error: statusQueryError,
+    isError: statusError,
+    isLoading: statusLoading,
+    refetch: refetchStatus,
+  } = useQuery<TrainStatus>({
+    queryKey: ["training-status"],
+    queryFn: () => apiFetch("/api/training/status"),
+    refetchInterval: (query) =>
+      query.state.data?.status === "running" ||
+      query.state.data?.status === "stopping"
+        ? 3000
+        : 15000,
+    retry: false,
+  });
+
+  const {
+    data: liveLearning,
+    error: liveLearningQueryError,
+    isError: liveLearningError,
+    isLoading: liveLearningLoading,
+    refetch: refetchLiveLearning,
+  } = useQuery({
+    queryKey: ["maxcore-live-learning-status"],
+    queryFn: () => apiFetch("/api/training/live/status"),
+    refetchInterval: 10_000,
+    retry: false,
+  });
+
+  const {
+    data: internalCandidates,
+    error: internalCandidatesError,
+  } = useQuery({
+    queryKey: ["maxcore-internal-learning-candidates"],
+    queryFn: () => apiFetch("/api/training/candidates/internal"),
+    refetchInterval: 15_000,
+    retry: false,
+  });
+
+  const {
+    data: generationCapabilities,
+    error: generationCapabilitiesQueryError,
+    isError: generationCapabilitiesError,
+    isLoading: generationCapabilitiesLoading,
+    refetch: refetchGenerationCapabilities,
+  } = useQuery({
+    queryKey: ["maxcore-generation-endpoints"],
+    queryFn: async () => {
+      const data = await apiFetch("/api/generation/capabilities");
+      if (
+        !data?.endpoint_routes?.generation ||
+        !data?.endpoint_routes?.readiness?.paths?.length
+      ) {
+        throw new Error("MaxCore did not return its readiness and generation endpoint catalog.");
+      }
+      return data;
+    },
+    refetchInterval: 15_000,
+    retry: false,
+  });
+
+  const {
+    data: maxcoreRuntimeEndpoints,
+    isLoading: maxcoreRuntimeEndpointsLoading,
+    refetch: refetchMaxcoreRuntimeEndpoints,
+  } = useQuery({
+    queryKey: ["maxcore-runtime-endpoint-status"],
+    queryFn: async () => {
+      const endpoints = [
+        {
+          id: "health",
+          label: "Liveness",
+          serverPath: "/health",
+          proxyPath: "/api/admin/maxcore/health",
+        },
+        {
+          id: "readiness",
+          label: "Readiness",
+          serverPath: "/ready",
+          proxyPath: "/api/admin/maxcore/readiness",
+        },
+        {
+          id: "warm",
+          label: "Warm status",
+          serverPath: "/api/warm/status",
+          proxyPath: "/api/admin/maxcore/warm/status",
+        },
+      ];
+      return Promise.all(endpoints.map(async (endpoint) => {
+        try {
+          const response = await apiFetch(endpoint.proxyPath);
+          return { ...endpoint, httpStatus: 200, response };
+        } catch (error) {
+          return {
+            ...endpoint,
+            httpStatus: Number((error as any)?.status) || null,
+            error: (error as Error)?.message || "No response from MaxCore",
+          };
+        }
+      }));
+    },
+    refetchInterval: 15_000,
+    retry: false,
+  });
+
+  const {
+    data: datasets,
+    error: datasetsQueryError,
+    isError: datasetsError,
+    isLoading: datasetsLoading,
+    refetch: refetchDatasets,
+  } = useQuery<DatasetInfo>({
+    queryKey: ["training-datasets"],
+    queryFn: () => apiFetch("/api/training/datasets"),
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  const {
+    data: schedule,
+    error: scheduleQueryError,
+    isError: scheduleError,
+    isLoading: scheduleLoading,
+    refetch: refetchSchedule,
+  } = useQuery<ScheduleInfo>({
+    queryKey: ["training-schedule"],
+    queryFn: () => apiFetch("/api/training/schedule"),
+    staleTime: 300_000,
+    retry: false,
+  });
+
+  const startMutation = useMutation({
+    mutationFn: () =>
+      apiFetch("/api/training/start", {
+        method: "POST",
+        body: JSON.stringify({ mode, n_sessions: nSessions }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["training-status"] }),
+  });
+
+  const stopMutation = useMutation({
+    mutationFn: () => apiFetch("/api/training/stop", { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["training-status"] }),
+  });
+
+  const isRunning = status?.status === "running";
+  const isStopping = status?.status === "stopping";
+  // Do not offer a start action until the current state has been read. Without
+  // that check an unavailable status service made the page appear safe to start
+  // even though a trainer could already be active.
+  const canStart = !!status && !isRunning && !isStopping;
+
+  if (authLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Brain className="w-7 h-7 text-indigo-400" />
+            <div>
+              <h1 className="text-xl font-semibold text-white">
+                Model Training
+              </h1>
+              <p className="text-sm text-gray-400">
+                UNetV4 · 463M params · 30-day curriculum
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {status && <StatusBadge status={status.status} />}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetchStatus()}
+              className="text-gray-400"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Error alert */}
+        {status?.error && (
+          <Alert className="border-red-500/30 bg-red-500/10">
+            <AlertTriangle className="w-4 h-4 text-red-400" />
+            <AlertDescription className="text-red-300 text-sm">
+              {status.error}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {statusError && (
+          <Alert className="border-yellow-500/30 bg-yellow-500/10">
+            <AlertTriangle className="w-4 h-4 text-yellow-400" />
+            <AlertDescription className="text-yellow-300 text-sm">
+              Unable to load trainer status:{" "}
+              {(statusQueryError as Error)?.message || "Unknown error"}
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 ml-2 text-yellow-300"
+                onClick={() => refetchStatus()}
+              >
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Card className="bg-gray-900 border-gray-700" data-testid="maxcore-live-learning-progress">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-white text-sm font-medium">
+                  MaxCore Live-Awareness Model Progress
+                </CardTitle>
+                <CardDescription className="mt-1 text-gray-400 text-xs">
+                  Awareness-backed serving is the active pre-checkpoint mode.
+                  Checkpoint training and certification remain separate.
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void refetchLiveLearning()}
+                disabled={liveLearningLoading}
+                aria-label="Refresh MaxCore live-learning status"
+              >
+                <RefreshCw className={`h-4 w-4 ${liveLearningLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            {liveLearningError ? (
+              <Alert className="border-yellow-500/30 bg-yellow-500/10 sm:col-span-2 lg:col-span-3">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                <AlertDescription className="text-yellow-300 text-xs">
+                  Live-learning status is unavailable:{" "}
+                  {(liveLearningQueryError as Error)?.message || "MaxCore did not return status"}
+                </AlertDescription>
+              </Alert>
+            ) : liveLearningLoading ? (
+              <p role="status" className="text-xs text-gray-400">Loading MaxCore status…</p>
+            ) : (
+              <>
+                <div>
+                  <div className="text-xs text-gray-400">Serving mode</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.generation_ready
+                      ? liveLearning.generation_mode === "live_awareness"
+                        ? "Live awareness serving"
+                        : liveLearning.generation_mode === "trained_checkpoint"
+                          ? "Trained checkpoint serving"
+                          : "Generation ready"
+                      : "Unavailable"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Checkpoint loaded</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.model_loaded === true ? "Yes" : "No"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Awareness snapshot</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.awareness_ready === true ? "Ready" : "Not ready"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Learning loop</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.running === true ? "Running" : "Not running"}
+                    {" · "}
+                    {liveLearning?.learning?.training || "state not reported"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Ten-year simulation source</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.internal_source?.simulation_cycle
+                      ? `Cycle ${liveLearning.learning.internal_source.simulation_cycle} · ` +
+                        `${liveLearning.learning.internal_source.simulation_horizon_days_per_track} days per track`
+                      : liveLearning?.learning?.internal_source_error
+                        ? `Unavailable · ${liveLearning.learning.internal_source_error}`
+                        : "Waiting for first persisted cycle"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Internal training data</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.internal_source?.training_records_selected ?? "—"}
+                    {" selected · "}
+                    {liveLearning?.learning?.internal_source?.owner_admin_records_eligible ?? 0}
+                    {" owner-admin"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Internal candidates</div>
+                  <div className="mt-1 text-white">
+                    {internalCandidatesError
+                      ? "Status unavailable"
+                      : `${internalCandidates?.runs?.length ?? 0} · ` +
+                        `${internalCandidates?.runs?.[0]?.status ?? "no candidate"}`}
+                  </div>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <div className="text-xs text-gray-400">Simulation durability</div>
+                  <div className="mt-1 break-all text-white">
+                    {liveLearning?.learning?.internal_source?.storage_authority ??
+                      "Canonical PDIM status not yet verified"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Awareness endpoint use</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.learning?.awareness_endpoint_usage?.uses ?? "—"} uses
+                    {" · "}
+                    {liveLearning?.learning?.awareness_endpoint_usage?.learning_check_signals ?? "—"} learning checks
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Latest learning run</div>
+                  <div className="mt-1 break-all text-white">
+                    {liveLearning?.learning?.last_run_id || "No run reported"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Last awareness use</div>
+                  <div className="mt-1 text-white">
+                    {formatEpochTimestamp(
+                      liveLearning?.learning?.awareness_endpoint_usage?.last_used_at,
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">Candidate evaluation</div>
+                  <div className="mt-1 text-white">
+                    {liveLearning?.serving?.candidate_quality ||
+                      "No candidate quality reported"}
+                  </div>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3 text-xs text-gray-400">
+                  Endpoint use requests a bounded learner check. Candidate creation,
+                  review, and serving promotion are reported separately and are not
+                  inferred from request counts.
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900 border-gray-700" data-testid="maxcore-server-endpoints">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-white text-sm font-medium">
+                  MaxCore Server Endpoints
+                </CardTitle>
+                <CardDescription className="mt-1 text-gray-400 text-xs">
+                  Live MaxCore routes through the authenticated Max Booster proxy.
+                  The private service address and credentials stay server-side.
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void refetchGenerationCapabilities()}
+                disabled={generationCapabilitiesLoading}
+                aria-label="Refresh MaxCore server endpoint status"
+              >
+                <RefreshCw className={`h-4 w-4 ${generationCapabilitiesLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {generationCapabilitiesError ? (
+              <Alert className="border-yellow-500/30 bg-yellow-500/10">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                <AlertDescription className="text-yellow-300 text-xs">
+                  MaxCore endpoint status unavailable:{" "}
+                  {(generationCapabilitiesQueryError as Error)?.message ||
+                    "No capability response was received"}
+                </AlertDescription>
+              </Alert>
+            ) : generationCapabilitiesLoading ? (
+              <p role="status" className="text-xs text-gray-400">
+                Loading MaxCore endpoint status…
+              </p>
+            ) : generationCapabilities?.endpoint_routes ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-gray-700 p-3">
+                  <Badge variant="default">Connected</Badge>
+                  <span className="text-gray-300">
+                    {generationCapabilities.endpoint_routes.capabilities.method}{" "}
+                    {generationCapabilities.endpoint_routes.capabilities.path}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    MaxCore capability response received
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-700 p-3">
+                  <div className="flex flex-wrap gap-2">
+                    {generationCapabilities.endpoint_routes.readiness.paths.map(
+                      (path: string) => (
+                        <code key={path} className="text-xs text-gray-200">
+                          GET {path}
+                        </code>
+                      ),
+                    )}
+                  </div>
+                  <Badge
+                    variant={
+                      generationCapabilities.endpoint_routes.readiness.ready
+                        ? "default"
+                        : "destructive"
+                    }
+                  >
+                    {generationCapabilities.endpoint_routes.readiness.ready
+                      ? "All generation routes ready"
+                      : "Generation readiness blocked"}
+                  </Badge>
+                </div>
+                <div className="rounded-md border border-gray-700 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <code className="text-xs text-gray-200">
+                      {generationCapabilities.endpoint_routes.awareness_status.method}{" "}
+                      {generationCapabilities.endpoint_routes.awareness_status.path}
+                    </code>
+                    <Badge
+                      variant={
+                        generationCapabilities.endpoint_routes.awareness_status.ready
+                          ? "default"
+                          : "destructive"
+                      }
+                    >
+                      {generationCapabilities.endpoint_routes.awareness_status.ready
+                        ? "Awareness ready"
+                        : "Awareness unavailable"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      MaxCore runtime checks
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void refetchMaxcoreRuntimeEndpoints()}
+                      disabled={maxcoreRuntimeEndpointsLoading}
+                      aria-label="Refresh MaxCore runtime checks"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${maxcoreRuntimeEndpointsLoading ? "animate-spin" : ""}`} />
+                    </Button>
+                  </div>
+                  {maxcoreRuntimeEndpointsLoading && !maxcoreRuntimeEndpoints ? (
+                    <p role="status" className="text-xs text-gray-400">
+                      Checking MaxCore liveness, readiness, and warm status…
+                    </p>
+                  ) : maxcoreRuntimeEndpoints?.map((endpoint: any) => {
+                    const reachable = endpoint.httpStatus >= 200 && endpoint.httpStatus < 300;
+                    const detail = endpoint.id === "health"
+                      ? endpoint.response?.status || endpoint.error
+                      : endpoint.id === "readiness"
+                        ? endpoint.response?.ready
+                          ? "Generation readiness passed"
+                          : endpoint.error || "Generation readiness is blocked"
+                        : endpoint.response?.deep_warm?.state ||
+                          endpoint.response?.warm_start?.state ||
+                          endpoint.error ||
+                          "Warm status returned";
+                    return (
+                      <div
+                        key={endpoint.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-700 px-3 py-2"
+                        data-testid={`maxcore-runtime-${endpoint.id}`}
+                      >
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-200">{endpoint.label}</div>
+                          <code className="break-all text-xs text-gray-400">
+                            GET {endpoint.serverPath}
+                          </code>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={reachable ? "default" : "destructive"}>
+                            {endpoint.httpStatus === null
+                              ? "Unavailable"
+                              : `HTTP ${endpoint.httpStatus}`}
+                          </Badge>
+                          <span className="text-xs text-gray-400">{detail}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="space-y-2">
+                  {Object.entries(
+                    generationCapabilities.endpoint_routes.generation,
+                  ).map(([modality, endpoint]: [string, any]) => (
+                    <div
+                      key={modality}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-700 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-medium capitalize text-gray-200">
+                          {modality}
+                        </div>
+                        <code className="break-all text-xs text-gray-400">
+                          {endpoint.method} {endpoint.path}
+                        </code>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant={
+                            endpoint.online
+                              ? "default"
+                              : "destructive"
+                          }
+                        >
+                          {endpoint.online ? "Online" : "Blocked"}
+                        </Badge>
+                        <span className="text-xs text-gray-400">
+                          {endpoint.trained
+                            ? "trained checkpoint"
+                            : modality === "text" &&
+                                generationCapabilities.serving?.generation_mode ===
+                                  "live_awareness"
+                              ? "live-awareness text serving"
+                              : endpoint.renderer
+                                ? `${endpoint.renderer} · procedural, not trained`
+                                : "not trained"}
+                        </span>
+                        {!endpoint.online && endpoint.readiness_reason && (
+                          <span className="text-xs text-red-300">
+                            {endpoint.readiness_reason}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400">
+                  {generationCapabilities.endpoint_routes.note}
+                </p>
+              </>
+            ) : (
+              <p role="status" className="text-xs text-gray-400">
+                MaxCore endpoint catalog is not available.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top stats row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="bg-gray-900 border-gray-700">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Layers className="w-4 h-4 text-indigo-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wide">
+                  Phase
+                </span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {status?.phase ?? "—"}
+                <span className="text-gray-500 text-sm">/4</span>
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5 truncate">
+                {status?.phase_name || "Not started"}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-700">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingDown className="w-4 h-4 text-green-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wide">
+                  Loss
+                </span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {status?.loss != null ? status.loss.toFixed(4) : "—"}
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">
+                {status?.session_count ?? 0} sessions completed
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-700">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Activity className="w-4 h-4 text-blue-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wide">
+                  Samples
+                </span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {status?.total_samples != null
+                  ? status.total_samples >= 1000
+                    ? `${(status.total_samples / 1000).toFixed(1)}K`
+                    : status.total_samples
+                  : "—"}
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">total trained</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-700">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="w-4 h-4 text-purple-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wide">
+                  Time
+                </span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {status?.elapsed_sec ? formatDuration(status.elapsed_sec) : "—"}
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">training time</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="control" className="space-y-4">
+          <TabsList className="bg-gray-800 border border-gray-700">
+            <TabsTrigger
+              value="control"
+              className="data-[state=active]:bg-gray-700"
+            >
+              <Play className="w-3.5 h-3.5 mr-1.5" />
+              Control
+            </TabsTrigger>
+            <TabsTrigger
+              value="loss"
+              className="data-[state=active]:bg-gray-700"
+            >
+              <BarChart2 className="w-3.5 h-3.5 mr-1.5" />
+              Loss Curve
+            </TabsTrigger>
+            <TabsTrigger
+              value="datasets"
+              className="data-[state=active]:bg-gray-700"
+            >
+              <Database className="w-3.5 h-3.5 mr-1.5" />
+              Datasets
+            </TabsTrigger>
+            <TabsTrigger
+              value="schedule"
+              className="data-[state=active]:bg-gray-700"
+            >
+              <Cpu className="w-3.5 h-3.5 mr-1.5" />
+              Curriculum
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Control Tab */}
+          <TabsContent value="control" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white text-sm font-medium">
+                    Start Training
+                  </CardTitle>
+                  <CardDescription className="text-gray-400 text-xs">
+                    Runs the curriculum trainer which automatically advances
+                    through phases
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1.5">
+                        Mode
+                      </label>
+                      <Select
+                        value={mode}
+                        onValueChange={(v) => setMode(v as typeof mode)}
+                        disabled={!canStart}
+                      >
+                        <SelectTrigger className="bg-gray-800 border-gray-600 text-gray-200 text-sm h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-600">
+                          <SelectItem
+                            value="session"
+                            className="text-gray-200 text-sm"
+                          >
+                            Single Session
+                          </SelectItem>
+                          <SelectItem
+                            value="day"
+                            className="text-gray-200 text-sm"
+                          >
+                            Day ({nSessions} sessions)
+                          </SelectItem>
+                          <SelectItem
+                            value="continuous"
+                            className="text-gray-200 text-sm"
+                          >
+                            Continuous (until stopped)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 block mb-1.5">
+                        Sessions (Day mode)
+                      </label>
+                      <Select
+                        value={String(nSessions)}
+                        onValueChange={(v) => setNSessions(Number(v))}
+                        disabled={!canStart || mode !== "day"}
+                      >
+                        <SelectTrigger className="bg-gray-800 border-gray-600 text-gray-200 text-sm h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-600">
+                          {[1, 2, 3, 5, 10].map((n) => (
+                            <SelectItem
+                              key={n}
+                              value={String(n)}
+                              className="text-gray-200 text-sm"
+                            >
+                              {n}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm"
+                      disabled={!canStart || startMutation.isPending}
+                      onClick={() => startMutation.mutate()}
+                    >
+                      {startMutation.isPending ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          Starting…
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3.5 h-3.5 mr-1.5" />
+                          Start Training
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-red-500/40 text-red-400 hover:bg-red-500/10 text-sm"
+                      disabled={!isRunning || stopMutation.isPending}
+                      onClick={() => stopMutation.mutate()}
+                    >
+                      {stopMutation.isPending ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Square className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                  </div>
+
+                  {startMutation.isError && (
+                    <p className="text-red-400 text-xs">
+                      {(startMutation.error as Error).message}
+                    </p>
+                  )}
+                    {stopMutation.isError && (
+                      <p className="text-red-400 text-xs">
+                        {(stopMutation.error as Error).message}
+                      </p>
+                    )}
+                    {statusLoading && (
+                      <p className="text-gray-400 text-xs">
+                        Checking trainer status…
+                      </p>
+                    )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white text-sm font-medium">
+                    Current Session
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between text-gray-300">
+                      <span className="text-gray-400">Status</span>
+                      {status ? (
+                        <StatusBadge status={status.status} />
+                      ) : (
+                        <span className="text-gray-500">—</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span className="text-gray-400">Phase</span>
+                      <span>
+                        {status?.phase
+                          ? `${status.phase} — ${status.phase_name}`
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span className="text-gray-400">Current Loss</span>
+                      <span className="font-mono text-green-400">
+                        {status?.loss != null ? status.loss.toFixed(5) : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span className="text-gray-400">Sessions Done</span>
+                      <span>{status?.session_count ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span className="text-gray-400">Last Weights Save</span>
+                      <span className="text-xs">
+                        {status?.last_save
+                          ? new Date(
+                              status.last_save * 1000,
+                            ).toLocaleTimeString()
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span className="text-gray-400">Weights File</span>
+                      <span className="text-xs text-gray-500 truncate max-w-[140px]">
+                        {status?.weights_path
+                          ? status.weights_path.split("/").pop()
+                          : "weights_v4.npz"}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 30-day progress */}
+            {schedule?.current_status && (
+              <Card className="bg-gray-900 border-gray-700">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-300">
+                      30-Day Curriculum Progress
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      Day {schedule.current_status.current_day} / 30
+                    </span>
+                  </div>
+                  <Progress
+                    value={schedule.current_status.progress_pct ?? 0}
+                    className="h-2"
+                  />
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Phase {schedule.current_status.current_phase}:{" "}
+                    {schedule.current_status.phase_name}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Loss Curve Tab */}
+          <TabsContent value="loss">
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-sm font-medium flex items-center gap-2">
+                  <TrendingDown className="w-4 h-4 text-green-400" />
+                  Training Loss History
+                </CardTitle>
+                <CardDescription className="text-gray-400 text-xs">
+                  {status?.loss_history?.length ?? 0} data points across{" "}
+                  {status?.session_count ?? 0} sessions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MiniLossChart history={status?.loss_history ?? []} />
+
+                {status?.loss_history && status.loss_history.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 gap-3 text-center text-xs">
+                    <div className="bg-gray-800 rounded p-2">
+                      <div className="text-gray-400 mb-1">First Loss</div>
+                      <div className="text-white font-mono">
+                        {status.loss_history[0].loss.toFixed(4)}
+                      </div>
+                    </div>
+                    <div className="bg-gray-800 rounded p-2">
+                      <div className="text-gray-400 mb-1">Best Loss</div>
+                      <div className="text-green-400 font-mono">
+                        {Math.min(
+                          ...status.loss_history.map((h) => h.loss),
+                        ).toFixed(4)}
+                      </div>
+                    </div>
+                    <div className="bg-gray-800 rounded p-2">
+                      <div className="text-gray-400 mb-1">Latest Loss</div>
+                      <div className="text-indigo-400 font-mono">
+                        {status.loss_history[
+                          status.loss_history.length - 1
+                        ].loss.toFixed(4)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Datasets Tab */}
+          <TabsContent value="datasets">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  {
+                    label: "HMDB-51 Clips",
+                    value: datasets?.stats?.hmdb51_clips,
+                    icon: "🎬",
+                    color: "text-blue-400",
+                  },
+                  {
+                    label: "UCF-101 Clips",
+                    value: datasets?.stats?.ucf101_clips,
+                    icon: "🎬",
+                    color: "text-blue-400",
+                  },
+                  {
+                    label: "MusicCaps Captions",
+                    value: datasets?.stats?.musiccaps_captions,
+                    icon: "🎵",
+                    color: "text-purple-400",
+                  },
+                  {
+                    label: "AudioCaps Captions",
+                    value: datasets?.stats?.audiocaps_captions,
+                    icon: "🔊",
+                    color: "text-teal-400",
+                  },
+                  {
+                    label: "FMA Tracks",
+                    value: datasets?.stats?.fma_tracks,
+                    icon: "🎼",
+                    color: "text-orange-400",
+                  },
+                  {
+                    label: "Total Disk Used",
+                    value:
+                      datasets?.total_gb != null
+                        ? `${datasets.total_gb} GB`
+                        : null,
+                    icon: "💾",
+                    color: "text-gray-300",
+                  },
+                ].map(({ label, value, icon, color }) => (
+                  <Card key={label} className="bg-gray-900 border-gray-700">
+                    <CardContent className="pt-3 pb-3">
+                      <div className="text-lg mb-0.5">{icon}</div>
+                      <div className={`text-xl font-bold ${color}`}>
+                        {value != null ? (
+                          typeof value === "number" ? (
+                            value.toLocaleString()
+                          ) : (
+                            value
+                          )
+                        ) : (
+                          <span className="text-gray-600">—</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        {label}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {datasetsError && (
+                <Alert className="border-yellow-500/30 bg-yellow-500/10">
+                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                  <AlertDescription className="text-yellow-300 text-sm">
+                    Unable to load dataset information:{" "}
+                    {(datasetsQueryError as Error)?.message || "Unknown error"}
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 ml-2 text-yellow-300"
+                      onClick={() => refetchDatasets()}
+                    >
+                      Retry
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              {datasetsLoading && (
+                <p className="text-center text-gray-500 text-sm">
+                  Loading dataset information…
+                </p>
+              )}
+
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                    <HardDrive className="w-4 h-4 text-gray-400" />
+                    Dataset Sizes on Disk
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {datasets?.disk_gb &&
+                  Object.keys(datasets.disk_gb).length > 0 ? (
+                    <div className="space-y-2">
+                      {Object.entries(datasets.disk_gb)
+                        .filter(([, gb]) => gb > 0)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([name, gb]) => (
+                          <div key={name} className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400 w-32 truncate">
+                              {name}
+                            </span>
+                            <div className="flex-1">
+                              <Progress
+                                value={Math.min(
+                                  100,
+                                  (gb / (datasets.total_gb || 1)) * 100,
+                                )}
+                                className="h-1.5"
+                              />
+                            </div>
+                            <span className="text-xs text-gray-300 w-14 text-right">
+                              {gb.toFixed(2)} GB
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  ) : datasetsLoading ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      Loading dataset info…
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      {datasetsError
+                        ? "Dataset size information is unavailable."
+                        : "No dataset files reported."}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-700">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle
+                      className={`w-4 h-4 ${datasets?.stats?.has_video_data ? "text-green-400" : "text-gray-600"}`}
+                    />
+                    <span className="text-sm text-gray-300">
+                      Real video frames (
+                      {datasets?.stats?.has_video_data
+                        ? "active — 25% of training samples"
+                        : "not yet available"}
+                      )
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle
+                      className={`w-4 h-4 ${datasets?.stats?.has_prompt_data ? "text-green-400" : "text-gray-600"}`}
+                    />
+                    <span className="text-sm text-gray-300">
+                      Real music captions (
+                      {datasets?.stats?.has_prompt_data
+                        ? "active — 20% of training prompts"
+                        : "not yet available"}
+                      )
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Curriculum Tab */}
+          <TabsContent value="schedule">
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-sm font-medium">
+                  30-Day Training Curriculum
+                </CardTitle>
+                <CardDescription className="text-gray-400 text-xs">
+                  Automatic phase progression based on loss targets
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {schedule?.schedule ? (
+                  <div className="space-y-3">
+                    {schedule.schedule.map((phase) => {
+                      const phaseNumber = Number(
+                        phase.id?.match(/\d+/)?.[0] ?? 0,
+                      );
+                      const isCurrent =
+                        phaseNumber === schedule.current_status?.current_phase;
+                      return (
+                        <div
+                          key={phase.id}
+                          className={`rounded-lg p-3 border ${
+                            isCurrent
+                              ? "border-indigo-500/50 bg-indigo-500/10"
+                              : "border-gray-700 bg-gray-800/50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              {isCurrent && (
+                                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                              )}
+                              <span className="text-sm font-medium text-white">
+                                Phase {phaseNumber}: {phase.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className="text-xs border-gray-600 text-gray-400"
+                              >
+                                 {phase.epochs} epochs
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="text-xs border-gray-600 text-gray-400"
+                              >
+                                 loss ≤ {phase.loss_target}
+                              </Badge>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-400">
+                            {phase.description}
+                          </p>
+                          {phase.datasets?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {phase.datasets.slice(0, 4).map((d) => (
+                                <span
+                                  key={d}
+                                  className="text-xs bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded"
+                                >
+                                  {d}
+                                </span>
+                              ))}
+                              {phase.datasets.length > 4 && (
+                                <span className="text-xs text-gray-500">
+                                  +{phase.datasets.length - 4} more
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : scheduleError ? (
+                  <Alert className="border-yellow-500/30 bg-yellow-500/10">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                    <AlertDescription className="text-yellow-300 text-sm">
+                      Unable to load curriculum:{" "}
+                      {(scheduleQueryError as Error)?.message || "Unknown error"}
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 ml-2 text-yellow-300"
+                        onClick={() => refetchSchedule()}
+                      >
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                ) : scheduleLoading ? (
+                  <div className="text-center py-8 text-gray-500 text-sm">
+                    Loading curriculum…
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500 text-sm">
+                    Curriculum data is not available.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </AppLayout>
+  );
+}

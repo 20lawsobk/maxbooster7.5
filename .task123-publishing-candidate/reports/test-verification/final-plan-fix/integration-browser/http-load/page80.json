@@ -1,0 +1,411 @@
+{
+  "generatedAt": "2026-11-06T11:56:42.771Z",
+  "startedAt": "2026-11-06T11:55:56.623Z",
+  "decision": "PASS_WITH_UNTESTED_CATEGORIES",
+  "command": "env -i PATH=\"$PATH\" HOME=/tmp node scripts/testing/page80-acceptance.mjs",
+  "artifactLabel": "sealed non-ML authenticated HTTP load; not full-stack or packed acceptance",
+  "extendedRunnerSha256": "5421efb028e8cf5b24190ca9d1181c2686c50bf753d9b23fdf37dc3b95e31bd5",
+  "sourceRevision": "7059b2373ef3d38df320f3918291cd8f2aabd473",
+  "sourceFileDigestsSha256": {
+    "scripts/testing/page80-acceptance.mjs": "5421efb028e8cf5b24190ca9d1181c2686c50bf753d9b23fdf37dc3b95e31bd5",
+    "scripts/readiness-egress-guard.mjs": "69e4bd4cf4dcc884936c61d4e902a8f23dfb1a4a524a51268b0a487a7e673b03",
+    "scripts/lib/isolated-acceptance-readiness.mjs": "45ca9b377e3104635c665509c2f94e85f9792cc2db2ccdec0117cf1740f85f03",
+    "server/index.ts": "faab9efadb7b8b475aac684c752a4004299afd216eb12961df1e229a9b9ad3ef",
+    "server/routes.ts": "12ed13b3a48de8fcf2ed0fd6834782279dbda511f85e0a4b8a5b1b6e2a9e021b",
+    "server/middleware/csrf.ts": "f54cd1337a21323635bbb65e26802e24046452efd9dc4505ec8c17bb3ae0b614",
+    "client/src/App.tsx": "6e05819b23b071c540dfad528bccc5bc1f02b369018e19b4872cf5804da3dfd1",
+    "client/src/pages/Storefront.tsx": "5ee9e44d59a9fc54a71f80edf87c5b63111d12d0d97aa25e1daa7bbc950fc29c",
+    "client/src/pages/Royalties.tsx": "96cca1cb3babed5a868052143146045bb74494cee8d4f0fdf3a9f39e8874d63f",
+    "client/src/pages/Shows.tsx": "6c1a47cc691a46ff5d72414545033b63dfff2bfdd1d5830548390acafd88712e",
+    "client/src/pages/SyncLicensing.tsx": "5cc23b2ef1d4570cfa94a591b8672916a4a7b95a567df6cb138c82104af6cc7a",
+    "client/src/pages/MerchStore.tsx": "15f245bbca16fb89ba14ed00c43a1ef69fee2a4f785c308974133b85f6e6b402",
+    "shared/schema.ts": "ce79392f833de48cc9bf3fe1ab6f158558b64824ccdcecce03ba277713bb1411"
+  },
+  "safety": {
+    "inheritedSecretNamesRejected": true,
+    "database": "ephemeral local PostgreSQL containing generated synthetic empty schema only",
+    "network": "child preloader permits loopback TCP/Unix sockets only; rejects wrapper and direct-socket external TCP, UDP, and child processes",
+    "pdim": "local imported PDIM on an ephemeral loopback port with disposable state; no production Redis credential or non-loopback endpoint is available",
+    "maxCore": "not started; loopback port 9 is a closed sentinel and no model is loaded",
+    "providerCredentialsPresent": false,
+    "productionDataPresent": false,
+    "disposableWorkingDirectory": true
+  },
+  "evidence": {
+    "capacityAdmission": {
+      "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
+      "hostMemAvailableBytes": 9865674752,
+      "cgroup": {
+        "currentBytes": 4882259968,
+        "maximumBytes": 17179869184,
+        "headroomBytes": 12297609216,
+        "anonymousBytes": 2543783936,
+        "filePageCacheBytes": 2181529600,
+        "inactiveFileBytes": 1275084800,
+        "activeFileBytes": 766099456,
+        "kernelBytes": 152887296,
+        "reclaimableKernelSlabBytes": 0
+      },
+      "effectiveAvailableBytes": 9865674752,
+      "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
+      "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
+      "minimumAvailableBytes": 1610612736
+    },
+    "schemaGeneration": "pass",
+    "postgres": "pass",
+    "appProcess": "pass",
+    "cpuProfile": "not_requested",
+    "health": {
+      "status": 200,
+      "contentType": "application/json; charset=utf-8"
+    },
+    "readiness": {
+      "scope": "sealed non-ML authentication, projects, and frontend acceptance",
+      "fullStackReadiness": "NOT_PROVEN: separate real imported MaxCore/model acceptance required",
+      "expectedDegradedReadinessAsserted": true,
+      "unifiedAwarenessReady": false,
+      "status": 503,
+      "aggregate": "degraded",
+      "subsystems": {
+        "database": {
+          "status": "ok"
+        },
+        "redis": {
+          "status": "ok"
+        },
+        "routes": {
+          "status": "ok",
+          "detail": "critical routes registered; route loading complete"
+        },
+        "audit": {
+          "status": "unknown",
+          "detail": "initializing"
+        },
+        "automation": {
+          "status": "ok",
+          "detail": "workflows=0"
+        },
+        "maxcore": {
+          "status": "unknown",
+          "detail": "MaxCore not configured (no URL/key)"
+        }
+      }
+    },
+    "frontend": {
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 16213,
+      "sha256": "41d2ed1e1e4a8dfaff79895faee4bb50a0c3937d28750b49e65e40fbb4fd331d"
+    },
+    "authHttp": {
+      "csrfCookieHeaderBinding": "pass",
+      "register": "pass",
+      "login": "pass",
+      "sessionPersistence": "pass",
+      "csrfRejection": "pass",
+      "logoutInvalidation": "pass",
+      "syntheticUsersRemovedWithDatabase": true
+    },
+    "httpLoad": {
+      "label": "source application HTTP simulation; not packed application acceptance",
+      "admission": {
+        "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
+        "hostMemAvailableBytes": 9865674752,
+        "cgroup": {
+          "currentBytes": 4882259968,
+          "maximumBytes": 17179869184,
+          "headroomBytes": 12297609216,
+          "anonymousBytes": 2543783936,
+          "filePageCacheBytes": 2181529600,
+          "inactiveFileBytes": 1275084800,
+          "activeFileBytes": 766099456,
+          "kernelBytes": 152887296,
+          "reclaimableKernelSlabBytes": 0
+        },
+        "effectiveAvailableBytes": 9865674752,
+        "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
+        "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
+        "minimumAvailableBytes": 1610612736
+      },
+      "thresholds": {
+        "minimumSuccessPercent": 99,
+        "maximumP95Ms": 500,
+        "maximumP99Ms": 1000
+      },
+      "settings": {
+        "phases": [
+          {
+            "name": "steady",
+            "workers": 10,
+            "durationSeconds": 20
+          },
+          {
+            "name": "spike",
+            "workers": 20,
+            "durationSeconds": 10
+          }
+        ],
+        "accounts": 10,
+        "clientAddressModel": "One stable TEST-NET address per simulated browser session through the local trusted proxy",
+        "sessions": 20,
+        "pacingMs": 3000,
+        "requestTimeoutMs": 15000,
+        "maximumRequestBodyBytes": 1024,
+        "appMaxOldSpaceMiB": 768,
+        "databasePoolSize": 15,
+        "overlappingRequestsPerVirtualUser": false,
+        "percentileMethod": "nearest-rank over all completed request durations, including failures"
+      },
+      "callbacks": [
+        {
+          "name": "session-read",
+          "method": "GET",
+          "path": "/api/auth/me"
+        },
+        {
+          "name": "project-read",
+          "method": "GET",
+          "path": "/api/projects"
+        },
+        {
+          "name": "session-write",
+          "method": "POST",
+          "path": "/api/auth/heartbeat"
+        },
+        {
+          "name": "project-write",
+          "method": "POST",
+          "path": "/api/projects"
+        }
+      ],
+      "coverage": {
+        "actualRegistrationAndLogin": true,
+        "sessionRead": true,
+        "csrfProtectedSessionWrite": true,
+        "projectRead": true,
+        "projectWrite": true,
+        "projectWriteProbeStatus": 200,
+        "missingCsrfRejected": true,
+        "logoutSessionRevoked": true,
+        "durableLoadGeneratorWorker": false
+      },
+      "phases": [
+        {
+          "name": "steady",
+          "workers": 10,
+          "configuredDurationSeconds": 20,
+          "count": 70,
+          "successful": 70,
+          "failed": 0,
+          "successPercent": 100,
+          "p95Ms": 214.156975,
+          "p99Ms": 258.881607,
+          "durationDefinition": "all completed request durations, including failed requests",
+          "operationLatencyMs": {
+            "session-read": {
+              "count": 17,
+              "p50": 164.51116,
+              "p95": 258.881607,
+              "p99": 258.881607,
+              "serverTimedCount": 17,
+              "serverP95Ms": 230.05
+            },
+            "project-read": {
+              "count": 18,
+              "p50": 138.52161,
+              "p95": 211.91385,
+              "p99": 211.91385,
+              "serverTimedCount": 18,
+              "serverP95Ms": 180.44
+            },
+            "session-write": {
+              "count": 18,
+              "p50": 168.760515,
+              "p95": 239.477179,
+              "p99": 239.477179,
+              "serverTimedCount": 18,
+              "serverP95Ms": 211.93
+            },
+            "project-write": {
+              "count": 17,
+              "p50": 129.477082,
+              "p95": 193.37845,
+              "p99": 193.37845,
+              "serverTimedCount": 17,
+              "serverP95Ms": 165.5
+            }
+          }
+        },
+        {
+          "name": "spike",
+          "workers": 20,
+          "configuredDurationSeconds": 10,
+          "count": 80,
+          "successful": 80,
+          "failed": 0,
+          "successPercent": 100,
+          "p95Ms": 349.689799,
+          "p99Ms": 394.618854,
+          "durationDefinition": "all completed request durations, including failed requests",
+          "operationLatencyMs": {
+            "session-read": {
+              "count": 20,
+              "p50": 311.600191,
+              "p95": 349.689799,
+              "p99": 378.83048,
+              "serverTimedCount": 20,
+              "serverP95Ms": 339.77
+            },
+            "project-read": {
+              "count": 20,
+              "p50": 240.467512,
+              "p95": 271.800635,
+              "p99": 285.286575,
+              "serverTimedCount": 20,
+              "serverP95Ms": 260.12
+            },
+            "session-write": {
+              "count": 20,
+              "p50": 314.880373,
+              "p95": 392.392043,
+              "p99": 394.618854,
+              "serverTimedCount": 20,
+              "serverP95Ms": 378.7
+            },
+            "project-write": {
+              "count": 20,
+              "p50": 238.428828,
+              "p95": 290.372326,
+              "p99": 299.706271,
+              "serverTimedCount": 20,
+              "serverP95Ms": 278.08
+            }
+          }
+        }
+      ],
+      "systemHealthDiagnostics": {
+        "status": 200,
+        "databaseQueries": {
+          "total": 1000,
+          "slow": 0,
+          "p95Ms": 4,
+          "avgMs": 1.63
+        },
+        "scalableRateLimiting": {
+          "global": {
+            "requests": 205,
+            "inProcessFallbackRequests": 0,
+            "pdimSyncAttempts": 205,
+            "pdimSyncFailures": 0,
+            "pdimEvalErrors": 0,
+            "recentMiddlewareSamples": 205,
+            "recentMiddlewareP95Ms": 93.944432,
+            "recentPdimSyncSamples": 205,
+            "recentPdimSyncP95Ms": 92.829308
+          },
+          "api": {
+            "requests": 0,
+            "inProcessFallbackRequests": 0,
+            "pdimSyncAttempts": 0,
+            "pdimSyncFailures": 0,
+            "pdimEvalErrors": 0,
+            "recentMiddlewareSamples": 0,
+            "recentMiddlewareP95Ms": null,
+            "recentPdimSyncSamples": 0,
+            "recentPdimSyncP95Ms": null
+          },
+          "ai": {
+            "requests": 0,
+            "inProcessFallbackRequests": 0,
+            "pdimSyncAttempts": 0,
+            "pdimSyncFailures": 0,
+            "pdimEvalErrors": 0,
+            "recentMiddlewareSamples": 0,
+            "recentMiddlewareP95Ms": null,
+            "recentPdimSyncSamples": 0,
+            "recentPdimSyncP95Ms": null
+          },
+          "auth": {
+            "requests": 0,
+            "inProcessFallbackRequests": 0,
+            "pdimSyncAttempts": 0,
+            "pdimSyncFailures": 0,
+            "pdimEvalErrors": 0,
+            "recentMiddlewareSamples": 0,
+            "recentMiddlewareP95Ms": null,
+            "recentPdimSyncSamples": 0,
+            "recentPdimSyncP95Ms": null
+          }
+        },
+        "components": {
+          "process": "reported",
+          "database": "reported",
+          "memory": "reported",
+          "server": "reported",
+          "offlineCache": "ready"
+        }
+      },
+      "failures": [],
+      "thresholdFailures": []
+    },
+    "browser": "intentionally skipped only for explicit --http-load mode",
+    "egressGuard": "pass (external net.connect, direct Socket.connect, UDP, and child processes denied in preflight)",
+    "cleanup": "pass",
+    "projectCrud": {
+      "create": true,
+      "read": true,
+      "update": true,
+      "delete": true,
+      "missingVersion428": true,
+      "staleVersion409": true,
+      "crossOwnerReadUpdateDelete404": true,
+      "deletedRead404": true
+    },
+    "lastReadinessObservation": {
+      "status": 503,
+      "aggregate": "degraded",
+      "unifiedAwarenessReady": false,
+      "subsystems": [
+        {
+          "name": "database",
+          "status": "ok"
+        },
+        {
+          "name": "redis",
+          "status": "ok"
+        },
+        {
+          "name": "routes",
+          "status": "ok"
+        },
+        {
+          "name": "audit",
+          "status": "unknown"
+        },
+        {
+          "name": "automation",
+          "status": "ok"
+        },
+        {
+          "name": "maxcore",
+          "status": "unknown"
+        }
+      ],
+      "routeRegistrationDetail": "critical routes registered; route loading complete"
+    }
+  },
+  "failures": [],
+  "observations": [
+    "Real application routes and production static frontend were served from the assembled server process.",
+    "Normal registration/login used the real password hashing, CSRF, session store, and logout paths with a synthetic user; no auth bypass was used.",
+    "Explicit load-only mode did not launch Chromium; the default invocation retains its browser flow."
+  ],
+  "untested": [
+    "authenticated business journeys beyond login/session/logout, project CRUD, preferences persistence, workspace ownership/list rendering, and press-kit form/publish/cache/unpublish checks",
+    "provider sandbox delivery, OAuth, webhooks, messaging, push, email, social posting, and DSP contracts",
+    "real-money payment, payout, refund, royalty, and financial reconciliation",
+    "production-source restore/upgrade/rollback and durable backup recovery",
+    "local MaxCore inference/model behavior (the only MaxCore implementation; intentionally not started in this bounded non-ML drill)",
+    "Redis/PDIM loss recovery, soak, multi-process clustering, DNS/TLS, browser UI, and packed cold-image startup"
+  ]
+}

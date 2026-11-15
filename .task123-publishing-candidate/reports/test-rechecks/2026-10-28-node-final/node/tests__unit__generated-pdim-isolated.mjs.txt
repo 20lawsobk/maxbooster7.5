@@ -1,0 +1,5 @@
+[12:14:37.960] INFO (191500): [LocalPDIM] Local PDIM exec server started on port 46255 (local fsynced AOF and snapshots)
+[12:14:38.028] INFO (191500): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[12:14:38.201] INFO (191500): ✅ [PDIM] Connected via HTTP exec endpoint
+[12:14:38.213] INFO (191500): [PDIM] First successful response after 186ms — entering 10s settling window
+PASS: actual WAV validation -> isolated private PDIM write/read -> SHA-256 equality

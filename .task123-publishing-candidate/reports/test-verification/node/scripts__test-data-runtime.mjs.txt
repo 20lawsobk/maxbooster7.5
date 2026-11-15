@@ -1,0 +1,7 @@
+PASS D6: set/touch/destroy await commit, propagate failures; read failure explicit; touch UPDATE-only
+PASS D6 auth integration: uncached generation validation, authority errors explicit, durable revoke waits and confirms
+PASS D7: eleven malformed records retained as failed; valid processor runs; no startup sweep
+PASS D4: checksum corruption, storage outage, sequence gap rejected; stream snapshot preserves generated ID
+PASS D4 legacy conversion: real loader accepts generation + stream pending metadata; originals retained; overwrite/tamper/unfolded-tail/unknown-type rejected
+PASS D1-D3: concurrent unique verified keys, checksum mismatch pending, catalog errors explicit, preferred target, isolated fail-stop restore
+PASS D2 shutdown: catch-up/cron tracked; dispatch fenced; upload and renewal drained; bounded timeout preserves ownership; failed run stays recoverable

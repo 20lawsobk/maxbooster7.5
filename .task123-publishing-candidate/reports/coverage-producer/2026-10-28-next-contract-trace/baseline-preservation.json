@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-28T13:32:40.240536+00:00",
+  "scope": "Read-only preserve old a160 selected maps before canonical overwrite; not a new execution",
+  "oldCanonicalFullSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+  "oldCanonicalExpectedSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+  "selectedMapEqualityToImmutableBaseline": {
+    "/workspace/maxbooster7.5/server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": true,
+    "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts": true,
+    "/workspace/maxbooster7.5/server/lib/pdimClient.ts": true,
+    "/workspace/maxbooster7.5/server/logger.ts": true,
+    "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/workers/lua-pool.ts": true,
+    "/workspace/maxbooster7.5/server/config/ports.ts": true,
+    "/workspace/maxbooster7.5/server/lib/luaExecutor.ts": true,
+    "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts": true,
+    "/workspace/maxbooster7.5/server/logSanitizer.ts": true
+  },
+  "savedFiles": {
+    "baseline-immutable-selected.json": "384f6c2eec0fce5619585914bb4cae16421b8cff1ffdd031c868e430509b5f49",
+    "node-bca-selected.json": "0a751904cb767f5fcd13cadea7393ed7d64629605e5c3e3fc7fccccf33cb3742",
+    "baseline-a160-selected.json": "6e35016ece0e0be2cce27e125f1b3679f13cb40dd9929d10a3673989a78e67aa"
+  },
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

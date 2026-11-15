@@ -1,0 +1,20 @@
+{
+  "name": "actual-tfjs-operation",
+  "executable": "/artifact/max-booster",
+  "args": [
+    "--input-type=module",
+    "-e",
+    "import {createRequire} from \"node:module\";const require=createRequire(\"file:///artifact/resources/app.asar/package.json\");const tf=require(\"@tensorflow/tfjs\");const a=tf.scalar(1),b=tf.scalar(2),sum=tf.add(a,b);const value=sum.dataSync()[0];if(value!==3)throw Error(\"Real tensor addition incorrect\");console.log(JSON.stringify({tfjs:tf.version.tfjs,value}));a.dispose();b.dispose();sum.dispose();"
+  ],
+  "cwd": "/artifact/resources",
+  "startedAt": "2026-10-28T09:05:14.161Z",
+  "pid": 90,
+  "exitCode": 0,
+  "signal": null,
+  "stoppedByFixture": false,
+  "spawnError": null,
+  "boundedDurationMs": 15000,
+  "moduleResolutionFailureObserved": false,
+  "sandboxFailureObserved": false,
+  "bundledServerExitObserved": false
+}

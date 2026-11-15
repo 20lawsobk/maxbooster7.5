@@ -1,0 +1,230 @@
+TAP version 13
+# Subtest: Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus
+    # Subtest: 390px actual accessibility name: Open navigation menu
+    not ok 1 - 390px actual accessibility name: Open navigation menu
+      ---
+      duration_ms: 6.637195
+      type: 'test'
+      location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:96:15'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        + actual - expected
+        
+        + ''
+        - 'Open navigation menu'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'Open navigation menu'
+      actual: ''
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:96:83)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:96:7)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: 390px actual accessibility name: Settings
+    not ok 2 - 390px actual accessibility name: Settings
+      ---
+      duration_ms: 8.07571
+      type: 'test'
+      location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:96:15'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        '' !== 'Settings'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'Settings'
+      actual: ''
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:96:83)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:96:7)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: 390px actual accessibility name: Sign Out
+    not ok 3 - 390px actual accessibility name: Sign Out
+      ---
+      duration_ms: 5.242366
+      type: 'test'
+      location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:96:15'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        '' !== 'Sign Out'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'Sign Out'
+      actual: ''
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:96:83)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:96:7)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: Settings is one link without nested button or link descendants
+    not ok 4 - Settings is one link without nested button or link descendants
+      ---
+      duration_ms: 3.682393
+      type: 'test'
+      location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:98:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+          {
+        +   href: null,
+        -   href: '/settings',
+            nested: 0,
+        +   tag: 'BUTTON'
+        -   tag: 'A'
+          }
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        tag: 'A'
+        href: '/settings'
+        nested: 0
+      actual:
+        tag: 'BUTTON'
+        href: ~
+        nested: 0
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:99:14)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:98:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: Closed mobile drawer cannot receive sequential keyboard focus
+    not ok 5 - Closed mobile drawer cannot receive sequential keyboard focus
+      ---
+      duration_ms: 27.908537
+      type: 'test'
+      location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:101:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        + actual - expected
+        
+        + 'sidebar-close'
+        - 'mobile-menu-button'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'mobile-menu-button'
+      actual: 'sidebar-close'
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:103:14)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:101:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: Menu control references existing drawer and exposes closed state
+    not ok 6 - Menu control references existing drawer and exposes closed state
+      ---
+      duration_ms: 2.959704
+      type: 'test'
+      location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:106:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+          {
+        +   expanded: null,
+        +   target: null
+        -   expanded: 'false',
+        -   target: 'ASIDE'
+          }
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        expanded: 'false'
+        target: 'ASIDE'
+      actual:
+        expanded: ~
+        target: ~
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:107:14)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:106:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: Opening with Enter moves focus into named mobile drawer
+    not ok 7 - Opening with Enter moves focus into named mobile drawer
+      ---
+      duration_ms: 2.260229
+      type: 'test'
+      location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:110:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        + actual - expected
+        
+        + 'mobile-menu-button'
+        - 'sidebar-close'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'sidebar-close'
+      actual: 'mobile-menu-button'
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:111:14)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:110:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: Escape closes drawer and restores opener focus and body scrolling
+    ok 8 - Escape closes drawer and restores opener focus and body scrolling
+      ---
+      duration_ms: 4.3921
+      type: 'test'
+      ...
+    # Subtest: Desktop resize exposes real navigation and releases mobile inert state
+    ok 9 - Desktop resize exposes real navigation and releases mobile inert state
+      ---
+      duration_ms: 23.372621
+      type: 'test'
+      ...
+    1..9
+not ok 1 - Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus
+  ---
+  duration_ms: 1218.241612
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/layout-navigation-accessibility-browser.test.mjs:15:1'
+  failureType: 'subtestsFailed'
+  error: '7 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 10
+# suites 0
+# pass 2
+# fail 8
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1329.460501

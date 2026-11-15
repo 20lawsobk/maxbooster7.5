@@ -1,0 +1,164 @@
+// @ts-nocheck
+import { db } from "../db.js";
+import {
+  emailMessages,
+  emailEvents,
+} from "@shared/schema";
+import { eq, desc, sql, gte } from "drizzle-orm";
+import { verifySendGridEvent } from "./emailWebhookVerification.js";
+import { logger } from "../logger.js";
+
+// Derive insert types from the table definitions (schema does not export named Insert types)
+type InsertEmailMessage = typeof emailMessages.$inferInsert;
+type InsertEmailEvent = typeof emailEvents.$inferInsert;
+
+export class EmailTrackingService {
+  /**
+   * Record a sent email for tracking
+   */
+  async recordSentEmail(data: InsertEmailMessage): Promise<void> {
+    try {
+      await db.insert(emailMessages).values(data).onConflictDoNothing();
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Failed to record sent email:");
+    }
+  }
+
+  /**
+   * Record an email event from SendGrid webhook
+   */
+  async recordEmailEvent(data: InsertEmailEvent): Promise<void> {
+    try {
+      await db.insert(emailEvents).values(data).onConflictDoNothing();
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Failed to record email event:");
+    }
+  }
+
+  /**
+   * Get email delivery stats
+   */
+  async getEmailStats(startDate?: Date): Promise<{
+    sent: number;
+    delivered: number;
+    bounced: number;
+    spam: number;
+    unsubscribed: number;
+    opened: number;
+    clicked: number;
+  }> {
+    try {
+      const dateFilter = startDate
+        ? gte(emailMessages.sentAt, startDate)
+        : undefined;
+
+      const [sentCount] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(emailMessages)
+        .where(dateFilter)
+        .limit(1);
+
+      // emailEvents.event is the column name (schema uses "event", not "eventType")
+      // emailEvents.messageId links to emailMessages.sendgridMessageId
+      const eventCounts = await db
+        .select({
+          eventType: emailEvents.event,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(emailEvents)
+        .innerJoin(
+          emailMessages,
+          eq(emailEvents.messageId, emailMessages.sendgridMessageId),
+        )
+        .where(dateFilter ? gte(emailMessages.sentAt, startDate) : undefined)
+        .groupBy(emailEvents.event);
+
+      const stats = {
+        sent: sentCount.count || 0,
+        delivered: 0,
+        bounced: 0,
+        spam: 0,
+        unsubscribed: 0,
+        opened: 0,
+        clicked: 0,
+      };
+
+      eventCounts?.forEach((row) => {
+        if (row?.eventType === "delivered") stats.delivered = row?.count;
+        if (row?.eventType === "bounce") stats.bounced = row?.count;
+        if (row?.eventType === "spam") stats.spam = row?.count;
+        if (row?.eventType === "unsubscribe") stats.unsubscribed = row?.count;
+        if (row?.eventType === "open") stats.opened = row?.count;
+        if (row?.eventType === "click") stats.clicked = row?.count;
+      });
+
+      return stats;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Failed to get email stats:");
+      return {
+        sent: 0,
+        delivered: 0,
+        bounced: 0,
+        spam: 0,
+        unsubscribed: 0,
+        opened: 0,
+        clicked: 0,
+      };
+    }
+  }
+
+  /**
+   * Get recent bounced emails
+   */
+  async getRecentBounces(limit: number = 50): Promise<any[]> {
+    try {
+      // emailMessages columns: id, userId, to, from, subject, templateId, status, sendgridMessageId, sentAt, metadata, createdAt
+      // emailEvents columns:   id, messageId, email, event, timestamp, category, reason, metadata, createdAt
+      const bounces = await db
+        .select({
+          messageId: emailEvents.messageId,
+          toEmail: emailMessages.to,
+          subject: emailMessages.subject,
+          sentAt: emailMessages.sentAt,
+          reason: emailEvents.reason,
+          // smtpResponse and eventAt do not exist; use available columns
+          category: emailEvents.category,
+          eventAt: emailEvents.timestamp,
+        })
+        .from(emailEvents)
+        .innerJoin(
+          emailMessages,
+          eq(emailEvents.messageId, emailMessages.sendgridMessageId),
+        )
+        .where(eq(emailEvents.event, "bounce"))
+        .orderBy(desc(emailEvents.timestamp))
+        .limit(limit);
+
+      return bounces;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Failed to get recent bounces:");
+      return [];
+    }
+  }
+
+  /**
+   * Verify SendGrid webhook signature using Ed25519
+   * SendGrid uses Ed25519 digital signatures for webhook verification
+   */
+  verifySendGridSignature(
+    payload: string | Buffer,
+    signature: string,
+    timestamp: string,
+  ): boolean {
+    const publicKey = process.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
+    if (!publicKey) {
+      logger.warn("SendGrid webhook public key not configured");
+      return false;
+    }
+
+    return verifySendGridEvent(Buffer.isBuffer(payload) ? payload : Buffer.from(payload, "utf8"),
+      signature, timestamp, publicKey);
+  }
+}
+
+export const emailTrackingService = new EmailTrackingService();

@@ -1,0 +1,338 @@
+{
+  "id": "daw-lyrics",
+  "case": {
+    "id": "daw-lyrics",
+    "handler": "platform_daw_generate",
+    "request_class": "PlatformDAWRequest",
+    "kind": "text",
+    "body": {
+      "user_id": "quality-eval-fictional",
+      "mode": "lyrics",
+      "genre": "hip-hop",
+      "mood": "calm",
+      "context": "Four short lines about lanterns reflected in a harbor"
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "returned",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/generation/orchestrator.py:<genexpr>": 4,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1,
+    "ai_model/quality_awareness.py:<module>": 1,
+    "ai_model/quality_awareness.py:platform_awareness_string": 1,
+    "ai_model/quality_awareness.py:self_sufficiency": 2,
+    "ai_model/quality_awareness.py:_own_corpus_size": 2,
+    "ai_model/quality_awareness.py:_store": 2,
+    "ai_model/quality_awareness.py:_modality_retire_threshold": 2,
+    "ai_model/quality_awareness.py:retire_threshold": 2,
+    "ai_model/quality_awareness.py:get_doc": 1,
+    "ai_model/quality_awareness.py:_doc_age_seconds": 1,
+    "ai_model/quality_awareness.py:_max_age_seconds": 1,
+    "ai_model/agents/script_agent.py:run": 1,
+    "ai_model/agents/script_agent.py:_format_awareness_prefix": 1,
+    "ai_model/agents/script_agent.py:_control_payloads": 4,
+    "ai_model/agents/script_agent.py:_control_values": 5,
+    "ai_model/gpu/pocket_pool.py:spawn_sync": 4,
+    "ai_model/gpu/pocket_pool.py:__init__": 2,
+    "ai_model/gpu/sizing.py:hyper_gpu_sizing": 2,
+    "ai_model/gpu/hyper_backend.py:__init__": 2,
+    "ai_model/gpu/hyper_core.py:__init__": 6,
+    "ai_model/gpu/digital_gpu.py:__init__": 4,
+    "ai_model/gpu/native/kernels.py:get_native_kernels": 2,
+    "ai_model/gpu/pocket_pool.py:_register_birth": 2,
+    "ai_model/gpu/pocket_pool.py:begin_work": 2,
+    "ai_model/gpu/hyper_creative_transformer.py:prefill": 6,
+    "ai_model/gpu/hyper_creative_transformer.py:_prefix_cache_model_state": 6,
+    "ai_model/gpu/hyper_creative_transformer.py:<genexpr>": 24,
+    "ai_model/gpu/hyper_creative_transformer.py:_prefix_key": 6,
+    "ai_model/gpu/hyper_creative_transformer.py:_hash_tensor": 6,
+    "ai_model/gpu/hyper_creative_transformer.py:_prefix_get": 6,
+    "ai_model/gpu/hyper_creative_transformer.py:forward_with_kv": 12,
+    "ai_model/gpu/hyper_creative_transformer.py:forward": 12,
+    "ai_model/gpu/hyper_backend.py:forward": 12,
+    "ai_model/gpu/hyper_core.py:layer_norm": 12,
+    "ai_model/gpu/native/kernels.py:layernorm_rows": 6,
+    "ai_model/gpu/native/kernels.py:_f32": 18,
+    "ai_model/gpu/native/kernels.py:_use_native": 6,
+    "ai_model/gpu/native/kernels.py:<genexpr>": 24,
+    "ai_model/gpu/native/kernels.py:_ptr": 24,
+    "ai_model/gpu/hyper_core.py:_model": 12,
+    "ai_model/gpu/hyper_core.py:mixed_gemm": 6,
+    "ai_model/gpu/hyper_core.py:_pocket": 6,
+    "ai_model/gpu/hyper_core.py:<lambda>": 36,
+    "ai_model/gpu/hyper_core.py:mixed_precision_gemm": 4,
+    "ai_model/gpu/hyper_core.py:_select_tensor_core": 4,
+    "ai_model/gpu/hyper_core.py:mixed_precision_matmul": 4,
+    "ai_model/gpu/pocket_pool.py:_register_death": 2,
+    "ai_model/gpu/pocket_pool.py:die": 2,
+    "ai_model/gpu/hyper_backend.py:flush_vram": 2,
+    "ai_model/gpu/hyper_core.py:flush_vram": 2,
+    "ai_model/gpu/hyper_core.py:flush": 2,
+    "ai_model/agents/script_agent.py:_awareness_compose": 1,
+    "ai_model/agents/script_agent.py:_parse_hook_from_awareness": 1,
+    "ai_model/agents/script_agent.py:_parse_signals_for_platform": 2,
+    "ai_model/agents/script_agent.py:_awareness_without_controls": 4,
+    "ai_model/agents/script_agent.py:<genexpr>": 503,
+    "ai_model/agents/script_agent.py:_is_content_signal": 42,
+    "ai_model/agents/script_agent.py:_build_awareness_body": 1,
+    "ai_model/agents/script_agent.py:_detect_genre_from_awareness": 1,
+    "ai_model/agents/script_agent.py:_norm": 2,
+    "ai_model/agents/script_agent.py:_parse_cta_from_awareness": 1,
+    "ai_model/agents/script_agent.py:_is_coaching_line": 38,
+    "ai_model/agents/script_agent.py:_apply_direction": 1,
+    "ai_model/agents/script_agent.py:_direction_opening": 1,
+    "ai_model/agents/script_agent.py:_direction_required_phrases": 1,
+    "ai_model/agents/script_agent.py:visit": 1,
+    "ai_model/agents/visual_spec_agent.py:run": 1,
+    "ai_model/agents/visual_spec_agent.py:_extract_genre_mood": 5,
+    "ai_model/agents/visual_spec_agent.py:_build_thumbnail_prompt": 1,
+    "ai_model/agents/visual_spec_agent.py:_build_thumbnail_prompt_alt": 1,
+    "ai_model/agents/visual_spec_agent.py:_score_visual_prompt": 2,
+    "ai_model/agents/visual_spec_agent.py:<genexpr>": 17,
+    "ai_model/agents/visual_spec_agent.py:<lambda>": 2,
+    "ai_model/agents/visual_spec_agent.py:_pick_color_from_awareness": 1,
+    "ai_model/gpu/hyper_backend.py:status": 1,
+    "ai_model/gpu/hyper_core.py:status": 12,
+    "ai_model/gpu/hyper_core.py:<genexpr>": 10,
+    "ai_model/gpu/hyper_core.py:used_bytes": 1,
+    "ai_model/gpu/hyper_core.py:silicon_report": 1
+  },
+  "exceptions": [
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/pocket_pool.py",
+      "function": "spawn_sync",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/pocket_pool.py",
+      "function": "spawn_sync",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "forward_with_kv",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    },
+    {
+      "file": "ai_model/gpu/hyper_creative_transformer.py",
+      "function": "prefill",
+      "error": "ValueError: too many values to unpack (expected 3)"
+    }
+  ],
+  "agent_outputs": [
+    {
+      "source": "awareness",
+      "hook": "Trending everywhere for one reason: song lyrics \u2014 Genre: hip-hop. Mood: calm. Four short lines about lanterns reflected in a harbor is genuinely different! \ud83d\udd25",
+      "body": "song lyrics \u2014 Genre: hip-hop. Mood: calm. Four short lines about lanterns reflected in a harbor (#shorts, #musicvideo, #newrelease trending).\n\nFictional evaluation release.\n\nCuriosity-gap titles finally drive viral click-through \u2014.",
+      "cta": "Subscribe and hit the bell \ud83d\udd14 \u2014 never miss an exclusive drop!"
+    }
+  ],
+  "awareness": [
+    {
+      "function": "get_doc",
+      "nonempty": true
+    }
+  ],
+  "files": [],
+  "runner_sha256": "f84bfc05e475481d9a29208cbfad49b2572139db4ad445efcf6c0fe0ce1aae2e",
+  "server_sha256": "ea83aef45af149339f9568bb14a030d50d953e11bcff5e2f8b2029a2b661ffa7",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 0.9,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 10,
+      "total_tensor_core_tflops": 0.010129,
+      "total_compute_ms": 111.54,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 2.2,
+      "silicon": null
+    }
+  },
+  "request": {
+    "user_id": "quality-eval-fictional",
+    "mode": "lyrics",
+    "genre": "hip-hop",
+    "mood": "calm",
+    "context": "Four short lines about lanterns reflected in a harbor",
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": "Four short lines about lanterns reflected in a harbor",
+    "user_id": "quality-eval-fictional",
+    "mode": "lyrics",
+    "genre": "hip-hop",
+    "mood": "calm",
+    "bpm": null,
+    "key": null,
+    "reference_track": null
+  },
+  "elapsed_seconds": 4.476358263000293,
+  "response": {
+    "success": true,
+    "user_id": "quality-eval-fictional",
+    "mode": "lyrics",
+    "genre": "hip-hop",
+    "mood": "calm",
+    "bpm": null,
+    "key": null,
+    "output": {
+      "main": "Trending everywhere for one reason: song lyrics \u2014 Genre: hip-hop. Mood: calm. Four short lines about lanterns reflected in a harbor is genuinely different! \ud83d\udd25",
+      "body": "song lyrics \u2014 Genre: hip-hop. Mood: calm. Four short lines about lanterns reflected in a harbor (#shorts, #musicvideo, #newrelease trending).\n\nFictional evaluation release.\n\nCuriosity-gap titles finally drive viral click-through \u2014.",
+      "cta": "Subscribe and hit the bell \ud83d\udd14 \u2014 never miss an exclusive drop!",
+      "visual_direction": "Cinematic calm cover art for song lyrics \u2014 Genre: hip-hop. Mood: calm. Four short lines about lanterns reflected in a harbor, capturing curiosity-gap titles finally drive viral click-through \u2014 the",
+      "color_scheme": "high_contrast",
+      "layout": "landscape_16_9"
+    },
+    "source": "awareness",
+    "processing_time_ms": 1264.2
+  },
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

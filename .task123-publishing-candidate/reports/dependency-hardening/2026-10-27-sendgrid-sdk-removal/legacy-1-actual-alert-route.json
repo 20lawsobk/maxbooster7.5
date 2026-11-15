@@ -1,0 +1,18 @@
+{
+  "command": [
+    "node",
+    "--import",
+    "tsx",
+    "--test",
+    "--test-reporter=junit",
+    "tests/sendgrid-alert-transport.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:35:27.818103+00:00",
+  "durationSeconds": 0.517,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/legacy-1-actual-alert-route.xml",
+  "logSha256": "fe8d3d80bb35dc05b67833e69000ac8bb7e410c4b6e6e9d31ff80467e25c00ce"
+}

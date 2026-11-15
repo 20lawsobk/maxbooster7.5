@@ -29,13 +29,15 @@ Nix channel selection rather than inventing an unverified channel pin.
 ## Editor and Publishing commands
 
 The editor **Run** action executes `npm run dev`. Publishing builds with
-`bash build.sh` and starts with `bash start.sh`. The build command packs runtime
+`bash build.sh` and starts with `npm run deployment:start`, which delegates to
+`bash start.sh`. The build command packs runtime
 capsules and removes build inputs in Replit's disposable Publishing copy.
 **Do not run `build.sh` in the editor checkout or a source workspace.** Normal
 source builds use `npm run build`.
 
-The Node 22 and Python 3.11 modules supply editor/build tools. `replit.nix` also
-declares `nodejs_22` (including npm), a `nodejs` executable alias, and `nix`
+The Node 24 and Python 3.11 modules supply editor/build tools. The portable
+deployed Node runtime is pinned to Node 24.22.1; root package installation uses
+npm 11.19.1. `replit.nix` also declares `nodejs_24` and `nix`
 (including `nix-shell`). Run `npm run check:tools` to verify all five requested
 commands, matching Node aliases, Nix expression evaluation and shell execution.
 Publishing carries
@@ -45,8 +47,8 @@ before installation. `start.sh` explicitly selects production mode; the editor's
 
 Select **Reserved VM** and the **web server** application type in
 **Publishing → Adjust settings**. The repository's owner-requested target is
-**North America, 16 vCPU / 64 GiB**; select the corresponding available machine
-and region in that UI. Machine availability, resource allocation, region and
+**North America, 16 vCPU / 64 GiB**; confirm the actual available machine and
+region in that UI. Machine availability, resource allocation, region and
 billing are not established by these files. Replit documents Reserved VM as an
 always-on server suited to background work and memory-intensive applications.
 

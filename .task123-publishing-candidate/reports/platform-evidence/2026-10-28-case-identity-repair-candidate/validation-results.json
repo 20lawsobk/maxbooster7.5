@@ -1,0 +1,427 @@
+{
+  "scope": "Outside candidate validation only; no current master or acceptance promotion",
+  "vitest": {
+    "sourceFiles": 10,
+    "declarations": 15,
+    "beforeLeaves": 173,
+    "afterLeaves": 173,
+    "renamedParameterizedLeaves": 82,
+    "formerlyAmbiguousRows": 64,
+    "nowUniqueRows": 64,
+    "allLeafInputsCallbacksAssertionsAndStatusesBytePreserved": true,
+    "sourceGuards": [
+      {
+        "file": "tests/unit/auth-page-age-policy.test.ts",
+        "changedTitleSites": 1,
+        "beforeSha256": "7daa3bc63ae43cba07f130fe4b1092d619c13e3422e70f27fe22cc97cfda8893",
+        "afterSha256": "22e0024e4084343f602b187c4223183feb4201f507e51611009c9bd4331f4fe5",
+        "titleOnlyByteRestoration": true
+      },
+      {
+        "file": "tests/unit/deployment-small-file-codec.test.ts",
+        "changedTitleSites": 1,
+        "beforeSha256": "86152f41af0eaf718e6ba8e62b8a87f9d7f8afdc96be7fa3ff20acbaee84a8bd",
+        "afterSha256": "6ed70a60ce032f07199006f202562f9d5a0a5e50f989a79eff3b067dddcb2d76",
+        "titleOnlyByteRestoration": true
+      },
+      {
+        "file": "tests/unit/email-provider-ack.test.ts",
+        "changedTitleSites": 2,
+        "beforeSha256": "f0dcae19451dd40cabd6fdfd047140c4c3774b49ed0fabd9c41d1a6c71966322",
+        "afterSha256": "c5b78d69f2243ef1044b27a735199b8b5c82b276e220854d8c87f417a211718a",
+        "titleOnlyByteRestoration": true
+      },
+      {
+        "file": "tests/unit/frontend-batch-response-contracts.test.ts",
+        "changedTitleSites": 1,
+        "beforeSha256": "5e3b278f498917a3b34a2c9b03e0c0a03ff27c178f20f05e76318f044981cf6d",
+        "afterSha256": "e0ff62ca2cac6a18bc64478e09904e6116d8930006c2fc6ec722ddd93106436d",
+        "titleOnlyByteRestoration": true
+      },
+      {
+        "file": "tests/unit/marketplace-storefront-page-contracts.test.ts",
+        "changedTitleSites": 1,
+        "beforeSha256": "2b5b251f5e7567a6c14559220d79c35c4d91e49a4f4496c361a8a66e26b45b94",
+        "afterSha256": "9d2177a22d4291da51d326e3706bf50f986aa82ef5c4361c492da1bf74a8ba4a",
+        "titleOnlyByteRestoration": true
+      },
+      {
+        "file": "tests/unit/password-policy.test.ts",
+        "changedTitleSites": 2,
+        "beforeSha256": "4d069984f095d5fa8ac65a6a90fb1956dbf6b376a276aee7213806feb0a2e341",
+        "afterSha256": "71161c56b54c0f12880fdd99e43dc223cbd9258618a2251dbb8ab5f2bcb55da7",
+        "titleOnlyByteRestoration": true
+      },
+      {
+        "file": "tests/unit/registrationCompletion.test.ts",
+        "changedTitleSites": 1,
+        "beforeSha256": "0cd757e641827b2e0e49f6a329ae8801cc4b664db3402da2cac01f82eaa235cc",
+        "afterSha256": "e9e2a92e364daa6a97b175331a232cd55c377e06deeccea0f8e2213d4bd1a649",
+        "titleOnlyByteRestoration": true
+      },
+      {
+        "file": "tests/unit/registrationCompletionBoundary.test.ts",
+        "changedTitleSites": 1,
+        "beforeSha256": "1701903ddd3b95a85c975c9548ec0cf12389c1a39700e29eb7e50137d19e61a9",
+        "afterSha256": "4a5e097fd4f1f9af3fc9fcc91f05364525829aa0d1404ca12cd210124275d6f5",
+        "titleOnlyByteRestoration": true
+      },
+      {
+        "file": "tests/unit/subscriptionCheckout.test.ts",
+        "changedTitleSites": 2,
+        "beforeSha256": "3e18dff432215b587e17438f6bc4df47470ec6f23964ff2b1a3d38cfc2df8b4a",
+        "afterSha256": "5eb3f59466a40e4423ce77a165704eb82943ea4ab1ab5f0f396a82137a4e6db5",
+        "titleOnlyByteRestoration": true
+      },
+      {
+        "file": "tests/unit/support-ticket-validation.test.ts",
+        "changedTitleSites": 3,
+        "beforeSha256": "c05ba4430018bcb4f8414ba997e2d7bdbebd512cafaf7952e753ac53d7fe5ae0",
+        "afterSha256": "81b7acf28cc1401d2f17d75f966e9d20502d25c1d55819db44dc6244feee26f6",
+        "titleOnlyByteRestoration": true
+      }
+    ]
+  },
+  "python": {
+    "sourceFiles": 2,
+    "leaves": 151,
+    "formerlyAmbiguousRows": 26,
+    "nowUniqueRows": 26,
+    "uniqueExistingNamesPreserved": 125,
+    "copiedSubjectInputsUnchanged": true,
+    "qualifiedRows": [
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py",
+        "rawName": "test_for_platform",
+        "name": "ai_model.director.test_director.StoryBibleTests::test_for_platform",
+        "className": "ai_model.director.test_director.StoryBibleTests",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py",
+        "rawName": "test_for_platform",
+        "name": "ai_model.director.test_director.AwarenessBusTests::test_for_platform",
+        "className": "ai_model.director.test_director.AwarenessBusTests",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_get_invalid_handle_raises",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestVRAM::test_get_invalid_handle_raises",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestVRAM",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_add_correct",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestSIMDCore::test_add_correct",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestSIMDCore",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_softmax_sums_to_one",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestDigitalGPUFunctional::test_softmax_sums_to_one",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestDigitalGPUFunctional",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_silicon_report_none_without_model",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestDigitalGPUFunctional::test_silicon_report_none_without_model",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestDigitalGPUFunctional",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_get_invalid_handle_raises",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestMemoryPool::test_get_invalid_handle_raises",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestMemoryPool",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_layer_norm_output_shape",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore::test_layer_norm_output_shape",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_batch_norm_training_output_shape",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore::test_batch_norm_training_output_shape",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_gelu_shape_preserved",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore::test_gelu_shape_preserved",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_silu_shape_preserved",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore::test_silu_shape_preserved",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_grouped_gemm_all_correct",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore::test_grouped_gemm_all_correct",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_fused_attention_norm_shape",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore::test_fused_attention_norm_shape",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_status_has_expected_keys",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore::test_status_has_expected_keys",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperSIMDCore",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_layer_norm_output_shape",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_layer_norm_output_shape",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_batch_norm_training_output_shape",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_batch_norm_training_output_shape",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_gelu_shape_preserved",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_gelu_shape_preserved",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_silu_shape_preserved",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_silu_shape_preserved",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_softmax_sums_to_one",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_softmax_sums_to_one",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_add_correct",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_add_correct",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_grouped_gemm_all_correct",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_grouped_gemm_all_correct",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_fused_attention_norm_shape",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_fused_attention_norm_shape",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_silicon_report_none_without_model",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_silicon_report_none_without_model",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_status_has_expected_keys",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU::test_status_has_expected_keys",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestHyperGPU",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_status_has_expected_keys",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestGPUClusterNode::test_status_has_expected_keys",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestGPUClusterNode",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      },
+      {
+        "file": "external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+        "rawName": "test_status_has_expected_keys",
+        "name": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestGPUCluster::test_status_has_expected_keys",
+        "className": "ai_model.gpu.tests.test_digital_gpu_comprehensive.TestGPUCluster",
+        "suiteNames": [
+          "pytest"
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  "httpCompatibility": [
+    {
+      "identity": [
+        "http",
+        "tests/health.test.ts",
+        "Liveness and Readiness Endpoints > GET /api/health returns 200"
+      ],
+      "caseNameUnchanged": true
+    },
+    {
+      "identity": [
+        "http",
+        "tests/health.test.ts",
+        "Liveness and Readiness Endpoints > GET /health returns 200"
+      ],
+      "caseNameUnchanged": true
+    },
+    {
+      "identity": [
+        "http",
+        "tests/health.test.ts",
+        "Liveness and Readiness Endpoints > GET /api/ping returns ok:true"
+      ],
+      "caseNameUnchanged": true
+    },
+    {
+      "identity": [
+        "http",
+        "tests/health.test.ts",
+        "Liveness and Readiness Endpoints > GET /ready reflects the actual admitted dependency set"
+      ],
+      "caseNameUnchanged": true
+    },
+    {
+      "identity": [
+        "http",
+        "tests/health.test.ts",
+        "Liveness and Readiness Endpoints > GET /readyz uses the same truthful readiness contract"
+      ],
+      "caseNameUnchanged": true
+    },
+    {
+      "identity": [
+        "http",
+        "tests/auth-flows.test.ts",
+        "Full Auth Flow > 4. GET /api/auth/me returns user when authenticated"
+      ],
+      "caseNameUnchanged": true
+    },
+    {
+      "identity": [
+        "http",
+        "tests/auth-flows.test.ts",
+        "Full Auth Flow > 10. /api/auth/me returns null or 401 after logout"
+      ],
+      "caseNameUnchanged": true
+    },
+    {
+      "identity": [
+        "http",
+        "tests/api-guards.test.ts",
+        "Unauthenticated route guards > GET /api/auth/me \u2192 200 (public, returns null)"
+      ],
+      "caseNameUnchanged": true
+    }
+  ],
+  "frameworkPassed": 99,
+  "frameworkFailed": 0,
+  "targetedAmbiguousRows": 90,
+  "targetedAmbiguousRowsResolved": 90,
+  "canonicalEvidenceChanged": false,
+  "globalReadinessClaim": false
+}

@@ -1,0 +1,21 @@
+{
+  "scope": "Historical diagnostic replay integrity only; no current execution proof",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 2109,
+      "sha256": "e6075f282bd12116b5a8d6c40e5c9a1ace115fca26d9a58cd6b59bdf94da393a"
+    },
+    {
+      "path": "receipt.json",
+      "bytes": 70945,
+      "sha256": "62841399587630962ee4ad5f3083623458520d7d4b6fa8c0e96fe9d683d41d5a"
+    },
+    {
+      "path": "replay.py",
+      "bytes": 3692,
+      "sha256": "3e0a9c313b36e3e71680d71f52835d7591b162384b794c9ccf7ecf16ecfb0671"
+    }
+  ],
+  "productionReady": false
+}

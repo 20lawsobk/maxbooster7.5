@@ -1,0 +1,65 @@
+{
+  "status": "PASS",
+  "productionReady": false,
+  "scope": "Required internal public-awareness snapshot dependency error classification only",
+  "sourceHashes": "source-hashes.json",
+  "productionChangedFiles": [
+    "server/services/generationAwareness.ts"
+  ],
+  "newTests": [
+    "tests/unit/required-awareness-dependency.test.ts"
+  ],
+  "before": {
+    "newUnit": {
+      "cases": 55,
+      "failures": 32,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mainHttp": {
+      "cases": 37,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "observedFailure": "Authenticated CareerCoach snapshot404 escaped as app500"
+  },
+  "after": {
+    "unitWithAdjacentRegressions": {
+      "cases": 70,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mainHttp": {
+      "cases": 56,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "serverTypesExitCode": 0,
+    "focusedLintExitCode": 0,
+    "diffCheckExitCode": 0
+  },
+  "semantics": {
+    "fixedSnapshotFailuresBecome503": true,
+    "originalReceivedErrorRetainedInDetails": true,
+    "noGenerationPostOnMissingRequiredSnapshot": true,
+    "noInventedContext": true,
+    "freshSnapshotAndCallerInputPreserved": true,
+    "bulkheadAndHalfOpenProbeReleased": true,
+    "genericTransportStatusesUnchanged": [
+      400,
+      401,
+      403,
+      404
+    ],
+    "publicAuth401AndAnalyticsValidation400Preserved": true,
+    "unrelatedAnalyticsNoAwarenessFetch": true
+  },
+  "limits": [
+    "Does not implement unavailable career-coaching reasoning or general generation",
+    "No public auth or shared transport policy rewrite",
+    "Not a deployed-provider, global-capacity, whole-platform coverage or launch proof"
+  ]
+}

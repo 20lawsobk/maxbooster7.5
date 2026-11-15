@@ -1,0 +1,18 @@
+{
+  "sourceRevision": "253b69cca4c57068494de0d8a6d1b950feb19ec9",
+  "files": [
+    "tests/auth-session-transient-browser.test.mjs",
+    "tests/local-media-renderer-browser.test.mjs",
+    "tests/storefront-hook-transition.test.mjs",
+    "tests/studio-load-save-guard.test.mjs",
+    "tests/studio-plugin-audio-browser.test.mjs"
+  ],
+  "exitCode": 0,
+  "counts": {
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+  },
+  "log": "reports/aso/isolated-full-20261106T233139Z/orchestration/browser.txt"
+}

@@ -1,0 +1,172 @@
+{
+  "status": "historical_captured_epoch_algebra_only",
+  "currentSourceAdmission": false,
+  "publishedCoverageCredit": false,
+  "productionReady": false,
+  "sourceRevision": "8a9b638c6c1ce1b46a19501ee4a48893497c2518",
+  "sourceInputsSha256": "afd50ee1ca7c5f5f9391e2b81950478504b62a3af406b70767919082ae479757",
+  "currentSourceInputsSha256": "1331649284d57675d1b1c078e4dafcbe93dff87f92021c2f2ff8a3bf288f71de",
+  "currentSourceIsStale": true,
+  "changedSourceInputs": [
+    "scripts/testing/report-progress.py",
+    "scripts/testing/run-node-suites.py",
+    "scripts/testing/run-python-suites.py",
+    "tests/platform-acceptance-map.json",
+    "tests/testing/test_catalog_snapshot_ownership.py",
+    "tests/testing/test_report_progress.py",
+    "tests/testing/test_python_runner_scheduling.py"
+  ],
+  "canonicalFileCount": 2653,
+  "canonicalCoverageSha256": "b9f9d1efbf2ac622020c708c90b621ef963e2bea2b373c370061917c64b10137",
+  "canonicalUnchanged": true,
+  "canonicalProof": {
+    "startedAt": "2026-10-29T22:30:14.177Z",
+    "finishedAt": "2026-10-29T22:34:00.828Z",
+    "assertions": 2771,
+    "thresholdFailed": true
+  },
+  "producerProof": {
+    "producerId": "88efc1f1-4310-454c-bbb5-a1e41ace0bcf",
+    "snapshotId": "88efc1f1-4310-454c-bbb5-a1e41ace0bcf-1",
+    "startedAt": "2026-10-29T22:57:42.638Z",
+    "finishedAt": "2026-10-29T22:57:45.362Z"
+  },
+  "profiles": [
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "completeMapEquality": true,
+      "canonicalWireEqualsOfficialGlobal": true,
+      "exactMergedTypedRoundtrip": true,
+      "canonicalTypedSha256": "4333cc37a333774d730bcca715ae3f4f4ccebca48268de1cbd0dbcfc1c5faa12",
+      "producerTypedSha256": "7fb998cc41289ac3b03b28827f01772641d9a68f89c603a87ee9760af524cd96",
+      "addedCounterSlotsInHistoricalCandidate": {
+        "statements": 31,
+        "functions": 6,
+        "branchArms": 12
+      },
+      "producerZeroFunctions": 5,
+      "producerZeroBranchArms": 17
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "completeMapEquality": true,
+      "canonicalWireEqualsOfficialGlobal": true,
+      "exactMergedTypedRoundtrip": true,
+      "canonicalTypedSha256": "30c3ab9498db80c09439c0174548774bf8950e56e1b83666dfb4d5e53ae7854b",
+      "producerTypedSha256": "31bad029de755f3703c00549950b4ca799784ed3a75f7edbfa168a52e9225dcd",
+      "addedCounterSlotsInHistoricalCandidate": {
+        "statements": 0,
+        "functions": 0,
+        "branchArms": 0
+      },
+      "producerZeroFunctions": 275,
+      "producerZeroBranchArms": 399
+    },
+    {
+      "file": "server/logger.ts",
+      "completeMapEquality": true,
+      "canonicalWireEqualsOfficialGlobal": true,
+      "exactMergedTypedRoundtrip": true,
+      "canonicalTypedSha256": "1f37eb692774aa0befd05bee2905fc11f282687086c5a3dfbf426229c12670e8",
+      "producerTypedSha256": "bfa9b0fd4fdeef78b42d8f04886710d2ff92032daf48e34adb00931e02c27d79",
+      "addedCounterSlotsInHistoricalCandidate": {
+        "statements": 0,
+        "functions": 0,
+        "branchArms": 0
+      },
+      "producerZeroFunctions": 2,
+      "producerZeroBranchArms": 5
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "completeMapEquality": true,
+      "canonicalWireEqualsOfficialGlobal": true,
+      "exactMergedTypedRoundtrip": true,
+      "canonicalTypedSha256": "fe7584cfe901dab395744459d4c6ef7504512542c4038d9df3fc8536097d32e0",
+      "producerTypedSha256": "6d758c4c460ea4dc5691ce5c12d0a4ef1258584ac41b568ce1f7acf34c4b2b40",
+      "addedCounterSlotsInHistoricalCandidate": {
+        "statements": 0,
+        "functions": 0,
+        "branchArms": 0
+      },
+      "producerZeroFunctions": 3,
+      "producerZeroBranchArms": 21
+    },
+    {
+      "file": "server/config/ports.ts",
+      "completeMapEquality": true,
+      "canonicalWireEqualsOfficialGlobal": true,
+      "exactMergedTypedRoundtrip": true,
+      "canonicalTypedSha256": "84a05609ab69e8b241f1ce0c476985b57275dbebcf82d99df9a437a3b3ff47e0",
+      "producerTypedSha256": "beb659cdc5579a37f261109e47c2243f9ee8acf264503922bace5f955b98a12b",
+      "addedCounterSlotsInHistoricalCandidate": {
+        "statements": 0,
+        "functions": 0,
+        "branchArms": 0
+      },
+      "producerZeroFunctions": 1,
+      "producerZeroBranchArms": 10
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "completeMapEquality": true,
+      "canonicalWireEqualsOfficialGlobal": true,
+      "exactMergedTypedRoundtrip": true,
+      "canonicalTypedSha256": "c9def6649d4152223f6045461c828e6e1b74578ff209d2e52434b71bbfb9133a",
+      "producerTypedSha256": "d91d2efccbbe908ecf6247f710a72e4cd12bf30405bd97f917d28beb9307ef90",
+      "addedCounterSlotsInHistoricalCandidate": {
+        "statements": 0,
+        "functions": 0,
+        "branchArms": 0
+      },
+      "producerZeroFunctions": 29,
+      "producerZeroBranchArms": 98
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "completeMapEquality": true,
+      "canonicalWireEqualsOfficialGlobal": true,
+      "exactMergedTypedRoundtrip": true,
+      "canonicalTypedSha256": "0a798e7e318e58324bdbfab49baf135568203577816d455bf3e534984b60dc97",
+      "producerTypedSha256": "46ae5b38fac54740bb8b5f37a94ad28bb8d46bba7b8fd3fda9d2c77746e04da3",
+      "addedCounterSlotsInHistoricalCandidate": {
+        "statements": 0,
+        "functions": 0,
+        "branchArms": 0
+      },
+      "producerZeroFunctions": 11,
+      "producerZeroBranchArms": 72
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "completeMapEquality": true,
+      "canonicalWireEqualsOfficialGlobal": true,
+      "exactMergedTypedRoundtrip": true,
+      "canonicalTypedSha256": "ca6856376cec5e856d2a138d5e7ab60e157227e2bf1f4cb3c9d98fc846e7c429",
+      "producerTypedSha256": "dc9eb073eab8a4029131f347ae2d0412fccdb930afcaf0c3f49e6d16af219f42",
+      "addedCounterSlotsInHistoricalCandidate": {
+        "statements": 2,
+        "functions": 0,
+        "branchArms": 3
+      },
+      "producerZeroFunctions": 303,
+      "producerZeroBranchArms": 2136
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "completeMapEquality": true,
+      "canonicalWireEqualsOfficialGlobal": true,
+      "exactMergedTypedRoundtrip": true,
+      "canonicalTypedSha256": "7efda67c187498d855f87159a938316dd33e1078a5b672b448092a14e74ad0c1",
+      "producerTypedSha256": "07c3a0da4aaf849a558ad8ca6d94faadd8495618d4d22db5eb0a4a9fff57f3c9",
+      "addedCounterSlotsInHistoricalCandidate": {
+        "statements": 0,
+        "functions": 0,
+        "branchArms": 0
+      },
+      "producerZeroFunctions": 14,
+      "producerZeroBranchArms": 21
+    }
+  ],
+  "scope": "Validates captured 8a9 bytes/counters/maps, exact wire match to official global and safe addition algebra. Current-source CLI rejection remains required; no authoritative global file is written."
+}

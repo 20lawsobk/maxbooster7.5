@@ -237,8 +237,8 @@ def rss(url):
     return rows
 
 
-# All ten original app feeds retained. Their category describes their editorial
-# coverage; feed appearance is never passed off as engagement/performance.
+# Legacy editorial feeds are retained for explicit non-awareness uses, but the
+# server awareness registry below does not collect from them.
 APP_RSS = (
     ("music_business_worldwide", "music", "https://www.musicbusinessworldwide.com/feed/"),
     ("digital_music_news", "music", "https://www.digitalmusicnews.com/feed/"),
@@ -310,6 +310,7 @@ def platform_search(provider, platform):
         raise RuntimeError("search_not_configured")
 
     query, since = query_for(platform)
+    allowed_domains = list(policy_for(platform)["domains"])
     if provider == "tavily":
         url = "https://api.tavily.com/search"
         headers = {"Authorization": "Bearer " + key, "Content-Type": "application/json"}
@@ -319,6 +320,7 @@ def platform_search(provider, platform):
             "search_depth": "basic",
             "topic": "news",
             "time_range": "week",
+            "include_domains": allowed_domains,
         }
     elif provider == "exa":
         url = "https://api.exa.ai/search"
@@ -329,6 +331,7 @@ def platform_search(provider, platform):
             "type": "auto",
             "startPublishedDate": since.isoformat().replace("+00:00", "Z"),
             "contents": {"text": {"maxCharacters": MAX_SEARCH_SNIPPET_CHARS}},
+            "includeDomains": allowed_domains,
         }
     else:
         raise ValueError("unsupported_search_provider")
@@ -353,7 +356,7 @@ def platform_search(provider, platform):
             continue
         result_url = result.get("url")
         classification = classify_result(platform, result_url)
-        if classification is None:
+        if classification != ("index_snippet", "platform_origin_search_index"):
             continue
         from .engine import citation
         cite = citation(result_url)
@@ -996,59 +999,16 @@ def _dedupe_profile_observations(candidates):
 
 
 def configured_sources():
-    # Narrow source/category claims: trade press is not campaign performance;
-    # Guardian culture is editorial coverage, not an all-world popularity index.
-    sources = {
-        "apple_charts": ("music", legacy.APPLE_SONGS_URL, apple),
-        "deezer_charts": ("music", legacy.DEEZER_CHART_URL.format(id=0), deezer),
-        "mastodon_trending": ("social", legacy.MASTODON_TRENDS_STATUSES, social),
-        "marketing_dive": ("advertising", "https://www.marketingdive.com/feeds/news/",
-                           functools.partial(rss, "https://www.marketingdive.com/feeds/news/")),
-        "guardian_culture": ("culture", "https://www.theguardian.com/culture/rss",
-                             functools.partial(rss, "https://www.theguardian.com/culture/rss")),
-        "hn_music": ("music", legacy.HN_URL, functools.partial(hn, legacy.HN_URL)),
-        "hn_marketing_discussion": ("advertising", legacy.HN_ADS_URL,
-                                    functools.partial(hn, legacy.HN_ADS_URL)),
-    }
-    for domain in MASTODON_TAGS:
-        sources["mastodon_peak_" + domain] = (
-            domain, MASTODON_PUBLIC_TAG + MASTODON_TAGS[domain],
-            functools.partial(mastodon_peak, domain))
-    for domain in PEAK_QUERIES:
-        sources["bluesky_peak_" + domain] = (
-            domain, BLUESKY_SEARCH, functools.partial(bluesky_peak, domain))
-    for feed in legacy.YOUTUBE_FEEDS:
-        sources["youtube_" + feed["name"]] = (
-            "music", feed["url"],
-            functools.partial(youtube_with_profile_candidates, feed["url"],
-                              feed["name"]))
+    # MaxCore server awareness is restricted to the eight canonical platforms.
+    # The YouTube Atom adapter has its own live rights/robots gate. Search-index
+    # discovery is separately opt-in and registers only those same platforms.
+    sources = {}
+    if "youtube" in PLATFORM_DISCOVERY:
+        for feed in legacy.YOUTUBE_FEEDS:
+            sources["youtube_" + feed["name"]] = (
+                "music", feed["url"],
+                functools.partial(youtube_with_profile_candidates, feed["url"],
+                                  feed["name"]))
     from .platform_discovery import source_specs
     sources.update(source_specs())
-    for name, domain, url in APP_RSS:
-        sources[name] = (domain, url, functools.partial(rss, url))
-    queries = {
-        "music": "music industry streaming platform independent artist technology news",
-        "social": "social media creator platform algorithm content policy update",
-        "advertising": "digital advertising marketing platform targeting policy news",
-        "culture": "culture arts music audience cultural news",
-    }
-    for provider, env, url in (
-        ("tavily", "TAVILY_API_KEY", "https://api.tavily.com/search"),
-        ("exa", "EXA_API_KEY", "https://api.exa.ai/search"),
-    ):
-        if os.environ.get(env):
-            for domain, query in queries.items():
-                sources[provider + "_" + domain] = (
-                    domain, url, functools.partial(search, provider, query))
-            # Live platform landscape: trend-specific queries in the social
-            # domain so trending hashtags/sounds/formats reach the snapshot
-            # through the same credential-inheriting pipe.
-            for i, lq in enumerate(LANDSCAPE_SEARCH_QUERIES):
-                sources[f"{provider}_social_landscape_{i}"] = (
-                    "social", url, functools.partial(search, provider, lq))
-    if os.environ.get("SOCIAL_LANDSCAPE_URL", "").strip():
-        for kind in LANDSCAPE_METRICS:
-            sources[f"landscape_{kind}"] = (
-                "social", os.environ["SOCIAL_LANDSCAPE_URL"].strip(),
-                functools.partial(landscape_feed, kind))
     return sources

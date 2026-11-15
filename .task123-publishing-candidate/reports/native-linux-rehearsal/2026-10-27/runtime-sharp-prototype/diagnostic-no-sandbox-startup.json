@@ -1,0 +1,21 @@
+{
+  "name": "diagnostic-no-sandbox-startup",
+  "executable": "/artifact/max-booster",
+  "args": [
+    "--no-sandbox",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--user-data-dir=/profile/diagnostic-no-sandbox-startup"
+  ],
+  "cwd": "/profile",
+  "startedAt": "2026-10-28T02:37:27.103Z",
+  "pid": 93,
+  "exitCode": 0,
+  "signal": null,
+  "stoppedByFixture": true,
+  "spawnError": null,
+  "boundedDurationMs": 10000,
+  "moduleResolutionFailureObserved": true,
+  "sandboxFailureObserved": false,
+  "bundledServerExitObserved": true
+}

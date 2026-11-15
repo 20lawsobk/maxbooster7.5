@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: recovery tools discover PATH without Nix and retain a credential-free probe environment
+ok 1 - recovery tools discover PATH without Nix and retain a credential-free probe environment
+  ---
+  duration_ms: 1.425931
+  type: 'test'
+  ...
+# Subtest: recovery tools preserve Nix support and report unexpected discovery failures
+ok 2 - recovery tools preserve Nix support and report unexpected discovery failures
+  ---
+  duration_ms: 0.475778
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 114.358286

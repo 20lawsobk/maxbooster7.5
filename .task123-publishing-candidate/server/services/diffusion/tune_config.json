@@ -1,0 +1,26 @@
+{
+  "conv2d.fusion": {
+    "value": "fused_silu",
+    "speedup": 2.035783537244523,
+    "baseline_ms": 5.998027,
+    "best_ms": 2.946299
+  },
+  "gemm.precision": {
+    "value": "fp32",
+    "speedup": 1.0,
+    "baseline_ms": 25.423458,
+    "best_ms": 25.423458
+  },
+  "gemm.impl": {
+    "value": "matmul",
+    "speedup": 3.5249071635994285,
+    "baseline_ms": 16.868922,
+    "best_ms": 16.868922
+  },
+  "attention.impl": {
+    "value": "einsum",
+    "speedup": 1.0,
+    "baseline_ms": 0.30465000000000003,
+    "best_ms": 0.30465000000000003
+  }
+}

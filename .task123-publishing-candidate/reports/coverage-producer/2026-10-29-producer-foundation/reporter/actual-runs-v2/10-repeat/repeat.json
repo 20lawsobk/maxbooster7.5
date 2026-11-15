@@ -1,0 +1,14 @@
+{
+  "runId": "f2ad02e5-1147-46e2-8cad-f8b427449dc1",
+  "startedAt": "2026-10-29T23:14:59.421Z",
+  "finishedAt": "2026-10-29T23:15:00.247Z",
+  "exitCode": 0,
+  "cleanup": {
+    "processGroup": 434609,
+    "signals": [],
+    "complete": true,
+    "remainingLivePids": []
+  },
+  "firstBytesPreserved": true,
+  "secondOutcomePath": "/tmp/c5-outcome-V4HRe4/coverage/command-outcomes/f2ad02e5-1147-46e2-8cad-f8b427449dc1.json"
+}

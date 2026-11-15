@@ -1,0 +1,406 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Max Booster Storage Server API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: redis
+    description: Redis-like storage instance management
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /redis/instances:
+    get:
+      operationId: listInstances
+      tags: [redis]
+      summary: List all storage instances
+      responses:
+        "200":
+          description: List of instances
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstanceList"
+    post:
+      operationId: createInstance
+      tags: [redis]
+      summary: Create a new storage instance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInstanceRequest"
+      responses:
+        "201":
+          description: Instance created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedInstance"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /redis/instances/{id}:
+    get:
+      operationId: getInstance
+      tags: [redis]
+      summary: Get instance info and stats (requires Bearer token)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Instance info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstanceInfo"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteInstance
+      tags: [redis]
+      summary: Delete a storage instance (requires Bearer token)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /redis/instances/{id}/exec:
+    post:
+      operationId: execCommand
+      tags: [redis]
+      summary: Execute a Redis-like command (requires Bearer token)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExecRequest"
+      responses:
+        "200":
+          description: Command result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecResult"
+        "400":
+          description: Command error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /redis/instances/{id}/pipeline:
+    post:
+      operationId: execPipeline
+      tags: [redis]
+      summary: Execute multiple commands in a pipeline (requires Bearer token)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExecRequest"
+      responses:
+        "200":
+          description: Pipeline results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineResult"
+
+  /redis/instances/{id}/keys:
+    get:
+      operationId: listKeys
+      tags: [redis]
+      summary: List keys in an instance (requires Bearer token)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pattern
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "*"
+      responses:
+        "200":
+          description: Keys list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KeysList"
+
+  /redis/instances/{id}/flush:
+    post:
+      operationId: flushInstance
+      tags: [redis]
+      summary: Flush all keys in an instance (requires Bearer token)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Flushed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResult"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    OkResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required: [ok]
+
+    CreateInstanceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        maxKeys:
+          type: integer
+          minimum: 0
+          default: 0
+      required: [name]
+
+    CreatedInstance:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        token:
+          type: string
+        connectionUrl:
+          type: string
+        httpUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, token, connectionUrl, httpUrl, createdAt]
+
+    InstanceSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        httpUrl:
+          type: string
+        tokenHint:
+          type: string
+        isActive:
+          type: boolean
+        keyCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+      required: [id, name, httpUrl, tokenHint, isActive, keyCount, createdAt, lastUsedAt]
+
+    InstanceList:
+      type: object
+      properties:
+        count:
+          type: integer
+        instances:
+          type: array
+          items:
+            $ref: "#/components/schemas/InstanceSummary"
+      required: [count, instances]
+
+    InstanceInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        connectionUrl:
+          type: string
+        httpUrl:
+          type: string
+        keyCount:
+          type: integer
+        totalCommandsProcessed:
+          type: integer
+        uptimeSeconds:
+          type: integer
+        createdAt:
+          type: string
+        lastSavedAt:
+          type: string
+          nullable: true
+        persistenceEnabled:
+          type: boolean
+      required: [id, name, connectionUrl, httpUrl, keyCount, totalCommandsProcessed, uptimeSeconds, createdAt, persistenceEnabled]
+
+    DeleteResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        id:
+          type: string
+      required: [ok, id]
+
+    ExecRequest:
+      type: object
+      properties:
+        cmd:
+          type: string
+        args:
+          type: array
+          items:
+            type: string
+          default: []
+      required: [cmd]
+
+    ExecResult:
+      type: object
+      properties:
+        result: {}
+      required: [result]
+
+    PipelineCommandResult:
+      type: object
+      properties:
+        result: {}
+        error:
+          type: string
+          nullable: true
+      required: [error]
+
+    PipelineResult:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/PipelineCommandResult"
+      required: [results]
+
+    KeysList:
+      type: object
+      properties:
+        count:
+          type: integer
+        keys:
+          type: array
+          items:
+            type: string
+      required: [count, keys]

@@ -1,0 +1,271 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for server/services/commerce/settlement.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../prettify.css" />
+    <link rel="stylesheet" href="../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">server/services/commerce</a> settlement.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/47</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/87</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/5</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/37</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { pool } from "../../db";
+import { commerceRepository } from "./runtime";
+import { allocateNet, minorUnits } from "./contract";
+import { verifiedPayment } from "./verification";
+import { assertSettlementAuthorization } from "./settlementAuthorization";
+&nbsp;
+export async function <span class="fstat-no" title="function not covered" >snapshotMarketplaceTerms(o</span>rder:{listingId:string;sellerId:string;amount:number;currency?:string;metadata?:any}) {
+  const <span class="cstat-no" title="statement not covered" >listing=(await pool.query("SELECT user_id,metadata FROM listings WHERE id=$1",[order.listingId])).rows[0];</span>
+<span class="cstat-no" title="statement not covered" >  if (!listing || listing.user_id !== order.sellerId) <span class="cstat-no" title="statement not covered" >throw new Error("Marketplace seller does not own listing");</span></span>
+  // Pending invitations are not payment authorization. user_id on approved
+  // settlement rows identifies the beneficiary; pending UI rows identify creator.
+  const approved = <span class="cstat-no" title="statement not covered" >"SELECT user_id,percentage FROM royalty_splits WHERE release_id=$1 AND status IN ('active','verified') ORDER BY id";</span>
+  let <span class="cstat-no" title="statement not covered" >splits=(await pool.query(approved,[order.listingId])).rows;</span>
+<span class="cstat-no" title="statement not covered" >  if(!splits.length &amp;&amp; listing.metadata?.beatId) {</span>
+    const <span class="cstat-no" title="statement not covered" >beat=(await pool.query("SELECT user_id FROM beats WHERE id=$1",[listing.metadata.beatId])).rows[0];</span>
+<span class="cstat-no" title="statement not covered" >    if (!beat || beat.user_id !== order.sellerId) <span class="cstat-no" title="statement not covered" >throw new Error("Listing references an unowned beat");</span></span>
+<span class="cstat-no" title="statement not covered" >    splits=(await pool.query(approved,[listing.metadata.beatId])).rows;</span>
+  }
+  const gross=<span class="cstat-no" title="statement not covered" >order.metadata?.amountCents ?? minorUnits(Number(order.amount),order.currency||"usd");</span>
+  const feeRate=<span class="cstat-no" title="statement not covered" >Number(process.env.PLATFORM_FEE_PERCENTAGE ?? 10);</span>
+<span class="cstat-no" title="statement not covered" >  if(!Number.isFinite(feeRate)||feeRate&lt;0||feeRate&gt;=100) <span class="cstat-no" title="statement not covered" >throw new Error("Invalid platform fee");</span></span>
+  const fee=<span class="cstat-no" title="statement not covered" >Math.round(gross*feeRate/100);</span>
+  const <span class="cstat-no" title="statement not covered" >allocations=allocateNet(gross,fee,splits.length?splits.map(<span class="fstat-no" title="function not covered" >s=&gt;(<span class="cstat-no" title="statement not covered" >{</span>userId:s.user_id,percentage:Number(s.percentage)}))</span>:[{userId:order.sellerId,percentage:100}]);</span>
+<span class="cstat-no" title="statement not covered" >  return {version:2,sellerId:order.sellerId,listingId:order.listingId,grossCents:gross,feeCents:fee,currency:(order.currency||"usd").toLowerCase(),allocations};</span>
+}
+&nbsp;
+export async function <span class="fstat-no" title="function not covered" >bookMarketplace(o</span>rder:any) {
+  const existing=<span class="cstat-no" title="statement not covered" >await commerceRepository.sourceByPayment(order.stripePaymentIntentId);</span>
+<span class="cstat-no" title="statement not covered" >  if(existing) {</span>
+<span class="cstat-no" title="statement not covered" >    if(existing.id!==order.id) <span class="cstat-no" title="statement not covered" >throw new Error("Payment already allocated to a different order");</span></span>
+    const verified=<span class="cstat-no" title="statement not covered" >await verifiedPayment(order.stripePaymentIntentId,Number(existing.gross_cents),existing.currency);</span>
+<span class="cstat-no" title="statement not covered" >    if(verified.refundedCents||verified.pendingCents||verified.disputed||Number(existing.disputed_cents)&gt;0) {</span>
+<span class="cstat-no" title="statement not covered" >      if((verified.disputed||Number(existing.disputed_cents)&gt;0)&amp;&amp;typeof verified.reversalState!=="function") <span class="cstat-no" title="statement not covered" >throw new Error("Disputed settlement requires current provider accounting");</span></span>
+<span class="cstat-no" title="statement not covered" >      await commerceRepository.compensate(existing.id,verified.refundedCents,verified.reversalState,verified.pendingCents);</span>
+    }
+<span class="cstat-no" title="statement not covered" >    return;</span>
+  }
+<span class="cstat-no" title="statement not covered" >  if(order.status==="completed") <span class="cstat-no" title="statement not covered" >throw new Error("Historical completed order needs reconciliation, not automatic re-credit");</span></span>
+  const terms=<span class="cstat-no" title="statement not covered" >order.metadata?.settlementTerms;</span>
+<span class="cstat-no" title="statement not covered" >  assertSettlementAuthorization(terms,order.sellerId,order.listingId);</span>
+  const <span class="cstat-no" title="statement not covered" >listing=(await pool.query("SELECT user_id FROM listings WHERE id=$1",[order.listingId])).rows[0];</span>
+<span class="cstat-no" title="statement not covered" >  if (!listing || listing.user_id!==order.sellerId) <span class="cstat-no" title="statement not covered" >throw new Error("Settlement seller does not own listing");</span></span>
+  const gross=<span class="cstat-no" title="statement not covered" >order.metadata?.amountCents ?? minorUnits(Number(order.amount),order.currency||"usd");</span>
+  const fee=<span class="cstat-no" title="statement not covered" >terms.feeCents;</span>
+<span class="cstat-no" title="statement not covered" >  if(terms.grossCents!==gross || terms.currency!==(order.currency||"usd").toLowerCase() ||</span>
+    !Number.isSafeInteger(fee) || fee&lt;0 || fee&gt;=gross || !Array.isArray(terms.allocations) ||
+    terms.allocations.some(<span class="fstat-no" title="function not covered" >(a</span>:any)=&gt;<span class="cstat-no" title="statement not covered" >!a.userId || !Number.isSafeInteger(a.cents) || a.cents&lt;0)</span> ||
+    terms.allocations.reduce(<span class="fstat-no" title="function not covered" >(s</span>um:number,a:any)=&gt;<span class="cstat-no" title="statement not covered" >sum+a.cents,0</span>)!==gross-fee) <span class="cstat-no" title="statement not covered" >throw new Error("Invalid checkout settlement terms");</span>
+  const verified=<span class="cstat-no" title="statement not covered" >await verifiedPayment(order.stripePaymentIntentId,gross,(order.currency||"usd").toLowerCase());</span>
+<span class="cstat-no" title="statement not covered" >  if(verified.disputed&amp;&amp;typeof verified.reversalState!=="function") <span class="cstat-no" title="statement not covered" >throw new Error("Disputed settlement requires current provider accounting");</span></span>
+<span class="cstat-no" title="statement not covered" >  await commerceRepository.book({</span>
+    id:order.id,kind:"marketplace",paymentIntent:order.stripePaymentIntentId,
+    currency:(order.currency||"usd").toLowerCase(),grossCents:gross,feeCents:fee,
+    processingFeeCents:verified.processingFeeCents,
+    allocations:terms.allocations,
+    metadata:{listingId:order.listingId,buyerId:order.userId,sellerId:order.sellerId},
+  },verified.refundedCents||verified.pendingCents||verified.disputed?{
+    refunded:verified.refundedCents,disputed:verified.disputed?gross:undefined,pendingRefund:verified.pendingCents,
+  }:undefined);
+<span class="cstat-no" title="statement not covered" >  if(verified.refundedCents||verified.pendingCents||verified.disputed) {</span>
+<span class="cstat-no" title="statement not covered" >    await commerceRepository.compensate(order.id,verified.refundedCents,verified.reversalState,verified.pendingCents);</span>
+  }
+}</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-05T14:31:30.173Z
+            </div>
+        <script src="../../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../../sorter.js"></script>
+        <script src="../../../block-navigation.js"></script>
+    </body>
+</html>
+    

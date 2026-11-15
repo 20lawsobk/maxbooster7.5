@@ -7,7 +7,7 @@
 - [Python scan version attribution](python-scan-version-attribution.md) — resolve reported versions from current constraints before changing pins when scan results disagree.
 - [Portable Python publishing](portable-python-build.md) — isolated runtime installs must override builder-level pip user mode and enforce both AI-server and diffusion requirements.
 - [Local PDIM AOF recovery](local-pdim-aof-conflicting-sequences.md) — verify checksums, ignore snapshot-covered frames, require contiguous records, and fence each writer with one lease.
-- [Awareness profile sources](awareness-profile-sources.md) — collect public music-profile content by platform; topic categories are analysis metadata, not source targets.
+- [Awareness profile sources](awareness-profile-sources.md) — only the selected eight platforms are approved; topic categories are metadata, not source targets.
 - [Simulation cycle semantics](simulation-cycle-semantics.md) — repeat a fixed ten-year horizon indefinitely with both rolling-state and fixed-baseline tracks.
 - [Live-awareness serving readiness](live-awareness-serving-readiness.md) — serve current awareness before a trained checkpoint, while reporting checkpoint status separately.
 - [Provider error logging](provider-error-logging.md) — do not log raw provider messages; they can embed unlabelled credentials that generic redaction cannot reliably identify.

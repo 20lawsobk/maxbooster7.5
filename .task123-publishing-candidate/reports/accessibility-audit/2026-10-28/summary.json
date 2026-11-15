@@ -1,0 +1,25 @@
+{
+  "status": "focused_shared_navigation_passed_full_platform_accessibility_unverified",
+  "productionReady": false,
+  "all80AccessibilityGreen": false,
+  "pairedSameFinalTest": {
+    "testSha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
+    "beforeExitCode": 1,
+    "beforeLeafCases": 9,
+    "beforePass": 2,
+    "beforeFail": 7,
+    "afterExitCode": 0,
+    "afterLeafCases": 9,
+    "afterPass": 9,
+    "afterFail": 0,
+    "afterSkip": 0
+  },
+  "frameworkCounts": "TAP10includes the parent; JUnit9counts actualleafcases. Never sum parent and leaf totals.",
+  "configuredSecretsUsed": 0,
+  "a11yEngine": "Actual Chromium Accessibility domain and real Input.dispatchKeyEvent; axe-core not installed and not substituted with a heuristic compliance score.",
+  "sourceInputsUnchanged": true,
+  "notes": [
+    "Initial after.txt onefocusfailure was caused by an incomplete synthetic Enter event; after-keyboard.txt corrects nativekeycode/text. Both retained. before-final-test.txt reran originalHEAD sources with the same finaltest and proved7actualdefects.",
+    "The9focused checks do not establish all80page compliance, full realauthentication, screenreader usability, contrast, reflow, localization, mediaalternatives or providerjourneys."
+  ]
+}

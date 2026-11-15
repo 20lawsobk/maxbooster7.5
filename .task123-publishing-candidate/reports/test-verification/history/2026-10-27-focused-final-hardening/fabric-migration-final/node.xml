@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="fabric migration journals recover physical I/O and accounting across process restarts" time="11.562192" disabled="0" errors="0" tests="12" failures="0" skipped="0" timestamp="2026-10-27T10:07:39.880Z" hostname="2fc971e77ddd">
+		<testcase name="verified target and original replica retain exact bytes with balanced accounting" time="0.931536" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="restart after reservation before physical write resumes the same target key" time="0.862966" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="ambiguous completed target write remains journaled and is resumed without double charge" time="0.927197" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="failed target verification retains the source and reserved target until successful retry" time="0.917676" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="SQL publication failure preserves original catalog and recovers after restart" time="0.823841" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="source deletion outage retains published target and durable cleanup receipt" time="0.994360" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="SQL failure after physical deletion retries cleanup without double subtraction" time="0.811557" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="a removed source reclaims an interrupted unpublished target and refunds its reservation" time="0.785220" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="insufficient target capacity denies admission before physical I/O or journal publication" time="0.759476" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="terminated catalog owner cannot republish or double-account after successor migration recovery" time="0.847286" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="discard after lost SQL owner atomically denies delayed old PDIM publication" time="0.811299" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+		<testcase name="two independent processes serialize migration without duplicate capacity charges" time="1.244261" classname="test" file="/workspace/maxbooster7.5/tests/fabric-migration-outbox-postgres.test.mjs"/>
+	</testsuite>
+	<testcase name="canonical PDIM permanently fences deleted replica keys and refuses immutable replacement" time="0.048499" classname="test" file="/workspace/maxbooster7.5/tests/fabric-replica-generation.test.mjs"/>
+	<testcase name="a delayed replica publication cannot resurrect bytes after a newer cleanup ACK" time="0.003088" classname="test" file="/workspace/maxbooster7.5/tests/fabric-replica-generation.test.mjs"/>
+	<testcase name="active root fabric preserves shared bytes and recovers failed SQL publication/deletion" time="1.441506" classname="test" file="/workspace/maxbooster7.5/tests/fabric-root-storage-postgres.test.mjs"/>
+	<!-- tests 16 -->
+	<!-- suites 0 -->
+	<!-- pass 16 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 13620.568705 -->
+</testsuites>

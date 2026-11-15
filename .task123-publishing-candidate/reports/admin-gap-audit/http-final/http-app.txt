@@ -1,0 +1,1152 @@
+{"level":30,"time":1794014324425,"pid":268633,"hostname":"repl","msg":"✅ [Observability] Sentry active — errors will be captured and reported"}
+
+============================
+Hi, looks like you are running TensorFlow.js in Node.js. To speed things up dramatically, install our node backend, visit https://github.com/tensorflow/tfjs-node for more details. 
+============================
+{"level":40,"time":1794014325020,"pid":268633,"hostname":"repl","msg":"[db] DATABASE_REPLICA_URLS not set — all queries routed to primary in production"}
+{"level":30,"time":1794014325021,"pid":268633,"hostname":"repl","msg":"📊 Monitoring system initialized"}
+{"level":30,"time":1794014325026,"pid":268633,"hostname":"repl","msg":"🛡️  Self-Healing Security Engine initializing..."}
+{"level":30,"time":1794014325167,"pid":268633,"hostname":"repl","msg":"[PDIM] Auto multiplier: 4 (clusterWorkers=1 × ceil(cpuCores=8/2)=4) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=4ms"}
+{"level":30,"time":1794014325167,"pid":268633,"hostname":"repl","msg":"[Redis] PDIM active — routing Redis operations through PDIM"}
+{"level":30,"time":1794014325246,"pid":268633,"hostname":"repl","msg":"[LocalPDIM] Local PDIM exec server started on port 42739 (local fsynced AOF and snapshots)"}
+{"level":30,"time":1794014325251,"pid":268633,"hostname":"repl","msg":"🔍 Running startup probes..."}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"🛡️ LOADING MANDATORY SECURITY MIDDLEWARE"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   ✓ Request ID middleware"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   ✓ Request logging middleware"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   ✓ Helmet security headers (deferred to securityMiddleware — avoids CSP downgrade)"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   ✓ CORS middleware (production allowlist enforced)"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   ✓ Prototype pollution protection"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   ✓ Rate limiting middleware (max: 1000/15min, backend: Redis, skip: disabled)"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   ✓ Strict rate limiting for auth endpoints (skip: disabled)"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   ✓ Self-Healing Security Engine (10x healing speed)"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"────────────────────────────────────────────────────────"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   Loaded: 8 | Failed: 0"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"   ✅ All mandatory middleware loaded successfully"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014325264,"pid":268633,"hostname":"repl","msg":"✅ Mandatory safety middleware applied"}
+{"level":40,"time":1794014325329,"pid":268633,"hostname":"repl","msg":"[ScaleConfig] DATABASE_REPLICA_URLS is not set. All database reads hit the primary instance. Create a Neon read replica and set DATABASE_REPLICA_URLS=<connection_string> to activate dbRead routing and double effective DB throughput."}
+{"level":40,"time":1794014325329,"pid":268633,"hostname":"repl","msg":"[ScaleConfig] Neither REDIS_URL nor REDIS_CLUSTER_URLS is set. Redis is required in production."}
+{"level":30,"time":1794014325329,"pid":268633,"hostname":"repl","msg":"[ScaleConfig] Validation complete — 1 warning(s), 1 error(s). See above for remediation steps."}
+{"level":30,"time":1794014325329,"pid":268633,"hostname":"repl","msg":"[MaxCoreLocal] Local mode disabled (MAXCORE_LOCAL=0) — using remote MaxCore URL."}
+{"level":40,"time":1794014326028,"pid":268633,"hostname":"repl","msg":"⚠️  Stripe setup skipped - invalid API key"}
+{"level":30,"time":1794014326186,"pid":268633,"hostname":"repl","msg":"[MaxCoreAI] Configured — local subsystem: http://[REDACTED]:45041 | MaxCore is the only AI source"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: stripe"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: sendgrid"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: socialApi"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: twitter"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: facebook"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: instagram"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: linkedin"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: tiktok"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: tiktok_sandbox"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: youtube"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: threads"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: googlebusiness"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: aiService"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: labelGrid"}
+{"level":30,"time":1794014326196,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: dsp"}
+{"level":30,"time":1794014326197,"pid":268633,"hostname":"repl","msg":"🔌 External service circuit breakers initialized"}
+{"level":40,"time":1794014326197,"pid":268633,"hostname":"repl","msg":"⚠️  Resend API key not configured. Email features will be disabled."}
+{"level":30,"time":1794014326239,"pid":268633,"hostname":"repl","msg":"📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend"}
+{"level":40,"time":1794014326310,"pid":268633,"hostname":"repl","msg":"VAPID keys not configured - Web Push disabled"}
+{"level":30,"time":1794014326535,"pid":268633,"hostname":"repl","msg":"[DataTransfer] Distribution data transfer service initialized"}
+{"level":30,"time":1794014326535,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: streaming-spotify"}
+{"level":30,"time":1794014326535,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: streaming-apple_music"}
+{"level":30,"time":1794014326535,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: streaming-youtube_music"}
+{"level":30,"time":1794014326535,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: streaming-deezer"}
+{"level":30,"time":1794014326535,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: streaming-soundcloud"}
+{"level":30,"time":1794014326536,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: streaming-tidal"}
+{"level":30,"time":1794014326536,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: streaming-bandcamp"}
+{"level":30,"time":1794014326536,"pid":268633,"hostname":"repl","msg":"🔌 Circuit breaker initialized: streaming-audiomack"}
+{"level":30,"time":1794014326565,"pid":268633,"hostname":"repl","msg":"✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)"}
+{"level":30,"time":1794014327001,"pid":268633,"hostname":"repl","msg":"Sharp module loaded for image processing"}
+{"level":30,"time":1794014327002,"pid":268633,"hostname":"repl","msg":"[SystemIntelligence] Reasoning engine initialized — watching all error and security signals"}
+{"level":30,"time":1794014327272,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014327275,"pid":268633,"hostname":"repl","msg":"📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)"}
+{"level":30,"time":1794014327286,"pid":268633,"hostname":"repl","msg":"[ChainFixer] Chain error auto-fixer active — monitoring 28 error patterns (adaptive cooldowns, daily un-suppress)"}
+{"level":30,"time":1794014327306,"pid":268633,"hostname":"repl","msg":"[ChainFixer] Autofix directive loaded (6945 bytes): # Max Booster Autonomous Fix Directive"}
+{"level":30,"time":1794014327306,"pid":268633,"hostname":"repl","msg":"[PlatformAutoFixer] Started — probing all subsystems (adaptive: 30s/10s/5s by health)"}
+{"level":30,"time":1794014327310,"pid":268633,"hostname":"repl","msg":"[Directive] Executor active — running the autofix directive phases every 15 min (first cycle now)"}
+{"level":30,"time":1794014327322,"pid":268633,"hostname":"repl","msg":"🔬 Starting post-deploy self-test..."}
+{"level":30,"time":1794014328072,"pid":268633,"hostname":"repl","msg":"1:18:48 AM [express] serving on port 33267 (early listen — full init in progress)"}
+{"level":30,"time":1794014328092,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328092,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":40,"time":1794014328095,"pid":268633,"hostname":"repl","msg":"⚠️ Database probe failed (attempt 1/5): Failed query: SELECT 1\nparams: "}
+{"level":40,"time":1794014328103,"pid":268633,"hostname":"repl","err":{"type":"Error","message":"Failed query: select \"id\", \"ip\", \"reason\", \"severity\", \"threat_id\", \"blocked_at\", \"expires_at\", \"is_active\", \"block_count\", \"metadata\", \"created_at\" from \"ip_blacklist\" where \"ip_blacklist\".\"expires_at\" >= $1 limit $2\nparams: 2026-11-07T01:18:45.026Z,10000: Connection terminated due to connection timeout: Connection terminated unexpectedly","stack":"[ACCESSOR]\ncaused by: [ACCESSOR]\ncaused by: [ACCESSOR]","query":"select \"id\", \"ip\", \"reason\", \"severity\", \"threat_id\", \"blocked_at\", \"expires_at\", \"is_active\", \"block_count\", \"metadata\", \"created_at\" from \"ip_blacklist\" where \"ip_blacklist\".\"expires_at\" >= $1 limit $2","params":["2026-11-07T01:18:45.026Z",10000]},"attempt":1,"maxAttempts":3,"msg":"Failed to load blocked IPs — retrying in 1000ms"}
+{"level":40,"time":1794014328151,"pid":268633,"hostname":"repl","msg":"⚠️ Remote MaxCore probe failed"}
+(node:268633) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{"level":30,"time":1794014328167,"pid":268633,"hostname":"repl","msg":"✅ PDIM probe ready (2915ms)"}
+{"level":30,"time":1794014328191,"pid":268633,"hostname":"repl","msg":"✅ Session store initialized (PDIM)"}
+{"level":30,"time":1794014328209,"pid":268633,"hostname":"repl","msg":"✅ Origin validation enabled (SameSite=Lax + Origin header check)"}
+{"level":30,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"✅ CSRF protection enabled (double-submit cookie, with safe exemptions)"}
+{"level":30,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"🛡️ INITIALIZING PRODUCTION SAFETY SYSTEMS"}
+{"level":30,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"🔐 ENVIRONMENT VALIDATION"}
+{"level":30,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"   ✓ DATABASE_URL"}
+{"level":40,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"   ⚠ NEON_DATABASE_URL - not set (optional)"}
+{"level":40,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"   ⚠ NEON_PRIMARY_URL - not set (optional)"}
+{"level":40,"time":1794014328210,"pid":268633,"hostname":"repl","msg":"   ⚠ DATABASE_REPLICA_URLS - not set (optional)"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ SESSION_SECRET"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ TOKEN_ENCRYPTION_KEY - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ BOOSTERSTATE_SECRET - not set (optional)"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ NODE_ENV"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ PORT"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ BOOSTERSTATE_SIDECAR_PORT - not set (optional)"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ APP_URL"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ DOMAIN - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ BASE_DOMAIN - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ BASE_URL - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ SITE_URL - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ CORS_ORIGIN - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ MAX_CONCURRENT_REQUESTS - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ NODE_OPTIONS - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ UV_THREADPOOL_SIZE - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ ENABLE_SELF_EVOLUTION - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ STOREFRONT_URL_FORMAT - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ ADMIN_EMAIL - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ ADMIN_USERNAME - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ ADMIN_PASSWORD - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✗ STRIPE_SECRET_KEY - MISSING (required)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✗ STRIPE_PUBLISHABLE_KEY - MISSING (required)"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ STRIPE_WEBHOOK_SECRET"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ VITE_STRIPE_PUBLIC_KEY - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✗ SENDGRID_API_KEY - MISSING (required)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ SENDGRID_FROM_EMAIL - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ RESEND_API_KEY - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ AI_SERVER_URL - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ AI_SERVER_KEY - invalid format"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ MAXCORE_ADMIN_KEY - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ MBS_AI_TRAINING_URL - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ MBS_AI_TRAINING_KEY - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ AI_Training_Server - not set (optional)"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ PEER_TRAINING_NODE - not set (optional)"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ STORAGE_HTTP_URL"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ STORAGE_BEARER_TOKEN"}
+{"level":40,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ⚠ STORAGE_PROVIDER - not set (optional)"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ PDIM_EXEC_URL"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ PDIM_HTTP_EXEC_URL"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ PDIM_EXEC_TOKEN"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ PDIM_BEARER_TOKEN"}
+{"level":30,"time":1794014328211,"pid":268633,"hostname":"repl","msg":"   ✓ POCKET_DIMENSION_KEY"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ REPLIT_BUCKET_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ REDIS_URL - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ REDIS_CLUSTER_URLS - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TWITTER_API_KEY - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TWITTER_API_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TWITTER_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TWITTER_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ FACEBOOK_APP_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ FACEBOOK_APP_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ INSTAGRAM_APP_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ INSTAGRAM_APP_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TIKTOK_CLIENT_KEY - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TIKTOK_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TIKTOK_ENV - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TIKTOK_SANDBOX_CLIENT_KEY - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TIKTOK_SANDBOX_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TIKTOK_SANDBOX_REDIRECT_URI - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ TIKTOK_SANDBOX_SCOPES - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ YOUTUBE_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ YOUTUBE_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ GOOGLE_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ GOOGLE_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ GOOGLE_BUSINESS_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ GOOGLE_BUSINESS_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ LINKEDIN_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ LINKEDIN_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ THREADS_APP_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ THREADS_APP_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ SPOTIFY_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ SPOTIFY_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ VAPID_PUBLIC_KEY - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ VAPID_PRIVATE_KEY - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ VAPID_SUBJECT - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ FCM_PROJECT_ID - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ FCM_CLIENT_EMAIL - not set (optional)"}
+{"level":40,"time":1794014328212,"pid":268633,"hostname":"repl","msg":"   ⚠ FCM_SERVICE_ACCOUNT_KEY - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TWILIO_ACCOUNT_SID - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TWILIO_AUTH_TOKEN - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TWILIO_PHONE_NUMBER - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TWILIO_VERIFY_SERVICE_SID - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ EXA_API_KEY - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TAVILY_API_KEY - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ SENTRY_DSN - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ VITE_SENTRY_DSN - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ MAXMIND_ACCOUNT_ID - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ MAXMIND_LICENSE_KEY - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ GEODB_PATH - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ GEODNS_ENABLED - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ REGION_MAP - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ DNS_SERVER_IP - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ DNS_PORT - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ DNSSEC_ENABLED - not set (optional)"}
+{"level":30,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ✓ ACME_ENABLED"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ ACME_CONTACT_EMAIL - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ ACME_DIRECTORY_URL - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ GITHUB_TOKEN - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ GITHUB_PAT - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ GITHUB_PERSONAL_ACCESS_TOKEN [redacted] not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ GITHUB_REPO - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ LABELGRID_API_URL - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ LABELGRID_API_TOKEN - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ LABELGRID_API_TOKEN1 - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ LABELGRID_WEBHOOK_URL - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TOOLOST_CLIENT_ID - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TOOLOST_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TOOLOST_SANDBOX_CLIENT_SECRET - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TOOLOST_ENVIRONMENT - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TOOLOST_REDIRECT_URI - not set (optional)"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ⚠ TOOLOST_SANDBOX_REDIRECT_URL - not set (optional)"}
+{"level":30,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"────────────────────────────────────────────────────────"}
+{"level":30,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   Valid: 14 | Missing: 3 | Invalid: 0"}
+{"level":40,"time":1794014328213,"pid":268633,"hostname":"repl","msg":"   ❌ Environment validation FAILED"}
+{"level":40,"time":1794014328214,"pid":268633,"hostname":"repl","msg":""}
+{"level":40,"time":1794014328214,"pid":268633,"hostname":"repl","msg":"   Critical errors:"}
+{"level":40,"time":1794014328214,"pid":268633,"hostname":"repl","msg":"     - MISSING: STRIPE_SECRET_KEY - Stripe secret API key"}
+{"level":40,"time":1794014328214,"pid":268633,"hostname":"repl","msg":"     - MISSING: STRIPE_PUBLISHABLE_KEY - Stripe publishable API key"}
+{"level":40,"time":1794014328214,"pid":268633,"hostname":"repl","msg":"     - MISSING: SENDGRID_API_KEY - SendGrid API key for email delivery"}
+{"level":30,"time":1794014328214,"pid":268633,"hostname":"repl","msg":"════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014328219,"pid":268633,"hostname":"repl","msg":"[Audit] Audit logger initialized"}
+{"level":30,"time":1794014328219,"pid":268633,"hostname":"repl","msg":"   ✓ Audit logger initialized"}
+{"level":30,"time":1794014328220,"pid":268633,"hostname":"repl","msg":"📊 DB indexes: cache hit (52 indexes verified, skipping DB check)"}
+{"level":30,"time":1794014328220,"pid":268633,"hostname":"repl","msg":"   ✓ Database indexes verified"}
+{"level":30,"time":1794014328220,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: topup.reversed"}
+{"level":30,"time":1794014328220,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: charge.refunded"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: refund.created"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: refund.updated"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: refund.failed"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: charge.dispute.created"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: charge.dispute.updated"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: charge.dispute.closed"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"   ✓ Refund webhook handlers registered"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"   ✓ Kill switch ready (global killed: false)"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"────────────────────────────────────────────────────────"}
+{"level":40,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"   ⚠ Safety systems initialized with 3 warnings"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"════════════════════════════════════════════════════════"}
+{"level":40,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"⚠️ Safety systems initialized with warnings: MISSING: STRIPE_SECRET_KEY - Stripe secret API key, MISSING: STRIPE_PUBLISHABLE_KEY - Stripe publishable API key, MISSING: SENDGRID_API_KEY - SendGrid API key for email delivery"}
+{"level":30,"time":1794014328221,"pid":268633,"hostname":"repl","msg":"WebSocket session store configured"}
+{"level":30,"time":1794014328222,"pid":268633,"hostname":"repl","msg":"General notification WebSocket server initialized at /ws"}
+{"level":30,"time":1794014328222,"pid":268633,"hostname":"repl","msg":"Realtime collaboration server initialized"}
+{"level":30,"time":1794014328222,"pid":268633,"hostname":"repl","msg":"🚀 BullMQ workers initializing (Redis-backed, ack + DLQ + retry)..."}
+{"level":30,"time":1794014328223,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014328224,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014328224,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014328225,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014328225,"pid":268633,"hostname":"repl","msg":"📋 Active BullMQ workers (staggered startup — 5s apart after PDIM is ready):"}
+{"level":30,"time":1794014328225,"pid":268633,"hostname":"repl","msg":"   - Audio     (concurrency: 12)"}
+{"level":30,"time":1794014328225,"pid":268633,"hostname":"repl","msg":"   - CSV       (concurrency: 8)"}
+{"level":30,"time":1794014328225,"pid":268633,"hostname":"repl","msg":"   - Analytics (concurrency: 16)"}
+{"level":30,"time":1794014328225,"pid":268633,"hostname":"repl","msg":"   - Email     (concurrency: 32)"}
+{"level":30,"time":1794014328234,"pid":268633,"hostname":"repl","msg":"✅ Weekly insights cron job scheduled (Every Monday at 9 AM EST)"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328237,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014328244,"pid":268633,"hostname":"repl","msg":"[PDIM] First successful response after 3080ms — entering 10s settling window"}
+{"level":30,"time":1794014328248,"pid":268633,"hostname":"repl","msg":"✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance"}
+{"level":30,"time":1794014328249,"pid":268633,"hostname":"repl","msg":"[StudioCollab] WebSocket server initialized on path: /ws/studio"}
+{"level":30,"time":1794014328249,"pid":268633,"hostname":"repl","msg":"Studio collaboration WebSocket server initialized"}
+{"level":30,"time":1794014328249,"pid":268633,"hostname":"repl","msg":"Presence manager ready"}
+{"level":30,"time":1794014328278,"pid":268633,"hostname":"repl","msg":"[Directive] Cycle 1 clean — scorecard {\"stability\":100,\"correctness\":100,\"integration_reliability\":100,\"security\":100,\"production_readiness\":100}"}
+{"level":30,"time":1794014328302,"pid":268633,"hostname":"repl","msg":"🔬 Self-test complete: 5 passed, 0 failed, 0 skipped"}
+{"level":30,"time":1794014328302,"pid":268633,"hostname":"repl","msg":"   Recommendation: healthy"}
+{"level":30,"time":1794014328445,"pid":268633,"hostname":"repl","msg":"[ca653ee8-b820-4716-80b2-074b69a226d1] GET /api/csrf-token - 404 (10ms)"}
+{"level":30,"time":1794014328446,"pid":268633,"hostname":"repl","msg":"1:18:48 AM [express] GET /api/csrf-token 404 in 7ms"}
+{"level":30,"time":1794014328954,"pid":268633,"hostname":"repl","msg":"[80cb2b9a-ed65-4d55-ad00-2be95a4e9e2e] GET /api/csrf-token - 404 (5ms)"}
+{"level":30,"time":1794014328955,"pid":268633,"hostname":"repl","msg":"1:18:48 AM [express] GET /api/csrf-token 404 in 4ms"}
+{"level":30,"time":1794014329111,"pid":268633,"hostname":"repl","msg":"   └─ Loaded 0 blocked IPs from database"}
+{"level":30,"time":1794014329111,"pid":268633,"hostname":"repl","msg":"🛡️  Self-Healing Security Engine ACTIVE"}
+{"level":30,"time":1794014329111,"pid":268633,"hostname":"repl","msg":"   └─ SLO Targets: MTTD<50ms, MTTR<250ms, Recovery<500ms"}
+{"level":30,"time":1794014329111,"pid":268633,"hostname":"repl","msg":"   └─ Healing Speed: 10x faster than attacks"}
+{"level":30,"time":1794014329272,"pid":268633,"hostname":"repl","msg":"[Workers] PDIM stable after 2 probe(s) (1038ms) — starting BullMQ workers"}
+{"level":30,"time":1794014329273,"pid":268633,"hostname":"repl","msg":"⏳ BullMQ workers listening for jobs (staggered)..."}
+{"level":30,"time":1794014329273,"pid":268633,"hostname":"repl","msg":"Background workers initialized"}
+{"level":30,"time":1794014329286,"pid":268633,"hostname":"repl","intervalMs":60000,"batchSize":20,"msg":"[domainVerify] worker started (multi-method DoH verification)"}
+{"level":30,"time":1794014329287,"pid":268633,"hostname":"repl","msg":"Domain verification worker started"}
+{"level":30,"time":1794014329333,"pid":268633,"hostname":"repl","intervalHours":6,"msg":"[DomainLifecycle] lifecycle job scheduled"}
+{"level":30,"time":1794014329333,"pid":268633,"hostname":"repl","msg":"[domainVerify] Domain lifecycle job started"}
+{"level":30,"time":1794014329358,"pid":268633,"hostname":"repl","msg":"✅ Scalable rate limiter applied"}
+{"level":30,"time":1794014329359,"pid":268633,"hostname":"repl","msg":"✅ Admission control applied (max concurrent: 5000)"}
+{"level":30,"time":1794014329359,"pid":268633,"hostname":"repl","msg":"✅ API response cache initialized (9 cached routes)"}
+{"level":30,"time":1794014329430,"pid":268633,"hostname":"repl","msg":"Accessibility routes registered"}
+[Python] required interpreter unavailable — Python-backed operations cannot run
+{"level":40,"time":1794014330045,"pid":268633,"hostname":"repl","msg":"Too Lost OAuth app credentials are not configured for the production environment (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET). Distribution features are unavailable until the required Too Lost OAuth configuration is present."}
+{"level":40,"time":1794014330051,"pid":268633,"hostname":"repl","msg":"⚠️  LabelGrid API token not configured. Distribution features will use simulated mode."}
+{"level":40,"time":1794014330051,"pid":268633,"hostname":"repl","msg":"   Set LABELGRID_API_TOKEN1 (production-scoped token) in your environment to enable real distribution."}
+{"level":30,"time":1794014332301,"pid":268633,"hostname":"repl","msg":"Sharp module loaded for DSP policy checking"}
+{"level":30,"time":1794014332320,"pid":268633,"hostname":"repl","msg":"[MaxCore] Peer mode: http — http://localhost:8000"}
+{"level":30,"time":1794014332461,"pid":268633,"hostname":"repl","msg":"🔐 Token refresh monitor started (checking every minute)"}
+{"level":30,"time":1794014332461,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014332467,"pid":268633,"hostname":"repl","msg":"Loaded route: socialMedia (direct)"}
+{"level":30,"time":1794014332467,"pid":268633,"hostname":"repl","msg":"[routes] socialMedia router registered directly at /api/social"}
+{"level":30,"time":1794014334778,"pid":268633,"hostname":"repl","msg":"✅ Database resilience monitoring started"}
+{"level":30,"time":1794014334778,"pid":268633,"hostname":"repl","msg":"🧠 Memory thresholds: Warning=768MB, Critical=1024MB (production)"}
+{"level":30,"time":1794014334786,"pid":268633,"hostname":"repl","msg":"Loaded route: downloads"}
+{"level":40,"time":1794014334788,"pid":268633,"hostname":"repl","msg":"❌ STRIPE CONFIGURATION ERROR in stripeService.ts:"}
+{"level":40,"time":1794014334788,"pid":268633,"hostname":"repl","msg":"   Missing or invalid Stripe secret key."}
+{"level":40,"time":1794014334788,"pid":268633,"hostname":"repl","msg":"   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)"}
+{"level":40,"time":1794014334788,"pid":268633,"hostname":"repl","msg":"   Configure a Stripe secret key or supported proxy credential binding."}
+{"level":40,"time":1794014334789,"pid":268633,"hostname":"repl","msg":"[Billing] STRIPE_SECRET_KEY not configured. Billing endpoints will return errors."}
+{"level":30,"time":1794014334818,"pid":268633,"hostname":"repl","msg":"Loaded route: storefrontDomains"}
+{"level":30,"time":1794014334818,"pid":268633,"hostname":"repl","msg":"Loaded route: dns"}
+{"level":30,"time":1794014334818,"pid":268633,"hostname":"repl","msg":"✅ Timing Optimizer service initialized"}
+{"level":30,"time":1794014334818,"pid":268633,"hostname":"repl","msg":"✅ Content Variant Generator service initialized"}
+{"level":30,"time":1794014334819,"pid":268633,"hostname":"repl","msg":"✅ Algorithm Intelligence service initialized"}
+{"level":30,"time":1794014334821,"pid":268633,"hostname":"repl","msg":"AutopilotCoordinatorService initialized"}
+{"level":30,"time":1794014334822,"pid":268633,"hostname":"repl","msg":"Loaded route: collaborations"}
+{"level":30,"time":1794014334822,"pid":268633,"hostname":"repl","msg":"Loaded route: seo"}
+{"level":30,"time":1794014334822,"pid":268633,"hostname":"repl","msg":"Loaded route: search"}
+{"level":30,"time":1794014334866,"pid":268633,"hostname":"repl","msg":"Loaded route: helpDesk"}
+{"level":30,"time":1794014334990,"pid":268633,"hostname":"repl","msg":"Loaded route: dnsManager"}
+{"level":30,"time":1794014334990,"pid":268633,"hostname":"repl","msg":"Loaded route: analytics"}
+{"level":30,"time":1794014334992,"pid":268633,"hostname":"repl","msg":"Loaded route: autopilotLearning"}
+{"level":30,"time":1794014334992,"pid":268633,"hostname":"repl","msg":"Loaded route: v1Analytics"}
+{"level":30,"time":1794014334992,"pid":268633,"hostname":"repl","msg":"Loaded route function: reliability"}
+{"level":30,"time":1794014334992,"pid":268633,"hostname":"repl","msg":"Loaded route: selfHealingApi"}
+{"level":30,"time":1794014334992,"pid":268633,"hostname":"repl","msg":"Loaded route: pressKit"}
+{"level":30,"time":1794014334992,"pid":268633,"hostname":"repl","msg":"Loaded route: storefront"}
+{"level":30,"time":1794014334992,"pid":268633,"hostname":"repl","msg":"Loaded route: storage"}
+{"level":30,"time":1794014334993,"pid":268633,"hostname":"repl","msg":"Loaded route: offline"}
+{"level":30,"time":1794014334993,"pid":268633,"hostname":"repl","msg":"Loaded route: sendgridWebhook"}
+{"level":30,"time":1794014334994,"pid":268633,"hostname":"repl","msg":"Loaded route: certifiedAnalytics"}
+{"level":30,"time":1794014334994,"pid":268633,"hostname":"repl","msg":"Loaded route: analyticsAlerts"}
+{"level":30,"time":1794014335004,"pid":268633,"hostname":"repl","msg":"🧬 Self-Evolution Engine initialized"}
+{"level":30,"time":1794014335069,"pid":268633,"hostname":"repl","msg":"Loaded route: monitoring"}
+{"level":30,"time":1794014335070,"pid":268633,"hostname":"repl","msg":"Loaded route: billing"}
+{"level":30,"time":1794014335070,"pid":268633,"hostname":"repl","msg":"Loaded route: payouts"}
+{"level":30,"time":1794014335070,"pid":268633,"hostname":"repl","msg":"Loaded route: kyc"}
+{"level":30,"time":1794014335070,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014335070,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014335070,"pid":268633,"hostname":"repl","msg":"📱 Social media queues initialized (boosterstate-backed)"}
+{"level":30,"time":1794014335078,"pid":268633,"hostname":"repl","msg":"Loaded route: studioGeneration"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: checkout.session.expired"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: checkout.session.completed"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: customer.subscription.created"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: customer.subscription.updated"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: customer.subscription.deleted"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: invoice.paid"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: invoice.payment_failed"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: payment_intent.succeeded"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: payment_intent.payment_failed"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: account.updated"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: transfer.created"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: payout.paid"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"[Stripe Webhook] Registered handler for: payout.failed"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"Loaded route: ai"}
+{"level":30,"time":1794014335079,"pid":268633,"hostname":"repl","msg":"Loaded route: hybridStorage"}
+{"level":30,"time":1794014335080,"pid":268633,"hostname":"repl","msg":"Loaded route: growth"}
+{"level":30,"time":1794014335080,"pid":268633,"hostname":"repl","msg":"Loaded route: organic"}
+{"level":30,"time":1794014335080,"pid":268633,"hostname":"repl","msg":"Loaded route: retention"}
+{"level":30,"time":1794014335210,"pid":268633,"hostname":"repl","msg":"Loaded route: autopilotCoordinator"}
+{"level":30,"time":1794014335210,"pid":268633,"hostname":"repl","msg":"Loaded route: developerApi"}
+{"level":30,"time":1794014335210,"pid":268633,"hostname":"repl","msg":"Loaded route: resendWebhook"}
+{"level":30,"time":1794014335210,"pid":268633,"hostname":"repl","msg":"Loaded route: dnsNodeLocalStatus"}
+{"level":30,"time":1794014335211,"pid":268633,"hostname":"repl","msg":"Loaded route: playlistPitching"}
+{"level":30,"time":1794014335211,"pid":268633,"hostname":"repl","msg":"Loaded route: export"}
+{"level":30,"time":1794014335211,"pid":268633,"hostname":"repl","msg":"Loaded route: hns"}
+{"level":30,"time":1794014335212,"pid":268633,"hostname":"repl","msg":"Loaded route: invoices"}
+{"level":30,"time":1794014335212,"pid":268633,"hostname":"repl","msg":"Loaded route: socialOAuth"}
+{"level":30,"time":1794014335216,"pid":268633,"hostname":"repl","msg":"Loaded route: audioAnalysis"}
+{"level":30,"time":1794014335216,"pid":268633,"hostname":"repl","msg":"Loaded route: content-analysis"}
+{"level":30,"time":1794014335217,"pid":268633,"hostname":"repl","msg":"Loaded route: simulation"}
+{"level":30,"time":1794014335217,"pid":268633,"hostname":"repl","msg":"Loaded route: connectedAccounts"}
+{"level":30,"time":1794014335217,"pid":268633,"hostname":"repl","msg":"Loaded route: auth"}
+{"level":30,"time":1794014335225,"pid":268633,"hostname":"repl","msg":"Loaded route: multimodal"}
+{"level":30,"time":1794014335225,"pid":268633,"hostname":"repl","msg":"✅ Sharp Image Service initialized - production-ready image generation available"}
+{"level":30,"time":1794014335232,"pid":268633,"hostname":"repl","msg":"Loaded route: bootstrap"}
+{"level":30,"time":1794014335232,"pid":268633,"hostname":"repl","msg":"Loaded route: achievements"}
+{"level":30,"time":1794014335232,"pid":268633,"hostname":"repl","msg":"Loaded route: onboarding"}
+{"level":30,"time":1794014335232,"pid":268633,"hostname":"repl","msg":"Loaded route: personalization"}
+{"level":30,"time":1794014335232,"pid":268633,"hostname":"repl","msg":"Loaded route: releaseCountdown"}
+{"level":30,"time":1794014335232,"pid":268633,"hostname":"repl","msg":"Loaded route: dmca"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: advertisingAutopilot"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: dualAutopilot"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: autonomousSocial"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: autoUpdates"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: platformSync"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: autopilotPreferences"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: studioMarkers"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: studioPlugins"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: studioMidi"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: vstBridge"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: audioProcessing"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: sync"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: workspace"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: support"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: executiveDashboard"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: admin"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: adminMetrics"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: adminAuditLog"}
+{"level":30,"time":1794014335233,"pid":268633,"hostname":"repl","msg":"Loaded route: adminContentSampler"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: audit"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: testing"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: webhooksAdmin"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: logs"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: killSwitch"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: paymentBypass"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: security"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: adaptivePricing"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: contracts"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: careerCoach"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: arIntelligence"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: outreach"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: apiKeys"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: recoveryCodes"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: fanHub"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: fanMemberships"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: shows"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: merch"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: syncLicensing"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: publishing"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: uploads"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: status"}
+{"level":30,"time":1794014335234,"pid":268633,"hostname":"repl","msg":"Loaded route: socialBulk"}
+{"level":30,"time":1794014335236,"pid":268633,"hostname":"repl","msg":"Loaded route: studio"}
+{"level":30,"time":1794014335236,"pid":268633,"hostname":"repl","msg":"Loaded route: studioWarping"}
+{"level":30,"time":1794014335236,"pid":268633,"hostname":"repl","msg":"Loaded route: stripeWebhook"}
+{"level":30,"time":1794014335236,"pid":268633,"hostname":"repl","msg":"Loaded route: advertising"}
+{"level":30,"time":1794014335237,"pid":268633,"hostname":"repl","msg":"Loaded route: domainRegistrar"}
+{"level":30,"time":1794014335237,"pid":268633,"hostname":"repl","msg":"Loaded route: backup"}
+{"level":30,"time":1794014335237,"pid":268633,"hostname":"repl","msg":"Loaded route: autopilotKnowledge"}
+{"level":30,"time":1794014335237,"pid":268633,"hostname":"repl","msg":"Loaded route: studioComping"}
+{"level":30,"time":1794014335237,"pid":268633,"hostname":"repl","msg":"Loaded route: studioStems"}
+{"level":30,"time":1794014335237,"pid":268633,"hostname":"repl","msg":"Loaded route: adminBeatMoneyLoop"}
+{"level":30,"time":1794014335237,"pid":268633,"hostname":"repl","msg":"Loaded route: autopilot"}
+{"level":30,"time":1794014335237,"pid":268633,"hostname":"repl","msg":"Loaded route: promotionalTools"}
+{"level":30,"time":1794014335238,"pid":268633,"hostname":"repl","msg":"Loaded route: socialAI"}
+{"level":30,"time":1794014335238,"pid":268633,"hostname":"repl","msg":"Loaded route: socialApprovals"}
+{"level":30,"time":1794014335238,"pid":268633,"hostname":"repl","msg":"Loaded route: emailPreferences"}
+{"level":30,"time":1794014335238,"pid":268633,"hostname":"repl","msg":"Loaded route: marketplace"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"✅ 24/7 Reliability endpoints configured"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"📊 Available endpoints:"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   GET /api/system/health - Comprehensive system health"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   GET /api/system/status - External monitoring status"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   GET /api/system/metrics - Prometheus metrics"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   GET /api/system/process - Process monitoring details"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   GET /api/system/memory - Memory monitoring details"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   GET /api/system/database - Database monitoring details"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   GET /api/system/database/metrics - Database query telemetry"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   GET /api/health/circuits - External service circuit breaker status"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   GET /api/health/circuits/:name - Individual circuit status"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   POST /api/health/circuits/:name/reset - Reset individual circuit"}
+{"level":30,"time":1794014335239,"pid":268633,"hostname":"repl","msg":"   POST /api/health/circuits/reset-all - Reset all circuits"}
+{"level":30,"time":1794014335240,"pid":268633,"hostname":"repl","msg":"OAuth callback redirect routes registered"}
+{"level":30,"time":1794014335257,"pid":268633,"hostname":"repl","msg":"Infrastructure scaling routes registered"}
+{"level":30,"time":1794014335281,"pid":268633,"hostname":"repl","msg":"Loaded route: unifiedContent"}
+{"level":30,"time":1794014335291,"pid":268633,"hostname":"repl","msg":"Loaded route: creativeModel"}
+{"level":30,"time":1794014335304,"pid":268633,"hostname":"repl","msg":"Collaboration routes registered"}
+{"level":30,"time":1794014335341,"pid":268633,"hostname":"repl","msg":"[MusicWorkflow] Scheduled workflow cron jobs initialized: monthly royalty reminder"}
+{"level":30,"time":1794014335342,"pid":268633,"hostname":"repl","msg":"Loaded route: musicWorkflowAutomations"}
+{"level":30,"time":1794014335429,"pid":268633,"hostname":"repl","msg":"Loaded route: fabric"}
+{"level":30,"time":1794014335440,"pid":268633,"hostname":"repl","msg":"Loaded route: labelSubmissions"}
+{"level":30,"time":1794014335449,"pid":268633,"hostname":"repl","msg":"Loaded route: radioPitches"}
+{"level":30,"time":1794014335458,"pid":268633,"hostname":"repl","msg":"Loaded route: venues"}
+{"level":30,"time":1794014335466,"pid":268633,"hostname":"repl","msg":"Loaded route: projectBudgets"}
+{"level":30,"time":1794014335474,"pid":268633,"hostname":"repl","msg":"Loaded route: sampleClearances"}
+{"level":30,"time":1794014335493,"pid":268633,"hostname":"repl","msg":"Loaded route: musicVideos"}
+{"level":30,"time":1794014335505,"pid":268633,"hostname":"repl","msg":"Loaded route: songwriting"}
+{"level":30,"time":1794014335522,"pid":268633,"hostname":"repl","msg":"Loaded route: fanCampaigns"}
+{"level":30,"time":1794014335536,"pid":268633,"hostname":"repl","msg":"Loaded route: customWorkflows"}
+{"level":30,"time":1794014335559,"pid":268633,"hostname":"repl","msg":"[MaxAssistantService] In-house Max AI assistant knowledge engine initialized — comprehensive edition with proactive prediction"}
+{"level":30,"time":1794014335561,"pid":268633,"hostname":"repl","msg":"Loaded route: assistant"}
+{"level":30,"time":1794014335561,"pid":268633,"hostname":"repl","msg":"Loaded route: maxcore-proxy"}
+{"level":30,"time":1794014335567,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014335568,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014335568,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014335569,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":40,"time":1794014335588,"pid":268633,"hostname":"repl","msg":"[SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect."}
+{"level":40,"time":1794014335594,"pid":268633,"hostname":"repl","msg":"[PDIM] exec error [HSET]: fetch failed"}
+{"level":40,"time":1794014335595,"pid":268633,"hostname":"repl","msg":"[PDIM] 5 startup failures suppressed — settling (3s remaining)"}
+{"level":30,"time":1794014335600,"pid":268633,"hostname":"repl","msg":"Loaded 0 contracts from database"}
+{"level":40,"time":1794014335612,"pid":268633,"hostname":"repl","err":{"type":"Error","message":"Failed to open pocket dimension application-storage: stored metadata/index is unavailable or corrupt: fetch failed: read ECONNRESET","stack":"[ACCESSOR]\ncaused by: [ACCESSOR]\ncaused by: [ACCESSOR]"},"msg":"[Storage] PDIM read failed for key=evolution-state/state.json — suppressing repeats for 30 s"}
+{"level":50,"time":1794014335614,"pid":268633,"hostname":"repl","err":{"type":"Error","message":"Storage read failed: evolution-state/state.json: Failed to open pocket dimension application-storage: stored metadata/index is unavailable or corrupt: fetch failed: read ECONNRESET","stack":"[ACCESSOR]\ncaused by: [ACCESSOR]\ncaused by: [ACCESSOR]\ncaused by: [ACCESSOR]"},"msg":"Failed to restore evolution state"}
+{"level":30,"time":1794014335615,"pid":268633,"hostname":"repl","msg":"Evolution registry loaded: 0 active enhancement(s), 0 live"}
+{"level":30,"time":1794014335615,"pid":268633,"hostname":"repl","msg":"Silent deployment system on standby (set ENABLE_SELF_EVOLUTION=true to activate)"}
+{"level":30,"time":1794014335616,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014335617,"pid":268633,"hostname":"repl","msg":"✅ Auto-posting BullMQ worker started (concurrency: 5)"}
+{"level":40,"time":1794014335623,"pid":268633,"hostname":"repl","err":{"type":"Error","message":"Failed to open pocket dimension offline-mode-cache: stored metadata/index is unavailable or corrupt: fetch failed: read ECONNRESET","stack":"[ACCESSOR]\ncaused by: [ACCESSOR]\ncaused by: [ACCESSOR]"},"msg":"[OfflineCache] Failed to open Pocket Dimension, cache unavailable:"}
+{"level":30,"time":1794014335626,"pid":268633,"hostname":"repl","msg":"✅ Database probe ready (attempt 2, 57ms)"}
+{"level":40,"time":1794014335626,"pid":268633,"hostname":"repl","msg":"⚠️ Startup completed in degraded mode (1 probe(s) degraded)"}
+{"level":30,"time":1794014335641,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014335642,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014335650,"pid":268633,"hostname":"repl","msg":"✅ Reloaded 0 pending posts"}
+{"level":30,"time":1794014335650,"pid":268633,"hostname":"repl","msg":"✅ Auto-posting service initialized (boosterstate-backed)"}
+{"level":30,"time":1794014335651,"pid":268633,"hostname":"repl","msg":"📅 Database backups scheduled (daily at 2 AM UTC)"}
+{"level":30,"time":1794014335651,"pid":268633,"hostname":"repl","msg":"✅ Database Backup Service initialized (Pocket Dimension storage)"}
+{"level":30,"time":1794014335651,"pid":268633,"hostname":"repl","msg":"   RPO Target: 24 hours"}
+{"level":30,"time":1794014335651,"pid":268633,"hostname":"repl","msg":"   RTO Target: 30 minutes"}
+{"level":30,"time":1794014335651,"pid":268633,"hostname":"repl","msg":"   Backup Schedule: Daily at 2 AM UTC"}
+{"level":30,"time":1794014335651,"pid":268633,"hostname":"repl","msg":"   Retention: 7 days"}
+{"level":30,"time":1794014335653,"pid":268633,"hostname":"repl","msg":"Fan delivery scheduler disabled; enable only after consent schema and mail configuration approval"}
+{"level":30,"time":1794014335654,"pid":268633,"hostname":"repl","msg":"[DnsNodeLocal] Disabled (set DNS_NODE_LOCAL=1 to run an internal-only dns-node instance for backend testing)."}
+{"level":30,"time":1794014335654,"pid":268633,"hostname":"repl","msg":"[Boot] Routes registered — boot stubs deactivated, real handlers active"}
+{"level":30,"time":1794014335985,"pid":268633,"hostname":"repl","msg":"📚 Swagger documentation available at /api-docs"}
+{"level":30,"time":1794014335994,"pid":268633,"hostname":"repl","msg":"📱 Mobile Push Service: No credentials configured — mobile push unavailable. Set FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_KEY (+ FCM_CLIENT_EMAIL for raw key) to activate."}
+{"level":30,"time":1794014335994,"pid":268633,"hostname":"repl","msg":"📱 Mobile Push Service mode: unavailable"}
+{"level":40,"time":1794014336001,"pid":268633,"hostname":"repl","msg":"🖥️ Desktop Push Service: VAPID keys not set — desktop push unavailable"}
+{"level":30,"time":1794014336001,"pid":268633,"hostname":"repl","msg":"🖥️  Desktop Push Service ready: false"}
+{"level":30,"time":1794014336004,"pid":268633,"hostname":"repl","msg":"[Health] Core probes registered: database, redis, routes, audit, automation, maxcore"}
+{"level":30,"time":1794014336014,"pid":268633,"hostname":"repl","msg":"[ReEngagement] Next run in 11 hours"}
+{"level":30,"time":1794014336014,"pid":268633,"hostname":"repl","msg":"[Retention] Re-engagement cron started"}
+{"level":30,"time":1794014336559,"pid":268633,"hostname":"repl","msg":"[acme/renewal] disabled (ACME_ENABLED!=true) — cron not started"}
+{"level":30,"time":1794014336564,"pid":268633,"hostname":"repl","msg":"[GeoDNS] Monthly database refresh cron scheduled (1st of month, 03:15 UTC)"}
+{"level":30,"time":1794014336570,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014336571,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014336571,"pid":268633,"hostname":"repl","msg":"[Retention] Dunning processor enqueued (6h interval)"}
+{"level":30,"time":1794014336571,"pid":268633,"hostname":"repl","msg":"[Retention] Health score batch processor enqueued (24h interval)"}
+{"level":30,"time":1794014336571,"pid":268633,"hostname":"repl","msg":"[Retention] Feature event buffer flush enqueued (60s interval)"}
+{"level":30,"time":1794014336571,"pid":268633,"hostname":"repl","msg":"[Engagement] Social engagement refresh cron started (8h interval)"}
+{"level":30,"time":1794014336573,"pid":268633,"hostname":"repl","msg":"✅ [SPA] Vite/static handler ready — boot fallback deactivated"}
+{"level":30,"time":1794014336574,"pid":268633,"hostname":"repl","msg":"1:18:56 AM [express] all middleware and routes registered — kicking off autonomous systems"}
+{"level":30,"time":1794014336587,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014336587,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014336587,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014336588,"pid":268633,"hostname":"repl","msg":""}
+{"level":30,"time":1794014336588,"pid":268633,"hostname":"repl","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014336588,"pid":268633,"hostname":"repl","msg":"🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)"}
+{"level":30,"time":1794014336588,"pid":268633,"hostname":"repl","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014336589,"pid":268633,"hostname":"repl","msg":"✅ [DistributedCache] Connected (PDIM)"}
+{"level":30,"time":1794014336589,"pid":268633,"hostname":"repl","msg":"✅ [DistributedCache] Connected (deferred)"}
+{"level":30,"time":1794014336589,"pid":268633,"hostname":"repl","msg":"[APICache] Cross-pod invalidation poller started (adaptive 200–5000 ms interval)"}
+{"level":40,"time":1794014336589,"pid":268633,"hostname":"repl","msg":"❌ Failed to initialize Stripe prices: Stripe is not configured (missing/invalid STRIPE_SECRET_KEY) — cannot set up products and prices"}
+{"level":40,"time":1794014336598,"pid":268633,"hostname":"repl","msg":"⚠️ ADMIN_EMAIL not set - skipping admin initialization"}
+{"level":30,"time":1794014336599,"pid":268633,"hostname":"repl","msg":"🎛️ Seeding plugin catalog..."}
+{"level":30,"time":1794014336723,"pid":268633,"hostname":"repl","msg":"[PermanentFixer] No permanent overrides saved yet — running with default constants"}
+{"level":30,"time":1794014336831,"pid":268633,"hostname":"repl","msg":"   ✓ Plugin catalog: 434 inserted, 0 updated (rev rev-enrich-v1)"}
+{"level":30,"time":1794014337047,"pid":268633,"hostname":"repl","msg":"[0990d866-9092-4132-bfd1-d0c9dacfd2ff] GET /api/csrf-token - 200 (81ms)"}
+{"level":30,"time":1794014337048,"pid":268633,"hostname":"repl","msg":"1:18:57 AM [express] GET /api/csrf-token 200 in 79ms"}
+{"level":30,"time":1794014337493,"pid":268633,"hostname":"repl","msg":"   ✓ Factory genre presets: 3180 inserted, 0 refreshed (rev rev-enrich-v1)"}
+{"level":30,"time":1794014337495,"pid":268633,"hostname":"repl","msg":"✅ Plugin catalog seeded"}
+{"level":30,"time":1794014337501,"pid":268633,"hostname":"repl","msg":"📋 Seeding studio templates..."}
+{"level":30,"time":1794014337517,"pid":268633,"hostname":"repl","msg":"   ✓ Seeded 8 built-in templates"}
+{"level":30,"time":1794014337523,"pid":268633,"hostname":"repl","msg":"🏪 Seeding storefront templates..."}
+{"level":30,"time":1794014337551,"pid":268633,"hostname":"repl","msg":"   ✓ Seeded 17 storefront templates"}
+{"level":30,"time":1794014337562,"pid":268633,"hostname":"repl","msg":"Seeding achievements..."}
+{"level":30,"time":1794014337579,"pid":268633,"hostname":"repl","msg":"Created 16 achievement(s)"}
+{"level":30,"time":1794014337580,"pid":268633,"hostname":"repl","msg":"Achievement seeding complete!"}
+{"level":30,"time":1794014337580,"pid":268633,"hostname":"repl","msg":"   ✓ Achievements seeded"}
+{"level":30,"time":1794014337587,"pid":268633,"hostname":"repl","msg":"Status page service created: 00600657-d667-4dfa-8a97-41fcf3088546 - Web Application"}
+{"level":30,"time":1794014337590,"pid":268633,"hostname":"repl","msg":"Status page service created: 6e6e35d4-31ef-4da0-ae1d-e86285354f96 - API"}
+{"level":30,"time":1794014337592,"pid":268633,"hostname":"repl","msg":"Status page service created: b7e6f533-a2da-4c3c-9532-6e611efe80a1 - Music Distribution"}
+{"level":30,"time":1794014337594,"pid":268633,"hostname":"repl","msg":"Status page service created: 05908f67-c2b4-4ae5-a729-b136cd6d09cc - Audio Processing"}
+{"level":30,"time":1794014337596,"pid":268633,"hostname":"repl","msg":"Status page service created: 0acda696-a19d-4a0f-885e-082bbd8a147e - Payment Processing"}
+{"level":30,"time":1794014337597,"pid":268633,"hostname":"repl","msg":"Status page service created: d86e8476-61b8-4ace-b537-0b6c516a09bb - Analytics"}
+{"level":30,"time":1794014337600,"pid":268633,"hostname":"repl","msg":"Status page service created: 1b168d52-5bc5-495f-9b35-e28720ca2b38 - Email Delivery"}
+{"level":30,"time":1794014337602,"pid":268633,"hostname":"repl","msg":"Status page service created: dbee8368-4e9b-49d4-90ca-bdbe86703103 - File Storage"}
+{"level":30,"time":1794014337602,"pid":268633,"hostname":"repl","msg":"Default status page services initialized"}
+{"level":30,"time":1794014337602,"pid":268633,"hostname":"repl","msg":"   ✓ Status page services initialized"}
+{"level":30,"time":1794014337610,"pid":268633,"hostname":"repl","msg":"🎵 Initializing AI Music Intelligence Models..."}
+{"level":30,"time":1794014337616,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: stem_separator_v1"}
+{"level":30,"time":1794014337621,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for stem_separator_v1"}
+{"level":30,"time":1794014337625,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: genre_preset_engine_v1"}
+{"level":30,"time":1794014337628,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for genre_preset_engine_v1"}
+{"level":30,"time":1794014337632,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: reference_matcher_v1"}
+{"level":30,"time":1794014337636,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for reference_matcher_v1"}
+{"level":30,"time":1794014337640,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: lufs_meter_v1"}
+{"level":30,"time":1794014337642,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for lufs_meter_v1"}
+{"level":30,"time":1794014337646,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: creative_planner_v1"}
+{"level":30,"time":1794014337649,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for creative_planner_v1"}
+{"level":30,"time":1794014337654,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: beat_sync_alignment_v1"}
+{"level":30,"time":1794014337658,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for beat_sync_alignment_v1"}
+{"level":30,"time":1794014337664,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: video_creative_scorer_v1"}
+{"level":30,"time":1794014337669,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for video_creative_scorer_v1"}
+{"level":30,"time":1794014337674,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: keyframe_style_selector_v1"}
+{"level":30,"time":1794014337678,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for keyframe_style_selector_v1"}
+{"level":30,"time":1794014337678,"pid":268633,"hostname":"repl","msg":"✅ AI Music Intelligence Models initialized"}
+{"level":30,"time":1794014337688,"pid":268633,"hostname":"repl","msg":"📊 Initializing AI Insights Engine Models..."}
+{"level":30,"time":1794014337692,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: time_series_predictor_v1"}
+{"level":30,"time":1794014337697,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for time_series_predictor_v1"}
+{"level":30,"time":1794014337702,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: cohort_analyzer_v1"}
+{"level":30,"time":1794014337706,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for cohort_analyzer_v1"}
+{"level":30,"time":1794014337711,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: churn_predictor_v1"}
+{"level":30,"time":1794014337716,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for churn_predictor_v1"}
+{"level":30,"time":1794014337721,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: revenue_forecaster_v1"}
+{"level":30,"time":1794014337725,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for revenue_forecaster_v1"}
+{"level":30,"time":1794014337730,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: anomaly_detector_v1"}
+{"level":30,"time":1794014337734,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for anomaly_detector_v1"}
+{"level":30,"time":1794014337734,"pid":268633,"hostname":"repl","msg":"✅ AI Insights Engine Models initialized"}
+{"level":30,"time":1794014337748,"pid":268633,"hostname":"repl","msg":"🚀 Initializing AI Content Models..."}
+{"level":30,"time":1794014337755,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: content_multilingual_v1"}
+{"level":30,"time":1794014337758,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for content_multilingual_v1"}
+{"level":30,"time":1794014337764,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: brand_voice_analyzer_v1"}
+{"level":30,"time":1794014337767,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for brand_voice_analyzer_v1"}
+{"level":30,"time":1794014337771,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: trend_detector_v1"}
+{"level":30,"time":1794014337773,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for trend_detector_v1"}
+{"level":30,"time":1794014337778,"pid":268633,"hostname":"repl","msg":"   ✓ Created AI Model: hashtag_optimizer_v1"}
+{"level":30,"time":1794014337786,"pid":268633,"hostname":"repl","msg":"   ✓ Created version for hashtag_optimizer_v1"}
+{"level":30,"time":1794014337786,"pid":268633,"hostname":"repl","msg":"✅ AI Content Models initialized"}
+{"level":30,"time":1794014337786,"pid":268633,"hostname":"repl","msg":"   ✓ AI models seeded"}
+{"level":30,"time":1794014337824,"pid":268633,"hostname":"repl","msg":"   ✓ System settings seeded (20 defaults)"}
+{"level":30,"time":1794014337844,"pid":268633,"hostname":"repl","msg":"   ✓ Alert rules seeded (12 defaults)"}
+{"level":30,"time":1794014337844,"pid":268633,"hostname":"repl","msg":"✅ Admin account initialized"}
+{"level":30,"time":1794014337851,"pid":268633,"hostname":"repl","msg":"Seeded 10 default onboarding tasks"}
+{"level":30,"time":1794014337892,"pid":268633,"hostname":"repl","msg":"✅ [Storage] Hybrid Storage initialized (Replit Object Storage + Pocket Dimension)"}
+{"level":30,"time":1794014337893,"pid":268633,"hostname":"repl","msg":"✅ [Storage] Auto-tiering scheduler started (every 6 hours)"}
+{"level":30,"time":1794014337901,"pid":268633,"hostname":"repl","msg":"[PocketFabric] Registered cluster node 0: fabric-cluster-0 (us-east)"}
+{"level":30,"time":1794014337903,"pid":268633,"hostname":"repl","msg":"[PocketFabric] Registered cluster node 1: fabric-cluster-1 (us-west)"}
+{"level":30,"time":1794014337905,"pid":268633,"hostname":"repl","msg":"[PocketFabric] Registered cluster node 2: fabric-cluster-2 (eu-west)"}
+{"level":30,"time":1794014337907,"pid":268633,"hostname":"repl","msg":"[PocketFabric] Cluster ready — 3 Pocket Dimension node(s) active"}
+{"level":30,"time":1794014337993,"pid":268633,"hostname":"repl","msg":"[FabricRebalancer] Background rebalancer started"}
+{"level":30,"time":1794014337994,"pid":268633,"hostname":"repl","msg":"[AutoCluster] Started — min=3 max=Infinity up≥70% down≤40% ema_alpha=0.3 maxSpawn=5 spawnCooldown=10min drainCooldown=30min"}
+{"level":30,"time":1794014337994,"pid":268633,"hostname":"repl","msg":"[PocketFabric] Single-owner auto-cluster manager started"}
+{"level":30,"time":1794014337994,"pid":268633,"hostname":"repl","msg":"✅ [PocketFabric] Distributed fabric storage initialized"}
+{"level":30,"time":1794014337994,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: pocket-fabric-autocluster"}
+{"level":30,"time":1794014338020,"pid":268633,"hostname":"repl","msg":"[AUTONOMOUS] Starting 24/7 autonomous operations..."}
+{"level":30,"time":1794014338022,"pid":268633,"hostname":"repl","msg":"[AUTONOMOUS] 24/7 operations started successfully"}
+{"level":30,"time":1794014338022,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Autonomous Service started on worker 0"}
+{"level":30,"time":1794014338022,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Autonomous Service initialized - Running: true"}
+{"level":30,"time":1794014338023,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: autonomous-service"}
+{"level":30,"time":1794014338034,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] Waiting 75s for startup PDIM burst to settle before registering BullMQ repeatable jobs…"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Send Email"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Post to Social Media"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Distribute Music"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Generate Analytics Report"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: AI Mix Track"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: AI Master Track"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Upload Beat to Marketplace"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Process Payment"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Send Notification"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Backup Data"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Create Promotional Video"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Create Social Media Video"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Create Lyric Video"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔧 Action registered: Create Audio Visualizer Video"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔍 Condition registered: Time Based"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔍 Condition registered: User Activity"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔍 Condition registered: Performance Threshold"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔍 Condition registered: Revenue Threshold"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🔍 Condition registered: Stream Threshold"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🎯 Trigger registered: Schedule"}
+{"level":30,"time":1794014338035,"pid":268633,"hostname":"repl","msg":"🎯 Trigger registered: Event"}
+{"level":30,"time":1794014338036,"pid":268633,"hostname":"repl","msg":"🎯 Trigger registered: Webhook"}
+{"level":30,"time":1794014338036,"pid":268633,"hostname":"repl","msg":"📂 Loading workflows from storage..."}
+{"level":30,"time":1794014338036,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Automation System initialized"}
+{"level":30,"time":1794014338036,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: automation-system"}
+{"level":30,"time":1794014338037,"pid":268633,"hostname":"repl","msg":"🚀 Automation engine started"}
+{"level":30,"time":1794014338037,"pid":268633,"hostname":"repl","msg":"🤖 Automation system initialized"}
+{"level":30,"time":1794014338073,"pid":268633,"hostname":"repl","msg":"🚀 Platform Self-Updating System started"}
+{"level":30,"time":1794014338074,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Auto-Upgrade System ENABLED"}
+{"level":30,"time":1794014338074,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: autonomous-updates"}
+{"level":30,"time":1794014338148,"pid":268633,"hostname":"repl","msg":"Auto-posting queue processor started"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"✅ Autopilot scheduler started (every 15 minutes)"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Autonomous Autopilot loaded"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: autonomous-autopilot"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Autopilot Engine loaded"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: autopilot-engine"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Auto-Posting Service V1 initialized"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: auto-posting-v1"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Auto-Posting Service V2 initialized"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: auto-posting-v2"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Auto Post Generator initialized"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: auto-post-generator"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"✅ [Autonomy] Autopilot Publisher initialized"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"[KillSwitch] Registered system: autopilot-publisher"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014338149,"pid":268633,"hostname":"repl","msg":"🤖 AUTONOMOUS SYSTEMS READY"}
+{"level":30,"time":1794014338153,"pid":268633,"hostname":"repl","msg":"[MaxCoreSync] Initialized — health probe running, authoritative state refresh scheduled every 10 min"}
+{"level":30,"time":1794014338153,"pid":268633,"hostname":"repl","msg":"[DB] Keepalive started — pinging primary + replica every 25s to prevent Neon cold-start latency"}
+{"level":30,"time":1794014338153,"pid":268633,"hostname":"repl","msg":"🤖 ═══════════════════════════════════════════════════════════"}
+{"level":30,"time":1794014338162,"pid":268633,"hostname":"repl","msg":"[DNS] ✅ Authoritative nameserver online — max-booster.com → [REDACTED] (UDP+TCP :53)"}
+{"level":30,"time":1794014338162,"pid":268633,"hostname":"repl","msg":"[DNS] 📋 NS records: ns1.max-booster.com + ns2.max-booster.com → [REDACTED]"}
+{"level":30,"time":1794014338169,"pid":268633,"hostname":"repl","msg":"[DNS] Custom domain cache warmed — 0 active domain(s) loaded."}
+{"level":30,"time":1794014338176,"pid":268633,"hostname":"repl","msg":"[MaxCoreSync] PDIM ✅ reachable — Redis-compatible layer active"}
+{"level":40,"time":1794014338186,"pid":268633,"hostname":"repl","msg":"[MaxCoreSync] MaxCore inference ⚠️ unreachable — http://[REDACTED]:45041 (will retry on first inference request)"}
+{"level":40,"time":1794014338187,"pid":268633,"hostname":"repl","msg":"[MaxCoreSync] Training peer not configured — PEER_TRAINING_NODE / MBS_AI_TRAINING_KEY missing"}
+{"level":30,"time":1794014339157,"pid":268633,"hostname":"repl","hasSession":true,"hasUserId":false,"sessionPrefix":"fd01f2b6","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1794014339157,"pid":268633,"hostname":"repl","msg":"[Auth/me] No sessionId cookie present in request"}
+{"level":30,"time":1794014339158,"pid":268633,"hostname":"repl","msg":"[7b4ba64d-ccaf-45ae-ae9a-1ac35e96be9a] GET /api/auth/me - 200 (42ms)"}
+{"level":30,"time":1794014339158,"pid":268633,"hostname":"repl","msg":"1:18:59 AM [express] GET /api/auth/me 200 in 37ms"}
+{"level":30,"time":1794014340058,"pid":268633,"hostname":"repl","msg":"[ff0defe0-53ee-44b8-95a2-ce7c766622da] GET /api/csrf-token - 200 (67ms)"}
+{"level":30,"time":1794014340058,"pid":268633,"hostname":"repl","msg":"1:19:00 AM [express] GET /api/csrf-token 200 in 46ms"}
+{"level":30,"time":1794014340199,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":40,"time":1794014340693,"pid":268633,"hostname":"repl","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1794014340704,"pid":268633,"hostname":"repl","msg":"[d8b73766-19c5-4c14-98bb-eb6d77af71cc] POST /api/auth/register - 200 (625ms)"}
+{"level":30,"time":1794014340704,"pid":268633,"hostname":"repl","msg":"1:19:00 AM [express] POST /api/auth/register 200 in 557ms"}
+{"level":30,"time":1794014341950,"pid":268633,"hostname":"repl","userId":"4bbb7d1b-254f-4441-aecc-51ab68844af0","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014341978,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014341980,"pid":268633,"hostname":"repl","msg":"Sent notification to user 4bbb7d1b-254f-4441-aecc-51ab68844af0"}
+{"level":30,"time":1794014341980,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user 4bbb7d1b-254f-4441-aecc-51ab68844af0: New Login Detected"}
+{"level":30,"time":1794014342007,"pid":268633,"hostname":"repl","msg":"[f69b8f42-e5c3-4705-99d1-cd70c3c0ca67] POST /api/auth/login - 200 (783ms)"}
+{"level":30,"time":1794014342009,"pid":268633,"hostname":"repl","msg":"1:19:02 AM [express] POST /api/auth/login 200 in 439ms"}
+{"level":30,"time":1794014342068,"pid":268633,"hostname":"repl","msg":"[82bc737a-1473-45c4-9c38-ee5f02bbebf4] GET /api/auth/2fa/status - 200 (54ms)"}
+{"level":30,"time":1794014342069,"pid":268633,"hostname":"repl","msg":"1:19:02 AM [express] GET /api/auth/2fa/status 200 in 52ms"}
+{"level":40,"time":1794014342083,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/2fa/setup"}
+{"level":30,"time":1794014342249,"pid":268633,"hostname":"repl","msg":"[0aa71866-131b-4207-8199-1f07d416e0fe] POST /api/auth/2fa/setup - 200 (176ms)"}
+{"level":30,"time":1794014342249,"pid":268633,"hostname":"repl","msg":"1:19:02 AM [express] POST /api/auth/2fa/setup 200 in 175ms"}
+{"level":40,"time":1794014342267,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/2fa/verify"}
+{"level":30,"time":1794014342386,"pid":268633,"hostname":"repl","msg":"[6e2712e8-476c-44e4-82be-0e3674508db6] POST /api/auth/2fa/verify - 200 (128ms)"}
+{"level":30,"time":1794014342387,"pid":268633,"hostname":"repl","msg":"1:19:02 AM [express] POST /api/auth/2fa/verify 200 in 127ms"}
+{"level":40,"time":1794014342402,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/2fa/verify"}
+{"level":40,"time":1794014342508,"pid":268633,"hostname":"repl","msg":"[2d99eb1c-8d22-4ab3-abb1-eb032b483c33] POST /api/auth/2fa/verify - 400 (115ms)"}
+{"level":30,"time":1794014342509,"pid":268633,"hostname":"repl","msg":"1:19:02 AM [express] POST /api/auth/2fa/verify 400 in 114ms"}
+{"level":30,"time":1794014342598,"pid":268633,"hostname":"repl","msg":"[b8d565fd-63c7-4539-bc60-e27c96bcb2a2] GET /api/auth/2fa/status - 200 (87ms)"}
+{"level":30,"time":1794014342599,"pid":268633,"hostname":"repl","msg":"1:19:02 AM [express] GET /api/auth/2fa/status 200 in 85ms"}
+{"level":40,"time":1794014342663,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/logout"}
+{"level":30,"time":1794014342723,"pid":268633,"hostname":"repl","msg":"[24430cfb-0aa8-4ba6-a1d4-0bf6923f1423] POST /api/auth/logout - 200 (120ms)"}
+{"level":30,"time":1794014342725,"pid":268633,"hostname":"repl","msg":"1:19:02 AM [express] POST /api/auth/logout 200 in 72ms"}
+{"level":30,"time":1794014342809,"pid":268633,"hostname":"repl","msg":"[56e11264-cff1-40a4-975b-1600df21b594] GET /api/csrf-token - 200 (77ms)"}
+{"level":30,"time":1794014342809,"pid":268633,"hostname":"repl","msg":"1:19:02 AM [express] GET /api/csrf-token 200 in 74ms"}
+{"level":30,"time":1794014342878,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014343024,"pid":268633,"hostname":"repl","msg":"[PocketDimension] Created storage space for user 4bbb7d1b-254f-4441-aecc-51ab68844af0"}
+{"level":30,"time":1794014343214,"pid":268633,"hostname":"repl","msg":"[601bab04-2266-4c43-bdc4-499068610692] POST /api/auth/login - 200 (401ms)"}
+{"level":30,"time":1794014343215,"pid":268633,"hostname":"repl","msg":"1:19:03 AM [express] POST /api/auth/login 200 in 401ms"}
+{"level":30,"time":1794014365626,"pid":268633,"hostname":"repl","msg":"🔍 Running startup probes..."}
+{"level":30,"time":1794014365629,"pid":268633,"hostname":"repl","msg":"✅ Database probe ready (attempt 1, 3ms)"}
+{"level":30,"time":1794014365632,"pid":268633,"hostname":"repl","msg":"✅ PDIM probe ready (6ms)"}
+{"level":40,"time":1794014365633,"pid":268633,"hostname":"repl","msg":"⚠️ Remote MaxCore probe failed"}
+{"level":40,"time":1794014365633,"pid":268633,"hostname":"repl","msg":"⚠️ Startup completed in degraded mode (1 probe(s) degraded)"}
+{"level":30,"time":1794014370182,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014370531,"pid":268633,"hostname":"repl","userId":"4bbb7d1b-254f-4441-aecc-51ab68844af0","msg":"[Login] SUCCESS for userId"}
+{"level":30,"time":1794014370555,"pid":268633,"hostname":"repl","msg":"[5bc8363d-1704-415e-9538-663fffc6c96d] POST /api/auth/login - 200 (447ms)"}
+{"level":30,"time":1794014370556,"pid":268633,"hostname":"repl","msg":"1:19:30 AM [express] POST /api/auth/login 200 in 408ms"}
+{"level":40,"time":1794014370576,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014370576,"pid":268633,"hostname":"repl","msg":"Sent notification to user 4bbb7d1b-254f-4441-aecc-51ab68844af0"}
+{"level":30,"time":1794014370576,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user 4bbb7d1b-254f-4441-aecc-51ab68844af0: New Login Detected"}
+{"level":30,"time":1794014370619,"pid":268633,"hostname":"repl","hasSession":true,"hasUserId":true,"sessionPrefix":"28cf69ac","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1794014370623,"pid":268633,"hostname":"repl","msg":"[f03a2d67-1073-4636-9f03-02fcb8e439b7] GET /api/auth/me - 200 (62ms)"}
+{"level":30,"time":1794014370624,"pid":268633,"hostname":"repl","msg":"1:19:30 AM [express] GET /api/auth/me 200 in 57ms"}
+{"level":30,"time":1794014387327,"pid":268633,"hostname":"repl","msg":"🔬 Starting post-deploy self-test..."}
+{"level":30,"time":1794014387370,"pid":268633,"hostname":"repl","msg":"🔬 Self-test complete: 5 passed, 0 failed, 0 skipped"}
+{"level":30,"time":1794014387370,"pid":268633,"hostname":"repl","msg":"   Recommendation: healthy"}
+{"level":30,"time":1794014395622,"pid":268633,"hostname":"repl","msg":"✅ Reloaded 0 pending posts"}
+{"level":30,"time":1794014395626,"pid":268633,"hostname":"repl","msg":"🔍 Running startup probes..."}
+{"level":30,"time":1794014395629,"pid":268633,"hostname":"repl","msg":"✅ Database probe ready (attempt 1, 3ms)"}
+{"level":40,"time":1794014395634,"pid":268633,"hostname":"repl","msg":"⚠️ Remote MaxCore probe failed"}
+{"level":30,"time":1794014395635,"pid":268633,"hostname":"repl","msg":"✅ PDIM probe ready (9ms)"}
+{"level":40,"time":1794014395635,"pid":268633,"hostname":"repl","msg":"⚠️ Startup completed in degraded mode (1 probe(s) degraded)"}
+{"level":30,"time":1794014397692,"pid":268633,"hostname":"repl","msg":"[Worker] Processing job feature-event-flush id=1"}
+{"level":30,"time":1794014397709,"pid":268633,"hostname":"repl","msg":"[Worker] Feature events flushed to DB: 0 in 1 batches"}
+{"level":30,"time":1794014398908,"pid":268633,"hostname":"repl","msg":"[Worker] ✅ 1 (feature-event-flush) done"}
+{"level":40,"time":1794014400154,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/2fa/validate"}
+{"level":30,"time":1794014400243,"pid":268633,"hostname":"repl","msg":"[c955bf7b-1e29-464d-a2f7-c21d92a76065] POST /api/auth/2fa/validate - 200 (139ms)"}
+{"level":30,"time":1794014400244,"pid":268633,"hostname":"repl","msg":"1:20:00 AM [express] POST /api/auth/2fa/validate 200 in 98ms"}
+{"level":40,"time":1794014400258,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/2fa/disable"}
+{"level":30,"time":1794014400646,"pid":268633,"hostname":"repl","msg":"[6d2012ad-1395-4d3b-b1e1-259d86bf8000] POST /api/auth/2fa/disable - 403 (398ms)"}
+{"level":30,"time":1794014400648,"pid":268633,"hostname":"repl","msg":"1:20:00 AM [express] POST /api/auth/2fa/disable 403 in 398ms"}
+{"level":30,"time":1794014413035,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] PDIM settled (depth=0) — registering jobs now"}
+{"level":40,"time":1794014413044,"pid":268633,"hostname":"repl","msg":"[BeatMoneyLoop] ADMIN_EMAIL env var is not set — cannot resolve admin user; loop will be disabled"}
+{"level":30,"time":1794014413045,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014413048,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014420855,"pid":268633,"hostname":"repl","msg":"[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor"}
+{"level":30,"time":1794014420856,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ Repeatable jobs registered (BullMQ, Redis-backed, exactly-once per interval)"}
+{"level":30,"time":1794014420857,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014420857,"pid":268633,"hostname":"repl","msg":"✅ [PDIM] Connected via HTTP exec endpoint"}
+{"level":30,"time":1794014425626,"pid":268633,"hostname":"repl","msg":"🔍 Running startup probes..."}
+{"level":30,"time":1794014425631,"pid":268633,"hostname":"repl","msg":"✅ Database probe ready (attempt 1, 5ms)"}
+{"level":30,"time":1794014425636,"pid":268633,"hostname":"repl","msg":"✅ PDIM probe ready (10ms)"}
+{"level":40,"time":1794014425638,"pid":268633,"hostname":"repl","msg":"⚠️ Remote MaxCore probe failed"}
+{"level":40,"time":1794014425638,"pid":268633,"hostname":"repl","msg":"⚠️ Startup completed in degraded mode (1 probe(s) degraded)"}
+{"level":30,"time":1794014426425,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ content-dispatch (id=repeat:content-dispatch:1794014413068)"}
+{"level":30,"time":1794014426426,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ analytics (id=repeat:analytics:1794014413781)"}
+{"level":30,"time":1794014426426,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ metrics-persist (id=repeat:metrics-persist:1794014414524)"}
+{"level":30,"time":1794014426427,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ prune-system-logs (id=repeat:prune-system-logs:1794014415259)"}
+{"level":30,"time":1794014427126,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ analytics done"}
+{"level":30,"time":1794014427809,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ prune-system-logs done"}
+{"level":30,"time":1794014428474,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ metrics-persist done"}
+{"level":30,"time":1794014429156,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ content-dispatch done"}
+{"level":30,"time":1794014429822,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ prune-audit-log (id=repeat:prune-audit-log:1794014416014)"}
+{"level":40,"time":1794014430151,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/2fa/disable"}
+{"level":30,"time":1794014430513,"pid":268633,"hostname":"repl","msg":"[a3d59394-c94b-4103-a4f5-de5368df7c17] POST /api/auth/2fa/disable - 200 (407ms)"}
+{"level":30,"time":1794014430514,"pid":268633,"hostname":"repl","msg":"1:20:30 AM [express] POST /api/auth/2fa/disable 200 in 372ms"}
+{"level":30,"time":1794014430518,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ prune-notifications (id=repeat:prune-notifications:1794014416742)"}
+{"level":30,"time":1794014430580,"pid":268633,"hostname":"repl","msg":"[7d5198bd-54d7-4483-8354-dd27b9f6b575] GET /api/auth/2fa/status - 200 (54ms)"}
+{"level":30,"time":1794014430580,"pid":268633,"hostname":"repl","msg":"1:20:30 AM [express] GET /api/auth/2fa/status 200 in 52ms"}
+{"level":40,"time":1794014430593,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/logout"}
+{"level":30,"time":1794014430648,"pid":268633,"hostname":"repl","msg":"[64f9a333-d6a5-4fac-b00e-b12120c4ac97] POST /api/auth/logout - 200 (65ms)"}
+{"level":30,"time":1794014430649,"pid":268633,"hostname":"repl","msg":"1:20:30 AM [express] POST /api/auth/logout 200 in 65ms"}
+{"level":30,"time":1794014430728,"pid":268633,"hostname":"repl","msg":"[9d342614-1d02-4470-9e8f-7ba8a16303a5] GET /api/csrf-token - 200 (75ms)"}
+{"level":30,"time":1794014430728,"pid":268633,"hostname":"repl","msg":"1:20:30 AM [express] GET /api/csrf-token 200 in 73ms"}
+{"level":30,"time":1794014430785,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014431108,"pid":268633,"hostname":"repl","userId":"4bbb7d1b-254f-4441-aecc-51ab68844af0","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014431116,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014431116,"pid":268633,"hostname":"repl","msg":"Sent notification to user 4bbb7d1b-254f-4441-aecc-51ab68844af0"}
+{"level":30,"time":1794014431116,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user 4bbb7d1b-254f-4441-aecc-51ab68844af0: New Login Detected"}
+{"level":30,"time":1794014431127,"pid":268633,"hostname":"repl","msg":"[5bff8744-f206-4f96-afd7-621555b2f8d3] POST /api/auth/login - 200 (395ms)"}
+{"level":30,"time":1794014431128,"pid":268633,"hostname":"repl","msg":"1:20:31 AM [express] POST /api/auth/login 200 in 395ms"}
+{"level":30,"time":1794014431746,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ prune-upload-dirs (id=repeat:prune-upload-dirs:1794014417936)"}
+{"level":30,"time":1794014431952,"pid":268633,"hostname":"repl","msg":"[6790ad0c-4e1f-4227-b003-da1d063dee21] GET /api/csrf-token - 200 (50ms)"}
+{"level":30,"time":1794014431952,"pid":268633,"hostname":"repl","msg":"1:20:31 AM [express] GET /api/csrf-token 200 in 32ms"}
+{"level":30,"time":1794014432029,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":40,"time":1794014432407,"pid":268633,"hostname":"repl","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1794014432412,"pid":268633,"hostname":"repl","msg":"[ea437047-11b0-477c-a52b-baeace9d7697] POST /api/auth/register - 200 (439ms)"}
+{"level":30,"time":1794014432412,"pid":268633,"hostname":"repl","msg":"1:20:32 AM [express] POST /api/auth/register 200 in 416ms"}
+{"level":30,"time":1794014432796,"pid":268633,"hostname":"repl","msg":"[705335d4-f49a-4ce0-88d1-52f72b82a692] GET /api/csrf-token - 200 (42ms)"}
+{"level":30,"time":1794014432797,"pid":268633,"hostname":"repl","msg":"1:20:32 AM [express] GET /api/csrf-token 200 in 36ms"}
+{"level":30,"time":1794014432812,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ beat-money-loop-tick (id=repeat:beat-money-loop-tick:1794014418681)"}
+{"level":30,"time":1794014432859,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014433185,"pid":268633,"hostname":"repl","userId":"e809afff-750b-4657-ab62-979551ebe983","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014433202,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014433202,"pid":268633,"hostname":"repl","msg":"Sent notification to user e809afff-750b-4657-ab62-979551ebe983"}
+{"level":30,"time":1794014433202,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user e809afff-750b-4657-ab62-979551ebe983: New Login Detected"}
+{"level":30,"time":1794014433221,"pid":268633,"hostname":"repl","msg":"[09888843-d97f-4dbc-801f-da161c6ccfa2] POST /api/auth/login - 200 (421ms)"}
+{"level":30,"time":1794014433222,"pid":268633,"hostname":"repl","msg":"1:20:33 AM [express] POST /api/auth/login 200 in 417ms"}
+{"level":30,"time":1794014433280,"pid":268633,"hostname":"repl","msg":"[7c03635d-8b80-4c5b-b3c7-aadff83226a7] GET /api/csrf-token - 200 (53ms)"}
+{"level":30,"time":1794014433280,"pid":268633,"hostname":"repl","msg":"1:20:33 AM [express] GET /api/csrf-token 200 in 35ms"}
+{"level":30,"time":1794014433337,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":30,"time":1794014433338,"pid":268633,"hostname":"repl","msg":"[PocketDimension] Created storage space for user e809afff-750b-4657-ab62-979551ebe983"}
+{"level":30,"time":1794014433573,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ prune-audit-log done"}
+{"level":40,"time":1794014433702,"pid":268633,"hostname":"repl","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1794014433715,"pid":268633,"hostname":"repl","msg":"[5a0ce7b8-1b12-4d11-a5c7-2794dc88ff75] POST /api/auth/register - 200 (431ms)"}
+{"level":30,"time":1794014433716,"pid":268633,"hostname":"repl","msg":"1:20:33 AM [express] POST /api/auth/register 200 in 410ms"}
+{"level":30,"time":1794014434118,"pid":268633,"hostname":"repl","msg":"[8d3afbcc-b0e5-4bd7-8677-0e0afee2ab78] GET /api/csrf-token - 200 (41ms)"}
+{"level":30,"time":1794014434119,"pid":268633,"hostname":"repl","msg":"1:20:34 AM [express] GET /api/csrf-token 200 in 33ms"}
+{"level":30,"time":1794014434163,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014434499,"pid":268633,"hostname":"repl","userId":"db18d849-e8dd-4143-b9a5-7d4ced982483","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014434517,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014434519,"pid":268633,"hostname":"repl","msg":"Sent notification to user db18d849-e8dd-4143-b9a5-7d4ced982483"}
+{"level":30,"time":1794014434519,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user db18d849-e8dd-4143-b9a5-7d4ced982483: New Login Detected"}
+{"level":30,"time":1794014434534,"pid":268633,"hostname":"repl","msg":"[ca148907-e2d4-47c8-b24c-740c2e5a44e1] POST /api/auth/login - 200 (411ms)"}
+{"level":30,"time":1794014434534,"pid":268633,"hostname":"repl","msg":"1:20:34 AM [express] POST /api/auth/login 200 in 410ms"}
+{"level":30,"time":1794014434614,"pid":268633,"hostname":"repl","msg":"[1df4107f-7278-403e-b2a7-347673076d24] GET /api/csrf-token - 200 (74ms)"}
+{"level":30,"time":1794014434615,"pid":268633,"hostname":"repl","msg":"1:20:34 AM [express] GET /api/csrf-token 200 in 44ms"}
+{"level":30,"time":1794014434675,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":30,"time":1794014434772,"pid":268633,"hostname":"repl","msg":"[PocketDimension] Created storage space for user db18d849-e8dd-4143-b9a5-7d4ced982483"}
+{"level":30,"time":1794014434985,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ prune-notifications done"}
+{"level":40,"time":1794014435050,"pid":268633,"hostname":"repl","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1794014435056,"pid":268633,"hostname":"repl","msg":"[a70ed9c7-56c9-45ac-98ae-b15977cf4a6e] POST /api/auth/register - 200 (437ms)"}
+{"level":30,"time":1794014435057,"pid":268633,"hostname":"repl","msg":"1:20:35 AM [express] POST /api/auth/register 200 in 411ms"}
+{"level":30,"time":1794014435515,"pid":268633,"hostname":"repl","msg":"[703980b2-85c4-4eb0-9f01-02c8483aca83] GET /api/csrf-token - 200 (37ms)"}
+{"level":30,"time":1794014435515,"pid":268633,"hostname":"repl","msg":"1:20:35 AM [express] GET /api/csrf-token 200 in 28ms"}
+{"level":30,"time":1794014435567,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014435843,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ prune-upload-dirs done"}
+{"level":30,"time":1794014435908,"pid":268633,"hostname":"repl","userId":"cd9b3064-8216-4b1f-b646-6eb6879f4af8","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014435918,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014435919,"pid":268633,"hostname":"repl","msg":"Sent notification to user cd9b3064-8216-4b1f-b646-6eb6879f4af8"}
+{"level":30,"time":1794014435919,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user cd9b3064-8216-4b1f-b646-6eb6879f4af8: New Login Detected"}
+{"level":30,"time":1794014435938,"pid":268633,"hostname":"repl","msg":"[f023fbd5-3152-4979-927c-ce453959b8d0] POST /api/auth/login - 200 (419ms)"}
+{"level":30,"time":1794014435939,"pid":268633,"hostname":"repl","msg":"1:20:35 AM [express] POST /api/auth/login 200 in 418ms"}
+{"level":30,"time":1794014436007,"pid":268633,"hostname":"repl","msg":"[80abfd2a-375e-4c04-8f3d-19f59cf7086d] GET /api/csrf-token - 200 (65ms)"}
+{"level":30,"time":1794014436007,"pid":268633,"hostname":"repl","msg":"1:20:36 AM [express] GET /api/csrf-token 200 in 44ms"}
+{"level":30,"time":1794014436071,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":30,"time":1794014436078,"pid":268633,"hostname":"repl","msg":"[PocketDimension] Created storage space for user cd9b3064-8216-4b1f-b646-6eb6879f4af8"}
+{"level":40,"time":1794014436437,"pid":268633,"hostname":"repl","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1794014436444,"pid":268633,"hostname":"repl","msg":"[1b6d6825-a671-44dc-8df3-843cfd0b7596] POST /api/auth/register - 200 (433ms)"}
+{"level":30,"time":1794014436444,"pid":268633,"hostname":"repl","msg":"1:20:36 AM [express] POST /api/auth/register 200 in 407ms"}
+{"level":30,"time":1794014436817,"pid":268633,"hostname":"repl","msg":"[f9e6f0bd-f3d6-4a36-bf80-06ac744cc989] GET /api/csrf-token - 200 (49ms)"}
+{"level":30,"time":1794014436818,"pid":268633,"hostname":"repl","msg":"1:20:36 AM [express] GET /api/csrf-token 200 in 42ms"}
+{"level":30,"time":1794014436860,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014436950,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ beat-money-loop-tick done"}
+{"level":30,"time":1794014437196,"pid":268633,"hostname":"repl","userId":"da5be37f-8d8b-44c1-bc55-b159b85befd4","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014437208,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014437208,"pid":268633,"hostname":"repl","msg":"Sent notification to user da5be37f-8d8b-44c1-bc55-b159b85befd4"}
+{"level":30,"time":1794014437208,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user da5be37f-8d8b-44c1-bc55-b159b85befd4: New Login Detected"}
+{"level":30,"time":1794014437228,"pid":268633,"hostname":"repl","msg":"[d19581e5-53a0-472c-92cd-670abc80d51b] POST /api/auth/login - 200 (408ms)"}
+{"level":30,"time":1794014437229,"pid":268633,"hostname":"repl","msg":"1:20:37 AM [express] POST /api/auth/login 200 in 408ms"}
+{"level":40,"time":1794014437262,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/projects"}
+{"level":30,"time":1794014437329,"pid":268633,"hostname":"repl","msg":"[ff493d65-74d1-47e4-9383-ab14eb4ffd04] POST /api/projects - 200 (94ms)"}
+{"level":30,"time":1794014437329,"pid":268633,"hostname":"repl","msg":"1:20:37 AM [express] POST /api/projects 200 in 75ms"}
+{"level":30,"time":1794014437421,"pid":268633,"hostname":"repl","msg":"[41062c1e-a8ff-487c-ba9c-cb5db949d780] GET /projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834 - 200 (88ms)"}
+{"level":30,"time":1794014437422,"pid":268633,"hostname":"repl","msg":"1:20:37 AM [express] GET /api/studio/projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834 200 in 86ms"}
+{"level":40,"time":1794014437486,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/projects"}
+{"level":30,"time":1794014437542,"pid":268633,"hostname":"repl","msg":"[45d2624e-224c-4ff6-ac26-947168ed6955] POST /api/projects - 200 (81ms)"}
+{"level":30,"time":1794014437543,"pid":268633,"hostname":"repl","msg":"1:20:37 AM [express] POST /api/projects 200 in 63ms"}
+{"level":30,"time":1794014437645,"pid":268633,"hostname":"repl","msg":"[ae8ca4a2-e3e8-438b-a345-5c919348ff37] GET /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 200 (98ms)"}
+{"level":30,"time":1794014437646,"pid":268633,"hostname":"repl","msg":"1:20:37 AM [express] GET /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 200 in 97ms"}
+{"level":30,"time":1794014437765,"pid":268633,"hostname":"repl","msg":"[5461af6c-3efc-467f-a85a-85fc801da151] GET /projects - 200 (76ms)"}
+{"level":30,"time":1794014437766,"pid":268633,"hostname":"repl","msg":"1:20:37 AM [express] GET /api/studio/projects 200 in 76ms"}
+{"level":30,"time":1794014437847,"pid":268633,"hostname":"repl","msg":"[4cf6c732-8d6b-4cbb-bf7f-af3cd9a352fa] GET /projects - 200 (77ms)"}
+{"level":30,"time":1794014437848,"pid":268633,"hostname":"repl","msg":"1:20:37 AM [express] GET /api/studio/projects 200 in 77ms"}
+{"level":30,"time":1794014437931,"pid":268633,"hostname":"repl","msg":"[0c754424-4927-4fb7-8a1b-133156a48166] GET /projects - 200 (79ms)"}
+{"level":30,"time":1794014437932,"pid":268633,"hostname":"repl","msg":"1:20:37 AM [express] GET /api/studio/projects 200 in 56ms"}
+{"level":30,"time":1794014437959,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ payout-drain (id=repeat:payout-drain:1794014419403)"}
+{"level":40,"time":1794014437984,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] payout-drain error: Stripe is not configured"}
+{"level":30,"time":1794014438003,"pid":268633,"hostname":"repl","msg":"[PocketDimension] Created storage space for user da5be37f-8d8b-44c1-bc55-b159b85befd4"}
+{"level":30,"time":1794014438031,"pid":268633,"hostname":"repl","msg":"[7493d5a9-d126-43cb-9fba-b063e0a75d6d] GET /projects - 200 (95ms)"}
+{"level":30,"time":1794014438032,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] GET /api/studio/projects 200 in 95ms"}
+{"level":30,"time":1794014438094,"pid":268633,"hostname":"repl","msg":"[69346675-8f47-4640-a049-d642cde1910f] GET /studio/projects - 403 (57ms)"}
+{"level":30,"time":1794014438095,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] GET /api/studio/projects 403 in 42ms"}
+{"level":30,"time":1794014438161,"pid":268633,"hostname":"repl","msg":"[18cf9165-d83d-42cf-9d7d-cfa95e179a5f] GET /dashboard - 403 (64ms)"}
+{"level":30,"time":1794014438161,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] GET /api/admin/dashboard 403 in 62ms"}
+{"level":30,"time":1794014438239,"pid":268633,"hostname":"repl","msg":"[0ea03985-d223-4f1f-9939-ea6fa2685882] GET /dashboard - 200 (76ms)"}
+{"level":30,"time":1794014438239,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] GET /api/admin/dashboard 200 in 73ms"}
+{"level":30,"time":1794014438294,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/studio/projects, cookie present: false, session exists: true"}
+{"level":30,"time":1794014438299,"pid":268633,"hostname":"repl","msg":"[a400010c-9b7c-4590-86d9-766bb79daebb] GET /projects - 401 (56ms)"}
+{"level":30,"time":1794014438300,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] GET /api/studio/projects 401 in 36ms"}
+{"level":40,"time":1794014438331,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/ai/optimize-content"}
+{"level":40,"time":1794014438429,"pid":268633,"hostname":"repl","msg":"[7edfe979-c358-4489-9632-628c393f042e] POST /api/ai/optimize-content - 400 (126ms)"}
+{"level":30,"time":1794014438430,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] POST /api/ai/optimize-content 400 in 107ms"}
+{"level":40,"time":1794014438441,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/developer/keys/create"}
+{"level":30,"time":1794014438501,"pid":268633,"hostname":"repl","msg":"🔑 Generated API key for user e809afff-750b-4657-ab62-979551ebe983: Admin pro (pro tier, 1000 req/sec)"}
+{"level":30,"time":1794014438506,"pid":268633,"hostname":"repl","msg":"[e2e258f6-174d-4eb5-88ec-214e3e89af55] POST /keys/create - 201 (72ms)"}
+{"level":30,"time":1794014438507,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] POST /api/developer/keys/create 201 in 72ms"}
+{"level":30,"time":1794014438630,"pid":268633,"hostname":"repl","msg":"[d73b29f5-c1cf-4a64-b472-dd1df46535d6] GET /keys - 200 (80ms)"}
+{"level":30,"time":1794014438632,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] GET /api/developer/keys 200 in 79ms"}
+{"level":30,"time":1794014438686,"pid":268633,"hostname":"repl","msg":"[e798656b-bbd9-420c-847c-c109a1b2d232] GET /keys - 200 (52ms)"}
+{"level":30,"time":1794014438686,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] GET /api/developer/keys 200 in 51ms"}
+{"level":40,"time":1794014438698,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/developer/keys/e78b9e7e-8996-4fae-9c4d-b8c5496e1d47"}
+{"level":40,"time":1794014438743,"pid":268633,"hostname":"repl","err":{"type":"Error","message":"API key not found or unauthorized","stack":"[ACCESSOR]"},"msg":"Error revoking API key:"}
+{"level":40,"time":1794014438744,"pid":268633,"hostname":"repl","err":{"type":"Error","message":"API key not found or unauthorized","stack":"[ACCESSOR]"},"msg":"Error revoking API key:"}
+{"level":40,"time":1794014438747,"pid":268633,"hostname":"repl","msg":"[9ae835bb-b3dd-4e61-ad4f-f39200e9bd1c] DELETE /keys/e78b9e7e-8996-4fae-9c4d-b8c5496e1d47 - 404 (58ms)"}
+{"level":30,"time":1794014438748,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] DELETE /api/developer/keys/e78b9e7e-8996-4fae-9c4d-b8c5496e1d47 404 in 59ms"}
+{"level":40,"time":1794014438794,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/developer/keys/e78b9e7e-8996-4fae-9c4d-b8c5496e1d47"}
+{"level":30,"time":1794014438852,"pid":268633,"hostname":"repl","msg":"🔒 Revoked API key e78b9e7e-8996-4fae-9c4d-b8c5496e1d47 for user e809afff-750b-4657-ab62-979551ebe983"}
+{"level":30,"time":1794014438856,"pid":268633,"hostname":"repl","msg":"[aa21b168-68ed-4536-9300-cbf9a67c58ac] DELETE /keys/e78b9e7e-8996-4fae-9c4d-b8c5496e1d47 - 200 (71ms)"}
+{"level":30,"time":1794014438856,"pid":268633,"hostname":"repl","msg":"1:20:38 AM [express] DELETE /api/developer/keys/e78b9e7e-8996-4fae-9c4d-b8c5496e1d47 200 in 70ms"}
+{"level":30,"time":1794014438903,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ advertising-autopilot-tick (id=repeat:advertising-autopilot-tick:1794014420111)"}
+{"level":40,"time":1794014438925,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/developer/keys/create"}
+{"level":30,"time":1794014438994,"pid":268633,"hostname":"repl","msg":"🔑 Generated API key for user e809afff-750b-4657-ab62-979551ebe983: Admin enterprise (enterprise tier, 5000 req/sec)"}
+{"level":30,"time":1794014439002,"pid":268633,"hostname":"repl","msg":"[688a2787-4a44-4a01-ba70-ceb491b8ef75] POST /keys/create - 201 (106ms)"}
+{"level":30,"time":1794014439003,"pid":268633,"hostname":"repl","msg":"1:20:39 AM [express] POST /api/developer/keys/create 201 in 106ms"}
+{"level":30,"time":1794014439135,"pid":268633,"hostname":"repl","msg":"[36b1edf8-13fd-4dd0-b16b-390e9cee6e36] GET /keys - 200 (93ms)"}
+{"level":30,"time":1794014439137,"pid":268633,"hostname":"repl","msg":"1:20:39 AM [express] GET /api/developer/keys 200 in 93ms"}
+{"level":30,"time":1794014439260,"pid":268633,"hostname":"repl","msg":"[fc22287e-8b48-4ad4-abb1-959276cb9b6a] GET /keys - 200 (117ms)"}
+{"level":30,"time":1794014439260,"pid":268633,"hostname":"repl","msg":"1:20:39 AM [express] GET /api/developer/keys 200 in 81ms"}
+{"level":40,"time":1794014439282,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/developer/keys/b1a15f70-065a-4390-adc6-2af035b75621"}
+{"level":40,"time":1794014439319,"pid":268633,"hostname":"repl","err":{"type":"Error","message":"API key not found or unauthorized","stack":"[ACCESSOR]"},"msg":"Error revoking API key:"}
+{"level":40,"time":1794014439319,"pid":268633,"hostname":"repl","err":{"type":"Error","message":"API key not found or unauthorized","stack":"[ACCESSOR]"},"msg":"Error revoking API key:"}
+{"level":40,"time":1794014439323,"pid":268633,"hostname":"repl","msg":"[ab46502b-3430-434f-b600-b6c90c3c2df3] DELETE /keys/b1a15f70-065a-4390-adc6-2af035b75621 - 404 (61ms)"}
+{"level":30,"time":1794014439324,"pid":268633,"hostname":"repl","msg":"1:20:39 AM [express] DELETE /api/developer/keys/b1a15f70-065a-4390-adc6-2af035b75621 404 in 60ms"}
+{"level":40,"time":1794014439393,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/developer/keys/b1a15f70-065a-4390-adc6-2af035b75621"}
+{"level":30,"time":1794014439443,"pid":268633,"hostname":"repl","msg":"🔒 Revoked API key b1a15f70-065a-4390-adc6-2af035b75621 for user e809afff-750b-4657-ab62-979551ebe983"}
+{"level":30,"time":1794014439446,"pid":268633,"hostname":"repl","msg":"[52047d21-5013-44e2-9d17-7d5ab5e0e079] DELETE /keys/b1a15f70-065a-4390-adc6-2af035b75621 - 200 (92ms)"}
+{"level":30,"time":1794014439446,"pid":268633,"hostname":"repl","msg":"1:20:39 AM [express] DELETE /api/developer/keys/b1a15f70-065a-4390-adc6-2af035b75621 200 in 60ms"}
+{"level":40,"time":1794014439514,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/developer/keys/create"}
+{"level":30,"time":1794014439595,"pid":268633,"hostname":"repl","msg":"[84941a50-d9b3-4c3a-b2a4-448743569a9a] POST /keys/create - 403 (113ms)"}
+{"level":30,"time":1794014439597,"pid":268633,"hostname":"repl","msg":"1:20:39 AM [express] POST /api/developer/keys/create 403 in 94ms"}
+{"level":40,"time":1794014439610,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/developer/keys/create"}
+{"level":30,"time":1794014439670,"pid":268633,"hostname":"repl","msg":"[fb96a043-dd34-45cd-bcfe-3452f03bad7d] POST /keys/create - 403 (68ms)"}
+{"level":30,"time":1794014439670,"pid":268633,"hostname":"repl","msg":"1:20:39 AM [express] POST /api/developer/keys/create 403 in 68ms"}
+{"level":40,"time":1794014439758,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/developer/keys/create"}
+{"level":30,"time":1794014439833,"pid":268633,"hostname":"repl","msg":"[f07522a4-9a1e-4f80-9497-246c6bbb151d] POST /keys/create - 403 (132ms)"}
+{"level":30,"time":1794014439834,"pid":268633,"hostname":"repl","msg":"1:20:39 AM [express] POST /api/developer/keys/create 403 in 84ms"}
+{"level":40,"time":1794014439849,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/developer/keys/create"}
+{"level":30,"time":1794014439920,"pid":268633,"hostname":"repl","msg":"[1dbf1d66-8936-434b-86e6-8fe5b554aeba] POST /keys/create - 403 (81ms)"}
+{"level":30,"time":1794014439921,"pid":268633,"hostname":"repl","msg":"1:20:39 AM [express] POST /api/developer/keys/create 403 in 82ms"}
+{"level":40,"time":1794014440000,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/developer/keys/create"}
+{"level":30,"time":1794014440078,"pid":268633,"hostname":"repl","msg":"[391ec4f4-2bd0-4b59-80b0-0fd40a52f1fb] POST /keys/create - 401 (88ms)"}
+{"level":30,"time":1794014440078,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] POST /api/developer/keys/create 401 in 87ms"}
+{"level":40,"time":1794014440122,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/developer/keys/create"}
+{"level":30,"time":1794014440165,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/developer/keys/create, cookie present: true, session exists: true"}
+{"level":30,"time":1794014440171,"pid":268633,"hostname":"repl","msg":"[d5b8c74e-48a4-4e51-bf2d-c26523576c72] POST /keys/create - 401 (55ms)"}
+{"level":30,"time":1794014440173,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] POST /api/developer/keys/create 401 in 55ms"}
+{"level":40,"time":1794014440219,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/developer/keys/create"}
+{"level":30,"time":1794014440275,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/developer/keys/create, cookie present: true, session exists: true"}
+{"level":30,"time":1794014440280,"pid":268633,"hostname":"repl","msg":"[a788f681-4bfe-436e-85b9-2d7242f75e47] POST /keys/create - 401 (67ms)"}
+{"level":30,"time":1794014440281,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] POST /api/developer/keys/create 401 in 67ms"}
+{"level":30,"time":1794014440396,"pid":268633,"hostname":"repl","msg":"[ec02de5c-2ec9-4774-b835-4d1fed93a835] GET /projects - 200 (79ms)"}
+{"level":30,"time":1794014440399,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] GET /api/studio/projects 200 in 79ms"}
+{"level":30,"time":1794014440486,"pid":268633,"hostname":"repl","msg":"[60bbaa0c-c37f-4584-a69b-356daa959117] GET /projects - 403 (48ms)"}
+{"level":30,"time":1794014440488,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] GET /api/studio/projects 403 in 48ms"}
+{"level":30,"time":1794014440600,"pid":268633,"hostname":"repl","msg":"[6952daa8-6c60-4387-a804-2c74eafb6dad] GET /projects - 403 (77ms)"}
+{"level":30,"time":1794014440601,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] GET /api/studio/projects 403 in 77ms"}
+{"level":40,"time":1794014440683,"pid":268633,"hostname":"repl","msg":"[a7fd0798-9999-4636-86c9-9fa6ad612231] GET /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 404 (73ms)"}
+{"level":30,"time":1794014440686,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] GET /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 404 in 56ms"}
+{"level":40,"time":1794014440700,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: PATCH /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac"}
+{"level":40,"time":1794014440755,"pid":268633,"hostname":"repl","msg":"[707b1a88-a7c2-4f62-99bd-9894a8923a27] PATCH /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 404 (64ms)"}
+{"level":30,"time":1794014440756,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] PATCH /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 404 in 64ms"}
+{"level":40,"time":1794014440766,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac"}
+{"level":40,"time":1794014440839,"pid":268633,"hostname":"repl","msg":"[d3c82028-bad5-4463-84c4-6fa5fe747d25] DELETE /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 404 (81ms)"}
+{"level":30,"time":1794014440839,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] DELETE /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 404 in 80ms"}
+{"level":40,"time":1794014440986,"pid":268633,"hostname":"repl","msg":"[b301c5d1-ba9a-4641-b629-c8b1db141e4d] GET /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 404 (116ms)"}
+{"level":30,"time":1794014440987,"pid":268633,"hostname":"repl","msg":"1:20:40 AM [express] GET /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 404 in 79ms"}
+{"level":40,"time":1794014440999,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: PATCH /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac"}
+{"level":40,"time":1794014441042,"pid":268633,"hostname":"repl","msg":"[08001039-da7c-4212-ad41-eeb99225001f] PATCH /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 404 (52ms)"}
+{"level":30,"time":1794014441043,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] PATCH /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 404 in 51ms"}
+{"level":40,"time":1794014441060,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac"}
+{"level":40,"time":1794014441118,"pid":268633,"hostname":"repl","msg":"[8927074d-f685-47cc-b767-fb2cd427e0fe] DELETE /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 404 (66ms)"}
+{"level":30,"time":1794014441119,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] DELETE /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 404 in 66ms"}
+{"level":40,"time":1794014441222,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ❌ payout-drain failed: Stripe is not configured"}
+{"level":40,"time":1794014441299,"pid":268633,"hostname":"repl","msg":"[3d511f1d-49d6-4323-ae2f-eb4dde000b96] GET /projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834 - 404 (147ms)"}
+{"level":30,"time":1794014441300,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] GET /api/studio/projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834 404 in 110ms"}
+{"level":40,"time":1794014441311,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: PATCH /api/studio/projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834"}
+{"level":40,"time":1794014441357,"pid":268633,"hostname":"repl","msg":"[c0dc55ce-1fad-4f6c-8f0f-62dc3a2f6a0c] PATCH /projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834 - 404 (55ms)"}
+{"level":30,"time":1794014441358,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] PATCH /api/studio/projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834 404 in 55ms"}
+{"level":40,"time":1794014441372,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: DELETE /api/studio/projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834"}
+{"level":40,"time":1794014441440,"pid":268633,"hostname":"repl","msg":"[b83b75da-0bff-491f-9468-cfe249da52c3] DELETE /projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834 - 404 (79ms)"}
+{"level":30,"time":1794014441441,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] DELETE /api/studio/projects/83cce6c6-0d6a-43c7-b3b7-9349cae5a834 404 in 78ms"}
+{"level":40,"time":1794014441484,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: PATCH /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac"}
+{"level":40,"time":1794014441490,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: PATCH /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac"}
+{"level":30,"time":1794014441613,"pid":268633,"hostname":"repl","msg":"[54df427c-f72c-4c94-abc5-604bd0dcde39] PATCH /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 200 (140ms)"}
+{"level":30,"time":1794014441614,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] PATCH /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 200 in 141ms"}
+{"level":40,"time":1794014441616,"pid":268633,"hostname":"repl","msg":"[86a592ce-3855-419b-860c-fddbc72f9843] PATCH /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 409 (141ms)"}
+{"level":30,"time":1794014441617,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] PATCH /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 409 in 141ms"}
+{"level":30,"time":1794014441726,"pid":268633,"hostname":"repl","msg":"[9130f24f-c360-4171-9102-4bcc6ee52750] GET /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 200 (106ms)"}
+{"level":30,"time":1794014441727,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] GET /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 200 in 103ms"}
+{"level":40,"time":1794014441786,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/logout"}
+{"level":30,"time":1794014441838,"pid":268633,"hostname":"repl","msg":"[ffaa4820-0c4c-4df5-a08b-a7d1b056d2a4] POST /api/auth/logout - 200 (104ms)"}
+{"level":30,"time":1794014441839,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] POST /api/auth/logout 200 in 61ms"}
+{"level":30,"time":1794014441894,"pid":268633,"hostname":"repl","msg":"[d51b249a-b2bf-406b-863d-f392fc69ae25] GET /api/csrf-token - 200 (53ms)"}
+{"level":30,"time":1794014441894,"pid":268633,"hostname":"repl","msg":"1:20:41 AM [express] GET /api/csrf-token 200 in 52ms"}
+{"level":30,"time":1794014441942,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014442096,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ✅ advertising-autopilot-tick done"}
+{"level":30,"time":1794014442267,"pid":268633,"hostname":"repl","userId":"db18d849-e8dd-4143-b9a5-7d4ced982483","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014442273,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014442274,"pid":268633,"hostname":"repl","msg":"Sent notification to user db18d849-e8dd-4143-b9a5-7d4ced982483"}
+{"level":30,"time":1794014442274,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user db18d849-e8dd-4143-b9a5-7d4ced982483: New Login Detected"}
+{"level":30,"time":1794014442288,"pid":268633,"hostname":"repl","msg":"[240b982e-d81d-4eb7-bcdb-3976e4768110] POST /api/auth/login - 200 (391ms)"}
+{"level":30,"time":1794014442289,"pid":268633,"hostname":"repl","msg":"1:20:42 AM [express] POST /api/auth/login 200 in 390ms"}
+{"level":30,"time":1794014442361,"pid":268633,"hostname":"repl","msg":"[c470adbb-3f13-45af-94d3-e621b8c098c1] GET /projects/dcade846-5233-4054-8d57-b70a5d77c9ac - 200 (68ms)"}
+{"level":30,"time":1794014442362,"pid":268633,"hostname":"repl","msg":"1:20:42 AM [express] GET /api/studio/projects/dcade846-5233-4054-8d57-b70a5d77c9ac 200 in 52ms"}
+{"level":30,"time":1794014442461,"pid":268633,"hostname":"repl","msg":"[bc81d475-cffa-4ad0-8426-6983153248a4] GET /dashboard - 401 (71ms)"}
+{"level":30,"time":1794014442462,"pid":268633,"hostname":"repl","msg":"1:20:42 AM [express] GET /api/admin/dashboard 401 in 57ms"}
+{"level":30,"time":1794014443116,"pid":268633,"hostname":"repl","msg":"[324cfeb4-2687-4829-8589-154045d44aef] GET /api/csrf-token - 200 (42ms)"}
+{"level":30,"time":1794014443116,"pid":268633,"hostname":"repl","msg":"1:20:43 AM [express] GET /api/csrf-token 200 in 28ms"}
+{"level":30,"time":1794014443179,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":40,"time":1794014443559,"pid":268633,"hostname":"repl","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1794014443571,"pid":268633,"hostname":"repl","msg":"[21f4d424-52e4-4037-a5e8-b81e87a9a559] POST /api/auth/register - 200 (435ms)"}
+{"level":30,"time":1794014443572,"pid":268633,"hostname":"repl","msg":"1:20:43 AM [express] POST /api/auth/register 200 in 421ms"}
+{"level":40,"time":1794014443984,"pid":268633,"hostname":"repl","msg":"[dca6b5f3-5ee0-45d0-98af-c230c3d24abb] POST /api/auth/register - 400 (406ms)"}
+{"level":30,"time":1794014443986,"pid":268633,"hostname":"repl","msg":"1:20:43 AM [express] POST /api/auth/register 400 in 408ms"}
+{"level":30,"time":1794014444399,"pid":268633,"hostname":"repl","msg":"[PocketDimension] Created storage space for user b218b009-b6dd-4470-9144-e53634971ceb"}
+{"level":30,"time":1794014444402,"pid":268633,"hostname":"repl","userId":"b218b009-b6dd-4470-9144-e53634971ceb","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014444409,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014444410,"pid":268633,"hostname":"repl","msg":"Sent notification to user b218b009-b6dd-4470-9144-e53634971ceb"}
+{"level":30,"time":1794014444410,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user b218b009-b6dd-4470-9144-e53634971ceb: New Login Detected"}
+{"level":30,"time":1794014444422,"pid":268633,"hostname":"repl","msg":"[754576e3-6b65-4c99-a99c-c9b7481e4ca7] POST /api/auth/login - 200 (428ms)"}
+{"level":30,"time":1794014444423,"pid":268633,"hostname":"repl","msg":"1:20:44 AM [express] POST /api/auth/login 200 in 427ms"}
+{"level":30,"time":1794014444501,"pid":268633,"hostname":"repl","hasSession":true,"hasUserId":true,"sessionPrefix":"f870bd68","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1794014444506,"pid":268633,"hostname":"repl","msg":"[eb290aef-069e-4c40-8488-b96bac74b047] GET /api/auth/me - 200 (74ms)"}
+{"level":30,"time":1794014444507,"pid":268633,"hostname":"repl","msg":"1:20:44 AM [express] GET /api/auth/me 200 in 42ms"}
+{"level":30,"time":1794014444553,"pid":268633,"hostname":"repl","msg":"[5ebc84f5-eae0-439e-ad9e-15051ae124bd] GET /api/auth/onboarding-status - 200 (42ms)"}
+{"level":30,"time":1794014444554,"pid":268633,"hostname":"repl","msg":"1:20:44 AM [express] GET /api/auth/onboarding-status 200 in 42ms"}
+{"level":30,"time":1794014444612,"pid":268633,"hostname":"repl","msg":"[6945f381-b32b-442a-ac50-8dbbe1ce308a] GET /api/auth/profile - 200 (55ms)"}
+{"level":30,"time":1794014444613,"pid":268633,"hostname":"repl","msg":"1:20:44 AM [express] GET /api/auth/profile 200 in 53ms"}
+{"level":30,"time":1794014444670,"pid":268633,"hostname":"repl","msg":"[8927520e-f38a-4f57-b792-c10de47b7449] GET /sessions - 200 (54ms)"}
+{"level":30,"time":1794014444671,"pid":268633,"hostname":"repl","msg":"1:20:44 AM [express] GET /api/auth/sessions 200 in 53ms"}
+{"level":30,"time":1794014444725,"pid":268633,"hostname":"repl","msg":"[9b7a68b7-8bbb-41b8-8709-9a7d5d949abd] GET /api/auth/login-history - 200 (50ms)"}
+{"level":30,"time":1794014444726,"pid":268633,"hostname":"repl","msg":"1:20:44 AM [express] GET /api/auth/login-history 200 in 50ms"}
+{"level":40,"time":1794014444741,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/auth/logout"}
+{"level":30,"time":1794014444792,"pid":268633,"hostname":"repl","msg":"[3db3a0e1-e3fd-4b19-89cb-03c71896f85a] POST /api/auth/logout - 200 (61ms)"}
+{"level":30,"time":1794014444792,"pid":268633,"hostname":"repl","msg":"1:20:44 AM [express] POST /api/auth/logout 200 in 60ms"}
+{"level":30,"time":1794014444851,"pid":268633,"hostname":"repl","hasSession":true,"hasUserId":false,"sessionPrefix":"daa2aeae","msg":"[Auth/me] Auth check"}
+{"level":30,"time":1794014444851,"pid":268633,"hostname":"repl","msg":"[Auth/me] No sessionId cookie present in request"}
+{"level":30,"time":1794014444852,"pid":268633,"hostname":"repl","msg":"[9bb3e1c5-8f60-46d4-a836-089858fdd42d] GET /api/auth/me - 200 (50ms)"}
+{"level":30,"time":1794014444852,"pid":268633,"hostname":"repl","msg":"1:20:44 AM [express] GET /api/auth/me 200 in 49ms"}
+{"level":30,"time":1794014444898,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445233,"pid":268633,"hostname":"repl","msg":"[26daf550-bb5a-4c59-9392-4490efb98ce7] POST /api/auth/login - 401 (376ms)"}
+{"level":30,"time":1794014445233,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] POST /api/auth/login 401 in 375ms"}
+{"level":30,"time":1794014445269,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/social/callback/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445280,"pid":268633,"hostname":"repl","msg":"[a93303c8-a79e-4fa1-829e-2de31f8904ec] GET /callback/youtube - 302 (43ms)"}
+{"level":30,"time":1794014445281,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/social/callback/youtube 302 in 42ms"}
+{"level":30,"time":1794014445331,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/social/callback/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445340,"pid":268633,"hostname":"repl","msg":"[b3f7e2d7-749e-49f2-8586-14e1c0ab1547] GET /callback/youtube - 302 (53ms)"}
+{"level":30,"time":1794014445341,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/social/callback/youtube 302 in 50ms"}
+{"level":30,"time":1794014445421,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/social/callback/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445427,"pid":268633,"hostname":"repl","msg":"[aeda2718-d1e4-4606-9dc2-c0f3fa0210da] GET /callback/youtube - 302 (79ms)"}
+{"level":30,"time":1794014445427,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/social/callback/youtube 302 in 41ms"}
+{"level":30,"time":1794014445478,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/social/callback/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445482,"pid":268633,"hostname":"repl","msg":"[d3a80188-d971-4280-ab23-2e4b209e90ef] GET /callback/youtube - 302 (51ms)"}
+{"level":30,"time":1794014445483,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/social/callback/youtube 302 in 48ms"}
+{"level":40,"time":1794014445487,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/social/connect/youtube"}
+{"level":40,"time":1794014445487,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"CSRF validation failed: Missing CSRF cookie - POST /api/social/connect/youtube"}
+{"level":30,"time":1794014445488,"pid":268633,"hostname":"repl","msg":"[10aa7483-c357-4eff-8b80-c48b26df0087] POST /api/social/connect/youtube - 403 (2ms)"}
+{"level":30,"time":1794014445488,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] POST /api/social/connect/youtube 403 in 2ms"}
+{"level":40,"time":1794014445498,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/social/connect/youtube"}
+{"level":30,"time":1794014445530,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/social/connect/youtube, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445537,"pid":268633,"hostname":"repl","msg":"[8befaa1b-3d75-4a22-abf1-dbe6c2fc9acc] POST /connect/youtube - 401 (41ms)"}
+{"level":30,"time":1794014445538,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] POST /api/social/connect/youtube 401 in 41ms"}
+{"level":30,"time":1794014445601,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/social/platforms, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445605,"pid":268633,"hostname":"repl","msg":"[6d5485db-7181-4b7d-8f92-6374ad0636bb] GET /platforms - 401 (57ms)"}
+{"level":30,"time":1794014445606,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/social/platforms 401 in 55ms"}
+{"level":30,"time":1794014445656,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/social/connections, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445660,"pid":268633,"hostname":"repl","msg":"[e1c08aa2-455b-4362-856d-62117c2c8926] GET /connections - 401 (51ms)"}
+{"level":30,"time":1794014445660,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/social/connections 401 in 50ms"}
+{"level":30,"time":1794014445711,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/google, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445712,"pid":268633,"hostname":"repl","msg":"[3a55f4e2-0ec7-493c-93a4-2e5975045c3c] GET /api/auth/google - 302 (48ms)"}
+{"level":30,"time":1794014445713,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/auth/google 302 in 29ms"}
+{"level":30,"time":1794014445749,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/google/callback, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445750,"pid":268633,"hostname":"repl","msg":"[c1645122-8747-46e4-aa24-f509077c7469] GET /api/auth/google/callback - 302 (35ms)"}
+{"level":30,"time":1794014445751,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/auth/google/callback 302 in 33ms"}
+{"level":30,"time":1794014445794,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/google/callback, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445795,"pid":268633,"hostname":"repl","msg":"[26686946-7c76-406d-8ac1-68cf04816a72] GET /api/auth/google/callback - 302 (42ms)"}
+{"level":30,"time":1794014445796,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/auth/google/callback 302 in 40ms"}
+{"level":30,"time":1794014445837,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/oauth/initiate, cookie present: false, session exists: true"}
+{"level":30,"time":1794014445840,"pid":268633,"hostname":"repl","msg":"[26c09ae5-6fab-4f60-984e-8c0855e3643b] GET /api/auth/oauth/initiate - 401 (39ms)"}
+{"level":30,"time":1794014445841,"pid":268633,"hostname":"repl","msg":"1:20:45 AM [express] GET /api/auth/oauth/initiate 401 in 36ms"}
+{"level":30,"time":1794014445890,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/login, cookie present: false, session exists: true"}
+{"level":30,"time":1794014446221,"pid":268633,"hostname":"repl","userId":"b218b009-b6dd-4470-9144-e53634971ceb","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014446227,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014446227,"pid":268633,"hostname":"repl","msg":"Sent notification to user b218b009-b6dd-4470-9144-e53634971ceb"}
+{"level":30,"time":1794014446228,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user b218b009-b6dd-4470-9144-e53634971ceb: New Login Detected"}
+{"level":30,"time":1794014446240,"pid":268633,"hostname":"repl","msg":"[63f1bded-2a88-41b5-950e-28a45d789c48] POST /api/auth/login - 200 (396ms)"}
+{"level":30,"time":1794014446240,"pid":268633,"hostname":"repl","msg":"1:20:46 AM [express] POST /api/auth/login 200 in 379ms"}
+{"level":30,"time":1794014446286,"pid":268633,"hostname":"repl","msg":"[a4bba779-c7f4-4eaf-ac70-1444681f318f] GET /api/auth/oauth/initiate - 307 (42ms)"}
+{"level":30,"time":1794014446286,"pid":268633,"hostname":"repl","msg":"1:20:46 AM [express] GET /api/auth/oauth/initiate 307 in 39ms"}
+{"level":30,"time":1794014446319,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/oauth/callback, cookie present: false, session exists: true"}
+{"level":30,"time":1794014446323,"pid":268633,"hostname":"repl","msg":"[6227bfc4-43fd-45b2-afde-f78866f7ae40] GET /api/auth/oauth/callback - 302 (35ms)"}
+{"level":30,"time":1794014446324,"pid":268633,"hostname":"repl","msg":"1:20:46 AM [express] GET /api/auth/oauth/callback 302 in 33ms"}
+{"level":30,"time":1794014446364,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/oauth/callback, cookie present: false, session exists: true"}
+{"level":30,"time":1794014446367,"pid":268633,"hostname":"repl","msg":"[2fa694b2-1ea5-4371-9d63-a42e2bc07507] GET /api/auth/oauth/callback - 302 (41ms)"}
+{"level":30,"time":1794014446368,"pid":268633,"hostname":"repl","msg":"1:20:46 AM [express] GET /api/auth/oauth/callback 302 in 35ms"}
+{"level":30,"time":1794014446402,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/google, cookie present: false, session exists: true"}
+{"level":30,"time":1794014446404,"pid":268633,"hostname":"repl","msg":"[b0075079-9fe6-4f4e-9e5c-e9dd421399a2] GET /api/auth/google - 302 (34ms)"}
+{"level":30,"time":1794014446404,"pid":268633,"hostname":"repl","msg":"1:20:46 AM [express] GET /api/auth/google 302 in 33ms"}
+{"level":30,"time":1794014447052,"pid":268633,"hostname":"repl","msg":"[79ff2c35-0f42-485f-a3f6-e9655c1fae4c] GET /api/csrf-token - 200 (39ms)"}
+{"level":30,"time":1794014447053,"pid":268633,"hostname":"repl","msg":"1:20:47 AM [express] GET /api/csrf-token 200 in 25ms"}
+{"level":30,"time":1794014447107,"pid":268633,"hostname":"repl","msg":"[Session] No userId in session for /api/auth/register, cookie present: false, session exists: true"}
+{"level":40,"time":1794014447458,"pid":268633,"hostname":"repl","msg":"⚠️  SendGrid not initialized, skipping welcome email"}
+{"level":30,"time":1794014447462,"pid":268633,"hostname":"repl","msg":"[c484fd6b-8ce8-4388-9534-5af9c660bd0a] POST /api/auth/register - 200 (393ms)"}
+{"level":30,"time":1794014447463,"pid":268633,"hostname":"repl","msg":"1:20:47 AM [express] POST /api/auth/register 200 in 381ms"}
+{"level":30,"time":1794014448158,"pid":268633,"hostname":"repl","userId":"5615a08b-91af-459d-90bd-6a030aff6902","msg":"[Login] SUCCESS for userId"}
+{"level":40,"time":1794014448170,"pid":268633,"hostname":"repl","msg":"Resend not initialized, skipping email"}
+{"level":30,"time":1794014448171,"pid":268633,"hostname":"repl","msg":"Sent notification to user 5615a08b-91af-459d-90bd-6a030aff6902"}
+{"level":30,"time":1794014448171,"pid":268633,"hostname":"repl","msg":"✅ Notification sent to user 5615a08b-91af-459d-90bd-6a030aff6902: New Login Detected"}
+{"level":30,"time":1794014448186,"pid":268633,"hostname":"repl","msg":"[e338aac0-b6a3-4903-92ac-4ae21621aa31] POST /api/auth/login - 200 (713ms)"}
+{"level":30,"time":1794014448186,"pid":268633,"hostname":"repl","msg":"1:20:48 AM [express] POST /api/auth/login 200 in 712ms"}
+{"level":40,"time":1794014448274,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/content-analysis/assets"}
+{"level":30,"time":1794014448316,"pid":268633,"hostname":"repl","msg":"[98647c62-cc83-4a70-9615-b6c6dce7eb9a] POST /assets - 403 (78ms)"}
+{"level":30,"time":1794014448317,"pid":268633,"hostname":"repl","msg":"1:20:48 AM [express] POST /api/content-analysis/assets 403 in 61ms"}
+{"level":40,"time":1794014448369,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/content-analysis/assets"}
+{"level":30,"time":1794014448488,"pid":268633,"hostname":"repl","msg":"[aa346707-23a0-470f-ae71-4038b3636e16] POST /assets - 403 (132ms)"}
+{"level":30,"time":1794014448488,"pid":268633,"hostname":"repl","msg":"1:20:48 AM [express] POST /api/content-analysis/assets 403 in 131ms"}
+{"level":40,"time":1794014448527,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/content-analysis/assets"}
+{"level":30,"time":1794014448605,"pid":268633,"hostname":"repl","msg":"[a4bf391b-34d8-49be-9387-5c28635ed59a] POST /assets - 403 (86ms)"}
+{"level":30,"time":1794014448605,"pid":268633,"hostname":"repl","msg":"1:20:48 AM [express] POST /api/content-analysis/assets 403 in 85ms"}
+{"level":40,"time":1794014448649,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/content-analysis/assets"}
+{"level":40,"time":1794014448731,"pid":268633,"hostname":"repl","msg":"[fc33a824-f83b-4ee4-95c3-8bd23660eb92] POST /assets - 400 (90ms)"}
+{"level":30,"time":1794014448732,"pid":268633,"hostname":"repl","msg":"1:20:48 AM [express] POST /api/content-analysis/assets 400 in 91ms"}
+{"level":40,"time":1794014448781,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/content-analysis/assets"}
+{"level":40,"time":1794014448858,"pid":268633,"hostname":"repl","msg":"[75dd2eae-16ea-4132-b1e0-9f2acfd92d89] POST /assets - 400 (91ms)"}
+{"level":30,"time":1794014448859,"pid":268633,"hostname":"repl","msg":"1:20:48 AM [express] POST /api/content-analysis/assets 400 in 92ms"}
+{"level":40,"time":1794014448900,"pid":268633,"hostname":"repl","ip":"[REDACTED]","userAgent":"node","msg":"Mutation without Origin: POST /api/content-analysis/assets"}
+{"level":40,"time":1794014448975,"pid":268633,"hostname":"repl","msg":"[cf63cc07-a693-4af4-b221-2f19cb83ed0f] POST /assets - 400 (84ms)"}
+{"level":30,"time":1794014448976,"pid":268633,"hostname":"repl","msg":"1:20:48 AM [express] POST /api/content-analysis/assets 400 in 84ms"}
+{"level":30,"time":1794014449333,"pid":268633,"hostname":"repl","now":"2026-11-07T01:20:49.333Z","msg":"[DomainLifecycle] starting lifecycle checks"}
+{"level":30,"time":1794014449350,"pid":268633,"hostname":"repl","msg":"[DomainLifecycle] lifecycle checks complete"}
+{"level":30,"time":1794014449401,"pid":268633,"hostname":"repl","msg":"[PocketDimension] Created storage space for user 5615a08b-91af-459d-90bd-6a030aff6902"}
+{"level":30,"time":1794014449490,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] ▶ payout-drain (id=repeat:payout-drain:1794014419403)"}
+{"level":40,"time":1794014449512,"pid":268633,"hostname":"repl","msg":"[AutonomousScheduler] payout-drain error: Stripe is not configured"}
+{"level":30,"time":1794014449854,"pid":268633,"hostname":"repl","msg":"[Shutdown] Received SIGTERM, starting graceful shutdown..."}
+Error [ConnectionError]: [PDIM] Redis client disconnected
+    at node:internal/deps/undici/undici:15456:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async run (/home/runner/workspace/server/lib/pdimClient.ts:1096:21)
+Error [ConnectionError]: [PDIM] Redis client disconnected
+    at node:internal/deps/undici/undici:15456:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async run (/home/runner/workspace/server/lib/pdimClient.ts:1096:21)
+Error [ConnectionError]: [PDIM] Redis client disconnected
+    at node:internal/deps/undici/undici:15456:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async run (/home/runner/workspace/server/lib/pdimClient.ts:1096:21)
+Error [ConnectionError]: [PDIM] Redis client disconnected
+    at node:internal/deps/undici/undici:15456:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async run (/home/runner/workspace/server/lib/pdimClient.ts:1096:21)
+{"level":30,"time":1794014449855,"pid":268633,"hostname":"repl","msg":"Shutting down auto-posting service..."}
+{"level":30,"time":1794014449856,"pid":268633,"hostname":"repl","msg":"[Shutdown] HTTP server closed"}
+{"level":40,"time":1794014449858,"pid":268633,"hostname":"repl","err":{"type":"ConnectionError","message":"[PDIM] Redis client disconnected","stack":"[ACCESSOR]","name":"ConnectionError"},"msg":"Auto-post BullMQ worker error:"}
+{"level":30,"time":1794014449858,"pid":268633,"hostname":"repl","msg":"🛑 Database backup schedule stopped and active runs drained"}
+{"level":30,"time":1794014449859,"pid":268633,"hostname":"repl","msg":"✅ Auto-posting service shut down gracefully"}
+{"level":30,"time":1794014449860,"pid":268633,"hostname":"repl","msg":"\n🛑 Received shutdownWorkers, shutting down workers..."}
+{"level":40,"time":1794014450609,"pid":268633,"hostname":"repl","msg":"[LuaExecutor] redis.call(ZREMRANGEBYRANK) → PDIM HTTP 400 (script ZREMRANGEBYRANK): {\"error\":\"ERR unknown command 'ZREMRANGEBYRANK'\"}"}
+{"level":30,"time":1794014450613,"pid":268633,"hostname":"repl","msg":"✅ All BullMQ workers closed (audio, csv, analytics, email, autonomous)"}
+{"level":30,"time":1794014450613,"pid":268633,"hostname":"repl","msg":"[Shutdown] BullMQ workers drained"}
+{"level":30,"time":1794014450614,"pid":268633,"hostname":"repl","msg":"[Shutdown] Autopilot coordinator persists flushed"}
+{"level":30,"time":1794014450615,"pid":268633,"hostname":"repl","msg":"[Shutdown] Local MaxCore subsystem stopped"}
+{"level":30,"time":1794014450615,"pid":268633,"hostname":"repl","msg":"[Shutdown] Local dns-node subsystem stopped"}
+{"level":30,"time":1794014450616,"pid":268633,"hostname":"repl","msg":"[DNS] Nameserver stopped."}
+{"level":30,"time":1794014450617,"pid":268633,"hostname":"repl","msg":"[Shutdown] PlatformAutoFixer stopped"}
+{"level":30,"time":1794014450618,"pid":268633,"hostname":"repl","msg":"[Shutdown] Database pool closed"}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "scripts/testing/run-node-suites.py",
+    "--file",
+    "tests/layout-navigation-accessibility-browser.test.mjs",
+    "--output",
+    "/workspace/maxbooster7.5/reports/accessibility-audit/2026-10-28-sealed-startup/master-nested-before"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T12:08:38.171172+00:00",
+  "durationSeconds": 10.804,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "reports/accessibility-audit/2026-10-28-sealed-startup/master-nested-before.txt",
+  "logSha256": "8fb512a9c7f830a259a20ea590fe6295a5168fbb6b3a85241f5affe678450faf"
+}

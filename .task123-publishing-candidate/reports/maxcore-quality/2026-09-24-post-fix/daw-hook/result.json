@@ -1,0 +1,171 @@
+{
+  "id": "daw-hook",
+  "case": {
+    "id": "daw-hook",
+    "handler": "platform_daw_generate",
+    "request_class": "PlatformDAWRequest",
+    "kind": "text",
+    "body": {
+      "user_id": "quality-eval-fictional",
+      "mode": "hook",
+      "genre": "hip-hop",
+      "mood": "calm",
+      "context": "Two memorable lines about lanterns reflected in a harbor"
+    }
+  },
+  "fixture_sha256": "155c31cfeaf2b38561063861cdb55e9129fb95532894d811d96ece7ca5083923",
+  "before": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "status": "error",
+  "scope": "in-process real handler, not HTTP/auth",
+  "calls": {
+    "ai_model/generation/orchestrator.py:merge_awareness": 1,
+    "ai_model/generation/orchestrator.py:_as_text": 5,
+    "ai_model/request_intelligence.py:<module>": 1,
+    "ai_model/request_intelligence.py:GenerationBrief": 1,
+    "ai_model/generation/orchestrator.py:<genexpr>": 4,
+    "ai_model/generation/orchestrator.py:_safe_envelope_text": 3,
+    "ai_model/generation/orchestrator.py:_coerce_aw": 1,
+    "ai_model/quality_awareness.py:<module>": 1,
+    "ai_model/quality_awareness.py:platform_awareness_string": 1,
+    "ai_model/quality_awareness.py:self_sufficiency": 2,
+    "ai_model/quality_awareness.py:_own_corpus_size": 2,
+    "ai_model/quality_awareness.py:_store": 2,
+    "ai_model/quality_awareness.py:_modality_retire_threshold": 2,
+    "ai_model/quality_awareness.py:retire_threshold": 2,
+    "ai_model/quality_awareness.py:get_doc": 1,
+    "ai_model/quality_awareness.py:_doc_age_seconds": 1,
+    "ai_model/quality_awareness.py:_max_age_seconds": 1,
+    "ai_model/agents/script_agent.py:run": 1,
+    "ai_model/agents/script_agent.py:_format_awareness_prefix": 1,
+    "ai_model/agents/script_agent.py:_control_payloads": 1,
+    "ai_model/agents/script_agent.py:_control_values": 3,
+    "ai_model/gpu/pocket_pool.py:spawn_sync": 2,
+    "ai_model/gpu/pocket_pool.py:__init__": 1,
+    "ai_model/gpu/sizing.py:hyper_gpu_sizing": 1,
+    "ai_model/gpu/hyper_backend.py:__init__": 1,
+    "ai_model/gpu/hyper_core.py:__init__": 3,
+    "ai_model/gpu/digital_gpu.py:__init__": 2,
+    "ai_model/gpu/native/kernels.py:get_native_kernels": 1,
+    "ai_model/gpu/pocket_pool.py:_register_birth": 1,
+    "ai_model/gpu/pocket_pool.py:begin_work": 1,
+    "ai_model/gpu/pocket_pool.py:_register_death": 1,
+    "ai_model/gpu/pocket_pool.py:die": 1,
+    "ai_model/gpu/hyper_backend.py:flush_vram": 1,
+    "ai_model/gpu/hyper_core.py:flush_vram": 1,
+    "ai_model/gpu/hyper_core.py:flush": 1
+  },
+  "exceptions": [
+    {
+      "file": "ai_model/gpu/pocket_pool.py",
+      "function": "spawn_sync",
+      "error": "ValueError: Prompt loses over 40% of its tokens to checkpoint <UNK>"
+    }
+  ],
+  "agent_outputs": [],
+  "awareness": [
+    {
+      "function": "get_doc",
+      "nonempty": true
+    }
+  ],
+  "files": [],
+  "runner_sha256": "7ac76463d05f22bffe337775bcf270ccd73434701a7add75cd15afe80b078d8c",
+  "server_sha256": "de5cc8ce351f65939ec12ceba4427c49b6ba324ba8622aba8ca935991a591e92",
+  "job_storage": "evaluation-local job metadata; not PDIM/client durability",
+  "connection": {
+    "backend": "HyperGPUBackend",
+    "model": "HyperCreativeTransformerLM",
+    "before": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 2.1,
+      "silicon": null
+    },
+    "all_modules_attached": true,
+    "after": {
+      "engine": "HyperGPU",
+      "lanes": 512,
+      "tensor_cores": 8,
+      "precision": "MIXED",
+      "tile_shape": "128x128x128",
+      "total_ops": 0,
+      "total_tensor_core_tflops": 0.0,
+      "total_compute_ms": 0.0,
+      "vram": {
+        "capacity_mb": "unlimited",
+        "used_mb": 0.0,
+        "peak_mb": 0.0,
+        "handles": 0
+      },
+      "memory_pool": {
+        "pool_size_mb": 512.0,
+        "current_mb": 0.0,
+        "peak_mb": 0.0,
+        "active_allocations": 0,
+        "total_allocs": 0,
+        "reuse_count": 0
+      },
+      "uptime_s": 2.8,
+      "silicon": null
+    }
+  },
+  "request": {
+    "user_id": "quality-eval-fictional",
+    "mode": "hook",
+    "genre": "hip-hop",
+    "mood": "calm",
+    "context": "Two memorable lines about lanterns reflected in a harbor",
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims."
+  },
+  "validated_request": {
+    "awareness": "Fictional evaluation release: Paper Lantern Harbor is a mellow instrumental. No awards, chart rankings or stream totals are known. Invite listening without inventing claims.",
+    "description": "",
+    "prompt_url": "",
+    "instruction": null,
+    "extra_context": null,
+    "content_themes": null,
+    "intent": null,
+    "direction": null,
+    "context": "Two memorable lines about lanterns reflected in a harbor",
+    "user_id": "quality-eval-fictional",
+    "mode": "hook",
+    "genre": "hip-hop",
+    "mood": "calm",
+    "bpm": null,
+    "key": null,
+    "reference_track": null
+  },
+  "elapsed_seconds": 5.637880500999927,
+  "error": "HTTPException: 500: Prompt loses over 40% of its tokens to checkpoint <UNK>",
+  "detail": "Prompt loses over 40% of its tokens to checkpoint <UNK>",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/dynamic_batching.py\", line 247, in _run_batch\n    outs = _forward()\n           ^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/dynamic_batching.py\", line 241, in _forward\n    return self._batch_fn(rows)\n           ^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/model/creative_model.py\", line 564, in generate_batch_rows\n    ids = self._encode_prompt(r[\"prompt\"]) or [bos_id]\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/model/creative_model.py\", line 164, in _encode_prompt\n    raise ValueError(\"Prompt loses over 40% of its tokens to checkpoint <UNK>\")\nValueError: Prompt loses over 40% of its tokens to checkpoint <UNK>\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/dynamic_batching.py\", line 340, in wrapped_generate\n    return coalescer.submit(row)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/dynamic_batching.py\", line 178, in submit\n    raise req.error\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/dynamic_batching.py\", line 269, in _run_batch\n    r.result = self._fallback_fn(r.row)\n               ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/dynamic_batching.py\", line 312, in _fallback\n    return original_generate(row[\"prompt\"], **params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/model/creative_model.py\", line 307, in generate\n    ids = self._encode_prompt(prompt)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/model/creative_model.py\", line 164, in _encode_prompt\n    raise ValueError(\"Prompt loses over 40% of its tokens to checkpoint <UNK>\")\nValueError: Prompt loses over 40% of its tokens to checkpoint <UNK>\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py\", line 4879, in platform_daw_generate\n    script = await _in_thread(lambda: _script_agent.run(ScriptRequest(\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py\", line 370, in _in_thread\n    return await asyncio.get_event_loop().run_in_executor(None, fn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/concurrent/futures/thread.py\", line 59, in run\n    result = self.fn(*self.args, **self.kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py\", line 4879, in <lambda>\n    script = await _in_thread(lambda: _script_agent.run(ScriptRequest(\n                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py\", line 971, in run\n    output = self.model.generate(prompt, max_new_tokens=80, temperature=0.8, top_p=0.92)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/dynamic_batching.py\", line 342, in wrapped_generate\n    return original_generate(\n           ^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/model/creative_model.py\", line 307, in generate\n    ids = self._encode_prompt(prompt)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/ai_model/model/creative_model.py\", line 164, in _encode_prompt\n    raise ValueError(\"Prompt loses over 40% of its tokens to checkpoint <UNK>\")\nValueError: Prompt loses over 40% of its tokens to checkpoint <UNK>\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/home/runner/workspace/scripts/evaluate-maxcore-types.py\", line 146, in child\n    response = await asyncio.wait_for(func(**kwargs), 100)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/asyncio/tasks.py\", line 520, in wait_for\n    return await fut\n           ^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py\", line 4913, in platform_daw_generate\n    raise HTTPException(status_code=500, detail=str(e))\nfastapi.exceptions.HTTPException: 500: Prompt loses over 40% of its tokens to checkpoint <UNK>\n",
+  "after": {
+    "ai_model/weights/model.pt": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+    "ai_model/weights/model.release.json": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+  },
+  "checkpoint_preserved": true,
+  "finished": true
+}

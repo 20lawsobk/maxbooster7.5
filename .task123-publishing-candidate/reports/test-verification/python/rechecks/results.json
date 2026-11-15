@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-25T15:23:57.161669+00:00",
+  "finishedAt": "2026-10-25T15:24:03.195271+00:00",
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "interpreter": "/workspace/.cloud-python/bin/python",
+  "summary": {
+    "passed": 2,
+    "failed": 0,
+    "timeout": 0,
+    "skipped": 0,
+    "blocked": 0,
+    "empty": 0
+  },
+  "counts": {
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "isolation": "Fresh interpreter and disposable HOME/state per file; no application credentials; only ephemeral loopback networking; child process group cleanup",
+  "limits": "Blocked/skip/timeout are not passes; fixture training does not establish generation quality or production readiness",
+  "duplicateSnapshots": [
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py"
+  ],
+  "suites": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py",
+      "description": "Real Lua/Redis atomicity tests in an isolated temporary Unix-socket Redis.\n\nNo app workflow or production/private store is started, read or written.",
+      "cases": [
+        {
+          "name": "test_contenders_and_owner_checked_heartbeat_release",
+          "description": "contenders and owner checked heartbeat release"
+        },
+        {
+          "name": "test_lost_lease_cannot_overwrite_successor_pointer",
+          "description": "lost lease cannot overwrite successor pointer"
+        },
+        {
+          "name": "test_same_owner_out_of_order_publication_rejected",
+          "description": "same owner out of order publication rejected"
+        },
+        {
+          "name": "test_server_clock_rejects_expired_publication",
+          "description": "server clock rejects expired publication"
+        },
+        {
+          "name": "test_published_snapshot_loads_into_follower_without_ingest",
+          "description": "published snapshot loads into follower without ingest"
+        },
+        {
+          "name": "test_previous_id_only_pointer_migrates_without_regression",
+          "description": "previous id only pointer migrates without regression"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "3cf422487b6899c7c58ac038972361f79055fed3cb093c94eefce44c39b1e7b0",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py --output /workspace/maxbooster7.5/reports/test-verification/python/rechecks",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 3.783,
+      "counts": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_lease.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_lease.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+      "description": "Regression tests for the RTA-1 fabric's strict correctness contracts.\n\nThese guard three properties that were bugs found and fixed during the build and\nthat are easy to silently re-break in future edits:\n\n  1. Cross-process determinism \u2014 the same inputs must produce byte-identical\n     images across fresh processes with *different* ``PYTHONHASHSEED`` values.\n     (Seeding must never fall back to Python's per-process-salted ``hash()``.)\n\n  2. Spectral tail reconstruction \u2014 the ARC overlap-add pass must reconstruct the\n     tail of a non-hop-aligned clip as faithfully as the rest of the signal.\n\n  3. Fabric self-test smoke \u2014 all three mediums (image / video / audio) render\n     and the Digital-GPU GEMM counter actually increments.\n\nRun standalone:\n    cd artifacts/ai-training-server\n    uv run python -u -m ai_model.rta.test_render_contracts",
+      "cases": [
+        {
+          "name": "test_image_bytes_identical_across_processes",
+          "description": "Same inputs \u2192 byte-identical image across processes with different hash seeds."
+        },
+        {
+          "name": "test_spectral_tail_reconstruction_non_hop_aligned",
+          "description": "The reconstructed tail of a non-hop-aligned clip is as accurate as the whole.\n\nWith ``reduction_db=0`` the gate is the identity, so ``denoise`` reduces to a\npure STFT\u2192iSTFT overlap-add round-trip. The tail must be fully reconstructed\n(the ``_frame`` padding bug left it under-covered), so the mean error over the\nlast window should not exceed the whole-signal mean error."
+        },
+        {
+          "name": "test_fabric_self_test_all_mediums_and_gpu",
+          "description": "All three mediums render and the Digital-GPU GEMM counter increments."
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "c13146406c9004754892750d08157495e0b8986e38d5ca128686ba100e31ae8f",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py --output /workspace/maxbooster7.5/reports/test-verification/python/rechecks",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 6.032,
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__rta__test_render_contracts.txt"
+    }
+  ]
+}

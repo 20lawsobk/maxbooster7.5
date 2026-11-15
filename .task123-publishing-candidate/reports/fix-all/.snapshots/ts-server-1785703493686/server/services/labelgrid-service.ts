@@ -1,0 +1,1949 @@
+import axios, { AxiosInstance, AxiosError } from "axios";
+import { storage } from "../storage";
+import { logger } from "../logger.js";
+import { CircuitBreaker } from "../infrastructure/circuitBreaker";
+
+export interface LabelGridRelease {
+  title: string;
+  artist: string;
+  releaseDate: string;
+  upc?: string;
+  tracks: LabelGridTrack[];
+  artwork: string;
+  genre: string;
+  platforms: string[];
+  label?: string;
+  copyrightYear?: number;
+  copyrightOwner?: string;
+  territoryMode?: "worldwide" | "include" | "exclude";
+  territories?: string[];
+}
+
+export interface LabelGridTrack {
+  title: string;
+  artist: string;
+  isrc?: string;
+  audioFile: string;
+  duration: number;
+  trackNumber: number;
+  explicit?: boolean;
+  lyrics?: string;
+}
+
+export interface LabelGridReleaseResponse {
+  releaseId: string;
+  status: "draft" | "not_submitted" | "processing" | "live" | "failed";
+  submittedAt?: string;
+  estimatedLiveDate?: string;
+  platforms: LabelGridPlatformStatus[];
+}
+
+export interface LabelGridPlatformStatus {
+  platform: string;
+  status:
+    | "draft"
+    | "not_submitted"
+    | "pending"
+    | "processing"
+    | "live"
+    | "failed";
+  liveDate?: string;
+  errorMessage?: string;
+}
+
+export interface LabelGridAnalytics {
+  releaseId: string;
+  totalStreams: number;
+  totalRevenue: number;
+  platforms: {
+    [key: string]: {
+      streams: number;
+      revenue: number;
+      listeners: number;
+    };
+  };
+  timeline: {
+    date: string;
+    streams: number;
+    revenue: number;
+  }[];
+}
+
+export interface LabelGridWebhookPayload {
+  event: string;
+  releaseId: string;
+  status?: string;
+  errorMessage?: string;
+  platform?: string;
+  data?: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface LabelGridCodeResponse {
+  code: string;
+  type: "isrc" | "upc";
+  assignedTo?: string;
+  createdAt: string;
+}
+
+export interface LabelGridPublishingMetadata {
+  writers: string[];
+  publishers: string[];
+  ipi: string;
+  pro: string;
+}
+
+export interface LabelGridSyncOpportunity {
+  id: string;
+  title: string;
+  brand: string;
+  budget: number;
+  deadline: string;
+  genre: string;
+  mood: string;
+}
+
+export interface LabelGridSyncSubmission {
+  id: string;
+  releaseId: string;
+  opportunityId: string;
+  status: "pending" | "accepted" | "rejected" | "placed";
+  notes?: string;
+}
+
+export interface LabelGridSmartLink {
+  id: string;
+  url: string;
+  releaseId: string;
+  platforms: string[];
+  customSlug?: string;
+  clicks: number;
+}
+
+export interface LabelGridSmartLinkAnalytics {
+  clicks: number;
+  platforms: Record<string, number>;
+  countries: Record<string, number>;
+}
+
+export interface LabelGridPreSave {
+  id: string;
+  releaseId: string;
+  url: string;
+  subscribers: number;
+  startDate: string;
+  endDate?: string;
+  status: "draft" | "active" | "completed" | "cancelled";
+}
+
+export interface LabelGridPreSaveSubscriber {
+  email: string;
+  platform: string;
+  subscribedAt: string;
+}
+
+export interface LabelGridContentClaim {
+  id: string;
+  releaseId: string;
+  platform: string;
+  videoId?: string;
+  status: "pending" | "active" | "disputed" | "released";
+  revenue: number;
+}
+
+export interface LabelGridContentRevenue {
+  total: number;
+  byPlatform: Record<string, number>;
+  byMonth: { month: string; amount: number }[];
+}
+
+export interface LabelGridRoyaltySummary {
+  pending: number;
+  available: number;
+  lifetime: number;
+  currency: string;
+}
+
+export interface LabelGridRoyaltyStatement {
+  id: string;
+  period: string;
+  amount: number;
+  status: "pending" | "paid" | "processing";
+  pdfUrl: string;
+}
+
+export interface LabelGridPayoutRequest {
+  id: string;
+  amount: number;
+  status: "pending" | "processing" | "completed" | "failed";
+  requestedAt: string;
+  processedAt?: string;
+}
+
+export interface LabelGridDSP {
+  id: string;
+  name: string;
+  slug: string;
+  category:
+    | "streaming"
+    | "download"
+    | "social"
+    | "electronic"
+    | "regional"
+    | "niche"
+    | "monetization";
+  region: string;
+  isActive: boolean;
+  processingTime: string;
+  requirements: {
+    isrc: boolean;
+    upc: boolean;
+    metadata: string[];
+    audioFormats: string[];
+  };
+  deliveryMethod: "api" | "ftp" | "ddex";
+  logoUrl?: string;
+}
+
+export interface LabelGridDSPListResponse {
+  dsps: LabelGridDSP[];
+  total: number;
+  syncedAt: string;
+}
+
+export interface LabelGridArtistPlatformPresence {
+  platform: string;
+  platformLabel: string;
+  artistId: string | null;
+  artistUrl: string | null;
+  status: "live" | "pending" | "processing" | "not_found" | "error";
+  liveAt?: string;
+}
+
+export interface LabelGridArtistSearchResult {
+  id: string;
+  name: string;
+  slug: string;
+  imageUrl?: string;
+  genres: string[];
+  verified: boolean;
+  platforms: LabelGridArtistPlatformPresence[];
+}
+
+export interface LabelGridCatalogTrack {
+  title: string;
+  isrc?: string;
+  trackNumber: number;
+  duration: number;
+}
+
+export interface LabelGridCatalogRelease {
+  id: string;
+  title: string;
+  artist: string;
+  releaseDate?: string;
+  upc?: string;
+  coverUrl?: string;
+  releaseType: "album" | "ep" | "single";
+  trackCount: number;
+  genre?: string;
+  platforms: string[];
+  tracks?: LabelGridCatalogTrack[];
+}
+
+class LabelGridService {
+  private client: AxiosInstance;
+  private apiToken: string | undefined;
+  private baseUrl: string;
+  private endpoints: Record<string, unknown>;
+  private authHeaderFormat: string;
+  private webhookSecret: string | undefined;
+  private isConfigured: boolean = false;
+  private configLoaded: boolean = false;
+  private maxRetries: number = 3;
+  private baseDelay: number = 1000;
+  private circuitBreaker: CircuitBreaker;
+
+  constructor() {
+    this.apiToken = process.env.LABELGRID_API_TOKEN;
+    this.baseUrl = process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
+    this.webhookSecret = process.env.LABELGRID_WEBHOOK_SECRET;
+    this.endpoints = {};
+    this.authHeaderFormat = "Bearer {token}";
+
+    this.circuitBreaker = new CircuitBreaker("labelgrid-api", {
+      failureThreshold: 5,
+      successThreshold: 2,
+      timeout: 30000,
+      resetTimeout: 60000,
+    });
+
+    if (!this.apiToken) {
+      logger.warn(
+        "⚠️  LabelGrid API token not configured. Distribution features will use simulated mode.",
+      );
+      logger.warn(
+        "   Set LABELGRID_API_TOKEN in your environment to enable real distribution.",
+      );
+    } else {
+      this.isConfigured = true;
+      logger.info("✅ LabelGrid API client initialized");
+    }
+
+    this.client = axios?.create({
+      baseURL: this.baseUrl,
+      timeout: 30000,
+      headers: {
+        "Content-Type": "application/json",
+        ...(this.apiToken && { Authorization: `Bearer ${this.apiToken}` }),
+      },
+    });
+
+    this.client.interceptors?.response.use(
+      (response) => response,
+      (error) => {
+        this.logError("LabelGrid API Error", error);
+        return Promise?.reject(error);
+      },
+    );
+
+    // Wrap the axios adapter with circuit breaker so all API calls are
+    // automatically protected — opens after 5 consecutive failures, resets after 60s.
+    const originalAdapter = this.client.defaults?.adapter;
+    const cb = this.circuitBreaker;
+    this.client.defaults.adapter = async (config: Record<string, unknown>) => {
+      return cb?.execute(
+        () => (originalAdapter as unknown as Record<string, unknown>)(config),
+        async () => {
+          throw new Error(
+            "LabelGrid API circuit breaker is open - service temporarily unavailable",
+          );
+        },
+      );
+    };
+
+    // Load config from database on initialization
+    this.loadConfig();
+  }
+
+  private async loadConfig() {
+    if (this.configLoaded) return;
+
+    try {
+      const provider = await storage?.getDistributionProvider("labelgrid");
+
+      if (provider) {
+        // Use actual fields from the schema
+        this.baseUrl =
+          (provider as any)?.apiBase || this.baseUrl || "https://api.labelgrid.com";
+        this.endpoints = (provider as any)?.requirements?.endpoints || {};
+        this.authHeaderFormat =
+          (provider as any)?.authType === "api_key"
+            ? "X-API-Key: {token}"
+            : "Bearer {token}";
+        this.webhookSecret =
+          (provider as any)?.requirements?.webhookSecret || this.webhookSecret;
+        this.configLoaded = true;
+
+        // Update axios client base URL
+        this.client.defaults.baseURL = this.baseUrl;
+
+        logger.info("✅ LabelGrid configuration loaded from database");
+        logger.info(`   Base URL: ${this.baseUrl}`);
+        logger.info(
+          `   Endpoints configured: ${Object.keys(this.endpoints).length}`,
+        );
+      } else {
+        // Fallback to environment variables (expected until provider is configured)
+        this.baseUrl =
+          process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
+        this.endpoints = {};
+        this.authHeaderFormat = "Bearer {token}";
+        this.configLoaded = true;
+        // Silent fallback - provider will be added when distribution is configured
+      }
+    } catch (error: unknown) {
+      logger.warn(
+        { err: error },
+        "Failed to load LabelGrid config from database:",
+      );
+      this.baseUrl =
+        process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
+      this.endpoints = {};
+      this.authHeaderFormat = "Bearer {token}";
+    }
+  }
+
+  private getEndpoint(key: string, fallback: string): string {
+    return this.endpoints[key] || fallback;
+  }
+
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    retries: number = this.maxRetries,
+  ): Promise<T> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await fn();
+      } catch (error: unknown) {
+        const isLastAttempt = attempt === retries;
+        const axiosError = error as AxiosError;
+
+        // HARDENING: Include 429 (rate limit) in retryable errors with respect for Retry-After header
+        const isRetryable =
+          axiosError?.code === "ECONNABORTED" ||
+          axiosError?.code === "ETIMEDOUT" ||
+          axiosError?.response?.status === 429 ||
+          (axiosError?.response?.status && axiosError?.response.status >= 500);
+
+        if (isLastAttempt || !isRetryable) {
+          throw error;
+        }
+
+        const delay = Math.min(this.baseDelay * Math.pow(2, attempt), 16000);
+        logger.info(
+          `⏳ LabelGrid API retry ${attempt + 1}/${retries} after ${delay}ms`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+    throw new Error("Max retries exceeded");
+  }
+
+  private logError(context: string, error: unknown): void {
+    const err = error as Record<string, unknown>;
+    logger.warn({
+      context,
+      message: err.message,
+      code: err.code,
+      status: (err.response as any)?.status,
+      data: (err.response as any)?.data,
+    }, `${context}: ${err?.message || "Unknown error"}`);
+  }
+
+  private logApiCall(method: string, endpoint: string, data?: unknown): void {
+    logger.info({
+      endpoint,
+      method,
+      hasData: !!data,
+    }, `LabelGrid API ${method} ${endpoint}`);
+  }
+
+  /**
+   * Check if LabelGrid API is configured
+   */
+  isApiConfigured(): boolean {
+    return !!this.apiToken;
+  }
+
+  /**
+   * Get available DSPs for distribution
+   *
+   * ARCHITECTURE NOTE: LabelGrid API is used for releases, distribution, analytics, and royalties.
+   * The DSP list is maintained locally as a reference catalog - LabelGrid does not expose
+   * a public /dsps endpoint. When submitting releases, platform selection is validated
+   * against LabelGrid's supported platforms on their end.
+   *
+   * The local catalog reflects all platforms LabelGrid supports for distribution.
+   */
+  async getAvailableDSPs(): Promise<LabelGridDSPListResponse> {
+    await this.loadConfig();
+
+    // DSP catalog is maintained locally - LabelGrid validates platform support during release submission
+    logger.info(
+      "📦 Using local DSP catalog (LabelGrid validates platforms during distribution)",
+    );
+    return this.getLocalDSPCatalog();
+  }
+
+  /**
+   * Get local DSP catalog from database as fallback
+   */
+  private async getLocalDSPCatalog(): Promise<LabelGridDSPListResponse> {
+    try {
+      const providers = await storage.getAllDSPProviders();
+
+      const dsps: LabelGridDSP[] = providers.map(
+        (p: Record<string, unknown>) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          category: (p.metadata as any).category || "streaming",
+          region: (p.metadata as any).region || "global",
+          isActive: p.isActive ?? true,
+          processingTime: (p.metadata as any).processingTime || "3-7 days",
+          requirements: (p.metadata as any).requirements || {
+            isrc: true,
+            upc: true,
+            metadata: ["title", "artist", "album"],
+            audioFormats: ["WAV", "FLAC"],
+          },
+          deliveryMethod: (p.metadata as any).deliveryMethod || "api",
+          logoUrl: p.logoUrl,
+        }),
+      );
+
+      return {
+        dsps,
+        total: dsps.length,
+        syncedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to get local DSP catalog:");
+      return { dsps: [], total: 0, syncedAt: new Date().toISOString() };
+    }
+  }
+
+  /**
+   * Verify local DSP catalog status
+   *
+   * ARCHITECTURE NOTE: DSPs are maintained locally. LabelGrid validates platform support
+   * when releases are submitted for distribution. This method verifies local catalog integrity.
+   */
+  async verifyDSPCatalog(): Promise<{
+    total: number;
+    active: number;
+    inactive: number;
+  }> {
+    try {
+      const catalog = await this.getLocalDSPCatalog();
+      const active = catalog.dsps.filter((d) => d.isActive).length;
+      const inactive = catalog.dsps.filter((d) => !d.isActive).length;
+
+      logger.info(
+        `✅ DSP catalog verified: ${catalog.total} total, ${active} active, ${inactive} inactive`,
+      );
+
+      return {
+        total: catalog.total,
+        active,
+        inactive,
+      };
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to verify DSP catalog:");
+      return { total: 0, active: 0, inactive: 0 };
+    }
+  }
+
+
+  /**
+   * Retrieve all releases in the authenticated user's LabelGrid catalog.
+   *
+   * Uses GET /v1/releases (or the configured override) with the bearer token
+   * already scoped to this user (scope: user.view-catalog).  No external artist
+   * ID is required — the API returns every release distributed under this account.
+   *
+   * Optionally filter by DSP platform name (e?.g. 'spotify', 'apple_music') so
+   * the caller can narrow the result without a client-side loop.
+   */
+  async getUserCatalog(platform?: string): Promise<LabelGridCatalogRelease[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "[LabelGrid] API not configured — getUserCatalog unavailable",
+      );
+      return [];
+    }
+
+    const endpoint = this.getEndpoint("getUserCatalog", "/v1/releases");
+    this.logApiCall("GET", endpoint, { platform });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<
+          { releases: LabelGridCatalogRelease[] } | LabelGridCatalogRelease[]
+        >(endpoint, {
+          params: {
+            ...(platform ? { platform } : {}),
+            limit: 200,
+          },
+        });
+      });
+
+      const releases: LabelGridCatalogRelease[] = Array.isArray(response?.data)
+        ? response?.data
+        : ((response?.data as Record<string, unknown>)?.releases ?? []);
+
+      logger.info(
+        `[LabelGrid] getUserCatalog: ${releases?.length} release(s) returned`,
+      );
+      return releases;
+    } catch (err) {
+      logger.warn(
+        "[LabelGrid] getUserCatalog failed (non-fatal):",
+        (err as any)?.message ?? err,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Fetch a single release by its LabelGrid ID, with full track listing.
+   * Returns null if the API is unconfigured or the endpoint fails.
+   */
+  async getReleaseDetail(
+    releaseId: string,
+  ): Promise<LabelGridCatalogRelease | null> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "[LabelGrid] API not configured — getReleaseDetail unavailable",
+      );
+      return null;
+    }
+
+    const endpoint = this.getEndpoint(
+      "getReleaseDetail",
+      "/v1/releases/:id",
+    ).replace(":id", encodeURIComponent(releaseId));
+    this.logApiCall("GET", endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () =>
+        this.client.get<LabelGridCatalogRelease>(endpoint),
+      );
+      return response?.data ?? null;
+    } catch (err) {
+      logger.warn(
+        `[LabelGrid] getReleaseDetail failed for ${releaseId}:`,
+        (err as any)?.message ?? err,
+      );
+      return null;
+    }
+  }
+
+  async createRelease(
+    releaseData: LabelGridRelease,
+  ): Promise<LabelGridReleaseResponse> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateCreateRelease(releaseData);
+    }
+
+    const endpoint = this.getEndpoint("createRelease", "/v1/releases");
+    this.logApiCall("POST", endpoint, releaseData);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridReleaseResponse>(endpoint, {
+          title: releaseData.title,
+          artist: releaseData.artist,
+          release_date: releaseData.releaseDate,
+          upc: releaseData.upc,
+          artwork_url: releaseData.artwork,
+          genre: releaseData.genre,
+          label: releaseData.label,
+          copyright_year: releaseData.copyrightYear,
+          copyright_owner: releaseData.copyrightOwner,
+          territory_mode: releaseData.territoryMode || "worldwide",
+          territories: releaseData.territories || [],
+          platforms: releaseData.platforms,
+          tracks: releaseData.tracks.map((track) => ({
+            title: track.title,
+            artist: track.artist,
+            isrc: track.isrc,
+            audio_url: track.audioFile,
+            duration_seconds: track.duration,
+            track_number: track.trackNumber,
+            explicit: track.explicit || false,
+            lyrics: track.lyrics,
+          })),
+        });
+      });
+
+      logger.info({
+        releaseId: response.data.releaseId,
+        status: response.data.status,
+      }, "LabelGrid release created successfully");
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to create LabelGrid release", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getReleaseStatus(releaseId: string): Promise<LabelGridReleaseResponse> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetReleaseStatus(releaseId);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getReleaseStatus",
+      `/v1/releases/:id/status`,
+    ).replace(":id", releaseId);
+    this.logApiCall("GET", endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridReleaseResponse>(endpoint);
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get LabelGrid release status", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async generateISRC(
+    artist: string,
+    title: string,
+  ): Promise<LabelGridCodeResponse> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn("⚠️  LabelGrid not configured - generating local ISRC");
+      return this.simulateGenerateISRC(artist, title);
+    }
+
+    const endpoint = this.getEndpoint("generateISRC", "/v1/codes/isrc");
+    this.logApiCall("POST", endpoint, { artist, title });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridCodeResponse>(endpoint, {
+          artist,
+          title,
+        });
+      });
+
+      logger.info({
+        code: response.data.code,
+        artist,
+        title,
+      }, "ISRC generated successfully");
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to generate ISRC", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async generateUPC(releaseTitle: string): Promise<LabelGridCodeResponse> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn("⚠️  LabelGrid not configured - generating local UPC");
+      return this.simulateGenerateUPC(releaseTitle);
+    }
+
+    const endpoint = this.getEndpoint("generateUPC", "/v1/codes/upc");
+    this.logApiCall("POST", endpoint, { releaseTitle });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridCodeResponse>(endpoint, {
+          release_title: releaseTitle,
+        });
+      });
+
+      logger.info({
+        code: response.data.code,
+        releaseTitle,
+      }, "UPC generated successfully");
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to generate UPC", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getReleaseAnalytics(releaseId: string): Promise<LabelGridAnalytics> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated analytics",
+      );
+      return this.simulateGetReleaseAnalytics(releaseId);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getReleaseAnalytics",
+      "/v1/releases/:id/analytics",
+    ).replace(":id", releaseId);
+    this.logApiCall("GET", endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridAnalytics>(endpoint);
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get LabelGrid release analytics", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async updateRelease(
+    releaseId: string,
+    updates: Partial<LabelGridRelease>,
+  ): Promise<LabelGridReleaseResponse> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateUpdateRelease(releaseId, updates);
+    }
+
+    const endpoint = this.getEndpoint(
+      "updateRelease",
+      "/v1/releases/:id",
+    ).replace(":id", releaseId);
+    this.logApiCall("PATCH", endpoint, updates);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.patch<LabelGridReleaseResponse>(
+          endpoint,
+          updates,
+        );
+      });
+
+      logger.info({
+        releaseId,
+      }, "LabelGrid release updated successfully");
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to update LabelGrid release", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async takedownRelease(releaseId: string): Promise<{ success: boolean }> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return { success: true };
+    }
+
+    const endpoint = this.getEndpoint(
+      "takedownRelease",
+      "/v1/releases/:id/takedown",
+    ).replace(":id", releaseId);
+    this.logApiCall("DELETE", endpoint);
+
+    try {
+      await this.retryWithBackoff(async () => {
+        return await this.client.delete(endpoint);
+      });
+
+      logger.info({
+        releaseId,
+      }, "LabelGrid release takedown initiated");
+
+      return { success: true };
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to takedown LabelGrid release", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getArtistAnalytics(artistId: string): Promise<LabelGridAnalytics> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated analytics",
+      );
+      return this.simulateGetArtistAnalytics(artistId);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getArtistAnalytics",
+      "/v1/artists/:id/analytics",
+    ).replace(":id", artistId);
+    this.logApiCall("GET", endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridAnalytics>(endpoint);
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get LabelGrid artist analytics", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  verifyWebhookSignature(payload: string, signature: string): boolean {
+    if (!this.webhookSecret) {
+      logger.warn(
+        "⚠️  LabelGrid webhook secret not configured - skipping verification",
+      );
+      return true;
+    }
+
+    try {
+      const crypto = require("crypto");
+      const expectedSignature = crypto
+        .createHmac("sha256", this.webhookSecret)
+        .update(payload)
+        .digest("hex");
+
+      return crypto?.timingSafeEqual(
+        Buffer?.from(signature),
+        Buffer?.from(expectedSignature),
+      );
+    } catch (error: unknown) {
+      this.logError("Webhook signature verification failed", error);
+      return false;
+    }
+  }
+
+  async setPublishingMetadata(
+    releaseId: string,
+    metadata: LabelGridPublishingMetadata,
+  ): Promise<{ success: boolean; releaseId: string }> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateSetPublishingMetadata(releaseId, metadata);
+    }
+
+    const endpoint = this.getEndpoint(
+      "setPublishingMetadata",
+      `/v1/releases/${releaseId}/publishing`,
+    );
+    this.logApiCall("POST", endpoint, metadata);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<{ success: boolean; releaseId: string }>(
+          endpoint,
+          {
+            writers: metadata.writers,
+            publishers: metadata.publishers,
+            ipi: metadata.ipi,
+            pro: metadata.pro,
+          },
+        );
+      });
+
+      logger.info({ releaseId }, "Publishing metadata set successfully");
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to set publishing metadata", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getPublishingMetadata(
+    releaseId: string,
+  ): Promise<LabelGridPublishingMetadata> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetPublishingMetadata(releaseId);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getPublishingMetadata",
+      `/v1/releases/${releaseId}/publishing`,
+    );
+    this.logApiCall("GET", endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridPublishingMetadata>(endpoint);
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get publishing metadata", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async submitForSync(
+    releaseId: string,
+    data: { genres: string[]; moods: string[]; notes?: string },
+  ): Promise<LabelGridSyncSubmission> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateSubmitForSync(releaseId, data);
+    }
+
+    const endpoint = this.getEndpoint(
+      "submitForSync",
+      `/v1/releases/${releaseId}/sync`,
+    );
+    this.logApiCall("POST", endpoint, data);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridSyncSubmission>(endpoint, {
+          genres: data.genres,
+          moods: data.moods,
+          notes: data.notes,
+        });
+      });
+
+      logger.info({ releaseId }, "Release submitted for sync licensing");
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to submit for sync", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getSyncOpportunities(filters?: {
+    genre?: string;
+    minBudget?: number;
+  }): Promise<LabelGridSyncOpportunity[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetSyncOpportunities(filters);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getSyncOpportunities",
+      "/v1/sync/opportunities",
+    );
+    this.logApiCall("GET", endpoint, filters);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridSyncOpportunity[]>(endpoint, {
+          params: filters,
+        });
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get sync opportunities", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async updateSyncSubmission(
+    submissionId: string,
+    action: "accept" | "reject",
+  ): Promise<LabelGridSyncSubmission> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateUpdateSyncSubmission(submissionId, action);
+    }
+
+    const endpoint = this.getEndpoint(
+      "updateSyncSubmission",
+      `/v1/sync/submissions/${submissionId}`,
+    );
+    this.logApiCall("PUT", endpoint, { action });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.put<LabelGridSyncSubmission>(endpoint, {
+          action,
+        });
+      });
+
+      logger.info({ submissionId, action }, "Sync submission updated");
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to update sync submission", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async createSmartLink(
+    releaseId: string,
+    options?: { customSlug?: string; platforms?: string[] },
+  ): Promise<LabelGridSmartLink> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateCreateSmartLink(releaseId, options);
+    }
+
+    const endpoint = this.getEndpoint("createSmartLink", "/v1/smartlinks");
+    this.logApiCall("POST", endpoint, { releaseId, ...options });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridSmartLink>(endpoint, {
+          release_id: releaseId,
+          custom_slug: options!.customSlug,
+          platforms: options!.platforms,
+        });
+      });
+
+      logger.info({
+        releaseId,
+        linkId: response.data.id,
+      }, "Smart link created");
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to create smart link", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getSmartLink(linkId: string): Promise<LabelGridSmartLink> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetSmartLink(linkId);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getSmartLink",
+      `/v1/smartlinks/${linkId}`,
+    );
+    this.logApiCall("GET", endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridSmartLink>(endpoint);
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get smart link", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getSmartLinkAnalytics(
+    linkId: string,
+    dateRange?: { start: string; end: string },
+  ): Promise<LabelGridSmartLinkAnalytics> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetSmartLinkAnalytics(linkId, dateRange);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getSmartLinkAnalytics",
+      `/v1/smartlinks/${linkId}/analytics`,
+    );
+    this.logApiCall("GET", endpoint, dateRange);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridSmartLinkAnalytics>(endpoint, {
+          params: dateRange,
+        });
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get smart link analytics", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async createPreSaveCampaign(
+    releaseId: string,
+    startDate: string,
+    endDate?: string,
+  ): Promise<LabelGridPreSave> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateCreatePreSaveCampaign(releaseId, startDate, endDate);
+    }
+
+    const endpoint = this.getEndpoint("createPreSaveCampaign", "/v1/presaves");
+    this.logApiCall("POST", endpoint, { releaseId, startDate, endDate });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridPreSave>(endpoint, {
+          release_id: releaseId,
+          start_date: startDate,
+          end_date: endDate,
+        });
+      });
+
+      logger.info({
+        releaseId,
+        campaignId: response.data.id,
+      }, "Pre-save campaign created");
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to create pre-save campaign", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getPreSaveCampaign(campaignId: string): Promise<LabelGridPreSave> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetPreSaveCampaign(campaignId);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getPreSaveCampaign",
+      `/v1/presaves/${campaignId}`,
+    );
+    this.logApiCall("GET", endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridPreSave>(endpoint);
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get pre-save campaign", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getPreSaveSubscribers(
+    campaignId: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<{ subscribers: LabelGridPreSaveSubscriber[]; total: number }> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetPreSaveSubscribers(campaignId, limit, offset);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getPreSaveSubscribers",
+      `/v1/presaves/${campaignId}/subscribers`,
+    );
+    this.logApiCall("GET", endpoint, { limit, offset });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<{
+          subscribers: LabelGridPreSaveSubscriber[];
+          total: number;
+        }>(endpoint, {
+          params: { limit, offset },
+        });
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get pre-save subscribers", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async submitContentClaim(
+    releaseId: string,
+    platforms: string[],
+  ): Promise<LabelGridContentClaim[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateSubmitContentClaim(releaseId, platforms);
+    }
+
+    const endpoint = this.getEndpoint(
+      "submitContentClaim",
+      "/v1/contentid/claim",
+    );
+    this.logApiCall("POST", endpoint, { releaseId, platforms });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridContentClaim[]>(endpoint, {
+          release_id: releaseId,
+          platforms,
+        });
+      });
+
+      logger.info({ releaseId, platforms }, "Content claim submitted");
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to submit content claim", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getContentClaims(releaseId?: string): Promise<LabelGridContentClaim[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetContentClaims(releaseId);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getContentClaims",
+      "/v1/contentid/claims",
+    );
+    this.logApiCall("GET", endpoint, { releaseId });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridContentClaim[]>(endpoint, {
+          params: releaseId ? { release_id: releaseId } : undefined,
+        });
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get content claims", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getContentRevenue(dateRange?: {
+    start: string;
+    end: string;
+  }): Promise<LabelGridContentRevenue> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetContentRevenue(dateRange);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getContentRevenue",
+      "/v1/contentid/revenue",
+    );
+    this.logApiCall("GET", endpoint, dateRange);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridContentRevenue>(endpoint, {
+          params: dateRange,
+        });
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get content revenue", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getRoyaltySummary(): Promise<LabelGridRoyaltySummary> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetRoyaltySummary();
+    }
+
+    const endpoint = this.getEndpoint(
+      "getRoyaltySummary",
+      "/v1/royalties/summary",
+    );
+    this.logApiCall("GET", endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridRoyaltySummary>(endpoint);
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get royalty summary", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async getRoyaltyStatements(
+    year?: number,
+  ): Promise<LabelGridRoyaltyStatement[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateGetRoyaltyStatements(year);
+    }
+
+    const endpoint = this.getEndpoint(
+      "getRoyaltyStatements",
+      "/v1/royalties/statements",
+    );
+    this.logApiCall("GET", endpoint, { year });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridRoyaltyStatement[]>(endpoint, {
+          params: year ? { year } : undefined,
+        });
+      });
+
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to get royalty statements", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  async requestPayout(
+    amount: number,
+    method?: "paypal" | "bank",
+  ): Promise<LabelGridPayoutRequest> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "⚠️  LabelGrid not configured - returning simulated response",
+      );
+      return this.simulateRequestPayout(amount, method);
+    }
+
+    const endpoint = this.getEndpoint("requestPayout", "/v1/payouts/request");
+    this.logApiCall("POST", endpoint, { amount, method });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridPayoutRequest>(endpoint, {
+          amount,
+          method: method || "paypal",
+        });
+      });
+
+      logger.info({ amount, method: method || "paypal" }, "Payout requested");
+      return response?.data;
+    } catch (error: unknown) {
+      const axiosErr = error as AxiosError;
+      this.logError("Failed to request payout", error);
+      throw new Error(
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
+      );
+    }
+  }
+
+  /**
+   * Search for an artist by name across all LabelGrid-connected platforms.
+   * Returns the artist's ID and live status on every DSP LabelGrid distributes to.
+   * Endpoint: GET /v1/artists/search?q={name}
+   */
+  async searchArtistAcrossPlatforms(
+    artistName: string,
+  ): Promise<LabelGridArtistSearchResult | null> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "[LabelGrid] API not configured — artist cross-platform search unavailable",
+      );
+      return null;
+    }
+
+    const endpoint = this.getEndpoint("searchArtist", "/v1/artists/search");
+    this.logApiCall("GET", `${endpoint}?q=${artistName}`);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<{
+          artists: LabelGridArtistSearchResult[];
+        }>(endpoint, {
+          params: { q: artistName, limit: 5 },
+        });
+      });
+
+      const artists: LabelGridArtistSearchResult[] =
+        response.data.artists ??
+        (Array.isArray(response.data)
+          ? (response.data as LabelGridArtistSearchResult[])
+          : []);
+      if (!artists.length) return null;
+
+      // Pick the best match by name similarity
+      const query = artistName.toLowerCase().trim();
+      const best = artists.reduce((prev, curr) => {
+        const prevSim = prev.name.toLowerCase().includes(query) ? 1 : 0;
+        const currSim = curr.name.toLowerCase().includes(query) ? 1 : 0;
+        return currSim > prevSim ? curr : prev;
+      }, artists[0]);
+
+      logger.info(
+        `[LabelGrid] Artist search found: ${best.name} — ${best.platforms.length ?? 0} platform(s)`,
+      );
+      return best;
+    } catch (err) {
+      logger.warn(
+        "[LabelGrid] Artist search failed (non-fatal):",
+        (err as Error).message ?? err,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Get all platform presences for a LabelGrid artist ID.
+   * Endpoint: GET /v1/artists/:id/platforms
+   */
+  async getArtistPlatformPresence(
+    labelGridArtistId: string,
+  ): Promise<LabelGridArtistPlatformPresence[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) return [];
+
+    const endpoint = this.getEndpoint(
+      "getArtistPlatforms",
+      "/v1/artists/:id/platforms",
+    ).replace(":id", labelGridArtistId);
+    this.logApiCall("GET", endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<{
+          platforms: LabelGridArtistPlatformPresence[];
+        }>(endpoint);
+      });
+      return response.data.platforms ?? [];
+    } catch (err) {
+      logger.warn(
+        "[LabelGrid] Artist platform presence fetch failed (non-fatal):",
+        (err as Error).message ?? err,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Retrieve the distributed release catalog for an artist on a given platform.
+   * When LabelGrid API is configured this calls GET /v1/artists/:externalId/releases.
+   * Returns an empty array (non-fatal) when the API is not configured, so callers
+   * can fall back to direct platform API scanning.
+   */
+  async getArtistCatalog(
+    artistExternalId: string,
+    platform?: string,
+  ): Promise<LabelGridCatalogRelease[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn(
+        "[LabelGrid] API not configured — artist catalog unavailable, caller should fall back to direct platform scan",
+      );
+      return [];
+    }
+
+    const endpoint = this.getEndpoint(
+      "getArtistCatalog",
+      "/v1/artists/:id/releases",
+    ).replace(":id", encodeURIComponent(artistExternalId));
+    this.logApiCall("GET", endpoint, { platform });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<
+          { releases: LabelGridCatalogRelease[] } | LabelGridCatalogRelease[]
+        >(endpoint, { params: platform ? { platform } : undefined });
+      });
+
+      const releases: LabelGridCatalogRelease[] = Array.isArray(response.data)
+        ? response.data
+        : ((response.data as Record<string, unknown>).releases ?? []);
+
+      logger.info(
+        `[LabelGrid] Artist catalog fetched: ${releases.length} release(s) for ${artistExternalId}`,
+      );
+      return releases;
+    } catch (err) {
+      logger.warn(
+        "[LabelGrid] Artist catalog fetch failed (non-fatal), caller may fall back to direct scan:",
+        (err as Error).message ?? err,
+      );
+      return [];
+    }
+  }
+
+  private simulateCreateRelease(
+    releaseData: LabelGridRelease,
+  ): LabelGridReleaseResponse {
+    // LabelGrid not configured — release saved as a local draft only, NOT submitted to any DSP.
+    const releaseId = `draft_${Date.now()}`;
+    return {
+      releaseId,
+      status: "draft",
+      submittedAt: new Date().toISOString(),
+      platforms: releaseData.platforms.map((platform) => ({
+        platform,
+        status: "draft",
+      })),
+    };
+  }
+
+  private simulateGetReleaseStatus(
+    releaseId: string,
+  ): LabelGridReleaseResponse {
+    // LabelGrid not configured — if releaseId is a local draft, report it honestly.
+    const isDraft = releaseId.startsWith("draft_");
+    return {
+      releaseId,
+      status: isDraft ? "draft" : "not_submitted",
+      submittedAt: undefined,
+      estimatedLiveDate: undefined,
+      platforms: [],
+    };
+  }
+
+  private simulateGenerateISRC(_artist: string, _title: string): never {
+    // Refuse to generate fake ISRC codes — ISRCs must be issued by a real
+    // distributor or national ISRC agency (e.g. RIAA). The caller's catch
+    // block will fall through to the internal musicCodes fallback generator.
+    throw new Error(
+      "LabelGrid not configured — ISRC generation requires a connected distributor account. " +
+        "Set LABELGRID_API_TOKEN to enable real ISRC assignment.",
+    );
+  }
+
+  private simulateGenerateUPC(_releaseTitle: string): never {
+    // Refuse to generate fake UPC codes — UPCs require a valid GS1 company
+    // prefix. The caller's catch block will fall through to the internal
+    // musicCodes fallback generator.
+    throw new Error(
+      "LabelGrid not configured — UPC generation requires a connected distributor account. " +
+        "Set LABELGRID_API_TOKEN to enable real UPC assignment.",
+    );
+  }
+
+  private simulateGetReleaseAnalytics(releaseId: string): LabelGridAnalytics {
+    return {
+      releaseId,
+      totalStreams: 0,
+      totalRevenue: 0,
+      platforms: {},
+      timeline: [],
+    };
+  }
+
+  private simulateGetArtistAnalytics(artistId: string): LabelGridAnalytics {
+    return {
+      releaseId: artistId,
+      totalStreams: 0,
+      totalRevenue: 0,
+      platforms: {},
+      timeline: [],
+    };
+  }
+
+  private simulateUpdateRelease(
+    releaseId: string,
+    _updates: Partial<LabelGridRelease>,
+  ): LabelGridReleaseResponse {
+    return {
+      releaseId,
+      status: "processing",
+      submittedAt: new Date().toISOString(),
+      platforms: [],
+    };
+  }
+
+  private simulateSetPublishingMetadata(
+    releaseId: string,
+    _metadata: LabelGridPublishingMetadata,
+  ): { success: boolean; releaseId: string } {
+    return {
+      success: true,
+      releaseId,
+    };
+  }
+
+  private simulateGetPublishingMetadata(
+    _releaseId: string,
+  ): LabelGridPublishingMetadata {
+    return {
+      writers: [],
+      publishers: [],
+      ipi: "",
+      pro: "",
+    };
+  }
+
+  private simulateSubmitForSync(
+    releaseId: string,
+    data: { genres: string[]; moods: string[]; notes?: string },
+  ): LabelGridSyncSubmission {
+    return {
+      id: `sync_sim_${Date?.now()}_${Math.random().toString(36).substring(7)}`,
+      releaseId,
+      opportunityId: "",
+      status: "pending",
+      notes: data.notes,
+    };
+  }
+
+  private simulateGetSyncOpportunities(_filters?: {
+    genre?: string;
+    minBudget?: number;
+  }): LabelGridSyncOpportunity[] {
+    return [];
+  }
+
+  private simulateUpdateSyncSubmission(
+    submissionId: string,
+    action: "accept" | "reject",
+  ): LabelGridSyncSubmission {
+    return {
+      id: submissionId,
+      releaseId: "",
+      opportunityId: "",
+      status: action === "accept" ? "accepted" : "rejected",
+    };
+  }
+
+  private simulateCreateSmartLink(
+    _releaseId: string,
+    _options?: { customSlug?: string; platforms?: string[] },
+  ): never {
+    throw new Error(
+      "LabelGrid not configured — smart link creation requires a connected distributor account. " +
+        "Set LABELGRID_API_TOKEN to enable real smart links.",
+    );
+  }
+
+  private simulateGetSmartLink(_linkId: string): never {
+    throw new Error(
+      "LabelGrid not configured — smart link lookup requires a connected distributor account.",
+    );
+  }
+
+  private simulateGetSmartLinkAnalytics(
+    _linkId: string,
+    _dateRange?: { start: string; end: string },
+  ): LabelGridSmartLinkAnalytics {
+    return {
+      clicks: 0,
+      platforms: {},
+      countries: {},
+    };
+  }
+
+  private simulateCreatePreSaveCampaign(
+    releaseId: string,
+    startDate: string,
+    endDate?: string,
+  ): LabelGridPreSave {
+    const id = `ps_sim_${Date?.now()}_${Math.random().toString(36).substring(7)}`;
+    return {
+      id,
+      releaseId,
+      url: `https://presave.labelgrid.com/${id}`,
+      subscribers: 0,
+      startDate,
+      endDate,
+      status: "active",
+    };
+  }
+
+  private simulateGetPreSaveCampaign(campaignId: string): LabelGridPreSave {
+    return {
+      id: campaignId,
+      releaseId: "",
+      url: `https://presave.labelgrid.com/${campaignId}`,
+      subscribers: 0,
+      startDate: new Date().toISOString(),
+      status: "active",
+    };
+  }
+
+  private simulateGetPreSaveSubscribers(
+    _campaignId: string,
+    _limit?: number,
+    _offset?: number,
+  ): { subscribers: LabelGridPreSaveSubscriber[]; total: number } {
+    return {
+      subscribers: [],
+      total: 0,
+    };
+  }
+
+  private simulateSubmitContentClaim(
+    releaseId: string,
+    platforms: string[],
+  ): LabelGridContentClaim[] {
+    return platforms?.map((platform) => ({
+      id: `cc_sim_${Date?.now()}_${Math.random().toString(36).substring(7)}`,
+      releaseId,
+      platform,
+      status: "pending" as const,
+      revenue: 0,
+    }));
+  }
+
+  private simulateGetContentClaims(
+    releaseId?: string,
+  ): LabelGridContentClaim[] {
+    return [];
+  }
+
+  private simulateGetContentRevenue(_dateRange?: {
+    start: string;
+    end: string;
+  }): LabelGridContentRevenue {
+    return {
+      total: 0,
+      byPlatform: {},
+      byMonth: [],
+    };
+  }
+
+  private simulateGetRoyaltySummary(): LabelGridRoyaltySummary {
+    return {
+      pending: 0,
+      available: 0,
+      lifetime: 0,
+      currency: "USD",
+    };
+  }
+
+  private simulateGetRoyaltyStatements(
+    _year?: number,
+  ): LabelGridRoyaltyStatement[] {
+    return [];
+  }
+
+  private simulateRequestPayout(
+    _amount: number,
+    _method?: "paypal" | "bank",
+  ): never {
+    throw new Error(
+      "LabelGrid not configured — payout requests require a connected distributor account with real royalty balances. " +
+        "Set LABELGRID_API_TOKEN to enable payouts.",
+    );
+  }
+}
+
+export const labelGridService = new LabelGridService();

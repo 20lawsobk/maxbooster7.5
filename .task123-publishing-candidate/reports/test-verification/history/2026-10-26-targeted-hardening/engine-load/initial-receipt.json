@@ -1,0 +1,37 @@
+{
+  "command": [
+    "/workspace/.cloud-python/bin/python",
+    "ai_model/maxcore/tests/load_test.py"
+  ],
+  "cwd": "external/maxcore/artifacts/ai-training-server",
+  "startedAt": "2026-10-26T17:58:31.017600+00:00",
+  "durationSeconds": 0.316,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "/workspace/onboarding-results/fix-scale-benchmark/initial.txt",
+  "logSha256": "12e8619e83a47d05eba55900fdcc1b1ba37e3b8a8c788428d1cfaeb4acad8a08",
+  "sourceSha256": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py": "72f273a23f0693ac56af937332e74e83916edd3096392ede586d43097140dfec"
+  },
+  "backendSelection": "No MAXCORE_BACKEND override: source default silicon_simt",
+  "profileEnvironment": {
+    "LOAD_TARGET": "90000000",
+    "LOAD_UNIQUE": "40",
+    "LOAD_THREADS": "8",
+    "LOAD_CONC": "500",
+    "LOAD_SAMPLE": "400",
+    "LOAD_MT": "160"
+  },
+  "observed": {
+    "coldUniqueGraphs": 40,
+    "contentionCompleted": 496,
+    "contentionSources": {
+      "compute": 40,
+      "cache": 432,
+      "coalesced": 24
+    },
+    "failure": "engine was never used",
+    "scope": "Numeric and single-flight checks passed; legacy engine-counter audit failed under current default backend"
+  }
+}

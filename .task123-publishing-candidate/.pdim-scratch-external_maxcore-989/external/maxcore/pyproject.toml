@@ -1,0 +1,44 @@
+# This tracked staging snapshot carries its own lockfile. Keep its dependency
+# manifest aligned with the active MaxCore Python service so the lock is
+# auditable and resolves to the supported CPU runtime.
+[project]
+name = "maxbooster-staged-maxcore"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "certifi>=2026.10.18",
+    "fastapi>=0.135.1",
+    "h11>=0.16.0",
+    "librosa>=0.11.0",
+    "numpy>=2.4.3",
+    "pillow>=13.0.0",
+    "psycopg2-binary>=2.9.11",
+    "pydantic>=2.12.5",
+    "pytest>=9.1.1",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.17.1",
+    "soundfile>=0.13.1",
+    "torch>=2.13.0",
+    "uvicorn[standard]>=0.41.0",
+]
+
+[[tool.uv.index]]
+explicit = true
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+
+[tool.uv]
+constraint-dependencies = ["click>=8.3.3,<9", "setuptools>=83.0.0", "fsspec>=2026.6.0"]
+override-dependencies = [
+    "anyio>=4.14.2,<5",
+    "cryptography>=48.0.1",
+    "idna>=3.15",
+    "msgpack>=1.2.1",
+    "protobuf>=5.29.6",
+    "requests>=2.33.0",
+    "starlette>=1.3.1",
+    "urllib3>=2.8.0",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }

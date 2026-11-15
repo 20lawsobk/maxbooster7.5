@@ -1,0 +1,36 @@
+.F..                                                                [100%]
+=================================== FAILURES ===================================
+___________ RunnerContractTests.test_hashes_match_unchanged_sources ____________
+
+self = <tests.test_original_quality_runner.RunnerContractTests testMethod=test_hashes_match_unchanged_sources>
+
+    def test_hashes_match_unchanged_sources(self):
+>       self.assertEqual(runner.hashes(), runner.hashes())
+                         ^^^^^^^^^^^^^^^
+
+tests/test_original_quality_runner.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/run-maxcore-original-quality.py:100: in hashes
+    with (ROOT / name).open("rb") as stream:
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('<repo>/external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '<repo>/external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_original_quality_runner.py::RunnerContractTests::test_hashes_match_unchanged_sources
+1 failed, 3 passed, 5 subtests passed in 1.10s

@@ -1,0 +1,8 @@
+coverage combine (exit 0)
+Combined 58 files, skipped 85
+
+coverage segregate (exit 0)
+{"unmappedDynamicFiles": [{"file": "<repo>/external/maxcore/artifacts/ai-training-server/job-update", "reason": "missing_non_python_runtime_filename", "executedLines": [7652, 7654, 7655, 7656, 7657, 7658, 7660, 7661, 7662, 7663, 7664], "arcs": [[-7652, 7654], [-1, 7652], [7652, -1], [7654, 7655], [7655, -7652], [7655, 7656], [7656, 7657], [7657, 7658], [7658, 7660], [7660, 7661], [7661, 7662], [7661, 7663], [7662, 7655], [7663, 7664], [7664, 7655]]}], "retainedMeasuredFiles": 333, "contextsPreserved": [""]}
+
+coverage json (exit 0)
+Wrote JSON report to <repo>/reports/aso/full-repo-readiness-20261105T141734Z/python/coverage.json

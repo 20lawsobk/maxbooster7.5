@@ -1,0 +1,51 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    versioning-strategy: "increase"
+    labels:
+      - "dependencies"
+    groups:
+      capacitor:
+        patterns:
+          - "@capacitor/*"
+      sentry:
+        patterns:
+          - "@sentry/*"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      aws:
+        patterns:
+          - "@aws-sdk/*"
+      stripe:
+        patterns:
+          - "@stripe/*"
+          - "stripe"
+      types:
+        patterns:
+          - "@types/*"
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@typescript-eslint/*"
+    ignore:
+      # Major upgrades require manual review
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "ci"
+      - "dependencies"

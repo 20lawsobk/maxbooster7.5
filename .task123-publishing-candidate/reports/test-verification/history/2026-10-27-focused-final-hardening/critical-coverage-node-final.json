@@ -1,0 +1,17 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-concurrency=1",
+    "tests/hybrid-storage-postgres.test.mjs",
+    "tests/social-media-jobs-postgres.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-27T05:03:46.708356+00:00",
+  "durationSeconds": 3.748,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "/workspace/onboarding-results/critical-coverage-node-final.txt",
+  "logSha256": "4d8823790e526fca7d58efbc4d6d9f1f834b6472a75907e3628e00fa4b439213"
+}

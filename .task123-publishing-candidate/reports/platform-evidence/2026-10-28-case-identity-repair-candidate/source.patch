@@ -1,0 +1,425 @@
+--- /dev/null
++++ b/scripts/testing/junit_evidence.py
+@@ -0,0 +1,45 @@
++"""Read exact JUnit leaves without losing Python class scope.
++
++Unique names retain their existing identity. Only Python names repeated across
++distinct, explicit JUnit classnames are qualified. A repeated qualified name
++remains a duplicate: consumers must count every occurrence, including failures
++and skips, before admitting a passing identity.
++"""
++from collections import defaultdict
++import xml.etree.ElementTree as ET
++
++
++def read_cases(file, group, default_file=None):
++    cases = []
++
++    def collect(element, suites=()):
++        if element.tag == "testsuite":
++            suites = (*suites, element.get("name", ""))
++        if element.tag == "testcase":
++            failure = element.find("failure")
++            if failure is None:
++                failure = element.find("error")
++            raw_name = element.get("name")
++            cases.append({
++                "file": default_file or element.get("file") or (suites[-1] if suites else ""),
++                "name": raw_name, "rawName": raw_name,
++                "className": element.get("classname"), "suiteNames": list(suites),
++                "status": "failed" if failure is not None else "skipped" if element.find("skipped") is not None else "passed",
++                "message": failure.get("message", "")[:500] if failure is not None else None,
++            })
++            return
++        for child in element:
++            collect(child, suites)
++
++    collect(ET.parse(file).getroot())
++    if group == "python":
++        by_name = defaultdict(list)
++        for case in cases:
++            by_name[case["file"], case["rawName"]].append(case)
++        for rows in by_name.values():
++            scopes = {row["className"] for row in rows}
++            if (rows[0]["rawName"] and len(scopes) > 1
++                    and all(scope and scope.strip() for scope in scopes)):
++                for row in rows:
++                    row["name"] = f'{row["className"]}::{row["rawName"]}'
++    return cases
+--- a/scripts/testing/platform-register.py
++++ b/scripts/testing/platform-register.py
+@@ -12,6 +12,7 @@
+ import datetime
+ import math
+ import hashlib
++import importlib.util
+ import json
+ from pathlib import Path
+ import re
+@@ -22,6 +23,10 @@
+ import xml.etree.ElementTree as ET
+ 
+ ROOT = Path(__file__).resolve().parents[2]
++# The registry is also imported directly by tooling outside this script folder.
++_JUNIT_SPEC = importlib.util.spec_from_file_location("maxbooster_junit_evidence", Path(__file__).with_name("junit_evidence.py"))
++_JUNIT = importlib.util.module_from_spec(_JUNIT_SPEC)
++_JUNIT_SPEC.loader.exec_module(_JUNIT)
+ METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "all"}
+ 
+ NODE_EXTRACTOR = r'''
+@@ -348,20 +353,15 @@
+             if len(matching) != 1:
+                 rejected["unbound-default-file-producer"] += 1; continue
+             default_file = identity[1]
+-        cache_key = artifact, default_file
++        cache_key = artifact, default_file, identity[0]
+         if cache_key not in xml_cache:
+             passed, occurrences = set(), Counter()
+             try:
+-                def collect(element, suite=""):
+-                    name = element.get("name", "") if element.tag == "testsuite" else suite
+-                    if element.tag == "testcase":
+-                        identity = default_file or element.get("file") or name, element.get("name")
+-                        occurrences[identity] += 1
+-                        if not any(element.find(tag) is not None for tag in ("failure", "error", "skipped")):
+-                            passed.add(identity)
+-                    else:
+-                        for child in element: collect(child, name)
+-                collect(ET.parse(artifact).getroot())
++                for row in _JUNIT.read_cases(artifact, identity[0], default_file):
++                    leaf = row["file"], row["name"]
++                    occurrences[leaf] += 1
++                    if row["status"] == "passed":
++                        passed.add(leaf)
+                 artifacts[str(artifact)] = digest(artifact)
+             except (OSError, ET.ParseError): rejected["unreadable-case-xml"] += 1
+             xml_cache[cache_key] = {identity for identity in passed if occurrences[identity] == 1}
+--- a/scripts/testing/summarize-results.py
++++ b/scripts/testing/summarize-results.py
+@@ -8,7 +8,7 @@
+ from pathlib import Path
+ import subprocess
+ import sys
+-import xml.etree.ElementTree as ET
++from junit_evidence import read_cases
+ from common import ROOT, source_revision, write_json
+ 
+ 
+@@ -19,24 +19,8 @@
+ def xml_cases(file, group, default_file=None):
+     cases = []
+     if not file.is_file(): return cases
+-    root = ET.parse(file).getroot()
+-    def collect(element, suite_name=''):
+-        name = element.get('name', '') if element.tag == 'testsuite' else suite_name
+-        if element.tag == 'testcase':
+-            case = element
+-            failure = case.find('failure')
+-            if failure is None: failure = case.find('error')
+-            status = 'failed' if failure is not None else 'skipped' if case.find('skipped') is not None else 'passed'
+-            cases.append({'group': group, 'file': default_file or case.get('file') or name,
+-                          'name': case.get('name'), 'status': status,
+-                          'message': failure.get('message', '')[:500] if failure is not None else None,
+-                          'junit': str(file.relative_to(ROOT)) if file.is_relative_to(ROOT) else str(file)})
+-            return
+-        for child in element:
+-            collect(child, name)
+-    # Node emits root-level cases alongside nested suites. Retain both once.
+-    collect(root)
+-    return cases
++    junit = str(file.relative_to(ROOT)) if file.is_relative_to(ROOT) else str(file)
++    return [dict(case, group=group, junit=junit) for case in read_cases(file, group, default_file)]
+ 
+ 
+ def coverage_contract_cases(file):
+--- a/tests/testing/test_platform_evidence.py
++++ b/tests/testing/test_platform_evidence.py
+@@ -158,7 +158,7 @@
+     import json
+     import sys
+ 
+-    def produce(group="python", multifile=False):
++    def produce(group="python", multifile=False, python_source=None, expected_exit=0):
+         base = tmp_path / group
+         incoming = base / "reports/incoming"
+         (incoming / "orchestration").mkdir(parents=True)
+@@ -166,7 +166,7 @@
+         source = base / relative
+         source.parent.mkdir()
+         if group == "python":
+-            source.write_text("def test_owned_producer():\n    assert 2 + 2 == 4\n")
++            source.write_text(python_source or "def test_owned_producer():\n    assert 2 + 2 == 4\n")
+             artifact = incoming / "python/owned.xml"
+             artifact.parent.mkdir()
+             command = [sys.executable, "-m", "pytest", "-q", relative, "--junitxml=" + str(artifact)]
+@@ -189,7 +189,7 @@
+         started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+         run = common.run_command(command, incoming / "orchestration" / (group + ".txt"), cwd=base,
+                                  timeout=15, extra_env={"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"})
+-        assert run["exitCode"] == 0, (incoming / "orchestration" / (group + ".txt")).read_text()
++        assert run["exitCode"] == expected_exit, (incoming / "orchestration" / (group + ".txt")).read_text()
+         run.update(group=group, id=group)
+         files = {relative: hashlib.sha256(source.read_bytes()).hexdigest()}
+         if additional: files[additional] = hashlib.sha256((base / additional).read_bytes()).hexdigest()
+@@ -202,9 +202,10 @@
+         (incoming / "orchestration/results.json").write_text(json.dumps(master))
+         cases = []
+         if group == "python":
+-            cases = [{"group": group, "file": relative, "name": name, "status": "passed", "junit": str(artifact)}]
++            cases = [dict(row, group=group, junit=str(artifact))
++                     for row in MODULE._JUNIT.read_cases(artifact, group, relative)]
+             (incoming / "python/results.json").write_text(json.dumps({"suites": [{"file": relative,
+-                "sourceSha256": files[relative], "junit": "owned.xml", "exitCode": 0,
++                "sourceSha256": files[relative], "junit": "owned.xml", "exitCode": run["exitCode"],
+                 "command": __import__("shlex").join(command)}]}))
+         elif group == "node":
+             (incoming / "node").mkdir()
+@@ -217,7 +218,9 @@
+                 "exitCode": 0, "log": "../orchestration/browser.txt"}}))
+         (incoming / "case-results.json").write_text(json.dumps(cases))
+         return {"root": base, "incoming": incoming, "current": current, "master": master,
+-                "expected": {(group, relative, name)}, "caseFile": relative, "source": source,
++                "expected": ({(group, relative, row["name"]) for row in cases if row["status"] == "passed" and expected_exit == 0}
++                             if group == "python" else {(group, relative, name)}),
++                "caseFile": relative, "source": source,
+                 "junit": artifact if group == "python" else None}
+     return produce
+ 
+@@ -443,3 +446,54 @@
+     passed, state = collect_actual(proof)
+     assert passed == set()
+     assert state["rejectedEvidence"]["duplicate-node-file-execution"] == 1
++
++
++@pytest.mark.parametrize("second_status", ["passed", "skipped", "failed"])
++def test_real_python_class_scopes_share_extractor_and_linker_identity(actual_execution, monkeypatch, second_status):
++    """Real pytest classnames separate methods; outcome and producer guards remain."""
++    source = ("import pytest\n"
++              "class TestFirst:\n    def test_same_method(self):\n        assert 2 + 2 == 4\n"
++              "class TestSecond:\n" +
++              ("    @pytest.mark.skip(reason='actual owned skip')\n" if second_status == "skipped" else "") +
++              "    def test_same_method(self):\n        assert 2 + 2 == " + ("5" if second_status == "failed" else "4") + "\n")
++    proof = actual_execution(python_source=source, expected_exit=1 if second_status == "failed" else 0)
++    monkeypatch.syspath_prepend(str(ROOT / "scripts/testing"))
++    spec = importlib.util.spec_from_file_location("scoped_case_summary", ROOT / "scripts/testing/summarize-results.py")
++    summary = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(summary)
++    rows = summary.xml_cases(proof["junit"], "python", proof["caseFile"])
++    assert len(rows) == 2
++    assert {row["rawName"] for row in rows} == {"test_same_method"}
++    assert all(row["suiteNames"] == ["pytest"] for row in rows)
++    by_class = {row["className"].rsplit(".", 1)[1]: row for row in rows}
++    assert set(by_class) == {"TestFirst", "TestSecond"}
++    assert by_class["TestFirst"]["status"] == "passed"
++    assert by_class["TestSecond"]["status"] == second_status
++    assert all(row["name"] == row["className"] + "::test_same_method" for row in rows)
++    passed, state = collect_actual(proof)
++    expected = {("python", proof["caseFile"], row["name"]) for row in rows if row["status"] == "passed"}
++    assert passed == (set() if second_status == "failed" else expected)
++    assert state["sourceInputsMatchCurrent"] is True
++    # Claiming all XML outcomes passed cannot import a failed/skipped class.
++    rewrite_artifact(proof, "case-results.json", lambda cases: [row.update(status="passed") for row in cases] and cases)
++    assert collect_actual(proof)[0] == passed
++
++
++@pytest.mark.parametrize("duplicate_status", ["passed", "failed", "skipped"])
++def test_duplicate_fully_qualified_python_scope_cannot_union_a_pass(actual_execution, duplicate_status):
++    """Disambiguating distinct classes must not disambiguate real duplicates."""
++    import xml.etree.ElementTree as ET
++    source = ("class TestFirst:\n    def test_same_method(self):\n        assert True\n"
++              "class TestSecond:\n    def test_same_method(self):\n        assert True\n")
++    proof = actual_execution(python_source=source)
++    tree = ET.parse(proof["junit"])
++    suite = next(tree.getroot().iter("testsuite"))
++    original = next(suite.iter("testcase"))
++    duplicate = copy.deepcopy(original)
++    if duplicate_status != "passed":
++        ET.SubElement(duplicate, "failure" if duplicate_status == "failed" else "skipped")
++    suite.append(duplicate)
++    tree.write(proof["junit"])
++    passed, state = collect_actual(proof)
++    assert passed == {identity for identity in proof["expected"] if "TestSecond::" in identity[2]}
++    assert state["rejectedEvidence"]["case-not-passed-in-bound-xml"] == 1
+--- a/tests/testing/test_summary_results.py
++++ b/tests/testing/test_summary_results.py
+@@ -105,3 +105,36 @@
+         assert [(case['file'], case['name'], case['status']) for case in cases] == [
+             ('tests/coverage/storage.test.ts', 'actual database outcome', 'passed'),
+             ('tests/coverage/storage.test.ts', 'database failure', 'failed')]
++
++
++def test_python_scopes_qualify_only_ambiguous_explicit_classes(tmp_path):
++    path = tmp_path / 'scopes.xml'
++    path.write_text('<testsuites><testsuite name="outer"><testsuite name="inner">'
++                    '<testcase classname="module.First" name="test_shared"/>'
++                    '<testcase classname="module.Second" name="test_shared"><skipped/></testcase>'
++                    '<testcase classname="module.First" name="test_unique"/>'
++                    '</testsuite></testsuite></testsuites>')
++    rows = MODULE.xml_cases(path, 'python', 'tests/owned.py')
++    assert [row['name'] for row in rows] == ['module.First::test_shared', 'module.Second::test_shared', 'test_unique']
++    assert [row['status'] for row in rows] == ['passed', 'skipped', 'passed']
++    assert all(row['suiteNames'] == ['outer', 'inner'] for row in rows)
++    assert all(row['file'] == 'tests/owned.py' for row in rows)
++    assert [row['name'] for row in MODULE.xml_cases(path, 'http', 'tests/owned.py')] == ['test_shared', 'test_shared', 'test_unique']
++
++
++def test_python_missing_class_scope_stays_ambiguous(tmp_path):
++    path = tmp_path / 'missing-class.xml'
++    path.write_text('<testsuite name="pytest"><testcase classname="module.First" name="test_shared"/>'
++                    '<testcase name="test_shared"/></testsuite>')
++    rows = MODULE.xml_cases(path, 'python', 'tests/owned.py')
++    assert [row['name'] for row in rows] == ['test_shared', 'test_shared']
++
++
++def test_python_missing_names_or_blank_classes_never_acquire_a_usable_identity(tmp_path):
++    path = tmp_path / 'malformed-scopes.xml'
++    path.write_text('<testsuite name="pytest"><testcase classname="module.First"/>'
++                    '<testcase classname="module.Second"/>'
++                    '<testcase classname=" " name="test_blank"/>'
++                    '<testcase classname="module.Second" name="test_blank"/></testsuite>')
++    rows = MODULE.xml_cases(path, 'python', 'tests/owned.py')
++    assert [row['name'] for row in rows] == [None, None, 'test_blank', 'test_blank']
+--- a/tests/unit/auth-page-age-policy.test.ts
++++ b/tests/unit/auth-page-age-policy.test.ts
+@@ -39,7 +39,7 @@
+     "2010-06-15T00:00:00Z", " 2010-06-15", "2010-06-15 ", "2010-02-29",
+     "2010-04-31", "2010-13-01", "2010-00-01", "2010-01-00", "0000-01-01",
+     "9999-01-01", "2026-06-16",
+-  ])("fails closed for missing, malformed, normalized-invalid or future DOB %j", value => {
++  ])("fails closed for missing, malformed, normalized-invalid or future DOB %j [row %#]", value => {
+     expect(getAccountEligibilityError(value, birthday)).toEqual(expect.any(String));
+   });
+ 
+--- a/tests/unit/deployment-small-file-codec.test.ts
++++ b/tests/unit/deployment-small-file-codec.test.ts
+@@ -6,7 +6,7 @@
+ 
+ describe("deployment small-file native compression", () => {
+   it.each([Buffer.alloc(0), Buffer.from("source code\n".repeat(900)), randomBytes(8192)])(
+-    "retains exact bytes through its container",
++    "retains exact bytes through its container [row %#]",
+     async (input) => {
+       expect(await codec.decompress(await codec.compress(input))).toEqual(input);
+     },
+--- a/tests/unit/email-provider-ack.test.ts
++++ b/tests/unit/email-provider-ack.test.ts
+@@ -55,12 +55,12 @@
+   });
+ 
+   it.each([undefined, "", "  ", "x".repeat(201), "bad\\nkey", "bad\nkey", "bad key"])(
+-    "rejects missing, oversized, or unsafe queue IDs",
++    "rejects missing, oversized, or unsafe queue IDs [row %#]",
+     id => expect(() => requireRetrySafeEmailJob(id, queuedAt, queuedAt + 1000)).toThrow(/queue ID/),
+   );
+ 
+   it.each([undefined, -1, 0, Number.NaN])(
+-    "rejects unreliable original enqueue timestamps",
++    "rejects unreliable original enqueue timestamps [row %#]",
+     timestamp => expect(() => requireRetrySafeEmailJob("job-123", timestamp, queuedAt + 1000))
+       .toThrow(/manual reconciliation/),
+   );
+--- a/tests/unit/frontend-batch-response-contracts.test.ts
++++ b/tests/unit/frontend-batch-response-contracts.test.ts
+@@ -97,7 +97,7 @@
+   });
+ 
+   it.each(["batch action", "batch actions", "bulk action"])(
+-    "rejects malformed batch JSON instead of synthesizing successful IDs",
++    "rejects malformed batch JSON instead of synthesizing successful IDs [row %#]",
+     async (parserName) => {
+       const parse = {
+         "batch action": parseBatchResultResponse,
+--- a/tests/unit/marketplace-storefront-page-contracts.test.ts
++++ b/tests/unit/marketplace-storefront-page-contracts.test.ts
+@@ -25,7 +25,7 @@
+   it.each([
+     [marketplace, "loadMarketplaceData", "/api/marketplace/purchases"],
+     [storefront, "loadStorefrontList", "/api/storefront/my"],
+-  ])("rejects malformed lists rather than rendering an empty success", async (source, name, path) => {
++  ])("rejects malformed lists rather than rendering an empty success [row %#]", async (source, name, path) => {
+     const calls: unknown[][] = [];
+     const load = extractFunction(source, name, {
+       apiRequest: async (...args: unknown[]) => {
+--- a/tests/unit/password-policy.test.ts
++++ b/tests/unit/password-policy.test.ts
+@@ -7,11 +7,11 @@
+   it.each([null, undefined, {}, 123, "", "short"])("rejects invalid input %j", value => {
+     expect(getNewPasswordError(value)).toBeTypeOf("string");
+   });
+-  it.each(["a".repeat(72), "é".repeat(36), "😀".repeat(18)])("accepts exactly 72 UTF-8 bytes", value => {
++  it.each(["a".repeat(72), "é".repeat(36), "😀".repeat(18)])("accepts exactly 72 UTF-8 bytes [row %#]", value => {
+     expect(getNewPasswordError(value)).toBeUndefined();
+     expect(() => validateRegistrationPassword(value, value)).not.toThrow();
+   });
+-  it.each(["a".repeat(73), "é".repeat(37), "😀".repeat(19)])("rejects input beyond 72 UTF-8 bytes", value => {
++  it.each(["a".repeat(73), "é".repeat(37), "😀".repeat(19)])("rejects input beyond 72 UTF-8 bytes [row %#]", value => {
+     expect(getNewPasswordError(value)).toContain("72 UTF-8 bytes");
+     expect(() => validateRegistrationPassword(value, value)).toThrow("72 UTF-8 bytes");
+   });
+--- a/tests/unit/registrationCompletion.test.ts
++++ b/tests/unit/registrationCompletion.test.ts
+@@ -16,7 +16,7 @@
+   );
+ 
+   it.each([null, "", "pi_123", "cs_bad-value", `cs_${"a".repeat(253)}`])(
+-    "rejects an invalid checkout session id",
++    "rejects an invalid checkout session id [row %#]",
+     (sessionId) => {
+       expect(() => validateCheckoutSessionId(sessionId)).toThrow(/Invalid payment session/i);
+     },
+--- a/tests/unit/registrationCompletionBoundary.test.ts
++++ b/tests/unit/registrationCompletionBoundary.test.ts
+@@ -12,7 +12,7 @@
+   });
+ 
+   it.each([{}, { sessionId: 123 }, { sessionId: "pi_123" }])(
+-    "rejects invalid verification sessions",
++    "rejects invalid verification sessions [row %#]",
+     (body) => {
+       expect(normalizeRegistrationVerificationBody(body)).toEqual({
+         ok: false,
+--- a/tests/unit/subscriptionCheckout.test.ts
++++ b/tests/unit/subscriptionCheckout.test.ts
+@@ -56,7 +56,7 @@
+     { clientSecret: null },
+     { clientSecret: 123 },
+     { clientSecret: "   " },
+-  ])("rejects checkout objects without a usable client secret", (payload) => {
++  ])("rejects checkout objects without a usable client secret [row %#]", (payload) => {
+     expect(parseSubscriptionSetupPayload(payload)).toEqual({
+       ok: false,
+       error: {
+@@ -69,7 +69,7 @@
+   });
+ 
+   it.each([null, undefined, [], "not-json-object"])(
+-    "maps non-object malformed payloads to a retryable checkout error",
++    "maps non-object malformed payloads to a retryable checkout error [row %#]",
+     (payload) => {
+       expect(parseSubscriptionSetupPayload(payload)).toEqual({
+         ok: false,
+--- a/tests/unit/support-ticket-validation.test.ts
++++ b/tests/unit/support-ticket-validation.test.ts
+@@ -2,19 +2,19 @@
+ import { supportMessageSchema, supportTicketCreateSchema, supportTicketUpdateSchema } from "../../shared/supportTicketValidation";
+ 
+ describe("support ticket write validation", () => {
+-  it.each([null, {}, {subject: 42}, {subject: "  "}, {subject: "a".repeat(256)}, {subject: "Valid", description: []}, {subject: "Valid", priority: ""}])("rejects malformed ticket input", input => {
++  it.each([null, {}, {subject: 42}, {subject: "  "}, {subject: "a".repeat(256)}, {subject: "Valid", description: []}, {subject: "Valid", priority: ""}])("rejects malformed ticket input [row %#]", input => {
+     expect(supportTicketCreateSchema.safeParse(input).success).toBe(false);
+   });
+   it("normalizes creation and discards caller-controlled identity/status", () => {
+     expect(supportTicketCreateSchema.parse({subject: " Help ", userId: "victim", status: "closed"})).toEqual({subject: "Help", category: "general", priority: "medium"});
+   });
+-  it.each([{}, {status: null}, {status: ""}, {priority: false}, {responseTimeMinutes: -1}, {responseTimeMinutes: "10"}, {satisfactionRating: 6}, {satisfactionRating: 1.5}, {resolvedAt: "garbage"}, {userId: "victim"}])("rejects unsafe admin updates input", input => {
++  it.each([{}, {status: null}, {status: ""}, {priority: false}, {responseTimeMinutes: -1}, {responseTimeMinutes: "10"}, {satisfactionRating: 6}, {satisfactionRating: 1.5}, {resolvedAt: "garbage"}, {userId: "victim"}])("rejects unsafe admin updates input [row %#]", input => {
+     expect(supportTicketUpdateSchema.safeParse(input).success).toBe(false);
+   });
+   it("converts a valid resolution timestamp to a database Date", () => {
+     expect(supportTicketUpdateSchema.parse({resolvedAt: "2026-10-17T12:00:00Z"}).resolvedAt).toEqual(new Date("2026-10-17T12:00:00Z"));
+   });
+-  it.each([null, {message: 1}, {message: " "}, {message: "a".repeat(10001)}])("rejects malformed staff messages input", input => {
++  it.each([null, {message: 1}, {message: " "}, {message: "a".repeat(10001)}])("rejects malformed staff messages input [row %#]", input => {
+     expect(supportMessageSchema.safeParse(input).success).toBe(false);
+   });
+ });

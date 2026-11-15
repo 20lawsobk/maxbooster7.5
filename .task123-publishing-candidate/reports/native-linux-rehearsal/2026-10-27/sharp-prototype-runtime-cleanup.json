@@ -1,0 +1,17 @@
+{
+  "command": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "rm",
+    "--force",
+    "maxbooster-linux-u3f69z18-sharp-prototype-runtime"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T02:37:37.574341+00:00",
+  "durationSeconds": 0.315,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/native-linux-rehearsal/2026-10-27/sharp-prototype-runtime-cleanup.txt",
+  "logSha256": "131e371b8181c58f93ff8c13bc40572af40c2b50e99c91280fe8950432153e5a"
+}

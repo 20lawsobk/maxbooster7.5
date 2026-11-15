@@ -1,0 +1,101 @@
+{
+  "reportVersion": 1,
+  "startedAt": "2026-09-23T10:55:31.797Z",
+  "completedAt": "2026-09-23T10:55:50.891Z",
+  "status": "pass",
+  "databaseEffect": "committed",
+  "exactApprovedFiles": [
+    {
+      "filename": "0022_commerce_webhook_receipts.sql",
+      "sha256": "b9fe9c9b890a350e12b6482b8f32ad0c409050a150794c5f0cc8b5cdc525405f"
+    },
+    {
+      "filename": "0023_commerce_settlement.sql",
+      "sha256": "3f1ca96deba38c5f1584cd4eaef72727005d50ddf5ce48879c5002f26d52f58c"
+    }
+  ],
+  "backup": {
+    "reportSha256": "4612be5e0682d1e9be0114fd0cceba39b7b93d37669c6d3f6ceaaac25bc78a79",
+    "dumpSha256": "9c2853a60b10f5fe92fa86efd3195f1c7254717a49a526d55b7864ba6e5b0c6b",
+    "dumpGeneration": "1790159070415781",
+    "manifestGeneration": "1790159070554329",
+    "sourceSchemaFingerprint": "e73595fefdb782ace008330169408c7c5b2714205c57f21f2c9e532471e18351",
+    "storage": "private-retained-app-storage"
+  },
+  "rehearsal": {
+    "passed": 7,
+    "total": 7,
+    "checks": [
+      {
+        "name": "rollback-proof",
+        "pass": true
+      },
+      {
+        "name": "balanced-commit",
+        "pass": true
+      },
+      {
+        "name": "unbalanced-commit-rejected",
+        "pass": true
+      },
+      {
+        "name": "immutable-journal",
+        "pass": true
+      },
+      {
+        "name": "concurrent-lock-exclusion",
+        "pass": true
+      },
+      {
+        "name": "lease-skip-locked-concurrency",
+        "pass": true
+      },
+      {
+        "name": "receipt-idempotency-constraint",
+        "pass": true
+      }
+    ]
+  },
+  "livePostconditions": {
+    "passed": 2,
+    "total": 2,
+    "statuses": [
+      {
+        "filename": "0022_commerce_webhook_receipts.sql",
+        "sha256": "b9fe9c9b890a350e12b6482b8f32ad0c409050a150794c5f0cc8b5cdc525405f",
+        "status": "applied-exact"
+      },
+      {
+        "filename": "0023_commerce_settlement.sql",
+        "sha256": "3f1ca96deba38c5f1584cd4eaef72727005d50ddf5ce48879c5002f26d52f58c",
+        "status": "applied-exact"
+      }
+    ]
+  },
+  "apply": {
+    "status": "applied",
+    "newlyApplied": [
+      {
+        "filename": "0022_commerce_webhook_receipts.sql",
+        "sha256": "b9fe9c9b890a350e12b6482b8f32ad0c409050a150794c5f0cc8b5cdc525405f",
+        "appliedAt": "2026-09-23T10:55:50.312Z",
+        "sourceRevision": "126bc69b7cf525cb3d16cd7a641d352b2e14e5c2"
+      },
+      {
+        "filename": "0023_commerce_settlement.sql",
+        "sha256": "3f1ca96deba38c5f1584cd4eaef72727005d50ddf5ce48879c5002f26d52f58c",
+        "appliedAt": "2026-09-23T10:55:50.312Z",
+        "sourceRevision": "126bc69b7cf525cb3d16cd7a641d352b2e14e5c2"
+      }
+    ],
+    "targetFingerprint": "afde6a976aa0ee1ca0e2dae6277d5d21e23133b428f75f2b3e7d86b4136b3761",
+    "sourceRevision": "126bc69b7cf525cb3d16cd7a641d352b2e14e5c2"
+  },
+  "externalReceipt": {
+    "name": "private-commerce-migration-receipts/2026-09-23T10-55-50-687Z-662ac29a85773e69d9af5f7f8e4cc2976b824390d7592a2852475df0bb6b68de.json",
+    "generation": "1790160950768342",
+    "sha256": "662ac29a85773e69d9af5f7f8e4cc2976b824390d7592a2852475df0bb6b68de",
+    "size": "1097"
+  },
+  "failures": []
+}

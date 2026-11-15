@@ -1,0 +1,522 @@
+/**
+ * STARTUP PROBES - Staged Readiness System
+ *
+ * Implements staged health probes for Replit Reserved VM deployment:
+ * - /health - Always responds immediately (liveness)
+ * - /ready - Only responds after all critical systems are ready
+ * - /startup - Verbose status with phase details
+ *
+ * DEPLOYMENT HARDENING FEATURES:
+ * - Database connection with retry (5 attempts, jitter)
+ * - Redis connection with fallback to memory store
+ * - MaxCore model-service readiness
+ * - Circuit breaker pattern for external services
+ */
+
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+import { existsSync, readFileSync } from "fs";
+import { db } from "./db.js";
+import { sql } from "drizzle-orm";
+import { logger } from "./logger.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
+
+const __metaUrl = (import.meta as unknown as Record<string, unknown>)?.url as
+  | string
+  | undefined;
+const __filename = __metaUrl
+  ? fileURLToPath(__metaUrl)
+  : resolve(process.argv[1] ?? "");
+dirname(__filename);
+
+interface ProbeStatus {
+  name: string;
+  status:
+    | "pending"
+    | "checking"
+    | "ready"
+    | "failed"
+    | "degraded"
+    | "disabled";
+  lastCheck: Date | null;
+  error?: string;
+  latencyMs?: number;
+}
+
+interface StartupStatus {
+  phase: "initializing" | "connecting" | "ready" | "degraded" | "failed";
+  startTime: Date;
+  readyTime: Date | null;
+  probes: Record<string, ProbeStatus>;
+  deploymentPhases?: unknown;
+}
+
+class StartupProbeManager {
+  private status: StartupStatus;
+  private readyResolvers: Array<() => void> = [];
+  private checkInterval: NodeJS.Timeout | null = null;
+  private refresh: Promise<boolean> | null = null;
+  private published: StartupStatus | null = null;
+  private publishedAt = 0;
+
+  constructor() {
+    this.status = {
+      phase: "initializing",
+      startTime: new Date(),
+      readyTime: null,
+      probes: {
+        database: {
+          name: "PostgreSQL Database",
+          status: "pending",
+          lastCheck: null,
+        },
+        redis: { name: "Redis Cache", status: "pending", lastCheck: null },
+        tensorflow: {
+          // Retain this legacy DTO member for health consumers while making
+          // its state explicit: local TensorFlow is no longer an app-server
+          // dependency and is intentionally not loaded by readiness checks.
+          name: "Local TensorFlow (retired)",
+          status: "disabled",
+          lastCheck: null,
+          error: "AI inference is owned by MaxCore",
+        },
+        maxcore: {
+          name: "MaxCore AI subsystem",
+          status: "pending",
+          lastCheck: null,
+        },
+      },
+    };
+
+    // Load deployment phases from capsule loader if available
+    if (process.env.DEPLOYMENT_PHASES) {
+      try {
+        this.status.deploymentPhases = JSON.parse(
+          process.env.DEPLOYMENT_PHASES,
+        );
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }
+
+  // Check database connection with retry. Each attempt is itself bounded by
+  // a hard timeout — a hung query (not an error, just never resolving) must
+  // not be able to stall the whole probe run indefinitely.
+  async checkDatabase(maxRetries = 5, perAttemptTimeoutMs = 5_000): Promise<boolean> {
+    this.status.probes.database.status = "checking";
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const startTime = Date?.now();
+      try {
+        await Promise.race([
+          db.execute(sql`SELECT 1`),
+          new Promise((_resolve, reject) =>
+            setTimeout(
+              () => reject(new Error(`query timed out after ${perAttemptTimeoutMs}ms`)),
+              perAttemptTimeoutMs,
+            ),
+          ),
+        ]);
+        this.status.probes.database.status = "ready";
+        this.status.probes.database.lastCheck = new Date();
+        this.status.probes.database.latencyMs = Date?.now() - startTime;
+        this.status.probes.database.error = undefined;
+        logger.info(
+          `✅ Database probe ready (attempt ${attempt}, ${this.status.probes?.database.latencyMs}ms)`,
+        );
+        return true;
+      } catch (error) {
+        const jitter = Math.random() * 1000; // 0-1000ms jitter
+        const backoff = Math.min(
+          1000 * Math.pow(2, attempt - 1) + jitter,
+          30000,
+        );
+
+        this.status.probes.database.error =
+          error instanceof Error ? error?.message : String(error);
+        this.status.probes.database.lastCheck = new Date();
+
+        logger.warn(
+          `⚠️ Database probe failed (attempt ${attempt}/${maxRetries}): ${this.status.probes?.database.error}`,
+        );
+
+        if (attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, backoff));
+        }
+      }
+    }
+
+    this.status.probes.database.status = "failed";
+    logger.warn("❌ Database probe exhausted all retries");
+    return false;
+  }
+
+  async checkRedis(): Promise<boolean> {
+    this.status.probes.redis.status = "checking";
+    const startTime = Date?.now();
+
+    // Use native fetch() directly to the PDIM HTTP endpoint — NOT the exec()
+    // chain.  The exec() chain has a 4 s AbortSignal timeout; during PDIM
+    // cold-start every exec()-based ping queues a 4 s wait and generates a
+    // flood of "exec error [PING]" warnings before timing out.  Native fetch
+    // bypasses all of that: one lightweight POST, no AIMD chain pressure.
+    const pdimUrl = process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL || "";
+    const pdimToken = process.env.PDIM_BEARER_TOKEN || process.env.PDIM_EXEC_TOKEN || "";
+
+    if (!pdimUrl || !pdimToken) {
+      this.status.probes.redis.status = "degraded";
+      this.status.probes.redis.error = "PDIM not configured";
+      return true; // degraded, not fatal
+    }
+
+    try {
+      const res = await fetch(pdimUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${pdimToken}`,
+        },
+        body: JSON.stringify({ cmd: "PING", args: [] }),
+        signal: AbortSignal.timeout(5_000),
+        redirect: "manual",
+      });
+
+      if (res.ok) {
+        this.status.probes.redis.status = "ready";
+        this.status.probes.redis.lastCheck = new Date();
+        this.status.probes.redis.latencyMs = Date?.now() - startTime;
+        this.status.probes.redis.error = undefined;
+        logger.info(
+          `✅ PDIM probe ready (${this.status.probes?.redis.latencyMs}ms)`,
+        );
+      } else {
+        this.status.probes.redis.status = "degraded";
+        this.status.probes.redis.error = `HTTP ${res.status}`;
+        logger.info(
+          `⚠️ PDIM probe degraded (HTTP ${res.status}) — circuit breaker will absorb failures until the local server recovers`,
+        );
+      }
+      return true;
+    } catch (error) {
+      this.status.probes.redis.status = "degraded";
+      this.status.probes.redis.lastCheck = new Date();
+      this.status.probes.redis.error =
+        error instanceof Error ? error?.message : String(error);
+      // Log at info not warn — local-boot probe failure is expected and self-healing
+      logger.info(
+        `⚠️ PDIM probe: ${this.status.probes?.redis.error} — circuit breaker will absorb failures until the local server recovers`,
+      );
+      return true; // always non-fatal; circuit breaker handles recovery
+    }
+  }
+
+  // Check MaxCore without issuing inference or training work. Local mode uses
+  // the supervised model service's readiness; remote mode uses its liveness.
+  async checkMaxcore(): Promise<boolean> {
+    this.status.probes.maxcore.status = "checking";
+    const startTime = Date?.now();
+    try {
+      const { checkMaxcoreLocalReady, getMaxcoreLocalStatus } = await import(
+        "./services/maxcoreLocalSupervisor.js"
+      );
+      const st = getMaxcoreLocalStatus();
+      if (!st.enabled) {
+        const { pingMaxcore } = await import("./services/maxcore.js");
+        const ready = await pingMaxcore();
+        this.status.probes.maxcore.status = ready ? "ready" : "degraded";
+        this.status.probes.maxcore.lastCheck = new Date();
+        this.status.probes.maxcore.latencyMs = Date.now() - startTime;
+        this.status.probes.maxcore.error = ready
+          ? undefined
+          : "remote MaxCore health check failed";
+        if (!ready) {
+          logger.warn("⚠️ Remote MaxCore probe failed");
+        }
+        return true;
+      }
+      // The child supervises a Python model server that can take a while to
+      // come up; poll its model-loaded /api/health gate for up to 60 s.
+      const deadline = Date.now() + 60_000;
+      for (;;) {
+        if (await checkMaxcoreLocalReady()) {
+          this.status.probes.maxcore.status = "ready";
+          this.status.probes.maxcore.lastCheck = new Date();
+          this.status.probes.maxcore.latencyMs = Date?.now() - startTime;
+          this.status.probes.maxcore.error = undefined;
+          logger.info(
+            `✅ MaxCore local probe ready (${this.status.probes.maxcore.latencyMs}ms)`,
+          );
+          return true;
+        }
+        if (Date.now() >= deadline) break;
+        await new Promise((r) => setTimeout(r, 2_000));
+      }
+      const s = getMaxcoreLocalStatus();
+      this.status.probes.maxcore.status = "degraded";
+      this.status.probes.maxcore.lastCheck = new Date();
+      this.status.probes.maxcore.error =
+        s.error ?? `local MaxCore not ready yet (running=${s.running}, restarts=${s.restarts})`;
+      logger.warn(`⚠️ MaxCore local probe: ${this.status.probes.maxcore.error}`);
+      return true; // degraded, not fatal — supervisor keeps restarting
+    } catch (error) {
+      this.status.probes.maxcore.status = "degraded";
+      this.status.probes.maxcore.lastCheck = new Date();
+      this.status.probes.maxcore.error =
+        error instanceof Error ? error.message : String(error);
+      logger.warn(`⚠️ MaxCore local probe failed: ${this.status.probes.maxcore.error}`);
+      return true;
+    }
+  }
+
+  // Run all probes and determine overall readiness
+  async runAllProbes(): Promise<boolean> {
+    try {
+      return await this.runAllProbesInner();
+    } finally {
+      // Whatever happened — success, degraded, failed, or an unexpected
+      // rejection — waiters must never hang forever. Flush the queue.
+      for (const resolver of this.readyResolvers) resolver();
+      this.readyResolvers = [];
+      // Once the initial run has settled, keep re-checking periodically so
+      // /ready and /startup reflect CURRENT health, not a one-time snapshot
+      // from boot. Without this, a database that drops and reconnects an
+      // hour into uptime would leave /ready reporting stale "ready" forever
+      // (or vice versa — a probe that recovers would never be reflected).
+      this.startPeriodicRecheck();
+    }
+  }
+
+  private startPeriodicRecheck(intervalMs = 30_000): void {
+    if (this.checkInterval) return; // already running
+    this.checkInterval = setInterval(() => {
+      this.runAllProbesInner().catch((err) => {
+        logger.warn({ err }, "[startup-probes] periodic recheck failed");
+      });
+    }, intervalMs);
+    // Don't let this timer keep the process alive on its own during shutdown.
+    this.checkInterval.unref?.();
+  }
+
+  private async runAllProbesInner(): Promise<boolean> {
+    if (this.refresh) return this.refresh;
+    this.refresh = this.refreshSnapshot();
+    try {
+      return await this.refresh;
+    } finally {
+      this.refresh = null;
+    }
+  }
+
+  private async refreshSnapshot(): Promise<boolean> {
+    try {
+      return await this.collectProbes();
+    } catch (err) {
+      this.status.phase = "failed";
+      throw err;
+    } finally {
+      // Readers see only a completed generation, never partially mutated probes.
+      this.published = structuredClone(this.status);
+      this.publishedAt = Date.now();
+    }
+  }
+
+  private async collectProbes(): Promise<boolean> {
+    this.status.phase = "connecting";
+
+    logger.info("🔍 Running startup probes...");
+
+    // Run probes in parallel
+    const [_dbReady, _redisReady, _maxcoreReady] = await Promise.all([
+      this.checkDatabase(),
+      this.checkRedis(),
+      this.checkMaxcore(),
+    ]);
+
+    // Determine overall status
+    const allProbes = Object.values(this.status.probes);
+    const failedCount = allProbes.filter((p) => p.status === "failed").length;
+    const degradedCount = allProbes.filter(
+      (p) => p.status === "degraded",
+    ).length;
+
+    if (failedCount > 0) {
+      // Critical failure - database is required
+      if (this.status.probes.database.status === "failed") {
+        this.status.phase = "failed";
+        logger.warn("❌ Startup failed: Database connection required");
+        return false;
+      }
+    }
+
+    if (degradedCount > 0) {
+      this.status.phase = "degraded";
+      logger.warn(
+        `⚠️ Startup completed in degraded mode (${degradedCount} probe(s) degraded)`,
+      );
+    } else {
+      this.status.phase = "ready";
+      logger.info("✅ All startup probes passed");
+    }
+
+    this.status.readyTime = new Date();
+
+    // Notify waiting handlers
+    for (const resolver of this.readyResolvers) {
+      resolver();
+    }
+    this.readyResolvers = [];
+
+    return true;
+  }
+
+  // Wait for readiness (for routes that need to wait)
+  waitForReady(): Promise<void> {
+    if (this.isReady()) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      this.readyResolvers.push(resolve);
+    });
+  }
+
+  // Check if system is ready
+  isReady(): boolean {
+    // "degraded" means at least one operational probe (PDIM/Redis or MaxCore)
+    // is not fully healthy. Each of those already has a real,
+    // self-healing fallback path (circuit breaker, in-memory rate limiting,
+    // supervisor restart) — but this gate must report that honestly rather
+    // than calling a degraded system "ready".
+    return this.published?.phase === "ready" && Date.now() - this.publishedAt <= 120_000;
+  }
+
+  // Get full status for /startup endpoint
+  getStatus(): StartupStatus {
+    const snapshot = structuredClone(this.published ?? this.status);
+    if (this.published && Date.now() - this.publishedAt > 120_000) snapshot.phase = "failed";
+    return snapshot;
+  }
+
+  // Get uptime in seconds
+  getUptimeSeconds(): number {
+    return (Date.now() - this.status.startTime.getTime()) / 1000;
+  }
+
+  // Cleanup
+  shutdown(): void {
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
+  }
+}
+
+// Singleton instance
+export const startupProbes = new StartupProbeManager();
+
+// Express middleware to add startup endpoints
+export function setupStartupEndpoints(app: import("express").Express): void {
+  // Registered before ALL middleware — designed for external uptime monitors.
+  // No session, no auth, no rate-limiting, no DB. Just confirms the process is alive.
+  app.get("/api/ping", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.json({
+      ok: true,
+      pid: process.pid,
+      uptime: Math.floor(process.uptime()),
+    });
+  });
+
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Root route: serves the React app's index?.html immediately so the Replit
+  // deployment health check (which always hits /) gets a 200 from the moment
+  // the process starts — not after the 2-minute async init window.
+  // In development Vite handles /, so this only runs in production.
+  //
+  // IMPORTANT: the built SPA shell lives in <repo>/dist/public/index?.html, NOT
+  // in <repo>/server/public/index?.html.  An earlier version of this code used
+  // resolve(__dirname, 'public', 'index.html'), which always missed the file
+  // and registered an empty `app?.get('/')` handler — causing GET / to return
+  // a zero-byte body in production.  Resolve the path against process.cwd()
+  // so it works whether we run via tsx (dev), node dist/ (built), or cluster.
+  if (isProductionEnv()) {
+    const indexPath = resolve(process.cwd(), "dist", "public", "index.html");
+    if (existsSync(indexPath)) {
+      const html = readFileSync(indexPath, "utf8");
+      app?.get("/", (_req, res) => {
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache");
+        res.status(200).send(html);
+      });
+    }
+    // If the build is missing entirely, do NOT register a fallback that returns
+    // an empty body — let the request fall through to the boot-fallback shim
+    // (which serves a real loading page) and ultimately to serveStatic, which
+    // injects route metadata.  Returning an empty 200 here would mask real
+    // build failures and ship a blank page to users.
+  }
+
+  // /startup - Verbose startup status
+  app?.get("/startup", (_req, res) => {
+    const status = startupProbes?.getStatus();
+    const httpStatus = status?.phase === "failed" ? 503 : 200;
+
+    res.status(httpStatus).json({
+      ...status,
+      uptime: startupProbes.getUptimeSeconds(),
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  // Shared readiness responder — /status, /ready, and /readyz all report the
+  // same underlying probe state; one implementation keeps them from drifting.
+  const sendReadiness = (
+    res: import("express").Response,
+    readyBody: (phase: string) => Record<string, unknown>,
+  ) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    if (startupProbes?.isReady()) {
+      res.status(200).json(readyBody(startupProbes.getStatus().phase));
+    } else {
+      res.status(503).json({
+        status: "not_ready",
+        phase: startupProbes.getStatus().phase,
+        probes: startupProbes.getStatus().probes,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+
+  app?.get("/status", (_req, res) => {
+    sendReadiness(res, (phase) => ({
+      status: "ok",
+      phase,
+      uptime: startupProbes.getUptimeSeconds(),
+      timestamp: new Date().toISOString(),
+    }));
+  });
+
+  // Override /ready to use probe status
+  app?.get("/ready", (_req, res) => {
+    sendReadiness(res, (phase) => ({
+      status: "ready",
+      phase,
+      uptime: startupProbes.getUptimeSeconds(),
+      timestamp: new Date().toISOString(),
+    }));
+  });
+
+  // /readyz — Kubernetes-style readiness probe alias for /ready.
+  // Registered before middleware so uptime monitors never hit the middleware chain.
+  app?.get("/readyz", (_req, res) => {
+    sendReadiness(res, (phase) => ({
+      status: "ready",
+      phase,
+      uptime: startupProbes.getUptimeSeconds(),
+      timestamp: new Date().toISOString(),
+    }));
+  });
+}

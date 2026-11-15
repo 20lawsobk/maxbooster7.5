@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: CLI options reject dangerous/unbounded invalid integers
+ok 1 - CLI options reject dangerous/unbounded invalid integers
+  ---
+  duration_ms: 1.318072
+  type: 'test'
+  ...
+# Subtest: repository scope inventories full Git index, not only client/server
+ok 2 - repository scope inventories full Git index, not only client/server
+  ---
+  duration_ms: 492.519277
+  type: 'test'
+  ...
+# Subtest: controller integration preserves the existing npm build and start commands
+ok 3 - controller integration preserves the existing npm build and start commands
+  ---
+  duration_ms: 1.00084
+  type: 'test'
+  ...
+# Subtest: verification cannot pass when evidence is not bound to a clean HEAD
+ok 4 - verification cannot pass when evidence is not bound to a clean HEAD
+  ---
+  duration_ms: 0.436513
+  type: 'test'
+  ...
+# Subtest: worktree fingerprint detects source-byte changes during dirty review
+ok 5 - worktree fingerprint detects source-byte changes during dirty review
+  ---
+  duration_ms: 539.143916
+  type: 'test'
+  ...
+# Subtest: output paths reject symlink traversal and paths outside the checkout
+ok 6 - output paths reject symlink traversal and paths outside the checkout
+  ---
+  duration_ms: 1.461756
+  type: 'test'
+  ...
+# Subtest: only explicit isolated review branches can enable repair
+ok 7 - only explicit isolated review branches can enable repair
+  ---
+  duration_ms: 2.267074
+  type: 'test'
+  ...
+# Subtest: repair routing accepts only reviewed lint and split typecheck gates
+ok 8 - repair routing accepts only reviewed lint and split typecheck gates
+  ---
+  duration_ms: 1.646865
+  type: 'test'
+  ...
+# Subtest: repair routing leaves Python, MaxCore, PDIM, integration, and infrastructure failures blocked
+ok 9 - repair routing leaves Python, MaxCore, PDIM, integration, and infrastructure failures blocked
+  ---
+  duration_ms: 0.614143
+  type: 'test'
+  ...
+# Subtest: repair routing fails closed for mixed and unclassified failures
+ok 10 - repair routing fails closed for mixed and unclassified failures
+  ---
+  duration_ms: 0.68513
+  type: 'test'
+  ...
+# Subtest: a verified uncommitted repair is successful without forcing a commit
+ok 11 - a verified uncommitted repair is successful without forcing a commit
+  ---
+  duration_ms: 0.319955
+  type: 'test'
+  ...
+# Subtest: supervisor lock is exclusive and released explicitly
+ok 12 - supervisor lock is exclusive and released explicitly
+  ---
+  duration_ms: 1.143072
+  type: 'test'
+  ...
+# Subtest: supervisor rejects malformed or unsafe adaptive policy state
+ok 13 - supervisor rejects malformed or unsafe adaptive policy state
+  ---
+  duration_ms: 0.378946
+  type: 'test'
+  ...
+# Subtest: supervisor retains each run's complete verification receipt
+ok 14 - supervisor retains each run's complete verification receipt
+  ---
+  duration_ms: 1.308225
+  type: 'test'
+  ...
+# Subtest: independent approval is required and must match current revision
+ok 15 - independent approval is required and must match current revision
+  ---
+  duration_ms: 2.511638
+  type: 'test'
+  ...
+# Subtest: child failures, timeouts and logs are recorded rather than silently passed
+ok 16 - child failures, timeouts and logs are recorded rather than silently passed
+  ---
+  duration_ms: 402.019824
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1616.606122

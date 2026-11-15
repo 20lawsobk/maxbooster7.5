@@ -1,0 +1,759 @@
+`python
+
+aimodel/gpu/opcodespec.py
+
+from future import annotations
+from dataclasses import dataclass
+from typing import Tuple, Dict, Literal
+
+NumericProfile = Literal["fp32strict", "fp16mixed", "fp8_mixed"]
+
+@dataclass(frozen=True)
+class OpcodeSpec:
+    name: str
+    version: int
+    input_shapes: Dict[str, Tuple[str, ...]]
+    output_shapes: Dict[str, Tuple[str, ...]]
+    dtypes: Dict[str, str]
+    numeric_profile: NumericProfile
+    deterministic: bool
+    doc: str
+
+OPCODES: Dict[str, OpcodeSpec] = {
+    "flashattentionfp8_sm102:v1": OpcodeSpec(
+        name="flashattentionfp8_sm102",
+        version=1,
+        input_shapes={"Q": ("B", "H", "T", "D"), "K": ("B", "H", "T", "D"), "V": ("B", "H", "T", "D")},
+        output_shapes={"O": ("B", "H", "T", "D")},
+        dtypes={"Q": "fp8", "K": "fp8", "V": "fp8", "O": "fp16"},
+        numericprofile="fp8mixed",
+        deterministic=True,
+        doc="FP8 compute, FP16 accumulate FlashAttention for sm_102.",
+    ),
+}
+`
+
+`python
+
+aimodel/gpu/executiongraph.py
+
+from future import annotations
+from dataclasses import dataclass, field
+from typing import List, Dict
+
+@dataclass
+class Node:
+    id: str
+    opcode: str
+    inputs: Dict[str, str]
+    outputs: Dict[str, str]
+    stream: int = 0
+
+@dataclass
+class ExecutionGraph:
+    nodes: List[Node] = field(default_factory=list)
+
+    def add_node(self, node: Node) -> None:
+        self.nodes.append(node)
+
+    def topological_order(self) -> List[Node]:
+        return list(self.nodes)
+`
+
+`python
+
+ai_model/gpu/scheduler.py
+
+from future import annotations
+from typing import Dict, Any
+from .execution_graph import ExecutionGraph
+from .digital_gpu import DigitalGPU
+
+class DigitalScheduler:
+    def init(self, gpu: DigitalGPU) -> None:
+        self._gpu = gpu
+
+    def run(self, graph: ExecutionGraph, tensors: Dict[str, Any]) -> Dict[str, Any]:
+        for node in graph.topological_order():
+            result = self.gpu.runkernel(
+                node.opcode,
+                inputs={name: tensors[src] for name, src in node.inputs.items()},
+            )
+            for outname, tensorid in node.outputs.items():
+                tensors[tensorid] = result[outname]
+        return tensors
+`
+
+`python
+
+ai_model/gpu/precision.py
+
+from future import annotations
+import numpy as np
+from typing import Literal
+
+FP8Format = Literal["e4m3", "e5m2"]
+
+def quantize_fp8(x: np.ndarray, fmt: FP8Format) -> np.ndarray:
+    if fmt == "e4m3":
+        scale = 16.0
+    else:
+        scale = 8.0
+    i = np.clip(np.round(x * scale), -128, 127).astype(np.int8)
+    return i.view(np.uint8)
+
+def dequantize_fp8(x: np.ndarray, fmt: FP8Format) -> np.ndarray:
+    if fmt == "e4m3":
+        scale = 16.0
+    else:
+        scale = 8.0
+    i = x.view(np.int8).astype(np.float32)
+    return i / scale
+
+def fp8mixedmatmul(afp8: np.ndarray, bfp8: np.ndarray, fmt: FP8Format) -> np.ndarray:
+    a = dequantizefp8(afp8, fmt)
+    b = dequantizefp8(bfp8, fmt)
+    acc = a.astype(np.float16) @ b.astype(np.float16)
+    return acc.astype(np.float16)
+`
+
+`python
+
+ai_model/gpu/telemetry.py
+
+from future import annotations
+from dataclasses import dataclass
+from typing import List
+
+@dataclass
+class OpMeasurement:
+    opcode: str
+    duration_ms: float
+    bytes_moved: int
+    flops: float
+    is_measurement: bool = True
+
+class Telemetry:
+    def init(self) -> None:
+        self._ops: List[OpMeasurement] = []
+
+    @property
+    def ops(self) -> List[OpMeasurement]:
+        return list(self._ops)
+
+    def record(self, opcode: str, start: float, end: float, bytes_moved: int, flops: float) -> None:
+        self._ops.append(
+            OpMeasurement(
+                opcode=opcode,
+                duration_ms=(end - start) * 1000.0,
+                bytesmoved=bytesmoved,
+                flops=flops,
+            )
+        )
+`
+
+`python
+
+ai_model/gpu/errors.py
+
+class DigitalGPUError(Exception):
+    pass
+
+class ShapeMismatchError(DigitalGPUError):
+    pass
+
+class OOMError(DigitalGPUError):
+    pass
+
+class InvalidOpcodeError(DigitalGPUError):
+    pass
+`
+
+`python
+
+aimodel/gpu/digitalgpu.py
+
+from future import annotations
+import time
+import numpy as np
+from typing import Dict, Any
+from .telemetry import Telemetry
+from .precision import fp8mixedmatmul
+from .opcode_spec import OPCODES
+from .errors import ShapeMismatchError, InvalidOpcodeError, DigitalGPUError
+
+class DigitalGPU:
+    def init(self) -> None:
+        self._vram: Dict[str, np.ndarray] = {}
+        self.telemetry = Telemetry()
+
+    def alloc(self, name: str, shape, dtype=np.float32) -> None:
+        if name in self._vram:
+            raise DigitalGPUError(f"Tensor '{name}' already allocated.")
+        self._vram[name] = np.zeros(shape, dtype=dtype)
+
+    def free(self, name: str) -> None:
+        if name in self._vram:
+            del self._vram[name]
+
+    def get(self, name: str) -> np.ndarray:
+        return self._vram[name]
+
+    def run_kernel(self, opcode: str, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        if opcode not in OPCODES:
+            raise InvalidOpcodeError(opcode)
+        spec = OPCODES[opcode]
+        start = time.time()
+
+        if opcode == "flashattentionfp8_sm102:v1":
+            Q = inputs["Q"]
+            K = inputs["K"]
+            V = inputs["V"]
+            if Q.shape != K.shape or Q.shape != V.shape:
+                raise ShapeMismatchError("Q, K, V must have identical shapes.")
+            scores = fp8mixedmatmul(Q, K.transpose(0, 1, 3, 2), "e4m3")
+            scores = scores - scores.max(axis=-1, keepdims=True)
+            weights = np.exp(scores)
+            weights /= weights.sum(axis=-1, keepdims=True)
+            O = (weights @ V.astype(np.float16)).astype(np.float16)
+            end = time.time()
+            bytes_moved = Q.nbytes + K.nbytes + V.nbytes + O.nbytes
+            flops = float(Q.size * K.shape[-1])
+            self.telemetry.record(opcode, start, end, bytes_moved, flops)
+            return {"O": O}
+
+        raise InvalidOpcodeError(opcode)
+`
+
+`python
+
+aimodel/gpu/digitalblas.py
+
+from future import annotations
+import numpy as np
+from .digital_gpu import DigitalGPU
+
+class DigitalBLAS:
+    def init(self, gpu: DigitalGPU) -> None:
+        self._gpu = gpu
+
+    def gemm(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
+        return A @ B
+`
+
+`python
+
+aimodel/gpu/digitaldnn.py
+
+from future import annotations
+import numpy as np
+
+class DigitalDNN:
+    def conv2d(self, x: np.ndarray, w: np.ndarray, stride: int = 1, padding: int = 0) -> np.ndarray:
+        N, C, H, W = x.shape
+        F, _, KH, KW = w.shape
+        out_h = (H + 2 * padding - KH) // stride + 1
+        out_w = (W + 2 * padding - KW) // stride + 1
+        y = np.zeros((N, F, outh, outw), dtype=x.dtype)
+        x_pad = np.pad(x, ((0, 0), (0, 0), (padding, padding), (padding, padding)))
+        for n in range(N):
+            for f in range(F):
+                for oh in range(out_h):
+                    for ow in range(out_w):
+                        h0 = oh * stride
+                        w0 = ow * stride
+                        patch = x_pad[n, :, h0:h0+KH, w0:w0+KW]
+                        y[n, f, oh, ow] = np.sum(patch * w[f])
+        return y
+`
+
+`python
+
+aimodel/gpu/multidevice.py
+
+from future import annotations
+from typing import Dict
+import numpy as np
+from .digital_gpu import DigitalGPU
+
+class DigitalMultiDevice:
+    def init(self, num_devices: int) -> None:
+        self.devices: Dict[int, DigitalGPU] = {i: DigitalGPU() for i in range(num_devices)}
+
+    def allreducesum(self, tensors: Dict[int, np.ndarray]) -> np.ndarray:
+        total = None
+        for t in tensors.values():
+            total = t if total is None else total + t
+        return total
+`
+
+`python
+
+aimodel/maxcore/backend/devicebackend.py
+
+from future import annotations
+from typing import Dict, Any
+from aimodel.gpu.digitalgpu import DigitalGPU
+from aimodel.gpu.executiongraph import ExecutionGraph
+from ai_model.gpu.scheduler import DigitalScheduler
+
+class MaxCoreDigitalBackend:
+    def init(self) -> None:
+        self._gpu = DigitalGPU()
+        self.scheduler = DigitalScheduler(self.gpu)
+
+    def run_graph(self, graph: ExecutionGraph, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        return self._scheduler.run(graph, inputs)
+`
+
+`cpp
+// flashattentionsm102.cu
+
+include <cuda_fp16.h>
+
+include <cuda_runtime.h>
+
+include <mma.h>
+
+using namespace nvcuda;
+
+define WARP_SIZE 32
+
+define FP8_E4M3 0
+
+define FP8_E5M2 1
+
+struct fp8_e4m3 {
+    unsigned char v;
+};
+
+struct fp8_e5m2 {
+    unsigned char v;
+};
+
+device forceinline fp8e4m3 floattofp8e4m3(float x) {
+    int i = float2int_rn(x * 16.0f);
+    i = max(-128, min(127, i));
+    fp8_e4m3 r;
+    r.v = static_cast<unsigned char>(i & 0xFF);
+    return r;
+}
+
+device forceinline fp8e5m2 floattofp8e5m2(float x) {
+    int i = float2int_rn(x * 8.0f);
+    i = max(-128, min(127, i));
+    fp8_e5m2 r;
+    r.v = static_cast<unsigned char>(i & 0xFF);
+    return r;
+}
+
+device forceinline float fp8e4m3tofloat(fp8e4m3 x) {
+    int i = static_cast<int>(x.v);
+    if (i & 0x80) i |= ~0xFF;
+    return static_cast<float>(i) / 16.0f;
+}
+
+device forceinline float fp8e5m2tofloat(fp8e5m2 x) {
+    int i = static_cast<int>(x.v);
+    if (i & 0x80) i |= ~0xFF;
+    return static_cast<float>(i) / 8.0f;
+}
+
+template<int FP8_FORMAT>
+global void flashattnsm102_kernel(
+    const void* restrict Q,
+    const void* restrict K,
+    const void* restrict V,
+    half* restrict O,
+    int B, int H, int T, int D,
+    bool causal
+) {
+    extern shared float shared[];
+    float* m_i = shared;
+    float* li = mi + T;
+    float* acc = l_i + T;
+
+    int bh = blockIdx.x;
+    int b = bh / H;
+    int h = bh % H;
+
+    int tid = threadIdx.x;
+    int laneid = tid % WARPSIZE;
+
+    if (lane_id < T) {
+        mi[laneid] = -INFINITY;
+        li[laneid] = 0.0f;
+        for (int d = 0; d < D; ++d) {
+            acc[lane_id * D + d] = 0.0f;
+        }
+    }
+    syncthreads();
+
+    float scale = 1.0f / sqrtf((float)D);
+
+    for (int kblock = 0; kblock < T; ++k_block) {
+        int qidx = laneid;
+        int kidx = kblock;
+
+        float score = -INFINITY;
+        if (qidx < T && kidx < T) {
+            float dot = 0.0f;
+            for (int d = 0; d < D; ++d) {
+                int qoff = (((b  H + h)  T + qidx) * D + d);
+                int koff = (((b  H + h)  T + kidx) * D + d);
+                float qv, kv;
+                if constexpr (FP8FORMAT == FP8E4M3) {
+                    fp8e4m3 q8 = reinterpretcast<const fp8e4m3*>(Q)[qoff];
+                    fp8e4m3 k8 = reinterpretcast<const fp8e4m3*>(K)[koff];
+                    qv = fp8e4m3to_float(q8);
+                    kv = fp8e4m3to_float(k8);
+                } else {
+                    fp8e5m2 q8 = reinterpretcast<const fp8e5m2*>(Q)[qoff];
+                    fp8e5m2 k8 = reinterpretcast<const fp8e5m2*>(K)[koff];
+                    qv = fp8e5m2to_float(q8);
+                    kv = fp8e5m2to_float(k8);
+                }
+                dot += qv * kv;
+            }
+            score = dot * scale;
+            if (causal && qidx < kidx) {
+                score = -INFINITY;
+            }
+        }
+
+        shared float scores_row[4096];
+        if (q_idx < T) {
+            scoresrow[qidx * T + k_idx] = score;
+        }
+        syncthreads();
+
+        if (lane_id < T) {
+            float row_max = -INFINITY;
+            for (int n = 0; n < T; ++n) {
+                float s = scoresrow[laneid * T + n];
+                rowmax = fmaxf(rowmax, s);
+            }
+            float mnew = fmaxf(mi[laneid], rowmax);
+            float expmdiff = expf(mi[laneid] - m_new);
+
+            float lnew = expmdiff * li[lane_id];
+            for (int n = 0; n < T; ++n) {
+                float s = scoresrow[laneid * T + n];
+                float e = expf(s - m_new);
+                l_new += e;
+
+                int v_off = (((b  H + h)  T + n) * D);
+                for (int d = 0; d < D; ++d) {
+                    float vv;
+                    if constexpr (FP8FORMAT == FP8E4M3) {
+                        fp8e4m3 v8 = reinterpretcast<const fp8e4m3*>(V)[voff + d];
+                        vv = fp8e4m3to_float(v8);
+                    } else {
+                        fp8e5m2 v8 = reinterpretcast<const fp8e5m2*>(V)[voff + d];
+                        vv = fp8e5m2to_float(v8);
+                    }
+                    acc[laneid  D + d] = (expmdiff  li[laneid]  acc[laneid  D + d] +
+                                            e * vv) / l_new;
+                }
+            }
+            mi[laneid] = m_new;
+            li[laneid] = l_new;
+        }
+        syncthreads();
+    }
+
+    if (lane_id < T) {
+        int qglobal = laneid;
+        for (int d = 0; d < D; ++d) {
+            int ooff = (((b  H + h)  T + qglobal) * D + d);
+            O[ooff] = float2half(acc[laneid * D + d]);
+        }
+    }
+}
+`
+
+`cpp
+// conv_sm102.cu
+
+include <cuda_fp16.h>
+
+include <cuda_runtime.h>
+
+include <mma.h>
+
+using namespace nvcuda;
+
+define WARP_SIZE 32
+
+global void im2colsm102kernel(
+    const half* restrict x,
+    half* restrict cols,
+    int N, int C, int H, int W,
+    int K, int stride, int padding,
+    int outh, int outw
+) {
+    int n = blockIdx.x;
+    int c = blockIdx.y;
+    int idx = threadIdx.x + blockIdx.z * blockDim.x;
+    int total = outh * outw;
+    if (idx >= total) return;
+
+    int oh = idx / out_w;
+    int ow = idx % out_w;
+
+    int h_start = oh * stride - padding;
+    int w_start = ow * stride - padding;
+
+    for (int kh = 0; kh < K; ++kh) {
+        for (int kw = 0; kw < K; ++kw) {
+            int h = h_start + kh;
+            int w = w_start + kw;
+            int col_c = c  K  K + kh * K + kw;
+            int colidx = ((n  (C  K  K)) + colc)  (outh * outw) + idx;
+            if (h >= 0 && h < H && w >= 0 && w < W) {
+                int x_idx = ((n  C + c)  H + h) * W + w;
+                cols[colidx] = x[xidx];
+            } else {
+                cols[colidx] = _float2half(0.0f);
+            }
+        }
+    }
+}
+
+global void convwmmasm102_kernel(
+    const half* restrict A,
+    const half* restrict B,
+    half* restrict C,
+    int M, int N, int K
+) {
+    int warpM = (blockIdx.x * blockDim.x + threadIdx.x) / WARP_SIZE;
+    int warpN = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (warpM  16 >= M || warpN  16 >= N) return;
+
+    wmma::fragment<wmma::matrixa, 16, 16, 16, half, wmma::rowmajor> a_frag;
+    wmma::fragment<wmma::matrixb, 16, 16, 16, half, wmma::colmajor> b_frag;
+    wmma::fragment<wmma::accumulator, 16, 16, 16, half> c_frag;
+
+    wmma::fillfragment(cfrag, float2half(0.0f));
+
+    for (int k = 0; k < K; k += 16) {
+        const half a_tile = A + (warpM  16) * K + k;
+        const half b_tile = B + (warpN  16) * K + k;
+
+        wmma::loadmatrixsync(afrag, atile, K);
+        wmma::loadmatrixsync(bfrag, btile, K);
+
+        wmma::mmasync(cfrag, afrag, bfrag, c_frag);
+    }
+
+    half c_tile = C + (warpM  16)  N + warpN  16;
+    wmma::storematrixsync(ctile, cfrag, N, wmma::memrowmajor);
+}
+`
+
+`cpp
+// reduction_sm102.cu
+
+include <cuda_runtime.h>
+
+define WARP_SIZE 32
+
+inline device float warpreducesum(float val) {
+    for (int offset = WARP_SIZE / 2; offset > 0; offset >>= 1) {
+        val += shfldownsync(0xffffffff, val, offset);
+    }
+    return val;
+}
+
+global void reductioncurrentsm102_kernel(
+    const float* restrict x,
+    const float* restrict y,
+    float* restrict out,
+    int n
+) {
+    shared float sdata[256];
+    int tid = threadIdx.x;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    float val = 0.0f;
+    if (i < n) {
+        val = x[i] * y[i];
+    }
+    sdata[tid] = val;
+    syncthreads();
+
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        syncthreads();
+    }
+
+    if (tid == 0) {
+        atomicAdd(out, sdata[0]);
+    }
+}
+
+global void reductionredesignedsm102_kernel(
+    const float* restrict x,
+    const float* restrict y,
+    float* restrict out,
+    int n
+) {
+    float sum = 0.0f;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+
+    for (int i = idx; i < n; i += stride) {
+        sum += x[i] * y[i];
+    }
+
+    sum = warpreducesum(sum);
+
+    if ((threadIdx.x & (WARP_SIZE - 1)) == 0) {
+        atomicAdd(out, sum);
+    }
+}
+`
+
+`cpp
+// maxcoresm102unified.cu
+
+include <cuda_fp16.h>
+
+include <cuda_runtime.h>
+
+include <mma.h>
+
+using namespace nvcuda;
+
+define WARP_SIZE 32
+
+define FP8_E4M3 0
+
+define FP8_E5M2 1
+
+struct fp8_e4m3 {
+    unsigned char v;
+};
+
+struct fp8_e5m2 {
+    unsigned char v;
+};
+
+device forceinline fp8e4m3 floattofp8e4m3(float x) {
+    int i = float2int_rn(x * 16.0f);
+    i = max(-128, min(127, i));
+    fp8_e4m3 r;
+    r.v = static_cast<unsigned char>(i & 0xFF);
+    return r;
+}
+
+device forceinline fp8e5m2 floattofp8e5m2(float x) {
+    int i = float2int_rn(x * 8.0f);
+    i = max(-128, min(127, i));
+    fp8_e5m2 r;
+    r.v = static_cast<unsigned char>(i & 0xFF);
+    return r;
+}
+
+device forceinline float fp8e4m3tofloat(fp8e4m3 x) {
+    int i = static_cast<int>(x.v);
+    if (i & 0x80) i |= ~0xFF;
+    return static_cast<float>(i) / 16.0f;
+}
+
+device forceinline float fp8e5m2tofloat(fp8e5m2 x) {
+    int i = static_cast<int>(x.v);
+    if (i & 0x80) i |= ~0xFF;
+    return static_cast<float>(i) / 8.0f;
+}
+
+template<int FP8_FORMAT>
+global void flashattnsm102kernelunified(
+    const void* restrict Q,
+    const void* restrict K,
+    const void* restrict V,
+    half* restrict O,
+    int B, int H, int T, int D,
+    bool causal
+) {
+    extern shared float shared[];
+    float* m_i = shared;
+    float* li = mi + T;
+    float* acc = l_i + T;
+
+    int bh = blockIdx.x;
+    int b = bh / H;
+    int h = bh % H;
+
+    int tid = threadIdx.x;
+    int laneid = tid % WARPSIZE;
+
+    if (lane_id < T) {
+        mi[laneid] = -INFINITY;
+        li[laneid] = 0.0f;
+        for (int d = 0; d < D; ++d) {
+            acc[lane_id * D + d] = 0.0f;
+        }
+    }
+    syncthreads();
+
+    float scale = 1.0f / sqrtf((float)D);
+
+    for (int kblock = 0; kblock < T; ++k_block) {
+        int qidx = laneid;
+        int kidx = kblock;
+
+        float score = -INFINITY;
+        if (qidx < T && kidx < T) {
+            float dot = 0.0f;
+            for (int d = 0; d < D; ++d) {
+                int qoff = (((b  H + h)  T + qidx) * D + d);
+                int koff = (((b  H + h)  T + kidx) * D + d);
+                float qv, kv;
+                if constexpr (FP8FORMAT == FP8E4M3) {
+                    fp8e4m3 q8 = reinterpretcast<const fp8e4m3*>(Q)[qoff];
+                    fp8e4m3 k8 = reinterpretcast<const fp8e4m3*>(K)[koff];
+                    qv = fp8e4m3to_float(q8);
+                    kv = fp8e4m3to_float(k8);
+                } else {
+                    fp8e5m2 q8 = reinterpretcast<const fp8e5m2*>(Q)[qoff];
+                    fp8e5m2 k8 = reinterpretcast<const fp8e5m2*>(K)[koff];
+                    qv = fp8e5m2to_float(q8);
+                    kv = fp8e5m2to_float(k8);
+                }
+                dot += qv * kv;
+            }
+            score = dot * scale;
+            if (causal && qidx < kidx) {
+                score = -INFINITY;
+            }
+        }
+
+        shared float scores_row[4096];
+        if (q_idx < T) {
+            scoresrow[qidx * T + k_idx] = score;
+        }
+        syncthreads();
+
+        if (lane_id < T) {
+            float row_max = -INFINITY;
+            for (int n = 0; n < T; ++n) {
+                float s = scoresrow[laneid * T + n];
+                rowmax = fmaxf(rowmax, s);
+            }
+            float mnew = fmaxf(mi[laneid], rowmax);
+            float expmdiff = expf(mi[laneid] - m_new);
+
+            float lnew = expmdiff * li[lane_id];
+            for (int n = 0; n < T; ++n) {
+                float s = scoresrow[laneid * T + n];
+                float e = expf(s - m_new);
+                l_new += e;
+
+                int v_off = (((b  H + h)  T + n) * D);
+                for (int d = 0; d < D; ++d) {
+                    float vv;
+                    if constexpr (FP8FORMAT == FP8E4M3) {
+                        fp8e4m3 v8 = reinterpretcast<con

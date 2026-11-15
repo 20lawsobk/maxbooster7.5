@@ -1,0 +1,12 @@
+{
+  "command": [
+    "git",
+    "apply",
+    "--check",
+    "/workspace/onboarding-results/case-identity-repairs/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/source.patch"
+  ],
+  "exitCode": 0,
+  "stdout": "",
+  "stderr": "",
+  "meaning": "Read-only apply check against existing root; candidate was not applied"
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-29T08:51:08.800231+00:00",
+  "sourceRevision": "d9d04498a02c25a1b6ce03306adc20727e9aa2d1",
+  "sourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "sourceInputCount": 4242,
+  "rootMutations": false,
+  "sourcePatch": "source.patch",
+  "sourcePatchSha256": "538665930f6000027a104167dfce59dcd73170e4ed53c0fcc23e88ddf9c66093",
+  "files": [
+    {
+      "path": "scripts/testing/commerce-legacy-fixture.mjs",
+      "operation": "modify",
+      "beforeSha256": "da438be7781b009932e7ce5d6606f0697b48ed6c484071dc45a2bf38b6f668ad",
+      "afterSha256": "035f06113c85eeb27f2fcae51719de68ddb5c00512ae3cd774ba68ad093fc6ee",
+      "candidate": "candidate/scripts/testing/commerce-legacy-fixture.mjs"
+    },
+    {
+      "path": "scripts/testing/run-commerce.py",
+      "operation": "modify",
+      "beforeSha256": "c4d9a0b188f5e1eae9eaed3e0b56a9b1ac02bd7222f4cc7df60f78cc9c027919",
+      "afterSha256": "3f28e1853e0f2b39e3008e801829a267ca7333baeb603871e4147dff319c2479",
+      "candidate": "candidate/scripts/testing/run-commerce.py"
+    },
+    {
+      "path": "scripts/testing/generate-catalog.py",
+      "operation": "modify",
+      "beforeSha256": "177fc3778137b5e255b2fd6618ed3f184c9d6a74f7ed2327b2cef927e598ccfe",
+      "afterSha256": "e83b2f217d5d29c9c2d04406b6881ae8fab392d116337b28e8b7fbe77fc14ef3",
+      "candidate": "candidate/scripts/testing/generate-catalog.py"
+    },
+    {
+      "path": "tests/testing/test_commerce_subject_selector.py",
+      "operation": "add",
+      "beforeSha256": null,
+      "afterSha256": "53bb5f75f101a39dc40e2eb412520a2d1eefd82db46fac0b399d3fc14e70dff7",
+      "candidate": "candidate/tests/testing/test_commerce_subject_selector.py"
+    },
+    {
+      "path": "tests/testing/test_catalog_snapshot_ownership.py",
+      "operation": "add",
+      "beforeSha256": null,
+      "afterSha256": "ab062f6aba7079b7b2bf87f74ffdbf534d5a4efb45b4ff9b12964add2bca5883",
+      "candidate": "candidate/tests/testing/test_catalog_snapshot_ownership.py"
+    }
+  ],
+  "selectorReceipt": "selector/receipts/verification.json",
+  "catalogCensusReceipt": "catalog/receipts/actual-census.json",
+  "catalogRegressionReceipt": "catalog/receipts/regressions.json",
+  "metrics": {
+    "targetedEvidenceOccurrences": 14,
+    "targetedCatalogOwnershipGaps": 1,
+    "selectorTopLevelTestsPassed": 12,
+    "selectorSubtestsPassed": 10,
+    "catalogRegressionTestsPassed": 6,
+    "realMoneyLoopCasesRerun": 0,
+    "acceptedNewFeatureEvidence": 0,
+    "greenPagesAdded": 0
+  },
+  "remaining": [
+    "Parent hash-guarded landing of exactly the three scripts and two tests",
+    "Real 14-case owned PostgreSQL/Redis legacy-beat execution with sanitized environment and current source binding",
+    "Fresh frozen full master/source-evidence reconciliation; no transfer of historical PASS status"
+  ],
+  "productionReady": false
+}

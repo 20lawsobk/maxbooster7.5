@@ -1,0 +1,84 @@
+{
+  "startedAt": "2026-10-28T12:12:02.630849+00:00",
+  "scope": "Read-only retained-profile analysis; no new product execution, source changes or counter merge",
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false,
+  "runs": [
+    {
+      "id": "initial-package-entry-harness-error",
+      "command": [
+        "node",
+        "/workspace/maxbooster7.5/reports/coverage-producer/2026-10-28-compatibility-trace/replay-comparison.initial.mjs"
+      ],
+      "exitCode": 1,
+      "expectedExitCode": 1,
+      "durationSeconds": 0.175,
+      "log": "reports/coverage-producer/2026-10-28-compatibility-trace/initial-package-entry-harness-error.txt",
+      "logSha256": "e91da040464f769fb8b004f644bdd0aed558d49f6c8fc57affb97c6efe6e9f98"
+    },
+    {
+      "id": "retained-input-verification",
+      "command": [
+        "python3",
+        "/workspace/maxbooster7.5/reports/coverage-producer/2026-10-28-compatibility-trace/verify-retained-inputs.py"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "durationSeconds": 2.378,
+      "log": "reports/coverage-producer/2026-10-28-compatibility-trace/retained-input-verification.txt",
+      "logSha256": "4cfc8ef14dec97c7da465f5834777667305ecd5d95090e11ea3d400a897fbbe4"
+    },
+    {
+      "id": "final-retained-runtime-replay",
+      "command": [
+        "node",
+        "/workspace/maxbooster7.5/reports/coverage-producer/2026-10-28-compatibility-trace/replay-comparison.mjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "durationSeconds": 4.755,
+      "log": "reports/coverage-producer/2026-10-28-compatibility-trace/final-retained-runtime-replay.txt",
+      "logSha256": "7723508deb2114b11d8f4cd4fe5e98f2d5bce406fcbbf0f1df337055ac4adbcd"
+    }
+  ],
+  "protectedInputsBefore": {
+    "scripts/testing/collect-node-coverage.mjs": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3",
+    "scripts/testing/coverage-provenance.mjs": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030",
+    "scripts/testing/coverage-node-bootstrap.mjs": "bd1a984cf459aeb3c0c6416bf72091f0d08752628c7cbff47b33d3577805baa4",
+    "vitest.platform.config.ts": "19db3933ad5515138a5831dc7f064f7f2f5622ce027ab76f02a6ed611c6c7438",
+    "package.json": "b5aa58bb5b6fc2263c07855a50c7159ddada8a5a2c9468c6295a77f4b1faa28e",
+    "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad",
+    "reports/test-verification/coverage/coverage-final.json": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76",
+    "external/pdim/artifacts/api-server/src/redis/store.ts": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770",
+    "server/lib/pdimClient.ts": "eef5afab18d6b5697efd49b0eb6c840f27d0b10759b65b8a11542a558d8fb1a9",
+    "server/logger.ts": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5",
+    "external/pdim/artifacts/api-server/src/workers/lua-pool.ts": "c545aafe8452eea8124923cee34c2e1ffde8c578299b9268793096c736eb6e3f",
+    "server/config/ports.ts": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d",
+    "server/lib/luaExecutor.ts": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00",
+    "server/lib/pdimCircuitBreaker.ts": "beb5d21a1bf9d41affb5edcff3a1cfdc5dd8102c5eef27fbb41d7aaa0e0b65f4",
+    "server/logSanitizer.ts": "f012622e80390701551ab38f7eda478daf9f7ee4a692e63a71ebaa856a145fb5"
+  },
+  "protectedInputsAfter": {
+    "scripts/testing/collect-node-coverage.mjs": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3",
+    "scripts/testing/coverage-provenance.mjs": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030",
+    "scripts/testing/coverage-node-bootstrap.mjs": "bd1a984cf459aeb3c0c6416bf72091f0d08752628c7cbff47b33d3577805baa4",
+    "vitest.platform.config.ts": "19db3933ad5515138a5831dc7f064f7f2f5622ce027ab76f02a6ed611c6c7438",
+    "package.json": "b5aa58bb5b6fc2263c07855a50c7159ddada8a5a2c9468c6295a77f4b1faa28e",
+    "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad",
+    "reports/test-verification/coverage/coverage-final.json": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76",
+    "external/pdim/artifacts/api-server/src/redis/store.ts": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770",
+    "server/lib/pdimClient.ts": "eef5afab18d6b5697efd49b0eb6c840f27d0b10759b65b8a11542a558d8fb1a9",
+    "server/logger.ts": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5",
+    "external/pdim/artifacts/api-server/src/workers/lua-pool.ts": "c545aafe8452eea8124923cee34c2e1ffde8c578299b9268793096c736eb6e3f",
+    "server/config/ports.ts": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d",
+    "server/lib/luaExecutor.ts": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00",
+    "server/lib/pdimCircuitBreaker.ts": "beb5d21a1bf9d41affb5edcff3a1cfdc5dd8102c5eef27fbb41d7aaa0e0b65f4",
+    "server/logSanitizer.ts": "f012622e80390701551ab38f7eda478daf9f7ee4a692e63a71ebaa856a145fb5"
+  },
+  "protectedInputsUnchanged": true,
+  "configuredCredentialsPassedToChildren": false,
+  "status": "analysis_completed_profiles_incompatible",
+  "finishedAt": "2026-10-28T12:12:09.991627+00:00"
+}

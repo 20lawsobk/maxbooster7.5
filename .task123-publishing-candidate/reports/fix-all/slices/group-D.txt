@@ -1,0 +1,413 @@
+server/security-system.ts(61,11): error TS6133: 'anomalyDetector' is declared but its value is never read.
+server/security-system.ts(62,11): error TS6133: 'autoHealer' is declared but its value is never read.
+server/security-system.ts(133,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { modelName: string | SQL<unknown> | Placeholder<string, any>; modelType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 11 more ...; lastTrainedAt?: SQL<...> | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'isActive' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; modelType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 11 more ...; lastTrainedAt?: SQL<...> | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { modelName: string | SQL<unknown> | Placeholder<string, any>; modelType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 11 more ...; lastTrainedAt?: SQL<...> | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'isActive' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; modelType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 11 more ...; lastTrainedAt?: SQL<...> | ... 3 more ... | undefined; }[]'.
+server/security-system.ts(364,11): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type '{ vulnerabilities: { type: string; severity: string; description: string; }[]; }' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type '{ vulnerabilities: { type: string; severity: string; description: string; }[]; }' is not assignable to parameter of type 'undefined'.
+server/security-system.ts(844,7): error TS2561: Object literal may only specify known properties, but 'source' does not exist in type '{ threatType: string; severity: string; sourceIp?: string | undefined; userId?: string | undefined; path?: string | undefined; method?: string | undefined; details?: string | undefined; ... 4 more ...; metadata?: Record<...> | undefined; }'. Did you mean to write 'sourceIp'?
+server/security-system.ts(869,7): error TS2561: Object literal may only specify known properties, but 'source' does not exist in type '{ threatType: string; severity: string; sourceIp?: string | undefined; userId?: string | undefined; path?: string | undefined; method?: string | undefined; details?: string | undefined; ... 4 more ...; metadata?: Record<...> | undefined; }'. Did you mean to write 'sourceIp'?
+server/security-system.ts(900,9): error TS2561: Object literal may only specify known properties, but 'source' does not exist in type '{ threatType: string; severity: string; sourceIp?: string | undefined; userId?: string | undefined; path?: string | undefined; method?: string | undefined; details?: string | undefined; ... 4 more ...; metadata?: Record<...> | undefined; }'. Did you mean to write 'sourceIp'?
+server/security-system.ts(953,7): error TS2561: Object literal may only specify known properties, but 'source' does not exist in type '{ threatType: string; severity: string; sourceIp?: string | undefined; userId?: string | undefined; path?: string | undefined; method?: string | undefined; details?: string | undefined; ... 4 more ...; metadata?: Record<...> | undefined; }'. Did you mean to write 'sourceIp'?
+server/security-system.ts(981,7): error TS2561: Object literal may only specify known properties, but 'source' does not exist in type '{ threatType: string; severity: string; sourceIp?: string | undefined; userId?: string | undefined; path?: string | undefined; method?: string | undefined; details?: string | undefined; ... 4 more ...; metadata?: Record<...> | undefined; }'. Did you mean to write 'sourceIp'?
+server/security-system.ts(998,7): error TS2561: Object literal may only specify known properties, but 'source' does not exist in type '{ threatType: string; severity: string; sourceIp?: string | undefined; userId?: string | undefined; path?: string | undefined; method?: string | undefined; details?: string | undefined; ... 4 more ...; metadata?: Record<...> | undefined; }'. Did you mean to write 'sourceIp'?
+server/security-system.ts(1017,7): error TS2561: Object literal may only specify known properties, but 'source' does not exist in type '{ threatType: string; severity: string; sourceIp?: string | undefined; userId?: string | undefined; path?: string | undefined; method?: string | undefined; details?: string | undefined; ... 4 more ...; metadata?: Record<...> | undefined; }'. Did you mean to write 'sourceIp'?
+server/security-system.ts(1196,15): error TS2571: Object is of type 'unknown'.
+server/security-system.ts(1344,29): error TS2531: Object is possibly 'null'.
+server/security-system.ts(1405,38): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'versionId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'modelId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]'.
+server/security-system.ts(1428,29): error TS2532: Object is possibly 'undefined'.
+server/security-system.ts(1438,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { modelName: string | SQL<unknown> | Placeholder<string, any>; decisionType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 7 more ...; explanation?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'inferenceId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; decisionType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 7 more ...; explanation?: string | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { modelName: string | SQL<unknown> | Placeholder<string, any>; decisionType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 7 more ...; explanation?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'inferenceId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; decisionType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 7 more ...; explanation?: string | ... 3 more ... | undefined; }[]'.
+server/security-system.ts(1513,29): error TS2531: Object is possibly 'null'.
+server/security-system.ts(1566,38): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'versionId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'modelId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]'.
+server/security-system.ts(1640,13): error TS6133: '_obfuscationDetected' is declared but its value is never read.
+server/security-system.ts(1693,38): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'versionId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'modelId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]'.
+server/security-system.ts(1809,15): error TS6133: '_testStart' is declared but its value is never read.
+server/security-system.ts(1812,15): error TS6133: '_vulnerabilityScore' is declared but its value is never read.
+server/security-system.ts(1831,38): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'versionId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'modelId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]'.
+server/security-system.ts(2023,35): error TS7031: Binding element 'gte' implicitly has an 'any' type.
+server/security-system.ts(2028,33): error TS7031: Binding element 'desc' implicitly has an 'any' type.
+server/security-system.ts(2040,37): error TS7031: Binding element 'desc' implicitly has an 'any' type.
+server/security-system.ts(2063,35): error TS7031: Binding element 'gte' implicitly has an 'any' type.
+server/services/aiContentService.ts(205,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'versionId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'modelId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]'.
+server/services/aiContentService.ts(229,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { modelName: string | SQL<unknown> | Placeholder<string, any>; decisionType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 7 more ...; explanation?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'inferenceId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; decisionType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 7 more ...; explanation?: string | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { modelName: string | SQL<unknown> | Placeholder<string, any>; decisionType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 7 more ...; explanation?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'inferenceId' does not exist in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; decisionType: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 7 more ...; explanation?: string | ... 3 more ... | undefined; }[]'.
+server/services/aiContentService.ts(257,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Platform'.
+server/services/aiContentService.ts(258,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'ContentTone'.
+server/services/aiContentService.ts(334,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Platform'.
+server/services/aiContentService.ts(335,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'ContentTone'.
+server/services/aiContentService.ts(512,13): error TS2353: Object literal may only specify known properties, and 'voiceProfile' does not exist in type '{ userId?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; voiceName?: string | SQL<...> | PgColumn<...> | undefined; ... 13 more ...; brandValues?: string[] | ... 3 more ... | undefined; }'.
+server/services/aiContentService.ts(520,43): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { userId: string | SQL<unknown> | Placeholder<string, any>; voiceName: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; brandValues?: string[] | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'voiceProfile' does not exist in type '{ userId: string | SQL<unknown> | Placeholder<string, any>; voiceName: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 12 more ...; brandValues?: string[] | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; voiceName: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; brandValues?: string[] | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'userId' does not exist in type '{ userId: string | SQL<unknown> | Placeholder<string, any>; voiceName: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 12 more ...; brandValues?: string[] | ... 3 more ... | undefined; }[]'.
+server/services/aiContentService.ts(670,13): error TS2322: Type '{ topic: string; category: "music" | "platform" | "social" | "industry" | "cultural" | "holiday"; popularity: number; hashtags: string[]; region: string | undefined; }[]' is not assignable to type 'TrendingTopic[]'.
+  Type '{ topic: string; category: "music" | "platform" | "social" | "industry" | "cultural" | "holiday"; popularity: number; hashtags: string[]; region: string | undefined; }' is not assignable to type 'TrendingTopic'.
+    Types of property 'category' are incompatible.
+      Type '"music" | "platform" | "social" | "industry" | "cultural" | "holiday"' is not assignable to type '"music" | "social" | "industry" | "cultural" | "holiday"'.
+        Type '"platform"' is not assignable to type '"music" | "social" | "industry" | "cultural" | "holiday"'.
+server/services/aiContentService.ts(721,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Platform'.
+server/services/aiContentService.ts(722,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'ContentTone'.
+server/services/aiContentService.ts(732,7): error TS2322: Type '{}' is not assignable to type 'string'.
+server/services/aiContentService.ts(761,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Platform'.
+server/services/aiContentService.ts(762,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'ContentTone'.
+server/services/aiContentService.ts(770,11): error TS2740: Type '{}' is missing the following properties from type 'string[]': length, pop, push, concat, and 35 more.
+server/services/aiContentService.ts(810,45): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { platform: string | SQL<unknown> | Placeholder<string, any>; hashtag: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; peakHours?: number[] | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'popularity' does not exist in type '{ platform: string | SQL<unknown> | Placeholder<string, any>; hashtag: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 12 more ...; peakHours?: number[] | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { platform: string | SQL<unknown> | Placeholder<string, any>; hashtag: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; peakHours?: number[] | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'userId' does not exist in type '{ platform: string | SQL<unknown> | Placeholder<string, any>; hashtag: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 12 more ...; peakHours?: number[] | ... 3 more ... | undefined; }[]'.
+server/services/aiContentService.ts(915,46): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { userId: string | SQL<unknown> | Placeholder<string, any>; platform: string | SQL<unknown> | Placeholder<string, any>; dayOfWeek: number | SQL<unknown> | Placeholder<...>; ... 10 more ...; avgReach?: number | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'sampleSize' does not exist in type '{ userId: string | SQL<unknown> | Placeholder<string, any>; platform: string | SQL<unknown> | Placeholder<string, any>; dayOfWeek: number | SQL<unknown> | Placeholder<...>; ... 10 more ...; avgReach?: number | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; platform: string | SQL<unknown> | Placeholder<string, any>; dayOfWeek: number | SQL<unknown> | Placeholder<...>; ... 10 more ...; avgReach?: number | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'userId' does not exist in type '{ userId: string | SQL<unknown> | Placeholder<string, any>; platform: string | SQL<unknown> | Placeholder<string, any>; dayOfWeek: number | SQL<unknown> | Placeholder<...>; ... 10 more ...; avgReach?: number | ... 3 more ... | undefined; }[]'.
+server/services/aiContentService.ts(1037,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Platform'.
+server/services/aiContentService.ts(1038,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'ContentTone'.
+server/services/aiContentService.ts(1144,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Platform'.
+server/services/aiContentService.ts(1145,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'ContentTone'.
+server/services/aiContentService.ts(1184,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type '"energetic" | "professional" | "casual" | "promotional" | "creative" | undefined'.
+server/services/aiContentService.ts(1223,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'Platform'.
+server/services/aiContentService.ts(1224,9): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'ContentTone'.
+server/services/aiContentService.ts(1239,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[ContentService] Video script generation failed, renderer will use topic as script:", msg?: undefined): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[ContentService] Video script generation failed, renderer will use topic as script:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'undefined'.
+server/services/aiContentService.ts(1298,47): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'MusicParameters'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'MusicParameters': key, scale, tempo, mood, genre
+server/services/aiContentService.ts(1299,37): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'MusicParameters'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'MusicParameters': key, scale, tempo, mood, genre
+server/services/aiContentService.ts(1301,63): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'MusicParameters'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'MusicParameters': key, scale, tempo, mood, genre
+server/services/autopilotPublisher.ts(44,20): error TS2503: Cannot find namespace 'cron'.
+server/services/autopilotPublisher.ts(187,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+server/services/autopilotPublisher.ts(432,13): error TS2740: Type '{}' is missing the following properties from type 'string[]': length, pop, push, concat, and 35 more.
+server/services/autopilotPublisher.ts(462,11): error TS2322: Type '{}' is not assignable to type 'string'.
+server/services/autopilotPublisher.ts(465,11): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/autopilotPublisher.ts(466,11): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/autopilotPublisher.ts(467,11): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/autopilotPublisher.ts(498,12): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+server/services/autopilotPublisher.ts(532,35): error TS7053: Element implicitly has an 'any' type because expression of type 'number' can't be used to index type '{}'.
+  No index signature with a parameter of type 'number' was found on type '{}'.
+server/services/autopilotPublisher.ts(591,11): error TS2322: Type 'unknown' is not assignable to type 'string'.
+server/services/autopilotPublisher.ts(595,11): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/autopilotPublisher.ts(596,11): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/autopilotPublisher.ts(610,11): error TS2365: Operator '<' cannot be applied to types 'number' and '{}'.
+server/services/autopilotPublisher.ts(639,11): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/autopilotPublisher.ts(640,11): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/autopilotPublisher.ts(641,11): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/autopilotPublisher.ts(678,11): error TS2322: Type 'Record<string, unknown>' is not assignable to type '"tiktok" | "instagram" | "twitter" | "youtube" | "facebook" | "linkedin"'.
+server/services/autopilotPublisher.ts(709,10): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+server/services/autopilotPublisher.ts(790,9): error TS2345: Argument of type '(best: Record<string, unknown>, current: Record<string, unknown>) => Record<string, unknown>' is not assignable to parameter of type '(previousValue: { name: string; platforms: string[]; mediaType: "audio" | "video" | "image" | "text"; content: string; creatives: any[]; targetAudience: any; suggestedBudget: number; expectedReach: number; expectedEngagement: number; predictedROI: number; confidence: number; platformOptimizations: any; }, currentVal...'.
+  Type 'Record<string, unknown>' is missing the following properties from type '{ name: string; platforms: string[]; mediaType: "audio" | "video" | "image" | "text"; content: string; creatives: any[]; targetAudience: any; suggestedBudget: number; expectedReach: number; expectedEngagement: number; predictedROI: number; confidence: number; platformOptimizations: any; }': name, platforms, mediaType, content, and 8 more.
+server/services/autopilotPublisher.ts(802,11): error TS2365: Operator '<' cannot be applied to types 'number' and '{}'.
+server/services/autopilotPublisher.ts(818,11): error TS2322: Type 'Record<string, unknown>' is not assignable to type '"tiktok" | "instagram" | "twitter" | "youtube" | "facebook" | "linkedin"'.
+server/services/autopilotPublisher.ts(838,10): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+server/services/autopilotPublisher.ts(920,36): error TS2538: Type '{}' cannot be used as an index type.
+server/services/autopilotPublisher.ts(949,5): error TS6133: 'frequency' is declared but its value is never read.
+server/services/contentAnalysisService.ts(110,5): error TS6133: '_sharpAvailable' is declared but its value is never read.
+server/services/contentAnalysisService.ts(123,5): error TS2322: Type 'boolean' is not assignable to type 'typeof sharp'.
+server/services/contentAnalysisService.ts(339,11): error TS6133: 'imageClassificationModel' is declared but its value is never read.
+server/services/contentAnalysisService.ts(344,11): error TS6133: 'textDetectionModel' is declared but its value is never read.
+server/services/contentAnalysisService.ts(388,7): error TS2740: Type 'Promise<LayersModel>' is missing the following properties from type 'LayersModel': optimizer_, isOptimizerOwned, loss, lossFunctions, and 130 more.
+server/services/contentAnalysisService.ts(389,7): error TS2740: Type 'Promise<LayersModel>' is missing the following properties from type 'LayersModel': optimizer_, isOptimizerOwned, loss, lossFunctions, and 130 more.
+server/services/contentAnalysisService.ts(390,7): error TS2740: Type 'Promise<LayersModel>' is missing the following properties from type 'LayersModel': optimizer_, isOptimizerOwned, loss, lossFunctions, and 130 more.
+server/services/contentAnalysisService.ts(411,7): error TS2322: Type 'null' is not assignable to type 'Promise<LayersModel>'.
+server/services/contentAnalysisService.ts(438,5): error TS2739: Type 'Sequential' is missing the following properties from type 'Promise<LayersModel>': then, catch, finally, [Symbol.toStringTag]
+server/services/contentAnalysisService.ts(448,7): error TS2322: Type 'null' is not assignable to type 'Promise<LayersModel>'.
+server/services/contentAnalysisService.ts(472,5): error TS2739: Type 'Sequential' is missing the following properties from type 'Promise<LayersModel>': then, catch, finally, [Symbol.toStringTag]
+server/services/contentAnalysisService.ts(482,7): error TS2322: Type 'null' is not assignable to type 'Promise<LayersModel>'.
+server/services/contentAnalysisService.ts(506,5): error TS2739: Type 'Sequential' is missing the following properties from type 'Promise<LayersModel>': then, catch, finally, [Symbol.toStringTag]
+server/services/contentAnalysisService.ts(890,42): error TS18046: 'prediction.data' is of type 'unknown'.
+server/services/contentAnalysisService.ts(893,7): error TS18046: 'prediction.dispose' is of type 'unknown'.
+server/services/contentAnalysisService.ts(1062,9): error TS18046: 'features.professionalQuality' is of type 'unknown'.
+server/services/contentAnalysisService.ts(1064,9): error TS18046: 'composition.complexity' is of type 'unknown'.
+server/services/contentAnalysisService.ts(1151,11): error TS2322: Type '{}' is not assignable to type 'number'.
+server/services/contentAnalysisService.ts(1152,11): error TS2322: Type '{}' is not assignable to type 'string'.
+server/services/contentAnalysisService.ts(1153,11): error TS2322: Type '{}' is not assignable to type '"unknown" | "minor" | "major"'.
+server/services/contentAnalysisService.ts(1154,11): error TS2740: Type '{}' is missing the following properties from type 'string[]': length, pop, push, concat, and 35 more.
+server/services/contentAnalysisService.ts(1155,11): error TS2322: Type '{}' is not assignable to type 'number'.
+server/services/contentAnalysisService.ts(1156,11): error TS2322: Type '{}' is not assignable to type 'number'.
+server/services/contentAnalysisService.ts(1157,11): error TS2322: Type '{}' is not assignable to type 'number'.
+server/services/contentAnalysisService.ts(1158,11): error TS2322: Type '{}' is not assignable to type 'number'.
+server/services/dnsServer.ts(89,24): error TS2349: This expression is not callable.
+  Type '{}' has no call signatures.
+server/services/dnsServer.ts(286,9): error TS2740: Type '{}' is missing the following properties from type 'Record<string, unknown>[]': length, pop, push, concat, and 35 more.
+server/services/dnsServer.ts(294,9): error TS2322: Type 'unknown' is not assignable to type 'number'.
+server/services/dnsServer.ts(308,11): error TS2322: Type 'unknown' is not assignable to type 'Buffer<ArrayBufferLike> | undefined'.
+server/services/dnsServer.ts(385,9): error TS2345: Argument of type '{}' is not assignable to parameter of type 'Buffer<ArrayBufferLike>'.
+  Type '{}' is missing the following properties from type 'Buffer<ArrayBufferLike>': slice, subarray, write, toJSON, and 102 more.
+server/services/dnsServer.ts(652,53): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[DNS] Error stopping DNS server:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[DNS] Error stopping DNS server:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/dnsServer.ts(878,35): error TS7016: Could not find a declaration file for module 'dns-packet'. '/home/runner/workspace/node_modules/dns-packet/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/dns-packet` if it exists or add a new declaration (.d.ts) file containing `declare module 'dns-packet';`
+server/services/dnsServer.ts(955,35): error TS7016: Could not find a declaration file for module 'dns-packet'. '/home/runner/workspace/node_modules/dns-packet/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/dns-packet` if it exists or add a new declaration (.d.ts) file containing `declare module 'dns-packet';`
+server/services/dnsServer.ts(1027,18): error TS7016: Could not find a declaration file for module 'dns-packet'. '/home/runner/workspace/node_modules/dns-packet/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/dns-packet` if it exists or add a new declaration (.d.ts) file containing `declare module 'dns-packet';`
+server/services/dnsServer.ts(1110,34): error TS7016: Could not find a declaration file for module 'dns-packet'. '/home/runner/workspace/node_modules/dns-packet/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/dns-packet` if it exists or add a new declaration (.d.ts) file containing `declare module 'dns-packet';`
+server/services/dnsServer.ts(1127,20): error TS2488: Type '{}' must have a '[Symbol.iterator]()' method that returns an iterator.
+server/services/dnsServer.ts(1143,47): error TS2345: Argument of type '{}' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type '{}'.
+server/services/dnsServer.ts(1179,14): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/services/dnsServer.ts(1180,20): error TS2488: Type '{}' must have a '[Symbol.iterator]()' method that returns an iterator.
+server/services/dnsServer.ts(1217,39): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+server/services/dnsServer.ts(1218,39): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+server/services/dnsServer.ts(1220,29): error TS2345: Argument of type '{}' is not assignable to parameter of type 'number'.
+server/services/dnsServer.ts(1221,29): error TS2345: Argument of type '{}' is not assignable to parameter of type 'number'.
+server/services/dnsServer.ts(1222,29): error TS2345: Argument of type '{}' is not assignable to parameter of type 'number'.
+server/services/dnsServer.ts(1223,29): error TS2345: Argument of type '{}' is not assignable to parameter of type 'number'.
+server/services/dnsServer.ts(1224,29): error TS2345: Argument of type '{}' is not assignable to parameter of type 'number'.
+server/services/dnsServer.ts(1230,29): error TS2345: Argument of type '{}' is not assignable to parameter of type 'number'.
+server/services/dnsServer.ts(1231,38): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+server/services/dnsServer.ts(1237,11): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'WithImplicitCoercion<string | ArrayLike<number>>'.
+server/services/dnsServer.ts(1375,14): error TS2488: Type '{}' must have a '[Symbol.iterator]()' method that returns an iterator.
+server/services/dnsServer.ts(1376,14): error TS2488: Type '{}' must have a '[Symbol.iterator]()' method that returns an iterator.
+server/services/hyperLearningEngine.ts(493,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(498,30): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(546,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(551,30): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(612,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(617,30): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(658,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(663,30): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(738,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(743,30): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(784,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(789,30): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(839,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(844,32): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(900,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(905,30): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(974,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(979,30): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1074,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1079,29): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1175,10): error TS2339: Property 'toLowerCase' does not exist on type '{}'.
+server/services/hyperLearningEngine.ts(1186,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1192,29): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1258,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1265,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1271,29): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1310,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1315,29): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1352,21): error TS2365: Operator '+' cannot be applied to types '{}' and '{}'.
+server/services/hyperLearningEngine.ts(1357,11): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/services/hyperLearningEngine.ts(1359,18): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/services/hyperLearningEngine.ts(1361,18): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/services/hyperLearningEngine.ts(1371,7): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1376,29): error TS2365: Operator '+' cannot be applied to types 'number' and '{}'.
+server/services/hyperLearningEngine.ts(1407,17): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/services/hyperLearningEngine.ts(1407,43): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/services/multimodalGenerationService.ts(7,10): error TS2724: '"./sharpImageService.js"' has no exported member named '_sharpImageService'. Did you mean 'sharpImageService'?
+server/services/multimodalGenerationService.ts(190,7): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(301,7): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MultimodalGen] fetchUserContext DB error (non-fatal):", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[MultimodalGen] fetchUserContext DB error (non-fatal):", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(1973,16): error TS6133: 'localAnalyzeUrl' is declared but its value is never read.
+server/services/multimodalGenerationService.ts(2064,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MultimodalGen] URL pre-fetch failed (non-fatal):", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[MultimodalGen] URL pre-fetch failed (non-fatal):", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(2100,7): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MultimodalGen] MaxCore /analyze unavailable:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[MultimodalGen] MaxCore /analyze unavailable:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(2395,3): error TS2322: Type '{ id: `${string}-${string}-${string}-${string}-${string}`; modality: OutputModality; payload: string; platform: Platform; slotId: unknown; purpose: {}; metadata: { source: string; }; }[]' is not assignable to type 'GeneratedAsset[]'.
+  Type '{ id: `${string}-${string}-${string}-${string}-${string}`; modality: OutputModality; payload: string; platform: Platform; slotId: unknown; purpose: {}; metadata: { source: string; }; }' is not assignable to type 'GeneratedAsset'.
+    Types of property 'slotId' are incompatible.
+      Type 'unknown' is not assignable to type 'string | undefined'.
+server/services/multimodalGenerationService.ts(2395,23): error TS2345: Argument of type '(slot: Record<string, unknown>) => { id: `${string}-${string}-${string}-${string}-${string}`; modality: OutputModality; payload: string; platform: Platform; slotId: unknown; purpose: {}; metadata: { source: string; }; }' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => { id: `${string}-${string}-${string}-${string}-${string}`; modality: OutputModality; payload: string; platform: Platform; slotId: unknown; purpose: {}; metadata: { ...; }; }'.
+  Types of parameters 'slot' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/services/multimodalGenerationService.ts(2649,17): error TS2322: Type '{}' is not assignable to type 'string'.
+server/services/multimodalGenerationService.ts(2731,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MultimodalGen] /generate/content text worker error:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[MultimodalGen] /generate/content text worker error:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(2745,11): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MultimodalGen] Local text fallback also failed:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[MultimodalGen] Local text fallback also failed:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(2809,9): error TS2532: Object is possibly 'undefined'.
+server/services/multimodalGenerationService.ts(3049,19): error TS2345: Argument of type '(o: Record<string, unknown>) => { id: `${string}-${string}-${string}-${string}-${string}`; modality: OutputModality; payload: {}; platform: Platform | undefined; slotId: unknown; purpose: unknown; metadata: { aspectRatio: any; platformRules: ImageRules | null; }; }' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => { id: `${string}-${string}-${string}-${string}-${string}`; modality: OutputModality; payload: {}; platform: Platform | undefined; slotId: unknown; purpose: unknown; metadata: { ...; }; }'.
+  Types of parameters 'o' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/services/multimodalGenerationService.ts(3091,31): error TS2322: Type '{ id: `${string}-${string}-${string}-${string}-${string}`; modality: OutputModality; payload: {}; platform: Platform | undefined; slotId: unknown; purpose: unknown; metadata: { aspectRatio: any; platformRules: ImageRules | null; }; }[]' is not assignable to type 'GeneratedAsset[]'.
+  Type '{ id: `${string}-${string}-${string}-${string}-${string}`; modality: OutputModality; payload: {}; platform: Platform | undefined; slotId: unknown; purpose: unknown; metadata: { aspectRatio: any; platformRules: ImageRules | null; }; }' is not assignable to type 'GeneratedAsset'.
+    Types of property 'payload' are incompatible.
+      Type '{}' is not assignable to type 'string'.
+server/services/multimodalGenerationService.ts(3095,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MultimodalGen] MaxCore /generate/image unavailable, using local fallback:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[MultimodalGen] MaxCore /generate/image unavailable, using local fallback:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(3204,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MultimodalGen] MaxCore /generate/audio unavailable — falling back to local audio generator:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[MultimodalGen] MaxCore /generate/audio unavailable — falling back to local audio generator:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(3252,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MultimodalGen] Local audio generator returned no file:", msg?: undefined): void', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'undefined'.
+      Type 'string' is not assignable to type 'undefined'.
+  Overload 2 of 3, '(obj: "[MultimodalGen] Local audio generator returned no file:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'undefined'.
+      Type 'string' is not assignable to type 'undefined'.
+server/services/multimodalGenerationService.ts(3257,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: "[MultimodalGen] Local audio generator threw:", msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: "[MultimodalGen] Local audio generator threw:", msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(3306,32): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, unknown>'.
+server/services/multimodalGenerationService.ts(3341,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/services/multimodalGenerationService.ts(3372,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(obj: string, msg?: undefined): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+  Overload 2 of 3, '(obj: string, msg?: undefined, ...args: unknown[]): void', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'undefined'.
+server/storage.ts(298,19): error TS2345: Argument of type '(user: Record<string, unknown>) => any' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => any'.
+  Types of parameters 'user' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/storage.ts(361,58): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }'.
+      Property 'modelName' is missing in type 'Record<string, unknown>' but required in type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]'.
+      Type 'Record<string, unknown>' is missing the following properties from type '{ modelName: string | SQL<unknown> | Placeholder<string, any>; error?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<...> | Placeholder<...> | undefined; ... 11 more ...; cost?: number | ... 3 more ... | undefined; }[]': length, pop, push, concat, and 35 more.
+server/storage.ts(414,9): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; platform: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 13 more ...; platformPostId?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ userId: string | SQL<unknown> | Placeholder<string, any>; platform: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 13 more ...; platformPostId?: string | ... 3 more ... | undefined; }[]'.
+server/storage.ts(596,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(597,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(598,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(599,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(600,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(601,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(608,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(609,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(610,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(611,9): error TS2365: Operator '+=' cannot be applied to types 'number' and '{}'.
+server/storage.ts(857,21): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type '{}'.
+  Property '0' does not exist on type '{}'.
+server/storage.ts(1234,13): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/storage.ts(1237,16): error TS2345: Argument of type '{}' is not assignable to parameter of type 'number'.
+server/storage.ts(1240,13): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/storage.ts(1243,16): error TS2345: Argument of type '{}' is not assignable to parameter of type 'number'.
+server/storage.ts(1500,25): error TS18046: 'perf.views' is of type 'unknown'.
+server/storage.ts(1500,44): error TS18046: 'perf.likes' is of type 'unknown'.
+server/storage.ts(1960,24): error TS2345: Argument of type '(u: Record<string, unknown>) => { id: unknown; username: {}; displayName: string; avatar: {}; avatarUrl: {}; bio: {}; location: {}; website: {}; verified: boolean; followers: number; following: number; sales: number; beats: number; rating: number; joinedAt: string; socialLinks: {}; }' is not assignable to parameter of type '(value: unknown, index: number, array: unknown[]) => { id: unknown; username: {}; displayName: string; avatar: {}; avatarUrl: {}; bio: {}; location: {}; website: {}; verified: boolean; followers: number; following: number; ... 4 more ...; socialLinks: {}; }'.
+  Types of parameters 'u' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+server/storage.ts(1994,63): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { title: string | SQL<unknown> | Placeholder<string, any>; artistId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 4 more ...; releaseDate?: SQL<...> | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ title: string | SQL<unknown> | Placeholder<string, any>; artistId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 4 more ...; releaseDate?: SQL<...> | ... 3 more ... | undefined; }'.
+      Type 'Record<string, unknown>' is missing the following properties from type '{ title: string | SQL<unknown> | Placeholder<string, any>; artistId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 4 more ...; releaseDate?: SQL<...> | ... 3 more ... | undefined; }': title, artistId
+  Overload 2 of 2, '(values: { title: string | SQL<unknown> | Placeholder<string, any>; artistId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 4 more ...; releaseDate?: SQL<...> | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ title: string | SQL<unknown> | Placeholder<string, any>; artistId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 4 more ...; releaseDate?: SQL<...> | ... 3 more ... | undefined; }[]'.
+      Type 'Record<string, unknown>' is missing the following properties from type '{ title: string | SQL<unknown> | Placeholder<string, any>; artistId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 4 more ...; releaseDate?: SQL<...> | ... 3 more ... | undefined; }[]': length, pop, push, concat, and 35 more.
+server/storage.ts(2037,59): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { title: string | SQL<unknown> | Placeholder<string, any>; releaseId: string | SQL<unknown> | Placeholder<string, any>; trackNumber: number | SQL<unknown> | Placeholder<...>; ... 5 more ...; isrc?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ title: string | SQL<unknown> | Placeholder<string, any>; releaseId: string | SQL<unknown> | Placeholder<string, any>; trackNumber: number | SQL<unknown> | Placeholder<...>; ... 5 more ...; isrc?: string | ... 3 more ... | undefined; }'.
+      Type 'Record<string, unknown>' is missing the following properties from type '{ title: string | SQL<unknown> | Placeholder<string, any>; releaseId: string | SQL<unknown> | Placeholder<string, any>; trackNumber: number | SQL<unknown> | Placeholder<...>; ... 5 more ...; isrc?: string | ... 3 more ... | undefined; }': title, releaseId, trackNumber
+  Overload 2 of 2, '(values: { title: string | SQL<unknown> | Placeholder<string, any>; releaseId: string | SQL<unknown> | Placeholder<string, any>; trackNumber: number | SQL<unknown> | Placeholder<...>; ... 5 more ...; isrc?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ title: string | SQL<unknown> | Placeholder<string, any>; releaseId: string | SQL<unknown> | Placeholder<string, any>; trackNumber: number | SQL<unknown> | Placeholder<...>; ... 5 more ...; isrc?: string | ... 3 more ... | undefined; }[]'.
+      Type 'Record<string, unknown>' is missing the following properties from type '{ title: string | SQL<unknown> | Placeholder<string, any>; releaseId: string | SQL<unknown> | Placeholder<string, any>; trackNumber: number | SQL<unknown> | Placeholder<...>; ... 5 more ...; isrc?: string | ... 3 more ... | undefined; }[]': length, pop, push, concat, and 35 more.
+server/storage.ts(2129,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { name: string | SQL<unknown> | Placeholder<string, any>; slug: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; metadata?: unknown; isActive?: boolean | ... 3 more ... | undefined; logoUrl?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'createdAt' does not exist in type '{ name: string | SQL<unknown> | Placeholder<string, any>; slug: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; metadata?: unknown; isActive?: boolean | ... 3 more ... | undefined; logoUrl?: string | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { name: string | SQL<unknown> | Placeholder<string, any>; slug: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; metadata?: unknown; isActive?: boolean | ... 3 more ... | undefined; logoUrl?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ name: string | SQL<unknown> | Placeholder<string, any>; slug: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; metadata?: unknown; isActive?: boolean | ... 3 more ... | undefined; logoUrl?: string | ... 3 more ... | undefined; }[]'.
+server/storage.ts(2160,11): error TS2353: Object literal may only specify known properties, and 'updatedAt' does not exist in type '{ name?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; slug?: string | SQL<unknown> | PgColumn<...> | undefined; id?: string | ... 2 more ... | undefined; metadata?: unknown; isActive?: boolean | ... 3 more ... | undefined; logoUrl?: string | ... 3 more ... | undefin...'.
+server/storage.ts(2285,11): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; workspaceId: string | SQL<unknown> | Placeholder<string, any>; action: string | SQL<unknown> | Placeholder<...>; ... 9 more ...; newValues?: unknown; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'workspaceId' does not exist in type '{ userId: string | SQL<unknown> | Placeholder<string, any>; workspaceId: string | SQL<unknown> | Placeholder<string, any>; action: string | SQL<unknown> | Placeholder<...>; ... 9 more ...; newValues?: unknown; }[]'.
+server/storage.ts(2515,11): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(values: { title: string | SQL<unknown> | Placeholder<string, any>; userId: string | SQL<unknown> | Placeholder<string, any>; slug: string | SQL<unknown> | Placeholder<...>; id?: string | ... 2 more ... | undefined; createdAt?: SQL<...> | ... 3 more ... | undefined; imageUrl?: string | ... 3 more ... | undefined; links?: unknown; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'userId' does not exist in type '{ title: string | SQL<unknown> | Placeholder<string, any>; userId: string | SQL<unknown> | Placeholder<string, any>; slug: string | SQL<unknown> | Placeholder<string, any>; id?: string | ... 2 more ... | undefined; createdAt?: SQL<...> | ... 3 more ... | undefined; imageUrl?: string | ... 3 more ... | undefined; lin...'.
+server/storage.ts(2536,25): error TS2353: Object literal may only specify known properties, and 'updatedAt' does not exist in type '{ title?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; userId?: string | SQL<unknown> | PgColumn<...> | undefined; ... 4 more ...; links?: unknown; }'.
+server/storage.ts(2607,11): error TS2345: Argument of type 'SQL<unknown> | undefined' is not assignable to parameter of type 'SQL<unknown>'.
+  Type 'undefined' is not assignable to type 'SQL<unknown>'.
+server/storage.ts(2618,11): error TS2345: Argument of type 'SQL<unknown> | undefined' is not assignable to parameter of type 'SQL<unknown>'.
+  Type 'undefined' is not assignable to type 'SQL<unknown>'.
+server/storage.ts(2654,11): error TS2740: Type 'SQL<unknown>[]' is missing the following properties from type 'SQL<unknown>': queryChunks, _, shouldInlineParams, append, and 8 more.
+server/storage.ts(2657,11): error TS2740: Type 'SQL<unknown>[]' is missing the following properties from type 'SQL<unknown>': queryChunks, _, shouldInlineParams, append, and 8 more.
+server/storage.ts(2660,11): error TS2740: Type 'SQL<unknown>[]' is missing the following properties from type 'SQL<unknown>': queryChunks, _, shouldInlineParams, append, and 8 more.
+server/storage.ts(2663,11): error TS2740: Type 'SQL<unknown>[]' is missing the following properties from type 'SQL<unknown>': queryChunks, _, shouldInlineParams, append, and 8 more.
+server/storage.ts(2677,21): error TS2488: Type 'SQL<unknown> | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
+server/storage.ts(3074,9): error TS2416: Property 'createJWTToken' in type 'DatabaseStorage' is not assignable to the same property in base type 'IStorage'.
+  Type '(data: Record<string, unknown>) => Promise<unknown>' is not assignable to type '(data: Record<string, unknown>) => Promise<string>'.
+    Type 'Promise<unknown>' is not assignable to type 'Promise<string>'.
+      Type 'unknown' is not assignable to type 'string'.
+server/storage.ts(3075,56): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; accessToken: string | SQL<...> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; accessToken: string | SQL<...> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }'.
+      Type 'Record<string, unknown>' is missing the following properties from type '{ userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; accessToken: string | SQL<...> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }': userId, expiresAt, accessToken
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; accessToken: string | SQL<...> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; accessToken: string | SQL<...> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }[]'.
+      Type 'Record<string, unknown>' is missing the following properties from type '{ userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; accessToken: string | SQL<...> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }[]': length, pop, push, concat, and 35 more.
+server/storage.ts(3112,9): error TS2416: Property 'createRefreshToken' in type 'DatabaseStorage' is not assignable to the same property in base type 'IStorage'.
+  Type '(data: Record<string, unknown>) => Promise<unknown>' is not assignable to type '(data: Record<string, unknown>) => Promise<string>'.
+    Type 'Promise<unknown>' is not assignable to type 'Promise<string>'.
+      Type 'unknown' is not assignable to type 'string'.
+server/storage.ts(3113,60): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; token: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; token: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }'.
+      Type 'Record<string, unknown>' is missing the following properties from type '{ userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; token: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }': userId, expiresAt, token
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; token: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type 'Record<string, unknown>' is not assignable to parameter of type '{ userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; token: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }[]'.
+      Type 'Record<string, unknown>' is missing the following properties from type '{ userId: string | SQL<unknown> | Placeholder<string, any>; expiresAt: SQL<unknown> | Date | Placeholder<string, any>; token: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; revokedReason?: string | ... 3 more ... | undefined; }[]': length, pop, push, concat, and 35 more.

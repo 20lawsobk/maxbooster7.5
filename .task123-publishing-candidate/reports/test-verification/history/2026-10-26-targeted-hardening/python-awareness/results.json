@@ -1,0 +1,589 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-26T02:39:30.490355+00:00",
+  "finishedAt": "2026-10-26T02:39:45.674073+00:00",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "interpreter": "/workspace/.cloud-python/bin/python",
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "timeout": 0,
+    "skipped": 0,
+    "blocked": 0,
+    "empty": 0
+  },
+  "counts": {
+    "tests": 110,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "enabled": false,
+    "status": "not_requested"
+  },
+  "isolation": "Fresh interpreter and disposable HOME/state per file; no application credentials; only ephemeral loopback networking; child process group cleanup",
+  "limits": "Blocked/skip/timeout are not passes; fixture training does not establish generation quality or production readiness",
+  "duplicateSnapshots": [
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py"
+  ],
+  "suites": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py",
+      "description": "Offline stack contracts: no server startup, storage, weights, or training.",
+      "cases": [
+        {
+          "name": "test_executor_propagates_isolated_request_context",
+          "description": "executor propagates isolated request context"
+        },
+        {
+          "name": "test_executor_cancellation_waits_for_actual_worker_exit",
+          "description": "executor cancellation waits for actual worker exit"
+        },
+        {
+          "name": "test_literal_direction_composes_real_model_without_claiming_raw_provenance",
+          "description": "literal direction composes real model without claiming raw provenance"
+        },
+        {
+          "name": "test_awareness_prompt_does_not_invent_checkpoint_special_tokens",
+          "description": "awareness prompt does not invent checkpoint special tokens"
+        },
+        {
+          "name": "test_prompt_keeps_user_words_and_punctuation_without_fabricated_suffixes",
+          "description": "prompt keeps user words and punctuation without fabricated suffixes"
+        },
+        {
+          "name": "test_composition_provenance_allowed_but_templates_still_rejected",
+          "description": "composition provenance allowed but templates still rejected"
+        },
+        {
+          "name": "test_planner_routes_all_documented_modalities_without_claiming_model",
+          "description": "planner routes all documented modalities without claiming model"
+        },
+        {
+          "name": "test_planner_topic_shorthand_retains_request_and_builds_real_slot",
+          "description": "planner topic shorthand retains request and builds real slot"
+        },
+        {
+          "name": "test_social_profile_identity_reaches_inference_without_fabricated_fetch",
+          "description": "social profile identity reaches inference without fabricated fetch"
+        },
+        {
+          "name": "test_profile_identity_never_turns_private_or_post_urls_into_claimed_content",
+          "description": "profile identity never turns private or post urls into claimed content"
+        },
+        {
+          "name": "test_video_checkpoint_unavailable_maps_to_503_not_500",
+          "description": "video checkpoint unavailable maps to 503 not 500"
+        },
+        {
+          "name": "test_model_failure_never_runs_awareness_template_substitute",
+          "description": "model failure never runs awareness template substitute"
+        },
+        {
+          "name": "test_private_supervisor_auth_requires_secret_and_loopback",
+          "description": "private supervisor auth requires secret and loopback"
+        },
+        {
+          "name": "test_render_worker_owns_gpu_until_it_returns",
+          "description": "render worker owns gpu until it returns"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "3a0deae7a638d65266274be3b688c8e684dbb5263ba9cc2d5d5f6977f419f30d",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py --output /workspace/onboarding-results/fix-python-awareness-final",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 4.115,
+      "counts": {
+        "tests": 20,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__tests__test_documented_stack_restore.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_documented_stack_restore.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+      "description": "Regression coverage for awareness at native MaxCore consumer seams.",
+      "cases": [
+        {
+          "name": "test_native_request_models_preserve_structured_and_direction_context",
+          "description": "native request models preserve structured and direction context"
+        },
+        {
+          "name": "test_social_route_delivers_structured_envelope_to_agents",
+          "description": "social route delivers structured envelope to agents"
+        },
+        {
+          "name": "test_live_report_payload_conditions_real_agent_without_metadata_leak",
+          "description": "live report payload conditions real agent without metadata leak"
+        },
+        {
+          "name": "test_real_agent_honors_exact_opening_wording",
+          "description": "real agent honors exact opening wording"
+        },
+        {
+          "name": "test_real_agent_honors_structured_must_include_list",
+          "description": "real agent honors structured must include list"
+        },
+        {
+          "name": "test_max_knowledge_assistant_remains_local_exempt_source",
+          "description": "max knowledge assistant remains local exempt source"
+        },
+        {
+          "name": "test_daw_agents_receive_effective_awareness",
+          "description": "daw agents receive effective awareness"
+        },
+        {
+          "name": "test_distribution_agent_receives_effective_awareness",
+          "description": "distribution agent receives effective awareness"
+        },
+        {
+          "name": "test_audio_job_identity_contains_effective_awareness",
+          "description": "audio job identity contains effective awareness"
+        },
+        {
+          "name": "test_platform_video_coalescer_uses_consumed_awareness",
+          "description": "platform video coalescer uses consumed awareness"
+        },
+        {
+          "name": "test_campaign_script_backend_receives_canonical_slot_and_caller_awareness",
+          "description": "campaign script backend receives canonical slot and caller awareness"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "67cd3539806a6edf0fa073b987950577a0536b20e8f09a2644409afbb73bd57a",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py --output /workspace/onboarding-results/fix-python-awareness-final",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 3.856,
+      "counts": {
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py",
+      "description": "Offline, lightweight contract tests for the original quality runner.",
+      "cases": [
+        {
+          "name": "RunnerContractTests.test_local_origin_only",
+          "description": "local origin only"
+        },
+        {
+          "name": "RunnerContractTests.test_hashes_match_unchanged_sources",
+          "description": "hashes match unchanged sources"
+        },
+        {
+          "name": "RunnerContractTests.test_counters_exclude_text_and_do_not_subtract_booleans",
+          "description": "counters exclude text and do not subtract booleans"
+        },
+        {
+          "name": "RunnerContractTests.test_subprocess_failure_and_timeout_are_recorded",
+          "description": "subprocess failure and timeout are recorded"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "cc6669dbb76321381f4cea42871a3f0ea7423cffd5fb891ba420f0883cd1e869",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py --output /workspace/onboarding-results/fix-python-awareness-final",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 1.367,
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__tests__test_original_quality_runner.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_original_quality_runner.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+      "description": "Contract guards for MaxCore capabilities that have no real model yet.",
+      "cases": [
+        {
+          "name": "test_missing_audio_and_video_inference_never_synthesizes_results",
+          "description": "missing audio and video inference never synthesizes results"
+        },
+        {
+          "name": "test_audio_endpoints_use_real_waveform_conductor",
+          "description": "audio endpoints use real waveform conductor"
+        },
+        {
+          "name": "test_audio_upload_contract_is_bounded_owner_scoped_and_validated",
+          "description": "audio upload contract is bounded owner scoped and validated"
+        },
+        {
+          "name": "test_real_conductor_analyzes_tiny_waveform",
+          "description": "real conductor analyzes tiny waveform"
+        },
+        {
+          "name": "test_text_content_mode_never_returns_template_fallback",
+          "description": "text content mode never returns template fallback"
+        },
+        {
+          "name": "test_model_readiness_reports_terminal_initialization_failure",
+          "description": "model readiness reports terminal initialization failure"
+        },
+        {
+          "name": "test_every_job_reader_enforces_durable_owner",
+          "description": "every job reader enforces durable owner"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "a7d194de95b1a87bbce973e343c6c6749fa33769d1b3f8e150a9004061863ee4",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py --output /workspace/onboarding-results/fix-python-awareness-final",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 11.067,
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__tests__test_unavailable_inference_contracts.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_unavailable_inference_contracts.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+      "description": "Unit tests for the URL-parser label-echo garble guard.\n\nVerifies that:\n  1. Captions containing raw awareness label lines are flagged as garbled.\n  2. Captions that naturally mention the resolved artist/title values are NOT\n     flagged (the whitelist correctly protects resolved content words).\n  3. The tier-marker prefix pattern ([HIGH] / [MED] / [LOW]) is detected.\n  4. Ordinary prose that happens to contain words like \"source\" or \"context\"\n     is NOT flagged.",
+      "cases": [
+        {
+          "name": "TestLabelEchoDetected.test_artist_label_line",
+          "description": "Artist: <name> at line start is a metadata echo."
+        },
+        {
+          "name": "TestLabelEchoDetected.test_title_label_line",
+          "description": "title label line"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_genre_label_line",
+          "description": "genre label line"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_intent_label_line",
+          "description": "intent label line"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_source_label_line",
+          "description": "source label line"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_album_label_line",
+          "description": "album label line"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_context_label_line",
+          "description": "context label line"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_bpm_key_year_labels",
+          "description": "bpm key year labels"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_tier_high_source_line",
+          "description": "[HIGH] Source: \u2026 is the awareness header format."
+        },
+        {
+          "name": "TestLabelEchoDetected.test_tier_marker_alone",
+          "description": "tier marker alone"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_med_tier_marker",
+          "description": "med tier marker"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_low_tier_marker",
+          "description": "low tier marker"
+        },
+        {
+          "name": "TestLabelEchoDetected.test_full_awareness_block_echo",
+          "description": "Reproduces the exact format from _build_awareness_text()."
+        },
+        {
+          "name": "TestLabelEchoDetected.test_mixed_caption_with_label",
+          "description": "Even one label line in an otherwise fine caption should be caught."
+        },
+        {
+          "name": "TestLabelEchoDetected.test_case_insensitive_label",
+          "description": "Labels must be detected regardless of capitalisation."
+        },
+        {
+          "name": "TestMidLineLabelEchoDetected.test_caption_ending_in_pipe_mood_fragment",
+          "description": "caption ending in pipe mood fragment"
+        },
+        {
+          "name": "TestMidLineLabelEchoDetected.test_midline_bpm_key_fragment",
+          "description": "midline bpm key fragment"
+        },
+        {
+          "name": "TestMidLineLabelEchoDetected.test_midline_fragment_case_insensitive",
+          "description": "midline fragment case insensitive"
+        },
+        {
+          "name": "TestMidLineLabelEchoDetected.test_midline_label_never_whitelisted",
+          "description": "midline label never whitelisted"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_artist_name_in_prose",
+          "description": "Mentioning 'Drake' naturally is fine."
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_artist_name_whitelisted",
+          "description": "With the artist in the whitelist, name in a caption is clean."
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_title_in_prose",
+          "description": "title in prose"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_source_word_in_prose",
+          "description": "'source' as a common English word should not trigger the guard."
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_context_word_in_prose",
+          "description": "context word in prose"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_key_word_in_prose",
+          "description": "key word in prose"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_year_word_in_prose",
+          "description": "year word in prose"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_genre_word_in_prose",
+          "description": "genre word in prose"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_intent_word_in_prose",
+          "description": "intent word in prose"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_pipes_in_ordinary_prose_not_flagged",
+          "description": "Pipes with non-awareness labels are normal event-flyer prose."
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_pipe_separated_prose_without_labels",
+          "description": "pipe separated prose without labels"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_normal_instagram_caption",
+          "description": "normal instagram caption"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_spotify_tiktok_mention",
+          "description": "spotify tiktok mention"
+        },
+        {
+          "name": "TestLegitimateCaptionNotFlagged.test_label_word_mid_sentence",
+          "description": "'Artist:' must only be caught at line boundaries, not mid-sentence."
+        },
+        {
+          "name": "TestGuardCoversAllEmittedLabels.test_awareness_builder_emits_expected_baseline",
+          "description": "Sanity: the builder still emits the known core labels \u2014 if this\nfails, the extraction regex or the builder changed shape."
+        },
+        {
+          "name": "TestGuardCoversAllEmittedLabels.test_every_emitted_label_triggers_guard",
+          "description": "THE cross-check: each emitted label prefix, alone at line start,\nmust be flagged by looks_garbled."
+        },
+        {
+          "name": "TestGuardCoversAllEmittedLabels.test_every_emitted_label_triggers_guard_midline",
+          "description": "Drift guard for the mid-line matcher: every emitted awareness label\nmust also be caught when it appears pipe-preceded mid-line, so\n_MIDLINE_LABEL_RE can't fall out of sync with _URL_LABEL_RE when new\nfields are added to _build_awareness_text()."
+        },
+        {
+          "name": "TestGuardCoversAllEmittedLabels.test_full_emitted_block_triggers_guard",
+          "description": "The verbatim awareness block itself must always be flagged."
+        },
+        {
+          "name": "TestGarbleReason.test_label_echo_reason",
+          "description": "label echo reason"
+        },
+        {
+          "name": "TestGarbleReason.test_tier_marker_reason",
+          "description": "tier marker reason"
+        },
+        {
+          "name": "TestGarbleReason.test_glue_tokens_reason",
+          "description": "glue tokens reason"
+        },
+        {
+          "name": "TestGarbleReason.test_clean_text_empty_reason",
+          "description": "clean text empty reason"
+        },
+        {
+          "name": "TestGarbleReason.test_looks_garbled_consistency",
+          "description": "looks_garbled must be exactly bool(garble_reason) for any input."
+        },
+        {
+          "name": "TestGarbleReason.test_whitelist_respected_for_glue_but_not_labels",
+          "description": "whitelist respected for glue but not labels"
+        },
+        {
+          "name": "TestGuardLogsWarning.test_ranking_penalty_logs_reason",
+          "description": "ranking penalty logs reason"
+        },
+        {
+          "name": "TestGuardLogsWarning.test_script_agent_suppression_logs_reason",
+          "description": "When the model 'output' echoes awareness labels, ScriptAgent must\nreject the candidate AND log the reason at WARNING level."
+        },
+        {
+          "name": "TestGuardLogsWarning.test_distribution_agent_suppression_logs_reason",
+          "description": "distribution agent suppression logs reason"
+        },
+        {
+          "name": "TestGuardLogsWarning.test_distribution_agent_rejects_structured_control_keys",
+          "description": "distribution agent rejects structured control keys"
+        },
+        {
+          "name": "TestGuardLogsWarning.test_distribution_agent_preserves_meaningful_caption_and_sampling_identity",
+          "description": "distribution agent preserves meaningful caption and sampling identity"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "fb4558259131335d28dd154f55595240b3f9e7d16f64ac131a11b386f8d65f0a",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py --output /workspace/onboarding-results/fix-python-awareness-final",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 2.36,
+      "counts": {
+        "tests": 48,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__tests__test_url_label_garble_guard.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_url_label_garble_guard.txt"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+      "description": "Voice-over synthesis regression tests (Task: birdcall narration fix).\n\nGuards the failure class where \"voice-over\" videos shipped unintelligible\naudio: narration must be real speech at the pipeline sample rate, not the\narpeggio synth and not a pitch-shifted (wrong-rate) render.",
+      "cases": [
+        {
+          "name": "TestCleanVoText.test_strips_emoji_hashtags_urls_tokens",
+          "description": "strips emoji hashtags urls tokens"
+        },
+        {
+          "name": "TestCleanVoText.test_empty_and_symbol_only",
+          "description": "empty and symbol only"
+        },
+        {
+          "name": "TestNarratorControls.test_valid_voices_pass_through",
+          "description": "valid voices pass through"
+        },
+        {
+          "name": "TestNarratorControls.test_invalid_voices_fall_back",
+          "description": "invalid voices fall back"
+        },
+        {
+          "name": "TestNarratorControls.test_valid_wpm_pass_through",
+          "description": "valid wpm pass through"
+        },
+        {
+          "name": "TestNarratorControls.test_invalid_wpm_fall_back",
+          "description": "invalid wpm fall back"
+        },
+        {
+          "name": "TestSynthesizeVoiceover.test_produces_speech_at_pipeline_rate",
+          "description": "produces speech at pipeline rate"
+        },
+        {
+          "name": "TestSynthesizeVoiceover.test_non_default_voice_and_pace",
+          "description": "non default voice and pace"
+        },
+        {
+          "name": "TestSynthesizeVoiceover.test_invalid_voice_and_pace_still_render",
+          "description": "invalid voice and pace still render"
+        },
+        {
+          "name": "TestSynthesizeVoiceover.test_empty_text_returns_false",
+          "description": "empty text returns false"
+        },
+        {
+          "name": "TestMixAndTrack.test_voice_dominates_ducked_music",
+          "description": "voice dominates ducked music"
+        },
+        {
+          "name": "TestMixAndTrack.test_voiceover_track_end_to_end",
+          "description": "voiceover track end to end"
+        },
+        {
+          "name": "TestMixAndTrack.test_missing_requested_music_never_returns_narration_as_success",
+          "description": "missing requested music never returns narration as success"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "a4415c20a660f0d6e09b1573112f3bea23f206c056b25025df469916f4532e87",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /workspace/onboarding-results/fix-python-awareness-final",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 2.112,
+      "counts": {
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__tests__test_voiceover.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__tests__test_voiceover.txt"
+    }
+  ]
+}

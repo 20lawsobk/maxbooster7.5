@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "scope": "AGROS orchestration and private-admin acceptance contracts only",
+  "application_admin_ready": false,
+  "application_tests_rerun_for_this_change": false,
+  "tests": {
+    "command": "python3 -m unittest discover -s /workspace/agros -p 'test_*.py'",
+    "count": 74,
+    "passed": 74,
+    "failed": 0,
+    "exit": 0,
+    "seconds": 19.432,
+    "log_sha256": "310ba4e6844f4f362c43bb59480cb8b889fe50a0f68b80a5b8208f98557fbbce"
+  },
+  "syntax": "Python compilation passed",
+  "catalog": {
+    "roles": 18,
+    "templates": 86,
+    "expanded_assignments": 625,
+    "domains": 12,
+    "admin_acceptance_criteria": 63,
+    "observed_repository_paths_in_planning_smoke": 1707
+  },
+  "verified_contracts": [
+    "Dependency ordering and cross-scope cycle rejection",
+    "Owner, separate check and reviewer evidence chain",
+    "Stale nonce, symlink and artifact tamper rejection",
+    "Source scope and protected validation enforcement",
+    "Bounded execution, cancellation and resume",
+    "Private-admin readiness separate from public coverage",
+    "Startup, security and artifact failures still block admin",
+    "Acceptance producer source mutation invalidates readiness"
+  ],
+  "remaining": [
+    "Role executors, reviewers and independent task checks are not configured",
+    "Real admin acceptance harness is not configured",
+    "No complete admin application acceptance or deployment performed by these tests",
+    "No proof of provider production outcomes or production recovery",
+    "Public-launch requirements remain deferred, not accepted"
+  ],
+  "files": {
+    "admin_release.json": "ac34ca422a1c12dc7349bb589a19c36a39371f8435b1028f2583463eff2e92e6",
+    "admin_release.py": "7c4f313f8cf0a73f8f20ee9fdd02db8633fa649574ee2dda8eb681a9eb0d96d9",
+    "policy.json": "61f4d3f6bf5b88a19ae08cf5ecb95e1ed0643fa9e1c6987a2fb78a60910be6e8",
+    "repair.py": "cc27769805b4020a4d5494f3cfe9bb21a5eac1d17e0bf13d63085399067bd69a",
+    "team.py": "fb964f2de8639e38856cd2b079fafd2397ae7485d2e5c1bc91c6ecf241edb046",
+    "team_catalog.json": "f5028f576d3f6cf4bb3bb731dcd57816a8c5ab18c9c5ff774f167c435509d368",
+    "test_admin_release.py": "f485b693c7a1d1be9adce93471ba2f7386d28aca4d44434188a23447f83dbb83",
+    "test_agros.py": "7426c49d348b9f10608103704402b2c52a2ad4b0ce3cefaab2792d8ac801ef9c",
+    "test_team.py": "593ab9403a8ef35510896e286e15df072063a3677cd2109510a14da74a381586",
+    "verify.py": "1fb19fdc1dd2157998a034b2b2008fe39b1b960acd37fc3a535a12a036f08ae4"
+  }
+}

@@ -1,0 +1,406 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-26T18:01:00.180064+00:00",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "sourceSha256": {
+    "scripts/testing/run-engine-load.py": "b9fa8427d9da2565f2d8527f976b4c096f7df0d44341a39795e0c5a17eafb5d6",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py": "6e034b3786126a90bcd6b044febeda50b86a97d2ed57a58c40a953298cdc1c84",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/api.py": "a1423a4d561d5bf27e00cf4a8f8e759e6bc2ee34940b962ab12466b7dcafb7d1",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/cpu_backend.py": "fc23e85fc9be7d243a21875531cd92b8dd7922200f8281a18d50be7c48a62e39",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/runtime/engine.py": "06b482d833d18af79b4d62b63327db602f6c30f62e59fcd520beb3d2c53cadab",
+    "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/pdim/orchestrator.py": "e77d42188757601944ce3fadc0f89899e6d08ae13b8030f02e57a3277e49c529",
+    "external/maxcore/artifacts/ai-training-server/ai_model/dedup_cache.py": "ad2d728842653fda30e513d25d823d15d9a381ad6153c0ca95fa57be1898a0e8",
+    "external/maxcore/artifacts/ai-training-server/storage_client.py": "0f7ce80659d75b055f4fde9faacc996d3a418b4c5f4ce22c81620b5860dd2bc5"
+  },
+  "file": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
+  "operationalProfile": "bounded-legacy-digital-gpu-numeric-dedup-v1",
+  "profileEnvironment": {
+    "LOAD_TARGET": "90000000",
+    "LOAD_UNIQUE": "40",
+    "LOAD_THREADS": "8",
+    "LOAD_CONC": "500",
+    "LOAD_SAMPLE": "400",
+    "LOAD_MT": "160",
+    "MAXCORE_BACKEND": "digital_gpu",
+    "MAXCORE_NUM_STREAMS": "1"
+  },
+  "scope": "Bounded execution of the existing numeric DigitalGPU/dedup scale benchmark.\n\nThe 90M value remains a projection. This profile executes 40 cold graph calls,\n500 contention calls, 400 serial and 160 threaded cache calls, plus one priming\ncall; it starts no app/server and blocks all socket connections.\n",
+  "network": "All Python socket connections and UDP sends denied; no application/private provider credentials inherited",
+  "storage": "Disposable local SQLite/cache fallback; no live canonical PDIM, external storage or application database",
+  "projection": {
+    "targetRequests": 90000000,
+    "executedAtTargetScale": false,
+    "simultaneousNetworkClients": 0,
+    "workerThreads": 8,
+    "maximumConcurrentOrchestratorCalls": 8
+  },
+  "configuredOperationsPerRun": {
+    "coldGraphCalls": 40,
+    "contentionCalls": 500,
+    "serialCacheCalls": 400,
+    "threadedCacheCalls": 160,
+    "cachePrimingCalls": 1,
+    "totalOrchestratorCalls": 1101
+  },
+  "limits": [
+    "Numeric toy embedding/MLP graphs, not text/image/audio/video model quality or the full app",
+    "The selected legacy digital_gpu backend does not verify the current silicon_simt default",
+    "Cache throughput and projections do not prove 90M simultaneous requests or multi-host scaling"
+  ],
+  "runs": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:00.182398+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-01.txt",
+      "logSha256": "407ee96d04581581cfbf06849e7e470628826fd9b64844dd7cb066b186586890",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "cache": 443,
+          "coalesced": 17
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:00.450092+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-02.txt",
+      "logSha256": "424e1639a72e4aefeb8258b80255c99c20e1b5779d3a334a9a975c1121f540f9",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "cache": 446,
+          "coalesced": 14
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:00.716595+00:00",
+      "durationSeconds": 0.265,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-03.txt",
+      "logSha256": "7ef9cc4cdc6b26f9199a5b14a27ddf1831f99b9a0c055745510014312349bfda",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "cache": 444,
+          "coalesced": 16
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:00.983299+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-04.txt",
+      "logSha256": "fd2ebb1bdfbc2acb179e259c0ef9fa3a084d2eb58e837835e74806c6e8d2af1b",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "cache": 444,
+          "coalesced": 16
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:01.250262+00:00",
+      "durationSeconds": 0.315,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-05.txt",
+      "logSha256": "e2e1993ea7991079cecb5b52b388878f641ec4464c2152f9c9abeade61c46089",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "cache": 441,
+          "coalesced": 19
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:01.566543+00:00",
+      "durationSeconds": 0.265,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-06.txt",
+      "logSha256": "0f0664cb8c46ce589b1b322b069b4b02744206b6a60565be038e4abedd97f06c",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "cache": 444,
+          "coalesced": 16
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:01.833054+00:00",
+      "durationSeconds": 0.315,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-07.txt",
+      "logSha256": "12979814d4bd270f1b408f4d3a95213ea3c5aa1931ef22f522ebe271bad87c84",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "cache": 443,
+          "coalesced": 17
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:02.150168+00:00",
+      "durationSeconds": 0.265,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-08.txt",
+      "logSha256": "3bc53204c24e2e3f3a2bee6d2e0d7584823659e2c1a0cb1b2d331ee1d738f0f3",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "coalesced": 19,
+          "cache": 441
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:02.416354+00:00",
+      "durationSeconds": 0.265,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-09.txt",
+      "logSha256": "5de40661ab90652ca69044b921dd1e73055d87755376fdfb46c99e6643a33605",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "cache": 440,
+          "coalesced": 20
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "ai_model/maxcore/tests/load_test.py"
+      ],
+      "cwd": "external/maxcore/artifacts/ai-training-server",
+      "startedAt": "2026-10-26T18:01:02.682949+00:00",
+      "durationSeconds": 0.265,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-scale-benchmark/final/run-10.txt",
+      "logSha256": "0a0d6d683555b78a3e50bcbc550331a6277835b21109bffb9c051389a831abbb",
+      "observed": {
+        "coldGraphCalls": 40,
+        "numericReferenceMatches": true,
+        "contentionSources": {
+          "compute": 40,
+          "cache": 442,
+          "coalesced": 18
+        },
+        "contentionCalls": 500,
+        "serialCacheCalls": 400,
+        "threadedCacheCalls": 160,
+        "engineCounters": {
+          "dgpu.gemm.engine": 240
+        },
+        "engineFallbackCounters": {},
+        "singleFlightNoDuplicateComputes": true,
+        "reportedPass": true,
+        "uncaughtThreadFailure": false
+      },
+      "evidenceFailures": [],
+      "ownedStateRemoved": true
+    }
+  ],
+  "productionReady": false,
+  "status": "passed",
+  "finishedAt": "2026-10-26T18:01:02.948744+00:00",
+  "unchangedSources": true
+}

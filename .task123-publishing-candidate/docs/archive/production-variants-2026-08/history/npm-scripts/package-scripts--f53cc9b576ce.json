@@ -1,0 +1,21 @@
+{
+  "source": "package.json script entries only",
+  "scripts": {
+    "build": "npx tsx script/build.ts",
+    "build:apps": "tsx scripts/build-apps.ts all",
+    "build:clean": "DEPLOY_CLEAN=1 npx tsx script/build.ts",
+    "build:deploy": "npm ci --omit=dev --ignore-scripts && node scripts/postinstall.mjs",
+    "build:desktop": "tsx scripts/build-apps.ts desktop",
+    "build:desktop:full": "FORCE_FULL_BUILD=true tsx scripts/build-apps.ts desktop",
+    "build:desktop+mobile": "tsx scripts/build-apps.ts desktop+mobile",
+    "build:full": "npm run security-fix && npm run build",
+    "build:mobile": "tsx scripts/build-apps.ts mobile",
+    "build:prod": "npx tsx script/build.ts && npm run prune:deploy",
+    "build:version": "tsx scripts/build-apps.ts version",
+    "deploy": "npx tsx scripts/deploy.ts",
+    "deploy:build": "npm install --omit=dev --no-audit --no-fund && npx tsx script/security-fix.ts && npx tsx script/build.ts && node script/deploy-clean-binary.mjs",
+    "electron:build": "electron-builder --projectDir electron",
+    "prune:deploy": "npm prune --omit=dev --no-audit --no-fund",
+    "start": "bash start.sh"
+  }
+}

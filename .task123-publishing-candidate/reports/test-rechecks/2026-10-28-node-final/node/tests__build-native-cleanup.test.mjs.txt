@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: native cleanup handles exact argv paths and never follows directory symlinks
+ok 1 - native cleanup handles exact argv paths and never follows directory symlinks
+  ---
+  duration_ms: 4.806801
+  type: 'test'
+  ...
+# Subtest: native cleanup validates the entire request before any deletion
+ok 2 - native cleanup validates the entire request before any deletion
+  ---
+  duration_ms: 0.716871
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 126.15528

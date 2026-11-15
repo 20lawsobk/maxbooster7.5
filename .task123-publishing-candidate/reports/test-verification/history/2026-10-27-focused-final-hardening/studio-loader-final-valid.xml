@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="1" failures="1" errors="0" time="43.870337445">
+    <testsuite name="tests/unit/studio-loader-browser.test.ts" timestamp="2026-10-27T10:05:33.070Z" hostname="2fc971e77ddd" tests="1" failures="1" errors="0" skipped="0" time="43.870337445">
+        <testcase classname="tests/unit/studio-loader-browser.test.ts" name="StudioLoader with the installed Query client &gt; reacts to actual query completion, failure, retry and authentication outcomes" time="42.956344293">
+            <failure message="No script for id: 4" type="Error">
+Error: No script for id: 4
+ ❯ WebSocket.&lt;anonymous&gt; tests/unit/studio-loader-browser.test.ts:119:42
+ ❯ Receiver.receiverOnMessage node_modules/ws/lib/websocket.js:1239:20
+ ❯ Receiver.dataMessage node_modules/ws/lib/receiver.js:633:14
+ ❯ node_modules/ws/lib/receiver.js:566:12
+ ❯ node_modules/ws/lib/permessage-deflate.js:311:9
+ ❯ node_modules/ws/lib/permessage-deflate.js:394:7
+            </failure>
+        </testcase>
+    </testsuite>
+</testsuites>

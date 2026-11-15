@@ -1,0 +1,329 @@
+{
+  "generatedAt": "2026-09-23T10:08:53Z",
+  "mode": "read-only reconciliation; no tests rerun, no runtime started, no database or provider call made",
+  "decision": "NOT_READY",
+  "releaseReady": false,
+  "scope": {
+    "authority": "reports/readiness-implementation/launch-blockers-current.md",
+    "secrets": "No secret or environment value was read or printed. Presence-only secret checks remain with the main agent.",
+    "mutations": "Only this JSON report and its Markdown companion were written.",
+    "pointInTime": "Digests cover bytes observed at generatedAt only; later or concurrent edits are not covered."
+  },
+  "revision": {
+    "gitHead": "bf6a902017b0e369469cc4c05998d07a129061af",
+    "gitHeadShort": "bf6a902017b0",
+    "gitHeadCommittedAt": "2026-09-23T10:03:54Z",
+    "gitHeadSubject": "Add memory documentation and recovery preflight report",
+    "workingTreeAtDigest": "not clean: scripts/database-recovery-drill.mjs modified and scripts/recovery-private-store.mjs untracked by concurrent work; neither change is claimed deployed or accepted",
+    "sourceDigest": {
+      "algorithm": "sha256 over sorted per-file sha256 records",
+      "value": "37be06bda485af31d4e27892b095e7d42d6bba7280c37db19c4361f59cb06c9b",
+      "roots": [
+        "server",
+        "client/src",
+        "shared",
+        "scripts",
+        "migrations"
+      ]
+    },
+    "testsDigest": {
+      "algorithm": "sha256 over sorted per-file sha256 records",
+      "value": "442d69ffd5d7d5b25abe24d691d0fe41d9869e4dd1bbc90be681b5fe9b1976c6",
+      "root": "tests"
+    },
+    "selectedEvidenceDigest": {
+      "algorithm": "sha256 over per-file sha256 records in listed order",
+      "value": "b4446898c20be87a7714addcce90483336b40c9349185181cd4b151f04b1ff3d",
+      "files": [
+        "reports/readiness-implementation/launch-blockers-current.md",
+        "reports/readiness-implementation/assembled-acceptance-drill.json",
+        "reports/readiness-implementation/database-recovery-drill.json",
+        "reports/readiness-implementation/local-pdim-recovery-drill.json",
+        "reports/readiness-implementation/provider-resumption.md"
+      ]
+    },
+    "artifactRevisionQualification": "Existing evidence artifacts do not record a deployable artifact digest tied to current HEAD. Their historical results are not promoted to current-revision acceptance."
+  },
+  "observations": [
+    {
+      "id": "published-health",
+      "classification": "historical_observation",
+      "finding": "The launch-blocker report records published health 200 and readiness 200 with MaxCore degraded/half-open.",
+      "currentInterpretation": "Evidence for an earlier published revision only; no deployment incorporation or current live health is claimed."
+    },
+    {
+      "id": "production-schema",
+      "classification": "historical_read_only_observation",
+      "finding": "The launch-blocker report records api_keys present and commerce_operations, commerce_webhook_inbox, and commerce_webhook_receipts absent.",
+      "currentCode": "Additive commerce SQL exists in migrations/0022_commerce_webhook_receipts.sql and migrations/0023_commerce_settlement.sql.",
+      "currentInterpretation": "Migration source existence is not application evidence. No live DDL or current schema recheck was performed."
+    },
+    {
+      "id": "secret-metadata",
+      "classification": "historical_presence_metadata_only",
+      "finding": "The launch-blocker report did not confirm Stripe keys or the application database URL as workspace Secrets.",
+      "currentInterpretation": "Not proof of absent runtime configuration. Task 71 credential migration/rotation remains external pending; the main agent owns presence-only checks."
+    }
+  ],
+  "implementedCorrections": [
+    {
+      "area": "subscription checkout and webhook durability",
+      "sourceExists": true,
+      "evidence": [
+        "server/services/subscriptionCheckoutService.ts",
+        "server/services/commerceWebhookRepository.ts",
+        "server/routes/webhooks/stripe.ts",
+        "migrations/0022_commerce_webhook_receipts.sql",
+        "migrations/0023_commerce_settlement.sql",
+        "tests/subscription-checkout-isolated.test.mjs",
+        "tests/unit/stripe-webhook-honesty.test.ts"
+      ],
+      "status": "implemented_in_source_not_deployment_certified"
+    },
+    {
+      "area": "admin API-key canonical scope and lifecycle",
+      "sourceExists": true,
+      "evidence": [
+        "server/services/adminApiTokenService.ts",
+        "tests/admin-governance-isolated.cjs"
+      ],
+      "status": "implemented_in_source_not_deployment_certified"
+    },
+    {
+      "area": "local PDIM protocol and recovery",
+      "sourceExists": true,
+      "evidence": [
+        "server/lib/localPdimServer.ts",
+        "tests/unit/local-pdim-protocol.test.ts",
+        "tests/unit/pdim-command-contract.test.ts",
+        "tests/unit/pdim-direct-prober.test.ts",
+        "reports/readiness-implementation/local-pdim-recovery-drill.json"
+      ],
+      "status": "source_and_historical_isolated_evidence; no independently retained off-source recovery artifact"
+    },
+    {
+      "area": "MaxCore supervisor/circuit recovery",
+      "sourceExists": true,
+      "evidence": [
+        "server/services/maxcoreLocalSupervisor.ts",
+        "tests/unit/maxcore-local-supervisor.test.ts",
+        "tests/integration/maxcore-local-supervisor.integration.test.ts"
+      ],
+      "status": "implemented_in_source; current published incorporation and real model health unverified"
+    },
+    {
+      "area": "workflow command, type inference, browser navigation harness",
+      "sourceExists": true,
+      "status": "reported_corrected; not re-executed in this reconciliation"
+    }
+  ],
+  "historicalVerification": {
+    "label": "Historical only; no old passing test was rerun.",
+    "reported": [
+      "12 Stripe fake-provider tests passed with no live charges/provider mutations",
+      "25 local PDIM/client/supervisor tests passed",
+      "7 MaxCore circuit recovery tests passed",
+      "2 admin lifecycle/verifier tests passed",
+      "server and client typechecks passed at the reported run",
+      "frontend-only Vite build passed at the reported run",
+      "isolated assembled HTTP authentication and Chromium login/session/logout passed with disposable cleanup",
+      "provider resumption reported 30 focused mocked-boundary tests and a server typecheck passed"
+    ],
+    "qualification": "These runs predate this point-in-time tree and do not cover concurrent changes, deployment, live providers, retained backup, load, cold image, or the complete authenticated product surface."
+  },
+  "providerPath": {
+    "activeProviderForNewSubmissions": "Too Lost",
+    "routeMount": "server/routes.ts mounts server/routes/distribution.ts at /api/distribution",
+    "newSubmissionPaths": [
+      "main release submission",
+      "Spotify platform submission",
+      "Apple platform submission",
+      "YouTube platform submission"
+    ],
+    "sourceEvidence": [
+      "server/routes/distribution.ts calls submitToolostRelease for the main and platform-specific submission paths",
+      "server/routes/distribution-toolost-submission.ts uses submitDistributionOnce with provider key toolost and invokes the Too Lost client",
+      "tests/unit/distribution-toolost-submission.test.ts exists"
+    ],
+    "labelGrid": {
+      "role": "historical only",
+      "startup": "server/index.ts still calls labelGridRoyaltySync.start on the background worker, but start is an intentional no-op",
+      "automaticProviderReadsOrWrites": false,
+      "automaticLedgerWrites": false,
+      "retainedCapability": "explicit operator-authorized historical reconciliation and legacy record reads",
+      "testExists": "tests/unit/legacy-labelgrid-royalty-sync.test.ts"
+    },
+    "providerMutationDuringThisReview": false,
+    "acceptance": "not accepted: no authorized Too Lost sandbox call or delivery receipt was obtained"
+  },
+  "fourGates": [
+    {
+      "gate": 1,
+      "name": "retained recovery backup and safe live commerce migration",
+      "status": "BLOCKED",
+      "codeAndArtifactReconciliation": "Migration files and isolated restore tooling/evidence exist. The historical database drill restored an ephemeral private dump and removed it; it explicitly makes no retention claim. No live commerce migration receipt exists in reviewed evidence.",
+      "missing": [
+        "authoritative independent off-source storage destination",
+        "retention/access-control evidence",
+        "retained checksummed backup",
+        "isolated restore and application-invariant proof from that retained backup",
+        "historical migration receipt/collision reconciliation",
+        "authorized migration application and post-apply verification"
+      ]
+    },
+    {
+      "gate": 2,
+      "name": "credential migration and rotation",
+      "status": "BLOCKED_EXTERNAL_PENDING",
+      "codeAndArtifactReconciliation": "No authoritative rotation/provisioning receipt was found. No task status was changed or inferred.",
+      "ownership": "overlapping Task 71 remains external pending",
+      "missing": [
+        "secure provisioning receipt",
+        "rotation confirmation",
+        "runtime continuity validation without disclosing values"
+      ]
+    },
+    {
+      "gate": 3,
+      "name": "publish corrected local MaxCore runtime and verify",
+      "status": "BLOCKED_EXTERNAL_PENDING",
+      "codeAndArtifactReconciliation": "Supervisor and circuit-recovery source/tests exist, but no current artifact/deployment digest, rollout receipt, or real local model-health acceptance ties them to the published revision.",
+      "relatedOwnership": "Task 215 DNS remains external pending unless an authoritative DNS/TLS/deployment receipt is supplied; no such receipt was found.",
+      "missing": [
+        "built artifact digest tied to source revision",
+        "deployment incorporation receipt",
+        "post-deploy readiness and owned-child verification",
+        "real local model-ready/inference acceptance",
+        "revision-linked DNS/TLS/public-origin evidence"
+      ]
+    },
+    {
+      "gate": 4,
+      "name": "provider delivery, financial reconciliation, disaster recovery, cold-image and load acceptance",
+      "status": "BLOCKED",
+      "codeAndArtifactReconciliation": "Too Lost is the enabled new-submission path and LabelGrid automation is disabled. Focused mocked tests and historical bounded auth evidence exist, but no sandbox delivery, payout/statement authority, retained DR, packed cold-image, or representative load result exists.",
+      "relatedOwnership": "Overlapping Tasks 213 and 214 for LabelGrid remain external pending; they do not change Too Lost's active-provider status and no authoritative completion receipts were found.",
+      "missing": [
+        "authorized Too Lost sandbox acceptance and response fixtures",
+        "provider delivery/status receipts and unknown-attempt reconciliation",
+        "authoritative financial period, currency, reversal, entitlement and duplicate-safe receipt semantics",
+        "retained independently recoverable backup",
+        "packed cold-image startup evidence",
+        "representative public and authenticated critical-journey load/soak evidence"
+      ]
+    }
+  ],
+  "externalStorage": {
+    "defaultProvider": "pocket-dimension",
+    "defaultHttpUrl": "",
+    "source": "server/config/index.ts",
+    "releaseEffect": "NOT_READY: the external storage URL default remains empty, and no authoritative independently retained recovery destination is established.",
+    "qualification": "This is a source-default observation, not an environment presence check."
+  },
+  "authSandbox": {
+    "neededCapabilities": [
+      "registered Too Lost sandbox OAuth application and exact sandbox redirect URI",
+      "an authenticated Max Booster test user mapped to an authorized disposable Too Lost sandbox account",
+      "OAuth authorization-code and refresh-token grants",
+      "read:profile",
+      "read:releases",
+      "write:releases",
+      "read:catalog",
+      "read:analytics",
+      "read:earnings",
+      "sandbox API egress and presigned object-upload egress",
+      "disposable non-customer FLAC, artwork, metadata, rights/terms and non-AI declarations",
+      "explicit authority before creating, editing, submitting, or deleting any sandbox release"
+    ],
+    "exactMissingPermissionsOrEvidenceThisReview": [
+      "no authorization to start the runtime",
+      "no authorization to make live/sandbox provider calls",
+      "no authorization to mutate a provider account",
+      "no authorization to query or mutate the source database",
+      "no evidenced authorized sandbox user connection",
+      "no evidenced granted scope string or sandbox response fixture",
+      "no provider delivery or accounting receipt"
+    ],
+    "genuineCodeOrContractBlockers": [
+      "AI-assisted submissions are blocked because required provider AI documentation fields/files are not collected",
+      "full catalog reconciliation lacks an authoritative pagination contract",
+      "no confirmed Too Lost takedown API exists",
+      "no confirmed royalty-statement or payout-request API exists",
+      "sales data cannot fund the payable ledger without authoritative period identity, currency semantics, reversal rules, entitlement and duplicate-safe receipt keys"
+    ],
+    "notCodeBlockers": [
+      "obtaining sandbox credentials and user consent",
+      "granting the requested OAuth scopes",
+      "provider allowlisting/account entitlement",
+      "authorizing disposable sandbox mutations",
+      "supplying authoritative provider contract/receipt documentation"
+    ]
+  },
+  "loadReview": {
+    "file": "tests/load/load-test.ts",
+    "runStatus": "not run",
+    "currentCoverage": "A 60-second, 50-user weighted GET-only public-read probe with ramp-up, 10-second request timeout, response-body consumption, non-overlap per user, latency/error accounting, and exit thresholds of >=99% success, P95 <=500ms, and P99 <=1000ms.",
+    "paths": [
+      "/api/health",
+      "/api/ping",
+      "/ready",
+      "/api/auth/me",
+      "/api/marketplace/beats",
+      "/"
+    ],
+    "safetyAssessment": [
+      "default target is loopback",
+      "requests are GET-only and carry no credentials",
+      "LOAD_BASE_URL can redirect traffic and has no built-in non-production allowlist or explicit target confirmation",
+      "the script is not safe evidence for production-like acceptance until an approved isolated target and fixture policy are enforced",
+      "it does not validate response semantics, authenticated isolation, durable writes, provider behavior, workers, storage recovery, or cold start"
+    ],
+    "realScriptsNeeded": [
+      "target-guarded public-read load/soak against an approved isolated release artifact",
+      "seeded authenticated session/CSRF load for login, session refresh and logout without shared customer accounts",
+      "seeded marketplace browse/cart/checkout lifecycle using Stripe test mode plus webhook and ledger reconciliation",
+      "explicitly authorized Too Lost sandbox OAuth/catalog/submission/status reconciliation using disposable assets",
+      "local PDIM interruption/export/restore workload with invariant checks",
+      "local MaxCore model-ready and representative generation workload",
+      "packed cold-image boot, readiness, worker restart/shutdown and sidecar recovery workload",
+      "DNS/TLS/public-origin and callback reachability verification bound to the deployed artifact digest"
+    ]
+  },
+  "taskOwnership": [
+    {
+      "task": 71,
+      "area": "credential migration/rotation",
+      "classification": "external pending",
+      "authoritativeReceiptFound": false
+    },
+    {
+      "task": 213,
+      "area": "LabelGrid overlapping ownership",
+      "classification": "external pending",
+      "authoritativeReceiptFound": false
+    },
+    {
+      "task": 214,
+      "area": "LabelGrid overlapping ownership",
+      "classification": "external pending",
+      "authoritativeReceiptFound": false
+    },
+    {
+      "task": 215,
+      "area": "DNS overlapping ownership",
+      "classification": "external pending",
+      "authoritativeReceiptFound": false
+    }
+  ],
+  "blockerInventory": [
+    "No retained independent off-source backup/recovery destination or retention receipt.",
+    "Commerce migrations 0022/0023 are not evidenced as applied; historical receipt and collision/post-apply checks remain open.",
+    "Task 71 credential migration/rotation has no authoritative receipt.",
+    "Corrected MaxCore source is not tied to a deployed artifact or real model-health acceptance.",
+    "Too Lost sandbox OAuth, delivery/status, analytics and accounting contracts lack authorized acceptance receipts.",
+    "Provider payout/statement and safe payable-ledger authority remain unavailable or unconfirmed.",
+    "Packed cold-image, representative authenticated load/soak and DNS/TLS evidence are missing.",
+    "External storage URL default is empty; independently retained recovery remains unestablished.",
+    "Tasks 213/214 LabelGrid and 215 DNS remain external pending without authoritative receipts."
+  ]
+}
