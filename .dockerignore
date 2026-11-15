@@ -29,6 +29,7 @@ __pycache__
 # Agent / Replit platform state — .local/state alone can exceed 15 GB.
 # Listed with multiple patterns for belt-and-suspenders compatibility across
 # Docker versions and Replit's own repl-layer packaging tool.
+.task123-publishing-candidate/
 .local
 .local/
 .local/**

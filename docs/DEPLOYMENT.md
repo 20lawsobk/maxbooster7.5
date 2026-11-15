@@ -6,7 +6,7 @@ it does not establish the state of a running deployment.
 
 ## Development and ordinary production compilation
 
-Use Node 24 and the pinned npm 11.19.1 for the root checkout:
+Use the configured Node 24 runtime and pinned npm 11.19.1 for the root checkout.
 The source requires Node 22.12 or newer; Replit selects Node 24 in `.replit`:
 
 ```sh

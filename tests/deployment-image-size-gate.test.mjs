@@ -81,7 +81,7 @@ test("the configured publishing build runs the image-size gate before reporting 
   const repl = fs.readFileSync(".replit", "utf8");
   const build = fs.readFileSync("build.sh", "utf8");
   assert.match(repl, /build\s*=\s*\[\s*"bash"\s*,\s*"build\.sh"\s*\]/);
-  assert.match(repl, /run\s*=\s*\[\s*"bash"\s*,\s*"start\.sh"\s*\]/);
+  assert.match(repl, /run\s*=\s*\[\s*"npm"\s*,\s*"run"\s*,\s*"deployment:start"\s*\]/);
   const finalize = build.slice(build.indexOf("phase_finalize()"));
   assert.match(build, /cp script\/lib\/verify-utf8-root\.py dist\/deployment\//);
   assert.match(finalize, /dist\/deployment\/verify-utf8-root\.py/);

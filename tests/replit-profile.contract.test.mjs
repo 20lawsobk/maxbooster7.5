@@ -42,7 +42,13 @@ test("Replit configuration and template contain no inline credentials", () => {
   for (const port of actual.ports.filter(port => port.externalPort === undefined)) {
     assert.notEqual(port.exposeLocalhost, true);
   }
-  assert.deepEqual(Object.keys(actual.userenv ?? {}), ["development"]);
+  assert.deepEqual(Object.keys(actual.userenv ?? {}).sort(), ["development", "production"]);
+  assert.deepEqual(actual.userenv.production, {
+    MAXCORE_AWARENESS_PLATFORM_DISCOVERY: "1",
+    MAXCORE_AWARENESS_PLATFORM_DISCOVERY_PROVIDER: "exa",
+  });
+  assert.equal(actual.userenv.development.MAXCORE_AWARENESS_PLATFORM_DISCOVERY, "1");
+  assert.equal(actual.userenv.development.MAXCORE_AWARENESS_PLATFORM_DISCOVERY_PROVIDER, "exa");
   assert.doesNotMatch(file(".replit"), /^\s*(?:DATABASE_URL|NEON_DATABASE_URL|OPENAI_API_KEY|STRIPE_SECRET_KEY|SESSION_SECRET)\s*=/m);
   assert.doesNotMatch(template, /^\s*\[userenv(?:\.|\])/m);
   assert.doesNotMatch(template, /^\s*(?:DATABASE_URL|OPENAI_API_KEY|STRIPE_SECRET_KEY|SESSION_SECRET)\s*=/m);

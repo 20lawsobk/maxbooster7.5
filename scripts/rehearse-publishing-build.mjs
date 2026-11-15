@@ -32,7 +32,8 @@ fs.writeFileSync(path.join(run, "status.json"), JSON.stringify({ stage: "copy", 
 console.log(`Rehearsal directory: ${run}`);
 const excluded = new Set([".local", ".git", ".agents", ".cache", ".config",
   ".prepared-release", "data", "uploads", "maxbooster7.5", ".pythonlibs",
-  "hardware", "reports", "attached_assets", ".replit", ".npmrc"]);
+  "hardware", "reports", "attached_assets", ".replit", ".npmrc",
+  ".task123-publishing-candidate"]);
 for (const name of fs.readdirSync(root)) {
   if (excluded.has(name) || name.startsWith(".pdim-scratch-")) continue;
   fs.cpSync(path.join(root, name), path.join(app, name), {
