@@ -7813,6 +7813,8 @@ _api_jobs_lock = threading.Lock()   # kept for legacy; file ops are the real sto
 _JOB_TTL_S        = 600   # evict done/error/cancelled jobs after 10 min
 _active_jobs: dict[str, str] = {}   # digest → job_id (in-flight only)
 _active_jobs_lock = threading.Lock()
+_active_audio_job_workers: set[str] = set()
+_active_audio_job_workers_lock = threading.Lock()
 
 
 def _job_digest(fields: dict) -> str:
@@ -7976,6 +7978,36 @@ def _job_update(job_id: str, updates: dict) -> None:
             return
         data.update(updates)
         _job_write(job_id, data)
+
+
+def _launch_audio_job_worker(job_id: str, worker) -> bool:
+    """Register an audio worker before starting it, closing cancel/start races."""
+    with _api_jobs_lock:
+        job = _job_read(job_id)
+        if not job or job.get("status") != "pending":
+            return False
+        with _active_audio_job_workers_lock:
+            _active_audio_job_workers.add(job_id)
+
+    def run() -> None:
+        try:
+            _run_gpu_job(job_id, worker)
+        finally:
+            with _active_audio_job_workers_lock:
+                _active_audio_job_workers.discard(job_id)
+
+    thread = threading.Thread(target=run, daemon=True, name=f"ApiAudioJob-{job_id}")
+    try:
+        thread.start()
+    except Exception:
+        with _active_audio_job_workers_lock:
+            _active_audio_job_workers.discard(job_id)
+        _job_update(job_id, {
+            "status": "error",
+            "error": "Audio worker could not be started",
+        })
+        raise
+    return True
 
 
 def _job_add_request_owner(job_id: str) -> None:
@@ -11463,6 +11495,19 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
             # Which dataset sample was selected — lets producers audit the pick.
             "source_sample":     render.get("source_sample"),
         })
+        committed_job = _job_read(job_id)
+        if not committed_job or committed_job.get("status") != "done":
+            from ai_model.generation.audio_job_storage import purge_audio_job_artifacts
+            purge_audio_job_artifacts(
+                job_id,
+                {
+                    "url": render.get("url"),
+                    "audio_url": render.get("url"),
+                    "stems": render.get("stems") or {},
+                },
+                _UPLOADS_PATH,
+            )
+            return
         # ── Admin content flywheel (audio arm) ─────────────────────────────
         # B-Lawz admin renders are auto-pushed back into the audio dataset
         # pool as additional dataset sources (parity with text/video/image
@@ -11535,6 +11580,9 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
                         for _u in _fp_stem_urls.values()
                     )
                 if _fp_name and _fp_stems_ok and (_UPLOADS_PATH / _fp_name).exists():
+                    from ai_model.generation.audio_job_storage import materialize_cached_audio_job
+                    _fp_hit = materialize_cached_audio_job(job_id, _fp_hit, _UPLOADS_PATH)
+                    _fp_name = str(_fp_hit["url"]).rsplit("/", 1)[-1]
                     _job_update(job_id, {
                         "status":        "done",
                         "url":           _fp_hit.get("url"),
@@ -11549,6 +11597,11 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
                         "arrangement":   _fp_hit.get("arrangement"),
                         "source_sample": _fp_hit.get("source_sample"),
                     })
+                    committed_job = _job_read(job_id)
+                    if not committed_job or committed_job.get("status") != "done":
+                        from ai_model.generation.audio_job_storage import purge_audio_job_artifacts
+                        purge_audio_job_artifacts(job_id, _fp_hit, _UPLOADS_PATH)
+                        raise RenderCancelled("Audio job was cancelled before cached output commit")
                     print(
                         f"[audio_pool] fast-path hit genre={_preferred_genres_handler[:1]} "
                         f"dur={_dur_probe}s job={job_id[:8]}",
@@ -11575,8 +11628,8 @@ async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_
     except Exception:
         pass  # never block on fast-path failure
 
-    threading.Thread(target=lambda: _run_gpu_job(job_id, _process),
-                     daemon=True, name=f"ApiAudioJob-{job_id}").start()
+    if not _launch_audio_job_worker(job_id, _process):
+        raise HTTPException(status_code=409, detail="Audio job was cancelled before rendering started")
     return {"job_id": job_id, "status": "processing", "intelligence": _audio_intelligence}
 
 
@@ -12577,16 +12630,61 @@ async def api_video_job_preview(job_id: str, scene_idx: int, request: Request, _
 
 @app.delete("/api/audio-job/{job_id}")
 async def api_cancel_audio_job(job_id: str, request: Request, _key=Depends(require_scope("generate"))):
-    """Cancel an owned audio render; its isolated worker observes terminal state."""
+    """Cancel an owned audio render or purge its completed, job-owned outputs."""
     job = _job_read(job_id)
     if job is None or job.get("job_type") != "audio":
         raise HTTPException(status_code=404, detail="Audio job not found")
     _require_job_owner(job, request)
-    if job.get("status") not in ("done", "error", "cancelled"):
+    status = job.get("status")
+    if status not in ("done", "error", "failed", "cancelled"):
         _job_update(job_id, {"status": "cancelled", "error": "Cancelled by owner"})
-    current = _job_read(job_id) or job
-    return {"ok": True, "job_id": job_id, "status": current.get("status"),
-            "action": "cancelled" if current.get("status") == "cancelled" else "no_op"}
+        current = _job_read(job_id)
+        if not current or current.get("status") != "cancelled":
+            raise HTTPException(status_code=500, detail="Audio job cancellation was not persisted")
+        return {"ok": True, "job_id": job_id, "status": "cancelled", "action": "cancelled"}
+
+    with _active_audio_job_workers_lock:
+        worker_active = job_id in _active_audio_job_workers
+    if worker_active:
+        raise HTTPException(
+            status_code=409,
+            detail="Audio job is still finalizing; retry the delete after it stops",
+        )
+
+    try:
+        from ai_model.generation.audio_job_storage import purge_audio_job_artifacts
+        import fcntl
+
+        with _api_jobs_lock, open(os.path.join(_JOBS_DIR, ".updates.lock"), "a") as lockfile:
+            fcntl.flock(lockfile, fcntl.LOCK_EX)
+            current = _job_read(job_id)
+            if current is None:
+                return {"ok": True, "job_id": job_id, "status": "deleted", "action": "already_purged"}
+            if current.get("job_type") != "audio":
+                raise HTTPException(status_code=404, detail="Audio job not found")
+            _require_job_owner(current, request)
+            if current.get("status") not in ("done", "error", "failed", "cancelled"):
+                raise HTTPException(status_code=409, detail="Audio job is not terminal")
+            with _active_audio_job_workers_lock:
+                if job_id in _active_audio_job_workers:
+                    raise HTTPException(status_code=409, detail="Audio job is still finalizing")
+            purge_audio_job_artifacts(job_id, current, _UPLOADS_PATH)
+            os.unlink(_job_path(job_id))
+            directory_fd = os.open(_JOBS_DIR, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+            if os.path.exists(_job_path(job_id)):
+                raise OSError("Audio job metadata still exists after purge")
+    except HTTPException:
+        raise
+    except (OSError, ValueError) as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Audio output cleanup was incomplete; the job remains available for retry",
+        ) from exc
+    return {"ok": True, "job_id": job_id, "status": "deleted", "action": "purged"}
 
 
 @app.get("/api/audio-job/{job_id}")

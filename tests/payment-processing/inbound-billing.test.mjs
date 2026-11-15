@@ -13,6 +13,7 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
       subscriptionRows: [{ id: "sub_buyer", status: "active", cancel_at_period_end: false, current_period_end: 2000000000 }],
       paymentMethods: [{ id: "pm_one", card: { last4: "4242" } }],
       invoices: [],
+      invoiceListError: null,
       paymentIntent: null,
       dispute: null,
       charges: [],
@@ -84,7 +85,11 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
       async detach(id) { records.stripe.calls.push(["paymentMethods.detach", id]); return { id, detached: true }; },
     },
     invoices: {
-      async list(input) { records.stripe.calls.push(["invoices.list", input]); return { data: records.stripe.invoices, has_more: false }; },
+      async list(input) {
+        records.stripe.calls.push(["invoices.list", input]);
+        if (records.stripe.invoiceListError) throw records.stripe.invoiceListError;
+        return { data: records.stripe.invoices, has_more: false };
+      },
       async retrieve(id) {
         records.stripe.calls.push(["invoices.retrieve", id]);
         if (id === "missing") throw Object.assign(new Error("missing"), { code: "resource_missing" });
@@ -181,9 +186,34 @@ test("billing transaction routes execute cancellation, payment setup, portal, in
   assert.equal(history.statusCode, 200);
   assert.equal(records.stripe.calls.at(-1)[0], "invoices.list");
   const invoices = await invoke("GET", "/invoices", { query: { status: "paid", limit: "10" } });
+  assert.equal(invoices.statusCode, 200);
   assert.equal(invoices.body.invoices[0].amount, 49);
+  assert.equal(invoices.body.invoices[0].dueDate, new Date(2000000000 * 1000).toISOString());
   assert.equal(invoices.body.invoices[0].statusDisplay, "Paid");
   assert.deepEqual(records.stripe.calls.at(-1)[1], { customer: "cus_buyer", limit: 10, status: "paid" });
+  records.stripe.invoices = [];
+  const emptyInvoices = await invoke("GET", "/invoices");
+  assert.equal(emptyInvoices.statusCode, 200);
+  assert.deepEqual(emptyInvoices.body, { invoices: [], hasMore: false });
+  records.stripe.invoices = [baseInvoice];
+  records.stripe.invoiceListError = Object.assign(new Error("provider outage"), { type: "StripeConnectionError" });
+  const invoiceOutage = await invoke("GET", "/invoices");
+  assert.equal(invoiceOutage.statusCode, 502);
+  assert.equal(invoiceOutage.body.code, "INVOICE_HISTORY_UNAVAILABLE");
+  assert.equal(invoiceOutage.body.invoices, undefined, "provider errors must not masquerade as empty results");
+  records.stripe.invoiceListError = null;
+  assert.equal((await invoke("GET", "/invoices", { query: { limit: "0" } })).statusCode, 400);
+  assert.equal((await invoke("GET", "/invoices", { query: { status: "unknown" } })).statusCode, 400);
+  records.stripe.invoices = [{
+    ...baseInvoice,
+    id: "in_no_due_date",
+    due_date: null,
+    status: "paid",
+  }];
+  const noDueDate = await invoke("GET", "/invoices");
+  assert.equal(noDueDate.statusCode, 200);
+  assert.equal(noDueDate.body.invoices[0].dueDate, null);
+  records.stripe.invoices = [baseInvoice];
   const download = await invoke("GET", "/invoices/:invoiceId/download", { params: { invoiceId: "in_paid" } });
   assert.equal(download.redirectTo, baseInvoice.invoice_pdf);
   records.stripe.invoices.push({ ...baseInvoice, id: "in_other", customer: "cus_someone_else" });
