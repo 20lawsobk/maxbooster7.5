@@ -640,6 +640,14 @@ class _GeneratedAssetsOnlyStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope):
         if path == "analysis-inputs" or path.startswith("analysis-inputs/"):
             raise HTTPException(status_code=404, detail="Not found")
+        if path == ".owner-manifests" or path.startswith(".owner-manifests/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        from ai_model.generation.private_assets import is_private_asset_authorized
+
+        if not is_private_asset_authorized(
+            _UPLOADS_PATH, f"/uploads/{path}", _request_job_owner.get(),
+        ):
+            raise HTTPException(status_code=404, detail="Not found")
         return await super().get_response(path, scope)
 
 
@@ -703,6 +711,11 @@ def _uploads_janitor_sweep() -> None:
             if now - mtime > _UPLOADS_TTL_SEC:
                 try:
                     p.unlink(missing_ok=True)
+                    from ai_model.generation.private_assets import remove_private_asset_manifest
+                    remove_private_asset_manifest(
+                        _UPLOADS_PATH,
+                        f"/uploads/{p.relative_to(_UPLOADS_PATH).as_posix()}",
+                    )
                     removed += 1
                 except OSError:
                     pass
@@ -716,6 +729,11 @@ def _uploads_janitor_sweep() -> None:
                     break
                 try:
                     p.unlink(missing_ok=True)
+                    from ai_model.generation.private_assets import remove_private_asset_manifest
+                    remove_private_asset_manifest(
+                        _UPLOADS_PATH,
+                        f"/uploads/{p.relative_to(_UPLOADS_PATH).as_posix()}",
+                    )
                     total -= size
                     removed += 1
                 except OSError:
@@ -7908,6 +7926,21 @@ def _job_write(job_id: str, data: dict) -> None:
     owner = _request_job_owner.get()
     if owner and not data.get("owner_ids"):
         data = {**data, "owner_ids": [owner]}
+    if data.get("status") == "done":
+        asset_urls = [data.get("url"), data.get("audio_url")]
+        if isinstance(data.get("stems"), dict):
+            asset_urls.extend(data["stems"].values())
+        local_urls = [
+            value for value in asset_urls
+            if isinstance(value, str) and value.startswith("/uploads/")
+        ]
+        if local_urls:
+            owners = data.get("owner_ids") or ([owner] if owner else [])
+            if not owners:
+                raise RuntimeError("Generated media cannot be served without a trusted owner")
+            from ai_model.generation.private_assets import register_private_asset
+            for media_url in local_urls:
+                register_private_asset(_UPLOADS_PATH, media_url, owners)
     tmp = _job_path(job_id) + ".tmp"
     with os.fdopen(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
         json.dump(data, f)
@@ -9658,11 +9691,23 @@ async def api_audio_upload(request: Request, _key=Depends(require_scope("generat
                 detail=f"Uploaded body is not decodable audio: {type(exc).__name__}",
             )
         temp_path.replace(final_path)
+        relative = final_path.relative_to(_UPLOADS_PATH).as_posix()
+        try:
+            from ai_model.generation.private_assets import register_private_asset
+            register_private_asset(
+                _UPLOADS_PATH, f"/uploads/{relative}", [owner_id],
+                ttl_seconds=None,
+            )
+        except (OSError, ValueError) as exc:
+            final_path.unlink(missing_ok=True)
+            raise HTTPException(
+                status_code=503,
+                detail="Uploaded audio could not be secured for private retrieval",
+            ) from exc
     except Exception:
         temp_path.unlink(missing_ok=True)
         final_path.unlink(missing_ok=True)
         raise
-    relative = final_path.relative_to(_UPLOADS_PATH).as_posix()
     return {"url": f"/uploads/{relative}"}
 
 
@@ -10232,6 +10277,22 @@ async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_
             raise HTTPException(status_code=503, detail="Pathtraced image produced no rendered file")
 
         if result and result.success:
+            owner_id = _request_job_owner.get()
+            if not owner_id:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Authenticated private owner required for generated media",
+                )
+            try:
+                from ai_model.generation.private_assets import register_private_asset
+                register_private_asset(
+                    _UPLOADS_PATH, result.url, [owner_id],
+                )
+            except (OSError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Generated image could not be secured for private retrieval",
+                ) from exc
             # Fold this produced image back into the retrieval index (non-blocking,
             # deduped, bounded; TOTAL — never raises into the generation path).
             try:
@@ -12501,14 +12562,32 @@ async def api_cancel_video_job(job_id: str, request: Request, _key=Depends(requi
     if status in ("done", "error", "cancelled"):
         filename = job.get("filename")
         if filename:
+            if not isinstance(filename, str) or Path(filename).name != filename:
+                raise HTTPException(status_code=409, detail="Video job has an unsafe output path")
+            video_path = _UPLOADS_PATH / "videos" / filename
+            from ai_model.generation.private_assets import remove_private_asset_manifest
             try:
-                (_UPLOADS_PATH / "videos" / filename).unlink(missing_ok=True)
-            except Exception:
-                pass
+                remove_private_asset_manifest(_UPLOADS_PATH, f"/uploads/videos/{filename}")
+                video_path.unlink(missing_ok=True)
+            except (OSError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Video output cleanup was incomplete; retry the purge",
+                ) from exc
         try:
             os.unlink(_job_path(job_id))
-        except Exception:
+            directory_fd = os.open(_JOBS_DIR, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+        except FileNotFoundError:
             pass
+        except OSError as exc:
+            raise HTTPException(
+                status_code=500,
+                detail="Video job metadata cleanup was incomplete; retry the purge",
+            ) from exc
         return {"ok": True, "action": "purged", "job_id": job_id}
 
     return {"ok": True, "action": "no_op", "job_id": job_id}

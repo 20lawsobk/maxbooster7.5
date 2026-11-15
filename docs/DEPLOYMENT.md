@@ -6,7 +6,8 @@ it does not establish the state of a running deployment.
 
 ## Development and ordinary production compilation
 
-Use Node 22 (at least 22.12) and the pinned npm 10.9.9 for the root checkout:
+Use the configured Node 24 runtime and pinned npm 10.9.9 for the root checkout.
+The source requires Node 22.12 or newer; Replit selects Node 24 in `.replit`:
 
 ```sh
 npm ci

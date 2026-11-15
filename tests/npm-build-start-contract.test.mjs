@@ -18,9 +18,12 @@ test("production build aliases do not invoke missing fixers or prune the workspa
 
 test("Replit preview runs the documented development workflow while deployment stays production-only", () => {
   const repl = fs.readFileSync(".replit", "utf8");
+  const deploymentDocs = fs.readFileSync("docs/DEPLOYMENT.md", "utf8");
   assert.match(repl, /^run = "npm run dev"$/m);
+  assert.match(repl, /modules = \["python-3\.11", "nodejs-24"\]/);
   assert.match(repl, /name = "Start application"[\s\S]*?args = "npm run dev"[\s\S]*?waitForPort = 5000/);
   assert.match(repl, /\[deployment\][\s\S]*?run = \["npm", "run", "deployment:start"\]/);
+  assert.match(deploymentDocs, /configured Node 24 runtime/);
 });
 
 test("legacy production shell delegates to the validated npm start path", () => {

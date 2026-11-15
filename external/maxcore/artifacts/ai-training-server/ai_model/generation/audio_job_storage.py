@@ -8,6 +8,7 @@ import stat
 import uuid
 from pathlib import Path
 from urllib.parse import urlsplit
+from ai_model.generation.private_assets import remove_private_asset_manifest
 
 
 _UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -169,6 +170,10 @@ def purge_audio_job_artifacts(job_id: str, job: dict, uploads_root: Path) -> int
             path.unlink()
             removed += 1
             changed_directories.add(path.parent)
+        relative = path.relative_to(uploads_root).as_posix()
+        remove_private_asset_manifest(
+            uploads_root, f"/uploads/{relative}",
+        )
 
     stems_dir = uploads_root / "stems" / job_id
     if stems_dir.is_symlink():
