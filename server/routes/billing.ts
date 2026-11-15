@@ -2476,15 +2476,27 @@ router.get(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user?.stripeCustomerId || !stripe) {
+      if (!user?.stripeCustomerId) {
         return res.json({ refunds: [], hasMore: false });
+      }
+      if (!stripe?.charges?.list) {
+        return res.status(503).json({
+          error: "Refund history is temporarily unavailable",
+          code: "REFUND_HISTORY_UNAVAILABLE",
+        });
       }
 
       try {
-        const charges = await stripe?.charges?.list({
+        const charges = await stripe.charges.list({
           customer: user.stripeCustomerId,
           limit: 50,
         });
+        if (!charges || !Array.isArray(charges.data)) {
+          return res.status(502).json({
+            error: "Refund history is temporarily unavailable",
+            code: "REFUND_HISTORY_UNAVAILABLE",
+          });
+        }
 
         const refunds: unknown[] = [];
 
@@ -2530,10 +2542,15 @@ router.get(
           hasMore: refunds.length > 20,
         });
       } catch (err) {
-        logger.warn({ err: err }, "[Billing] Failed to fetch refunds:");
+        logger.warn(
+          { errorType: err instanceof Error ? err.name : "unknown" },
+          "[Billing] Failed to fetch refund history",
+        );
+        return res.status(502).json({
+          error: "Refund history could not be loaded",
+          code: "REFUND_HISTORY_UNAVAILABLE",
+        });
       }
-
-      res.json({ refunds: [], hasMore: false });
     } catch (error) {
       logger.warn({ err: error }, "[Billing] Failed to get refunds:");
       res.status(500).json({ error: "Failed to get refunds" });

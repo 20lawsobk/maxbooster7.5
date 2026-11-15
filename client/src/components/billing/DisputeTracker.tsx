@@ -108,7 +108,7 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
     submit: false,
   });
 
-  const { data, isLoading } = useQuery<{ disputes: Dispute[] }>({
+  const { data, isLoading, isError, refetch } = useQuery<{ disputes: Dispute[] }>({
     queryKey: ["/api/billing/disputes"],
   });
 
@@ -195,6 +195,32 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
       <Card className={className}>
         <CardContent className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Disputes
+          </CardTitle>
+          <CardDescription>
+            Track and respond to payment disputes
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertDescription className="flex items-center justify-between gap-3">
+              <span>Dispute information is temporarily unavailable. No empty result is being assumed.</span>
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );

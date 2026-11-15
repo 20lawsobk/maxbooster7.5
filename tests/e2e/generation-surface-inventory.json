@@ -30,6 +30,19 @@
       "liveE2e": "requires isolated account and non-production provider receipt"
     },
     {
+      "id": "social-optimized-draft",
+      "productArea": "Social",
+      "clientFile": "client/src/pages/SocialMedia.tsx",
+      "action": "Generate a quality-scored social draft, then review and schedule it",
+      "backend": ["POST /api/social/generate-enhanced-content", "POST /api/social/schedule-post"],
+      "maxCorePath": ["/api/platform/social/generate"],
+      "modalities": ["text"],
+      "result": "Owner-generated draft with recommendation metadata, scheduled only after user review",
+      "ownerBound": true,
+      "verification": ["tests/unit/social-enhanced-generation-contract.test.mjs"],
+      "liveE2e": "requires isolated account, connected provider, and non-production delivery receipt"
+    },
+    {
       "id": "social-component-copy",
       "productArea": "Social",
       "clientFile": "client/src/components/social/ContentGenerator.tsx",

@@ -82,6 +82,30 @@ export function normalizePublishingPlatform(platform: string): string {
   return normalized;
 }
 
+function missingPublishingConnections(
+  platforms: string[],
+  accounts: Array<{
+    platform?: string;
+    isActive?: boolean | null;
+    accessToken?: string | null;
+    refreshToken?: string | null;
+    tokenExpiresAt?: Date | string | null;
+  }>,
+): string[] {
+  return platforms.filter((platform) => !accounts.some((account) =>
+    account.isActive === true &&
+    typeof account.accessToken === "string" &&
+    account.accessToken.length > 0 &&
+    typeof account.platform === "string" &&
+    normalizePublishingPlatform(account.platform) === platform &&
+    (
+      !account.tokenExpiresAt ||
+      new Date(account.tokenExpiresAt).getTime() > Date.now() ||
+      typeof account.refreshToken === "string" && account.refreshToken.length > 0
+    )
+  ));
+}
+
 export function normalizePostContent(
   rawContent: unknown,
   mediaUrls: string[] = [],
@@ -407,6 +431,7 @@ class AutoPostingServiceV2 {
     if (!(scheduledTime instanceof Date) || !Number.isFinite(scheduledTime.getTime())) {
       throw new Error("A valid scheduled publishing time is required");
     }
+    await this.assertPublishingConnections(userId, normalizedPlatforms);
     if (createdBy !== "manual") {
       const config =
         createdBy === "advertising_autopilot"
@@ -527,7 +552,6 @@ class AutoPostingServiceV2 {
           : "At least one publishing platform is required",
       );
     }
-
     const mediaUrls = updates.mediaUrls ?? existingPost.mediaUrls ?? [];
     const content = normalizePostContent(
       updates.content !== undefined ? updates.content : existingPost.content,
@@ -540,6 +564,7 @@ class AutoPostingServiceV2 {
     if (!(scheduledTime instanceof Date) || !Number.isFinite(scheduledTime.getTime())) {
       throw new Error("A valid scheduled publishing time is required");
     }
+    await this.assertPublishingConnections(existingPost.userId, platforms);
 
     const createdBy = existingPost.createdBy || "manual";
     const permissionConfig =
@@ -602,14 +627,7 @@ class AutoPostingServiceV2 {
     if (!platforms.length || platforms.some(platform => !PUBLISHING_PLATFORMS.has(platform))) {
       throw new SocialPublishRequestError("Post has an unsupported platform", 400, "INVALID_PUBLISHING_PLATFORM");
     }
-    const accounts = await storage.getSocialAccounts(userId);
-    const missing = platforms.filter(platform => !accounts.some(account =>
-      account.isActive === true && typeof account.accessToken === "string" && account.accessToken.length > 0 &&
-      normalizePublishingPlatform(account.platform) === platform &&
-      (!account.tokenExpiresAt || new Date(account.tokenExpiresAt).getTime() > Date.now() || !!account.refreshToken)));
-    if (missing.length) {
-      throw new SocialPublishRequestError("Connect the post's publishing platforms before publishing", 409, "PUBLISHING_CONNECTION_REQUIRED");
-    }
+    await this.assertPublishingConnections(userId, platforms);
     if (!await this.hasCurrentPublishConsent(post)) {
       throw new SocialPublishRequestError("Automated publishing requires current consent", 409, "PUBLISHING_CONSENT_REQUIRED");
     }
@@ -665,6 +683,21 @@ class AutoPostingServiceV2 {
     if (Array.isArray(saved.results)) return saved.results;
     if (Array.isArray(saved.engagement?.postingResults)) return saved.engagement.postingResults;
     throw new Error("Immediate post has no readable durable receipts; reconcile before retrying");
+  }
+
+  private async assertPublishingConnections(
+    userId: string,
+    platforms: string[],
+  ): Promise<void> {
+    const accounts = await storage.getSocialAccounts(userId);
+    const missing = missingPublishingConnections(platforms, accounts);
+    if (missing.length) {
+      throw new SocialPublishRequestError(
+        "Connect or reauthorize the selected platforms before publishing or scheduling",
+        409,
+        "PUBLISHING_CONNECTION_REQUIRED",
+      );
+    }
   }
 
   private async executePost(post: ScheduledPost): Promise<PostResult[]> {

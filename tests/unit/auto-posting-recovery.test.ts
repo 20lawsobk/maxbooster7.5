@@ -286,6 +286,45 @@ describe("scheduled social post recovery", () => {
     expect(state.queuedJobs.size).toBe(0);
   });
 
+  it.each([
+    { accounts: [] },
+    { accounts: [{ platform: "twitter", isActive: false, accessToken: "expired" }] },
+    { accounts: [{ platform: "twitter", isActive: true, accessToken: "" }] },
+  ])("refuses to create a scheduled job without a usable connected account", async ({ accounts }) => {
+    state.pendingRows = [];
+    state.getSocialAccounts.mockResolvedValue(accounts);
+    const service = await loadService();
+    await expect(service.schedulePost(
+      "user-1",
+      ["x"],
+      { text: "Scheduled copy" },
+      new Date(SCHEDULED_AT),
+      "manual",
+      undefined,
+      "connection-required",
+    )).rejects.toMatchObject({
+      status: 409,
+      code: "PUBLISHING_CONNECTION_REQUIRED",
+    });
+    expect(state.queuedJobs.size).toBe(0);
+    expect(state.addAttempts).toHaveLength(0);
+    expect(state.workers).toHaveLength(0);
+  });
+
+  it("does not edit or queue a durable calendar post when its account was revoked", async () => {
+    state.pendingRows = [];
+    state.getSocialAccounts.mockResolvedValue([]);
+    const service = await loadService();
+    await expect(service.scheduleExistingPost(POST_ID, {
+      scheduledAt: new Date(SCHEDULED_AT),
+    })).rejects.toMatchObject({
+      status: 409,
+      code: "PUBLISHING_CONNECTION_REQUIRED",
+    });
+    expect(state.updateQueuedSocialPost).not.toHaveBeenCalled();
+    expect(state.queuedJobs.size).toBe(0);
+  });
+
   it.each(["posting", "completed", "failed"])("never resets %s delivery for publish-now", async status => {
     state.pendingRows = [];
     state.posts.get(POST_ID).status = status;

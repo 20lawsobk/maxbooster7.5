@@ -111,7 +111,7 @@
     "vst3:inspect": "tsx scripts/inspect-vst3-binary.ts",
     "test:vst3": "node --test tests/linux-vst3-build.test.mjs tests/vst3-binary-inspection.test.mjs",
     "test:beat-loop": "node --test tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs",
-    "test:storage-recovery": "node --test tests/recovery-snapshot-integrity.test.mjs tests/pdim-acknowledged-crash-capacity.test.mjs",
+    "test:storage-recovery": "node --import tsx --test tests/pdim-bucket-objects.test.mjs && node --test tests/recovery-snapshot-integrity.test.mjs tests/pdim-acknowledged-crash-capacity.test.mjs",
     "test:distribution-tenancy": "node --test tests/distribution-workflow-tenancy.test.mjs",
     "test:storage-chunks": "node --test tests/storage-chunk-shared-postgres.test.mjs",
     "test:packaging-contracts": "node --test tests/desktop-runtime-policy.test.mjs tests/linux-vst3-build.test.mjs tests/vst3-binary-inspection.test.mjs"

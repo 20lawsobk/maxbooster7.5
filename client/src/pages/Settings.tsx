@@ -274,20 +274,35 @@ export default function Settings() {
   });
 
   // Query for payment method
-  const { data: paymentMethod } = useQuery<PaymentMethodResponse>({
+  const {
+    data: paymentMethod,
+    isLoading: paymentMethodLoading,
+    isError: paymentMethodReadError,
+    refetch: refetchPaymentMethod,
+  } = useQuery<PaymentMethodResponse>({
     queryKey: ["/api/billing/payment-method"],
     enabled: !!user,
   });
 
   // Query for billing history
-  const { data: billingHistory = [], isLoading: billingLoading } =
+  const {
+    data: billingHistory = [],
+    isLoading: billingLoading,
+    isError: billingHistoryReadError,
+    refetch: refetchBillingHistory,
+  } =
     useQuery<BillingHistoryItem[]>({
       queryKey: ["/api/billing/history"],
       enabled: !!user,
     });
 
   // Query for refunds
-  const { data: refundsData, isLoading: refundsLoading } =
+  const {
+    data: refundsData,
+    isLoading: refundsLoading,
+    isError: refundsReadError,
+    refetch: refetchRefunds,
+  } =
     useQuery<RefundsResponse>({
       queryKey: ["/api/billing/refunds"],
       enabled: !!user && refundsExpanded,
@@ -1748,16 +1763,41 @@ export default function Settings() {
                             <CreditCard className="w-4 h-4 text-white" />
                           </div>
                           <div>
-                            <p className="font-medium">
-                              {paymentMethod?.last4
-                                ? `•••• •••• •••• ${paymentMethod.last4}`
-                                : "No payment method"}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {paymentMethod?.expiry
-                                ? `Expires ${paymentMethod.expiry}`
-                                : "Add payment method"}
-                            </p>
+                            {paymentMethodLoading ? (
+                              <>
+                                <p className="font-medium">Loading payment method…</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Checking your billing account
+                                </p>
+                              </>
+                            ) : paymentMethodReadError ? (
+                              <>
+                                <p className="font-medium text-destructive">
+                                  Payment method details unavailable
+                                </p>
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="h-auto p-0"
+                                  onClick={() => refetchPaymentMethod()}
+                                >
+                                  Retry
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <p className="font-medium">
+                                  {paymentMethod?.last4
+                                    ? `•••• •••• •••• ${paymentMethod.last4}`
+                                    : "No payment method"}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {paymentMethod?.expiry
+                                    ? `Expires ${paymentMethod.expiry}`
+                                    : "Add payment method"}
+                                </p>
+                              </>
+                            )}
                           </div>
                         </div>
                         <Button
@@ -1790,6 +1830,16 @@ export default function Settings() {
                           </div>
                         ))}
                       </div>
+                    ) : billingHistoryReadError ? (
+                      <Alert variant="destructive">
+                        <AlertTitle>Billing history unavailable</AlertTitle>
+                        <AlertDescription className="flex items-center justify-between gap-3">
+                          <span>We could not retrieve your billing history. No empty result is being assumed.</span>
+                          <Button variant="outline" size="sm" onClick={() => refetchBillingHistory()}>
+                            Retry
+                          </Button>
+                        </AlertDescription>
+                      </Alert>
                     ) : billingHistory.length === 0 ? (
                       <div className="text-center py-8 bg-muted/10 rounded-lg">
                         <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
@@ -1919,6 +1969,19 @@ export default function Settings() {
                                 <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/4"></div>
                               </div>
                             ))}
+                          </div>
+                        ) : refundsReadError ? (
+                          <div className="space-y-3 rounded-lg border border-destructive/30 p-4 text-center">
+                            <p className="text-sm text-destructive">
+                              Refund history is temporarily unavailable.
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void refetchRefunds()}
+                            >
+                              Retry
+                            </Button>
                           </div>
                         ) : !refundsData?.refunds ||
                           refundsData.refunds.length === 0 ? (

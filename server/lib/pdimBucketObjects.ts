@@ -9,17 +9,50 @@ export class PdimBucketObjects implements PdimObjectStore {
 
   async read(key: string): Promise<{ bytes: Buffer; generation: string } | null> {
     const file = this.bucket.file(key);
-    let generation: string;
-    try {
-      const [metadata] = await file.getMetadata();
-      if (typeof metadata.generation !== "string") throw new Error("Missing object generation");
-      generation = metadata.generation;
-    } catch (error) {
-      if ((error as { code?: unknown }).code === 404) return null;
-      throw error;
+    const maxGenerationChanges = 3;
+    for (let attempt = 0; attempt < maxGenerationChanges; attempt += 1) {
+      let generation: string;
+      try {
+        const [metadata] = await file.getMetadata();
+        if (typeof metadata.generation !== "string") {
+          throw new Error("Missing object generation");
+        }
+        generation = metadata.generation;
+      } catch (error) {
+        if ((error as { code?: unknown }).code === 404) return null;
+        throw error;
+      }
+
+      try {
+        const [bytes] = await this.bucket.file(key, { generation }).download({
+          validation: "crc32c",
+        });
+        return { bytes, generation };
+      } catch (error) {
+        if ((error as { code?: unknown }).code !== 404) throw error;
+
+        // A generation-pinned read may lose a race with the active lease
+        // owner's CAS replacement. Retry only when fresh metadata proves that
+        // the object changed; a stable-generation 404 remains a hard failure.
+        let currentGeneration: unknown;
+        try {
+          const [current] = await file.getMetadata();
+          currentGeneration = current.generation;
+        } catch (metadataError) {
+          if ((metadataError as { code?: unknown }).code === 404) return null;
+          throw metadataError;
+        }
+        if (typeof currentGeneration !== "string" || currentGeneration === generation) {
+          throw error;
+        }
+        if (attempt === maxGenerationChanges - 1) {
+          throw new Error(`Object ${key} changed during ${maxGenerationChanges} generation-pinned reads`, {
+            cause: error,
+          });
+        }
+      }
     }
-    const [bytes] = await this.bucket.file(key, { generation }).download({ validation: "crc32c" });
-    return { bytes, generation };
+    throw new Error(`Object ${key} could not be read from a stable generation`);
   }
 
   async write(key: string, bytes: Buffer, generation: string | 0): Promise<string> {

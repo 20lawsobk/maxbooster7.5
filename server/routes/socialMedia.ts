@@ -69,6 +69,7 @@ import {
   normalizePublishingPlatform,
   SocialPublishRequestError,
 } from "../services/autoPostingServiceV2.js";
+import { autoPostGenerator } from "../services/autoPostGenerator.js";
 import {
   audioUpload,
   artworkUpload,
@@ -480,6 +481,13 @@ router.post(
         });
       }
     } catch (error) {
+      if (error instanceof SocialPublishRequestError) {
+        return res.status(error.status).json({
+          success: false,
+          code: error.code,
+          error: error.message,
+        });
+      }
       logger.warn({ err: error }, "Failed to schedule post:");
       res.status(500).json({ error: "Failed to schedule post" });
     }
@@ -768,6 +776,13 @@ router.post(
         ...(postStatus === "scheduled" ? { queued: true } : {}),
       });
     } catch (error) {
+      if (error instanceof SocialPublishRequestError) {
+        return res.status(error.status).json({
+          success: false,
+          code: error.code,
+          error: error.message,
+        });
+      }
       logger.warn({ err: error }, "Failed to create calendar post:");
       res.status(500).json({ error: "Failed to create calendar post" });
     }
@@ -889,6 +904,13 @@ router.put(
 
       res.json(updated);
     } catch (error) {
+      if (error instanceof SocialPublishRequestError) {
+        return res.status(error.status).json({
+          success: false,
+          code: error.code,
+          error: error.message,
+        });
+      }
       logger.warn({ err: error }, "Failed to update calendar post:");
       res.status(500).json({ error: "Failed to update calendar post" });
     }
@@ -3439,6 +3461,15 @@ const manualSocialGenerationSchema = z.object({
   awareness: z.unknown().optional(),
 });
 
+const enhancedSocialGenerationSchema = z.object({
+  platforms: z.array(z.string().trim().min(1).max(50)).min(1).max(8),
+  topic: z.string().trim().min(1).max(1000),
+  objective: z.enum(["awareness", "engagement", "conversions", "viral"]).default("engagement"),
+  tone: z.enum(["professional", "casual", "humorous", "inspirational"]).default("professional"),
+  targetAudience: z.string().trim().max(500).optional(),
+  includeHashtags: z.boolean().default(true),
+});
+
 const MANUAL_SOCIAL_PLATFORMS = new Set([
   "instagram",
   "twitter",
@@ -3596,6 +3627,87 @@ router.post(
       return res
         .status(500)
         .json({ success: false, error: "Social content generation failed" });
+    }
+  },
+);
+
+router.post(
+  "/generate-enhanced-content",
+  requireAuth,
+  aiRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = enhancedSocialGenerationSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid enhanced social content request",
+        details: parsed.error.issues,
+      });
+    }
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+    }
+
+    const platforms = [
+      ...new Set(parsed.data.platforms.map(normalizePublishingPlatform)),
+    ];
+    const invalidPlatforms = platforms.filter(
+      (platform) => !MANUAL_SOCIAL_PLATFORMS.has(platform),
+    );
+    if (invalidPlatforms.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Unsupported social platform(s): ${invalidPlatforms.join(", ")}`,
+      });
+    }
+
+    try {
+      const generated = await autoPostGenerator.generateEnhancedContent(userId, {
+        ...parsed.data,
+        platforms,
+        generateVariants: 3,
+        mediaType: "text",
+      });
+      if (!generated.body?.trim()) {
+        throw new AIUnavailableError("MaxCore returned no enhanced social content");
+      }
+      if (
+        !(generated.optimalPostingTime instanceof Date) ||
+        !Number.isFinite(generated.optimalPostingTime.getTime())
+      ) {
+        return res.status(502).json({
+          success: false,
+          code: "MAXCORE_INVALID_RESPONSE",
+          error: "Enhanced social generation returned no valid scheduling recommendation",
+        });
+      }
+      return res.json({
+        success: true,
+        ...generated,
+        optimalPostingTime: generated.optimalPostingTime.toISOString(),
+        source: generated.generatedBy,
+        platforms,
+      });
+    } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          code: error.code,
+          error: "MaxCore enhanced social generation is temporarily unavailable",
+        });
+      }
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Enhanced social content generation failed",
+      );
+      return res.status(500).json({
+        success: false,
+        error: "Enhanced social content generation failed",
+      });
     }
   },
 );
