@@ -22,11 +22,12 @@ test("real adaptive source capsule applies root-only exclusions without dropping
     import {computeRemainingAppMembers} from './script/lib/dockerignoreScan.ts';
     const root=await fs.mkdtemp(path.join(os.tmpdir(),'source-admission-'));
     try {
-      for(const d of ['data','uploads','private-runtime','module/private-runtime','.task123-publishing-candidate'])
+      for(const d of ['data','uploads','private-runtime','module/private-runtime','.task123-publishing-candidate','deploy-capsule/capsule-interrupted/chunks'])
         await fs.mkdir(path.join(root,d),{recursive:true});
       for(const d of ['data','uploads','private-runtime'])
         await fs.writeFile(path.join(root,d,'private.txt'),'must not be included');
       await fs.writeFile(path.join(root,'.task123-publishing-candidate','large-rehearsal-output.bin'),'not a runtime asset');
+      await fs.writeFile(path.join(root,'deploy-capsule/capsule-interrupted/chunks/partial.bin'),'incomplete capsule output');
       await fs.writeFile(path.join(root,'module/private-runtime/source.json'),'{}');
       const output=path.join(root,'packed');
       const m=await new PlatformCapsuleBuilder(root).build({
@@ -43,6 +44,8 @@ test("real adaptive source capsule applies root-only exclusions without dropping
       await fs.writeFile(path.join(root,'.dockerignore'),dockerignore);
       const deployMembers=computeRemainingAppMembers(root);
       assert.equal(deployMembers.some(f=>f.startsWith('.task123-publishing-candidate/')),false);
+      assert.equal(deployMembers.some(f=>f.startsWith('deploy-capsule/')),false,
+        'interrupted or completed source capsule build artifacts must never enter the app runtime image');
     } finally {await fs.rm(root,{recursive:true,force:true});}
   `], { encoding: "utf8", timeout: 60000, env: { ...process.env, DEPLOY_TASK_CPU: "1" } });
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);

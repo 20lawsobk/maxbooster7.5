@@ -36,6 +36,11 @@ const ELASTIC_TASKS = new Set([
 ]);
 
 const RETRYABLE_CAPSULE_TASKS = new Set([
+  // app_capsule writes a uniquely named capsule and publishes its cache marker
+  // only after checksum verification, so an isolated child interruption can
+  // retry without accepting partial output. Executive-level cancellation still
+  // aborts the whole plan and is never retried.
+  "app_capsule",
   "pack_node",
   "pack_python",
   "pack_maxcore",

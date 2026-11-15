@@ -123,6 +123,8 @@ export function bindShutdownSignals(controller, emitter = process) {
           code: "DEPLOY_EXECUTIVE_SIGNAL",
           signal: signalName,
           signalOrigin: "unknown",
+          signalScope: "executive",
+          resumePolicy: "not-auto-resumed-ambiguous-origin",
         },
       ));
     };
@@ -1387,6 +1389,8 @@ async function main(mode) {
       code:error.code??null,
       signal:error.signal??error.taskSignal??null,
       signalOrigin:error.signalOrigin??null,
+      signalScope:error.signalScope??null,
+      resumePolicy:error.resumePolicy??(error.taskSignal?"bounded-task-policy":"none"),
       taskId:error.taskId??null,
       checkpointAt:error.checkpointAt??new Date().toISOString(),
       completed: error.completedTasks ?? [],

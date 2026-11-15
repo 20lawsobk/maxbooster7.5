@@ -211,6 +211,7 @@ storybook-static/
 
 # Build-time generated directories (created fresh by build.sh every deploy)
 # Excluding prevents stale workspace copies from polluting the repl layer.
+/deploy-capsule/
 python_runtime/
 python_runtime/**
 services/

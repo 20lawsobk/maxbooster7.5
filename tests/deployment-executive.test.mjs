@@ -81,25 +81,33 @@ test("capsule tasks retry a child-only transient signal after cleanup",async t=>
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   const attemptsFile=path.join(root,"attempts");
   const code=`const fs=require('node:fs');const file=process.env.EXECUTIVE_ATTEMPTS_FILE;let n=0;try{n=Number(fs.readFileSync(file,'utf8'))}catch{};fs.writeFileSync(file,String(n+1));if(n===0)process.kill(process.pid,'SIGTERM');`;
+  const capsulePlanTask=buildPlan().find(job=>job.id==="app_capsule");
+  assert.equal(capsulePlanTask.maxRetries,1);
+  assert.deepEqual(capsulePlanTask.retryOnSignals,["SIGTERM","SIGHUP"]);
   const logs=[];
   await runExecutive([{
-    ...task("pack",[],code),maxRetries:1,retryOnSignals:["SIGTERM"],retryBackoffMs:5,
+    ...capsulePlanTask,deps:[],command:process.execPath,args:["-e",code],
+    memoryMB:512,cpu:1,retryBackoffMs:5,
   }],{cwd:root,env:{...process.env,EXECUTIVE_ATTEMPTS_FILE:attemptsFile},
-    capacity,pollMs:5,budgetMs:3000,log:line=>logs.push(line)});
+    capacity:()=>({cpus:4,memoryMB:4096,availableMB:4096,ioSlots:2}),
+    pollMs:5,budgetMs:3000,log:line=>logs.push(line)});
   assert.equal(fs.readFileSync(attemptsFile,"utf8"),"2");
-  assert.ok(logs.some(line=>line.includes("retry pack: SIGTERM; 1/1")));
-  assert.ok(logs.some(line=>line.includes("completed pack")));
+  assert.ok(logs.some(line=>line.includes("retry app_capsule: SIGTERM; 1/1")));
+  assert.ok(logs.some(line=>line.includes("completed app_capsule")));
 });
 test("executor cancellation stops promptly and is never retried",async t=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-cancel-"));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   const attemptsFile=path.join(root,"attempts");
   const code=`const fs=require('node:fs');fs.appendFileSync(process.env.EXECUTIVE_ATTEMPTS_FILE,'started\\n');setInterval(()=>{},1000);`;
+  const capsulePlanTask=buildPlan().find(job=>job.id==="app_capsule");
   const controller=new AbortController();
   const running=runExecutive([{
-    ...task("pack",[],code),maxRetries:2,retryOnSignals:["SIGTERM","SIGHUP"],retryBackoffMs:5,
+    ...capsulePlanTask,deps:[],command:process.execPath,args:["-e",code],
+    memoryMB:512,cpu:1,
   }],{cwd:root,env:{...process.env,EXECUTIVE_ATTEMPTS_FILE:attemptsFile},
-    capacity,pollMs:5,budgetMs:5000,signal:controller.signal,log(){}});
+    capacity:()=>({cpus:4,memoryMB:4096,availableMB:4096,ioSlots:2}),
+    pollMs:5,budgetMs:5000,signal:controller.signal,log(){}});
   const deadline=Date.now()+2000;
   while(!fs.existsSync(attemptsFile)&&Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,10));
   assert.equal(fs.existsSync(attemptsFile),true,"task should have started before cancellation");
@@ -107,8 +115,8 @@ test("executor cancellation stops promptly and is never retried",async t=>{
   let rejection;
   await assert.rejects(running,error=>{rejection=error;return /Publish cancelled by user/.test(error.message);});
   assert.equal(fs.readFileSync(attemptsFile,"utf8").trim().split("\n").length,1);
-  assert.deepEqual(rejection.runningTasks,["pack"]);
-  assert.equal(rejection.taskCheckpoint.find(item=>item.id==="pack").state,"running");
+  assert.deepEqual(rejection.runningTasks,["app_capsule"]);
+  assert.equal(rejection.taskCheckpoint.find(item=>item.id==="app_capsule").state,"running");
 });
 test("unreasoned abort signals retain an actionable executive interruption error",async t=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),"executive-abort-reason-"));
@@ -147,6 +155,8 @@ test("executor binds TERM, INT and HUP with truthful signal metadata and removes
   assert.equal(controller.signal.reason.message,"Executive interrupted by SIGHUP");
   assert.equal(controller.signal.reason.code,"DEPLOY_EXECUTIVE_SIGNAL");
   assert.equal(controller.signal.reason.signalOrigin,"unknown");
+  assert.equal(controller.signal.reason.signalScope,"executive");
+  assert.equal(controller.signal.reason.resumePolicy,"not-auto-resumed-ambiguous-origin");
   unbind();
   assert.equal(emitter.listenerCount("SIGINT"),0);
   assert.equal(emitter.listenerCount("SIGTERM"),0);
