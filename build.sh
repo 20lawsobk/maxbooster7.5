@@ -485,6 +485,10 @@ phase_finalize() {
   rm -rf .deployment-capsule-cache
   rm -rf maxbooster7.5 .pythonlibs hardware reports .pdim-scratch-*
 
+  require_file dist/pdim-restore.mjs
+  echo '==> Verifying deployment capsule manifests and checksums without restoring...'
+  node dist/pdim-restore.mjs --verify
+
   echo "==> Verifying UTF-8-safe filenames without deleting workspace data..."
   python3 dist/deployment/verify-utf8-root.py "$PWD"
 
