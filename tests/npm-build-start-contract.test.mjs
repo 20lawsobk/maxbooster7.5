@@ -224,3 +224,38 @@ test("startup sidecar reuse probes the configured health listener", async t => {
   status = 503;
   assert.equal(await probe(), 1);
 });
+
+test("startup detects an occupied sidecar port independently of its health result", async t => {
+  const server = http.createServer((_req, res) => { res.writeHead(503); res.end("not ready"); });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const port = server.address().port;
+  const source = fs.readFileSync("start.sh", "utf8");
+  const start = source.indexOf("_tcp_port_open() {");
+  const helper = source.slice(start, source.indexOf("\n}\n", start) + 3);
+  const probe = () => new Promise((resolve, reject) => {
+    const child = spawn("bash", ["-c", helper + '\n_tcp_port_open "$CHECK_PORT"'], {
+      env: { PATH: process.env.PATH, _NODE_BIN: process.execPath, CHECK_PORT: String(port) },
+      stdio: "ignore",
+    });
+    child.once("error", reject); child.once("exit", resolve);
+  });
+  try {
+    assert.equal(await probe(), 0);
+    await new Promise(resolve => server.close(resolve));
+    assert.equal(await probe(), 1);
+  } finally {
+    if (server.listening) await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test("production Python sidecar ownership is determined by its configured listener", () => {
+  const source = fs.readFileSync("start.sh", "utf8");
+  const start = source.indexOf("# ── 3b. Optional legacy Python AI Content Sidecar");
+  const end = source.indexOf("# ── 3c. Start MaxCore Diffusion Gateway", start);
+  assert.ok(start >= 0 && end > start);
+  const sidecarBlock = source.slice(start, end);
+  assert.doesNotMatch(sidecarBlock, /pgrep/);
+  assert.match(sidecarBlock, /_service_healthy "\$PYTHON_AI_PORT"/);
+  assert.match(sidecarBlock, /_tcp_port_open "\$PYTHON_AI_PORT"/);
+  assert.match(sidecarBlock, /FATAL: configured Python AI port/);
+});
