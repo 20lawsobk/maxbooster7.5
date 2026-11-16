@@ -189,10 +189,15 @@ test("production startup rejects missing, altered and stale build output", () =>
     for (const file of ["package.json", "package-lock.json", "vite.config.ts", "start.sh"]) {
       fs.writeFileSync(path.join(root, file), "fixture");
     }
+    fs.mkdirSync(path.join(root, "server/services"), { recursive: true });
+    fs.writeFileSync(path.join(root, "server/services/ai_content_sidecar.py"), "print('sidecar')");
+    fs.writeFileSync(path.join(root, "server/services/secure_http.py"), "def request(): pass");
     const lib = path.join(root, "external/maxcore/lib/api-spec");
     fs.mkdirSync(path.join(lib, "node_modules/.cache/jiti"), { recursive: true });
     fs.writeFileSync(path.join(lib, "index.ts"), "export const version = 1;");
     const before = readBuildInputs(root);
+    assert.ok(Object.hasOwn(before, "server/services/ai_content_sidecar.py"));
+    assert.ok(Object.hasOwn(before, "server/services/secure_http.py"));
     const cache = path.join(lib, "node_modules/.cache/jiti/generated.mjs");
     fs.writeFileSync(cache, "export default 1;");
     assert.deepEqual(readBuildInputs(root), before);
@@ -202,6 +207,8 @@ test("production startup rejects missing, altered and stale build output", () =>
     assert.notDeepEqual(readBuildInputs(root), before);
     fs.writeFileSync(path.join(lib, "added.ts"), "export default 1;");
     assert.ok(Object.hasOwn(readBuildInputs(root), "external/maxcore/lib/api-spec/added.ts"));
+    fs.writeFileSync(path.join(root, "server/services/ai_content_sidecar.py"), "print('updated sidecar')");
+    assert.notDeepEqual(readBuildInputs(root), before);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -258,4 +265,11 @@ test("production Python sidecar ownership is determined by its configured listen
   assert.match(sidecarBlock, /_service_healthy "\$PYTHON_AI_PORT"/);
   assert.match(sidecarBlock, /_tcp_port_open "\$PYTHON_AI_PORT"/);
   assert.match(sidecarBlock, /FATAL: configured Python AI port/);
+});
+
+test("startup session health probe uses the migrated millisecond-expiry table", () => {
+  const source = fs.readFileSync("server/services/platformAutoFixer.ts", "utf8");
+  assert.match(source, /SELECT 1 FROM pg_sessions WHERE expire > \$1 LIMIT 1/);
+  assert.match(source, /relation "pg_sessions"/);
+  assert.doesNotMatch(source, /SELECT 1 FROM session WHERE expire > NOW\(\)/);
 });

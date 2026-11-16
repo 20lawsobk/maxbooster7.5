@@ -944,14 +944,17 @@ export class PlatformAutoFixer extends EventEmitter {
     let details: Record<string, unknown> = {};
 
     try {
-      // Ping the session store via a direct DB query (the session store uses the same pool).
+      // Ping the authoritative session store via the same pool.
       // Timeout raised 3s → 5s: Neon cold-starts on the first post-boot probe routinely
       // exceed 3s, triggering a false "sessions degraded" alert and escalating the probe
       // interval to 5s for the rest of the boot window.
       const { pool } = await import("../db.js");
       const start = Date?.now();
       (await Promise?.race([
-        pool?.query("SELECT 1 FROM session WHERE expire > NOW() LIMIT 1"),
+        pool?.query(
+          "SELECT 1 FROM pg_sessions WHERE expire > $1 LIMIT 1",
+          [Date.now()],
+        ),
         // Increased from 5 000ms → 8 000ms: Neon serverless connections go cold
         // between probe cycles (every 30s) and can take 5–7s to warm up.  The
         // old 5s limit caused false "sessions degraded" alerts during normal
@@ -970,13 +973,13 @@ export class PlatformAutoFixer extends EventEmitter {
       }
     } catch (err) {
       const msg = (err as Error).message ?? "";
-      // 'session' table may not exist (no sessions yet) — not a real failure.
+      // The session table is provisioned by reviewed migration 0090.
       if (
         msg?.includes("does not exist") ||
-        msg?.includes('relation "session"')
+        msg?.includes('relation "pg_sessions"')
       ) {
         status = "unknown";
-        message = "Session table not yet created (no sessions)";
+        message = "Authoritative session table not yet provisioned";
       } else if (msg?.includes("session ping timeout")) {
         // Neon serverless databases go cold between requests and take 5-8s to
         // reconnect.  This affects both startup and runtime probes.  Treat all

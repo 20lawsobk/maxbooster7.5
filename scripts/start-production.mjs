@@ -30,6 +30,7 @@ function sourceInputs(root) {
   }
   for (const file of ["client/index.html", "dns-node/package.json", "dns-node/tsconfig.json",
     "dns-os/db/migrations/001_init.sql", "dns-os/db/migrations/002_audit.sql",
+    "server/services/ai_content_sidecar.py", "server/services/secure_http.py",
     "tsconfig.json", "tsconfig.server.json", "tsconfig.client.json", ".replit",
     ...["external/maxcore", "external/pdim"].flatMap(dir =>
       ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"].map(name => `${dir}/${name}`))]) {
