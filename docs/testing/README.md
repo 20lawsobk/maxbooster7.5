@@ -75,6 +75,49 @@ sampling a few areas. [Launch gates](global-launch-readiness.md), [release rehea
 and the [migration procedure](storage-release-runbook.md) distinguish source
 verification from deployment and global-capacity evidence.
 
+## Bounded repository verification
+
+`npm run dev` first runs an offline, bounded repository preflight, then starts
+the existing `scripts/start-dev.sh` launcher only if the local checks pass.
+The preflight inventories every Git-tracked path, records file type and
+lifecycle, hashes source/configuration/test inputs, checks the startup contract
+and required local tools, and verifies that inputs did not drift while it ran.
+It does not read application credentials, contact providers or production,
+apply migrations, build artifacts, or repair files.
+Clean tracked inputs are bound to their Git object IDs, while modified and
+untracked input bytes receive SHA-256 hashes; the complete inventory and report
+also have SHA-256 receipts.
+
+Reports and the full machine-readable inventory are retained in a unique
+`.local/repository-verification/runs/` directory. Each report has a SHA-256
+integrity receipt and separate source-revision, full-inventory, behavior-input,
+and dirty-input identities. Source files and tests are explicitly marked
+`UNVERIFIED` by inventory alone; generated files, archives, reports, and docs
+remain separate lifecycle categories with a reason when behavior testing does
+not apply. No prior result is reused as current evidence.
+
+To run the existing comprehensive local groups explicitly, use:
+
+```sh
+npm run verify:repository
+```
+
+This wraps `scripts/testing/run-all.py`, which runs its selected groups
+sequentially with its existing per-command deadlines and retained output. It
+then runs `scripts/testing/launch-readiness-audit.py` against that run's fresh
+register and plan in the same isolated output directory. The controller applies
+a four-hour test-run bound plus a three-minute audit bound, terminates the owned
+process group on timeout/interruption, records every group result, and checks
+the relevant source identity before and after execution. This command is
+intentionally not part of `npm run dev`.
+
+Provider, destructive, specialized-hardware/device, and production/deployment
+acceptance is never inferred or silently included. Those checks remain
+explicitly `BLOCKED` until separately authorized and run against owned,
+isolated resources. A passing finite report means only that its listed checks
+passed for the recorded inputs; overall product readiness remains
+`UNVERIFIED`, not a percentage or production certification.
+
 The [seven-level critical path](launch-critical-path.md) extends that plan;
 the [launch audit](launch-readiness-audit.md) supplies the complete status,
 feature/gap/dependency registers, explicit domain pass/fail criteria and

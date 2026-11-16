@@ -26,6 +26,13 @@ test("Replit preview runs the documented development workflow while deployment s
   assert.match(deploymentDocs, /configured Node 24 runtime/);
 });
 
+test("development preflight gates the unchanged application launcher", () => {
+  const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  assert.equal(scripts.dev, "node scripts/testing/repository-verification.mjs preflight && bash scripts/start-dev.sh");
+  assert.match(fs.readFileSync("scripts/start-dev.sh", "utf8"), /dev_acquire_instance_lock/);
+  assert.match(scripts["verify:repository"], /repository-verification\.mjs full/);
+});
+
 test("legacy production shell delegates to the validated npm start path", () => {
   const source = fs.readFileSync("scripts/start-production.sh", "utf8");
   assert.match(source, /exec npm run start/);
