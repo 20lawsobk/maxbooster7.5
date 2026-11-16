@@ -9,7 +9,7 @@ prepare_publishing_context() {
     return 1
   fi
   export DEPLOY_PACK=1 PUBLISH_PAYLOAD_CLEANUP=1 PUBLISH_BUILD_ROOT="$root"
-  # Only the historical executive packs. Its nested npm build compiles only.
+  # The Publishing phase runner owns capsule packing; nested npm builds compile only.
   export PUBLISH_SHELL_PACKS_CAPSULES=1
   local identity
   identity=$(printf '%s' "$root" | sha256sum)
@@ -23,7 +23,7 @@ prepare_publishing_context() {
 
 isolate_publishing_caches() {
   # $tools is an owned mktemp directory outside the payload. Existing bootstrap
-  # and executive cleanup remove it only after child processes have drained.
+  # and bootstrap cleanup removes it after the sequential build runner exits.
   export XDG_CACHE_HOME="$tools/cache/xdg"
   export npm_config_cache="$tools/cache/npm" NPM_CONFIG_CACHE="$tools/cache/npm"
   export NODE_COMPILE_CACHE="$tools/cache/node"

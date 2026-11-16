@@ -36,7 +36,8 @@ export async function buildDeploymentBootstrap(root: string, outdir: string) {
   // start.sh must run these before the application capsule is restored.
   const bootstrap = path.join(outdir, "deployment");
   fs.mkdirSync(bootstrap, { recursive: true });
-  for (const name of fs.readdirSync(path.join(root, "script/deployment")).filter(name => name.endsWith(".mjs"))) {
+  for (const name of fs.readdirSync(path.join(root, "script/deployment"))
+    .filter(name => name.endsWith(".mjs") && name !== "sequential-build.mjs")) {
     fs.copyFileSync(path.join(root, "script/deployment", name), path.join(bootstrap, name));
   }
   for (const file of ["scripts/port-contract.sh", "scripts/boot-stub-server.mjs", "script/deployment/image-size-gate.sh"]) {

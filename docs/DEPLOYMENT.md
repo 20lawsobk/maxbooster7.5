@@ -79,8 +79,8 @@ Keep all dependency locks; there is no supported tar stub or lock-deletion repai
 
 The tracked `.replit` deployment invokes `bash build.sh`, then
 `npm run deployment:start` (which delegates to `bash start.sh`). This preserves
-the guarded deployment executive, portable runtimes, capsule
-packaging/restoration and integrity checks. Replit runs the build and start as
+the guarded bootstrap, sequential dependency-ordered Publishing build, portable
+runtimes, capsule packaging/restoration and integrity checks. Replit runs the build and start as
 separate ordered phases; do not combine them into one shell command or run
 destructive packing in the development checkout. A GitHub push does not prove
 a successful publication. The owner-defined target is a Replit Reserved VM;
@@ -93,27 +93,24 @@ selected machine configuration to those commands.
 The project requests a **16 vCPU / 64 GiB** Reserved VM. Confirm the selected
 machine size and region in Publishing settings; source configuration does not
 prove the live selection. The shared deployment capacity module is the source
-of the **16 vCPU / 64 GiB** ceiling used by build plans, the executor,
-capsule/release helpers, and runtime worker sizing. The admin scaling metrics read cgroup CPU and memory usage
-against the same live capacity; host load average is labeled separately.
-Each build tool receives its per-task CPU assignment; worker counts cannot
-exceed the shared ceiling or live cgroup capacity. The optional prepared-release
-path uses the same detected CPU budget by default. Per-task `memoryMB` values
-are scheduler reservations, not hard memory limits; the live cgroup remains the
-actual process limit. Scaling recommendations do not resize Replit's machine.
+of the **16 vCPU / 64 GiB** ceiling used by startup execution,
+capsule/release helpers, and runtime worker sizing. The admin scaling metrics
+read cgroup CPU and memory usage against the same live capacity; host load
+average is labeled separately.
+The Publishing build runs one phase at a time without scheduler CPU/RAM
+reservations or an overall executor deadline. Phase-internal workers still
+respect their live cgroup limits and the shared CPU ceiling where applicable.
+The optional prepared-release path uses the same detected CPU budget by default.
+Scaling recommendations do not resize Replit's machine.
 Machine-setting changes require a new publish. See
 [Replit machine configuration](https://docs.replit.com/features/publishing/machine-configuration).
 
-Workspace cleanup, dependency installation, and Rust compilation request elastic
-CPU allocations up to the 16-vCPU ceiling instead of reserving a fixed eight
-CPUs. The cleanup phase is I/O-bound, so a larger CPU reservation does not imply
-that filesystem removal scales linearly. The executive re-samples live CPU,
-available memory, and I/O capacity before admitting work.
-If capacity falls, it pauses new admissions without killing already-running
-build phases; once a phase exits its reservations are released, and queued work
-can start again when a later live sample has enough headroom. This adapts to
-resource fluctuations but cannot change the actual machine allocation or
-resize worker counts inside an already-running child process.
+Publishing build phases run serially, so this path does not perform parallel
+admission or dynamically rebalance phase-level resource reservations. Cleanup,
+dependency installation, Rust compilation, and compression use their own
+bounded worker sizing based on resources visible inside the running container.
+The startup executive continues to use live capacity admission for restore and
+application tasks.
 
 `.prepared-release` is optional tooling, not a dependency of this configured
 Publish path. See [prepared-production-releases.md](prepared-production-releases.md).

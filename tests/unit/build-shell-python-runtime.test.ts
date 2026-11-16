@@ -41,7 +41,7 @@ afterEach(() => {
   }
 });
 
-describe("build.sh delegates to the production executive bootstrap", () => {
+describe("build.sh delegates to the sequential Publishing bootstrap", () => {
   it("starts from its own project root and executes the bootstrap once", () => {
     const { result, capture, project } = isolatedEntrypoint(0);
     expect(result.status).toBe(0);
@@ -54,7 +54,7 @@ describe("build.sh delegates to the production executive bootstrap", () => {
     expect(capture).toBe(`cwd=${project}\nbootstrap=true\n`);
   });
 
-  it("keeps resource-mutating phases behind explicit executive tasks", () => {
+  it("keeps resource-mutating phases behind explicit internal phase dispatch", () => {
     execFileSync("bash", ["-n", path.join(root, "build.sh")]);
     const source = fs.readFileSync(path.join(root, "build.sh"), "utf8");
     expect(source).toContain('exec bash script/deployment/bootstrap.sh');

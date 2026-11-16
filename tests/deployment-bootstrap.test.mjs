@@ -23,8 +23,9 @@ test("bootstrap verifies compatible package managers without starting a build",(
       .packageManager.match(new RegExp(`^${manager}@(\\S+)$`))?.[1];
     if (version) assert.match(output, new RegExp(`Preserved ${manager} ${version.replaceAll(".", "\\.")}`));
   }
-  assert.match(output,/Toolchain, imports and build graph verified; build not executed/);
-  assert.doesNotMatch(output,/Handing off/);
+  assert.match(output,/Sequential plan verified; 18 ordered phases; no build phases executed/);
+  assert.match(output,/Toolchain and sequential build plan verified; build not executed/);
+  assert.doesNotMatch(output,/Running dependency-ordered build phases/);
 });
 
 test("bootstrap announces and cleans up a failure before admitting destructive tasks",t=>{
@@ -43,7 +44,7 @@ test("bootstrap announces and cleans up a failure before admitting destructive t
   assert.ok(failure);
   assert.match(failure.stderr,/No compatible durable npm installation found/);
   assert.match(failure.stdout,/\[bootstrap\] Resolving compatible npm/);
-  assert.doesNotMatch(failure.stdout,/Handing off/);
+  assert.doesNotMatch(failure.stdout,/Running dependency-ordered build phases/);
   const after = new Set(fs.readdirSync("/tmp").filter((p) => p.startsWith("deployment-tools.")));
   assert.deepEqual(
     [...after].filter((entry) => !before.has(entry)),

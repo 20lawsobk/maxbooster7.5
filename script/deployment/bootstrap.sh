@@ -7,8 +7,6 @@ prepare_publishing_context
 cd -- "$PUBLISH_BUILD_ROOT"
 
 export DEPLOY_PROJECT_ROOT="$PWD"
-export DEPLOY_EXECUTIVE_STARTED_SECONDS
-DEPLOY_EXECUTIVE_STARTED_SECONDS=$(date +%s)
 
 case "${1:-}" in
   '') ;;
@@ -242,36 +240,20 @@ LAUNCHER
   echo "[bootstrap] Preserved $manager $actual"
 done
 
-executive="$DEPLOY_PROJECT_ROOT/script/deployment/executive.mjs"
+sequential_build="$DEPLOY_PROJECT_ROOT/script/deployment/sequential-build.mjs"
 
 bash -n "$DEPLOY_PROJECT_ROOT/build.sh"
 
-# Check the actual import graph and coordinated plan before launching tasks.
-timeout --kill-after=5s 30 \
-  "$tools/node" --input-type=module - "$executive" <<'NODE'
-import {pathToFileURL} from "node:url";
-
-const executiveURL = pathToFileURL(process.argv[2]);
-const module = await import(executiveURL.href);
-
-if (
-  typeof module.runExecutive !== "function" ||
-  typeof module.coordinateBuildPlan !== "function"
-) {
-  throw Error("Executive exports are incomplete");
+[[ -s "$sequential_build" ]] || {
+  echo "Sequential build runner is missing: $sequential_build" >&2
+  exit 1
 }
 
-const {buildPlan} = await import(new URL("./plans.mjs", executiveURL));
-module.coordinateBuildPlan(buildPlan());
-NODE
-
 if [[ "${1:-}" == --check ]]; then
-  echo '[bootstrap] Toolchain, imports and build graph verified; build not executed'
+  "$tools/node" "$sequential_build" --check
+  echo '[bootstrap] Toolchain and sequential build plan verified; build not executed'
   exit 0
 fi
 
-echo '[bootstrap] Handing off toolchain and cleanup ownership to executive'
-
-# After successful exec, executive.main owns cleanup.
-# Failed exec leaves Bash's EXIT cleanup in place.
-exec "$tools/node" "$executive" build
+echo '[bootstrap] Running dependency-ordered build phases sequentially'
+"$tools/node" "$sequential_build"

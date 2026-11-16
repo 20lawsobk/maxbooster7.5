@@ -509,8 +509,8 @@ phase_finalize() {
 }
 
 if [[ ${1:-} == --help || ${1:-} == -h ]]; then
-  printf 'Usage: bash build.sh [--executive-task TASK]\n'
-  printf 'Runs bootstrap by default; individual tasks are internal bootstrap entry points.\n'
+  printf 'Usage: bash build.sh [--executive-task PHASE]\n'
+  printf 'Runs the sequential Publishing build by default; phase dispatch is internal.\n'
   exit 0
 fi
 
