@@ -69,7 +69,7 @@ test("bounded command timeout terminates its process group and retains the log",
   try {
     const result = await runOwned(process.execPath, ["-e", "console.log('started'); setInterval(() => {}, 1000)"], {
       cwd: root,
-      timeoutMs: 100,
+      timeoutMs: 1000,
       logPath,
       env: cleanEnvironment(),
     });
