@@ -68,6 +68,10 @@ const EXCLUDED_TOP_LEVEL = new Set([
 const MAXCORE_EXCLUDED_SUBTREES = [
   // Generated/customer runtime media belongs in persistent serving storage,
   // never in a source snapshot, disposable simulation or publishing capsule.
+  // This workspace-only venv resolves its interpreter through the Nix store;
+  // the portable Python runtime is built separately for releases.
+  "artifacts/ai-training-server/.venv",
+  "artifacts/ai-training-server/.pytest_cache",
   "artifacts/ai-training-server/uploads",
   "artifacts/ai-training-server/ai_model/training_data",
   "artifacts/ai-training-server/ai_model/training/candidate_runs",

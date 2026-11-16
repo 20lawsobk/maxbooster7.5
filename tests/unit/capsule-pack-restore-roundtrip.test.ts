@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll } from "vitest";
 import fs from "fs/promises";
 import path from "path";
 import { createHash, randomBytes } from "crypto";
-import { execSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 // The round-trip tests shell out to the real `zstd` binary. In environments
 // where it is not installed (minimal containers, some CI images) they skip
 // cleanly instead of failing — the codec-selection unit test below still runs.
@@ -610,5 +610,44 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     expect(tarFlagsForCompression("xz-9e")).toEqual(["-xJf"]);
     expect(tarFlagsForCompression("gzip-9")).toEqual(["-xzf"]);
     expect(tarFlagsForCompression(undefined)).toEqual(["-xzf"]);
+  });
+
+  itRequiresZstd("excludes the workspace MaxCore virtualenv from a real capsule", async () => {
+    const dirRelative = `${ROOT_RELATIVE}/external/maxcore`;
+    const capsuleRelative = `${ROOT_RELATIVE}/external_maxcore.pdim`;
+    const sourceRoot = path.resolve(projectRoot, dirRelative);
+    const venvPython = path.join(
+      sourceRoot,
+      "artifacts/ai-training-server/.venv/bin/python",
+    );
+    const sourceFile = path.join(
+      sourceRoot,
+      "artifacts/ai-training-server/server.py",
+    );
+    const outsidePython = path.resolve(projectRoot, ROOT_RELATIVE, "outside-python");
+    await fs.mkdir(path.dirname(venvPython), { recursive: true });
+    await fs.mkdir(path.dirname(sourceFile), { recursive: true });
+    await fs.writeFile(outsidePython, "workspace-only Python");
+    await fs.writeFile(sourceFile, "portable MaxCore source");
+    await fs.symlink(outsidePython, venvPython);
+
+    const packed = await packCapsule({
+      root: projectRoot,
+      dir: dirRelative,
+      capsule: capsuleRelative,
+      excludePaths: MAXCORE_CAPSULE_EXCLUDE_PATHS,
+      preserveSource: true,
+    });
+    expect(packed).not.toBeNull();
+    const decompressed = execFileSync("zstd", [
+      "-dc",
+      path.resolve(projectRoot, capsuleRelative),
+    ]);
+    const members = execFileSync("tar", ["-tf", "-"], {
+      input: decompressed,
+      encoding: "utf8",
+    });
+    expect(members).toContain(`${dirRelative}/artifacts/ai-training-server/server.py`);
+    expect(members).not.toContain("/.venv/");
   });
 });

@@ -60,6 +60,10 @@ export const MAXCORE_CAPSULE_EXCLUDE_PATHS = [
   "**/*.pyc",
   // Exclude runtime images/audio/video and staging, preserving sibling source,
   // first-party assets and explicitly named fixture trees.
+  // Workspace-only virtualenv/cache are not portable runtime inputs; Python is
+  // supplied by the separately verified python_runtime capsule.
+  "artifacts/ai-training-server/.venv",
+  "artifacts/ai-training-server/.pytest_cache",
   "artifacts/ai-training-server/uploads",
   "artifacts/ai-training-server/ai_model/training_data",
   "artifacts/ai-training-server/ai_model/training/candidate_runs",

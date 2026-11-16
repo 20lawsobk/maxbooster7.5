@@ -1,10 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { buildPlan } from "../script/deployment/plans.mjs";
 import {
+  bindBuildShutdownSignals,
   executeBuildPhase,
   orderBuildPlan,
   runSequentialBuild,
@@ -92,7 +94,7 @@ test("build plan rejects unknown dependencies, duplicate tasks, and cycles", () 
   );
 });
 
-test("phase dispatcher runs the requested shell phase with isolated executor settings", (t) => {
+test("phase dispatcher runs the requested shell phase with isolated executor settings", async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "sequential-phase-"));
   const stateDirectory = path.join(root, "state");
   fs.mkdirSync(stateDirectory);
@@ -119,7 +121,7 @@ node -e 'require("node:fs").writeFileSync(process.argv[1], JSON.stringify({
   process.env.DEPLOY_TASK_CPU = "99";
   process.env.DEPLOY_BUILD_BUDGET_SECONDS = "1";
   try {
-    executeBuildPhase(
+    await executeBuildPhase(
       {
         id: "fixture",
         command: "bash",
@@ -142,15 +144,15 @@ node -e 'require("node:fs").writeFileSync(process.argv[1], JSON.stringify({
   });
 });
 
-test("phase dispatcher reports the actual failed phase exit code", (t) => {
+test("phase dispatcher reports the actual failed phase exit code", async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "sequential-phase-failure-"));
   const stateDirectory = path.join(root, "state");
   fs.mkdirSync(stateDirectory);
   fs.writeFileSync(path.join(root, "build.sh"), 'exit 37\n');
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
 
-  assert.throws(
-    () => executeBuildPhase(
+  await assert.rejects(
+    executeBuildPhase(
       {
         id: "fixture",
         command: "bash",
@@ -160,6 +162,93 @@ test("phase dispatcher reports the actual failed phase exit code", (t) => {
     ),
     (error) => error.exitCode === 37 && /Build phase fixture failed: exit=37/.test(error.message),
   );
+});
+
+test("SIGTERM stops a sequential phase's complete process tree before the runner exits", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "sequential-phase-signal-"));
+  const stateDirectory = path.join(root, "state");
+  const childPidFile = path.join(root, "child.pid");
+  const runnerFile = path.join(root, "runner.mjs");
+  fs.mkdirSync(stateDirectory);
+  fs.writeFileSync(
+    path.join(root, "build.sh"),
+    `#!/usr/bin/env bash
+set -Eeuo pipefail
+sleep 120 &
+child=$!
+printf '%s' "$child" > ${JSON.stringify(childPidFile)}
+wait "$child"
+`,
+  );
+  fs.writeFileSync(
+    runnerFile,
+    `import { runSequentialBuild, bindBuildShutdownSignals } from ${JSON.stringify(
+      new URL("../script/deployment/sequential-build.mjs", import.meta.url).href,
+    )};
+const controller = new AbortController();
+const unbind = bindBuildShutdownSignals(controller);
+try {
+  await runSequentialBuild({
+    tasks: [{id:"fixture", deps:[], command:"bash", args:["build.sh","--executive-task","fixture"]}],
+    root: ${JSON.stringify(root)},
+    signal: controller.signal,
+  });
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = Number.isInteger(error.exitCode) ? error.exitCode : 1;
+} finally {
+  unbind();
+}
+`,
+  );
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  const runner = spawn(process.execPath, [runnerFile], {
+    stdio: ["ignore", "pipe", "pipe"],
+    detached: true,
+  });
+  t.after(() => {
+    if (runner.exitCode === null && runner.pid) {
+      try {
+        process.kill(-runner.pid, "SIGKILL");
+      } catch (error) {
+        if (error.code !== "ESRCH") throw error;
+      }
+    }
+  });
+  const output = [];
+  runner.stdout.on("data", (chunk) => output.push(chunk.toString()));
+  runner.stderr.on("data", (chunk) => output.push(chunk.toString()));
+  const exited = new Promise((resolve) => runner.once("exit", resolve));
+
+  for (let attempt = 0; attempt < 100 && !fs.existsSync(childPidFile); attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  assert.ok(fs.existsSync(childPidFile), "phase process should start");
+  const childPid = Number(fs.readFileSync(childPidFile, "utf8"));
+  runner.kill("SIGTERM");
+  let timeout;
+  const [code, exitSignal] = await Promise.race([
+    exited.then((value) => [value, null]),
+    new Promise((_, reject) => {
+      timeout = setTimeout(
+        () => reject(new Error("runner did not drain after SIGTERM")),
+        10_000,
+      );
+    }),
+  ]).finally(() => clearTimeout(timeout));
+
+  assert.equal(code, 143);
+  assert.equal(exitSignal, null);
+  assert.match(output.join(""), /Build interrupted by SIGTERM/);
+  let childAlive = false;
+  try {
+    const stat = fs.readFileSync(`/proc/${childPid}/stat`, "utf8");
+    childAlive = !/^\d+ \(.*\) Z/.test(stat);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  assert.equal(childAlive, false, "the phase descendant must be stopped before runner exit");
 });
 
 test("sequential runner contains no executive import or build budget admission", () => {

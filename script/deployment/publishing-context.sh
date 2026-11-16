@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Sourced by the historical publishing bootstrap, never by npm run build.
+PUBLISHING_RUNNER_PID=''
+PUBLISHING_RUNNER_STARTING=''
+PUBLISHING_PENDING_SIGNAL=''
+
 prepare_publishing_context() {
   local root
   root=$(pwd -P)
@@ -19,6 +23,66 @@ prepare_publishing_context() {
     echo "Another publishing pipeline owns this root; refusing overlapping recovery/build/packing." >&2
     return 73
   fi
+}
+
+publishing_stop_runner() {
+  local runner_pid="${PUBLISHING_RUNNER_PID:-}"
+  [[ -n "$runner_pid" ]] || return 0
+
+  echo "[bootstrap] Asking build runner $runner_pid to stop before releasing the publishing lock" >&2
+  kill -TERM "$runner_pid" 2>/dev/null || true
+  wait "$runner_pid" 2>/dev/null || true
+  PUBLISHING_RUNNER_PID=''
+}
+
+publishing_handle_signal() {
+  local signal_name="$1"
+  local exit_code="$2"
+
+  if [[ -z "${PUBLISHING_RUNNER_PID:-}" ]]; then
+    if [[ "${PUBLISHING_RUNNER_STARTING:-}" == "1" ]]; then
+      PUBLISHING_PENDING_SIGNAL="$signal_name"
+      return 0
+    fi
+    echo "[bootstrap] Received $signal_name before the build runner started" >&2
+    exit "$exit_code"
+  fi
+
+  echo "[bootstrap] Received $signal_name; forwarding it and waiting for owned build cleanup" >&2
+  trap '' "$signal_name"
+  kill -s "$signal_name" "$PUBLISHING_RUNNER_PID" 2>/dev/null || true
+  wait "$PUBLISHING_RUNNER_PID" 2>/dev/null || true
+  PUBLISHING_RUNNER_PID=''
+  exit "$exit_code"
+}
+
+publishing_run_runner() {
+  if [[ -n "${PUBLISHING_RUNNER_PID:-}" ]]; then
+    echo "[bootstrap] Refusing to launch a second build runner" >&2
+    return 2
+  fi
+
+  PUBLISHING_RUNNER_STARTING=1
+  "$@" &
+  PUBLISHING_RUNNER_PID=$!
+  PUBLISHING_RUNNER_STARTING=''
+
+  if [[ -n "${PUBLISHING_PENDING_SIGNAL:-}" ]]; then
+    case "$PUBLISHING_PENDING_SIGNAL" in
+      TERM) publishing_handle_signal TERM 143 ;;
+      INT) publishing_handle_signal INT 130 ;;
+      HUP) publishing_handle_signal HUP 129 ;;
+    esac
+  fi
+
+  local status=0
+  if wait "$PUBLISHING_RUNNER_PID"; then
+    status=0
+  else
+    status=$?
+  fi
+  PUBLISHING_RUNNER_PID=''
+  return "$status"
 }
 
 isolate_publishing_caches() {

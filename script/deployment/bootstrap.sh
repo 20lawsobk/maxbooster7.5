@@ -27,15 +27,16 @@ tools=$(mktemp -d /tmp/deployment-tools.XXXXXX)
 cleanup() {
   local rc=$?
   trap - EXIT
+  publishing_stop_runner
   rm -rf -- "$tools" || echo '[bootstrap] Tool cleanup failed' >&2
   exit "$rc"
 }
 
 trap cleanup EXIT
 trap 'rc=$?; echo "[bootstrap] FAILED at line $LINENO (exit $rc)" >&2' ERR
-trap 'echo "[bootstrap] Interrupted by TERM" >&2; exit 143' TERM
-trap 'echo "[bootstrap] Interrupted by INT" >&2; exit 130' INT
-trap 'echo "[bootstrap] Interrupted by HUP" >&2; exit 129' HUP
+trap 'publishing_handle_signal TERM 143' TERM
+trap 'publishing_handle_signal INT 130' INT
+trap 'publishing_handle_signal HUP 129' HUP
 
 isolate_publishing_caches
 cd -- "$DEPLOY_PROJECT_ROOT"
@@ -256,4 +257,4 @@ if [[ "${1:-}" == --check ]]; then
 fi
 
 echo '[bootstrap] Running dependency-ordered build phases sequentially'
-"$tools/node" "$sequential_build"
+publishing_run_runner "$tools/node" "$sequential_build"

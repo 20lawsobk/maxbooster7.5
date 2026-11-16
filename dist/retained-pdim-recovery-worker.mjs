@@ -9002,17 +9002,45 @@ var init_pdimBucketObjects = __esm({
       }
       async read(key) {
         const file = this.bucket.file(key);
-        let generation;
-        try {
-          const [metadata] = await file.getMetadata();
-          if (typeof metadata.generation !== "string") throw new Error("Missing object generation");
-          generation = metadata.generation;
-        } catch (error) {
-          if (error.code === 404) return null;
-          throw error;
+        const maxGenerationChanges = 3;
+        for (let attempt = 0; attempt < maxGenerationChanges; attempt += 1) {
+          let generation;
+          try {
+            const [metadata] = await file.getMetadata();
+            if (typeof metadata.generation !== "string") {
+              throw new Error("Missing object generation");
+            }
+            generation = metadata.generation;
+          } catch (error) {
+            if (error.code === 404) return null;
+            throw error;
+          }
+          try {
+            const [bytes] = await this.bucket.file(key, { generation }).download({
+              validation: "crc32c"
+            });
+            return { bytes, generation };
+          } catch (error) {
+            if (error.code !== 404) throw error;
+            let currentGeneration;
+            try {
+              const [current] = await file.getMetadata();
+              currentGeneration = current.generation;
+            } catch (metadataError) {
+              if (metadataError.code === 404) return null;
+              throw metadataError;
+            }
+            if (typeof currentGeneration !== "string" || currentGeneration === generation) {
+              throw error;
+            }
+            if (attempt === maxGenerationChanges - 1) {
+              throw new Error(`Object ${key} changed during ${maxGenerationChanges} generation-pinned reads`, {
+                cause: error
+              });
+            }
+          }
         }
-        const [bytes] = await this.bucket.file(key, { generation }).download({ validation: "crc32c" });
-        return { bytes, generation };
+        throw new Error(`Object ${key} could not be read from a stable generation`);
       }
       async write(key, bytes, generation) {
         const file = this.bucket.file(key);

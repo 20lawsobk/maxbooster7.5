@@ -1,9 +1,10 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { buildPlan } from "./plans.mjs";
+import { createOwnedProcessTracker } from "./owned-processes.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -53,7 +54,51 @@ export function orderBuildPlan(tasks) {
   return ordered;
 }
 
-export function executeBuildPhase(task, { root, stateDirectory }) {
+function interruptionError(signal) {
+  const reason = signal?.reason;
+  if (reason instanceof Error && Number.isInteger(reason.exitCode)) return reason;
+
+  const signalName =
+    reason?.signal ??
+    (reason?.message?.match(/\b(SIGTERM|SIGINT|SIGHUP)\b/)?.[1] ?? "SIGTERM");
+  const signalNumber = os.constants.signals[signalName];
+  return Object.assign(
+    new Error(reason?.message ?? `Build interrupted by ${signalName}`),
+    {
+      code: "BUILD_INTERRUPTED",
+      signal: signalName,
+      exitCode: signalNumber ? 128 + signalNumber : 1,
+    },
+  );
+}
+
+async function stopOwnedProcess(tracker, child) {
+  if (!child.pid) return;
+
+  const result = await tracker.stop({
+    graceMs: 2000,
+    descendantGraceMs: 1000,
+    pollMs: 25,
+  });
+
+  if (result.remaining.length) {
+    for (const pid of result.remaining) {
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch (error) {
+        if (error.code !== "ESRCH") throw error;
+      }
+    }
+    throw new Error(
+      `Build phase process tree did not stop: ${result.remaining.join(",")}`,
+    );
+  }
+}
+
+export async function executeBuildPhase(
+  task,
+  { root, stateDirectory, signal },
+) {
   if (
     task.command !== "bash" ||
     !Array.isArray(task.args) ||
@@ -70,24 +115,112 @@ export function executeBuildPhase(task, { root, stateDirectory }) {
   delete env.DEPLOY_BUILD_BUDGET_SECONDS;
   delete env.DEPLOY_EXECUTIVE_STARTED_SECONDS;
 
-  const result = spawnSync("bash", ["build.sh", "--executive-task", task.id], {
+  if (signal?.aborted) throw interruptionError(signal);
+
+  const child = spawn("bash", ["build.sh", "--executive-task", task.id], {
     cwd: root,
     env,
     stdio: "inherit",
+    detached: process.platform !== "win32",
   });
 
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    const signal = result.signal ? ` signal=${result.signal}` : "";
-    const exitCode = result.status ??
-      (result.signal && os.constants.signals[result.signal]
-        ? 128 + os.constants.signals[result.signal]
-        : 1);
-    throw Object.assign(
-      new Error(`Build phase ${task.id} failed: exit=${exitCode}${signal}`),
-      { exitCode },
-    );
+  const tracker = child.pid ? createOwnedProcessTracker(child.pid) : null;
+  let closed = false;
+  let stopping;
+  let stopError;
+  const completion = new Promise((resolve, reject) => {
+    child.once("error", reject);
+    child.once("close", (code, exitSignal) => {
+      closed = true;
+      resolve({ code, signal: exitSignal });
+    });
+  });
+
+  const stop = () => {
+    if (!stopping && tracker) {
+      stopping = stopOwnedProcess(tracker, child).catch((error) => {
+        stopError = error;
+        try {
+          process.kill(-child.pid, "SIGKILL");
+        } catch (killError) {
+          if (killError.code !== "ESRCH") stopError = killError;
+        }
+      });
+    }
+    return stopping ?? Promise.resolve();
+  };
+
+  const onAbort = () => {
+    void stop();
+  };
+  signal?.addEventListener("abort", onAbort, { once: true });
+
+  const ownershipPoll = tracker
+    ? setInterval(() => {
+        try {
+          tracker.capture();
+        } catch (error) {
+          stopError ??= error;
+          void stop();
+        }
+      }, 250)
+    : null;
+  ownershipPoll?.unref();
+
+  try {
+    const result = await completion;
+    if (tracker) await stop();
+    if (stopError) throw stopError;
+    if (signal?.aborted) throw interruptionError(signal);
+    if (result.code !== 0) {
+      const signalDetail = result.signal ? ` signal=${result.signal}` : "";
+      const exitCode = result.code ??
+        (result.signal && os.constants.signals[result.signal]
+          ? 128 + os.constants.signals[result.signal]
+          : 1);
+      throw Object.assign(
+        new Error(`Build phase ${task.id} failed: exit=${exitCode}${signalDetail}`),
+        { exitCode },
+      );
+    }
+  } catch (error) {
+    if (signal?.aborted) {
+      if (!closed) await stop();
+      if (stopError) throw stopError;
+      throw interruptionError(signal);
+    }
+    if (!closed) await stop();
+    if (stopError) throw stopError;
+    throw error;
+  } finally {
+    signal?.removeEventListener("abort", onAbort);
+    if (ownershipPoll) clearInterval(ownershipPoll);
   }
+}
+
+export function bindBuildShutdownSignals(controller, emitter = process) {
+  const bindings = ["SIGINT", "SIGTERM", "SIGHUP"].map((signalName) => {
+    const handler = () => {
+      if (controller.signal.aborted) return;
+      const signalNumber = os.constants.signals[signalName];
+      controller.abort(Object.assign(
+        new Error(`Build interrupted by ${signalName}`),
+        {
+          code: "BUILD_INTERRUPTED",
+          signal: signalName,
+          exitCode: signalNumber ? 128 + signalNumber : 1,
+        },
+      ));
+    };
+    emitter.on(signalName, handler);
+    return [signalName, handler];
+  });
+
+  return () => {
+    for (const [signalName, handler] of bindings) {
+      emitter.off(signalName, handler);
+    }
+  };
 }
 
 export async function runSequentialBuild({
@@ -95,6 +228,7 @@ export async function runSequentialBuild({
   root = ROOT,
   executeTask = executeBuildPhase,
   log = console.log,
+  signal,
 } = {}) {
   const ordered = orderBuildPlan(tasks);
   const stateDirectory = fs.mkdtempSync(
@@ -109,9 +243,11 @@ export async function runSequentialBuild({
 
   try {
     for (const [index, task] of ordered.entries()) {
+      if (signal?.aborted) throw interruptionError(signal);
       const taskStarted = Date.now();
       log(`[build] starting ${task.id} (${index + 1}/${ordered.length})`);
-      await executeTask(task, { root, stateDirectory });
+      await executeTask(task, { root, stateDirectory, signal });
+      if (signal?.aborted) throw interruptionError(signal);
       log(
         `[build] completed ${task.id} in ` +
           `${((Date.now() - taskStarted) / 1000).toFixed(1)}s`,
@@ -139,7 +275,13 @@ async function main(args) {
   if (args.length !== 0) {
     throw new Error("Usage: sequential-build.mjs [--check]");
   }
-  await runSequentialBuild();
+  const controller = new AbortController();
+  const unbindSignals = bindBuildShutdownSignals(controller);
+  try {
+    await runSequentialBuild({ signal: controller.signal });
+  } finally {
+    unbindSignals();
+  }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
