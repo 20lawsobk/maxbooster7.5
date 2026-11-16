@@ -12,8 +12,8 @@ test('Replit configuration parses as TOML and preserves the production entrypoin
   assert.equal(parsed.status, 0, parsed.stderr);
   const config = JSON.parse(parsed.stdout);
   assert.equal(config.run, 'npm run dev');
-  assert.deepEqual(config.deployment.build, ['bash', 'build.sh']);
-   assert.deepEqual(config.deployment.run, ['npm', 'run', 'deployment:start']);
+  assert.deepEqual(config.deployment.build, ['npm', 'run', 'deployment:build']);
+  assert.deepEqual(config.deployment.run, ['npm', 'run', 'deployment:start']);
   assert.equal(config.deployment.ignorePorts, false);
   const publicMappings = config.ports.filter(port => port.externalPort !== undefined);
   assert.deepEqual(publicMappings, [{ localPort: 5000, externalPort: 80 }]);

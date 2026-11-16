@@ -69,7 +69,7 @@ print(json.dumps({k:d["deployment"][k] for k in ("build","run","deploymentTarget
 `, path.join(root, ".replit")], { env, encoding: "utf8" });
 if (config.status !== 0) throw new Error("Cannot read publishing commands");
 const deployment = JSON.parse(config.stdout);
-if (JSON.stringify(deployment.build) !== JSON.stringify(["bash", "build.sh"]) ||
+if (JSON.stringify(deployment.build) !== JSON.stringify(["npm", "run", "deployment:build"]) ||
     JSON.stringify(deployment.run) !== JSON.stringify(["npm", "run", "deployment:start"])) {
   throw new Error("Publishing commands changed; rehearsal requires review");
 }

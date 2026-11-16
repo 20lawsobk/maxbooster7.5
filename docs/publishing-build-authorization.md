@@ -2,17 +2,18 @@
 
 ## Active Replit publishing configuration
 
-The tracked `.replit` file calls the full publishing builder directly and uses
-the package entrypoint for the runtime phase:
+The tracked `.replit` file uses the package scripts as the single publishing
+entrypoint:
 
 ```
-build: bash build.sh
+build: npm run deployment:build
 run:   npm run deployment:start
 ```
 
-The build runs the guarded bootstrap/executive, prepares and verifies portable
-runtimes, packages capsules, and applies integrity and image-size gates. The
-runtime package script delegates to `bash start.sh`, which restores verified
+The build alias invokes the guarded bootstrap and sequential phase runner,
+prepares and verifies portable runtimes, packages capsules, and applies
+integrity and image-size gates. The runtime package script delegates to
+`bash start.sh`, which restores verified
 capsules before launching the application. Replit invokes build and run
 separately and in order; they must not be joined with `&&` or replaced with the
 ordinary unpacked-production scripts.

@@ -9,7 +9,7 @@ requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
 # Replit executes this in its disposable publishing copy, never the editor.
-build = ["bash", "build.sh"]
+build = ["npm", "run", "deployment:build"]
 run = ["npm", "run", "deployment:start"]
 ignorePorts = false
 

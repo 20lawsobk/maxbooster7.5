@@ -100,12 +100,12 @@ function fixture(t) {
   return {root,state,calls,authorization,write,run,runLegacyPublishing,outsideInterpreter};
 }
 
-test("Replit uses the direct capsule build and capsule-aware publishing start", () => {
+test("Replit uses npm aliases for the capsule build and capsule-aware start", () => {
   const repl = fs.readFileSync(path.join(repo, ".replit"), "utf8");
   assert.match(repl, /^run = "npm run dev"$/m);
   assert.match(repl, /^args = "npm run dev"$/m);
   const command = configuredBuildCommand();
-  assert.deepEqual(command, ["bash", "build.sh"]);
+  assert.deepEqual(command, ["npm", "run", "deployment:build"]);
   const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
     .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
   const publishing = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
@@ -115,8 +115,20 @@ test("Replit uses the direct capsule build and capsule-aware publishing start", 
   const scripts = JSON.parse(fs.readFileSync("package.json", "utf8")).scripts;
   assert.equal(scripts["deployment:build"], "bash build.sh");
   assert.equal(scripts["deployment:start"], "bash start.sh");
+  assert.equal(scripts.build, "node scripts/build-production.mjs");
+  assert.match(
+    fs.readFileSync("scripts/build-production.mjs", "utf8"),
+    /"script\/build\.ts"/,
+    "ordinary compilation must use the current adapted August build entry",
+  );
+  assert.match(
+    fs.readFileSync("build.sh", "utf8"),
+    /PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build/,
+    "Publishing must retain the complete shell packaging pipeline around compilation",
+  );
   assert.equal(scripts.deploy, undefined);
   assert.match(fs.readFileSync("build.sh", "utf8"), /exec bash script\/deployment\/bootstrap\.sh/);
+  assert.match(fs.readFileSync("script/deployment/bootstrap.sh", "utf8"), /sequential-build\.mjs/);
   assert.match(fs.readFileSync("start.sh", "utf8"), /dist\/deployment\/executive\.mjs/);
   assert.ok(fs.readFileSync("docs/publishing-build-authorization.md","utf8").includes(publishing.join(" ")));
 });

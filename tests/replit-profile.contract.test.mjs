@@ -61,7 +61,7 @@ test("public mapping is exactly app 5000 -> external 80", () => {
 });
 
 test("deployment runs the capsule-aware build and production launcher", () => {
-  assert.match(template, /build\s*=\s*\["bash",\s*"build\.sh"\]/);
+  assert.match(template, /build\s*=\s*\["npm",\s*"run",\s*"deployment:build"\]/);
   assert.match(template, /run\s*=\s*\["npm",\s*"run",\s*"deployment:start"\]/);
   assert.equal(pkg.scripts.build, "node scripts/build-production.mjs");
   assert.equal(pkg.scripts.dev, "bash scripts/start-dev.sh");

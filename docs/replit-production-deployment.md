@@ -28,10 +28,12 @@ Nix channel selection rather than inventing an unverified channel pin.
 
 ## Editor and Publishing commands
 
-The editor **Run** action executes `npm run dev`. Publishing builds with
-`bash build.sh` and starts with `npm run deployment:start`, which delegates to
-`bash start.sh`. The build command packs runtime
-capsules and removes build inputs in Replit's disposable Publishing copy.
+The editor **Run** action executes `npm run dev`. Publishing runs
+`npm run deployment:build` and `npm run deployment:start`. The build alias
+delegates to `bash build.sh`; its compile phase uses the adapted
+`script/build.ts`, then the outer pipeline packs runtime capsules and removes
+build inputs in Replit's disposable Publishing copy. The start alias delegates
+to `bash start.sh`.
 **Do not run `build.sh` in the editor checkout or a source workspace.** Normal
 source builds use `npm run build`.
 

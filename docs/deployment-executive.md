@@ -2,10 +2,11 @@
 
 ## Publishing build
 
-The configured `bash build.sh` command first runs `script/deployment/bootstrap.sh`
-to recover authorized build inputs, preserve a compatible Node/npm/pnpm toolchain,
-and isolate caches. Bootstrap validates the dependency graph, then runs the 18
-build phases one at a time through `script/deployment/sequential-build.mjs`.
+The configured `npm run deployment:build` alias delegates to `bash build.sh`,
+which first runs `script/deployment/bootstrap.sh` to recover authorized build
+inputs, preserve a compatible Node/npm/pnpm toolchain, and isolate caches.
+Bootstrap validates the dependency graph, then runs the 18 build phases one at a
+time through `script/deployment/sequential-build.mjs`.
 
 The phase order is derived from the dependencies in `script/deployment/plans.mjs`.
 Each phase must exit successfully before the next one starts. A failed phase

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import test from "node:test";
 
 const gate = path.resolve("script/deployment/image-size-gate.sh");
@@ -59,7 +60,27 @@ test("the actual finalize phase runs after source removal and rejects an oversiz
   fs.mkdirSync(path.join(root, ".local/state"), { recursive: true });
   fs.copyFileSync(gate, path.join(root, "dist/deployment/image-size-gate.sh"));
   fs.copyFileSync("script/lib/verify-utf8-root.py", path.join(root, "dist/deployment/verify-utf8-root.py"));
+  fs.copyFileSync("dist/pdim-restore.mjs", path.join(root, "dist/pdim-restore.mjs"));
   fs.copyFileSync("build.sh", path.join(root, "build.sh"));
+  const capsules = [
+    ["app_remainder.pdim", "app_remainder.manifest.json"],
+    ["node_modules.pdim", "node_modules.manifest.json"],
+    ["python_runtime.pdim", "python_runtime.manifest.json"],
+    ["external_maxcore.pdim", "external_maxcore.manifest.json"],
+    ["external_pdim.pdim", "external_pdim.manifest.json"],
+  ];
+  for (const [capsule, manifest] of capsules) {
+    const input = path.join(root, `.fixture-${capsule}`);
+    fs.mkdirSync(input);
+    fs.writeFileSync(path.join(input, "payload.txt"), `fixture for ${capsule}`);
+    const archive = path.join(root, capsule);
+    execFileSync("tar", ["-czf", archive, "-C", input, "."]);
+    fs.writeFileSync(path.join(root, manifest), JSON.stringify({
+      sha256: createHash("sha256").update(fs.readFileSync(archive)).digest("hex"),
+      compression: "gzip-9",
+    }));
+    fs.rmSync(input, { recursive: true, force: true });
+  }
   fs.writeFileSync(path.join(root, ".local/state/build-path"), "0");
   const options = { cwd: root, encoding: "utf8", timeout: 15000,
     env: { ...process.env, DEPLOY_STATE_DIR: path.join(root, ".local/state") } };
@@ -80,7 +101,7 @@ test("the actual finalize phase runs after source removal and rejects an oversiz
 test("the configured publishing build runs the image-size gate before reporting success", () => {
   const repl = fs.readFileSync(".replit", "utf8");
   const build = fs.readFileSync("build.sh", "utf8");
-  assert.match(repl, /build\s*=\s*\[\s*"bash"\s*,\s*"build\.sh"\s*\]/);
+  assert.match(repl, /build\s*=\s*\[\s*"npm"\s*,\s*"run"\s*,\s*"deployment:build"\s*\]/);
   assert.match(repl, /run\s*=\s*\[\s*"npm"\s*,\s*"run"\s*,\s*"deployment:start"\s*\]/);
   const finalize = build.slice(build.indexOf("phase_finalize()"));
   assert.match(build, /cp script\/lib\/verify-utf8-root\.py dist\/deployment\//);

@@ -6,8 +6,10 @@ The repository now commits a credential-free `.replit` and matching
 commands, environment values and deployment checks are documented in
 [Replit production deployment](replit-production-deployment.md).
 
-Publishing builds with `bash build.sh` in its disposable build copy and starts
-with `bash start.sh`. Use `npm run build` for ordinary source builds. Preserve
+Publishing runs `npm run deployment:build` and `npm run deployment:start` in its
+disposable build copy; those aliases delegate to `bash build.sh` and
+`bash start.sh`. The publishing compile phase uses the adapted
+`script/build.ts`. Use `npm run build` for ordinary source builds. Preserve
 existing Secrets and production settings when synchronizing an established
 Replit project; commit source changes without resetting live data or private
 configuration. Only port 5000 maps publicly to port 80; sidecars stay private.

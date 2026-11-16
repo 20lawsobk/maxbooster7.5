@@ -6,8 +6,10 @@ modules, PostgreSQL/Drizzle, BullMQ/Redis, PDIM and supervised MaxCore processes
 Social and advertising share posting infrastructure; the beat loop promotes
 marketplace listings through advertising dispatch and reconciles genuine sales.
 Music workflow templates have their own dispatch and execution-log layer.
-Publishing is configured as `bash build.sh` followed by `bash start.sh`, not
-merely the package build command. Server bundles externalize dependencies.
+Publishing is configured as `npm run deployment:build` followed by
+`npm run deployment:start`. The build alias runs the complete guarded shell
+pipeline, whose compile stage uses `script/build.ts`; the start alias runs the
+capsule-aware `start.sh`. Server bundles externalize dependencies.
 
 ## Ordered work and acceptance gates
 1. Workflow execution integrity: replace descriptive-only success with owned,

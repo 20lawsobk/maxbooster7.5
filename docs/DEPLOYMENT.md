@@ -77,10 +77,12 @@ Keep all dependency locks; there is no supported tar stub or lock-deletion repai
 
 ## Configured publishing
 
-The tracked `.replit` deployment invokes `bash build.sh`, then
-`npm run deployment:start` (which delegates to `bash start.sh`). This preserves
-the guarded bootstrap, sequential dependency-ordered Publishing build, portable
-runtimes, capsule packaging/restoration and integrity checks. Replit runs the build and start as
+The tracked `.replit` deployment invokes `npm run deployment:build` and
+`npm run deployment:start`. The build alias delegates to `bash build.sh`, which
+runs the guarded bootstrap and sequential dependency-ordered Publishing build;
+its compilation phase uses the current `npm run build` → `script/build.ts`
+pipeline. The start alias delegates to `bash start.sh`, which restores verified
+capsules before starting the application. Replit runs build and start as
 separate ordered phases; do not combine them into one shell command or run
 destructive packing in the development checkout. A GitHub push does not prove
 a successful publication. The owner-defined target is a Replit Reserved VM;

@@ -29,8 +29,10 @@ no live remote-parity claim is made.
 3. Production MaxCore runs compiled JavaScript, not its development TSX
    bootstrap. Its interpreter is explicitly rooted in the parent application,
    with the existing explicit interpreter override honored.
-4. Publishing remains the separate historical `bash build.sh` / `bash start.sh`
-   compile/pack/restore flow. It was not executed destructively or published.
+4. Publishing remains the separate `npm run deployment:build` /
+   `npm run deployment:start` compile/pack/restore flow. The package aliases
+   dispatch to the guarded shell pipeline and capsule-aware startup scripts. It
+   was not executed destructively or published.
 5. Electron packaging is separate from the web build. It must not be inferred
    successful from a passing npm web build.
 
