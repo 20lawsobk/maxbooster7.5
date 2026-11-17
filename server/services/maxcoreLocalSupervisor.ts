@@ -23,6 +23,11 @@ import { logger } from "../logger.js";
 import { computeWorkerSizing, computeHyperGpuSizing, type ComputeSizingResult } from "../computeSizing.js";
 import { isDevEnv } from "../lib/envHelpers.js";
 import { startNeonPostgresBridge } from "../lib/neonPostgresBridge.js";
+import {
+  MaxcoreCheckpointStorageError,
+  resolveMaxcoreCheckpointForStartup,
+  withMaxcoreCheckpointPath,
+} from "./maxcoreCheckpointStorage.js";
 
 let databaseBridge: Awaited<ReturnType<typeof startNeonPostgresBridge>> | null = null;
 
@@ -373,6 +378,25 @@ async function spawnChild(): Promise<void> {
   await ensureMaxcoreSchema(childDbUrl);
   if (shuttingDown || child) return;
 
+  // Legacy checkpoint mode consumes a pinned numerical-inference checkpoint.
+  // Restore it from App Storage and verify against model.release.json before
+  // any serving process starts. Live-awareness mode does not download weights.
+  const checkpointPath = await resolveMaxcoreCheckpointForStartup({
+    weightsDir: path.join(
+      MAXCORE_ROOT,
+      "artifacts",
+      "ai-training-server",
+      "ai_model",
+      "weights",
+    ),
+  });
+  if (shuttingDown || child) return;
+  if (checkpointPath) {
+    logger.info(
+      "[MaxCoreLocal] Pinned checkpoint restored and verified from App Storage.",
+    );
+  }
+
   const { port, modelApiPort } = config.maxcoreLocal;
   lastStartAt = Date.now();
 
@@ -406,7 +430,7 @@ async function spawnChild(): Promise<void> {
   child = spawn(production ? process.execPath : TSX_BIN, [production ? productionEntry : "src/index.ts"], {
     cwd: API_SERVER_DIR,
     env: {
-      ...process.env,
+      ...withMaxcoreCheckpointPath(process.env, checkpointPath),
       ...resourceEnv,
       NODE_ENV: production ? "production" : "development",
       MAXBOOSTER_EMBEDDED: "1",
@@ -647,7 +671,10 @@ export async function startMaxcoreLocal(): Promise<void> {
       : err instanceof Error ? err.name : "STARTUP_ERROR";
     provisionAttempts++;
     const delay = provisionBackoffMs();
-    startupError = `MaxCore startup attempt failed (${errorCode})`;
+    const safeDetail = err instanceof MaxcoreCheckpointStorageError
+      ? `: ${err.message}`
+      : "";
+    startupError = `MaxCore startup attempt failed (${errorCode})${safeDetail}`;
     logger.error(`[MaxCoreLocal] ${startupError} — retrying in ${delay}ms`);
     scheduleProvisionRetry(delay);
   } finally {
