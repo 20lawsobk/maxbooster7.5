@@ -156,7 +156,9 @@ test("npm development command does not launch the app after a required preflight
 
 test("preflight command environment excludes application credentials", () => {
   const environment = cleanEnvironment();
-  assert.deepEqual(Object.keys(environment).sort(), ["CI", "HOME", "LANG", "PATH", "TMPDIR"].sort());
+  assert.deepEqual(Object.keys(environment).sort(),
+    ["CI", "GIT_OPTIONAL_LOCKS", "HOME", "LANG", "PATH", "TMPDIR"].sort());
+  assert.equal(environment.GIT_OPTIONAL_LOCKS, "0");
   assert.equal(Object.hasOwn(environment, "DATABASE_URL"), false);
   assert.equal(Object.hasOwn(environment, "STRIPE_SECRET_KEY"), false);
 });

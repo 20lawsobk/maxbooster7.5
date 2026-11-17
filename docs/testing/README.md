@@ -279,14 +279,51 @@ must be refreshed before it can support current comparisons.
 
 The learner does not retain raw command output or logs, does not modify source,
 and does not change the app's readiness state. The `dev` mode performs finite,
-bounded analysis on startup; it is not an infinite repair loop. Corrupt, oversized, stale, or
-unavailable history is surfaced explicitly rather than silently treated as
-complete. `npm run dev` still runs a bounded preflight; it does not start an
-infinite repair loop or edit files during application startup. History reads
+bounded analysis on startup; it is not an infinite repair loop. Corrupt,
+oversized, stale, or unavailable history is surfaced explicitly rather than
+silently treated as complete. `npm run dev` runs that bounded analysis before
+the application launcher; it does not start the continuous loop or edit files
+during startup. History reads
 are bounded to 2,000 records and 64 MiB, with an 8 MiB per-record limit. The
 learner retains at most 2,000 failing checks and 5,000 remediation references
 per event, emits at most 500 check proposals plus 200 detailed remediation
 proposals, and reports omitted counts. Benchmark gap proposals are separate.
+
+### Continuous production-readiness loop
+
+`npm run completion:loop` runs only against a worktree explicitly marked as an
+isolated copy. Initialize the existing isolated worktree once, then start the
+loop from the primary checkout:
+
+```sh
+npm run completion:loop -- --initialize-isolated \
+  --root .local/isolated-dev-20261117T144245Z --source-root "$PWD"
+npm run completion:loop -- --root .local/isolated-dev-20261117T144245Z
+```
+
+The default loop runs the full local verification and repeats every 15 minutes
+until a fresh full report and its matching learning report pass every gate, or
+the operator cancels with SIGINT/SIGTERM. State and cycle receipts are retained
+under the isolated worktree's ignored `.local/repository-verification/completion-loop/`
+directory; rerunning resumes the recorded cycle count and re-verifies before
+accepting readiness. A concurrent loop is rejected. `--max-cycles N` is
+available for controlled tests and exits with `LIMIT_REACHED`, never success,
+when readiness remains unverified. Development mode is allowed only with a
+finite cycle limit.
+
+The loop derives its separate readiness result from the sealed full report and
+matching learning summary; it does not trust the reports' legacy
+`productionReady: false` / `UNVERIFIED` fields as inputs to that calculation,
+and it never rewrites those reports. The derived gate requires a clean
+source-drift receipt, a complete successful full runner, every check and
+external prerequisite passing, no skipped checks, a complete source-bound
+dossier and passing Atlas policy, current remediation with no unresolved items,
+and no open or omitted proposals. It creates proposal-first evidence only;
+changes still require a reviewed, hash-pinned plan through
+`npm run completion:execute`. It launches no application services and receives
+no application credentials. This separate command is intentionally not wired
+into `npm run dev`, so an incomplete readiness audit cannot prevent the app from
+starting.
 
 ### Reviewing completion proposals
 

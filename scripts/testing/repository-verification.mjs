@@ -460,6 +460,7 @@ function cleanEnvironment() {
     TMPDIR: process.env.TMPDIR || "/tmp",
     LANG: "C",
     CI: "1",
+    GIT_OPTIONAL_LOCKS: "0",
   };
 }
 
