@@ -167,6 +167,40 @@ is reported as `APPLIED_VERIFIED`, never as `productionReady`; providers,
 deployment, hardware, real-account journeys and work omitted from the plan
 remain unverified or blocked.
 
+### Cross-run completion learning
+
+Every preflight, full verification and completion-plan result is passed to the
+proposal-first learner. It stores a compact, integrity-sealed observation under
+`.local/repository-verification/learning/observations/` and writes a
+`learning.json` beside that run's report. It learns recurring failing check
+families and remembers exact plans whose named local checks passed. For a full
+run, it imports detailed remediation items only when the launch audit reports
+fresh source evidence, the runner confirms its inputs did not change, and the
+remediation artifact's recorded hash matches that run's platform register. It
+surfaces high-priority source-bound steps as review proposals and points to the
+complete remediation artifact; truncated history or proposal counts stay
+explicit. A prior verified plan is a review hint only; it is never replayed
+automatically.
+
+The learner does not retain raw command output or logs, does not modify source,
+and does not change the app's readiness state. Its history is local to this
+workspace and is not a backup across workspace loss. Corrupt or oversized
+history is surfaced as degraded/truncated rather than silently treated as
+complete. `npm run dev` still runs a bounded preflight; it does not start an
+infinite repair loop or edit files during application startup.
+History reads are bounded to 2,000 records and 64 MiB, with an 8 MiB per-record
+limit. The learner retains at most 2,000 failing checks and 5,000 remediation
+references per event, and emits at most 500 check proposals plus 200 detailed
+remediation proposals; it reports any omitted counts and points to the complete
+current full-run remediation artifact.
+
+Internal whole-product readiness remains based on the current full-run audit.
+Competitor superiority is deliberately reported as `UNCONFIGURED` until dated,
+source-backed competitor observations and comparable measured outcomes are
+supplied. The learner never invents competitors, treats public webpages as
+product-training permission, or claims a passing local subset means Max
+Booster is production-ready.
+
 The [seven-level critical path](launch-critical-path.md) extends that plan;
 the [launch audit](launch-readiness-audit.md) supplies the complete status,
 feature/gap/dependency registers, explicit domain pass/fail criteria and

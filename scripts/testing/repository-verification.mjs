@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { recordLearningOutcome } from "./completion-learning.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, "../..");
@@ -983,6 +984,7 @@ async function main(args = process.argv.slice(2)) {
     try {
       const { executeCompletionPlan } = await import("./completion-executor.mjs");
       const report = await executeCompletionPlan({ ...options, signal: controller.signal });
+      await reportLearningOutcome(options.root, path.dirname(report.reportPath), report);
       console.log(`Completion plan ${report.status}; product readiness remains ${report.readinessStatus}.`);
       console.log(`Report: ${report.reportPath}`);
       console.log(`Journal: ${report.journalPath}`);
@@ -1008,6 +1010,7 @@ async function main(args = process.argv.slice(2)) {
     removeHandlers();
   }
   const report = result.report;
+  await reportLearningOutcome(options.root, runDirectory, report);
   console.log(`Repository verification ${report.gateStatus}; readiness remains ${report.readinessStatus}.`);
   console.log(`Report: ${path.join(runDirectory, "report.md")}`);
   console.log(`Inventory: ${path.join(runDirectory, "inventory.json")}`);
@@ -1016,6 +1019,16 @@ async function main(args = process.argv.slice(2)) {
     if (finding.nextAction) console.error(`  Next: ${finding.nextAction}`);
   }
   return report.gateStatus === "PASS" ? 0 : 1;
+}
+
+async function reportLearningOutcome(root, runDirectory, report) {
+  try {
+    const learning = await recordLearningOutcome({ root, runDirectory, report });
+    console.log(`[completion-learning] history=${learning.summary.history.status}; analyzed=${learning.summary.history.analyzedRecords}; proposals=${learning.summary.currentProposals.length}; competitorBenchmark=${learning.summary.benchmark.competitorComparisons}`);
+    console.log(`[completion-learning] report: ${learning.summaryPath}`);
+  } catch (error) {
+    console.error(`[completion-learning] WARNING: outcome was not recorded; verification result is unchanged: ${error.message}`);
+  }
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
