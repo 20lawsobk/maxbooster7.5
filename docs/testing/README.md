@@ -235,8 +235,20 @@ npm run completion:review -- decide \
 
 Supported decisions are `accept-for-plan`, `defer`, `reject`, and `reopen`.
 They are immutable, integrity-sealed, bound to the exact report and source
-identity, and stored with private local permissions. A decision applies only
-while that complete source identity remains unchanged. `accept-for-plan` means
+identity, and mirrored locally with private permissions. When the configured
+private App Storage bucket is available, a decision is acknowledged only after
+its isolated generation-fenced journal has committed and recovery readback
+verifies it. The journal has its own
+`completion-proposal-decisions-v1` namespace; it does not write PDIM's HEAD or
+data namespace. If configured storage cannot be verified, no approval is
+acknowledged or written as local-only. Without a configured bucket, the CLI
+labels decisions `LOCAL_ONLY`, and they are not durable across workspace loss.
+Bucket recovery restores decision records, but linked execution still requires
+the original verified run report and proposal summary to be present locally;
+missing evidence blocks the approval rather than being reconstructed.
+A decision applies only while that complete source identity remains unchanged.
+Conflicting, incomplete, or branched chains degrade feedback and block linked
+execution. `accept-for-plan` means
 only that a non-executable review packet may be prepared:
 
 ```sh
@@ -253,8 +265,8 @@ missing, or source-mismatched approvals before changing files. Only an
 integrity-sealed executor report with every named change present and every
 required check passing is recorded as a verified resolution; failed or rolled
 back attempts remain unresolved. It never writes application source or runs
-the executor. The decision ledger is workspace-local, not App Storage-backed,
-and is explicitly reported as not durable across workspace loss.
+the executor. Bucket-backed history is recovered and checked on subsequent
+workflow starts; the local mirror is not treated as the durable authority.
 
 Internal whole-product readiness remains based on the current full-run audit.
 Competitor evidence status is deliberately separate from product readiness.

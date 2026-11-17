@@ -543,6 +543,7 @@ export async function recordLearningOutcome({
   report,
   durableHistory = false,
   persistHistory = persistConfiguredCompletionHistory,
+  env = {},
 } = {}) {
   if (!root || !runDirectory || !report) throw new Error("root, runDirectory, and report are required");
   const rootReal = await fs.realpath(root);
@@ -557,6 +558,7 @@ export async function recordLearningOutcome({
       proposalLink: report.proposalLink,
       sourceIdentity: report.sourceIdentity,
       requireLatestDecision: false,
+      env,
     })
     : null;
   const observation = buildObservation(report, runId, remediation, verifiedProposalLink);
@@ -598,6 +600,7 @@ export async function recordLearningOutcome({
         observations,
         currentRunId: runId,
         historyTruncated: history.truncated,
+        env,
       });
       const persistedCurrent = persistence.observations?.find?.(item => item.runId === runId);
       if (persistence.readbackVerified &&
@@ -681,7 +684,7 @@ export async function recordLearningOutcome({
     latest: new Map(),
   };
   try {
-    feedback = await loadProposalFeedback(rootReal, observation.sourceIdentity);
+    feedback = await loadProposalFeedback(rootReal, observation.sourceIdentity, { env });
     allProposals = applyProposalFeedback(allProposals, feedback);
   } catch {
     // Feedback is advisory; unreadable decisions never block verification.

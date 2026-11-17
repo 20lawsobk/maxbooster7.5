@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { sealReport } from "../scripts/testing/repository-verification.mjs";
 import { recordLearningOutcome } from "../scripts/testing/completion-learning.mjs";
 import {
@@ -10,6 +11,38 @@ import {
   prepareProposalPlanDraft,
   recordProposalDecision,
 } from "../scripts/testing/completion-proposal-feedback.mjs";
+
+function canonical(value) {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map(key =>
+      `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function makeBranchDecision(previous, decision, decidedAt) {
+  const identity = {
+    runId: previous.runId,
+    runPath: previous.runPath,
+    proposalId: previous.proposalId,
+    proposalKey: previous.proposalKey,
+    decision,
+    reportSha256: previous.reportSha256,
+    sourceIdentity: previous.sourceIdentity,
+    previousDecisionId: previous.previousDecisionId,
+  };
+  const decisionId = sha256(canonical(identity));
+  const unsigned = { schemaVersion: 1, decisionId, ...identity, decidedAt };
+  return {
+    ...unsigned,
+    integrity: { algorithm: "sha256", sha256: sha256(canonical(unsigned)) },
+  };
+}
 
 async function fixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "completion-feedback-"));
@@ -96,6 +129,7 @@ test("records explicit source-bound decisions without applying source changes", 
     assert.equal((await fs.stat(path.join(root, accepted.recordPath))).mode & 0o777, 0o600);
     const listed = await listRunProposals({ root, runDirectory: run });
     assert.equal(listed.proposals[0].state, "APPROVED_FOR_PLAN");
+    assert.equal(listed.storageStatus, "LOCAL_ONLY");
     assert.equal(listed.proposals[0].reviewDecision.automaticallyApplied, false);
     assert.equal(learning.summary.productionReady, false);
     assert.equal(await fs.readFile(path.join(run, "report.json"), "utf8"), before);
@@ -209,6 +243,40 @@ test("keeps proposal decision log corruption visible and ignores invalid decisio
       runDirectory: run,
       proposalId: proposal.id,
       decision: "defer",
+    }), /history is degraded/);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test("conflicting signed branches degrade feedback and prevent another approval", async () => {
+  const { root, runDirectory } = await fixture();
+  try {
+    const run = await runDirectory("2026-11-17T01-06-00-branch");
+    const learning = await createLearningRun(root, run, makeReport());
+    const proposal = learning.summary.currentProposals[0];
+    const accepted = await recordProposalDecision({
+      root,
+      runDirectory: run,
+      proposalId: proposal.id,
+      decision: "accept-for-plan",
+    });
+    const branch = makeBranchDecision(
+      accepted.record,
+      "defer",
+      "2026-11-17T01:06:01.000Z",
+    );
+    const decisionDirectory = path.join(root, ".local", "repository-verification", "learning", "decisions");
+    const branchName = `${branch.decidedAt.replace(/[-:.]/g, "")}-${branch.decisionId}.json`;
+    await fs.writeFile(path.join(decisionDirectory, branchName), JSON.stringify(branch), { mode: 0o600 });
+    const listed = await listRunProposals({ root, runDirectory: run });
+    assert.equal(listed.feedbackStatus, "DEGRADED");
+    assert.equal(listed.proposals[0].state, "NEEDS_REVIEW");
+    await assert.rejects(recordProposalDecision({
+      root,
+      runDirectory: run,
+      proposalId: proposal.id,
+      decision: "reject",
     }), /history is degraded/);
   } finally {
     await fs.rm(root, { recursive: true, force: true });

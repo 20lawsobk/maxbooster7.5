@@ -263,6 +263,7 @@ export async function executeCompletionPlan({
   apply = false,
   signal,
   runCheck = runOwned,
+  env = {},
 } = {}) {
   if (!planPath) throw new Error("--plan is required");
   root = path.resolve(root);
@@ -273,6 +274,7 @@ export async function executeCompletionPlan({
       root,
       proposalLink: plan.proposalLink,
       sourceIdentity: plan.sourceIdentity,
+      env,
     })
     : null;
   if (apply && expectedPlanSha256 !== actualPlanSha) {

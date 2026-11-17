@@ -983,7 +983,11 @@ async function main(args = process.argv.slice(2)) {
   if (options.mode === "execute") {
     try {
       const { executeCompletionPlan } = await import("./completion-executor.mjs");
-      const report = await executeCompletionPlan({ ...options, signal: controller.signal });
+      const report = await executeCompletionPlan({
+        ...options,
+        signal: controller.signal,
+        env: process.env,
+      });
       await reportLearningOutcome(options.root, path.dirname(report.reportPath), report);
       console.log(`Completion plan ${report.status}; product readiness remains ${report.readinessStatus}.`);
       console.log(`Report: ${report.reportPath}`);
@@ -1023,7 +1027,13 @@ async function main(args = process.argv.slice(2)) {
 
 async function reportLearningOutcome(root, runDirectory, report) {
   try {
-    const learning = await recordLearningOutcome({ root, runDirectory, report, durableHistory: true });
+    const learning = await recordLearningOutcome({
+      root,
+      runDirectory,
+      report,
+      durableHistory: true,
+      env: process.env,
+    });
     console.log(`[completion-learning] history=${learning.summary.history.status}; durable=${learning.summary.history.persistence.status}; analyzed=${learning.summary.history.analyzedRecords}; proposals=${learning.summary.currentProposals.length}; competitorBenchmark=${learning.summary.benchmark.competitorComparisons}`);
     console.log(`[completion-learning] report: ${learning.summaryPath}`);
   } catch (error) {

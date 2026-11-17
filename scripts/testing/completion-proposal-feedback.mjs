@@ -112,6 +112,35 @@ function verifyDecision(record, filename) {
     Number.isFinite(Date.parse(record.decidedAt ?? "")) &&
     new Date(record.decidedAt).toISOString() === record.decidedAt &&
     (record.previousDecisionId === null || HASH_RE.test(record.previousDecisionId ?? "")) &&
+    (record.previousDecisionId === null || HASH_RE.test(record.previousDecisionId ?? "")) &&
+    record.decisionId === sha256(canonical(identity));
+}
+
+export function verifyProposalDecisionRecord(record) {
+  if (!record || typeof record !== "object" || Array.isArray(record)) return false;
+  const identity = {
+    runId: record.runId,
+    runPath: record.runPath,
+    proposalId: record.proposalId,
+    proposalKey: record.proposalKey,
+    decision: record.decision,
+    reportSha256: record.reportSha256,
+    sourceIdentity: record.sourceIdentity,
+    previousDecisionId: record.previousDecisionId ?? null,
+  };
+  return isSealed(record) &&
+    record.schemaVersion === 1 &&
+    HASH_RE.test(record.decisionId ?? "") &&
+    typeof record.runId === "string" && /^[A-Za-z0-9._-]{1,180}$/.test(record.runId) &&
+    validRunPath(record.runPath) &&
+    PROPOSAL_ID_RE.test(record.proposalId ?? "") &&
+    HASH_RE.test(record.proposalKey ?? "") &&
+    HASH_RE.test(record.reportSha256 ?? "") &&
+    validSourceIdentity(record.sourceIdentity) &&
+    DECISIONS.has(record.decision) &&
+    Number.isFinite(Date.parse(record.decidedAt ?? "")) &&
+    new Date(record.decidedAt).toISOString() === record.decidedAt &&
+    (record.previousDecisionId === null || HASH_RE.test(record.previousDecisionId ?? "")) &&
     record.decisionId === sha256(canonical(identity));
 }
 
@@ -198,14 +227,48 @@ async function readDecisionLog(root) {
   };
 }
 
-export async function loadProposalFeedback(root, sourceIdentity) {
+export async function loadProposalFeedback(
+  root,
+  sourceIdentity,
+  { env = {}, storageObjects, journalClass } = {},
+) {
   const rootReal = await fs.realpath(root);
   const log = await readDecisionLog(rootReal);
-  const current = validSourceIdentity(sourceIdentity)
-    ? log.decisions.filter(record => sameSourceIdentity(record.sourceIdentity, sourceIdentity))
-    : [];
-  const warnings = [...log.warnings];
   let status = log.status;
+  const warnings = [...log.warnings];
+  let allDecisions = log.decisions;
+  let storageStatus = "LOCAL_ONLY";
+  const bucketConfigured = Boolean(env.Replit_storage_bucket_id ||
+    env.DATABASE_RECOVERY_BUCKET_ID || env.REPLIT_BUCKET_ID);
+  if (bucketConfigured) {
+    try {
+      const { readProposalDecisions } = await import("./completion-proposal-bucket.mjs");
+      const durable = await readProposalDecisions({ env, storageObjects, journalClass });
+      if (durable.status !== "VERIFIED" && durable.status !== "EMPTY") {
+        status = "DEGRADED";
+        storageStatus = "BLOCKED";
+        warnings.push("Private App Storage proposal-decision history could not be verified.");
+      } else {
+        allDecisions = mergeDecisionRecords(log.decisions, durable.decisions);
+        const durableIds = new Set(durable.decisions.map(record => record.decisionId));
+        const hasUnsyncedLocal = log.decisions.some(record => !durableIds.has(record.decisionId));
+        if (hasUnsyncedLocal) {
+          status = "DEGRADED";
+          storageStatus = "LOCAL_UNSYNCED";
+          warnings.push("Local proposal decisions are not yet verified in private App Storage.");
+        } else {
+          storageStatus = durable.status === "EMPTY" ? "DURABLE_EMPTY" : "DURABLE_VERIFIED";
+        }
+      }
+    } catch {
+      status = "DEGRADED";
+      storageStatus = "BLOCKED";
+      warnings.push("Private App Storage proposal-decision history could not be read.");
+    }
+  }
+  const current = validSourceIdentity(sourceIdentity)
+    ? allDecisions.filter(record => sameSourceIdentity(record.sourceIdentity, sourceIdentity))
+    : [];
   const latest = new Map();
   const groups = new Map();
   for (const record of current) {
@@ -231,10 +294,28 @@ export async function loadProposalFeedback(root, sourceIdentity) {
   }
   return {
     status,
+    storageStatus,
     warnings,
     decisions: current,
+    allDecisions,
     latest,
   };
+}
+
+function mergeDecisionRecords(...lists) {
+  const byId = new Map();
+  for (const record of lists.flat()) {
+    if (!verifyProposalDecisionRecord(record)) {
+      throw new Error("Invalid proposal decision history record");
+    }
+    const previous = byId.get(record.decisionId);
+    if (previous && canonical(previous) !== canonical(record)) {
+      throw new Error(`Conflicting proposal decision ${record.decisionId}`);
+    }
+    byId.set(record.decisionId, record);
+  }
+  return [...byId.values()].sort((a, b) =>
+    a.decidedAt.localeCompare(b.decidedAt) || a.decisionId.localeCompare(b.decisionId));
 }
 
 function mapDecision(decision) {
@@ -337,6 +418,9 @@ export async function recordProposalDecision({
   runDirectory,
   proposalId,
   decision,
+  env = {},
+  storageObjects,
+  journalClass,
 } = {}) {
   if (!runDirectory || typeof proposalId !== "string" || !PROPOSAL_ID_RE.test(proposalId) ||
       !DECISIONS.has(decision)) {
@@ -350,7 +434,30 @@ export async function recordProposalDecision({
   if (!proposal || !HASH_RE.test(proposal.proposalKey ?? "")) {
     throw new Error("Proposal is not present in the integrity-verified current run");
   }
-  const feedback = await loadProposalFeedback(run.root, run.report.sourceIdentity);
+  let feedback = await loadProposalFeedback(run.root, run.report.sourceIdentity, {
+    env,
+    storageObjects,
+    journalClass,
+  });
+  if (feedback.storageStatus === "LOCAL_UNSYNCED") {
+    const { persistConfiguredProposalDecisions } = await import("./completion-proposal-bucket.mjs");
+    const migrated = await persistConfiguredProposalDecisions({
+      decisions: feedback.allDecisions,
+      env,
+      storageObjects,
+      journalClass,
+    });
+    if (migrated.status !== "VERIFIED" ||
+        feedback.allDecisions.some(record =>
+          !migrated.decisions.some(stored => stored.decisionId === record.decisionId))) {
+      throw new Error(migrated.reason ?? "Existing local decisions could not be migrated to private App Storage");
+    }
+    feedback = await loadProposalFeedback(run.root, run.report.sourceIdentity, {
+      env,
+      storageObjects,
+      journalClass,
+    });
+  }
   if (feedback.status !== "CURRENT") {
     throw new Error("Proposal decision history is degraded; no new decision can be recorded");
   }
@@ -359,7 +466,11 @@ export async function recordProposalDecision({
     throw new Error("Only a previously decided proposal can be reopened");
   }
   if (prior?.decision === decision) {
-    return { status: "ALREADY_RECORDED", record: prior };
+    return {
+      status: "ALREADY_RECORDED",
+      record: prior,
+      durability: bucketConfigured ? "DURABLE_VERIFIED" : "LOCAL_ONLY",
+    };
   }
   const recordedAt = new Date().toISOString();
   const identity = {
@@ -379,10 +490,28 @@ export async function recordProposalDecision({
     ...identity,
     decidedAt: recordedAt,
   });
+  const bucketConfigured = Boolean(env.Replit_storage_bucket_id ||
+    env.DATABASE_RECOVERY_BUCKET_ID || env.REPLIT_BUCKET_ID);
+  let durableStatus = "LOCAL_ONLY";
+  if (bucketConfigured) {
+    const { persistConfiguredProposalDecisions } = await import("./completion-proposal-bucket.mjs");
+    const persisted = await persistConfiguredProposalDecisions({
+      decisions: [...feedback.allDecisions, record],
+      env,
+      storageObjects,
+      journalClass,
+    });
+    if (persisted.status !== "VERIFIED" ||
+        !persisted.decisions.some(item => item.decisionId === record.decisionId)) {
+      throw new Error(persisted.reason ?? "Private App Storage did not verify the proposal decision");
+    }
+    durableStatus = "DURABLE_VERIFIED";
+  }
   const recordPath = await createDecisionFile(run.root, record);
   return {
-    status: "RECORDED_LOCAL_ONLY",
+    status: durableStatus === "DURABLE_VERIFIED" ? "RECORDED_DURABLY" : "RECORDED_LOCAL_ONLY",
     record,
+    durability: durableStatus,
     recordPath: path.relative(run.root, recordPath),
   };
 }
@@ -392,6 +521,9 @@ export async function verifyAcceptedProposalLink({
   proposalLink,
   sourceIdentity,
   requireLatestDecision = true,
+  env = {},
+  storageObjects,
+  journalClass,
 } = {}) {
   if (!proposalLink || proposalLink.schemaVersion !== 1 ||
       !PROPOSAL_ID_RE.test(proposalLink.proposalId ?? "") ||
@@ -403,7 +535,11 @@ export async function verifyAcceptedProposalLink({
       !sameSourceIdentity(proposalLink.sourceIdentity, sourceIdentity)) {
     throw new Error("Proposal link is malformed or does not match the plan source identity");
   }
-  const log = await loadProposalFeedback(root, sourceIdentity);
+  const log = await loadProposalFeedback(root, sourceIdentity, {
+    env,
+    storageObjects,
+    journalClass,
+  });
   const approved = log.decisions.find(record =>
     record.decisionId === proposalLink.approvalDecisionId);
   if (!approved || approved.decision !== "accept-for-plan" ||
@@ -444,6 +580,9 @@ export async function prepareProposalPlanDraft({
   root = DEFAULT_ROOT,
   runDirectory,
   proposalId,
+  env = {},
+  storageObjects,
+  journalClass,
 } = {}) {
   if (!runDirectory || typeof proposalId !== "string" || !PROPOSAL_ID_RE.test(proposalId)) {
     throw new Error("A run directory and proposal ID are required");
@@ -456,7 +595,11 @@ export async function prepareProposalPlanDraft({
   if (!proposal || !HASH_RE.test(proposal.proposalKey ?? "")) {
     throw new Error("Proposal is not present in the integrity-verified current run");
   }
-  const feedback = await loadProposalFeedback(run.root, run.report.sourceIdentity);
+  const feedback = await loadProposalFeedback(run.root, run.report.sourceIdentity, {
+    env,
+    storageObjects,
+    journalClass,
+  });
   const decision = feedback.latest.get(proposal.proposalKey);
   if (decision?.decision !== "accept-for-plan") {
     throw new Error("Preparing a plan draft requires accept-for-plan for this exact source identity");
@@ -473,6 +616,9 @@ export async function prepareProposalPlanDraft({
       sourceIdentity: decision.sourceIdentity,
     },
     sourceIdentity: run.report.sourceIdentity,
+    env,
+    storageObjects,
+    journalClass,
   });
 
   const directory = await ensureDirectory(run.root, [...DRAFTS_DIR.split("/"), run.summary.runId]);
@@ -541,14 +687,25 @@ export async function prepareProposalPlanDraft({
   };
 }
 
-export async function listRunProposals({ root = DEFAULT_ROOT, runDirectory } = {}) {
+export async function listRunProposals({
+  root = DEFAULT_ROOT,
+  runDirectory,
+  env = {},
+  storageObjects,
+  journalClass,
+} = {}) {
   if (!runDirectory) throw new Error("A run directory is required");
   const run = await readVerifiedRun(root, runDirectory);
-  const feedback = await loadProposalFeedback(run.root, run.report.sourceIdentity);
+  const feedback = await loadProposalFeedback(run.root, run.report.sourceIdentity, {
+    env,
+    storageObjects,
+    journalClass,
+  });
   return {
     runId: run.summary.runId,
     reportSha256: run.reportSha256,
     feedbackStatus: feedback.status,
+    storageStatus: feedback.storageStatus,
     feedbackWarnings: feedback.warnings,
     verifiedProposalResolutions: run.summary.verifiedProposalResolutions ?? [],
     proposals: applyProposalFeedback(run.summary.currentProposals, feedback),
@@ -587,16 +744,18 @@ async function main(args = process.argv.slice(2)) {
       console.log("Usage: npm run completion:review -- list --run-dir <run-directory>");
       console.log("       npm run completion:review -- decide --run-dir <run-directory> --proposal-id <id> --decision <accept-for-plan|defer|reject|reopen>");
       console.log("       npm run completion:review -- prepare --run-dir <run-directory> --proposal-id <id>");
-      console.log("Decisions are source-bound, local-only, and never apply a plan or edit code.");
+      console.log("Decisions are source-bound; configured bucket writes require verified readback.");
+      console.log("Without configured private storage, decisions are LOCAL_ONLY.");
+      console.log("Decisions never apply a plan or edit source code.");
       console.log("Prepared drafts have schemaVersion 0 and cannot be executed.");
       return 0;
     }
     if (options.command === "list") {
-      console.log(JSON.stringify(await listRunProposals(options), null, 2));
+      console.log(JSON.stringify(await listRunProposals({ ...options, env: process.env }), null, 2));
       return 0;
     }
     if (options.command === "prepare") {
-      const result = await prepareProposalPlanDraft(options);
+      const result = await prepareProposalPlanDraft({ ...options, env: process.env });
       console.log(JSON.stringify({
         status: result.status,
         draftPath: result.draftPath,
@@ -606,13 +765,14 @@ async function main(args = process.argv.slice(2)) {
       }, null, 2));
       return 0;
     }
-    const result = await recordProposalDecision(options);
+    const result = await recordProposalDecision({ ...options, env: process.env });
     console.log(JSON.stringify({
       status: result.status,
       decisionId: result.record.decisionId,
       proposalId: result.record.proposalId,
       decision: result.record.decision,
-      recordPath: result.recordPath ?? null,
+    recordPath: result.recordPath ?? null,
+    durability: result.durability ?? "LOCAL_ONLY",
       applied: false,
       sourceEdited: false,
     }, null, 2));

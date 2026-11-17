@@ -15,6 +15,35 @@ import { buildInventory, sealReport } from "../scripts/testing/repository-verifi
 
 const hash = value => createHash("sha256").update(value).digest("hex");
 
+function canonical(value) {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map(key =>
+      `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function makeConflictingDecision(previous) {
+  const identity = {
+    runId: previous.runId,
+    runPath: previous.runPath,
+    proposalId: previous.proposalId,
+    proposalKey: previous.proposalKey,
+    decision: "defer",
+    reportSha256: previous.reportSha256,
+    sourceIdentity: previous.sourceIdentity,
+    previousDecisionId: previous.previousDecisionId,
+  };
+  const decisionId = hash(canonical(identity));
+  const decidedAt = "2026-11-17T02:00:01.000Z";
+  const unsigned = { schemaVersion: 1, decisionId, ...identity, decidedAt };
+  return {
+    ...unsigned,
+    integrity: { algorithm: "sha256", sha256: hash(canonical(unsigned)) },
+  };
+}
+
 async function fixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "completion-proposal-link-"));
   execFileSync("git", ["init", "-q"], { cwd: root });
@@ -201,6 +230,29 @@ test("superseded proposal approval is blocked before the executor edits files", 
       apply: true,
       runCheck: passingCheck,
     }), /superseded/);
+    assert.equal(await fs.readFile(state.sourceFile, "utf8"), state.before);
+  } finally {
+    await fs.rm(state.root, { recursive: true, force: true });
+  }
+});
+
+test("conflicting approval history blocks linked execution before source edits", async () => {
+  const state = await fixture();
+  try {
+    const prepared = await prepareApprovedPlan(state);
+    const branch = makeConflictingDecision(prepared.accepted.record);
+    const decisionDirectory = path.join(
+      prepared.root, ".local", "repository-verification", "learning", "decisions",
+    );
+    const name = `${branch.decidedAt.replace(/[-:.]/g, "")}-${branch.decisionId}.json`;
+    await fs.writeFile(path.join(decisionDirectory, name), JSON.stringify(branch), { mode: 0o600 });
+    await assert.rejects(executeCompletionPlan({
+      root: prepared.root,
+      planPath: prepared.planPath,
+      expectedPlanSha256: prepared.planSha256,
+      apply: true,
+      runCheck: passingCheck,
+    }), /superseded|degraded/);
     assert.equal(await fs.readFile(state.sourceFile, "utf8"), state.before);
   } finally {
     await fs.rm(state.root, { recursive: true, force: true });
