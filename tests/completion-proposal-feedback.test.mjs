@@ -131,6 +131,9 @@ test("carries decisions only across the exact source identity and supports expli
       decision: "reopen",
     });
     assert.equal(reopened.status, "RECORDED_LOCAL_ONLY");
+    const reopenedList = await listRunProposals({ root, runDirectory: second });
+    assert.equal(reopenedList.proposals[0].state, "NEEDS_REVIEW");
+    assert.equal(reopenedList.proposals[0].reviewDecision.decision, "reopen");
 
     const third = await runDirectory("2026-11-17T01-03-00-changed-source");
     const changedLearning = await createLearningRun(root, third, makeReport({ dirtyHash: "d".repeat(64) }));
@@ -201,6 +204,12 @@ test("keeps proposal decision log corruption visible and ignores invalid decisio
     assert.equal(listed.feedbackStatus, "DEGRADED");
     assert.equal(listed.proposals[0].state, "REJECTED");
     assert.equal(listed.feedbackWarnings.length > 0, true);
+    await assert.rejects(recordProposalDecision({
+      root,
+      runDirectory: run,
+      proposalId: proposal.id,
+      decision: "defer",
+    }), /history is degraded/);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }

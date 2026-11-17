@@ -247,10 +247,14 @@ npm run completion:review -- prepare \
 
 The packet has `schemaVersion: 0`, empty changes/checks, and cannot be passed as
 an executable plan. It preserves the accepted proposal's source evidence and
-lists the exact information required to author a separate schema-versioned
-completion plan. It never writes application source or runs the executor. The
-decision ledger is workspace-local, not App Storage-backed, and is explicitly
-reported as not durable across workspace loss.
+includes the exact `proposalLink` object the executor will validate if the
+reference is added to an authored plan. The executor rejects superseded,
+missing, or source-mismatched approvals before changing files. Only an
+integrity-sealed executor report with every named change present and every
+required check passing is recorded as a verified resolution; failed or rolled
+back attempts remain unresolved. It never writes application source or runs
+the executor. The decision ledger is workspace-local, not App Storage-backed,
+and is explicitly reported as not durable across workspace loss.
 
 Internal whole-product readiness remains based on the current full-run audit.
 Competitor evidence status is deliberately separate from product readiness.

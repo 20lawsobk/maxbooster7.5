@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildInventory, cleanEnvironment, runOwned, sealReport } from "./repository-verification.mjs";
+import { verifyAcceptedProposalLink } from "./completion-proposal-feedback.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, "../..");
@@ -87,6 +88,13 @@ function validatePlan(plan) {
   }
   if (plan.checks.length < 1 || plan.checks.some(check => !check || !CHECKS.has(check.script))) {
     throw new Error(`Plan checks must use only: ${[...CHECKS.keys()].join(", ")}`);
+  }
+  if (plan.proposalLink !== undefined &&
+      (!plan.proposalLink || plan.proposalLink.schemaVersion !== 1 ||
+       typeof plan.proposalLink.proposalId !== "string" ||
+       typeof plan.proposalLink.proposalKey !== "string" ||
+       typeof plan.proposalLink.approvalDecisionId !== "string")) {
+    throw new Error("proposalLink must contain a versioned accepted-proposal reference");
   }
   const ids = new Set();
   const paths = new Set();
@@ -260,6 +268,13 @@ export async function executeCompletionPlan({
   root = path.resolve(root);
   const { realPath, raw, plan, sha256: actualPlanSha } = await readPlan(planPath);
   validatePlan(plan);
+  const proposalLink = plan.proposalLink
+    ? await verifyAcceptedProposalLink({
+      root,
+      proposalLink: plan.proposalLink,
+      sourceIdentity: plan.sourceIdentity,
+    })
+    : null;
   if (apply && expectedPlanSha256 !== actualPlanSha) {
     throw new Error("Applying requires --plan-sha256 to exactly match the plan file's SHA-256");
   }
@@ -285,6 +300,7 @@ export async function executeCompletionPlan({
     planPath: path.relative(root, realPath),
     planSha256: actualPlanSha,
     sourceIdentity: plan.sourceIdentity,
+    proposalLink,
     changes: [],
     checks: [],
     externalPrerequisites: [

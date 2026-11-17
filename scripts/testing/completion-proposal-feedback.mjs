@@ -70,6 +70,12 @@ function validSourceIdentity(identity) {
     HASH_RE.test(identity.dirtyInputSha256 ?? "");
 }
 
+function validRunPath(value) {
+  return typeof value === "string" && value.length > 0 &&
+    !path.posix.isAbsolute(value) && !value.includes("\\") &&
+    value.split("/").every(part => part && part !== "." && part !== "..");
+}
+
 function sameSourceIdentity(left, right) {
   return left?.revision === right?.revision &&
     left?.inputInventorySha256 === right?.inputInventorySha256 &&
@@ -83,6 +89,7 @@ function verifyDecision(record, filename) {
     : "";
   const identity = record && {
     runId: record.runId,
+    runPath: record.runPath,
     proposalId: record.proposalId,
     proposalKey: record.proposalKey,
     decision: record.decision,
@@ -96,6 +103,7 @@ function verifyDecision(record, filename) {
     match?.[1] === expectedTimeKey &&
     match?.[2] === record.decisionId &&
     typeof record.runId === "string" && /^[A-Za-z0-9._-]{1,180}$/.test(record.runId) &&
+    validRunPath(record.runPath) &&
     PROPOSAL_ID_RE.test(record.proposalId ?? "") &&
     HASH_RE.test(record.proposalKey ?? "") &&
     HASH_RE.test(record.reportSha256 ?? "") &&
@@ -196,11 +204,34 @@ export async function loadProposalFeedback(root, sourceIdentity) {
   const current = validSourceIdentity(sourceIdentity)
     ? log.decisions.filter(record => sameSourceIdentity(record.sourceIdentity, sourceIdentity))
     : [];
+  const warnings = [...log.warnings];
+  let status = log.status;
   const latest = new Map();
-  for (const record of current) latest.set(record.proposalKey, record);
+  const groups = new Map();
+  for (const record of current) {
+    const group = groups.get(record.proposalKey) ?? [];
+    group.push(record);
+    groups.set(record.proposalKey, group);
+  }
+  for (const [proposalKey, records] of groups) {
+    const byId = new Map(records.map(record => [record.decisionId, record]));
+    const superseded = new Set(records.map(record => record.previousDecisionId).filter(Boolean));
+    if ([...superseded].some(decisionId => !byId.has(decisionId))) {
+      status = "DEGRADED";
+      warnings.push(`Proposal decision chain is incomplete for ${proposalKey}.`);
+      continue;
+    }
+    const heads = [...byId.values()].filter(record => !superseded.has(record.decisionId));
+    if (heads.length !== 1) {
+      status = "DEGRADED";
+      warnings.push(`Proposal decision history has conflicting branches for ${proposalKey}.`);
+      continue;
+    }
+    latest.set(proposalKey, heads[0]);
+  }
   return {
-    status: log.status,
-    warnings: log.warnings,
+    status,
+    warnings,
     decisions: current,
     latest,
   };
@@ -320,6 +351,9 @@ export async function recordProposalDecision({
     throw new Error("Proposal is not present in the integrity-verified current run");
   }
   const feedback = await loadProposalFeedback(run.root, run.report.sourceIdentity);
+  if (feedback.status !== "CURRENT") {
+    throw new Error("Proposal decision history is degraded; no new decision can be recorded");
+  }
   const prior = feedback.latest.get(proposal.proposalKey) ?? null;
   if (decision === "reopen" && !prior) {
     throw new Error("Only a previously decided proposal can be reopened");
@@ -330,6 +364,7 @@ export async function recordProposalDecision({
   const recordedAt = new Date().toISOString();
   const identity = {
     runId: run.summary.runId,
+    runPath: path.relative(run.root, run.runDirectory),
     proposalId,
     proposalKey: proposal.proposalKey,
     decision,
@@ -349,6 +384,59 @@ export async function recordProposalDecision({
     status: "RECORDED_LOCAL_ONLY",
     record,
     recordPath: path.relative(run.root, recordPath),
+  };
+}
+
+export async function verifyAcceptedProposalLink({
+  root,
+  proposalLink,
+  sourceIdentity,
+  requireLatestDecision = true,
+} = {}) {
+  if (!proposalLink || proposalLink.schemaVersion !== 1 ||
+      !PROPOSAL_ID_RE.test(proposalLink.proposalId ?? "") ||
+      !HASH_RE.test(proposalLink.proposalKey ?? "") ||
+      !HASH_RE.test(proposalLink.approvalDecisionId ?? "") ||
+      !/^[A-Za-z0-9._-]{1,180}$/.test(proposalLink.approvalRunId ?? "") ||
+      !HASH_RE.test(proposalLink.approvalReportSha256 ?? "") ||
+      !validSourceIdentity(proposalLink.sourceIdentity) ||
+      !sameSourceIdentity(proposalLink.sourceIdentity, sourceIdentity)) {
+    throw new Error("Proposal link is malformed or does not match the plan source identity");
+  }
+  const log = await loadProposalFeedback(root, sourceIdentity);
+  const approved = log.decisions.find(record =>
+    record.decisionId === proposalLink.approvalDecisionId);
+  if (!approved || approved.decision !== "accept-for-plan" ||
+      approved.proposalId !== proposalLink.proposalId ||
+      approved.proposalKey !== proposalLink.proposalKey ||
+      approved.runId !== proposalLink.approvalRunId ||
+      approved.reportSha256 !== proposalLink.approvalReportSha256 ||
+      !sameSourceIdentity(approved.sourceIdentity, proposalLink.sourceIdentity)) {
+    throw new Error("Proposal link has no matching integrity-verified approval record");
+  }
+  const approvedRun = await readVerifiedRun(root, approved.runPath);
+  const approvedProposal = approvedRun.summary.currentProposals.find(item =>
+    item.id === approved.proposalId && item.proposalKey === approved.proposalKey);
+  if (approvedRun.reportSha256 !== approved.reportSha256 ||
+      !sameSourceIdentity(approvedRun.report.sourceIdentity, approved.sourceIdentity) ||
+      !approvedProposal) {
+    throw new Error("Proposal approval no longer matches its integrity-verified source run");
+  }
+  if (requireLatestDecision &&
+      log.latest.get(approved.proposalKey)?.decisionId !== approved.decisionId) {
+    throw new Error("Proposal approval was superseded; review and approve it again");
+  }
+  if (log.status !== "CURRENT") {
+    throw new Error("Proposal decision history is degraded; linked execution is blocked");
+  }
+  return {
+    schemaVersion: 1,
+    proposalId: approved.proposalId,
+    proposalKey: approved.proposalKey,
+    approvalDecisionId: approved.decisionId,
+    approvalRunId: approved.runId,
+    approvalReportSha256: approved.reportSha256,
+    sourceIdentity: approved.sourceIdentity,
   };
 }
 
@@ -373,9 +461,25 @@ export async function prepareProposalPlanDraft({
   if (decision?.decision !== "accept-for-plan") {
     throw new Error("Preparing a plan draft requires accept-for-plan for this exact source identity");
   }
+  const proposalLink = await verifyAcceptedProposalLink({
+    root: run.root,
+    proposalLink: {
+      schemaVersion: 1,
+      proposalId,
+      proposalKey: proposal.proposalKey,
+      approvalDecisionId: decision.decisionId,
+      approvalRunId: decision.runId,
+      approvalReportSha256: decision.reportSha256,
+      sourceIdentity: decision.sourceIdentity,
+    },
+    sourceIdentity: run.report.sourceIdentity,
+  });
 
   const directory = await ensureDirectory(run.root, [...DRAFTS_DIR.split("/"), run.summary.runId]);
-  const destination = path.join(directory, `${proposal.proposalKey}.json`);
+  const destination = path.join(
+    directory,
+    `${proposal.proposalKey}-${decision.decisionId}.json`,
+  );
   const draft = seal({
     schemaVersion: 0,
     status: "DRAFT_NOT_EXECUTABLE",
@@ -386,6 +490,7 @@ export async function prepareProposalPlanDraft({
     proposalKind: proposal.kind,
     reportSha256: run.reportSha256,
     sourceIdentity: run.report.sourceIdentity,
+    proposalLink,
     approvedDecisionId: decision.decisionId,
     context: {
       checkId: proposal.checkId ?? null,
@@ -445,6 +550,7 @@ export async function listRunProposals({ root = DEFAULT_ROOT, runDirectory } = {
     reportSha256: run.reportSha256,
     feedbackStatus: feedback.status,
     feedbackWarnings: feedback.warnings,
+    verifiedProposalResolutions: run.summary.verifiedProposalResolutions ?? [],
     proposals: applyProposalFeedback(run.summary.currentProposals, feedback),
   };
 }

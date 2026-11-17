@@ -5,7 +5,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { persistConfiguredCompletionHistory } from "./completion-learning-bucket.mjs";
 import { evaluateCompetitorBenchmarks } from "./competitor-benchmarks.mjs";
-import { applyProposalFeedback, loadProposalFeedback } from "./completion-proposal-feedback.mjs";
+import {
+  applyProposalFeedback,
+  loadProposalFeedback,
+  verifyAcceptedProposalLink,
+} from "./completion-proposal-feedback.mjs";
 
 const LEARNING_DIR = ".local/repository-verification/learning";
 const MAX_OBSERVATIONS = 2_000;
@@ -213,20 +217,40 @@ function compactCheck(check) {
 
 function isVerifiedPlan(report) {
   return ["APPLIED_VERIFIED", "ALREADY_APPLIED_VERIFIED"].includes(report.status) &&
+    /^[a-f0-9]{64}$/.test(report.planSha256 ?? "") &&
+    /^[a-f0-9]{40,64}$/.test(report.sourceIdentity?.revision ?? "") &&
+    /^[a-f0-9]{64}$/.test(report.sourceIdentity?.inputInventorySha256 ?? "") &&
+    /^[a-f0-9]{64}$/.test(report.sourceIdentity?.dirtyInputSha256 ?? "") &&
     Array.isArray(report.checks) && report.checks.length > 0 &&
     report.checks.every(check => check.status === "PASS") &&
-    Array.isArray(report.changes) &&
+    Array.isArray(report.changes) && report.changes.length > 0 &&
     report.changes.every(change => ["APPLIED", "ALREADY_APPLIED"].includes(change.status));
 }
 
-function buildObservation(report, runId, remediation) {
+function buildObservation(report, runId, remediation, verifiedProposalLink) {
   if (!isSealed(report)) throw new Error("Learning accepts only integrity-verified completion reports");
   if (!Array.isArray(report.checks)) throw new Error("Completion report has no check list");
   const allChecks = report.checks.map(compactCheck).filter(Boolean);
   const checkPriority = { FAIL: 0, BLOCKED: 1, UNVERIFIED: 2, SKIPPED: 3, "NOT APPLICABLE": 4, PASS: 5 };
   const unresolvedChecks = allChecks.filter(check => check.status !== "PASS")
     .sort((a, b) => checkPriority[a.status] - checkPriority[b.status] || a.id.localeCompare(b.id));
-  const verifiedPlan = isVerifiedPlan(report) ? {
+  const planVerified = isVerifiedPlan(report);
+  const proposalPlanAttempt = verifiedProposalLink ? {
+    status: report.status,
+    reportSha256: report.integrity.reportSha256 ?? report.integrity.sha256,
+    planSha256: report.planSha256 ?? null,
+    approvalDecisionId: verifiedProposalLink.approvalDecisionId,
+    proposalId: verifiedProposalLink.proposalId,
+    proposalKey: verifiedProposalLink.proposalKey,
+    resolved: planVerified,
+    checks: report.checks.map(check => ({
+      id: safeString(check.id, 240),
+      status: ["PASS", "FAIL", "BLOCKED", "UNVERIFIED", "SKIPPED"].includes(check.status)
+        ? check.status
+        : "UNVERIFIED",
+    })).filter(check => check.id),
+  } : null;
+  const verifiedPlan = planVerified ? {
     status: report.status,
     planSha256: report.planSha256,
     planPath: safeString(report.planPath, 300),
@@ -234,6 +258,7 @@ function buildObservation(report, runId, remediation) {
     changePaths: report.changes.map(change => change.path).filter(pathValue =>
       typeof pathValue === "string" && pathValue.length <= 500),
     passedCheckIds: report.checks.map(check => check.id).filter(id => typeof id === "string"),
+    proposalLink: verifiedProposalLink,
   } : null;
   return seal({
     schemaVersion: 1,
@@ -248,6 +273,7 @@ function buildObservation(report, runId, remediation) {
       dirtyInputSha256: report.sourceIdentity?.dirtyInputSha256 ?? null,
     },
     checks: unresolvedChecks.slice(0, MAX_CHECK_HISTORY),
+    proposalPlanAttempt,
     truncated: {
       checks: Math.max(0, unresolvedChecks.length - MAX_CHECK_HISTORY),
       remediationItems: remediation.artifact?.omittedItems ?? 0,
@@ -274,6 +300,36 @@ function buildObservation(report, runId, remediation) {
       }))
       .filter(item => item.id),
   });
+}
+
+function collectVerifiedProposalResolutions(observations, currentProposals) {
+  const currentKeys = new Set(currentProposals.map(proposal => proposal.proposalKey));
+  const resolutions = new Map();
+  for (const observation of observations) {
+    const plan = observation.verifiedPlan;
+    const link = plan?.proposalLink;
+    if (!link || !plan.passedCheckIds?.length ||
+        plan.passedCheckIds.some(id =>
+          !observation.proposalPlanAttempt?.checks?.some(check =>
+            check.id === id && check.status === "PASS"))) continue;
+    resolutions.set(link.approvalDecisionId, {
+      state: currentKeys.has(link.proposalKey)
+        ? "VERIFIED_PLAN_PASSED_BUT_CURRENT_FINDING_REMAINS"
+        : "RESOLVED_BY_VERIFIED_PLAN",
+      proposalId: link.proposalId,
+      proposalKey: link.proposalKey,
+      approvalDecisionId: link.approvalDecisionId,
+      approvalRunId: link.approvalRunId,
+      approvalReportSha256: link.approvalReportSha256,
+      verificationRunId: observation.runId,
+      planSha256: plan.planSha256,
+      passedCheckIds: plan.passedCheckIds,
+      sourceRevision: plan.sourceRevision,
+      verifiedAt: observation.recordedAt,
+    });
+  }
+  return [...resolutions.values()].sort((a, b) =>
+    a.verifiedAt.localeCompare(b.verifiedAt)).reverse();
 }
 
 async function readHistory(eventsDirectory) {
@@ -495,7 +551,15 @@ export async function recordLearningOutcome({
   const runId = path.basename(runReal);
   if (!/^[A-Za-z0-9._-]{1,180}$/.test(runId)) throw new Error("Unsafe verification run ID");
   const remediation = await readCurrentRemediation(rootReal, runReal, report);
-  const observation = buildObservation(report, runId, remediation);
+  const verifiedProposalLink = report.proposalLink
+    ? await verifyAcceptedProposalLink({
+      root: rootReal,
+      proposalLink: report.proposalLink,
+      sourceIdentity: report.sourceIdentity,
+      requireLatestDecision: false,
+    })
+    : null;
+  const observation = buildObservation(report, runId, remediation, verifiedProposalLink);
   const eventContent = `${JSON.stringify(observation, null, 2)}\n`;
   if (Buffer.byteLength(eventContent) > MAX_OBSERVATION_BYTES) {
     throw new Error(`Learning observation exceeds the ${MAX_OBSERVATION_BYTES}-byte safety limit`);
@@ -685,6 +749,15 @@ export async function recordLearningOutcome({
       omittedProposals: proposalSet.omittedRemediationCandidates,
     },
     currentProposals: allProposals,
+    proposalPlanAttempts: analysisHistory.observations
+      .filter(item => item.proposalPlanAttempt)
+      .slice(-50)
+      .reverse()
+      .map(item => ({ runId: item.runId, ...item.proposalPlanAttempt })),
+    verifiedProposalResolutions: collectVerifiedProposalResolutions(
+      analysisHistory.observations,
+      allProposals,
+    ),
     proposalFeedback: {
       status: feedback.status,
       scope: "LOCAL_WORKSPACE_ONLY",
