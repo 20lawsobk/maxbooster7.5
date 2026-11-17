@@ -170,35 +170,63 @@ remain unverified or blocked.
 ### Cross-run completion learning
 
 Every preflight, full verification and completion-plan result is passed to the
-proposal-first learner. It stores a compact, integrity-sealed observation under
-`.local/repository-verification/learning/observations/` and writes a
-`learning.json` beside that run's report. It learns recurring failing check
-families and remembers exact plans whose named local checks passed. For a full
-run, it imports detailed remediation items only when the launch audit reports
-fresh source evidence, the runner confirms its inputs did not change, and the
-remediation artifact's recorded hash matches that run's platform register. It
-surfaces high-priority source-bound steps as review proposals and points to the
-complete remediation artifact; truncated history or proposal counts stay
-explicit. A prior verified plan is a review hint only; it is never replayed
-automatically.
+proposal-first learner. It stores a compact, integrity-sealed local observation
+under `.local/repository-verification/learning/observations/` and writes a
+`learning.json` beside that run's report. The dev controller attempts to persist
+observations in a dedicated `completion-learning-v1` namespace under the
+configured private App Storage bucket, separate from PDIM's own namespace. It
+reports `VERIFIED` only after authenticated write and recovery readback succeed.
+Writes use the generation-fenced PDIM journal, immutable
+SHA-256-addressed objects, bounded backfill, checkpointing, and full recovery
+readback before the report says `VERIFIED`. A storage or readback failure stays
+visible as `BLOCKED` or `DEGRADED`; the local record remains usable, but is not
+described as durable across workspace loss. The durable store keeps at most
+2,000 active observations and preserves an explicit truncation flag.
+
+It learns recurring failing check families and remembers exact plans whose
+named local checks passed. For a full run, it imports detailed remediation items
+only when the launch audit reports fresh source evidence, the runner confirms
+its inputs did not change, and the remediation artifact's recorded hash matches
+that run's platform register. It surfaces source-bound steps as review proposals
+and points to the complete remediation artifact; a prior verified plan is never
+replayed automatically.
+
+### Competitor benchmark evidence
+
+`docs/testing/competitor-evidence.json` contains a dated public-source snapshot
+for studio, songwriting, distribution, social publishing, outreach,
+advertising, and dashboard/analytics. It records first-party claims from
+BandLab, Hookpad, LANDR, Buffer, Mailchimp, Google Ads, and Chartmetric. These
+are marketing statements, not independent product tests. DistroKid was not
+included because its public page presented a bot challenge; no claim was
+inferred from that response.
+
+A full audit can attach source-bound measurements to a check using
+`benchmarkAreaIds` and `benchmarkMeasurements`. A comparison is accepted only
+when a passing current-run check provides the same metric identifier, unit, and
+scope as the reference. A feature check alone cannot establish superiority.
+Missing or stale evidence becomes a `NEEDS_REVIEW` proposal, and the learner
+never changes source or claims Max Booster is production-ready. The search and
+scrape callbacks returned HTTP 402 during this snapshot, so only directly
+reachable official pages were used. The snapshot expires after 30 days and
+must be refreshed before it can support current comparisons.
 
 The learner does not retain raw command output or logs, does not modify source,
-and does not change the app's readiness state. Its history is local to this
-workspace and is not a backup across workspace loss. Corrupt or oversized
-history is surfaced as degraded/truncated rather than silently treated as
+and does not change the app's readiness state. Corrupt, oversized, stale, or
+unavailable history is surfaced explicitly rather than silently treated as
 complete. `npm run dev` still runs a bounded preflight; it does not start an
-infinite repair loop or edit files during application startup.
-History reads are bounded to 2,000 records and 64 MiB, with an 8 MiB per-record
-limit. The learner retains at most 2,000 failing checks and 5,000 remediation
-references per event, and emits at most 500 check proposals plus 200 detailed
-remediation proposals; it reports any omitted counts and points to the complete
-current full-run remediation artifact.
+infinite repair loop or edit files during application startup. History reads
+are bounded to 2,000 records and 64 MiB, with an 8 MiB per-record limit. The
+learner retains at most 2,000 failing checks and 5,000 remediation references
+per event, emits at most 500 check proposals plus 200 detailed remediation
+proposals, and reports omitted counts. Benchmark gap proposals are separate.
 
 Internal whole-product readiness remains based on the current full-run audit.
-Competitor superiority is deliberately reported as `UNCONFIGURED` until dated,
-source-backed competitor observations and comparable measured outcomes are
-supplied. The learner never invents competitors, treats public webpages as
-product-training permission, or claims a passing local subset means Max
+Competitor evidence status is deliberately separate from product readiness.
+The current snapshot provides a dated reference set, but no current Max Booster
+source-bound measurements have been attached, so the current overall result is
+`EVIDENCE_GAPS`, not a head-to-head win. Public webpages are not treated as
+product-training permission, and passing a local subset never means Max
 Booster is production-ready.
 
 The [seven-level critical path](launch-critical-path.md) extends that plan;

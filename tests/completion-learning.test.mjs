@@ -97,7 +97,8 @@ test("records repeated failures and produces source-bound proposals without raw 
     assert.doesNotMatch(record, /npm run test:runtime-contracts/);
     assert.equal((await fs.stat(second.eventPath)).mode & 0o777, 0o600);
     assert.equal((await fs.stat(path.dirname(second.eventPath))).mode & 0o777, 0o700);
-    assert.equal(second.summary.benchmark.competitorComparisons, "UNCONFIGURED");
+    assert.equal(second.summary.benchmark.competitorComparisons, "NOT_RUN");
+    assert.equal(second.summary.history.persistence.status, "NOT_REQUESTED");
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
@@ -187,8 +188,81 @@ test("only a fresh full-run launch audit can mark internal benchmark evidence cu
     });
     const result = await recordLearningOutcome({ root, runDirectory: run, report: full });
     assert.equal(result.summary.benchmark.internalCoverage, "CURRENT_AUDIT_PRESENT");
-    assert.equal(result.summary.benchmark.competitorComparisons, "UNCONFIGURED");
-    assert.match(result.summary.benchmark.reason, /Competitor superiority requires dated public evidence/);
+    assert.equal(result.summary.benchmark.competitorComparisons, "EVIDENCE_GAPS");
+    assert.equal(result.summary.benchmark.coveredProductAreas, 7);
+    assert.equal(result.summary.benchmark.measuredAreas, 0);
+    assert.equal(result.summary.currentProposals.filter(row =>
+      row.kind === "competitor-benchmark-evidence-gap").length, 7);
+    assert.match(result.summary.benchmark.reason, /first-party marketing statements/);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test("reports durable-history failures without leaking storage errors or losing local learning", async () => {
+  const { root, runDirectory } = await fixture();
+  try {
+    const run = await runDirectory("2026-11-17T00-06-30-storage-blocked");
+    const result = await recordLearningOutcome({
+      root,
+      runDirectory: run,
+      report: report({
+        checks: [{ id: "check:storage", status: "FAIL", nextAction: "Check the isolated storage path." }],
+      }),
+      durableHistory: true,
+      persistHistory: async () => {
+        throw new Error("Authorization failed for sk_live_sensitive_value");
+      },
+    });
+    assert.equal(result.summary.history.persistence.status, "BLOCKED");
+    assert.equal(result.summary.history.persistence.readbackVerified, false);
+    assert.equal(result.summary.history.analyzedRecords, 1);
+    const output = await fs.readFile(result.summaryPath, "utf8");
+    assert.doesNotMatch(output, /sk_live_sensitive_value/);
+    assert.match(output, /Private App Storage persistence failed/);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test("uses both durable observations and local records still awaiting backfill", async () => {
+  const { root, runDirectory } = await fixture();
+  try {
+    const repeated = {
+      id: "dashboard/freshness",
+      status: "FAIL",
+      exitCode: 1,
+      command: ["node", "check-dashboard"],
+    };
+    const firstRun = await runDirectory("2026-11-17T00-06-45-local-only");
+    await recordLearningOutcome({
+      root,
+      runDirectory: firstRun,
+      report: report({ checks: [repeated] }),
+    });
+
+    const secondRun = await runDirectory("2026-11-17T00-06-46-partial-backfill");
+    const result = await recordLearningOutcome({
+      root,
+      runDirectory: secondRun,
+      report: report({ checks: [repeated] }),
+      durableHistory: true,
+      persistHistory: async ({ observations, currentRunId }) => ({
+        status: "VERIFIED",
+        readbackVerified: true,
+        observations: observations.filter(item => item.runId === currentRunId),
+        availableRecords: 1,
+        recordsAdded: 1,
+        pendingLocalRecords: 1,
+        truncated: false,
+      }),
+    });
+    const proposal = result.summary.currentProposals.find(item =>
+      item.checkId === "dashboard/freshness");
+    assert.equal(result.summary.history.persistence.status, "VERIFIED");
+    assert.equal(result.summary.history.persistence.pendingLocalRecords, 1);
+    assert.equal(result.summary.history.analyzedRecords, 2);
+    assert.equal(proposal.recurrence.matchingObservations, 2);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }

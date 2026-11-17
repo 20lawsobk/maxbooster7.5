@@ -1023,8 +1023,8 @@ async function main(args = process.argv.slice(2)) {
 
 async function reportLearningOutcome(root, runDirectory, report) {
   try {
-    const learning = await recordLearningOutcome({ root, runDirectory, report });
-    console.log(`[completion-learning] history=${learning.summary.history.status}; analyzed=${learning.summary.history.analyzedRecords}; proposals=${learning.summary.currentProposals.length}; competitorBenchmark=${learning.summary.benchmark.competitorComparisons}`);
+    const learning = await recordLearningOutcome({ root, runDirectory, report, durableHistory: true });
+    console.log(`[completion-learning] history=${learning.summary.history.status}; durable=${learning.summary.history.persistence.status}; analyzed=${learning.summary.history.analyzedRecords}; proposals=${learning.summary.currentProposals.length}; competitorBenchmark=${learning.summary.benchmark.competitorComparisons}`);
     console.log(`[completion-learning] report: ${learning.summaryPath}`);
   } catch (error) {
     console.error(`[completion-learning] WARNING: outcome was not recorded; verification result is unchanged: ${error.message}`);

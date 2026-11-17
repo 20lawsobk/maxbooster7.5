@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "collectedAt": "2026-11-17T00:59:18.000Z",
+  "methodology": {
+    "marketScope": "Public alternatives mapped to Max Booster's creator and music-career workflows.",
+    "evidenceType": "First-party official-page metadata retrieved over unauthenticated HTTPS.",
+    "comparisonRule": "A competitor statement is a reference claim only. It is not independently validated and is not proof that Max Booster matches or surpasses it.",
+    "freshnessDays": 30,
+    "limitations": [
+      "The web-search and web-fetch services returned HTTP 402 during this collection, so the snapshot uses directly reachable official pages only.",
+      "No customer reviews, paid competitor databases, account-only pages, or platform logins were used.",
+      "Claims do not represent an exhaustive competitor census and do not establish feature quality, adoption, or customer outcomes.",
+      "DistroKid's public page returned a bot-challenge page during inspection, so no DistroKid claim is included.",
+      "Public competitor material is reference evidence only; it is not authorized training data."
+    ]
+  },
+  "competitors": [
+    {
+      "id": "bandlab",
+      "name": "BandLab",
+      "role": "Cloud music creation and collaboration alternative",
+      "sources": [
+        {
+          "url": "https://www.bandlab.com/products/studio",
+          "status": "HTTP_200",
+          "evidenceType": "official-page-metadata",
+          "retrievedAt": "2026-11-17T00:59:18.000Z",
+          "pageTitle": "BandLab",
+          "claim": "The cloud platform where musicians and fans create music, collaborate, and engage with each other across the globe."
+        }
+      ]
+    },
+    {
+      "id": "hookpad",
+      "name": "Hookpad by Hooktheory",
+      "role": "Songwriting and chord/melody composition alternative",
+      "sources": [
+        {
+          "url": "https://www.hooktheory.com/hookpad",
+          "status": "HTTP_200",
+          "evidenceType": "official-page-metadata",
+          "retrievedAt": "2026-11-17T00:59:18.000Z",
+          "pageTitle": "Hookpad Songwriting Software: Create Amazing Music",
+          "claim": "Easy-to-use chord and melody sketchpad with built-in music theory, melody guides, and intelligent chord suggestions to help you write chords and melody."
+        }
+      ]
+    },
+    {
+      "id": "landr",
+      "name": "LANDR",
+      "role": "Music distribution and creator-services alternative",
+      "sources": [
+        {
+          "url": "https://www.landr.com/digital-distribution",
+          "status": "HTTP_200",
+          "evidenceType": "official-page-metadata",
+          "retrievedAt": "2026-11-17T00:59:18.000Z",
+          "pageTitle": "LANDR: Digital Music Distribution with No Hidden Fees",
+          "claim": "Unlimited releases for as low as $24/yr, keep 100% of your streaming revenue from 150+ online music stores with LANDR Distribution.",
+          "metrics": [
+            {
+              "metricId": "digital-stores",
+              "value": 150,
+              "unit": "stores",
+              "scope": "Online music stores claimed by a digital distribution service",
+              "comparison": "AT_LEAST"
+            },
+            {
+              "metricId": "streaming-revenue-share",
+              "value": 100,
+              "unit": "percent",
+              "scope": "Streaming revenue share claimed by a digital distribution service",
+              "comparison": "AT_LEAST"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "buffer",
+      "name": "Buffer",
+      "role": "Social media planning, scheduling, and publishing alternative",
+      "sources": [
+        {
+          "url": "https://buffer.com/publish",
+          "status": "HTTP_200",
+          "evidenceType": "official-page-metadata",
+          "retrievedAt": "2026-11-17T00:59:18.000Z",
+          "pageTitle": "Social Media Scheduler & Planner for Everyone | Buffer",
+          "claim": "Plan, schedule, and publish social media posts with a social media scheduler and content planner."
+        }
+      ]
+    },
+    {
+      "id": "mailchimp",
+      "name": "Mailchimp",
+      "role": "Small-business outreach and multichannel campaign alternative",
+      "sources": [
+        {
+          "url": "https://mailchimp.com/marketing-platform/",
+          "status": "HTTP_200",
+          "evidenceType": "official-page-metadata",
+          "retrievedAt": "2026-11-17T00:59:18.000Z",
+          "pageTitle": "The All-in-one Marketing Platform Built for Small Businesses",
+          "claim": "Create multichannel campaigns that reach your people where they are."
+        }
+      ]
+    },
+    {
+      "id": "google-ads",
+      "name": "Google Ads",
+      "role": "Paid advertising campaign alternative",
+      "sources": [
+        {
+          "url": "https://ads.google.com/home/",
+          "status": "HTTP_200",
+          "evidenceType": "official-page-metadata",
+          "retrievedAt": "2026-11-17T00:59:18.000Z",
+          "pageTitle": "Reach Customers Across YouTube & Search - Google Ads",
+          "claim": "Run Google Ads campaigns to generate leads and reach new customers on Google and YouTube."
+        }
+      ]
+    },
+    {
+      "id": "chartmetric",
+      "name": "Chartmetric",
+      "role": "Music-industry analytics and artist-data alternative",
+      "sources": [
+        {
+          "url": "https://chartmetric.com/",
+          "status": "HTTP_200",
+          "evidenceType": "official-page-metadata",
+          "retrievedAt": "2026-11-17T00:59:18.000Z",
+          "pageTitle": "Music Data Intelligence for the Music Industry | Chartmetric",
+          "claim": "Track streaming, social, playlist, and audience data across 40+ platforms and 14M+ artists.",
+          "metrics": [
+            {
+              "metricId": "analytics-platforms",
+              "value": 40,
+              "unit": "platforms",
+              "scope": "Platforms represented in a music-industry analytics service",
+              "comparison": "AT_LEAST"
+            },
+            {
+              "metricId": "artist-profiles",
+              "value": 14000000,
+              "unit": "artist-profiles",
+              "scope": "Artist profiles claimed by a music-industry analytics service",
+              "comparison": "AT_LEAST"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "id": "studio",
+      "title": "Studio and media creation",
+      "competitorIds": ["bandlab"],
+      "acceptanceCriteria": [
+        "Create, edit, save, reopen, and export a real user-owned project.",
+        "Verify exported audio or media is accessible and playable after reload."
+      ]
+    },
+    {
+      "id": "songwriting",
+      "title": "Songwriting",
+      "competitorIds": ["hookpad", "bandlab"],
+      "acceptanceCriteria": [
+        "Generate editable, structured songwriting content and retain provenance.",
+        "Save, reopen, edit, and export the same project without losing user changes."
+      ]
+    },
+    {
+      "id": "distribution",
+      "title": "Music distribution",
+      "competitorIds": ["landr"],
+      "acceptanceCriteria": [
+        "Validate a release package and preserve ownership and rights metadata.",
+        "Require the configured explicit opt-in before submission and report only provider-acknowledged states.",
+        "Measure store coverage only using the same definition and scope as the cited competitor claim."
+      ]
+    },
+    {
+      "id": "social-publishing",
+      "title": "Social content and publishing",
+      "competitorIds": ["buffer"],
+      "acceptanceCriteria": [
+        "Generate usable content, save edits, schedule it, and recover the scheduled job after restart.",
+        "Verify account ownership, platform access, and provider-acknowledged publish outcomes."
+      ]
+    },
+    {
+      "id": "outreach",
+      "title": "Outreach and campaigns",
+      "competitorIds": ["mailchimp"],
+      "acceptanceCriteria": [
+        "Persist approved recipients, content, consent, and campaign state.",
+        "Verify previews and dry runs without sending customer messages; live delivery must use provider acknowledgements."
+      ]
+    },
+    {
+      "id": "advertising",
+      "title": "Advertising",
+      "competitorIds": ["google-ads"],
+      "acceptanceCriteria": [
+        "Persist campaign configuration and budget limits before activation.",
+        "Verify reporting and attribution from source records; no test may make a live charge."
+      ]
+    },
+    {
+      "id": "dashboard",
+      "title": "Dashboard and analytics",
+      "competitorIds": ["chartmetric"],
+      "acceptanceCriteria": [
+        "Every displayed metric has an account-scoped source and freshness timestamp.",
+        "Distinguish zero from missing, stale, or unavailable data.",
+        "Compare platform or artist counts only when metric definitions and scope match the reference."
+      ]
+    }
+  ]
+}

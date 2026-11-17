@@ -3,6 +3,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { persistConfiguredCompletionHistory } from "./completion-learning-bucket.mjs";
+import { evaluateCompetitorBenchmarks } from "./competitor-benchmarks.mjs";
 
 const LEARNING_DIR = ".local/repository-verification/learning";
 const MAX_OBSERVATIONS = 2_000;
@@ -322,6 +324,26 @@ async function readHistory(eventsDirectory) {
   };
 }
 
+function mergeAnalysisHistory(localRecords, durableRecords) {
+  const byRunId = new Map();
+  for (const record of [...localRecords, ...durableRecords]) {
+    if (!isSealed(record) || record.schemaVersion !== 1) {
+      throw new Error("Invalid observation in merged completion-learning history");
+    }
+    const prior = byRunId.get(record.runId);
+    if (prior && prior.reportSha256 !== record.reportSha256) {
+      throw new Error(`Conflicting report identity for completion-learning run ${record.runId}`);
+    }
+    if (!prior) byRunId.set(record.runId, record);
+  }
+  const ordered = [...byRunId.values()].sort((a, b) =>
+    a.recordedAt.localeCompare(b.recordedAt) || a.runId.localeCompare(b.runId));
+  return {
+    observations: ordered.slice(-MAX_OBSERVATIONS),
+    truncated: ordered.length > MAX_OBSERVATIONS,
+  };
+}
+
 function buildProposals(current, history, remediation, allCurrentChecks) {
   const recurrence = new Map();
   const verifiedPlans = [];
@@ -447,30 +469,6 @@ function buildProposals(current, history, remediation, allCurrentChecks) {
   };
 }
 
-function benchmarkStatus(report, remediationStatus) {
-  if (report.mode !== "full") {
-    return {
-      internalCoverage: "NOT_RUN",
-      remediationInventory: remediationStatus,
-      competitorComparisons: "UNCONFIGURED",
-      reason: "A development preflight is not a whole-product benchmark; no dated, source-backed competitor comparisons are configured.",
-    };
-  }
-  const audit = report.checks.find(check => check.id === "launch-readiness-audit");
-  let sourceFreshness = "UNVERIFIED";
-  try {
-    sourceFreshness = JSON.parse(audit?.output ?? "{}").sourceFreshness ?? "UNVERIFIED";
-  } catch {
-    sourceFreshness = "UNVERIFIED";
-  }
-  return {
-    internalCoverage: sourceFreshness === "PASS" ? "CURRENT_AUDIT_PRESENT" : "UNVERIFIED_OR_STALE",
-    remediationInventory: remediationStatus,
-    competitorComparisons: "UNCONFIGURED",
-    reason: "The internal launch audit is source-bound when its freshness check passes. Competitor superiority requires dated public evidence and comparable measured outcomes; none is inferred.",
-  };
-}
-
 async function writeSummary(runDirectory, summary) {
   const output = path.join(runDirectory, "learning.json");
   const temporary = `${output}.${process.pid}.${randomUUID()}.tmp`;
@@ -480,7 +478,13 @@ async function writeSummary(runDirectory, summary) {
   return output;
 }
 
-export async function recordLearningOutcome({ root, runDirectory, report } = {}) {
+export async function recordLearningOutcome({
+  root,
+  runDirectory,
+  report,
+  durableHistory = false,
+  persistHistory = persistConfiguredCompletionHistory,
+} = {}) {
   if (!root || !runDirectory || !report) throw new Error("root, runDirectory, and report are required");
   const rootReal = await fs.realpath(root);
   const runReal = await fs.realpath(runDirectory);
@@ -512,8 +516,104 @@ export async function recordLearningOutcome({ root, runDirectory, report } = {})
     ...observation,
     reportSha256: observation.reportSha256,
   };
-  const proposalSet = buildProposals(current, history, remediation, report.checks);
-  const allVerifiedPlans = history.observations
+  let persistence = {
+    status: durableHistory ? "BLOCKED" : "NOT_REQUESTED",
+    readbackVerified: false,
+    observations: [],
+    reason: durableHistory ? "Durable history integration did not complete." : null,
+  };
+  if (durableHistory) {
+    try {
+      const observations = history.observations.some(item => item.runId === runId)
+        ? history.observations
+        : [...history.observations, observation];
+      persistence = await persistHistory({
+        observations,
+        currentRunId: runId,
+        historyTruncated: history.truncated,
+      });
+      const persistedCurrent = persistence.observations?.find?.(item => item.runId === runId);
+      if (persistence.readbackVerified &&
+          (!Array.isArray(persistence.observations) ||
+           persistence.observations.some(item => !isSealed(item) || item.schemaVersion !== 1) ||
+           !persistedCurrent || persistedCurrent.reportSha256 !== observation.reportSha256)) {
+        persistence = {
+          status: "DEGRADED",
+          readbackVerified: false,
+          observations: [],
+          reason: "Durable history readback did not contain a valid current-run observation.",
+        };
+      }
+    } catch {
+      persistence = {
+        status: "BLOCKED",
+        readbackVerified: false,
+        observations: [],
+        reason: "Private App Storage persistence failed; the local observation remains available.",
+      };
+    }
+  }
+  let durableRecords = [];
+  let mergedHistoryTruncated = false;
+  if (persistence.readbackVerified === true) {
+    try {
+      const mergedHistory = mergeAnalysisHistory(
+        history.observations,
+        persistence.observations,
+      );
+      durableRecords = mergedHistory.observations;
+      mergedHistoryTruncated = mergedHistory.truncated;
+    } catch {
+      persistence = {
+        status: "DEGRADED",
+        readbackVerified: false,
+        observations: [],
+        reason: "Durable history conflicted with local records; no conflicting remote records were used.",
+      };
+    }
+  }
+  if (persistence.readbackVerified !== true) durableRecords = history.observations;
+  const analysisHistory = {
+    ...history,
+    observations: durableRecords,
+    availableRecords: persistence.readbackVerified
+      ? persistence.availableRecords ?? durableRecords.length
+      : history.availableRecords,
+    truncated: history.truncated || persistence.truncated === true || mergedHistoryTruncated,
+    loadedBytes: persistence.readbackVerified
+      ? Buffer.byteLength(JSON.stringify(durableRecords))
+      : history.loadedBytes,
+    warnings: [...history.warnings,
+      ...(durableHistory && persistence.status !== "VERIFIED"
+        ? [persistence.reason ?? "Durable history was not verified."]
+        : [])],
+  };
+  const proposalSet = buildProposals(current, analysisHistory, remediation, report.checks);
+  let benchmarkAssessment;
+  try {
+    benchmarkAssessment = await evaluateCompetitorBenchmarks({ report });
+  } catch {
+    benchmarkAssessment = {
+      summary: {
+        competitorComparisons: "BLOCKED",
+        evidenceStatus: "INVALID_OR_UNAVAILABLE",
+        coveredProductAreas: 0,
+        sourceCount: 0,
+        measuredAreas: 0,
+        reason: "The dated competitor evidence manifest could not be validated.",
+        areas: [],
+      },
+      proposals: [],
+    };
+  }
+  const allProposals = [...proposalSet.proposals, ...benchmarkAssessment.proposals];
+  const proposalRank = { P1: 0, P2: 1, P3: 2, P4: 3, BLOCKED: 4 };
+  allProposals.sort((a, b) =>
+    (proposalRank[a.priority] ?? 5) - (proposalRank[b.priority] ?? 5) ||
+    (b.recurrence?.matchingObservations ?? 0) - (a.recurrence?.matchingObservations ?? 0) ||
+    (a.checkId ?? a.remediationId ?? a.productArea ?? a.id)
+      .localeCompare(b.checkId ?? b.remediationId ?? b.productArea ?? b.id));
+  const allVerifiedPlans = analysisHistory.observations
     .map(item => item.verifiedPlan)
     .filter(Boolean);
   const summary = {
@@ -527,17 +627,37 @@ export async function recordLearningOutcome({ root, runDirectory, report } = {})
     goal: "Use fresh evidence to identify and close every required Max Booster workflow gap; never infer whole-product readiness from a passing subset.",
     sourceIdentity: observation.sourceIdentity,
     history: {
-      status: history.warnings.length ? "DEGRADED" : history.truncated ? "TRUNCATED" : "CURRENT",
-      availableRecords: history.availableRecords,
-      analyzedRecords: history.observations.length,
-      truncated: history.truncated,
-      loadedBytes: history.loadedBytes,
-      warnings: history.warnings,
-      repeatedFailureFamilies: new Set(history.observations.flatMap(item =>
+      status: analysisHistory.warnings.length ? "DEGRADED" : analysisHistory.truncated ? "TRUNCATED" : "CURRENT",
+      availableRecords: analysisHistory.availableRecords,
+      analyzedRecords: analysisHistory.observations.length,
+      truncated: analysisHistory.truncated,
+      loadedBytes: analysisHistory.loadedBytes,
+      warnings: analysisHistory.warnings,
+      persistence: {
+        requested: durableHistory === true,
+        status: persistence.status,
+        readbackVerified: persistence.readbackVerified === true,
+        durableRecords: persistence.readbackVerified ? persistence.observations.length : 0,
+        recordsAdded: persistence.recordsAdded ?? 0,
+        pendingLocalRecords: persistence.pendingLocalRecords ?? 0,
+        sequence: persistence.sequence ?? null,
+        readbackSha256: persistence.readbackSha256 ?? null,
+        checkpointStatus: persistence.checkpointStatus ?? "NOT_RUN",
+        leaseReleased: persistence.leaseReleased ?? null,
+        failureKind: persistence.failureKind ?? null,
+        reason: persistence.reason ?? null,
+      },
+      repeatedFailureFamilies: new Set(analysisHistory.observations.flatMap(item =>
         item.checks.map(check => check.fingerprint))).size,
       verifiedPlanRuns: allVerifiedPlans.length,
     },
-    benchmark: benchmarkStatus(report, remediation.status),
+    benchmark: {
+      ...benchmarkAssessment.summary,
+      internalCoverage: report.mode === "full"
+        ? benchmarkAssessment.summary.sourceAudit === "CURRENT" ? "CURRENT_AUDIT_PRESENT" : "UNVERIFIED_OR_STALE"
+        : "NOT_RUN",
+      remediationInventory: remediation.status,
+    },
     currentRemediation: {
       status: remediation.status,
       reason: remediation.reason,
@@ -548,12 +668,13 @@ export async function recordLearningOutcome({ root, runDirectory, report } = {})
       proposedItems: proposalSet.proposals.filter(row => row.kind === "source-bound-remediation").length,
       omittedProposals: proposalSet.omittedRemediationCandidates,
     },
-    currentProposals: proposalSet.proposals,
+    currentProposals: allProposals,
     proposalCounts: {
       totalCheckCandidates: proposalSet.totalCheckCandidates,
       omittedCheckCandidates: proposalSet.omittedCheckCandidates,
       totalRemediationCandidates: proposalSet.totalRemediationCandidates,
       omittedRemediationCandidates: proposalSet.omittedRemediationCandidates,
+      competitorBenchmarkCandidates: benchmarkAssessment.proposals.length,
     },
     latestVerifiedInterventions: allVerifiedPlans.slice(-10).reverse(),
     guardrails: [
