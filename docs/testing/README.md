@@ -118,6 +118,55 @@ isolated resources. A passing finite report means only that its listed checks
 passed for the recorded inputs; overall product readiness remains
 `UNVERIFIED`, not a percentage or production certification.
 
+### Applying a bounded completion fix plan
+
+Both `npm run dev` and `npm run completion:execute` use the same
+`scripts/testing/repository-verification.mjs` controller: dev uses its
+read-only `preflight` mode, while the completion command selects explicit plan
+execution. Starting the app never applies source edits.
+
+The completion runner can apply an explicitly prepared, source-bound patch
+manifest and then run its allowlisted local checks. It does **not** translate
+free-form remediation prose into code, mark unrelated work complete, or claim
+whole-product readiness. A human or a separately reviewed implementation
+process must first create the exact patch manifest.
+
+Plan schema version 1 requires the exact Git revision and behavior-input hashes,
+one or more `replace` or `add` file changes with before/after SHA-256 values
+and complete replacement text, and at least one local check from `check:server`,
+`check:client`, `lint`, `test:runtime-contracts`, `test:unit` or `test:ci`.
+Plans are limited to 50 files and 10 MiB. They cannot target secrets, generated
+directories or symlinks, use path traversal, include credential-like material,
+delete files, or execute arbitrary shell commands.
+
+A dry run validates plan structure, repository identity and target hashes
+without editing files:
+
+```sh
+npm run completion:execute -- --plan .local/completion-fix-plan.json
+```
+
+Applying requires a clean worktree, an exact source match, and the SHA-256 of
+the reviewed plan:
+
+```sh
+sha256sum .local/completion-fix-plan.json
+npm run completion:execute -- \
+  --plan .local/completion-fix-plan.json \
+  --plan-sha256 <reviewed-plan-sha256> \
+  --apply
+```
+
+The executor backs up replaced files, journals each change, applies the patch
+set, and keeps it only when every required command passes and all result hashes
+remain unchanged. A failed or interrupted verification triggers hash-guarded
+rollback; incomplete rollback is reported rather than hidden. Backups, logs,
+journal and integrity-sealed report are stored under the ignored
+`.local/repository-verification/completion-runs/` directory. Local verification
+is reported as `APPLIED_VERIFIED`, never as `productionReady`; providers,
+deployment, hardware, real-account journeys and work omitted from the plan
+remain unverified or blocked.
+
 The [seven-level critical path](launch-critical-path.md) extends that plan;
 the [launch audit](launch-readiness-audit.md) supplies the complete status,
 feature/gap/dependency registers, explicit domain pass/fail criteria and

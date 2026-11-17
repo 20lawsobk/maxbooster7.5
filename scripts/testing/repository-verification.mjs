@@ -946,14 +946,21 @@ function installSignalHandlers(controller) {
 function parseArgs(args) {
   if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) return { help: true };
   const mode = args[0] ?? "preflight";
-  let root = DEFAULT_ROOT;
+  const options = { mode, root: DEFAULT_ROOT, apply: false };
   for (let index = 1; index < args.length; index++) {
-    if (args[index] === "--root" && args[index + 1]) root = path.resolve(args[++index]);
+    if (args[index] === "--root" && args[index + 1]) options.root = path.resolve(args[++index]);
+    else if (args[index] === "--plan" && args[index + 1]) options.planPath = path.resolve(args[++index]);
+    else if (args[index] === "--plan-sha256" && args[index + 1]) options.expectedPlanSha256 = args[++index];
+    else if (args[index] === "--apply") options.apply = true;
     else if (args[index] === "--help" || args[index] === "-h") return { help: true };
     else throw new Error(`Unknown argument: ${args[index]}`);
   }
-  if (!["preflight", "full"].includes(mode)) throw new Error(`Unknown mode: ${mode}`);
-  return { mode, root };
+  if (!["preflight", "full", "execute"].includes(mode)) throw new Error(`Unknown mode: ${mode}`);
+  if (mode === "execute" && !options.planPath) throw new Error("execute mode requires --plan <manifest.json>");
+  if (mode !== "execute" && (options.planPath || options.expectedPlanSha256 || options.apply)) {
+    throw new Error("--plan, --plan-sha256, and --apply are valid only in execute mode");
+  }
+  return options;
 }
 
 async function main(args = process.argv.slice(2)) {
@@ -965,13 +972,30 @@ async function main(args = process.argv.slice(2)) {
     return 2;
   }
   if (options.help) {
-    console.log("Usage: node scripts/testing/repository-verification.mjs [preflight|full] [--root <repo>]");
-    console.log("preflight is offline and bounded; full runs the existing local verification groups.");
+    console.log("Usage: node scripts/testing/repository-verification.mjs [preflight|full|execute] [options]");
+    console.log("preflight is offline and bounded; full runs local verification groups.");
+    console.log("execute applies a reviewed source-bound plan only when --apply and --plan-sha256 are supplied.");
     return 0;
   }
-  const runDirectory = newRunDirectory(options.root);
   const controller = new AbortController();
   const removeHandlers = installSignalHandlers(controller);
+  if (options.mode === "execute") {
+    try {
+      const { executeCompletionPlan } = await import("./completion-executor.mjs");
+      const report = await executeCompletionPlan({ ...options, signal: controller.signal });
+      console.log(`Completion plan ${report.status}; product readiness remains ${report.readinessStatus}.`);
+      console.log(`Report: ${report.reportPath}`);
+      console.log(`Journal: ${report.journalPath}`);
+      if (report.blockReason) console.error(report.blockReason);
+      return ["APPLIED_VERIFIED", "ALREADY_APPLIED_VERIFIED", "DRY_RUN_READY"].includes(report.status) ? 0 : 1;
+    } catch (error) {
+      console.error(`repository-verification: ${error.message}`);
+      return 1;
+    } finally {
+      removeHandlers();
+    }
+  }
+  const runDirectory = newRunDirectory(options.root);
   let result;
   try {
     result = options.mode === "preflight"

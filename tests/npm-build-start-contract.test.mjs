@@ -29,6 +29,7 @@ test("Replit preview runs the documented development workflow while deployment s
 test("development preflight gates the unchanged application launcher", () => {
   const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
   assert.equal(scripts.dev, "node scripts/testing/repository-verification.mjs preflight && bash scripts/start-dev.sh");
+  assert.equal(scripts["completion:execute"], "node scripts/testing/repository-verification.mjs execute");
   assert.match(fs.readFileSync("scripts/start-dev.sh", "utf8"), /dev_acquire_instance_lock/);
   assert.match(scripts["verify:repository"], /repository-verification\.mjs full/);
 });
