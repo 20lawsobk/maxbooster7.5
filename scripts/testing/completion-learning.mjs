@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { persistConfiguredCompletionHistory } from "./completion-learning-bucket.mjs";
 import { evaluateCompetitorBenchmarks } from "./competitor-benchmarks.mjs";
+import { applyProposalFeedback, loadProposalFeedback } from "./completion-proposal-feedback.mjs";
 
 const LEARNING_DIR = ".local/repository-verification/learning";
 const MAX_OBSERVATIONS = 2_000;
@@ -401,6 +402,7 @@ function buildProposals(current, history, remediation, allCurrentChecks) {
         : check.nextAction ?? `Inspect the current failure for ${check.id}, reproduce it, and prepare a reviewed source-bound fix plan.`;
     proposals.push({
       id: sha256(`${check.fingerprint}:${current.reportSha256}`).slice(0, 24),
+      proposalKey: sha256(`check:${check.id}:${check.commandHash}`),
       kind: check.status === "FAIL" ? "verification-failure" :
         check.status === "BLOCKED" ? "external-or-environment-blocker" : "missing-current-evidence",
       state: "NEEDS_REVIEW",
@@ -431,7 +433,8 @@ function buildProposals(current, history, remediation, allCurrentChecks) {
     const priority = item.priority !== null && item.priority <= 0 ? "P1" :
       item.priority !== null && item.priority <= 2 ? "P2" : "P3";
     proposals.push({
-      id: `remediation-${item.id}`,
+      id: `remediation-${sha256(item.id).slice(0, 24)}`,
+      proposalKey: sha256(`remediation:${item.id}`),
       kind: "source-bound-remediation",
       state: "NEEDS_REVIEW",
       priority: matchingObservations >= 3 && priority === "P2" ? "P1" : priority,
@@ -606,7 +609,19 @@ export async function recordLearningOutcome({
       proposals: [],
     };
   }
-  const allProposals = [...proposalSet.proposals, ...benchmarkAssessment.proposals];
+  let allProposals = [...proposalSet.proposals, ...benchmarkAssessment.proposals];
+  let feedback = {
+    status: "DEGRADED",
+    warnings: ["Proposal feedback could not be read."],
+    decisions: [],
+    latest: new Map(),
+  };
+  try {
+    feedback = await loadProposalFeedback(rootReal, observation.sourceIdentity);
+    allProposals = applyProposalFeedback(allProposals, feedback);
+  } catch {
+    // Feedback is advisory; unreadable decisions never block verification.
+  }
   const proposalRank = { P1: 0, P2: 1, P3: 2, P4: 3, BLOCKED: 4 };
   allProposals.sort((a, b) =>
     (proposalRank[a.priority] ?? 5) - (proposalRank[b.priority] ?? 5) ||
@@ -619,6 +634,7 @@ export async function recordLearningOutcome({
   const summary = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
+    reportSha256: observation.reportSha256,
     mode: "proposal-first",
     repositoryRoot: rootReal,
     runId,
@@ -669,6 +685,16 @@ export async function recordLearningOutcome({
       omittedProposals: proposalSet.omittedRemediationCandidates,
     },
     currentProposals: allProposals,
+    proposalFeedback: {
+      status: feedback.status,
+      scope: "LOCAL_WORKSPACE_ONLY",
+      durableAcrossWorkspaceLoss: false,
+      decisionsApplied: allProposals.filter(item => item.reviewDecision).length,
+      warnings: feedback.warnings,
+      acceptedForPlan: allProposals.filter(item => item.state === "APPROVED_FOR_PLAN").length,
+      deferred: allProposals.filter(item => item.state === "DEFERRED").length,
+      rejected: allProposals.filter(item => item.state === "REJECTED").length,
+    },
     proposalCounts: {
       totalCheckCandidates: proposalSet.totalCheckCandidates,
       omittedCheckCandidates: proposalSet.omittedCheckCandidates,
@@ -684,6 +710,7 @@ export async function recordLearningOutcome({
       "Only the exact, separately reviewed completion plan can change source; deployment and whole-product readiness remain separate gates.",
     ],
   };
-  const summaryPath = await writeSummary(runReal, summary);
-  return { summary, summaryPath, eventPath };
+  const sealedSummary = seal(summary);
+  const summaryPath = await writeSummary(runReal, sealedSummary);
+  return { summary: sealedSummary, summaryPath, eventPath };
 }

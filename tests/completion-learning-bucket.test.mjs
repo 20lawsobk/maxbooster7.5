@@ -2,7 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { PdimBucketJournal } from "../server/lib/pdimBucketJournal.ts";
-import { persistCompletionHistory } from "../scripts/testing/completion-learning-bucket.mjs";
+import {
+  persistCompletionHistory,
+  persistConfiguredCompletionHistory,
+} from "../scripts/testing/completion-learning-bucket.mjs";
 
 function canonical(value) {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -205,4 +208,24 @@ test("checkpoints a newly observed truncation flag even before the normal interv
     currentRunId: null,
   });
   assert.equal(recovered.truncated, true);
+});
+
+test("configured bucket wrapper forwards local truncation and isolates its namespace", async () => {
+  const objects = new MemoryObjects();
+  const record = observation("configured-wrapper", 1);
+  const result = await persistConfiguredCompletionHistory({
+    env: {
+      REPLIT_BUCKET_ID: "fixture-bucket",
+      PDIM_BUCKET_NAMESPACE: "configured-wrapper-test",
+    },
+    storageObjects: objects,
+    journalClass: { PdimBucketJournal },
+    observations: [record],
+    currentRunId: record.runId,
+    historyTruncated: true,
+  });
+  assert.equal(result.status, "VERIFIED");
+  assert.equal(result.truncated, true);
+  assert.equal(objects.data.has("configured-wrapper-test/completion-learning-v1/HEAD"), true);
+  assert.equal(objects.data.has("configured-wrapper-test/HEAD"), false);
 });

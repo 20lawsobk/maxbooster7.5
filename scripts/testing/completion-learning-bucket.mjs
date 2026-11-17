@@ -307,7 +307,10 @@ export async function persistCompletionHistory({
 export async function persistConfiguredCompletionHistory({
   observations,
   currentRunId,
+  historyTruncated = false,
   env = process.env,
+  storageObjects,
+  journalClass,
 } = {}) {
   const hasBucket = Boolean(env.Replit_storage_bucket_id ||
     env.DATABASE_RECOVERY_BUCKET_ID || env.REPLIT_BUCKET_ID);
@@ -321,20 +324,26 @@ export async function persistConfiguredCompletionHistory({
     };
   }
   try {
-    const { tsImport } = await import("tsx/esm/api");
-    const [{ configuredPdimBucketObjects }, { PdimBucketJournal }] = await Promise.all([
-      tsImport("../../server/lib/pdimBucketObjects.ts", import.meta.url),
-      tsImport("../../server/lib/pdimBucketJournal.ts", import.meta.url),
-    ]);
+    let objects = storageObjects;
+    let journal = journalClass;
+    if (!objects || !journal) {
+      const { tsImport } = await import("tsx/esm/api");
+      const [configuredObjectsModule, journalModule] = await Promise.all([
+        objects ? null : tsImport("../../server/lib/pdimBucketObjects.ts", import.meta.url),
+        journal ? null : tsImport("../../server/lib/pdimBucketJournal.ts", import.meta.url),
+      ]);
+      objects ??= (await configuredObjectsModule.configuredPdimBucketObjects());
+      journal ??= { PdimBucketJournal: journalModule.PdimBucketJournal };
+    }
     const baseNamespace = env.PDIM_BUCKET_NAMESPACE || "maxbooster-dev-pdim-v1";
     const namespace = `${baseNamespace}/${LEARNING_NAMESPACE_SUFFIX}`;
-    const objects = await configuredPdimBucketObjects();
     return await persistCompletionHistory({
       objects,
       namespace,
       observations,
       currentRunId,
-      journalClass: { PdimBucketJournal },
+      historyTruncated,
+      journalClass: journal,
     });
   } catch (error) {
     const classified = safeFailure(error);

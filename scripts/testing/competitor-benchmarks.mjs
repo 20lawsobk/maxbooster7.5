@@ -181,6 +181,7 @@ export async function evaluateCompetitorBenchmarks({ report, now = Date.now(), e
         })));
       proposals.push({
         id: sha256(`${area.id}:${report?.integrity?.reportSha256 ?? "unsealed"}`).slice(0, 24),
+        proposalKey: sha256(`benchmark:${area.id}`),
         kind: "competitor-benchmark-evidence-gap",
         state: "NEEDS_REVIEW",
         priority: "P3",

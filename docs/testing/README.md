@@ -221,6 +221,37 @@ learner retains at most 2,000 failing checks and 5,000 remediation references
 per event, emits at most 500 check proposals plus 200 detailed remediation
 proposals, and reports omitted counts. Benchmark gap proposals are separate.
 
+### Reviewing completion proposals
+
+Review decisions can be listed and recorded against one integrity-verified run:
+
+```sh
+npm run completion:review -- list --run-dir .local/repository-verification/runs/<run-id>
+npm run completion:review -- decide \
+  --run-dir .local/repository-verification/runs/<run-id> \
+  --proposal-id <proposal-id> \
+  --decision accept-for-plan
+```
+
+Supported decisions are `accept-for-plan`, `defer`, `reject`, and `reopen`.
+They are immutable, integrity-sealed, bound to the exact report and source
+identity, and stored with private local permissions. A decision applies only
+while that complete source identity remains unchanged. `accept-for-plan` means
+only that a non-executable review packet may be prepared:
+
+```sh
+npm run completion:review -- prepare \
+  --run-dir .local/repository-verification/runs/<run-id> \
+  --proposal-id <proposal-id>
+```
+
+The packet has `schemaVersion: 0`, empty changes/checks, and cannot be passed as
+an executable plan. It preserves the accepted proposal's source evidence and
+lists the exact information required to author a separate schema-versioned
+completion plan. It never writes application source or runs the executor. The
+decision ledger is workspace-local, not App Storage-backed, and is explicitly
+reported as not durable across workspace loss.
+
 Internal whole-product readiness remains based on the current full-run audit.
 Competitor evidence status is deliberately separate from product readiness.
 The current snapshot provides a dated reference set, but no current Max Booster
