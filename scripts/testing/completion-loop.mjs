@@ -11,6 +11,11 @@ import {
   runOwned,
   verifyReport,
 } from "./repository-verification.mjs";
+import {
+  generateEvidenceBasedPlans,
+  deterministicPatchRuleEvidence,
+  deterministicPatchRuleIds,
+} from "./completion-patch-rules.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, "../..");
@@ -21,6 +26,7 @@ const ISOLATION_FILE = "isolated-copy.json";
 const MAX_STATE_BYTES = 1024 * 1024;
 const MAX_ARTIFACT_BYTES = 16 * 1024 * 1024;
 const MAX_EXECUTABLE_PLAN_BYTES = 10 * 1024 * 1024;
+const MAX_PLAN_ATTEMPTS = 500;
 const DEFAULT_INTERVAL_MS = 15 * 60 * 1000;
 const MIN_INTERVAL_MS = 1000;
 const MAX_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -307,10 +313,112 @@ async function readLoopState(root) {
   if (!isSealed(state) || state.schemaVersion !== 1 ||
       state.kind !== "maxbooster-completion-loop-state" || state.root !== root ||
       !Number.isSafeInteger(state.cycleCount) || state.cycleCount < 0 ||
-      !Array.isArray(state.cycles) || !Array.isArray(state.appliedPlans)) {
+      !Array.isArray(state.cycles)) {
     throw new Error("Completion-loop state integrity or schema check failed");
   }
+  // State written before the executor handoff had no plan ledger. Preserve its
+  // sealed cycle history and initialize the new idempotency ledger empty.
+  if (state.appliedPlans === undefined) state.appliedPlans = [];
+  if (!Array.isArray(state.appliedPlans) || state.appliedPlans.length > MAX_PLAN_ATTEMPTS) {
+    throw new Error("Completion-loop plan ledger integrity or size check failed");
+  }
   return state;
+}
+
+function sourceIdentityMatches(left, right) {
+  return Boolean(left && right &&
+    left.revision === right.revision &&
+    left.inputInventorySha256 === right.inputInventorySha256 &&
+    left.dirtyInputSha256 === right.dirtyInputSha256);
+}
+
+function safeRelativePath(root, relativePath) {
+  if (typeof relativePath !== "string" || !relativePath ||
+      path.posix.isAbsolute(relativePath) || relativePath.includes("\\")) return null;
+  const parts = relativePath.split("/");
+  if (parts.some(part => !part || part === "." || part === "..")) return null;
+  const resolved = path.resolve(root, ...parts);
+  return within(root, resolved) ? resolved : null;
+}
+
+async function verifyDeterministicPlanEvidence(root, plan) {
+  const evidence = plan.automationEvidence;
+  if (plan.generator?.name !== "completion-loop-deterministic" ||
+      plan.generator.schemaVersion !== 1 ||
+      !deterministicPatchRuleIds.includes(plan.generator.ruleId) ||
+      evidence?.schemaVersion !== 1 ||
+      evidence.ruleId !== plan.generator.ruleId ||
+      evidence.instruction !== deterministicPatchRuleEvidence[plan.generator.ruleId]?.instruction ||
+      !/^[a-f0-9]{64}$/.test(evidence.reportSha256 ?? "") ||
+      !sourceIdentityMatches(evidence.reportSourceIdentity, plan.sourceIdentity)) {
+    return false;
+  }
+  const reportPath = safeRelativePath(root, evidence.reportPath);
+  if (!reportPath) return false;
+  let report;
+  try {
+    report = JSON.parse((await readRegularFile(
+      reportPath, MAX_ARTIFACT_BYTES, "Deterministic plan evidence report",
+    )).toString("utf8"));
+  } catch {
+    return false;
+  }
+  if (!verifyReport(report) ||
+      report.integrity.reportSha256 !== evidence.reportSha256 ||
+      !sourceIdentityMatches(report.sourceIdentity, plan.sourceIdentity)) return false;
+
+  const learningPath = safeRelativePath(root, evidence.learningPath);
+  if (!learningPath || !/^[a-f0-9]{64}$/.test(evidence.learningSha256 ?? "")) return false;
+  let learning;
+  try {
+    const learningBytes = await readRegularFile(
+      learningPath, MAX_ARTIFACT_BYTES, "Deterministic plan learning evidence",
+    );
+    if (sha256(learningBytes) !== evidence.learningSha256) return false;
+    learning = JSON.parse(learningBytes.toString("utf8"));
+  } catch {
+    return false;
+  }
+  if (!isSealed(learning) ||
+      learning.reportSha256 !== report.integrity.reportSha256 ||
+      !sourceIdentityMatches(learning.sourceIdentity, plan.sourceIdentity)) return false;
+
+  const target = evidence.targetedTest;
+  const rule = deterministicPatchRuleEvidence[plan.generator.ruleId];
+  const targetLogPath = safeRelativePath(root, target?.log);
+  if (!targetLogPath || target?.name !== rule.testName ||
+      target?.status !== "FAIL" || target.exitCode === 0 ||
+      target.observedExpected !== rule.expected ||
+      target.observedActual !== rule.actual ||
+      !Array.isArray(target.command) ||
+      target.command.join("\0") !== [
+        "node", "--test", "--test-name-pattern", rule.testName, rule.testFile,
+      ].join("\0") ||
+      !/^[a-f0-9]{64}$/.test(target.logSha256 ?? "")) return false;
+  try {
+    const targetLog = await readRegularFile(
+      targetLogPath, MAX_ARTIFACT_BYTES, "Deterministic plan evidence log",
+    );
+    const targetText = targetLog.toString("utf8");
+    if (sha256(targetLog) !== target.logSha256 ||
+        !targetText.includes(rule.testName) ||
+        !targetText.includes(rule.expected) ||
+        !targetText.includes(rule.actual)) return false;
+  } catch {
+    return false;
+  }
+  if (!Array.isArray(evidence.evidenceFiles) || evidence.evidenceFiles.length < 2) return false;
+  for (const item of evidence.evidenceFiles) {
+    const filePath = safeRelativePath(root, item?.path);
+    if (!filePath || !/^[a-f0-9]{64}$/.test(item.sha256 ?? "")) return false;
+    try {
+      const bytes = await readRegularFile(filePath, MAX_EXECUTABLE_PLAN_BYTES, "Deterministic plan input");
+      if (sha256(bytes) !== item.sha256) return false;
+    } catch {
+      return false;
+    }
+  }
+  return true;
 }
 
 async function readApprovedPlan(root, planPath, expectedPlanSha256) {
@@ -340,18 +448,29 @@ async function readApprovedPlan(root, planPath, expectedPlanSha256) {
   } catch {
     throw new Error("Approved plan is not valid JSON");
   }
-  if (plan.schemaVersion !== 1 || !plan.proposalLink ||
-      typeof plan.proposalLink.proposalId !== "string" ||
-      typeof plan.proposalLink.approvalDecisionId !== "string") {
-    throw new Error("Only an executable, proposal-approved schemaVersion 1 plan may be applied");
+  if (plan.schemaVersion !== 1) {
+    throw new Error("Only an executable schemaVersion 1 plan may be applied");
   }
-  return { path: realPath, sha256: actualSha256 };
+  const linkedProposal = plan.proposalLink &&
+    typeof plan.proposalLink.proposalId === "string" &&
+    typeof plan.proposalLink.approvalDecisionId === "string";
+  if (!linkedProposal && !(await verifyDeterministicPlanEvidence(root, plan))) {
+    throw new Error("Plan lacks a verified accepted proposal link or registered deterministic evidence");
+  }
+  return {
+    path: realPath,
+    sha256: actualSha256,
+    dedupeKey: plan.dedupeKey ?? actualSha256,
+    ruleId: plan.generator?.ruleId ?? null,
+  };
 }
 
 async function runApprovedPlan({ root, plan, signal }) {
   const directory = await ensurePrivateDirectory(root);
   const logPath = path.join(directory, "cycles", `plan-${plan.sha256}-${randomUUID()}`, "execution.log");
-  const verifierPath = path.join(root, "scripts/testing/repository-verification.mjs");
+  // Always use the current guarded executor implementation. --root confines
+  // the actual reads/writes to the marked isolated worktree.
+  const verifierPath = path.join(SCRIPT_DIR, "repository-verification.mjs");
   const execution = await runOwned(process.execPath, [
     verifierPath,
     "execute",
@@ -400,6 +519,87 @@ async function writeLoopState(root, state) {
   }
   await writeAtomic(path.join(directory, STATE_FILE), content);
   return sealed;
+}
+
+async function applyPlanOnce({ root, state, plan, runPlan, signal }) {
+  const dedupeKey = plan.dedupeKey ?? plan.sha256;
+  const priorAttempt = state.appliedPlans.find(item =>
+    item.dedupeKey === dedupeKey || item.sha256 === plan.sha256);
+  if (priorAttempt) {
+    if (priorAttempt.status === "APPLYING") {
+      const recovered = {
+        ...priorAttempt,
+        status: "INTERRUPTED_UNCERTAIN",
+        completedAt: new Date().toISOString(),
+        result: {
+          status: "INTERRUPTED",
+          exitCode: null,
+          interrupted: true,
+          reason: "Previous executor ended before a verified result; inspect its journal before creating a new plan.",
+        },
+      };
+      state = {
+        ...state,
+        appliedPlans: state.appliedPlans.map(item =>
+          item === priorAttempt ? recovered : item),
+      };
+      await writeLoopState(root, state);
+      return {
+        state,
+        attempted: false,
+        verified: false,
+        status: recovered.status,
+        interrupted: false,
+      };
+    }
+    return {
+      state,
+      attempted: false,
+      verified: ["APPLIED_VERIFIED", "ALREADY_APPLIED_VERIFIED"].includes(priorAttempt.status),
+      status: priorAttempt.status,
+      interrupted: priorAttempt.status === "INTERRUPTED",
+    };
+  }
+  if (state.appliedPlans.length >= MAX_PLAN_ATTEMPTS) {
+    return { state, attempted: false, verified: false, status: "PLAN_HISTORY_LIMIT", interrupted: false };
+  }
+  const attempt = {
+    sha256: plan.sha256,
+    dedupeKey,
+    ruleId: plan.ruleId ?? null,
+    path: path.relative(root, plan.path),
+    status: "APPLYING",
+    startedAt: new Date().toISOString(),
+    result: null,
+  };
+  state = { ...state, appliedPlans: [...state.appliedPlans, attempt] };
+  await writeLoopState(root, state);
+  let result;
+  try {
+    result = await runPlan({ root, plan, signal });
+  } catch {
+    result = { status: "FAILED", exitCode: null, interrupted: false, log: null, logSha256: null };
+  }
+  const verified = ["APPLIED_VERIFIED", "ALREADY_APPLIED_VERIFIED"].includes(result.status) &&
+    result.exitCode === 0 && result.interrupted !== true;
+  const finalAttempt = {
+    ...attempt,
+    status: verified ? result.status : result.status === "INTERRUPTED" ? "INTERRUPTED" : "FAILED",
+    completedAt: new Date().toISOString(),
+    result,
+  };
+  state = {
+    ...state,
+    appliedPlans: [...state.appliedPlans.slice(0, -1), finalAttempt],
+  };
+  await writeLoopState(root, state);
+  return {
+    state,
+    attempted: true,
+    verified,
+    status: finalAttempt.status,
+    interrupted: result.interrupted === true || finalAttempt.status === "INTERRUPTED",
+  };
 }
 
 async function processIsAlive(pid) {
@@ -514,7 +714,12 @@ async function readVerificationArtifacts(root, output) {
   }
   if (!verifyReport(report)) throw new Error("The verification report integrity check failed");
   if (!isSealed(learning)) throw new Error("The learning summary integrity check failed");
-  return { report, learning, runDirectory };
+  return {
+    report,
+    learning,
+    runDirectory,
+    reportPath: path.join(runDirectory, "report.json"),
+  };
 }
 
 export async function runVerificationCycle({
@@ -559,6 +764,9 @@ export async function runVerificationCycle({
       sourceIdentity: null,
       reportSha256: null,
       runDirectory: null,
+      report: null,
+      learning: null,
+      reportPath: null,
     };
   }
   if (execution.logSha256 === null || !/^[a-f0-9]{64}$/.test(execution.logSha256)) {
@@ -568,6 +776,9 @@ export async function runVerificationCycle({
       sourceIdentity: null,
       reportSha256: null,
       runDirectory: null,
+      report: null,
+      learning: null,
+      reportPath: null,
     };
   }
   let artifacts;
@@ -592,6 +803,9 @@ export async function runVerificationCycle({
     sourceIdentity: artifacts.report.sourceIdentity,
     reportSha256: artifacts.report.integrity.reportSha256,
     runDirectory: path.relative(root, artifacts.runDirectory),
+    report: artifacts.report,
+    learning: artifacts.learning,
+    reportPath: path.relative(root, artifacts.reportPath),
   };
 }
 
@@ -619,9 +833,6 @@ export async function runCompletionLoop({
   if ((approvedPlanPath === null) !== (expectedPlanSha256 === null)) {
     throw new Error("An approved plan path and its exact --plan-sha256 must be supplied together");
   }
-  if (approvedPlanPath && mode !== "full") {
-    throw new Error("Approved source changes may be applied only before a full verification loop");
-  }
   const approvedPlan = approvedPlanPath
     ? await readApprovedPlan(root, approvedPlanPath, expectedPlanSha256)
     : null;
@@ -647,48 +858,19 @@ export async function runCompletionLoop({
   let invocationCycles = 0;
   let plansAppliedThisInvocation = 0;
   if (approvedPlan) {
-    const priorAttempt = state.appliedPlans.find(item => item.sha256 === approvedPlan.sha256);
-    if (!priorAttempt) {
-      const attempt = {
-        sha256: approvedPlan.sha256,
-        path: path.relative(root, approvedPlan.path),
-        status: "APPLYING",
-        startedAt: new Date().toISOString(),
-        result: null,
-      };
-      state = { ...state, appliedPlans: [...state.appliedPlans, attempt] };
+    const outcome = await applyPlanOnce({ root, state, plan: approvedPlan, runPlan, signal });
+    state = outcome.state;
+    if (outcome.attempted && outcome.verified) plansAppliedThisInvocation++;
+    if (signal?.aborted || outcome.interrupted) {
+      state = { ...state, status: "CANCELLED", nextWakeAt: null };
       await writeLoopState(root, state);
-      let result;
-      try {
-        result = await runPlan({ root, plan: approvedPlan, signal });
-      } catch {
-        result = { status: "FAILED", exitCode: null, interrupted: false, log: null, logSha256: null };
-      }
-      const verified = ["APPLIED_VERIFIED", "ALREADY_APPLIED_VERIFIED"].includes(result.status) &&
-        result.exitCode === 0 && result.interrupted !== true;
-      const finalAttempt = {
-        ...attempt,
-        status: verified ? result.status : result.status === "INTERRUPTED" ? "INTERRUPTED" : "FAILED",
-        completedAt: new Date().toISOString(),
-        result,
+      return {
+        status: "CANCELLED",
+        exitCode: 130,
+        cyclesThisInvocation: invocationCycles,
+        plansAppliedThisInvocation,
+        statePath: path.relative(root, statePath(root)),
       };
-      state = {
-        ...state,
-        appliedPlans: [...state.appliedPlans.slice(0, -1), finalAttempt],
-      };
-      await writeLoopState(root, state);
-      if (verified) plansAppliedThisInvocation++;
-      if (signal?.aborted || result.interrupted === true) {
-        state = { ...state, status: "CANCELLED", nextWakeAt: null };
-        await writeLoopState(root, state);
-        return {
-          status: "CANCELLED",
-          exitCode: 130,
-          cyclesThisInvocation: invocationCycles,
-          plansAppliedThisInvocation,
-          statePath: path.relative(root, statePath(root)),
-        };
-      }
     }
   }
   while (true) {
@@ -712,6 +894,9 @@ export async function runCompletionLoop({
         sourceIdentity: null,
         reportSha256: null,
         runDirectory: null,
+        report: null,
+        learning: null,
+        reportPath: null,
       };
     }
     const cycleRecord = {
@@ -734,6 +919,77 @@ export async function runCompletionLoop({
       lastRunDirectory: cycle.runDirectory,
       nextWakeAt: null,
     };
+    await writeLoopState(root, state);
+    let patchOutcome = null;
+    if (cycle.report && cycle.learning && cycle.reportPath && !signal?.aborted) {
+      try {
+        const generated = await generateEvidenceBasedPlans({
+          root,
+          report: cycle.report,
+          learning: cycle.learning,
+          reportPath: path.resolve(root, cycle.reportPath),
+          signal,
+        });
+        patchOutcome = {
+          status: generated.status,
+          reason: generated.reason,
+          plans: [],
+          evidence: generated.evidence ?? null,
+        };
+        for (const candidate of generated.plans.slice(0, 5)) {
+          const planDirectory = path.join(root, ...LOOP_PARTS, "generated-plans");
+          await fs.mkdir(planDirectory, { recursive: true, mode: 0o700 });
+          const planPath = path.join(planDirectory, `${candidate.sha256}.json`);
+          await writeAtomic(planPath, candidate.bytes, 0o600);
+          const plan = await readApprovedPlan(root, planPath, candidate.sha256);
+          plan.dedupeKey = candidate.dedupeKey;
+          plan.ruleId = candidate.ruleId;
+          const outcome = await applyPlanOnce({ root, state, plan, runPlan, signal });
+          state = outcome.state;
+          if (outcome.attempted && outcome.verified) plansAppliedThisInvocation++;
+          patchOutcome.plans.push({
+            ruleId: candidate.ruleId,
+            sha256: candidate.sha256,
+            status: outcome.status,
+            evidenceLog: candidate.evidenceLog,
+          });
+          const updatedRecord = { ...cycleRecord, patchGeneration: patchOutcome };
+          state = {
+            ...state,
+            cycles: [...state.cycles.slice(0, -1), updatedRecord],
+          };
+          cycleRecord.patchGeneration = patchOutcome;
+          await writeLoopState(root, state);
+          if (signal?.aborted || outcome.interrupted) {
+            state = { ...state, status: "CANCELLED", nextWakeAt: null };
+            await writeLoopState(root, state);
+            return {
+              status: "CANCELLED",
+              exitCode: 130,
+              cyclesThisInvocation: invocationCycles,
+              plansAppliedThisInvocation,
+              statePath: path.relative(root, statePath(root)),
+            };
+          }
+          if (outcome.verified) break;
+        }
+      } catch {
+        patchOutcome = { status: "GENERATION_FAILED", reason: "evidence-based-plan-generation-or-validation-failed", plans: [] };
+      }
+      if (patchOutcome) {
+        const updatedRecord = { ...cycleRecord, patchGeneration: patchOutcome };
+        state = {
+          ...state,
+          cycles: [...state.cycles.slice(0, -1), updatedRecord],
+        };
+        cycleRecord.patchGeneration = patchOutcome;
+        await writeLoopState(root, state);
+      }
+    }
+    if (patchOutcome?.plans?.some(plan => plan.status === "APPLIED_VERIFIED" ||
+        plan.status === "ALREADY_APPLIED_VERIFIED")) {
+      continue;
+    }
     if (cycle.readiness?.ready === true && cycle.readiness.status === "READY") {
       state = { ...state, status: "READY" };
       await writeLoopState(root, state);
@@ -816,7 +1072,8 @@ async function main(args = process.argv.slice(2)) {
     console.log("Usage: npm run completion:loop -- --root <isolated-worktree> [--approved-plan <plan.json> --plan-sha256 <sha256>] [--interval-ms 900000] [--max-cycles N]");
     console.log("Initialize first with --initialize-isolated --root <worktree> --source-root <primary-worktree>.");
     console.log("The default full loop repeats until fresh evidence satisfies every production gate or SIGINT/SIGTERM cancels it.");
-    console.log("Only proposal-first analysis runs by default. An explicitly approved plan may be applied once through the hash-pinned executor.");
+    console.log("Only registered, evidence-verified deterministic rules may auto-apply once through the existing executor; unmatched findings remain proposals.");
+    console.log("Manually supplied plans require an accepted proposal and exact plan hash.");
     return 0;
   }
   try {

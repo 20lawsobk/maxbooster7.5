@@ -65,6 +65,9 @@ code coverage, builds a source register of pages, API handlers and UI controls,
 and produces a prioritized [fix checklist](remediation.md). The actual generated
 tasks are in `reports/test-verification/remediation.md`; the platform register is
 `reports/test-verification/platform-register.md`.
+The focused `npm run test:runtime-contracts` lane caps Node test-file concurrency
+at two because several cases inventory the full repository; this avoids
+resource contention that previously timed out read-only Git probes.
 
 The current [completion plan](completion-execution-plan.md) orders remaining
 work. The [complete platform work ledger](platform-completion-plan.md) includes
@@ -318,12 +321,34 @@ and it never rewrites those reports. The derived gate requires a clean
 source-drift receipt, a complete successful full runner, every check and
 external prerequisite passing, no skipped checks, a complete source-bound
 dossier and passing Atlas policy, current remediation with no unresolved items,
-and no open or omitted proposals. It creates proposal-first evidence only;
-changes still require a reviewed, hash-pinned plan through
-`npm run completion:execute`. It launches no application services and receives
-no application credentials. This separate command is intentionally not wired
-into `npm run dev`, so an incomplete readiness audit cannot prevent the app from
-starting.
+and no open or omitted proposals. It launches no application services and
+receives no application credentials. This separate command is intentionally
+not wired into `npm run dev`, so an incomplete readiness audit cannot prevent
+the app from starting.
+
+The loop uses the existing `completion-executor.mjs` as its only source writer.
+It can apply a deterministic patch only when a registered rule proves an exact
+source mismatch, binds the rule to a current integrity-verified report and
+learning record, runs the named failing test, and emits a source-hash-pinned
+executor plan. The initial rule corrects the known stale `npm run dev` contract
+assertion; it changes no application behavior. The executor still enforces its
+path/check allowlists, clean-worktree requirement, byte backups, write
+readback, verification, and rollback. Each evidence identity is attempted at
+most once, including after a restart. Unsupported or ambiguous findings remain
+proposals; free-form instructions are never converted into code. A dirty
+worktree blocks application rather than being overwritten.
+
+For a separately reviewed proposal plan, supply its exact plan hash to the loop:
+
+```sh
+npm run completion:loop -- --root .local/isolated-dev-20261117T144245Z \
+  --approved-plan .local/repository-verification/plan-drafts/<run>/<plan>.json \
+  --plan-sha256 <reviewed-plan-sha256>
+```
+
+Prepared schemaVersion 0 drafts are not executable. The supplied manifest must
+be a complete schemaVersion 1 plan with a current accepted-proposal link. It is
+applied once through the same executor, then the loop runs fresh verification.
 
 ### Reviewing completion proposals
 

@@ -101,7 +101,7 @@ function git(root, args) {
   const result = spawnSync("git", args, {
     cwd: root,
     encoding: "buffer",
-    timeout: 15_000,
+    timeout: 30_000,
     maxBuffer: 64 * 1024 * 1024,
     env: {
       PATH: process.env.PATH || "/usr/bin:/bin",

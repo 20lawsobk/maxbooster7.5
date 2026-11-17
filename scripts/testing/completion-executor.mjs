@@ -145,8 +145,13 @@ function validatePlan(plan) {
 
 function git(root, args) {
   const child = spawnSync("git", args, {
-    cwd: root, encoding: "utf8", timeout: 10_000,
-    env: { PATH: process.env.PATH || "/usr/bin:/bin", HOME: process.env.HOME || "/tmp", LANG: "C" },
+    cwd: root, encoding: "utf8", timeout: 30_000,
+    env: {
+      PATH: process.env.PATH || "/usr/bin:/bin",
+      HOME: process.env.HOME || "/tmp",
+      LANG: "C",
+      GIT_OPTIONAL_LOCKS: "0",
+    },
   });
   if (child.error) throw new Error(`git ${args.join(" ")} failed: ${child.error.message}`);
   if (child.status !== 0) throw new Error(`git ${args.join(" ")} exited ${child.status}: ${child.stderr.trim()}`);
