@@ -20,6 +20,7 @@ test("inventory classifications retain explicit code, documentation, archive, ge
   assert.equal(classifyPath("external/maxcore/server.py").lifecycle, "imported-source");
   assert.equal(classifyPath("tests/flow.test.mjs").lifecycle, "tests");
   assert.equal(classifyPath("package.json").lifecycle, "config");
+  assert.equal(classifyPath("atlas/production.atlas").lifecycle, "config");
   assert.equal(classifyPath("docs/testing/README.md").lifecycle, "docs");
   assert.equal(classifyPath("reports/history/result.json").lifecycle, "report");
   assert.equal(classifyPath("archive-capsules/old/source.ts").lifecycle, "archive");

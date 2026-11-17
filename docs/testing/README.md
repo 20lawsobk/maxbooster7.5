@@ -191,6 +191,63 @@ that run's platform register. It surfaces source-bound steps as review proposals
 and points to the complete remediation artifact; a prior verified plan is never
 replayed automatically.
 
+### Repository understanding and failure context
+
+`npm run completion:understand` builds a bounded local dossier of source hashes,
+static TypeScript/JavaScript imports and exports, conservative Python import and
+route references, literal HTTP route candidates, package-script entrypoints,
+direct test references, and context for non-passing verification checks. It
+records impact and coverage candidates with their exact source evidence,
+confidence, and uncertainty. The dossier is written with private permissions
+only under `.local/repository-verification/understanding/`; its compact index
+points to hash-listed module-detail shards so large repositories stay within
+bounded report sizes. Source text, raw logs, and credentials are not written or
+sent to a model or external service.
+
+An explicit `npm run verify:repository` full run also creates and binds this
+dossier to the same Git revision and source-input identity before adding its
+evidence to proposal-first learning. If sources drift or the report cannot be
+matched, the dossier is blocked or marked stale and is not used to rank
+proposals. Static import/route/test references are candidates, not proof of
+runtime reachability or executed coverage. Truncation and parser errors lower
+the dossier's completeness and candidate confidence.
+
+The dossier improves reading and analysis; it does not edit application files.
+Accepted findings remain review packets. All source writes still require a
+separately authored, source-hash-pinned plan through
+`npm run completion:execute`, its allowlisted verification checks, and its
+rollback journal.
+
+### Atlas repository operating language
+
+`npm run atlas -- run atlas/production.atlas` executes a local, bounded
+repository-audit plan. Atlas treats the repository as the subject and supports
+static scan, component-signal discovery, dependency and feature-path mapping,
+missing/unfinished candidates, intent heuristics, subsystem checks, and
+measurable policy rules. `read file "path"` and `read symbol "name"` return
+hash-bound declarations, imports, routes, relationships, and test references;
+they do not copy source bodies into reports. `draft repair plans` produces
+private packets with evidence, uncertainty, impact rank, related tests, and
+the exact proposal identifiers used by completion review. These packets have
+empty executable changes and cannot edit the app. The checked-in
+`atlas/production.atlas` plan requests two source-hash comparisons and stops
+early when the repository input manifest is stable.
+
+Atlas is a restricted declarative language, not a shell or general-purpose
+programming language. Its files cannot execute commands, mutate application
+source, or trigger fixes. It writes private reports only under
+`.local/repository-verification/atlas/`. Static function/call/route and path
+links include evidence and uncertainty; path groups are not treated as
+authoritative product features. A policy metric without a fresh measured value
+is `UNVERIFIED`, never a guessed pass. In particular, broad coverage,
+documentation, security, and performance percentages require dedicated
+measured evidence before `ProductionReady` can pass. Source repairs remain
+proposal-first: accept a proposal with `npm run completion:review -- decide`,
+prepare its non-executable packet with `npm run completion:review -- prepare`,
+then submit an authored, reviewed, source-hash-pinned plan to
+`npm run completion:execute`. Atlas never approves proposals or generates
+application-file patches by itself.
+
 ### Competitor benchmark evidence
 
 `docs/testing/competitor-evidence.json` contains a dated public-source snapshot

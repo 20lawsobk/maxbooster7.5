@@ -401,7 +401,7 @@ function mergeAnalysisHistory(localRecords, durableRecords) {
   };
 }
 
-function buildProposals(current, history, remediation, allCurrentChecks) {
+function buildProposals(current, history, remediation, allCurrentChecks, repositoryUnderstanding = null) {
   const recurrence = new Map();
   const verifiedPlans = [];
   const remediationRecurrence = new Map();
@@ -514,6 +514,85 @@ function buildProposals(current, history, remediation, allCurrentChecks) {
         "Review the current source-bound remediation record, reproduce the exact finding, and prepare an exact reviewed patch plan.",
     });
   }
+  const dossier = repositoryUnderstanding?.dossier;
+  const acceptedUnderstandingStatus = ["CURRENT", "PARTIAL", "TRUNCATED"].includes(repositoryUnderstanding?.status) &&
+    dossier?.sourceIdentity?.runSourceMatch === true;
+  if (acceptedUnderstandingStatus) {
+    const checkContexts = new Map((dossier.failureCheckContext ?? []).map(item => [item.checkId, item]));
+    for (const proposal of proposals) {
+      const context = checkContexts.get(proposal.checkId);
+      if (!context) continue;
+      proposal.repositoryContext = {
+        dossierSha256: dossier.integrity?.sha256 ?? null,
+        confidence: context.confidence,
+        directReferences: context.directReferences,
+        uncertainty: context.uncertainty,
+      };
+    }
+    for (const candidate of dossier.coverageCandidates ?? []) {
+      proposals.push({
+        id: `understanding-${sha256(`${candidate.path}:${candidate.sourceSha256}`).slice(0, 24)}`,
+        proposalKey: sha256(canonical({
+          kind: "static-coverage-candidate",
+          path: candidate.path,
+          sourceSha256: candidate.sourceSha256,
+        })),
+        kind: "static-coverage-candidate",
+        state: "NEEDS_REVIEW",
+        priority: candidate.priority,
+        productArea: candidate.path.split("/")[0] ?? "repository",
+        sourcePath: candidate.path,
+        observationConfidence: candidate.confidence,
+        impactScore: candidate.impactScore,
+        recurrence: { matchingObservations: 0 },
+        evidence: {
+          dossierSha256: dossier.integrity?.sha256 ?? null,
+          sourceSha256: candidate.sourceSha256,
+          sourceRevision: dossier.sourceIdentity.gitRevision,
+          details: candidate.evidence,
+        },
+        uncertainty: candidate.uncertainty,
+        recommendedNextAction: candidate.recommendedNextAction,
+        requiredEvidence: [
+          "Trace the source path through its runtime consumer.",
+          "Link or add a behavior-level test before treating coverage as complete.",
+        ],
+      });
+    }
+    for (const marker of (dossier.unfinishedCandidates ?? []).slice(0, 200)) {
+      proposals.push({
+        id: `unfinished-${sha256(`${marker.path}:${marker.line}:${marker.marker}:${marker.sourceSha256}`).slice(0, 24)}`,
+        proposalKey: sha256(canonical({
+          kind: "unfinished-marker-candidate",
+          path: marker.path,
+          line: marker.line,
+          marker: marker.marker,
+          sourceSha256: marker.sourceSha256,
+        })),
+        kind: "unfinished-marker-candidate",
+        state: "NEEDS_REVIEW",
+        priority: "P3",
+        productArea: marker.path.split("/")[0] ?? "repository",
+        sourcePath: marker.path,
+        observationConfidence: marker.confidence,
+        recurrence: { matchingObservations: 0 },
+        evidence: {
+          dossierSha256: dossier.integrity?.sha256 ?? null,
+          sourceSha256: marker.sourceSha256,
+          sourceRevision: dossier.sourceIdentity.gitRevision,
+          line: marker.line,
+          marker: marker.marker,
+          lifecycle: marker.lifecycle,
+        },
+        uncertainty: [marker.uncertainty],
+        recommendedNextAction: "Inspect this marker in its current code context and confirm whether the behavior is incomplete before drafting a repair.",
+        requiredEvidence: [
+          "Confirm the marker still exists at the source-hash-pinned line.",
+          "Trace the feature through its runtime entry point and tests.",
+        ],
+      });
+    }
+  }
   const rank = { P1: 0, P2: 1, P3: 2, P4: 3, BLOCKED: 4 };
   proposals.sort((a, b) =>
     rank[a.priority] - rank[b.priority] ||
@@ -544,6 +623,7 @@ export async function recordLearningOutcome({
   durableHistory = false,
   persistHistory = persistConfiguredCompletionHistory,
   env = {},
+  repositoryUnderstanding = null,
 } = {}) {
   if (!root || !runDirectory || !report) throw new Error("root, runDirectory, and report are required");
   const rootReal = await fs.realpath(root);
@@ -658,7 +738,9 @@ export async function recordLearningOutcome({
         ? [persistence.reason ?? "Durable history was not verified."]
         : [])],
   };
-  const proposalSet = buildProposals(current, analysisHistory, remediation, report.checks);
+  const proposalSet = buildProposals(
+    current, analysisHistory, remediation, report.checks, repositoryUnderstanding,
+  );
   let benchmarkAssessment;
   try {
     benchmarkAssessment = await evaluateCompetitorBenchmarks({ report });
@@ -741,6 +823,28 @@ export async function recordLearningOutcome({
         : "NOT_RUN",
       remediationInventory: remediation.status,
     },
+    repositoryUnderstanding: {
+      status: repositoryUnderstanding?.status ?? "NOT_RUN",
+      reason: repositoryUnderstanding?.reason ?? null,
+      artifact: repositoryUnderstanding?.artifact ?? null,
+      atlas: repositoryUnderstanding?.atlas ?? { status: "NOT_RUN" },
+      sourceIdentity: repositoryUnderstanding?.dossier?.sourceIdentity ? {
+        gitRevision: repositoryUnderstanding.dossier.sourceIdentity.gitRevision,
+        sourceFileManifestSha256: repositoryUnderstanding.dossier.sourceIdentity.sourceFileManifestSha256,
+        runReportSha256: repositoryUnderstanding.dossier.sourceIdentity.runReportSha256,
+        runSourceMatch: repositoryUnderstanding.dossier.sourceIdentity.runSourceMatch,
+        complete: repositoryUnderstanding.dossier.sourceIdentity.complete,
+      } : null,
+      summary: repositoryUnderstanding?.dossier?.summary ?? null,
+      candidatePaths: (repositoryUnderstanding?.dossier?.coverageCandidates ?? [])
+        .slice(0, MAX_REMEDIATION_PROPOSALS).map(item => ({
+          path: item.path,
+          priority: item.priority,
+          impactScore: item.impactScore,
+          confidence: item.confidence,
+          sourceSha256: item.sourceSha256,
+        })),
+    },
     currentRemediation: {
       status: remediation.status,
       reason: remediation.reason,
@@ -777,6 +881,10 @@ export async function recordLearningOutcome({
       totalRemediationCandidates: proposalSet.totalRemediationCandidates,
       omittedRemediationCandidates: proposalSet.omittedRemediationCandidates,
       competitorBenchmarkCandidates: benchmarkAssessment.proposals.length,
+      repositoryUnderstandingCandidates: proposalSet.proposals.filter(row =>
+        row.kind === "static-coverage-candidate").length,
+      unfinishedMarkerCandidates: proposalSet.proposals.filter(row =>
+        row.kind === "unfinished-marker-candidate").length,
     },
     latestVerifiedInterventions: allVerifiedPlans.slice(-10).reverse(),
     guardrails: [
@@ -784,6 +892,7 @@ export async function recordLearningOutcome({
       "Raw command output, test logs, credentials, and customer data are not copied into learning memory.",
       "Historical fixes are recommendations only; source hashes and checks must be reviewed before reuse.",
       "Only the exact, separately reviewed completion plan can change source; deployment and whole-product readiness remain separate gates.",
+      "Repository import, route, and test references are static evidence candidates and never prove runtime reachability or coverage.",
     ],
   };
   const sealedSummary = seal(summary);

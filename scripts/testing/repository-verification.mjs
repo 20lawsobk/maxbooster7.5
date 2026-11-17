@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash, randomUUID } from "node:crypto";
-import { createReadStream, createWriteStream } from "node:fs";
+import { constants as fsConstants, createReadStream, createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
@@ -88,6 +88,7 @@ function isConfigPath(name) {
   const extension = path.posix.extname(name).toLowerCase();
   return base.startsWith(".") || /(^|[-_.])(config|lock|manifest|workflow)([-_.]|$)/i.test(base) ||
     [".json", ".jsonc", ".yaml", ".yml", ".toml", ".ini", ".conf", ".xml", ".properties"].includes(extension) ||
+    extension === ".atlas" ||
     ["Dockerfile", "Makefile", "CMakeLists.txt", "package-lock.json"].includes(base);
 }
 
@@ -1025,19 +1026,136 @@ async function main(args = process.argv.slice(2)) {
   return report.gateStatus === "PASS" ? 0 : 1;
 }
 
-async function reportLearningOutcome(root, runDirectory, report) {
+export async function reportLearningOutcome(
+  root,
+  runDirectory,
+  report,
+  { durableHistory = true, env = process.env } = {},
+) {
+  let repositoryUnderstanding = null;
+  if (report.mode === "full") {
+    try {
+      const drift = report.checks?.find(check => check.id === "full-sweep-source-drift");
+      if (drift?.status !== "PASS") {
+        repositoryUnderstanding = {
+          status: "BLOCKED",
+          reason: "Repository understanding requires a passing full-sweep source-drift check.",
+        };
+      } else {
+        const current = await buildInventory(root);
+        const sourceMatches = current.sourceIdentity.inputInventorySha256 ===
+            report.sourceIdentity?.inputInventorySha256 &&
+          current.sourceIdentity.dirtyInputSha256 === report.sourceIdentity?.dirtyInputSha256;
+        if (!sourceMatches) {
+          repositoryUnderstanding = {
+            status: "STALE",
+            reason: "The source identity changed after the full verification; no current dossier was generated.",
+          };
+        } else {
+          const { buildRepositoryUnderstanding, saveRepositoryUnderstanding } =
+            await import("./completion-understanding.mjs");
+          const dossier = await buildRepositoryUnderstanding({ root, report });
+          const after = await buildInventory(root);
+          const sourceStillMatches = after.sourceIdentity.inputInventorySha256 ===
+              report.sourceIdentity?.inputInventorySha256 &&
+            after.sourceIdentity.dirtyInputSha256 === report.sourceIdentity?.dirtyInputSha256;
+          if (!dossier.sourceIdentity.runSourceMatch || !sourceStillMatches) {
+            repositoryUnderstanding = {
+              status: "STALE",
+              reason: "Source identity changed during analysis or the dossier could not bind to the verification run.",
+            };
+          } else {
+            const artifact = await saveRepositoryUnderstanding({ root, dossier });
+            let atlas = { status: "NOT_CONFIGURED" };
+            const atlasPolicyPath = path.join(root, "atlas", "production.atlas");
+            try {
+              const atlasPolicyInfo = await fs.lstat(atlasPolicyPath);
+              if (atlasPolicyInfo.isSymbolicLink() || !atlasPolicyInfo.isFile() || atlasPolicyInfo.size > 64 * 1024) {
+                throw new Error("Atlas production policy is not a bounded regular file");
+              }
+              const policyHandle = await fs.open(
+                atlasPolicyPath,
+                fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0),
+              );
+              let policySource;
+              try {
+                const openedPolicyInfo = await policyHandle.stat();
+                if (!openedPolicyInfo.isFile() || openedPolicyInfo.ino !== atlasPolicyInfo.ino ||
+                    openedPolicyInfo.size > 64 * 1024) {
+                  throw new Error("Atlas production policy changed while it was being opened");
+                }
+                policySource = await policyHandle.readFile("utf8");
+              } finally {
+                await policyHandle.close();
+              }
+              const { parseAtlasPolicy, runAtlasPolicy, saveAtlasReport } =
+                await import("./atlas-runtime.mjs");
+              const program = parseAtlasPolicy(policySource, "atlas/production.atlas");
+              const atlasReport = await runAtlasPolicy({
+                root,
+                program,
+                policySource,
+                policyPath: "atlas/production.atlas",
+                report,
+                initialDossier: dossier,
+                inventory: after,
+              });
+              const afterAtlas = await buildInventory(root);
+              const atlasSourceMatches = afterAtlas.sourceIdentity.inputInventorySha256 ===
+                  report.sourceIdentity?.inputInventorySha256 &&
+                afterAtlas.sourceIdentity.dirtyInputSha256 === report.sourceIdentity?.dirtyInputSha256;
+              if (!atlasSourceMatches || !atlasReport.sourceIdentity.runSourceMatch) {
+                atlas = {
+                  status: "STALE",
+                  reason: "Repository source identity changed during the Atlas policy scan.",
+                };
+              } else {
+                atlas = {
+                  status: "GENERATED",
+                  reportStatus: atlasReport.status,
+                  policyStatus: atlasReport.policy.evaluation.status,
+                  artifact: await saveAtlasReport({ root, report: atlasReport }),
+                };
+              }
+            } catch (error) {
+              if (error.code !== "ENOENT") {
+                atlas = { status: "BLOCKED", reason: `Atlas policy could not run: ${error.message}` };
+              }
+            }
+            repositoryUnderstanding = {
+              status: dossier.sourceIdentity.complete ? "CURRENT" :
+                dossier.truncation.occurred ? "TRUNCATED" : "PARTIAL",
+              dossier,
+              artifact,
+              atlas,
+              reason: dossier.sourceIdentity.complete ? null :
+                "Some source inputs were omitted by the dossier's explicit safety bounds.",
+            };
+          }
+        }
+      }
+    } catch (error) {
+      repositoryUnderstanding = {
+        status: "BLOCKED",
+        reason: `Repository understanding could not be generated: ${error.message}`,
+      };
+    }
+  }
   try {
     const learning = await recordLearningOutcome({
       root,
       runDirectory,
       report,
-      durableHistory: true,
-      env: process.env,
+      durableHistory,
+      env,
+      repositoryUnderstanding,
     });
-    console.log(`[completion-learning] history=${learning.summary.history.status}; durable=${learning.summary.history.persistence.status}; analyzed=${learning.summary.history.analyzedRecords}; proposals=${learning.summary.currentProposals.length}; competitorBenchmark=${learning.summary.benchmark.competitorComparisons}`);
+    console.log(`[completion-learning] history=${learning.summary.history.status}; durable=${learning.summary.history.persistence.status}; analyzed=${learning.summary.history.analyzedRecords}; proposals=${learning.summary.currentProposals.length}; repositoryUnderstanding=${learning.summary.repositoryUnderstanding.status}; competitorBenchmark=${learning.summary.benchmark.competitorComparisons}`);
     console.log(`[completion-learning] report: ${learning.summaryPath}`);
+    return learning;
   } catch (error) {
     console.error(`[completion-learning] WARNING: outcome was not recorded; verification result is unchanged: ${error.message}`);
+    return null;
   }
 }
 
