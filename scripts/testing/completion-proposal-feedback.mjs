@@ -461,6 +461,8 @@ export async function recordProposalDecision({
   if (feedback.status !== "CURRENT") {
     throw new Error("Proposal decision history is degraded; no new decision can be recorded");
   }
+  const bucketConfigured = Boolean(env.Replit_storage_bucket_id ||
+    env.DATABASE_RECOVERY_BUCKET_ID || env.REPLIT_BUCKET_ID);
   const prior = feedback.latest.get(proposal.proposalKey) ?? null;
   if (decision === "reopen" && !prior) {
     throw new Error("Only a previously decided proposal can be reopened");
@@ -490,8 +492,6 @@ export async function recordProposalDecision({
     ...identity,
     decidedAt: recordedAt,
   });
-  const bucketConfigured = Boolean(env.Replit_storage_bucket_id ||
-    env.DATABASE_RECOVERY_BUCKET_ID || env.REPLIT_BUCKET_ID);
   let durableStatus = "LOCAL_ONLY";
   if (bucketConfigured) {
     const { persistConfiguredProposalDecisions } = await import("./completion-proposal-bucket.mjs");
