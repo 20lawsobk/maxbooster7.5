@@ -123,7 +123,7 @@ test("explicit cancellation returns after terminating the owned process group", 
 test("npm development command does not launch the app after a required preflight failure", async () => {
   const project = JSON.parse(await fs.readFile("package.json", "utf8"));
   const command = project.scripts.dev;
-  assert.match(command, /repository-verification\.mjs preflight && bash scripts\/start-dev\.sh$/);
+  assert.match(command, /repository-verification\.mjs dev && bash scripts\/start-dev\.sh$/);
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "repository-verify-startup-"));
   const bin = path.join(root, "bin");
   const marker = path.join(root, "launcher-started");

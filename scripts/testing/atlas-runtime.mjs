@@ -651,8 +651,11 @@ export async function runAtlasPolicy({
   if (!program?.repository || !Array.isArray(program.actions)) {
     throw new Error("A parsed Atlas repository program is required");
   }
-  if (report && (!verifySealed(report) || report.mode !== "full" ||
-      !Array.isArray(report.checks) || !report.sourceIdentity)) {
+  const reportDriftCheckId = report?.mode === "full" ? "full-sweep-source-drift" :
+    report?.mode === "dev" ? "source-drift" : null;
+  if (report && (!verifySealed(report) || !reportDriftCheckId ||
+      !Array.isArray(report.checks) || !report.sourceIdentity ||
+      report.checks.find(check => check.id === reportDriftCheckId)?.status !== "PASS")) {
     throw new Error("Atlas verification input failed its integrity, scope, or schema check");
   }
   if (initialDossier && (!verifySealed(initialDossier) ||

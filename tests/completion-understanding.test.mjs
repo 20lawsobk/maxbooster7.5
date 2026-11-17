@@ -272,6 +272,56 @@ test("attaches failure context and hash-bound coverage candidates to proposal-fi
   assert.equal(learning.summary.proposalCounts.repositoryUnderstandingCandidates > 0, true);
 });
 
+test("npm dev-mode learning runs source-bound repository understanding and Atlas", async () => {
+  const { root } = await createFixture();
+  const inventory = await buildInventory(root);
+  const report = sealReport({
+    schemaVersion: 1,
+    runId: "fixture-dev",
+    mode: "dev",
+    gateStatus: "PASS",
+    sourceIdentity: inventory.sourceIdentity,
+    checks: [{ id: "source-drift", status: "PASS", command: [], nextAction: null }],
+  });
+  const runDirectory = path.join(root, ".local", "repository-verification", "runs", "fixture-dev");
+  await fs.mkdir(runDirectory, { recursive: true });
+
+  const learning = await reportLearningOutcome(root, runDirectory, report, {
+    durableHistory: false,
+    env: {},
+  });
+
+  assert.equal(learning.summary.repositoryUnderstanding.status, "CURRENT");
+  assert.equal(learning.summary.repositoryUnderstanding.sourceIdentity.runSourceMatch, true);
+  assert.equal(learning.summary.repositoryUnderstanding.atlas.status, "GENERATED");
+  assert.equal(learning.summary.repositoryUnderstanding.atlas.reportStatus, "UNVERIFIED");
+  assert.equal(learning.summary.readinessStatus, "UNVERIFIED");
+});
+
+test("dev-mode repository understanding refuses a failed source-drift check", async () => {
+  const { root } = await createFixture();
+  const inventory = await buildInventory(root);
+  const report = sealReport({
+    schemaVersion: 1,
+    runId: "fixture-dev-drift",
+    mode: "dev",
+    gateStatus: "FAIL",
+    sourceIdentity: inventory.sourceIdentity,
+    checks: [{ id: "source-drift", status: "FAIL", command: [], nextAction: "Rerun from a stable source tree." }],
+  });
+  const runDirectory = path.join(root, ".local", "repository-verification", "runs", "fixture-dev-drift");
+  await fs.mkdir(runDirectory, { recursive: true });
+
+  const learning = await reportLearningOutcome(root, runDirectory, report, {
+    durableHistory: false,
+    env: {},
+  });
+
+  assert.equal(learning.summary.repositoryUnderstanding.status, "BLOCKED");
+  assert.match(learning.summary.repositoryUnderstanding.reason, /passing source-drift check/);
+  assert.equal(learning.summary.repositoryUnderstanding.atlas.status, "NOT_RUN");
+});
+
 test("rejects a verification report whose integrity seal was changed", async () => {
   const { root } = await createFixture();
   const report = {

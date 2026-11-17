@@ -134,7 +134,11 @@ function runGit(root, args, timeout = 10_000) {
     cwd: root,
     timeout,
     maxBuffer: 32 * 1024 * 1024,
-    env: { PATH: process.env.PATH || "/usr/bin:/bin", LANG: "C" },
+    env: {
+      PATH: process.env.PATH || "/usr/bin:/bin",
+      LANG: "C",
+      GIT_OPTIONAL_LOCKS: "0",
+    },
   });
   if (result.error) throw new Error(`git ${args.join(" ")} unavailable: ${result.error.message}`);
   if (result.status !== 0) {
@@ -472,28 +476,28 @@ async function localPreflight(root, runDirectory, inventory) {
   try {
     manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
     const dev = manifest?.scripts?.dev;
-    if (dev !== "node scripts/testing/repository-verification.mjs preflight && bash scripts/start-dev.sh") {
-      throw new Error("package.json dev script does not gate the existing launcher behind repository preflight");
+    if (dev !== "node scripts/testing/repository-verification.mjs dev && bash scripts/start-dev.sh") {
+      throw new Error("package.json dev script does not run completion automation before the existing launcher");
     }
     checks.push({
       id: "startup-contract",
-      command: ["read package.json", "verify the preflight-to-launcher ordering"],
+      command: ["read package.json", "verify the completion-automation-to-launcher ordering"],
       status: "PASS",
       exitCode: 0,
       timedOut: false,
       durationMs: 0,
-      output: "The development command runs preflight before the unchanged launcher.",
+      output: "The development command runs bounded preflight, repository understanding, and Atlas before the unchanged launcher.",
     });
   } catch (error) {
     checks.push({
       id: "startup-contract",
-      command: ["read package.json", "verify the preflight-to-launcher ordering"],
+      command: ["read package.json", "verify the completion-automation-to-launcher ordering"],
       status: "FAIL",
       exitCode: 1,
       timedOut: false,
       durationMs: 0,
       output: error.message,
-      nextAction: "Restore the preflight-first npm dev command and preserve scripts/start-dev.sh as the application launcher.",
+      nextAction: "Restore the bounded completion-automation dev command and preserve scripts/start-dev.sh as the application launcher.",
     });
   }
 
@@ -651,7 +655,7 @@ function newRunDirectory(root) {
   return path.join(root, ".local", "repository-verification", "runs", `${timestamp}-${process.pid}-${randomUUID()}`);
 }
 
-async function runPreflight(root, runDirectory) {
+async function runPreflight(root, runDirectory, { mode = "preflight" } = {}) {
   const startedAt = new Date().toISOString();
   let inventory = {
     schemaVersion: SCHEMA_VERSION,
@@ -726,17 +730,27 @@ async function runPreflight(root, runDirectory) {
   }
   const report = {
     schemaVersion: SCHEMA_VERSION,
-    mode: "preflight",
+    mode,
     repositoryRoot: root,
     startedAt,
     finishedAt: new Date().toISOString(),
-    scope: "Bounded offline repository checks only; no application services, credentials, migrations, providers, or production systems.",
+    scope: mode === "dev"
+      ? "Bounded repository checks and source-bound completion analysis; no application services, provider calls, migrations, or production systems are included in this report."
+      : "Bounded offline repository checks only; no application services, credentials, migrations, providers, or production systems.",
     executionPolicy: {
       inventoryDeadlineMs: MAX_INVENTORY_MS,
       perCommandTimeoutMs: PREFLIGHT_COMMAND_TIMEOUT_MS,
-      maximumExpectedDurationMs: 120_000,
+      maximumExpectedDurationMs: mode === "dev" ? null : 120_000,
       concurrentFileReads: 12,
       retries: 0,
+      ...(mode === "dev" ? {
+        repositoryAnalysisLimits: {
+          maxFiles: 50_000,
+          maxFileBytes: 2 * 1024 * 1024,
+          maxTotalBytes: 256 * 1024 * 1024,
+          atlasPasses: 2,
+        },
+      } : {}),
     },
     checks,
     externalPrerequisites,
@@ -957,7 +971,7 @@ function parseArgs(args) {
     else if (args[index] === "--help" || args[index] === "-h") return { help: true };
     else throw new Error(`Unknown argument: ${args[index]}`);
   }
-  if (!["preflight", "full", "execute"].includes(mode)) throw new Error(`Unknown mode: ${mode}`);
+  if (!["dev", "preflight", "full", "execute"].includes(mode)) throw new Error(`Unknown mode: ${mode}`);
   if (mode === "execute" && !options.planPath) throw new Error("execute mode requires --plan <manifest.json>");
   if (mode !== "execute" && (options.planPath || options.expectedPlanSha256 || options.apply)) {
     throw new Error("--plan, --plan-sha256, and --apply are valid only in execute mode");
@@ -974,8 +988,8 @@ async function main(args = process.argv.slice(2)) {
     return 2;
   }
   if (options.help) {
-    console.log("Usage: node scripts/testing/repository-verification.mjs [preflight|full|execute] [options]");
-    console.log("preflight is offline and bounded; full runs local verification groups.");
+    console.log("Usage: node scripts/testing/repository-verification.mjs [dev|preflight|full|execute] [options]");
+    console.log("dev runs bounded preflight plus repository understanding and Atlas; preflight runs checks only; full runs local verification groups.");
     console.log("execute applies a reviewed source-bound plan only when --apply and --plan-sha256 are supplied.");
     return 0;
   }
@@ -1005,8 +1019,8 @@ async function main(args = process.argv.slice(2)) {
   const runDirectory = newRunDirectory(options.root);
   let result;
   try {
-    result = options.mode === "preflight"
-      ? await runPreflight(options.root, runDirectory)
+    result = options.mode === "preflight" || options.mode === "dev"
+      ? await runPreflight(options.root, runDirectory, { mode: options.mode })
       : { report: await runFullSweep(options.root, runDirectory, controller) };
   } catch (error) {
     console.error(`repository-verification: ${error.message}`);
@@ -1033,13 +1047,14 @@ export async function reportLearningOutcome(
   { durableHistory = true, env = process.env } = {},
 ) {
   let repositoryUnderstanding = null;
-  if (report.mode === "full") {
+  if (report.mode === "full" || report.mode === "dev") {
     try {
-      const drift = report.checks?.find(check => check.id === "full-sweep-source-drift");
+      const driftCheckId = report.mode === "full" ? "full-sweep-source-drift" : "source-drift";
+      const drift = report.checks?.find(check => check.id === driftCheckId);
       if (drift?.status !== "PASS") {
         repositoryUnderstanding = {
           status: "BLOCKED",
-          reason: "Repository understanding requires a passing full-sweep source-drift check.",
+          reason: `Repository understanding requires a passing ${driftCheckId} check.`,
         };
       } else {
         const current = await buildInventory(root);
@@ -1049,7 +1064,7 @@ export async function reportLearningOutcome(
         if (!sourceMatches) {
           repositoryUnderstanding = {
             status: "STALE",
-            reason: "The source identity changed after the full verification; no current dossier was generated.",
+            reason: "The source identity changed after verification; no current dossier was generated.",
           };
         } else {
           const { buildRepositoryUnderstanding, saveRepositoryUnderstanding } =
@@ -1062,7 +1077,7 @@ export async function reportLearningOutcome(
           if (!dossier.sourceIdentity.runSourceMatch || !sourceStillMatches) {
             repositoryUnderstanding = {
               status: "STALE",
-              reason: "Source identity changed during analysis or the dossier could not bind to the verification run.",
+            reason: "Source identity changed during analysis or the dossier could not bind to the verification run.",
             };
           } else {
             const artifact = await saveRepositoryUnderstanding({ root, dossier });

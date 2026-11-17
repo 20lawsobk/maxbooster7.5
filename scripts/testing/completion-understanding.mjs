@@ -103,7 +103,12 @@ function git(root, args) {
     encoding: "buffer",
     timeout: 15_000,
     maxBuffer: 64 * 1024 * 1024,
-    env: { PATH: process.env.PATH || "/usr/bin:/bin", HOME: process.env.HOME || "/tmp", LANG: "C" },
+    env: {
+      PATH: process.env.PATH || "/usr/bin:/bin",
+      HOME: process.env.HOME || "/tmp",
+      LANG: "C",
+      GIT_OPTIONAL_LOCKS: "0",
+    },
   });
   if (result.error) throw new Error(`git ${args.join(" ")} failed: ${result.error.message}`);
   if (result.status !== 0) {
@@ -877,8 +882,10 @@ export async function buildRepositoryUnderstanding({
       runReportSha256: report?.integrity?.reportSha256 ?? null,
       runSourceIdentity: report?.sourceIdentity ?? null,
       runSourceMatch: report
-        ? report.sourceIdentity?.revision === currentRevision &&
-          report.checks?.find(check => check.id === "full-sweep-source-drift")?.status === "PASS"
+        ? ["dev", "full"].includes(report.mode) &&
+          report.sourceIdentity?.revision === currentRevision &&
+          report.checks?.find(check => check.id ===
+            (report.mode === "full" ? "full-sweep-source-drift" : "source-drift"))?.status === "PASS"
         : null,
       focusPaths: [...focusPaths].sort(),
     },
@@ -1138,7 +1145,7 @@ async function main(args = process.argv.slice(2)) {
       throw new Error("Repository source identity changed during analysis; no dossier was written");
     }
     if (report && !dossier.sourceIdentity.runSourceMatch) {
-      throw new Error("The supplied report is not a matching full-sweep source snapshot");
+      throw new Error("The supplied report is not a matching dev or full-verification source snapshot");
     }
     const saved = await saveRepositoryUnderstanding({ root, dossier });
     console.log(`Repository understanding: ${dossier.summary.sourceFiles} source, ${dossier.summary.testFiles} test files; ${dossier.summary.moduleEdges} resolved module edges; ${dossier.summary.coverageCandidates} static coverage candidates.`);

@@ -77,18 +77,27 @@ verification from deployment and global-capacity evidence.
 
 ## Bounded repository verification
 
-`npm run dev` first runs an offline, bounded repository preflight, then starts
-the existing `scripts/start-dev.sh` launcher only if the local checks pass.
+`npm run dev` first runs the bounded `dev` mode in
+`scripts/testing/repository-verification.mjs`. It performs the repository
+preflight, then runs source-bound completion learning, the bounded repository
+understanding dossier, and the checked-in Atlas policy before starting the
+existing `scripts/start-dev.sh` launcher. The dossier and Atlas reports are
+advisory and do not edit source or change readiness; a failed preflight still
+prevents the launcher from starting.
 The preflight inventories every Git-tracked path, records file type and
 lifecycle, hashes source/configuration/test inputs, checks the startup contract
 and required local tools, and verifies that inputs did not drift while it ran.
-It does not read application credentials, contact providers or production,
-apply migrations, build artifacts, or repair files.
+The static understanding and Atlas stages use the existing file and byte
+bounds; they do not read credential values, contact providers or production,
+apply migrations, build artifacts, or repair files. Learning persistence may
+write only to its configured private App Storage namespace and reports
+unavailable durability explicitly.
 Clean tracked inputs are bound to their Git object IDs, while modified and
 untracked input bytes receive SHA-256 hashes; the complete inventory and report
 also have SHA-256 receipts.
 
-Reports and the full machine-readable inventory are retained in a unique
+The standalone `preflight` mode remains available for checks without the
+additional analysis. Reports and the full machine-readable inventory are retained in a unique
 `.local/repository-verification/runs/` directory. Each report has a SHA-256
 integrity receipt and separate source-revision, full-inventory, behavior-input,
 and dirty-input identities. Source files and tests are explicitly marked
@@ -121,9 +130,9 @@ passed for the recorded inputs; overall product readiness remains
 ### Applying a bounded completion fix plan
 
 Both `npm run dev` and `npm run completion:execute` use the same
-`scripts/testing/repository-verification.mjs` controller: dev uses its
-read-only `preflight` mode, while the completion command selects explicit plan
-execution. Starting the app never applies source edits.
+`scripts/testing/repository-verification.mjs` controller: dev uses its bounded
+`dev` mode, while the completion command selects explicit plan execution.
+Starting the app never applies source edits.
 
 The completion runner can apply an explicitly prepared, source-bound patch
 manifest and then run its allowlisted local checks. It does **not** translate
@@ -204,11 +213,11 @@ points to hash-listed module-detail shards so large repositories stay within
 bounded report sizes. Source text, raw logs, and credentials are not written or
 sent to a model or external service.
 
-An explicit `npm run verify:repository` full run also creates and binds this
-dossier to the same Git revision and source-input identity before adding its
-evidence to proposal-first learning. If sources drift or the report cannot be
-matched, the dossier is blocked or marked stale and is not used to rank
-proposals. Static import/route/test references are candidates, not proof of
+Both `npm run dev` and an explicit `npm run verify:repository` full run create
+and bind this dossier to the same Git revision and source-input identity before
+adding its evidence to proposal-first learning. If sources drift or the report
+cannot be matched, the dossier is blocked or marked stale and is not used to
+rank proposals. Static import/route/test references are candidates, not proof of
 runtime reachability or executed coverage. Truncation and parser errors lower
 the dossier's completeness and candidate confidence.
 
@@ -269,7 +278,8 @@ reachable official pages were used. The snapshot expires after 30 days and
 must be refreshed before it can support current comparisons.
 
 The learner does not retain raw command output or logs, does not modify source,
-and does not change the app's readiness state. Corrupt, oversized, stale, or
+and does not change the app's readiness state. The `dev` mode performs finite,
+bounded analysis on startup; it is not an infinite repair loop. Corrupt, oversized, stale, or
 unavailable history is surfaced explicitly rather than silently treated as
 complete. `npm run dev` still runs a bounded preflight; it does not start an
 infinite repair loop or edit files during application startup. History reads
