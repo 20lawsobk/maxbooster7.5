@@ -4,8 +4,10 @@ The private-launch defaults remain unchanged: public registration is disabled,
 and non-admin accounts are denied by the application governance boundary.
 
 For a single shared regular-account test, the development workspace can permit
-only the credentials stored in `MAXBOOSTER_REGULAR_E2E_USERNAME` and
-`MAXBOOSTER_REGULAR_E2E_PASSWORD`. The registration exception also requires
+only the password stored in `MAXBOOSTER_REGULAR_E2E_PASSWORD` and the username
+configured by `MAXBOOSTER_REGULAR_E2E_LOGIN_USERNAME`. If that non-secret alias
+is unset, the username secret `MAXBOOSTER_REGULAR_E2E_USERNAME` is used. The
+registration exception also requires
 `NODE_ENV=development`, no Replit deployment marker, and the temporary
 `MAXBOOSTER_REGULAR_E2E_REGISTRATION_ENABLED=true` flag. The email must be the
 reserved, non-deliverable address derived from the username:

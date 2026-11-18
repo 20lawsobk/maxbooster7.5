@@ -39,6 +39,13 @@ export function regularE2eEmail(username: string): string {
   return `${username.toLowerCase()}@${TEST_EMAIL_DOMAIN}`;
 }
 
+function configuredUsername(env: E2ePolicyEnvironment): string | undefined {
+  const configured = env.MAXBOOSTER_REGULAR_E2E_LOGIN_USERNAME !== undefined
+    ? env.MAXBOOSTER_REGULAR_E2E_LOGIN_USERNAME.trim()
+    : env.MAXBOOSTER_REGULAR_E2E_USERNAME?.trim();
+  return configured && USERNAME_PATTERN.test(configured) ? configured : undefined;
+}
+
 /** Allows the single configured account to register only in the dev workspace. */
 export function isRegularE2eRegistration(
   input: RegistrationInput,
@@ -48,10 +55,9 @@ export function isRegularE2eRegistration(
     return false;
   }
 
-  const expectedUsername = env.MAXBOOSTER_REGULAR_E2E_USERNAME?.trim();
+  const expectedUsername = configuredUsername(env);
   const expectedPassword = env.MAXBOOSTER_REGULAR_E2E_PASSWORD;
   if (!expectedUsername || !expectedPassword ||
-      !USERNAME_PATTERN.test(expectedUsername) ||
       typeof input.username !== "string" ||
       typeof input.email !== "string" ||
       typeof input.password !== "string") {
@@ -73,7 +79,7 @@ export function isRegularE2eUser(
   }
 
   const expectedId = env.MAXBOOSTER_REGULAR_E2E_ACCESS_USER_ID?.trim();
-  const expectedUsername = env.MAXBOOSTER_REGULAR_E2E_USERNAME?.trim();
+  const expectedUsername = configuredUsername(env);
   if (!expectedId || !expectedUsername || !user) return false;
 
   return user.id === expectedId &&

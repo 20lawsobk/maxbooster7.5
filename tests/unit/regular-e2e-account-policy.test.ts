@@ -63,6 +63,48 @@ describe("regular E2E account policy", () => {
     })).toBe(false);
   });
 
+  it("uses an explicit login alias consistently for registration and access", () => {
+    const env = {
+      ...baseEnv,
+      MAXBOOSTER_REGULAR_E2E_LOGIN_USERNAME: "regular_e2e_test",
+      MAXBOOSTER_REGULAR_E2E_REGISTRATION_ENABLED: "true",
+      MAXBOOSTER_REGULAR_E2E_ACCESS_ENABLED: "true",
+      MAXBOOSTER_REGULAR_E2E_ACCESS_USER_ID: "user-test-id",
+    };
+    const user = {
+      id: "user-test-id",
+      role: "user",
+      username: "regular_e2e_test",
+      email: "regular_e2e_test@maxbooster-test.invalid",
+    };
+
+    expect(isRegularE2eRegistration({
+      username: user.username,
+      email: user.email,
+      password: "safe-test-password",
+    }, env)).toBe(true);
+    expect(isRegularE2eRegistration({
+      username: "regular_test_01",
+      email: "regular_test_01@maxbooster-test.invalid",
+      password: "safe-test-password",
+    }, env)).toBe(false);
+    expect(isRegularE2eUser(user, env)).toBe(true);
+    expect(isRegularE2eUser({ ...user, username: "regular_test_01" }, env)).toBe(false);
+  });
+
+  it("fails closed instead of falling back when the explicit alias is invalid", () => {
+    const env = {
+      ...baseEnv,
+      MAXBOOSTER_REGULAR_E2E_LOGIN_USERNAME: "invalid-alias",
+      MAXBOOSTER_REGULAR_E2E_REGISTRATION_ENABLED: "true",
+    };
+    expect(isRegularE2eRegistration({
+      username: "regular_test_01",
+      email: "regular_test_01@maxbooster-test.invalid",
+      password: "safe-test-password",
+    }, env)).toBe(false);
+  });
+
   it("admits only the configured regular account ID to development app APIs", () => {
     const env = {
       ...baseEnv,
