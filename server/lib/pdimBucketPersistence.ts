@@ -86,6 +86,7 @@ export class PdimBucketPersistence {
         ...(event.sequence === undefined ? [] : [`sequence=${event.sequence}`]),
         ...(event.ordinal === undefined ? [] : [`ordinal=${event.ordinal}`]),
         `elapsed_ms=${event.elapsedMs}`,
+        ...(event.byteLength === undefined ? [] : [`bytes=${event.byteLength}`]),
         `outcome=${event.outcome}`,
         ...(event.failureCategory ? [`category=${event.failureCategory}`] : []),
       ];
@@ -99,7 +100,9 @@ export class PdimBucketPersistence {
         (completed, total) => this.onStage(`snapshot-shards:${completed}/${total}`),
         { deadlineAt, onRead });
       this.onStage("snapshot-verified");
+      this.onStage("lease-renew-start");
       await this.journal.renew();
+      this.onStage("lease-renew-complete");
       const ordered = orderedBucketRecovery(recovered.transactions, snapshot.redisSequence, snapshot.capsuleSequence);
       this.assertHealthy();
       // Complete validation before publishing any recovered state to the owner.

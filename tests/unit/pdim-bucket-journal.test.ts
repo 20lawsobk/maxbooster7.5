@@ -88,6 +88,7 @@ describe("bucket PDIM durability", () => {
     expect(new Set(reads.filter(event => event.phase === "journal_frame")
       .map(event => event.sequence))).toEqual(new Set(Array.from({ length: 133 }, (_, i) => i + 1)));
     expect(reads.every(event => Number.isSafeInteger(event.elapsedMs) && event.elapsedMs >= 0)).toBe(true);
+    expect(reads.every(event => Number.isSafeInteger(event.byteLength) && event.byteLength! > 0)).toBe(true);
     expect(reads.every(event => event.outcome === "ok")).toBe(true);
   });
   it("times out a stalled journal read without changing committed frames and recovers after release", async () => {

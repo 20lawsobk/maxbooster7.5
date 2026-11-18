@@ -4,6 +4,7 @@ import {
   configuredPdimBucketObjects,
   PDIM_GCS_READ_RETRY_OPTIONS,
   PDIM_GCS_READ_TIMEOUT_MS,
+  PDIM_GCS_WRITE_TIMEOUT_MS,
   PdimBucketObjects,
 } from "../server/lib/pdimBucketObjects.ts";
 
@@ -142,7 +143,7 @@ test("slow generation-pinned downloads fail at the same bounded read deadline", 
   assert.ok(performance.now() - startedAt < 100);
 });
 
-test("configured PDIM storage isolates bounded read client settings from write defaults", async () => {
+test("configured PDIM storage bounds writes and isolates recovery read settings", async () => {
   const calls = [];
   const normalFixture = fakeBucket({
     metadata: ["10"],
@@ -168,10 +169,14 @@ test("configured PDIM storage isolates bounded read client settings from write d
     phase: "journal_frame", sequence: 1, deadlineAt: performance.now() + 1_000,
   })).bytes.toString(), "recovery-read");
   await store.write("namespace/HEAD", Buffer.from("write"), "11");
-  assert.deepEqual(calls[0], { bucketId: "configured-bucket" });
   assert.equal(calls[1].timeoutMs, PDIM_GCS_READ_TIMEOUT_MS);
   assert.deepEqual(calls[1].retryOptions, PDIM_GCS_READ_RETRY_OPTIONS);
+  assert.deepEqual(calls[0], {
+    bucketId: "configured-bucket",
+    timeoutMs: PDIM_GCS_WRITE_TIMEOUT_MS,
+  });
   assert.equal(normalFixture.calls.filter(([kind]) => kind === "save").length, 1);
-  assert.equal(normalFixture.calls.find(([kind]) => kind === "save")[1]
-    .preconditionOpts.ifGenerationMatch, "11");
+  const writeOptions = normalFixture.calls.find(([kind]) => kind === "save")[1];
+  assert.equal(writeOptions.timeout, PDIM_GCS_WRITE_TIMEOUT_MS);
+  assert.equal(writeOptions.preconditionOpts.ifGenerationMatch, "11");
 });

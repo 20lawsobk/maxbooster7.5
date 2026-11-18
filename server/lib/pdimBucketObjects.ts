@@ -10,6 +10,7 @@ import { createRecoveryStorage } from "../../scripts/recovery-private-store.mjs"
 
 export const PDIM_OBJECT_READ_DEADLINE_MS = 20_000;
 export const PDIM_GCS_READ_TIMEOUT_MS = 5_000;
+export const PDIM_GCS_WRITE_TIMEOUT_MS = 15_000;
 export const PDIM_GCS_READ_RETRY_OPTIONS = Object.freeze({
   autoRetry: true,
   maxRetries: 1,
@@ -156,6 +157,7 @@ export class PdimBucketObjects implements PdimObjectStore {
     await file.save(bytes, {
       resumable: false,
       validation: "crc32c",
+      timeout: PDIM_GCS_WRITE_TIMEOUT_MS,
       preconditionOpts: { ifGenerationMatch: generation },
     });
     // The upload response populates this File instance's metadata. Never obtain
@@ -179,9 +181,13 @@ export async function configuredPdimBucketObjects({
 } = {}): Promise<PdimBucketObjects> {
   const bucketId = configuredPdimBucketId(env);
   if (!bucketId) throw new Error("PDIM App Storage bucket is not configured");
-  // Keep the write client's defaults untouched. Only reads used for PDIM
-  // recovery receive the tighter per-request timeout and retry budget.
-  const { bucket } = await storageFactory({ bucketId });
+  // Bound normal journal operations too: startup lease acquisition/renewal and
+  // runtime writes otherwise inherit the SDK's unbounded default request time.
+  // Conditional writes remain generation-fenced; no local fallback is allowed.
+  const { bucket } = await storageFactory({
+    bucketId,
+    timeoutMs: PDIM_GCS_WRITE_TIMEOUT_MS,
+  });
   const { bucket: readBucket } = await storageFactory({
     bucketId,
     timeoutMs: PDIM_GCS_READ_TIMEOUT_MS,

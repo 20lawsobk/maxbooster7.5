@@ -23,6 +23,7 @@ export type PdimRecoveryReadEvent = {
   sequence?: number;
   ordinal?: number;
   elapsedMs: number;
+  byteLength?: number;
   outcome: "ok" | "failed" | "timeout";
   failureCategory?: string;
 };
@@ -181,6 +182,7 @@ export class PdimBucketJournal<T> {
     const startedAt = performance.now();
     let outcome: PdimRecoveryReadEvent["outcome"] = "failed";
     let failureCategory: string | undefined;
+    let byteLength: number | undefined;
     try {
       const key = `${this.prefix}/objects/${id}`;
       let object: { bytes: Buffer; generation: string } | null;
@@ -216,6 +218,7 @@ export class PdimBucketJournal<T> {
         object = await this.objects.read(key, context);
       }
       if (!object) throw new PdimBucketReadFailure("missing");
+      byteLength = object.bytes.byteLength;
       if (digest(object.bytes) !== id) throw new PdimBucketReadFailure("integrity");
       outcome = "ok";
       return object.bytes;
@@ -230,6 +233,7 @@ export class PdimBucketJournal<T> {
           ...(context.sequence === undefined ? {} : { sequence: context.sequence }),
           ...(context.ordinal === undefined ? {} : { ordinal: context.ordinal }),
           elapsedMs: Math.max(0, Math.round(performance.now() - startedAt)),
+          ...(byteLength === undefined ? {} : { byteLength }),
           outcome,
           ...(failureCategory ? { failureCategory } : {}),
         });
@@ -388,7 +392,7 @@ export class PdimBucketJournal<T> {
       transactions.push(frame.value);
       tip = frame.previous;
       expected--;
-      if ((head.sequence - expected) % 32 === 0 || expected === head.baseSequence) {
+      if ((head.sequence - expected) % 8 === 0 || expected === head.baseSequence) {
         onProgress?.(head.sequence - expected, head.sequence - head.baseSequence);
       }
     }
