@@ -29,6 +29,7 @@ FRESHNESS_WINDOW_DAYS = 7
 DEFAULT_SEARCH_INTERVAL_SECONDS = 3600
 MIN_SEARCH_INTERVAL_SECONDS = 900
 MAX_SEARCH_INTERVAL_SECONDS = 3600
+NATIVE_SOURCE_INTERVAL_SECONDS = 3600
 MAX_RESULT_CHARS = 500
 _PROVIDER_KEYS = {"exa": "EXA_API_KEY", "tavily": "TAVILY_API_KEY"}
 
@@ -330,6 +331,8 @@ def search_interval_seconds(environ=None) -> int:
 
 
 def source_min_interval(source: str, environ=None) -> int:
+    if source.startswith("youtube_"):
+        return NATIVE_SOURCE_INTERVAL_SECONDS
     if source.startswith(("exa_", "tavily_", "platform_discovery_")):
         return search_interval_seconds(environ)
     return 0

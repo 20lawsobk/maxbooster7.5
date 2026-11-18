@@ -706,17 +706,21 @@ def _freshness_score(published_at):
 
 
 def youtube(url):
-    from .public_access import assert_platform_feed_access
+    from .native_downloader import download_registered_source, source_id_for_url
 
-    assert_platform_feed_access("youtube", url)
-    return _youtube_rows(parse_feed_xml(_fetch(url)))
+    source_id = source_id_for_url("youtube", url)
+    return _youtube_rows(parse_feed_xml(
+        download_registered_source("youtube", source_id, url)
+    ))
 
 
 def youtube_with_profile_candidates(url, channel_name):
-    from .public_access import assert_platform_feed_access
+    from .native_downloader import download_registered_source, source_id_for_url
 
-    assert_platform_feed_access("youtube", url)
-    root = parse_feed_xml(_fetch(url))
+    source_id = source_id_for_url("youtube", url)
+    root = parse_feed_xml(
+        download_registered_source("youtube", source_id, url)
+    )
     return (_youtube_rows(root)
             + _youtube_profile_rows(root, url, channel_name))
 
@@ -726,6 +730,7 @@ def profile_source_status(source_health=None):
     from ai_model.platform_optimization import PLATFORMS
     from ai_model.awareness.profile_quality import summarize_quality_cohort
     from .platform_discovery import rights_policy_for
+    from .native_downloader import source_outcome
     from .public_access import native_crawl_status
 
     configured = {
@@ -887,6 +892,12 @@ def profile_source_status(source_health=None):
         rights = rights_policy_for(platform)
         provider_item = health.get(search_sources[platform], {}) if search_sources[platform] else {}
         provider_item = provider_item if isinstance(provider_item, dict) else {}
+        native_health = {
+            name: health.get(name, {})
+            for name in source_names
+            if name.startswith("youtube_")
+        }
+        native_outcome = source_outcome(platform, native_health)
         if not search_sources[platform]:
             provider_query_status = "disabled_or_not_configured"
         elif not provider_item:
@@ -899,7 +910,10 @@ def profile_source_status(source_health=None):
             "network_group": direct_policy["network_group"],
             "status": availability_status,
             "reason": availability_reason,
-            "native_crawl": native_crawl_status(platform),
+            "native_crawl": {
+                **native_crawl_status(platform),
+                **native_outcome,
+            },
             "authorization_mode": authorization_mode,
             "connection_state": connection_state,
             "ingestion_state": ingestion_state,

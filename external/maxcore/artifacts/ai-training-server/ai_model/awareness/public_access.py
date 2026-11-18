@@ -7,7 +7,9 @@ so this module never authorizes collection merely because a URL is public.
 
 from __future__ import annotations
 
+import math
 import os
+import re
 import threading
 import time
 from urllib.parse import urlsplit
@@ -32,41 +34,49 @@ NATIVE_CRAWL_POLICIES = {
         "state": "blocked",
         "reason": "approved_meta_source_access_not_configured",
         "basis": "meta_platform_terms_and_application_policy",
+        "authorization_record": None,
     },
     "instagram": {
         "state": "blocked",
         "reason": "approved_meta_source_access_not_configured",
         "basis": "meta_platform_terms_and_application_policy",
+        "authorization_record": None,
     },
     "x": {
         "state": "blocked",
         "reason": "authorized_x_source_api_not_configured",
         "basis": "x_developer_agreement_and_application_policy",
+        "authorization_record": None,
     },
     "youtube": {
         "state": "blocked",
         "reason": "youtube_feed_requires_current_robots_and_terms_approval",
         "basis": "youtube_api_terms_and_live_robots_gate",
+        "authorization_record": None,
     },
     "tiktok": {
         "state": "blocked",
         "reason": "written_tiktok_approval_required_for_automated_extraction",
         "basis": "tiktok_terms_of_service",
+        "authorization_record": None,
     },
     "linkedin": {
         "state": "blocked",
         "reason": "automated_scraping_prohibited_by_user_agreement",
         "basis": "linkedin_user_agreement",
+        "authorization_record": None,
     },
     "threads": {
         "state": "blocked",
         "reason": "verified_threads_api_scope_not_configured",
         "basis": "threads_api_overview_and_application_policy",
+        "authorization_record": None,
     },
     "google_business": {
         "state": "blocked",
         "reason": "owned_or_authorized_business_profile_api_not_configured",
         "basis": "business_profile_api_policies",
+        "authorization_record": None,
     },
 }
 
@@ -76,22 +86,101 @@ def native_crawl_status(platform: str) -> dict:
     canonical = normalize_platform(platform)
     policy = NATIVE_CRAWL_POLICIES[canonical]
     rights = rights_policy_for(canonical)
+    from .native_downloader import source_registry
+    registered_count = len(source_registry()[canonical])
+    authorized_source_count = len(_authorized_source_ids(canonical))
+    authorized = authorized_source_count > 0
     return {
         "engine": "maxcore_native_public_web",
-        "implementation_state": "not_available_without_source_authorization",
-        "state": policy["state"],
-        "reason": policy["reason"],
+        "implementation_state": (
+            "native_downloader_authorized"
+            if authorized else
+            "registered_source_blocked_by_policy"
+            if registered_count else "no_native_source_registered"
+        ),
+        "state": "authorized" if authorized else "blocked",
+        "reason": None if authorized else _authorization_block_reason(canonical),
         "policy_basis": policy["basis"],
+        "registered_source_count": registered_count,
+        "authorized_source_count": authorized_source_count,
         "rights_policy_schema": rights["schema"],
         "rights_policy_reviewed_on": rights["reviewed_on"],
         "policy_sources": rights["policy_sources"],
-        "authorized": False,
+        "authorized": authorized,
         "robots_checked_at": None,
         "last_attempt_at": None,
         "last_success_at": None,
         "first_party_observation_count": 0,
         "training_eligible": False,
     }
+
+
+def _authorized_source_ids(platform: str) -> set[str]:
+    """Return only registered sources covered by current, reviewed approval."""
+    policy = NATIVE_CRAWL_POLICIES[platform]
+    evidence = policy.get("authorization_record")
+    rights = rights_policy_for(platform)
+    if (
+        not isinstance(evidence, dict)
+        or set(evidence) != {
+            "authorization_id", "source_ids", "approved_at", "expires_at",
+        }
+    ):
+        return set()
+    authorization_id = evidence["authorization_id"]
+    source_ids = evidence["source_ids"]
+    approved_at, expires_at = evidence["approved_at"], evidence["expires_at"]
+    if (
+        not isinstance(authorization_id, str)
+        or not re.fullmatch(r"[A-Za-z0-9._:-]{1,120}", authorization_id)
+        or not isinstance(source_ids, list)
+        or not source_ids
+        or any(
+            not isinstance(source_id, str)
+            or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", source_id)
+            for source_id in source_ids
+        )
+        or len(source_ids) != len(set(source_ids))
+        or type(approved_at) not in (int, float)
+        or type(expires_at) not in (int, float)
+        or not math.isfinite(approved_at)
+        or not math.isfinite(expires_at)
+        or approved_at <= 0
+        or expires_at <= time.time()
+        or approved_at > time.time()
+    ):
+        return set()
+    from .native_downloader import source_registry
+    registered_ids = {
+        source["id"] for source in source_registry()[platform]
+    }
+    if (
+        policy.get("state") != "authorized"
+        or rights.get("direct_collection") != "approved_source_access"
+        or not set(source_ids) <= registered_ids
+    ):
+        return set()
+    return set(source_ids)
+
+
+def _platform_authorized(platform: str, source_id: str | None = None) -> bool:
+    allowed_sources = _authorized_source_ids(platform)
+    return source_id in allowed_sources if source_id is not None else bool(allowed_sources)
+
+
+def _authorization_block_reason(platform: str) -> str:
+    policy = NATIVE_CRAWL_POLICIES[platform]
+    if policy.get("state") != "authorized":
+        return policy["reason"]
+    evidence = policy.get("authorization_record")
+    if not isinstance(evidence, dict):
+        return "source_authorization_not_configured"
+    expiry = evidence.get("expires_at")
+    if type(expiry) in (int, float) and math.isfinite(expiry) and expiry <= time.time():
+        return "source_authorization_expired"
+    if rights_policy_for(platform).get("direct_collection") != "approved_source_access":
+        return "source_rights_policy_not_approved"
+    return "source_authorization_record_invalid_or_scope_mismatch"
 
 
 def _robots_policy(host: str, *, fetcher=fetch_bytes, clock=time.monotonic) -> RobotFileParser:
@@ -161,6 +250,17 @@ def assert_platform_feed_access(
 
     if canonical != "youtube" or parsed.path != "/feeds/videos.xml":
         raise SafeHTTPError("platform feed source is not authorized")
+    from .native_downloader import source_registry
+    if feed_url not in {
+        source["url"] for source in source_registry()[canonical]
+    }:
+        raise SafeHTTPError("platform feed source is not registered")
+    registered = next(
+        source for source in source_registry()[canonical]
+        if source["url"] == feed_url
+    )
+    if not _platform_authorized(canonical, registered["id"]):
+        raise SafeHTTPError("platform terms review required for direct collection")
 
     # Resolve the exact configured host's robots file, not a caller-selected
     # host or a platform alias that could change the policy origin.
@@ -169,9 +269,8 @@ def assert_platform_feed_access(
     if not parser.can_fetch(ROBOTS_USER_AGENT, feed_url):
         raise SafeHTTPError("robots policy denied platform feed")
 
-    # No permission evidence exists in this checkout. Robots Allow never
-    # substitutes for platform terms or explicit source authorization.
-    raise SafeHTTPError("platform terms review required for direct collection")
+    # An Allow rule is necessary but does not itself grant platform permission;
+    # _platform_authorized also requires the separately recorded rights review.
 
 
 def clear_robots_cache_for_tests() -> None:

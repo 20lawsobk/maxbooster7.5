@@ -17,8 +17,9 @@ particular use is lawful.
   privacy, and content-rights rules that apply to the chosen access path.
 - Native direct-page crawling is disabled for all eight platforms. The server
   does not bypass login, robots, CAPTCHA, rate limits, access denials, or API
-  scopes. The YouTube Atom adapter rechecks the live robots file and then still
-  fails closed unless its source-policy gate is satisfied.
+  scopes. The YouTube Atom adapter rejects requests before network access unless
+  both the source-policy gate and a separate authorization record are present;
+  only then does it check the live robots file before fetching the feed.
 - Optional Exa/Tavily discovery returns bounded, sanitized search-index
   metadata/snippets only. The adapter does not fetch result pages. These rows
   have unknown reuse rights, are short-lived awareness context, and are

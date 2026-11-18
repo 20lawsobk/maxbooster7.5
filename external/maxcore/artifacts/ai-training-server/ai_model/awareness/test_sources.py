@@ -12,9 +12,12 @@ class SourceCoverageTests(unittest.TestCase):
         xmlns:media="http://search.yahoo.com/mrss/"><entry>
         <title>Fixture video</title><link href="https://www.youtube.com/watch?v=fixture"/>
         <media:statistics views="42"/></entry></feed>"""
-        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml), \
-                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
-            rows = youtube("https://www.youtube.com/feeds/videos.xml")
+        feed_url = legacy.YOUTUBE_FEEDS[0]["url"]
+        with patch(
+            "ai_model.awareness.native_downloader.download_registered_source",
+            return_value=xml,
+        ):
+            rows = youtube(feed_url)
         self.assertEqual(rows[0]["value"], 42)
         self.assertEqual(rows[0]["metric"], "youtube_feed_views")
 
@@ -27,17 +30,23 @@ class SourceCoverageTests(unittest.TestCase):
         <link href="https://www.youtube.com/watch?v=oldfixture"/>
         <published>{published}</published>
         </entry></feed>""".encode()
-        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml), \
-                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
-            rows = youtube("https://www.youtube.com/feeds/videos.xml")
+        feed_url = legacy.YOUTUBE_FEEDS[0]["url"]
+        with patch(
+            "ai_model.awareness.native_downloader.download_registered_source",
+            return_value=xml,
+        ):
+            rows = youtube(feed_url)
         self.assertEqual(rows, [])
 
     def test_youtube_feed_rejects_entity_declarations(self):
         xml = b'<!DOCTYPE feed [<!ENTITY x SYSTEM "file:///etc/passwd">]><feed>&x;</feed>'
-        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml), \
-                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
+        feed_url = legacy.YOUTUBE_FEEDS[0]["url"]
+        with patch(
+            "ai_model.awareness.native_downloader.download_registered_source",
+            return_value=xml,
+        ):
             with self.assertRaises(ValueError):
-                youtube("https://www.youtube.com/feeds/videos.xml")
+                youtube(feed_url)
 
     def test_youtube_profile_candidates_keep_public_evidence_and_missing_factors(self):
         from datetime import datetime, timezone
@@ -53,10 +62,13 @@ class SourceCoverageTests(unittest.TestCase):
         <published>{published}</published>
         <media:group><media:statistics views="1200"/></media:group>
         </entry></feed>""".encode()
-        with patch("ai_model.awareness.sources._fetch", return_value=xml), \
-                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
+        feed_url = legacy.YOUTUBE_FEEDS[0]["url"]
+        with patch(
+            "ai_model.awareness.native_downloader.download_registered_source",
+            return_value=xml,
+        ):
             rows = youtube_with_profile_candidates(
-                "https://www.youtube.com/feeds/videos.xml?channel_id=UC123",
+                feed_url,
                 "Public music channel",
             )
         candidate = next(row for row in rows if row.get("profile_source"))
@@ -80,6 +92,11 @@ class SourceCoverageTests(unittest.TestCase):
         self.assertEqual(result["youtube"]["status"], "public_feed_blocked")
         self.assertEqual(result["youtube"]["authorization_mode"], "none")
         self.assertEqual(result["youtube"]["native_crawl"]["state"], "blocked")
+        self.assertEqual(
+            result["youtube"]["native_crawl"]["last_attempt_outcome"],
+            "not_attempted",
+        )
+        self.assertTrue(result["youtube"]["native_crawl"]["registered_source_count"])
         self.assertFalse(result["youtube"]["native_crawl"]["authorized"])
         self.assertEqual(result["youtube"]["freshness_state"], "unavailable")
         self.assertFalse(result["youtube"]["training_eligibility"]["eligible"])
@@ -90,6 +107,9 @@ class SourceCoverageTests(unittest.TestCase):
                 result[platform]["native_crawl"]["reason"],
             )
             self.assertFalse(result[platform]["native_crawl"]["authorized"])
+            self.assertEqual(
+                result[platform]["native_crawl"]["registered_source_count"], 0
+            )
             self.assertEqual(result[platform]["connection_state"], "not_connected")
             self.assertEqual(result[platform]["freshness_state"], "unavailable")
             self.assertFalse(result[platform]["training_eligibility"]["eligible"])
@@ -100,6 +120,26 @@ class SourceCoverageTests(unittest.TestCase):
         })["platforms"]["youtube"]["source_health"]
         self.assertEqual(with_failure[0]["status"], "failed")
         self.assertEqual(with_failure[0]["failure"], "not_found")
+
+    def test_profile_status_reports_policy_blocked_feed_attempt_truthfully(self):
+        from ai_model.awareness.sources import profile_source_status
+        from workers import quality_harvester
+
+        source = "youtube_" + quality_harvester.YOUTUBE_FEEDS[0]["name"]
+        observed = 1234
+        result = profile_source_status({
+            source: {
+                "ok": False,
+                "failure_class": "terms_review_required",
+                "observed_at": observed,
+                "direct_public_observation_count": 0,
+            },
+        })["platforms"]["youtube"]["native_crawl"]
+        self.assertEqual(result["policy_outcome"], "blocked")
+        self.assertEqual(result["last_attempt_outcome"], "blocked")
+        self.assertEqual(result["last_attempt_at"], observed)
+        self.assertEqual(result["request_state"], "blocked_before_request")
+        self.assertEqual(result["first_party_observation_count"], 0)
 
     def test_profile_source_quality_is_reported_as_global_content_cohorts(self):
         from ai_model.awareness.sources import profile_source_status
@@ -146,10 +186,12 @@ class SourceCoverageTests(unittest.TestCase):
         <link href="https://www.youtube.com/watch?v=abcdefghijk"/>
         <published>{published}</published>
         </entry></feed>""".encode()
-        feed_url = "https://www.youtube.com/feeds/videos.xml?channel_id=UC123"
+        feed_url = legacy.YOUTUBE_FEEDS[0]["url"]
         store = MemoryStore()
-        with patch("ai_model.awareness.sources._fetch", return_value=xml), \
-                patch("ai_model.awareness.public_access.assert_platform_feed_access"):
+        with patch(
+            "ai_model.awareness.native_downloader.download_registered_source",
+            return_value=xml,
+        ):
             engine = Engine(
                 sources={"youtube_NoCopyrightSounds": (
                     "music", feed_url,
@@ -188,6 +230,59 @@ class SourceCoverageTests(unittest.TestCase):
         self.assertEqual(restored_report["candidate_count"], 1)
         self.assertEqual(
             restored_report["quality_cohort"]["candidate_observations"], 1
+        )
+
+    def test_native_feed_ingest_persists_provenance_and_stays_out_of_training(self):
+        from datetime import datetime, timezone
+        from ai_model.awareness.engine import Engine
+        from ai_model.awareness.test_engine import MemoryStore
+
+        published = datetime.now(timezone.utc).isoformat()
+        xml = f"""<feed xmlns="http://www.w3.org/2005/Atom"
+        xmlns:media="http://search.yahoo.com/mrss/"><entry>
+        <title>A new independent music performance</title>
+        <link href="https://www.youtube.com/watch?v=abcdefghijk"/>
+        <published>{published}</published>
+        <media:group><media:statistics views="40"/></media:group>
+        </entry></feed>""".encode()
+        feed_url = legacy.YOUTUBE_FEEDS[0]["url"]
+        source_name = "youtube_" + legacy.YOUTUBE_FEEDS[0]["name"]
+        store = MemoryStore()
+        with patch(
+            "ai_model.awareness.native_downloader.download_registered_source",
+            return_value=xml,
+        ):
+            engine = Engine(
+                sources={source_name: ("music", feed_url, lambda: youtube(feed_url))},
+                store=store,
+                timeout=1,
+            )
+            engine.refresh()
+
+        rows = engine.discovery_observations()
+        self.assertEqual(len(rows), 1)
+        observation = rows[0]
+        self.assertEqual(observation["discovery"]["retrieval_method"], "direct_public")
+        self.assertEqual(
+            observation["discovery"]["source_type"], "official_public_atom_feed"
+        )
+        self.assertEqual(observation["discovery"]["provider"], "youtube_atom")
+        self.assertEqual(
+            observation["discovery"]["original_published_at"], published.replace("+00:00", "Z")
+        )
+        self.assertEqual(observation["observed_at"], store.get(
+            "awareness:v1:source-observations:" + source_name
+        )["records"][0]["observed_at"])
+        self.assertFalse(observation["discovery"]["training_eligible"])
+        self.assertEqual(engine.training_observations()["records"], [])
+
+        restarted = Engine(
+            sources=engine.sources,
+            store=store,
+        )
+        self.assertEqual(
+            restarted.discovery_observations()[0]["discovery"]["content_hash"],
+            observation["discovery"]["content_hash"],
         )
 
     def test_default_registry_contains_only_selected_platform_sources(self):

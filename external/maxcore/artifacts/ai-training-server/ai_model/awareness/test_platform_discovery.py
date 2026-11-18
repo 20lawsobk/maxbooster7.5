@@ -6,7 +6,7 @@ import time
 import unittest
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from ai_model.awareness.engine import (
     DOMAINS,
@@ -28,6 +28,7 @@ from ai_model.awareness.platform_discovery import (
     DEFAULT_SEARCH_INTERVAL_SECONDS,
     MAX_SEARCH_INTERVAL_SECONDS,
     MIN_SEARCH_INTERVAL_SECONDS,
+    NATIVE_SOURCE_INTERVAL_SECONDS,
     classify_result,
     make_provenance,
     provider_state,
@@ -289,7 +290,14 @@ class PlatformDiscoveryTests(unittest.TestCase):
         self.assertEqual(source_min_interval("exa_music", {}), DEFAULT_SEARCH_INTERVAL_SECONDS)
         self.assertEqual(source_min_interval("platform_discovery_exa_x", {}),
                          DEFAULT_SEARCH_INTERVAL_SECONDS)
-        self.assertEqual(source_min_interval("youtube_feed", {}), 0)
+        self.assertEqual(
+            source_min_interval("youtube_feed", {}),
+            NATIVE_SOURCE_INTERVAL_SECONDS,
+        )
+        self.assertEqual(
+            source_min_interval("youtube_NoCopyrightSounds", {}),
+            NATIVE_SOURCE_INTERVAL_SECONDS,
+        )
         self.assertEqual(
             search_interval_seconds({"MAXCORE_AWARENESS_SEARCH_INTERVAL_SECONDS": "1"}),
             MIN_SEARCH_INTERVAL_SECONDS,
@@ -543,6 +551,39 @@ class PlatformDiscoveryTests(unittest.TestCase):
         )
         self.assertFalse(restarted._health[name]["ok"])
 
+    def test_native_policy_block_and_hourly_quota_survive_engine_recreation(self):
+        now = time.time()
+        name = "youtube_NoCopyrightSounds"
+        url = "https://www.youtube.com/feeds/videos.xml?user=NoCopyrightSounds"
+        store = MemoryStore()
+        first = Engine(
+            sources={name: ("music", url, lambda: [])},
+            store=store,
+            clock=lambda: now,
+        )
+        first._health[name] = {}
+        first._store_source_observations(
+            name,
+            "music",
+            [],
+            attempt_at=now,
+            scan_state="failed",
+            failure_class="terms_review_required",
+        )
+
+        restarted = Engine(
+            sources={name: ("music", url, lambda: self.fail("quota should defer"))},
+            store=store,
+            clock=lambda: now + 60,
+        )
+        results = {}
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertTrue(restarted._defer_interval_source(name, now + 60, results))
+        self.assertEqual(results, {})
+        self.assertEqual(restarted._health[name]["failure_class"], "terms_review_required")
+        self.assertEqual(restarted._health[name]["schedule_state"], "interval_deferred")
+        self.assertEqual(restarted._health[name]["next_scan_at"], now + NATIVE_SOURCE_INTERVAL_SECONDS)
+
     def test_deferred_no_result_scan_does_not_serve_expired_rows(self):
         from ai_model.gpu.awareness_kernels import rank_signals
 
@@ -694,22 +735,54 @@ class PlatformDiscoveryTests(unittest.TestCase):
         self.assertNotIn("fixture-do-not-return", repr(result))
         self.assertEqual(result["facebook"]["ingestion_state"], "not_scanned")
 
-    def test_admin_source_status_route_requires_admin_authentication(self):
+    def test_admin_source_status_and_refresh_routes_require_admin_authentication(self):
         from fastapi import HTTPException
         import server
 
-        route = next(
-            row for row in server.app.routes
-            if getattr(row, "path", None)
-            == "/api/awareness/unified/admin/source-status"
-        )
-        self.assertIn(
-            server.verify_admin,
-            [dependency.call for dependency in route.dependant.dependencies],
-        )
+        for path in (
+            "/api/awareness/unified/admin/source-status",
+            "/api/awareness/unified/admin/refresh",
+        ):
+            route = next(
+                row for row in server.app.routes
+                if getattr(row, "path", None) == path
+            )
+            self.assertIn(
+                server.verify_admin,
+                [dependency.call for dependency in route.dependant.dependencies],
+            )
         with self.assertRaises(HTTPException) as caught:
             server.verify_admin(x_admin_key=None, authorization=None)
         self.assertEqual(caught.exception.status_code, 401)
+
+    def test_admin_refresh_returns_outcome_and_redacted_status_on_failure(self):
+        import asyncio
+        import json
+        import server
+
+        class FakeEngine:
+            def status(self):
+                return {"source_scan_state": "failed", "profile_sourcing": {}}
+
+        engine = FakeEngine()
+        with (
+            patch("ai_model.awareness.get_engine", return_value=engine),
+            patch(
+                "server._in_thread",
+                new=AsyncMock(
+                    side_effect=RuntimeError("provider error contained private value")
+                ),
+            ),
+        ):
+            response = asyncio.run(server.unified_awareness_admin_refresh())
+
+        payload = json.loads(response.body)
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(payload["success"])
+        self.assertEqual(payload["refresh_outcome"], "failed")
+        self.assertEqual(payload["failure"], "refresh_or_storage_unavailable")
+        self.assertEqual(payload["status"]["source_scan_state"], "failed")
+        self.assertNotIn("private value", response.body.decode())
 
     def test_discovery_provenance_survives_snapshot_but_never_enters_training(self):
         now = time.time()

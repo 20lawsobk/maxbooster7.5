@@ -18,17 +18,22 @@ paths, and topic terms live together in `platform_discovery.py`.
   Exa/Tavily awareness sources. It defaults to 3600 seconds and is bounded to
   900–3600 seconds. The last-attempt ledger is persisted with each source's
   existing awareness observation document so restarts do not reset the quota.
+- Registered YouTube native feeds also use a persisted one-hour minimum scan
+  interval. This prevents a future approved feed from being fetched on every
+  scheduler cycle.
 - Search results are never fetched as pages by this adapter. First-party
   platform URLs are labeled `index_snippet`; non-platform URLs are labeled
   `third_party_search` because the result alone does not verify editorial
   independence. Search relevance is not engagement.
-- The current checkout does not contain a native public web-search/crawl engine
-  for the eight platforms. The local observatory searches only records already
-  collected by MaxCore; it is not a crawler.
-- Anonymous direct collection is fail-closed. The YouTube Atom adapter checks
-  the exact origin's current `robots.txt` before requesting a feed and refuses
-  collection when robots is inaccessible or disallows that path. A robots
-  Allow rule alone never grants content-reuse or training rights.
+- MaxCore's native downloader uses an exact source registry and bounded safe
+  HTTP. It does not turn indexed result URLs into fetch targets. The registry
+  currently contains only the configured YouTube Atom feeds; no direct source
+  is authorized for any platform in this checkout.
+- Direct collection is fail-closed before a content request. YouTube requires
+  an unexpired, source-ID-scoped authorization record plus the rights-policy
+  approval and a current robots Allow rule. A robots Allow rule alone never
+  grants content-reuse or training rights. The other seven platforms have no
+  registered native source path.
 - An official-policy review on 2026-11-12 is recorded in
   `platform-rights.md` and enforced as a conservative matrix in
   `platform_discovery.py`. The admin source-status payload returns the
@@ -54,5 +59,6 @@ The admin-only diagnostics route is
 `GET /api/awareness/unified/admin/source-status`. It reports configuration,
 scan outcome, freshness, source failures, schedule state, rights policy, and
 retrieval-method counts without returning provider credentials or raw search
-snippets. The profile-discovery route searches the persisted local index and
-does not make request-time web calls.
+snippets. `POST /api/awareness/unified/admin/refresh` runs one bounded refresh
+and reports per-source outcomes. The profile-discovery route searches the
+persisted local index and does not make request-time web calls.

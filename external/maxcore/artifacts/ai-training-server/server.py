@@ -2898,6 +2898,31 @@ async def unified_awareness_admin_source_status(_admin=Depends(verify_admin)):
     }
 
 
+@app.post("/api/awareness/unified/admin/refresh")
+async def unified_awareness_admin_refresh(_admin=Depends(verify_admin)):
+    """Run one protected refresh and return truthful per-source outcomes."""
+    from fastapi.responses import JSONResponse
+    from ai_model.awareness import get_engine
+    from ai_model.awareness.engine import _safe_failure_code
+
+    engine = get_engine()
+    try:
+        snapshot = await _in_thread(engine.refresh)
+    except Exception as exc:
+        return JSONResponse(status_code=503, content={
+            "success": False,
+            "refresh_outcome": "failed",
+            "failure": _safe_failure_code(exc),
+            "status": engine.status(),
+        })
+    return {
+        "success": True,
+        "refresh_outcome": "succeeded",
+        "snapshot_id": snapshot.id,
+        "status": engine.status(),
+    }
+
+
 # Admin authorization is deliberately stronger than ordinary generation/train
 # access. This isolated route does not relax any serving-write rejection.
 from ai_model.training.live_learning import create_router as _live_learning_router
