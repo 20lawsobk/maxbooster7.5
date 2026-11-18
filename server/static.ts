@@ -11,6 +11,7 @@ import { fileURLToPath } from "url";
 import { db } from "./db";
 import { listings, storefrontDomains, storefronts } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
 const __filename = fileURLToPath(import.meta.url);
 path?.dirname(__filename);
@@ -527,7 +528,13 @@ export function serveStatic(app: Express) {
   app.use("/{*splat}", async (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    if (isProductionEnv()) {
+      res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    } else {
+      // The dev HTML response uses a Replit-preview CSP allowlist; X-Frame-
+      // Options cannot represent that allowlist and would block the preview.
+      res.removeHeader("X-Frame-Options");
+    }
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 
     // If multiTenantRouter already resolved a storefront via storefrontDomains table,
