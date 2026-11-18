@@ -95,7 +95,7 @@ class ContentVariantGeneratorService {
         hashtags?: string[];
         source?: string;
       }>;
-    }>("/platform/social/generate", {
+    }>("/api/platform/social/generate", {
       method: "POST",
       authScope: "generation",
       userId: content.userId,

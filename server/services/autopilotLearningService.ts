@@ -104,7 +104,7 @@ class AutopilotLearningService {
       .limit(50);
     const platform = options.platform || recent[0]?.platform || "instagram";
     const result = await maxCoreControlTransport.request<MaxCoreAutopilotResult>(
-      "/platform/social/autopilot",
+      "/api/platform/social/autopilot",
       {
         method: "POST",
         authScope: "generation",

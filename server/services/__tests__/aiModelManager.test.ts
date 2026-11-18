@@ -59,6 +59,49 @@ describe("AIModelManager MaxCore engagement transport", () => {
   });
 
   it.each(["admin-owner", "regular-owner"])(
+    "routes %s social autopilot generation to its account curriculum",
+    async (userId) => {
+      mocks.maxCoreRequest
+        .mockResolvedValueOnce({
+          domain: "social",
+          version: "trained-1",
+          session_count: 7,
+          weights: { ready: true },
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          platform: "instagram",
+          variants: [
+            {
+              body: "A new release is here",
+              source: "model",
+            },
+          ],
+        });
+
+      const model = await aiModelManager.getSocialAutopilot(userId);
+      const recommendations = await model.generateContentRecommendations("release");
+
+      expect(recommendations[0]?.content).toBe("A new release is here");
+      expect(mocks.maxCoreRequest).toHaveBeenNthCalledWith(
+        1,
+        "/api/models/social/state",
+        { method: "GET", authScope: "admin" },
+      );
+      expect(mocks.maxCoreRequest).toHaveBeenNthCalledWith(
+        2,
+        "/api/platform/social/generate",
+        expect.objectContaining({
+          method: "POST",
+          authScope: "generation",
+          userId,
+          body: expect.objectContaining({ user_id: userId }),
+        }),
+      );
+    },
+  );
+
+  it.each(["admin-owner", "regular-owner"])(
     "routes %s advertising autopilot generation to MaxCore",
     async (userId) => {
       mocks.maxCoreRequest
@@ -95,7 +138,7 @@ describe("AIModelManager MaxCore engagement transport", () => {
       );
       expect(mocks.maxCoreRequest).toHaveBeenNthCalledWith(
         2,
-        "/platform/ads/generate",
+        "/api/platform/ads/generate",
         expect.objectContaining({
           method: "POST",
           authScope: "generation",

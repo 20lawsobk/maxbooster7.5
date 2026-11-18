@@ -118,7 +118,7 @@ describe("autopilot learning MaxCore integration", () => {
     );
 
     expect(mocks.maxCoreRequest).toHaveBeenCalledWith(
-      "/platform/social/autopilot",
+      "/api/platform/social/autopilot",
       {
         method: "POST",
         authScope: "generation",
