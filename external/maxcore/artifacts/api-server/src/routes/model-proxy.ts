@@ -725,6 +725,27 @@ router.get("/training/status", async (req, res) => {
   await proxyRequest(req, res, "/training/status");
 });
 
+// Internal learning-candidate metadata is served by the Python model API.
+// Keep the exact `/api/training/...` upstream path: these routes are mounted
+// below `/api` in this gateway, while the Python router declares that prefix
+// itself. Max Booster's outer proxy already enforces administrator access.
+router.get("/training/candidates/internal", async (req, res) => {
+  await proxyRequest(req, res, "/api/training/candidates/internal");
+});
+
+router.get("/training/candidates/internal/:runId", async (req, res) => {
+  const { runId } = req.params;
+  if (!/^internal-[0-9a-f]{32}$/.test(runId)) {
+    res.status(404).json({ status: "not_found" });
+    return;
+  }
+  await proxyRequest(
+    req,
+    res,
+    `/api/training/candidates/internal/${encodeURIComponent(runId)}`,
+  );
+});
+
 // Management must remain reachable while waiting for the first reviewed model.
 // Python validates the caller's admin credential; never insert a server key.
 router.get("/training/live/status", async (req, res) => {

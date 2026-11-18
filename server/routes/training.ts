@@ -20,7 +20,14 @@ async function proxyToAI(
   timeoutMs = TRAIN_TIMEOUT,
 ): Promise<{ ok: boolean; data: unknown; status: number }> {
   try {
-    const data = await maxCoreControlTransport.request(endpoint, {
+    // The local MaxCore API server mounts its model proxy under `/api`.
+    // Keep accepting the route-local paths used below, but always send the
+    // canonical upstream API path. Without this prefix, requests hit the
+    // server root and return 404 even though the training endpoint exists.
+    const apiEndpoint = endpoint.startsWith("/api/")
+      ? endpoint
+      : `/api${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+    const data = await maxCoreControlTransport.request(apiEndpoint, {
       method,
       body,
       timeoutMs,
