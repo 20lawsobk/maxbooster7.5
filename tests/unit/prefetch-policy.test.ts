@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getPrefetchMode } from "../../client/src/lib/prefetchPolicy";
+import {
+  getPrefetchMode,
+  isIdlePrefetchAllowed,
+} from "../../client/src/lib/prefetchPolicy";
 
 describe("speculative route prefetch policy", () => {
   it("disables speculation for data-saving and constrained devices", () => {
@@ -52,14 +55,16 @@ describe("speculative route prefetch policy", () => {
   });
 
   it("allows idle prefetch only with strong desktop capacity signals", () => {
-    expect(
-      getPrefetchMode({
+    const mode = getPrefetchMode({
         effectiveType: "4g",
         downlink: 5,
         deviceMemory: 4,
         hardwareConcurrency: 4,
         viewportWidth: 1024,
-      }),
-    ).toBe("idle");
+      });
+    expect(mode).toBe("idle");
+    expect(isIdlePrefetchAllowed(false, mode)).toBe(true);
+    expect(isIdlePrefetchAllowed(true, mode)).toBe(false);
+    expect(isIdlePrefetchAllowed(false, "intent")).toBe(false);
   });
 });
