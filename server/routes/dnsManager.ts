@@ -29,7 +29,7 @@ async function getUserDomainUsage(
        SELECT domain FROM dns_zones WHERE user_id = $1
        UNION
        SELECT sd.domain
-       FROM storefront_domains sd
+       FROM public.storefront_domains sd
        JOIN storefronts s ON s.id = sd.storefront_id
        WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
      ) combined`,
@@ -707,7 +707,7 @@ router.get("/zones/:zoneId/storefront-link", async (req, res) => {
 
     const linkResult = await pool?.query(
       `SELECT sd.storefront_id, sd.status, s.name, s.slug
-       FROM storefront_domains sd
+       FROM public.storefront_domains sd
        JOIN storefronts s ON s.id = sd.storefront_id
        WHERE sd.domain = $1 AND sd.type = 'custom_domain' AND s.user_id = $2
        LIMIT 1`,
@@ -783,25 +783,25 @@ router.post("/zones/:zoneId/use-as-storefront", async (req, res) => {
 
     // Clear any existing custom_domain links for this storefront (one at a time)
     await pool.query(
-      `DELETE FROM storefront_domains WHERE storefront_id = $1 AND type = 'custom_domain'`,
+      `DELETE FROM public.storefront_domains WHERE storefront_id = $1 AND type = 'custom_domain'`,
       [storefrontId],
     );
 
     // Clear any existing link for this domain (in case it was linked to a different storefront)
-    await pool.query(`DELETE FROM storefront_domains WHERE domain = $1`, [
+    await pool.query(`DELETE FROM public.storefront_domains WHERE domain = $1`, [
       zone.domain,
     ]);
 
     // Insert new link
     await pool.query(
-      `INSERT INTO storefront_domains (storefront_id, domain, type, status, is_primary, dns_zone_id)
+      `INSERT INTO public.storefront_domains (storefront_id, domain, type, status, is_primary, dns_zone_id)
        VALUES ($1, $2, 'custom_domain', 'active', true, $3)`,
       [storefrontId, zone.domain, zone.id],
     );
 
     // Upsert storefront_hosts so the edge router picks it up (root domain)
     await pool.query(
-      `INSERT INTO storefront_hosts (host, storefront_id, cert_status, created_at, updated_at)
+      `INSERT INTO public.storefront_hosts (host, storefront_id, cert_status, created_at, updated_at)
        VALUES ($1, $2, 'pending', NOW(), NOW())
        ON CONFLICT (host) DO UPDATE SET storefront_id = EXCLUDED.storefront_id, updated_at = NOW()`,
       [zone.domain, storefrontId],
@@ -812,7 +812,7 @@ router.post("/zones/:zoneId/use-as-storefront", async (req, res) => {
       !zone.domain.startsWith("www.") && zone.domain.split(".").length === 2;
     if (isRootDomain) {
       await pool.query(
-        `INSERT INTO storefront_hosts (host, storefront_id, cert_status, created_at, updated_at)
+        `INSERT INTO public.storefront_hosts (host, storefront_id, cert_status, created_at, updated_at)
          VALUES ($1, $2, 'pending', NOW(), NOW())
          ON CONFLICT (host) DO UPDATE SET storefront_id = EXCLUDED.storefront_id, updated_at = NOW()`,
         [`www.${zone.domain}`, storefrontId],
@@ -969,17 +969,17 @@ router.post("/zones/:zoneId/transfer-out", async (req, res) => {
 
     // Clean up storefront links before deleting the zone
     const linkResult = await pool?.query(
-      `SELECT storefront_id FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain' LIMIT 1`,
+      `SELECT storefront_id FROM public.storefront_domains WHERE domain = $1 AND type = 'custom_domain' LIMIT 1`,
       [zone?.domain],
     );
     const linkedStorefrontId = (linkResult as any)?.rows[0]?.storefront_id ?? null;
 
     await pool?.query(
-      `DELETE FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain'`,
+      `DELETE FROM public.storefront_domains WHERE domain = $1 AND type = 'custom_domain'`,
       [zone?.domain],
     );
     await pool?.query(
-      `DELETE FROM storefront_hosts WHERE host = $1 OR host = $2`,
+      `DELETE FROM public.storefront_hosts WHERE host = $1 OR host = $2`,
       [zone?.domain, `www.${zone?.domain}`],
     );
 
@@ -1027,20 +1027,20 @@ router.delete("/zones/:zoneId/use-as-storefront", async (req, res) => {
 
     // Find the linked storefront so we can clear its customDomain field
     const linkResult = await pool.query(
-      `SELECT storefront_id FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain' LIMIT 1`,
+      `SELECT storefront_id FROM public.storefront_domains WHERE domain = $1 AND type = 'custom_domain' LIMIT 1`,
       [zone.domain],
     );
     const linkedStorefrontId = (linkResult as any).rows[0].storefront_id ?? null;
 
     // Remove storefront_domains entry
     await pool.query(
-      `DELETE FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain'`,
+      `DELETE FROM public.storefront_domains WHERE domain = $1 AND type = 'custom_domain'`,
       [zone?.domain],
     );
 
     // Remove storefront_hosts entries (root domain and www variant)
     await pool?.query(
-      `DELETE FROM storefront_hosts WHERE host = $1 OR host = $2`,
+      `DELETE FROM public.storefront_hosts WHERE host = $1 OR host = $2`,
       [zone?.domain, `www.${zone?.domain}`],
     );
 

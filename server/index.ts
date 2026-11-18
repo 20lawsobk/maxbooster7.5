@@ -1091,9 +1091,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   const { pool: readinessPool } = await import("./db.js");
   await assertWorkerSchema(sql => readinessPool.query(sql), backupsEnabled, fanMailEnabled);
-  // Check every durable consumer before starting any readiness background work.
+  // Check the durable consumer's full column contract before worker startup.
   await readinessPool.query(
-    "SELECT id,user_id,type,title,message,link,frequency,due_at,state,owner,provider_id,error,updated_at FROM integration_notification_digest LIMIT 0",
+    "SELECT id,user_id,type,title,message,link,frequency,due_at,state,owner,provider_id,error,updated_at FROM public.integration_notification_digest LIMIT 0",
   );
   app.use((await import("./lib/maxcoreOwnerContext.js")).maxcoreOwnerContext);
   await registerRoutes(httpServer, app);

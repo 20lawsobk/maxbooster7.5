@@ -536,7 +536,7 @@ export class DatabaseStorage implements IStorage {
   async getAllEnabledAdvertisingAutopilotConfigs(): Promise<any[]> {
     const result = await dbRead?.execute(sql`
       SELECT id, preferences
-      FROM users
+      FROM public.users
       WHERE (preferences->>'advertisingAutopilotConfig')::jsonb->>'isRunning' = 'true'
       LIMIT 1000
     `);
@@ -557,7 +557,7 @@ export class DatabaseStorage implements IStorage {
   async getAllEnabledAutopilotConfigs(): Promise<any[]> {
     const result = await dbRead?.execute(sql`
       SELECT id, preferences
-      FROM users
+      FROM public.users
       WHERE (preferences->>'autopilotConfig')::jsonb->>'enabled' = 'true'
       LIMIT 1000
     `);
@@ -1371,7 +1371,7 @@ export class DatabaseStorage implements IStorage {
           ), 0)::int AS engagement,
           COALESCE(SUM(COALESCE((engagement->>'views')::int, 0)), 0)::int AS views,
           COALESCE(SUM(COALESCE((engagement->>'impressions')::int, 0)), 0)::int AS impressions
-        FROM posts
+         FROM public.posts
         WHERE user_id = ${userId} AND created_at >= ${sevenDaysAgo}
         GROUP BY DATE(created_at)
       `),

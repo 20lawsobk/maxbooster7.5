@@ -13,6 +13,7 @@ import * as schema from "@shared/schema";
 import { config } from "./config/defaults.js";
 import { createHash } from "crypto";
 import { logger } from "./logger.js";
+import { configureApplicationDatabaseSession } from "./lib/databaseSession.js";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -270,20 +271,22 @@ export const pool: Pool = isolatedNodePostgresPool
       connectionTimeoutMillis: config.database.connectionTimeout,
     });
 
-// Hard cap on individual query execution time — set at session level on every
-// new connection so it survives pool recycling. Prevents runaway background jobs
-// (pattern detection, token refresh, analytics) from holding a connection for
-// minutes and starving user-facing requests. Using pool.on('connect') rather
-// than the 'options' startup parameter is safer with Neon's WebSocket proxy,
-// which may not forward arbitrary startup options to the backend.
-pool.on("connect", (client: PoolClient) => {
-  client.query("SET statement_timeout = '30000'").catch((err: Error) => {
-    logger.warn({
+// Pin the app schema and timeout before the pool exposes each new client.
+// The single queued statement is ordered before application queries and works
+// with both Neon serverless and the isolated node-postgres acceptance adapter.
+function configurePoolClient(client: PoolClient, source: string): void {
+  void configureApplicationDatabaseSession(client).catch((err: Error) => {
+    logger.error({
+      source,
       err: err?.message,
-      message: "[DB] Failed to set statement_timeout on new connection",
+      message: "[DB] Failed to initialize application database session",
     });
   });
-});
+}
+
+pool.on("connect", (client: PoolClient) =>
+  configurePoolClient(client, "primary"),
+);
 
 // Pool-level error handler — prevents unhandled 'error' events from idle client
 // disconnects from becoming uncaughtExceptions and crashing the process.
@@ -323,6 +326,9 @@ export const replicaPool = replicaUrl
 
 // Prevent uncaughtException from replica pool idle client disconnects
 if (replicaPool) {
+  replicaPool.on("connect", (client: PoolClient) =>
+    configurePoolClient(client, "replica"),
+  );
   replicaPool?.on("error", (err: Error) => {
     logger.warn({
       value: err?.message,

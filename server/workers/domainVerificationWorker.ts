@@ -68,7 +68,7 @@ async function runVerificationTick(): Promise<void> {
       verification_failures: number;
     }>(
       `SELECT id, domain, COALESCE(verification_failures, 0) AS verification_failures
-       FROM storefront_domains
+       FROM public.storefront_domains
        WHERE status IN ('pending', 'verification_failed')
          AND type = 'custom_domain'
        ORDER BY verification_failures ASC, updated_at ASC

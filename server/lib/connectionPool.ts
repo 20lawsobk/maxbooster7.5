@@ -20,6 +20,7 @@ import { Pool, PoolConfig, type PoolClient } from "pg";
 import { logger } from "../logger.js";
 import { env } from "../config/env.js";
 import { selectApplicationDatabaseUrl } from "../config/databaseTarget.js";
+import { configureApplicationDatabaseSession } from "./databaseSession.js";
 
 interface PoolStats {
   totalConnections: number;
@@ -78,8 +79,14 @@ class OptimizedConnectionPool {
   }
 
   private setupEventHandlers(): void {
-    this.pool.on("connect", () => {
+    this.pool.on("connect", (client: PoolClient) => {
       logger.debug("New database connection established");
+      void configureApplicationDatabaseSession(client).catch((err: Error) => {
+        logger.error(
+          { err: err.message },
+          "Failed to initialize the application database session",
+        );
+      });
     });
 
     this.pool.on("acquire", () => {});

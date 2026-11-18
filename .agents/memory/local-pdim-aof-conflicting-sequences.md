@@ -18,3 +18,11 @@ Create and durably sync the AOF parent directory before attempting the sibling l
 **Why:** A clean local PDIM test first exposed a missing `data/` parent, then an `ELOCKED` lease left by SIGKILL. The safe recovery preserved all 256 acknowledged writes but waited about 60 seconds for the configured stale lease.
 
 **How to apply:** Include fresh-directory startup and forced-kill/restart tests in AOF changes. Treat the stale-window delay as an availability tradeoff; any faster takeover requires a separately verified owner-liveness/fencing design.
+
+## Workspace and deployment namespace isolation
+
+The development preview and published runtime can address the same private App Storage bucket, so they must use distinct PDIM namespaces and distinct local journal paths. A new namespace is not created by normal startup: confirm its `HEAD` is absent, then initialize it through the explicit offline migration from a new empty development journal. Never migrate the existing shared journal into preview merely to acquire a lease, and never force-take an active owner's namespace.
+
+**Why:** A preview start collided with a live namespace owner. The existing local journal was not a safe preview seed, and the journal protocol correctly refuses to acquire a missing namespace until an operator initializes it.
+
+**How to apply:** Before starting a second PDIM runtime, separate bucket prefixes and local AOF files, preserve the existing namespace and journal, initialize only the isolated development prefix, and confirm the development workflow can hold its lease while all configured ports pass readiness.

@@ -18481,6 +18481,18 @@ var init_defaults = __esm({
   }
 });
 
+// server/lib/databaseSession.ts
+async function configureApplicationDatabaseSession(client) {
+  await client.query(APPLICATION_DATABASE_SESSION_SQL);
+}
+var APPLICATION_DATABASE_SESSION_SQL;
+var init_databaseSession = __esm({
+  "server/lib/databaseSession.ts"() {
+    "use strict";
+    APPLICATION_DATABASE_SESSION_SQL = "SELECT set_config('search_path', 'public', false), set_config('statement_timeout', '30s', false)";
+  }
+});
+
 // server/db.ts
 var db_exports = {};
 __export(db_exports, {
@@ -18525,6 +18537,15 @@ function createInstrumentedPool(options) {
   });
   return pool2;
 }
+function configurePoolClient(client, source) {
+  void configureApplicationDatabaseSession(client).catch((err) => {
+    logger.error({
+      source,
+      err: err?.message,
+      message: "[DB] Failed to initialize application database session"
+    });
+  });
+}
 async function verifyReadReplica() {
   if (!replicaPool) return;
   try {
@@ -18550,6 +18571,7 @@ var init_db = __esm({
     init_schema();
     init_defaults();
     init_logger();
+    init_databaseSession();
     neonConfig.webSocketConstructor = ws;
     if (!config?.database.url) {
       throw new Error(
@@ -18687,14 +18709,10 @@ var init_db = __esm({
       idleTimeoutMillis: config.database.idleTimeout,
       connectionTimeoutMillis: config.database.connectionTimeout
     });
-    pool.on("connect", (client) => {
-      client.query("SET statement_timeout = '30000'").catch((err) => {
-        logger.warn({
-          err: err?.message,
-          message: "[DB] Failed to set statement_timeout on new connection"
-        });
-      });
-    });
+    pool.on(
+      "connect",
+      (client) => configurePoolClient(client, "primary")
+    );
     pool.on("error", (err) => {
       logger.warn({ value: err?.message, message: "[DB] Idle client error (pool)" });
     });
@@ -18710,6 +18728,10 @@ var init_db = __esm({
       connectionTimeoutMillis: config.database.connectionTimeout
     }) : null;
     if (replicaPool) {
+      replicaPool.on(
+        "connect",
+        (client) => configurePoolClient(client, "replica")
+      );
       replicaPool?.on("error", (err) => {
         logger.warn({
           value: err?.message,
