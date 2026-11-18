@@ -35,8 +35,14 @@ def test_ads_meta_uses_social_awareness_but_keeps_network_identity(monkeypatch):
 
     monkeypatch.setattr(storage_client, "get_ads_client", lambda: Ads())
     monkeypatch.setattr(server, "_model_ready", True)
+    curriculum_reads = []
+
+    def top_performers(user_id, **kwargs):
+        curriculum_reads.append((user_id, kwargs.get("platform")))
+        return [{"style_tags": ["story", "video"]}]
+
     monkeypatch.setattr(storage_client, "get_curriculum_client",
-                        lambda: SimpleNamespace(get_top_performers=lambda *a, **k: []))
+                        lambda: SimpleNamespace(get_top_performers=top_performers))
     seen = []
 
     async def creative(**kwargs):
@@ -56,11 +62,135 @@ def test_ads_meta_uses_social_awareness_but_keeps_network_identity(monkeypatch):
     )
     result = asyncio.run(server.ads_generate(req, _key={}))
     assert result["platform"] == "meta"
+    assert curriculum_reads == [
+        ("artist", "facebook"),
+        ("artist", "instagram"),
+    ]
     assert [c["content_type"] for c in result["creatives"]] == [
         "video", "audio", "text", "image"]
+    assert all(c["curriculum_tags"] == ["story", "video"] for c in seen)
     assert all("social=facebook" in c["awareness"] and
                "quiet harbor" in c["awareness"] for c in seen)
     assert "platform_benchmarks" not in result
+
+
+def test_social_autopilot_conditions_base_model_on_requested_account_curriculum(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    curriculum_reads = []
+    script_requests = []
+
+    def top_performers(user_id, **kwargs):
+        curriculum_reads.append(user_id)
+        return [{
+            "style_tags": ["story"],
+            "content_type": "video",
+            "engagement_rate": 6.0,
+        }]
+
+    class ScriptAgent:
+        def run(self, request):
+            script_requests.append(request)
+            return SimpleNamespace(
+                hook="A story from the studio",
+                cta="Watch the clip",
+                source="model",
+            )
+
+    class DistributionAgent:
+        def run(self, request):
+            return SimpleNamespace(posting_time="2026-11-18T18:00:00Z")
+
+    async def in_thread(fn):
+        return fn()
+
+    async def ready():
+        return None
+
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: SimpleNamespace(
+            get_top_performers=top_performers,
+            get_user_stats=lambda _user_id: {},
+        ),
+    )
+    monkeypatch.setattr(server, "_model_ready", True)
+    monkeypatch.setattr(server, "_wait_for_model_ready", ready)
+    monkeypatch.setattr(server, "_script_agent", ScriptAgent())
+    monkeypatch.setattr(server, "_distribution_agent", DistributionAgent())
+    monkeypatch.setattr(server, "_in_thread", in_thread)
+    monkeypatch.setattr(server, "_effective_awareness", lambda _platform, _text: "")
+    monkeypatch.setattr(server, "_merged_awareness_for", lambda _req: "")
+
+    request = server.PlatformAutopilotRequest(
+        user_id="admin-owner",
+        platform="instagram",
+        recent_posts=[],
+    )
+    result = asyncio.run(server.platform_social_autopilot(request, _key={}))
+
+    assert curriculum_reads == ["admin-owner"]
+    assert script_requests
+    assert script_requests[0].idea == "story"
+    assert result["user_id"] == "admin-owner"
+    assert result["model_powered"] is True
+    assert result["recommendations"]["style_focus"] == ["story"]
+
+
+def test_social_autopilot_does_not_hide_account_curriculum_storage_failure(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    def unavailable():
+        raise RuntimeError("curriculum storage unavailable")
+
+    monkeypatch.setattr(storage_client, "get_curriculum_client", unavailable)
+    request = server.PlatformAutopilotRequest(
+        user_id="admin-owner",
+        platform="instagram",
+        recent_posts=[],
+    )
+
+    with pytest.raises(HTTPException) as err:
+        asyncio.run(server.platform_social_autopilot.__wrapped__(request, _key={}))
+
+    assert err.value.status_code == 503
+    assert "account curriculum is unavailable" in err.value.detail.lower()
+
+
+def test_ads_generation_does_not_hide_account_curriculum_storage_failure(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    monkeypatch.setattr(
+        storage_client,
+        "get_ads_client",
+        lambda: SimpleNamespace(get_winning_formula=lambda *_args: None),
+    )
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.AdGenerateRequest(
+        user_id="admin-owner",
+        product="release",
+        platform="meta",
+    )
+
+    with pytest.raises(HTTPException) as err:
+        asyncio.run(server.ads_generate.__wrapped__(request, _key={}))
+
+    assert err.value.status_code == 503
+    assert "account curriculum is unavailable" in err.value.detail.lower()
 
 
 def test_ad_script_uses_agent_run_and_exposes_source(monkeypatch):
@@ -69,6 +199,7 @@ def test_ad_script_uses_agent_run_and_exposes_source(monkeypatch):
     class Agent:
         def run(self, request):
             assert request.platform == "facebook"
+            assert "account-specific measured style themes: story, video" in request.idea
             assert "quiet harbor" in request.awareness
             return SimpleNamespace(hook="Lanterns on the water",
                                    body="A mellow instrumental by June",
@@ -86,7 +217,8 @@ def test_ad_script_uses_agent_run_and_exposes_source(monkeypatch):
     monkeypatch.setattr(server, "_in_thread", in_thread)
     result = asyncio.run(server._generate_ad_creative(
         "meta", "video", "Paper Lanterns", "streams", None,
-        "June", "hip-hop", 0, awareness="quiet harbor"))
+        "June", "hip-hop", 0, awareness="quiet harbor",
+        curriculum_tags=["story", "video"]))
     assert result["source"] == "model"
     assert result["asset_status"] == "spec_only"
     assert result["hook"] == "Lanterns on the water"

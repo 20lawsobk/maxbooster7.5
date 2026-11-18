@@ -108,3 +108,64 @@ def test_ownerless_legacy_feedback_is_audited_without_entering_user_curriculum(
     assert response["curriculum"] == "not_recorded_ownerless"
     assert response["user_id"] is None
     assert (tmp_path / "feedback_log.json").is_file()
+
+
+def test_curriculum_feedback_is_isolated_between_accounts() -> None:
+    class MemoryStorage:
+        def __init__(self) -> None:
+            self.values: dict[str, object] = {}
+
+        def lpush(self, key: str, value: object) -> int:
+            self.values.setdefault(key, [])
+            assert isinstance(self.values[key], list)
+            self.values[key].insert(0, value)
+            return len(self.values[key])
+
+        def ltrim(self, key: str, start: int, stop: int) -> None:
+            assert isinstance(self.values[key], list)
+            self.values[key] = self.values[key][start : stop + 1]
+
+        def hset(self, key: str, field: str, value: object) -> None:
+            self.values.setdefault(key, {})
+            assert isinstance(self.values[key], dict)
+            self.values[key][field] = value
+
+        def incr(self, key: str) -> int:
+            self.values[key] = int(self.values.get(key, 0)) + 1
+            return int(self.values[key])
+
+        def lrange(self, key: str, start: int, stop: int) -> list[dict]:
+            values = self.values.get(key, [])
+            assert isinstance(values, list)
+            return values[start : stop + 1]
+
+        def hgetall(self, key: str) -> dict:
+            value = self.values.get(key, {})
+            assert isinstance(value, dict)
+            return value
+
+    curriculum = storage_client.CurriculumStateClient(MemoryStorage())
+    curriculum.record_feedback(
+        user_id="admin-owner",
+        platform="instagram",
+        engagement_rate=5.0,
+        content_type="video",
+        style_tags=["story"],
+    )
+    curriculum.record_feedback(
+        user_id="regular-owner",
+        platform="instagram",
+        engagement_rate=7.0,
+        content_type="text",
+        style_tags=["question"],
+    )
+
+    admin_feedback = curriculum.get_top_performers("admin-owner")
+    assert len(admin_feedback) == 1
+    assert admin_feedback[0]["user_id"] == "admin-owner"
+    assert admin_feedback[0]["style_tags"] == ["story"]
+    assert admin_feedback[0]["content_type"] == "video"
+    assert [
+        item["style_tags"]
+        for item in curriculum.get_top_performers("regular-owner")
+    ] == [["question"]]

@@ -5825,9 +5825,11 @@ async def platform_social_autopilot(req: PlatformAutopilotRequest, _key = Depend
         curriculum = get_curriculum_client()
         top_content = curriculum.get_top_performers(req.user_id, platform=platform, top_n=5)
         _user_stats = curriculum.get_user_stats(req.user_id)
-    except Exception:
-        top_content = []
-        _user_stats = {}
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="MaxCore account curriculum is unavailable for social autopilot",
+        ) from exc
 
     # Analyse what's working
     top_tags = []
@@ -6950,6 +6952,16 @@ def _ad_social_platform(platform: str) -> str:
     return {"meta": "facebook", "google": "general"}.get(name, normalize_platform(name))
 
 
+def _ad_curriculum_platforms(platform: str) -> tuple[str, ...]:
+    """Use only the signed-in account's social profiles behind this ad network."""
+    name = (platform or "").strip().lower()
+    if name == "meta":
+        return ("facebook", "instagram")
+    if name == "google":
+        return ("google_business",)
+    return (normalize_platform(name),)
+
+
 class AdAutopilotRequest(_AwarenessMixin):
     user_id: str
     platform: Optional[str] = None
@@ -7006,6 +7018,7 @@ async def _generate_ad_creative(
     awareness: str = "",
     instruction: Optional[str] = None,
     content_themes: Optional[List[str]] = None,
+    curriculum_tags: Optional[List[str]] = None,
 ) -> dict:
     """
     Generate an ad-copy creative and placement specification for one subtype.
@@ -7026,8 +7039,19 @@ async def _generate_ad_creative(
     from ai_model.agents.script_agent import ScriptRequest
     if not (_model_ready and _script_agent):
         raise HTTPException(status_code=503, detail="Ad script model is unavailable")
+    safe_curriculum_tags = [
+        " ".join(tag.split())[:64]
+        for tag in (curriculum_tags or [])
+        if isinstance(tag, str) and tag.strip()
+    ][:5]
+    idea = f"{product} by {artist}"
+    if safe_curriculum_tags:
+        idea += (
+            "; account-specific measured style themes: "
+            + ", ".join(safe_curriculum_tags)
+        )
     _sreq = ScriptRequest(
-        idea=f"{product} by {artist}", genre=genre or "",
+        idea=idea, genre=genre or "",
         platform=_ad_social_platform(platform), goal=goal,
         tone=type_spec["copy_tone"], awareness=awareness,
         variant_idx=variant_idx,
@@ -7156,10 +7180,29 @@ async def ads_generate(req: AdGenerateRequest, _key = Depends(require_scope("gen
     # Pull organic engagement signals to cross-enrich targeting
     try:
         curriculum = get_curriculum_client()
-        top_organic = curriculum.get_top_performers(req.user_id, platform=plat, top_n=5)
-        organic_tags = list({t for p in top_organic for t in p.get("style_tags", [])})
-    except Exception:
-        organic_tags = []
+        top_organic = []
+        for curriculum_platform in _ad_curriculum_platforms(plat):
+            top_organic.extend(
+                curriculum.get_top_performers(
+                    req.user_id,
+                    platform=curriculum_platform,
+                    top_n=5,
+                )
+            )
+        top_organic.sort(
+            key=lambda row: row.get("engagement_rate", 0),
+            reverse=True,
+        )
+        top_organic = top_organic[:5]
+        organic_tags = list(dict.fromkeys(
+            t for p in top_organic for t in p.get("style_tags", [])
+            if isinstance(t, str) and t.strip()
+        ))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="MaxCore account curriculum is unavailable for advertising generation",
+        ) from exc
 
     # ── Subtype selection & cycling ───────────────────────────────────────────
     # Priority order (highest wins):
@@ -7214,6 +7257,7 @@ async def ads_generate(req: AdGenerateRequest, _key = Depends(require_scope("gen
             awareness=_merged_aw,
             instruction=req.instruction,
             content_themes=req.content_themes,
+            curriculum_tags=organic_tags,
         )
         creatives.append(creative)
 

@@ -25,6 +25,7 @@
 - [Owner training and generation rights](owner-admin-training-rights.md) — owner-controlled content is authorized; third-party awareness content still needs separate permission.
 - [PDIM Lua JSON values](pdim-lua-json-values.md) — the embedded Wasmoon Redis bridge may expose decoded JSON objects as userdata, so validate fields rather than requiring Lua `table` type.
 - [Max Booster publishing authorization](maxbooster-publishing-authorization.md) — the owner authorizes publishing once release readiness is achieved; this does not make unfinished work ready.
+- [Organic advertising autopilot](organic-advertising-autopilot.md) — MaxCore creates organic promotion distributed through each user's connected social profiles; it does not spend on paid ads.
 - [Replit build runner capacity](replit-publishing-build-runner-capacity.md) — the publishing Build runner is managed separately from the configured Reserved VM runtime; schedule against live cgroup limits.
 - [Read-only Git inventory](read-only-git-inventory.md) — set `GIT_OPTIONAL_LOCKS=0` on audit subprocesses to avoid optional index writes in isolated worktrees.
 - [Deterministic completion patches](completion-loop-patching.md) — generate only registered, evidence-bound local fixes and route all writes through the existing isolated executor.
