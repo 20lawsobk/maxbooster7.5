@@ -9,6 +9,13 @@ export interface PrefetchSignals {
 
 export type PrefetchMode = "none" | "intent" | "idle";
 
+export function isIdlePrefetchAllowed(
+  isDevelopment: boolean,
+  mode: PrefetchMode,
+): boolean {
+  return !isDevelopment && mode === "idle";
+}
+
 /**
  * Keep speculative network work off constrained devices. "idle" is reserved
  * for known-fast, desktop-sized clients; missing browser hints are treated
