@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { readFile } from "node:fs/promises";
+import vm from "node:vm";
 import { waitForStartup } from "../scripts/startup-health.mjs";
 
 async function server(t, handler) {
@@ -32,6 +34,59 @@ test("application readiness requires both the SPA and dependencies", async t => 
   });
   await waitForStartup({ mode: "application", port, timeoutMs: 1000, intervalMs: 5 });
   assert.ok(bootChecks >= 3);
+});
+test("boot page polls uncached readiness and fades into the application", async () => {
+  const source = await readFile(new URL("../server/index.ts", import.meta.url), "utf8");
+  const routeStart = source.indexOf('res.status(200).send(`<!DOCTYPE html>');
+  assert.notEqual(routeStart, -1);
+  assert.match(source.slice(source.indexOf('app.get("/api/boot-status"', 0), routeStart),
+    /res\.setHeader\("Cache-Control", "no-store"\)/);
+
+  const scriptStart = source.indexOf("<script>", routeStart) + "<script>".length;
+  const scriptEnd = source.indexOf("</script>", scriptStart);
+  assert.ok(scriptStart >= "<script>".length && scriptEnd > scriptStart);
+  const script = source.slice(scriptStart, scriptEnd);
+  assert.match(source.slice(routeStart, scriptStart), /body\.is-ready\{opacity:0;pointer-events:none\}/);
+
+  const timers = [];
+  const fetchOptions = [];
+  const replies = [false, true];
+  const classes = new Set();
+  const replacements = [];
+  const screen = { classList: { add: name => classes.add(name) } };
+  const context = {
+    window: {
+      matchMedia: () => ({ matches: false }),
+      location: { replace: path => replacements.push(path) },
+    },
+    document: {
+      body: screen,
+      getElementById: id => id === "boot-screen" ? screen : null,
+    },
+    fetch: async (_url, options) => {
+      fetchOptions.push(options);
+      return { ok: true, json: async () => ({ ready: replies.shift() }) };
+    },
+    setTimeout: (callback, delay) => {
+      timers.push({ callback, delay });
+      return timers.length;
+    },
+  };
+  vm.runInNewContext(script, context, { timeout: 1000 });
+
+  const flushPromises = () => new Promise(resolve => setImmediate(resolve));
+  timers.shift().callback();
+  await flushPromises();
+  assert.equal(timers.at(-1).delay, 2000);
+  timers.at(-1).callback();
+  await flushPromises();
+
+  assert.deepEqual(fetchOptions.map(options => options.cache), ["no-store", "no-store"]);
+  assert.ok(classes.has("is-ready"));
+  assert.deepEqual(replacements, []);
+  assert.equal(timers.at(-1).delay, 180);
+  timers.at(-1).callback();
+  assert.deepEqual(replacements, ["/"]);
 });
 test("liveness text, malformed JSON and degraded dependencies never count as ready", async t => {
   for (const body of ["starting up", "{", JSON.stringify({ status: "degraded" })]) {

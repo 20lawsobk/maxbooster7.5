@@ -18,8 +18,19 @@ describe("initial loading screen", () => {
     const listeners = new Map<string, Function>();
     const classes = new Set<string>();
     let removed = false;
+    let reloadHandler: (() => void) | undefined;
     let observerCallback: (() => void) | undefined;
     let observerDisconnected = false;
+    let errorHandler: ((event: { message: string }) => void) | undefined;
+    const appendErrorOverlay = vi.fn();
+    const msg = { textContent: "Loading Max Booster..." };
+    const sub = { textContent: "" };
+    const button = {
+      style: { display: "none" },
+      addEventListener: (_name: string, callback: () => void) => {
+        reloadHandler = callback;
+      },
+    };
     const loader = {
       parentNode: {
         removeChild() {
@@ -34,16 +45,25 @@ describe("initial loading screen", () => {
     const root = {
       children: [] as unknown[],
       firstElementChild: null as { id: string } | null,
+      hasSuspenseFallback: true,
+      querySelector(selector: string) {
+        return selector === '[role="status"][aria-label="Loading application"]' &&
+          this.hasSuspenseFallback ? {} : null;
+      },
     };
     const document = {
       getElementById(id: string) {
-        return id === "root" ? root : id === "mb-initial-loader" ? loader : null;
+        return id === "root" ? root
+          : id === "mb-initial-loader" ? loader
+            : id === "mb-loader-msg" ? msg
+              : id === "mb-loader-sub" ? sub
+                : id === "mb-loader-reload" ? button
+                  : null;
       },
       querySelectorAll: () => [],
       createElement: () => ({ style: {}, appendChild() {}, addEventListener() {}, textContent: "" }),
-      body: { appendChild() {} },
+      body: { appendChild: appendErrorOverlay },
     };
-    const windowListeners = new Map<string, Function>();
     class TestMutationObserver {
       constructor(callback: () => void) {
         observerCallback = callback;
@@ -54,7 +74,7 @@ describe("initial loading screen", () => {
       }
     }
     const location = { reload: vi.fn() };
-    const timers: Function[] = [];
+    const timers: Array<{ callback: () => void; delay: number }> = [];
     const consoleLog = vi.fn();
     new Function(
       "window",
@@ -68,13 +88,15 @@ describe("initial loading screen", () => {
     )(
       {
         __MB_BOOT: Date.now(),
-        addEventListener: (name: string, callback: Function) => windowListeners.set(name, callback),
+        addEventListener(name: string, callback: (event: { message: string }) => void) {
+          if (name === "error") errorHandler = callback;
+        },
       },
       document,
       { userAgent: "test" },
       TestMutationObserver,
-      (callback: Function) => {
-        timers.push(callback);
+      (callback: () => void, delay: number) => {
+        timers.push({ callback, delay });
         return timers.length;
       },
       location,
@@ -82,8 +104,19 @@ describe("initial loading screen", () => {
     );
 
     expect(removed).toBe(false);
+    timers.find(timer => timer.delay === 20000)?.callback();
+    expect(button.style.display).toBe("inline-block");
+    expect(msg.textContent).toBe("The app has not appeared yet.");
+    reloadHandler?.();
+    expect(location.reload).toHaveBeenCalledOnce();
+
     root.firstElementChild = { id: "main-content" };
     root.children = [root.firstElementChild];
+    observerCallback?.();
+    expect(removed).toBe(false);
+    expect(observerDisconnected).toBe(false);
+
+    root.hasSuspenseFallback = false;
     observerCallback?.();
 
     expect(observerDisconnected).toBe(true);
@@ -92,6 +125,8 @@ describe("initial loading screen", () => {
     expect(removed).toBe(false);
     listeners.get("transitionend")?.();
     expect(removed).toBe(true);
+    errorHandler?.({ message: "Late async error" });
+    expect(appendErrorOverlay).not.toHaveBeenCalled();
     expect(consoleLog).toHaveBeenCalledWith(expect.stringMatching(/App rendered in \d+ ms/));
   });
 });

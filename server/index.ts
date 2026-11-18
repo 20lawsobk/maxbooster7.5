@@ -356,6 +356,7 @@ let _routesReady = false;
 // Lightweight boot-status endpoint — always available, no proxy/header issues.
 // The boot loading page polls this instead of sniffing response headers.
 app.get("/api/boot-status", (_req: Request, res: Response) => {
+  res.setHeader("Cache-Control", "no-store");
   res.json({ ready: _spaHandlerReady });
 });
 
@@ -480,8 +481,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:#0f0f1a}
     body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;
-         background:#0f0f1a;color:#fff;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:24px}
+         color:#fff;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:24px;
+         transition:opacity 180ms ease}
+    body.is-ready{opacity:0;pointer-events:none}
+    @media(prefers-reduced-motion:reduce){body{transition:none}}
     .logo{width:80px;height:80px;border-radius:20px;margin-bottom:24px;
           box-shadow:0 0 40px rgba(124,58,237,0.4);display:block}
     h1{font-size:1.5rem;font-weight:700;margin-bottom:8px}
@@ -496,17 +501,28 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 <body>
   <img class="logo" src="/logo.png" alt="Max Booster"/>
   <h1>Max Booster</h1>
-  <p>Initializing AI systems…</p>
+  <p>Preparing your workspace…</p>
   <div class="bar"><div class="bar-fill"></div></div>
-  <p class="note">First start takes ~1 minute. This page will reload automatically.</p>
+  <p class="note">This page will transition automatically when Max Booster is ready.</p>
   <script>
     (function(){
+      function handoff(){
+        var reducedMotion = window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!reducedMotion) {
+          document.body.classList.add("is-ready");
+          setTimeout(function(){ window.location.replace("/"); }, 180);
+        } else {
+          window.location.replace("/");
+        }
+      }
       function tryReload(){
-        fetch('/api/boot-status').then(function(r){
-          return r?.json();
+        fetch('/api/boot-status', {cache:'no-store'}).then(function(r){
+          if (!r.ok) throw new Error("Boot status is unavailable");
+          return r.json();
         }).then(function(data){
           if(data?.ready){
-            location?.reload();
+            handoff();
           } else {
             setTimeout(tryReload, 2000);
           }
