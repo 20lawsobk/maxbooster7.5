@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { storage } from "../storage.js";
 import { logger } from "../logger.js";
 import { aiModelManager } from "../services/aiModelManager.js";
+import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
 import { db } from "../db";
 import { adCampaigns } from "@shared/schema";
 import { eq, count, gt, desc, and, isNotNull } from "drizzle-orm";
@@ -250,7 +251,7 @@ router.post("/recommend", requireAuth, async (req, res) => {
 
     // Get AI model
     const advertisingModel =
-      await aiModelManager?.getAdvertisingAutopilot(userId);
+      await aiModelManager.getAdvertisingAutopilot(userId);
 
     // Get multimodal features if enabled
     let multimodalFeatures = null;
@@ -266,10 +267,16 @@ router.post("/recommend", requireAuth, async (req, res) => {
 
     // Generate campaign recommendations
     const recommendations =
-      await advertisingModel?.generateCampaignRecommendations(
+      await advertisingModel.generateCampaignRecommendations(
         objective || "awareness",
         multimodalFeatures,
       );
+    if (!Array.isArray(recommendations)) {
+      throw new MaxCoreControlError(
+        "MaxCore advertising recommendations returned an invalid response",
+        502,
+      );
+    }
 
     res.json({
       success: true,
@@ -278,6 +285,13 @@ router.post("/recommend", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Failed to generate campaign recommendations:");
+    if (error instanceof MaxCoreControlError) {
+      res.status(error.status).json({
+        error: "MaxCore advertising recommendations are unavailable",
+        detail: error.message,
+      });
+      return;
+    }
     res
       .status(500)
       .json({ error: "Failed to generate campaign recommendations" });

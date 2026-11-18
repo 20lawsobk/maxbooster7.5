@@ -134,6 +134,30 @@ describe("autopilot MaxCore routes", () => {
     });
   });
 
+  it("preserves MaxCore's curriculum-unavailable status for social recommendations", async () => {
+    mocks.getRecommendations.mockRejectedValue(
+      new mocks.MockMaxCoreControlError(
+        "MaxCore account curriculum is unavailable for social autopilot",
+        503,
+        { detail: "MaxCore account curriculum is unavailable for social autopilot" },
+      ),
+    );
+    const res = makeResponse();
+
+    await getHandler("/recommend")(
+      {
+        user: { id: "creator-1" },
+        body: { platform: "instagram", contentType: "video" },
+      },
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith({
+      detail: "MaxCore account curriculum is unavailable for social autopilot",
+    });
+  });
+
   it("preserves MaxCore's explicit unavailable status for engagement prediction", async () => {
     const upstreamError = new mocks.MockMaxCoreControlError(
       "engagement model unavailable",

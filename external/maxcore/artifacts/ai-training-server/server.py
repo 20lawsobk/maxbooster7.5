@@ -5638,7 +5638,7 @@ class PlatformVideoRequest(_AwarenessMixin):
 
 
 def _build_personalized_tone(user_id: str, platform: str, base_tone: str) -> str:
-    """Pull user engagement signals from storage to bias the model tone."""
+    """Pull required user engagement signals before model-driven generation."""
     try:
         from storage_client import get_curriculum_client
         client = get_curriculum_client()
@@ -5650,8 +5650,11 @@ def _build_personalized_tone(user_id: str, platform: str, base_tone: str) -> str
             if tags:
                 dominant = max(set(tags), key=tags.count)
                 return f"{base_tone}, {dominant}"
-    except Exception:
-        pass
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="MaxCore account curriculum is unavailable for generation",
+        ) from exc
     return base_tone
 
 
@@ -7363,9 +7366,11 @@ async def ads_autopilot(req: AdAutopilotRequest, _key = Depends(require_scope("g
         curriculum   = get_curriculum_client()
         organic_tops = curriculum.get_top_performers(req.user_id, top_n=10)
         organic_tags = list({t for p in organic_tops for t in p.get("style_tags", [])})
-    except Exception:
-        organic_tops = []
-        organic_tags = []
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="MaxCore account curriculum is unavailable for advertising generation",
+        ) from exc
 
     # Determine what platforms to recommend based on what's working
     active_platforms = list({p.get("platform") for p in peaks if p.get("platform")})
@@ -7490,8 +7495,11 @@ async def ads_audience(req: AdAudienceRequest, _key = Depends(require_scope("gen
         curriculum   = get_curriculum_client()
         organic_tops = curriculum.get_top_performers(req.user_id, platform=plat, top_n=10)
         organic_tags = list({t for p in organic_tops for t in p.get("style_tags", [])})
-    except Exception:
-        organic_tags = []
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="MaxCore account curriculum is unavailable for advertising generation",
+        ) from exc
 
     genre_key = (req.genre or "music_fan").lower().replace("-", "_").replace(" ", "_")
     base_segs = AUDIENCE_SEGMENTS.get(genre_key) or AUDIENCE_SEGMENTS["music_fan"]

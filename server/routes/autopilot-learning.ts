@@ -3,7 +3,10 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
 import { autopilotLearningService } from "../services/autopilotLearningService.js";
-import { maxCoreControlTransport } from "../services/maxcoreControlTransport.js";
+import {
+  MaxCoreControlError,
+  maxCoreControlTransport,
+} from "../services/maxcoreControlTransport.js";
 import { logger } from "../logger.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 
@@ -48,6 +51,14 @@ async function getPdimArtistLearningData(artistId: string) {
 }
 
 const router = Router();
+
+function sendLearningError(res, error, message: string): void {
+  if (error instanceof MaxCoreControlError) {
+    res.status(error.status).json({ error: message, detail: error.message });
+    return;
+  }
+  res.status(500).json({ error: message });
+}
 
 async function getSocialModelState() {
   const state = await maxCoreControlTransport.request<{
@@ -150,7 +161,11 @@ router.get("/status", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Failed to get autopilot learning status:");
-    res.status(500).json({ error: "Failed to get autopilot learning status" });
+    sendLearningError(
+      res,
+      error,
+      "MaxCore autopilot learning status is unavailable",
+    );
   }
 });
 
@@ -205,7 +220,7 @@ router.get("/recommendations", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Failed to get recommendations:");
-    res.status(500).json({ error: "Failed to get recommendations" });
+    sendLearningError(res, error, "MaxCore recommendations are unavailable");
   }
 });
 

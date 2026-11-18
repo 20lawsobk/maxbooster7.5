@@ -34,6 +34,8 @@ def canonical(monkeypatch):
             result = "OK"
         elif cmd == "GET":
             result = values.get(args[0])
+        elif cmd == "LRANGE":
+            result = values.get(args[0], [])
         else:
             raise AssertionError(cmd)
         return SimpleNamespace(status=200, body=json.dumps({"result": result}).encode())
@@ -63,6 +65,54 @@ def test_canonical_failure_is_explicit_not_sqlite_success(canonical, monkeypatch
         client.mget("one", "two", "three", "four")
     assert client._fallback == {}
     assert client.status()["available"] is False
+
+
+def test_curriculum_read_distinguishes_authoritative_empty_from_failure(canonical, monkeypatch):
+    client, _, _ = canonical
+    curriculum = storage.CurriculumStateClient(client)
+
+    assert curriculum.get_user_curriculum("creator-1") == []
+
+    monkeypatch.setattr(
+        storage,
+        "trusted_request",
+        lambda *a, **k: SimpleNamespace(status=503, body=b'{"error":"offline"}'),
+    )
+    with pytest.raises(storage.StorageUnavailable):
+        curriculum.get_user_curriculum("creator-1")
+
+
+def test_legacy_curriculum_read_does_not_use_empty_fallback_on_pdim_failure(monkeypatch):
+    monkeypatch.delenv("PDIM_LOCAL_CHANNEL_TOKEN", raising=False)
+    monkeypatch.setenv("PDIM_FORCE_REMOTE", "1")
+    monkeypatch.setattr(
+        storage,
+        "STORAGE_HTTP_URL",
+        "https://storage.example.invalid/api/redis/instances/test/exec",
+    )
+    monkeypatch.setattr(storage, "STORAGE_BEARER_TOKEN", "test-remote-token")
+    monkeypatch.setattr(storage.threading.Thread, "start", lambda self: None)
+    monkeypatch.setattr(storage, "_DiskStore", lambda: None)
+    monkeypatch.setattr(storage, "_get_ping_pool", lambda: None)
+    monkeypatch.setattr(storage, "_get_pool", lambda: None)
+    monkeypatch.setattr(
+        storage,
+        "validated_origin",
+        lambda url, local_only=False: SimpleNamespace(local_only=local_only),
+    )
+    monkeypatch.setattr(
+        storage,
+        "trusted_request",
+        lambda *a, **k: SimpleNamespace(status=503, body=b'{"error":"offline"}'),
+    )
+
+    client = storage.StorageClient()
+    stale_local_value = [{"user_id": "creator-1", "engagement_rate": 0.9}]
+    client._fallback["mb:curriculum:creator-1:feedback"] = stale_local_value
+
+    with pytest.raises(storage.StorageUnavailable):
+        storage.CurriculumStateClient(client).get_user_curriculum("creator-1")
+    assert client._fallback["mb:curriculum:creator-1:feedback"] == stale_local_value
 
 
 def test_local_secret_cannot_be_sent_to_stale_external_origin(monkeypatch):

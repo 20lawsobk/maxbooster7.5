@@ -11,6 +11,13 @@ import pytest
 from fastapi import HTTPException
 
 
+def assert_account_curriculum_unavailable(handler, request):
+    with pytest.raises(HTTPException) as err:
+        asyncio.run(handler.__wrapped__(request, _key={}))
+    assert err.value.status_code == 503
+    assert "account curriculum is unavailable" in err.value.detail.lower()
+
+
 @pytest.fixture(autouse=True)
 def immutable_public_plan():
     from ai_model.awareness import bind
@@ -191,6 +198,98 @@ def test_ads_generation_does_not_hide_account_curriculum_storage_failure(
 
     assert err.value.status_code == 503
     assert "account curriculum is unavailable" in err.value.detail.lower()
+
+
+def test_social_generation_does_not_silently_use_base_tone_when_curriculum_fails(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.PlatformSocialRequest(
+        user_id="creator-1",
+        platform="instagram",
+        topic="new single release",
+    )
+
+    assert_account_curriculum_unavailable(server.platform_social_generate, request)
+
+
+def test_video_generation_does_not_silently_use_base_tone_when_curriculum_fails(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.PlatformVideoRequest(
+        user_id="creator-1",
+        topic="new single release",
+        platform="instagram",
+    )
+
+    assert_account_curriculum_unavailable(server.platform_video_generate, request)
+
+
+def test_ads_autopilot_does_not_generate_from_cold_audience_after_curriculum_failure(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    class Ads:
+        def analyse_portfolio(self, *_args, **_kwargs):
+            return {}
+
+        def get_peak_performers(self, *_args, **_kwargs):
+            return []
+
+    monkeypatch.setattr(storage_client, "get_ads_client", lambda: Ads())
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.AdAutopilotRequest(
+        user_id="creator-1",
+        platform="meta",
+    )
+
+    assert_account_curriculum_unavailable(server.ads_autopilot, request)
+
+
+def test_ads_audience_does_not_return_cold_segments_after_curriculum_failure(
+    monkeypatch,
+):
+    import server
+    import storage_client
+
+    class Ads:
+        def get_peak_performers(self, *_args, **_kwargs):
+            return []
+
+    monkeypatch.setattr(storage_client, "get_ads_client", lambda: Ads())
+    monkeypatch.setattr(
+        storage_client,
+        "get_curriculum_client",
+        lambda: (_ for _ in ()).throw(RuntimeError("curriculum storage unavailable")),
+    )
+    request = server.AdAudienceRequest(
+        user_id="creator-1",
+        platform="meta",
+        product="release",
+    )
+
+    assert_account_curriculum_unavailable(server.ads_audience, request)
 
 
 def test_ad_script_uses_agent_run_and_exposes_source(monkeypatch):
