@@ -11,13 +11,12 @@ function portFromEnv(env, name, fallback) {
 }
 
 export function configuredPortSpecs(env = process.env) {
-  const development = env.MAXBOOSTER_DEV_PORTS === "1" && env.NODE_ENV !== "production";
   return [
     { name: "authoritative DNS", port: portFromEnv(env, "DNS_AUTHORITY_PORT", 53), udp: true },
     {
       name: "web application",
       port: portFromEnv(env, "PORT", 5000),
-      ...(development ? { httpPath: "/ready" } : {}),
+      httpPath: "/ready",
     },
     { name: "local DNS node", port: portFromEnv(env, "DNS_NODE_LOCAL_PORT", 5353), udp: true },
     {
@@ -34,27 +33,28 @@ export function configuredPortSpecs(env = process.env) {
     {
       name: "MaxCore diffusion gateway",
       port: portFromEnv(env, "VIDEO_DIFFUSION_PORT", 8008),
-      ...(development ? { httpPath: "/health" } : {}),
+      httpPath: "/health",
     },
     {
       name: "MaxCore API",
       port: portFromEnv(env, "MAXCORE_LOCAL_PORT", 8090),
-      ...(development ? { httpPath: "/healthz" } : {}),
+      httpPath: "/healthz",
     },
     { name: "BoosterState", port: portFromEnv(env, "BOOSTERSTATE_SIDECAR_PORT", 9877) },
     {
       name: "MaxCore model API",
       port: portFromEnv(env, "MODEL_API_PORT", 9878),
-      ...(development ? { httpPath: "/api/ready" } : {}),
+      httpPath: "/api/ready",
     },
     {
       name: "MaxCore model health",
       port: portFromEnv(env, "MODEL_API_HEALTH_PORT", 9879),
-      ...(development ? { httpPath: "/health" } : {}),
+      httpPath: "/healthz",
     },
     {
       name: "MaxCore proxy sidecar",
       port: portFromEnv(env, "PYTHON_AI_PORT", 9880),
+      httpPath: "/health",
     },
   ];
 }
@@ -114,7 +114,9 @@ export async function httpHealthy(port, path = "/health", timeoutMs = 500) {
       signal: AbortSignal.timeout(timeoutMs),
       redirect: "manual",
     });
-    return response.status === 200;
+    const healthy = response.status === 200;
+    await response.body?.cancel();
+    return healthy;
   } catch {
     return false;
   }

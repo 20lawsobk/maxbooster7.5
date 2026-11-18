@@ -8931,138 +8931,32 @@ try {
   }
 });
 
-// scripts/recovery-private-store.mjs
-import { Storage, CRC32C } from "@google-cloud/storage";
-async function createRecoveryStorage({
-  bucketId,
-  fetchImpl = globalThis.fetch,
-  StorageClass = Storage
-} = {}) {
-  let selected = bucketId;
-  if (!selected) {
-    if (typeof fetchImpl !== "function") throw new Error("Sidecar default-bucket lookup is unavailable");
-    const response = await fetchImpl(DEFAULT_BUCKET_URL);
-    if (!response.ok) throw new Error(`Sidecar default-bucket lookup failed (${response.status})`);
-    const body = await response.json();
-    selected = body?.bucketId;
-  }
-  selected = assertSafeBucketId(selected);
-  const client = new StorageClass({ credentials: REPLIT_ADC, projectId: "" });
-  return { bucket: client.bucket(selected), bucketId: selected };
-}
-var SIDECAR, DEFAULT_BUCKET_URL, REPLIT_ADC, assertSafeBucketId, MANAGED_STORAGE_CONTRACT;
-var init_recovery_private_store = __esm({
-  "scripts/recovery-private-store.mjs"() {
-    "use strict";
-    SIDECAR = "http://127.0.0.1:1106";
-    DEFAULT_BUCKET_URL = `${SIDECAR}/object-storage/default-bucket`;
-    REPLIT_ADC = Object.freeze({
-      audience: "replit",
-      subject_token_type: "access_token",
-      token_url: `${SIDECAR}/token`,
-      type: "external_account",
-      credential_source: {
-        url: `${SIDECAR}/credential`,
-        format: { type: "json", subject_token_field_name: "access_token" }
-      },
-      universe_domain: "googleapis.com"
-    });
-    assertSafeBucketId = (value) => {
-      if (typeof value !== "string" || !/^[a-z0-9][a-z0-9._-]{1,221}[a-z0-9]$/.test(value)) {
-        throw new Error("Recovery bucket selection was missing or invalid");
-      }
-      return value;
-    };
-    MANAGED_STORAGE_CONTRACT = Object.freeze({
-      privacy: "private Replit App Storage; authenticated access required",
-      retention: "retained-until-explicit-delete",
-      fixedDurationLocked: false
-    });
-  }
-});
-
-// server/lib/pdimBucketObjects.ts
-function configuredPdimBucketId(env2 = process.env) {
-  return env2.Replit_storage_bucket_id || env2.DATABASE_RECOVERY_BUCKET_ID || env2.REPLIT_BUCKET_ID;
-}
-async function configuredPdimBucketObjects() {
-  const bucketId = configuredPdimBucketId();
-  if (!bucketId) throw new Error("PDIM App Storage bucket is not configured");
-  const { bucket } = await createRecoveryStorage({ bucketId });
-  return new PdimBucketObjects(bucket);
-}
-var PdimBucketObjects;
-var init_pdimBucketObjects = __esm({
-  "server/lib/pdimBucketObjects.ts"() {
-    "use strict";
-    init_recovery_private_store();
-    PdimBucketObjects = class {
-      constructor(bucket) {
-        this.bucket = bucket;
-      }
-      async read(key) {
-        const file = this.bucket.file(key);
-        const maxGenerationChanges = 3;
-        for (let attempt = 0; attempt < maxGenerationChanges; attempt += 1) {
-          let generation;
-          try {
-            const [metadata] = await file.getMetadata();
-            if (typeof metadata.generation !== "string") {
-              throw new Error("Missing object generation");
-            }
-            generation = metadata.generation;
-          } catch (error) {
-            if (error.code === 404) return null;
-            throw error;
-          }
-          try {
-            const [bytes] = await this.bucket.file(key, { generation }).download({
-              validation: "crc32c"
-            });
-            return { bytes, generation };
-          } catch (error) {
-            if (error.code !== 404) throw error;
-            let currentGeneration;
-            try {
-              const [current] = await file.getMetadata();
-              currentGeneration = current.generation;
-            } catch (metadataError) {
-              if (metadataError.code === 404) return null;
-              throw metadataError;
-            }
-            if (typeof currentGeneration !== "string" || currentGeneration === generation) {
-              throw error;
-            }
-            if (attempt === maxGenerationChanges - 1) {
-              throw new Error(`Object ${key} changed during ${maxGenerationChanges} generation-pinned reads`, {
-                cause: error
-              });
-            }
-          }
-        }
-        throw new Error(`Object ${key} could not be read from a stable generation`);
-      }
-      async write(key, bytes, generation) {
-        const file = this.bucket.file(key);
-        await file.save(bytes, {
-          resumable: false,
-          validation: "crc32c",
-          preconditionOpts: { ifGenerationMatch: generation }
-        });
-        const published = file.metadata.generation;
-        if (typeof published !== "string") throw new Error("Upload returned no generation receipt");
-        return published;
-      }
-    };
-  }
-});
-
 // server/lib/pdimBucketJournal.ts
 import { createHash as createHash7, randomUUID as randomUUID4 } from "node:crypto";
-var digest2, hash, sequence, PdimBucketUnavailable, PdimBucketLeaseBusy, PdimBucketJournal;
+import { performance as performance2 } from "node:perf_hooks";
+function pdimBucketReadFailureCategory(error) {
+  if (error instanceof PdimBucketReadTimeout) return "timeout";
+  if (error instanceof PdimBucketReadFailure) return error.category;
+  const code = error && typeof error === "object" ? error.code : void 0;
+  if (typeof code === "string" && ["ETIMEDOUT", "ESOCKETTIMEDOUT", "ECONNABORTED", "ABORT_ERR"].includes(code)) {
+    return "timeout";
+  }
+  if (code === 401 || code === 403) return "access_denied";
+  if (code === 404) return "not_found";
+  if (code === 429) return "rate_limited";
+  if (typeof code === "number" && code >= 500 && code <= 599) return "service_unavailable";
+  if (error instanceof PdimBucketUnavailable) {
+    if (/missing/i.test(error.message)) return "missing";
+    if (/corrupt|integrity|discontinuity|truncated|ancestry/i.test(error.message)) return "integrity";
+    return "durability_failure";
+  }
+  return "storage_error";
+}
+var DEFAULT_PDIM_RECOVERY_TIMEOUT_MS, digest2, hash, sequence, PdimBucketUnavailable, PdimBucketReadTimeout, PdimBucketReadFailure, PdimBucketLeaseBusy, PdimBucketJournal;
 var init_pdimBucketJournal = __esm({
   "server/lib/pdimBucketJournal.ts"() {
     "use strict";
+    DEFAULT_PDIM_RECOVERY_TIMEOUT_MS = 18e4;
     digest2 = (bytes) => createHash7("sha256").update(bytes).digest("hex");
     hash = (value) => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
     sequence = (value) => Number.isSafeInteger(value) && Number(value) >= 0;
@@ -9070,6 +8964,25 @@ var init_pdimBucketJournal = __esm({
       constructor() {
         super(...arguments);
         this.code = "PDIM_DURABILITY_FAILURE";
+      }
+    };
+    PdimBucketReadTimeout = class extends PdimBucketUnavailable {
+      constructor(phase, sequence2, ordinal, elapsedMs = 0) {
+        super("Bucket PDIM read deadline exceeded");
+        this.phase = phase;
+        this.sequence = sequence2;
+        this.ordinal = ordinal;
+        this.elapsedMs = elapsedMs;
+        this.code = "PDIM_READ_TIMEOUT";
+        this.name = "PdimBucketReadTimeout";
+      }
+    };
+    PdimBucketReadFailure = class extends PdimBucketUnavailable {
+      constructor(category) {
+        super("Bucket PDIM object read failed");
+        this.category = category;
+        this.code = "PDIM_STORAGE_READ_FAILURE";
+        this.name = "PdimBucketReadFailure";
       }
     };
     PdimBucketLeaseBusy = class extends PdimBucketUnavailable {
@@ -9123,13 +9036,74 @@ var init_pdimBucketJournal = __esm({
         }
         return id;
       }
-      async readImmutable(id) {
+      async readImmutable(id, context) {
         if (!hash(id)) throw new PdimBucketUnavailable("Invalid bucket object reference");
-        const object = await this.objects.read(`${this.prefix}/objects/${id}`);
-        if (!object || digest2(object.bytes) !== id) {
-          throw new PdimBucketUnavailable("Bucket PDIM object missing or corrupt");
+        const startedAt = performance2.now();
+        let outcome = "failed";
+        let failureCategory;
+        let byteLength;
+        try {
+          const key = `${this.prefix}/objects/${id}`;
+          let object;
+          if (context?.deadlineAt !== void 0) {
+            const remainingMs = context.deadlineAt - performance2.now();
+            if (remainingMs <= 0) {
+              throw new PdimBucketReadTimeout(
+                context.phase,
+                context.sequence,
+                context.ordinal,
+                Math.max(0, Math.round(performance2.now() - startedAt))
+              );
+            }
+            let timer;
+            try {
+              object = await Promise.race([
+                this.objects.read(key, context),
+                new Promise((_resolve, reject) => {
+                  timer = setTimeout(() => reject(new PdimBucketReadTimeout(
+                    context.phase,
+                    context.sequence,
+                    context.ordinal,
+                    Math.max(0, Math.round(performance2.now() - startedAt))
+                  )), remainingMs);
+                })
+              ]);
+            } finally {
+              if (timer) clearTimeout(timer);
+            }
+            if (performance2.now() >= context.deadlineAt) {
+              throw new PdimBucketReadTimeout(
+                context.phase,
+                context.sequence,
+                context.ordinal,
+                Math.max(0, Math.round(performance2.now() - startedAt))
+              );
+            }
+          } else {
+            object = await this.objects.read(key, context);
+          }
+          if (!object) throw new PdimBucketReadFailure("missing");
+          byteLength = object.bytes.byteLength;
+          if (digest2(object.bytes) !== id) throw new PdimBucketReadFailure("integrity");
+          outcome = "ok";
+          return object.bytes;
+        } catch (error) {
+          failureCategory = pdimBucketReadFailureCategory(error);
+          outcome = failureCategory === "timeout" ? "timeout" : "failed";
+          throw error;
+        } finally {
+          if (context?.onRead) {
+            context.onRead({
+              phase: context.phase,
+              ...context.sequence === void 0 ? {} : { sequence: context.sequence },
+              ...context.ordinal === void 0 ? {} : { ordinal: context.ordinal },
+              elapsedMs: Math.max(0, Math.round(performance2.now() - startedAt)),
+              ...byteLength === void 0 ? {} : { byteLength },
+              outcome,
+              ...failureCategory ? { failureCategory } : {}
+            });
+          }
         }
-        return object.bytes;
       }
       async publish(next, expected) {
         const committed = { ...next, commit: randomUUID4() };
@@ -9236,29 +9210,61 @@ var init_pdimBucketJournal = __esm({
           }
         });
       }
-      async recover(onProgress) {
+      async recover(onProgress, options = {}) {
         this.assertOwned();
+        const startedAt = performance2.now();
+        if (options.timeoutMs !== void 0 && (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1)) {
+          throw new Error("Invalid bucket PDIM recovery timeout");
+        }
+        const deadlineAt = options.deadlineAt ?? startedAt + (options.timeoutMs ?? DEFAULT_PDIM_RECOVERY_TIMEOUT_MS);
+        if (!Number.isFinite(deadlineAt) || deadlineAt <= startedAt) {
+          throw new PdimBucketReadTimeout("recovery", void 0, void 0, 0);
+        }
+        const readContext = (phase, sequence2, ordinal) => ({
+          phase,
+          sequence: sequence2,
+          ordinal,
+          deadlineAt,
+          onRead: options.onRead
+        });
+        const assertDeadline = (sequence2) => {
+          if (performance2.now() >= deadlineAt) {
+            throw new PdimBucketReadTimeout(
+              "journal_replay",
+              sequence2,
+              void 0,
+              Math.max(0, Math.round(performance2.now() - startedAt))
+            );
+          }
+        };
         const head = { ...this.head };
-        const snapshot = await this.readImmutable(head.snapshot);
+        const snapshot = await this.readImmutable(head.snapshot, readContext("snapshot_manifest"));
+        assertDeadline();
         const transactions = [];
         let tip = head.tip;
         let expected = head.sequence;
         onProgress?.(0, head.sequence - head.baseSequence);
         while (expected > head.baseSequence) {
+          assertDeadline(expected);
           if (!tip) throw new PdimBucketUnavailable("Bucket PDIM journal truncated");
-          const frame = JSON.parse((await this.readImmutable(tip)).toString());
+          const frame = JSON.parse((await this.readImmutable(
+            tip,
+            readContext("journal_frame", expected)
+          )).toString());
+          assertDeadline(expected);
           if (frame.version !== 1 || frame.sequence !== expected || !(frame.previous === null || hash(frame.previous)) || !this.validateValue(frame.value)) {
             throw new PdimBucketUnavailable("Bucket PDIM journal discontinuity or invalid transaction");
           }
           transactions.push(frame.value);
           tip = frame.previous;
           expected--;
-          if ((head.sequence - expected) % 32 === 0 || expected === head.baseSequence) {
+          if ((head.sequence - expected) % 8 === 0 || expected === head.baseSequence) {
             onProgress?.(head.sequence - expected, head.sequence - head.baseSequence);
           }
         }
         if (tip !== head.baseTip) throw new PdimBucketUnavailable("Bucket PDIM checkpoint ancestry mismatch");
         this.assertOwned();
+        assertDeadline();
         return { snapshot, transactions: transactions.reverse() };
       }
       checkpoint(snapshot, position) {
@@ -9290,6 +9296,249 @@ var init_pdimBucketJournal = __esm({
           this.assertOwned();
           await this.publish({ ...this.head, owner: null, leaseUntil: 0 }, this.generation);
         });
+      }
+    };
+  }
+});
+
+// scripts/recovery-private-store.mjs
+import { Storage, CRC32C } from "@google-cloud/storage";
+async function createRecoveryStorage({
+  bucketId,
+  fetchImpl = globalThis.fetch,
+  StorageClass = Storage,
+  timeoutMs,
+  retryOptions
+} = {}) {
+  let selected = bucketId;
+  if (!selected) {
+    if (typeof fetchImpl !== "function") throw new Error("Sidecar default-bucket lookup is unavailable");
+    const response = await fetchImpl(DEFAULT_BUCKET_URL);
+    if (!response.ok) throw new Error(`Sidecar default-bucket lookup failed (${response.status})`);
+    const body = await response.json();
+    selected = body?.bucketId;
+  }
+  selected = assertSafeBucketId(selected);
+  const clientOptions = { credentials: REPLIT_ADC, projectId: "" };
+  if (timeoutMs !== void 0) {
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 12e4) {
+      throw new Error("Recovery storage request timeout is invalid");
+    }
+    clientOptions.timeout = timeoutMs;
+  }
+  if (retryOptions !== void 0) {
+    if (!retryOptions || typeof retryOptions !== "object" || Array.isArray(retryOptions)) {
+      throw new Error("Recovery storage retry options are invalid");
+    }
+    const allowedRetryOptions = /* @__PURE__ */ new Set([
+      "autoRetry",
+      "maxRetries",
+      "totalTimeout",
+      "maxRetryDelay",
+      "retryDelayMultiplier"
+    ]);
+    for (const [key, value] of Object.entries(retryOptions)) {
+      if (!allowedRetryOptions.has(key)) throw new Error("Recovery storage retry options are invalid");
+      if (key === "autoRetry" && typeof value !== "boolean") {
+        throw new Error("Recovery storage retry options are invalid");
+      }
+      if (key !== "autoRetry" && (!Number.isFinite(value) || value < 0)) {
+        throw new Error("Recovery storage retry options are invalid");
+      }
+    }
+    if (retryOptions.maxRetries !== void 0 && (!Number.isSafeInteger(retryOptions.maxRetries) || retryOptions.maxRetries > 5) || retryOptions.totalTimeout !== void 0 && retryOptions.totalTimeout > 120 || retryOptions.maxRetryDelay !== void 0 && retryOptions.maxRetryDelay > 30 || retryOptions.retryDelayMultiplier !== void 0 && retryOptions.retryDelayMultiplier > 10) {
+      throw new Error("Recovery storage retry options are invalid");
+    }
+    clientOptions.retryOptions = { ...retryOptions };
+  }
+  const client = new StorageClass(clientOptions);
+  return { bucket: client.bucket(selected), bucketId: selected };
+}
+var SIDECAR, DEFAULT_BUCKET_URL, REPLIT_ADC, assertSafeBucketId, MANAGED_STORAGE_CONTRACT;
+var init_recovery_private_store = __esm({
+  "scripts/recovery-private-store.mjs"() {
+    "use strict";
+    SIDECAR = "http://127.0.0.1:1106";
+    DEFAULT_BUCKET_URL = `${SIDECAR}/object-storage/default-bucket`;
+    REPLIT_ADC = Object.freeze({
+      audience: "replit",
+      subject_token_type: "access_token",
+      token_url: `${SIDECAR}/token`,
+      type: "external_account",
+      credential_source: {
+        url: `${SIDECAR}/credential`,
+        format: { type: "json", subject_token_field_name: "access_token" }
+      },
+      universe_domain: "googleapis.com"
+    });
+    assertSafeBucketId = (value) => {
+      if (typeof value !== "string" || !/^[a-z0-9][a-z0-9._-]{1,221}[a-z0-9]$/.test(value)) {
+        throw new Error("Recovery bucket selection was missing or invalid");
+      }
+      return value;
+    };
+    MANAGED_STORAGE_CONTRACT = Object.freeze({
+      privacy: "private Replit App Storage; authenticated access required",
+      retention: "retained-until-explicit-delete",
+      fixedDurationLocked: false
+    });
+  }
+});
+
+// server/lib/pdimBucketObjects.ts
+import { performance as performance3 } from "node:perf_hooks";
+function storageFailureCategory(error) {
+  if (error instanceof PdimBucketReadTimeout) return "timeout";
+  const code = error && typeof error === "object" ? error.code : void 0;
+  if (code === 401 || code === 403) return "access_denied";
+  if (code === 429) return "rate_limited";
+  if (code === 408 || code === 504) return "timeout";
+  if (typeof code === "number" && code >= 500 && code <= 599) return "service_unavailable";
+  if (typeof code === "string" && ["ETIMEDOUT", "ESOCKETTIMEDOUT", "ECONNABORTED", "ABORT_ERR"].includes(code)) {
+    return "timeout";
+  }
+  return "storage_error";
+}
+function throwSafeStorageFailure(error) {
+  throw new PdimBucketReadFailure(storageFailureCategory(error));
+}
+function awaitReadDeadline(operation, deadlineAt, context, startedAt) {
+  const remainingMs = deadlineAt - performance3.now();
+  if (remainingMs <= 0) {
+    return Promise.reject(new PdimBucketReadTimeout(
+      context?.phase ?? "object_read",
+      context?.sequence,
+      context?.ordinal,
+      Math.max(0, Math.round(performance3.now() - startedAt))
+    ));
+  }
+  let pending;
+  try {
+    pending = operation();
+  } catch (error) {
+    return Promise.reject(error);
+  }
+  let timer;
+  return Promise.race([
+    pending,
+    new Promise((_resolve, reject) => {
+      timer = setTimeout(() => reject(new PdimBucketReadTimeout(
+        context?.phase ?? "object_read",
+        context?.sequence,
+        context?.ordinal,
+        Math.max(0, Math.round(performance3.now() - startedAt))
+      )), remainingMs);
+    })
+  ]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+function configuredPdimBucketId(env2 = process.env) {
+  return env2.Replit_storage_bucket_id || env2.DATABASE_RECOVERY_BUCKET_ID || env2.REPLIT_BUCKET_ID;
+}
+async function configuredPdimBucketObjects({
+  storageFactory = createRecoveryStorage,
+  env: env2 = process.env
+} = {}) {
+  const bucketId = configuredPdimBucketId(env2);
+  if (!bucketId) throw new Error("PDIM App Storage bucket is not configured");
+  const { bucket } = await storageFactory({
+    bucketId,
+    timeoutMs: PDIM_GCS_WRITE_TIMEOUT_MS
+  });
+  const { bucket: readBucket } = await storageFactory({
+    bucketId,
+    timeoutMs: PDIM_GCS_READ_TIMEOUT_MS,
+    retryOptions: PDIM_GCS_READ_RETRY_OPTIONS
+  });
+  return new PdimBucketObjects(bucket, readBucket);
+}
+var PDIM_OBJECT_READ_DEADLINE_MS, PDIM_GCS_READ_TIMEOUT_MS, PDIM_GCS_WRITE_TIMEOUT_MS, PDIM_GCS_READ_RETRY_OPTIONS, PdimBucketObjects;
+var init_pdimBucketObjects = __esm({
+  "server/lib/pdimBucketObjects.ts"() {
+    "use strict";
+    init_pdimBucketJournal();
+    init_recovery_private_store();
+    PDIM_OBJECT_READ_DEADLINE_MS = 2e4;
+    PDIM_GCS_READ_TIMEOUT_MS = 5e3;
+    PDIM_GCS_WRITE_TIMEOUT_MS = 15e3;
+    PDIM_GCS_READ_RETRY_OPTIONS = Object.freeze({
+      autoRetry: true,
+      maxRetries: 1,
+      totalTimeout: 7,
+      maxRetryDelay: 1,
+      retryDelayMultiplier: 2
+    });
+    PdimBucketObjects = class {
+      constructor(bucket, recoveryReadBucket = bucket) {
+        this.bucket = bucket;
+        this.recoveryReadBucket = recoveryReadBucket;
+      }
+      async read(key, context) {
+        const startedAt = performance3.now();
+        const boundedRecoveryRead = context?.deadlineAt !== void 0;
+        const deadlineAt = boundedRecoveryRead ? Math.min(context.deadlineAt, startedAt + PDIM_OBJECT_READ_DEADLINE_MS) : Number.POSITIVE_INFINITY;
+        const readBucket = boundedRecoveryRead ? this.recoveryReadBucket : this.bucket;
+        const file = readBucket.file(key);
+        const readRequest = (operation) => boundedRecoveryRead ? awaitReadDeadline(operation, deadlineAt, context, startedAt) : operation();
+        const maxGenerationChanges = 3;
+        for (let attempt = 0; attempt < maxGenerationChanges; attempt += 1) {
+          let generation;
+          try {
+            const [metadata] = await readRequest(
+              () => file.getMetadata()
+            );
+            if (typeof metadata.generation !== "string") {
+              throw new PdimBucketReadFailure("invalid_metadata");
+            }
+            generation = metadata.generation;
+          } catch (error) {
+            if (error.code === 404) return null;
+            if (error instanceof PdimBucketReadFailure || error instanceof PdimBucketReadTimeout) throw error;
+            throwSafeStorageFailure(error);
+          }
+          try {
+            const [bytes] = await readRequest(
+              () => readBucket.file(key, { generation }).download({ validation: "crc32c" })
+            );
+            return { bytes, generation };
+          } catch (error) {
+            if (error.code !== 404) {
+              if (error instanceof PdimBucketReadFailure || error instanceof PdimBucketReadTimeout) throw error;
+              throwSafeStorageFailure(error);
+            }
+            let currentGeneration;
+            try {
+              const [current] = await readRequest(
+                () => file.getMetadata()
+              );
+              currentGeneration = current.generation;
+            } catch (metadataError) {
+              if (metadataError.code === 404) return null;
+              if (metadataError instanceof PdimBucketReadFailure || metadataError instanceof PdimBucketReadTimeout) throw metadataError;
+              throwSafeStorageFailure(metadataError);
+            }
+            if (typeof currentGeneration !== "string" || currentGeneration === generation) {
+              throw new PdimBucketReadFailure("not_found");
+            }
+            if (attempt === maxGenerationChanges - 1) {
+              throw new PdimBucketReadFailure("generation_conflict");
+            }
+          }
+        }
+        throw new PdimBucketReadFailure("generation_conflict");
+      }
+      async write(key, bytes, generation) {
+        const file = this.bucket.file(key);
+        await file.save(bytes, {
+          resumable: false,
+          validation: "crc32c",
+          timeout: PDIM_GCS_WRITE_TIMEOUT_MS,
+          preconditionOpts: { ifGenerationMatch: generation }
+        });
+        const published = file.metadata.generation;
+        if (typeof published !== "string") throw new Error("Upload returned no generation receipt");
+        return published;
       }
     };
   }
@@ -9349,6 +9598,7 @@ var init_pdimBucketRecovery = __esm({
 
 // server/lib/pdimBucketSnapshot.ts
 import { createHash as createHash8 } from "node:crypto";
+import { performance as performance4 } from "node:perf_hooks";
 async function writeBucketSnapshot(objects, entries, redisSequence, capsuleSequence, chunkBytes = 4 * 1024 * 1024) {
   if (!validSequence(redisSequence) || !validSequence(capsuleSequence) || !Number.isSafeInteger(chunkBytes) || chunkBytes < 1) throw new Error("Invalid snapshot limits");
   const chunks = [];
@@ -9384,15 +9634,40 @@ async function writeBucketSnapshot(objects, entries, redisSequence, capsuleSeque
   };
   return objects.putImmutable(Buffer.from(JSON.stringify(manifest)));
 }
-async function readBucketSnapshot(objects, manifestBytes, validate, onProgress) {
+async function readBucketSnapshot(objects, manifestBytes, validate, onProgress, options = {}) {
+  const startedAt = performance4.now();
+  if (options.timeoutMs !== void 0 && (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1)) {
+    throw new Error("Invalid bucket PDIM snapshot read timeout");
+  }
+  const deadlineAt = options.deadlineAt ?? startedAt + (options.timeoutMs ?? DEFAULT_PDIM_RECOVERY_TIMEOUT_MS);
+  if (!Number.isFinite(deadlineAt) || deadlineAt <= startedAt) {
+    throw new PdimBucketReadTimeout("snapshot_shards", void 0, void 0, 0);
+  }
+  const assertDeadline = (ordinal) => {
+    if (performance4.now() >= deadlineAt) {
+      throw new PdimBucketReadTimeout(
+        "snapshot_shards",
+        void 0,
+        ordinal,
+        Math.max(0, Math.round(performance4.now() - startedAt))
+      );
+    }
+  };
+  assertDeadline();
   const manifest = JSON.parse(manifestBytes.toString());
   if (manifest.format !== "pdim-bucket-snapshot-v1" || !validSequence(manifest.redisSequence) || !validSequence(manifest.capsuleSequence) || !validSequence(manifest.count) || !Array.isArray(manifest.chunks) || manifest.chunks.some((id) => typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id))) {
     throw new Error("Invalid bucket PDIM snapshot manifest");
   }
   const entries = /* @__PURE__ */ new Map();
   onProgress?.(0, manifest.chunks.length);
-  for (let offset = 0; offset < manifest.chunks.length; offset += 4) {
-    const buffers = await Promise.all(manifest.chunks.slice(offset, offset + 4).map((id) => objects.readImmutable(id)));
+  for (let offset = 0; offset < manifest.chunks.length; offset += SNAPSHOT_READ_CONCURRENCY) {
+    assertDeadline(offset + 1);
+    const buffers = await Promise.all(manifest.chunks.slice(offset, offset + SNAPSHOT_READ_CONCURRENCY).map((id, index3) => objects.readImmutable(id, {
+      phase: "snapshot_shard",
+      ordinal: offset + index3 + 1,
+      deadlineAt,
+      onRead: options.onRead
+    })));
     for (const buffer of buffers) {
       const rows = JSON.parse(buffer.toString());
       if (!Array.isArray(rows)) throw new Error("Invalid bucket PDIM snapshot chunk");
@@ -9403,11 +9678,13 @@ async function readBucketSnapshot(objects, manifestBytes, validate, onProgress) 
         entries.set(row[0], validate(row[0], row[1]));
       }
     }
-    const completed = Math.min(offset + 4, manifest.chunks.length);
+    const completed = Math.min(offset + SNAPSHOT_READ_CONCURRENCY, manifest.chunks.length);
+    assertDeadline(completed);
     if (completed % 32 === 0 || completed === manifest.chunks.length) {
       onProgress?.(completed, manifest.chunks.length);
     }
   }
+  assertDeadline(manifest.chunks.length || void 0);
   if (entries.size !== manifest.count) throw new Error("Bucket PDIM snapshot count mismatch");
   return { entries, redisSequence: manifest.redisSequence, capsuleSequence: manifest.capsuleSequence };
 }
@@ -9428,15 +9705,18 @@ async function verifyBucketSnapshot(objects, id, expected, redisSequence, capsul
   }
   if (seen.size !== expected.size) throw new Error("Imported snapshot missing entries");
 }
-var validSequence;
+var validSequence, SNAPSHOT_READ_CONCURRENCY;
 var init_pdimBucketSnapshot = __esm({
   "server/lib/pdimBucketSnapshot.ts"() {
     "use strict";
+    init_pdimBucketJournal();
     validSequence = (n) => Number.isSafeInteger(n) && Number(n) >= 0;
+    SNAPSHOT_READ_CONCURRENCY = 8;
   }
 });
 
 // server/lib/pdimBucketPersistence.ts
+import { performance as performance5 } from "node:perf_hooks";
 function captureEntry(entry) {
   const copy = (value) => {
     if (Array.isArray(value)) return value.map(copy);
@@ -9458,13 +9738,17 @@ var init_pdimBucketPersistence = __esm({
     };
     PdimBucketPersistence = class {
       constructor(objects, namespace, engine, entries, validate, onStage = () => {
-      }) {
+      }, recoveryTimeoutMs = DEFAULT_PDIM_RECOVERY_TIMEOUT_MS) {
         this.engine = engine;
         this.entries = entries;
         this.validate = validate;
         this.onStage = onStage;
+        this.recoveryTimeoutMs = recoveryTimeoutMs;
         this.capsuleSequence = 0;
         this.closing = false;
+        if (!Number.isSafeInteger(recoveryTimeoutMs) || recoveryTimeoutMs < 1) {
+          throw new Error("Invalid bucket PDIM recovery timeout");
+        }
         this.journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
       }
       assertHealthy() {
@@ -9492,16 +9776,34 @@ var init_pdimBucketPersistence = __esm({
           });
         }, 1e4);
         this.heartbeat.unref();
+        const recoveryStartedAt = performance5.now();
+        const deadlineAt = recoveryStartedAt + this.recoveryTimeoutMs;
+        const onRead = (event) => {
+          const details = [
+            `recovery-read phase=${event.phase}`,
+            ...event.sequence === void 0 ? [] : [`sequence=${event.sequence}`],
+            ...event.ordinal === void 0 ? [] : [`ordinal=${event.ordinal}`],
+            `elapsed_ms=${event.elapsedMs}`,
+            ...event.byteLength === void 0 ? [] : [`bytes=${event.byteLength}`],
+            `outcome=${event.outcome}`,
+            ...event.failureCategory ? [`category=${event.failureCategory}`] : []
+          ];
+          this.onStage(details.join(" "));
+        };
         try {
-          const recovered = await this.journal.recover((completed, total) => this.onStage(`journal:${completed}/${total}`));
+          this.onStage(`recovery-start deadline_ms=${this.recoveryTimeoutMs}`);
+          const recovered = await this.journal.recover((completed, total) => this.onStage(`journal:${completed}/${total}`), { deadlineAt, onRead });
           const snapshot = await readBucketSnapshot(
             this.journal,
             recovered.snapshot,
             this.validate,
-            (completed, total) => this.onStage(`snapshot-shards:${completed}/${total}`)
+            (completed, total) => this.onStage(`snapshot-shards:${completed}/${total}`),
+            { deadlineAt, onRead }
           );
           this.onStage("snapshot-verified");
+          this.onStage("lease-renew-start");
           await this.journal.renew();
+          this.onStage("lease-renew-complete");
           const ordered = orderedBucketRecovery(recovered.transactions, snapshot.redisSequence, snapshot.capsuleSequence);
           this.assertHealthy();
           this.entries.clear();
@@ -9518,6 +9820,9 @@ var init_pdimBucketPersistence = __esm({
         } catch (error) {
           if (this.heartbeat) clearInterval(this.heartbeat);
           this.engine.closeEmbedded();
+          this.onStage(
+            `recovery-failed elapsed_ms=${Math.max(0, Math.round(performance5.now() - recoveryStartedAt))} category=${pdimBucketReadFailureCategory(error)}`
+          );
           throw error;
         }
       }

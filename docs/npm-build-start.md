@@ -4,11 +4,27 @@
 verifies the installed MaxCore/PDIM dependency trees without downloading tools
 or reinstalling packages. Build failure invalidates the completion record.
 
-`npm run start` validates the completion record, source inputs and artifact
-hashes, then invokes the existing production application handoff in `start.sh`.
-It preserves Python activation, the Rust sidecar, diffusion gateway, port
-validation and cluster startup, with `NODE_ENV=production`. It does not launch
-Vite, restore deployment capsules, or execute the deployment packer.
+`npm run prod` (also `npm run start`) first runs a bounded, read-only production
+startup readiness gate. It checks the Node version pins, production command
+contract, runtime launch files, all 12 unique listener definitions, and the
+source/artifact hashes in the build contract. After startup it waits for the
+configured transports and checks HTTP health endpoints for the web app, DNS,
+diffusion gateway, MaxCore and Python proxy. A listening socket alone is not
+treated as application readiness.
+
+The startup gate does not require Git metadata, run repository-wide tests or
+the indefinite completion loop, write source/learning state, contact providers,
+or run database migrations. Dependency security is checked by the Publishing
+build and the explicit `npm run build:full` path, not repeated on every process
+restart. This report covers operational startup prerequisites; it is not a
+whole-product production certification.
+
+The existing production handoff preserves Python activation, the Rust sidecar,
+diffusion gateway, port validation and cluster startup, with
+`NODE_ENV=production`. It does not launch Vite, restore deployment capsules,
+or execute the deployment packer. Configured Replit Publishing remains the
+separate `npm run deployment:build` / `npm run deployment:start` capsule flow;
+that path is not redirected through the unpacked `npm run prod` launcher.
 
 Run these commands from a checkout with installed dependencies and provisioned
 runtime services. They are not a standalone `dist`-only installation format.

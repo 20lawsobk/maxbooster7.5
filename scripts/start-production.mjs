@@ -3,6 +3,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { runProductionStartupReadiness } from "./testing/production-readiness.mjs";
 
 const required = ["dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs",
   "dist/dns-node.mjs", "dist/dns-api.mjs",
@@ -168,7 +169,22 @@ export function validateBuild(root) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   try {
-    validateBuild(root);
+    const startupReadinessReport = await runProductionStartupReadiness({
+      root,
+      env: process.env,
+      nodeVersion: process.version,
+      validateBuild,
+    });
+    for (const check of startupReadinessReport.checks) {
+      console.log(`[ProductionReadiness] ${check.status} ${check.id} (${check.durationMs}ms): ${check.evidence}`);
+    }
+    if (!startupReadinessReport.ready) {
+      const failed = startupReadinessReport.checks
+        .filter(check => check.status !== "PASS")
+        .map(check => check.id);
+      throw new Error(`Production startup blocked by readiness checks: ${failed.join(", ")}`);
+    }
+    console.log("[ProductionReadiness] READY; starting the validated production handoff");
     const port = process.env.PORT ?? "5000";
     if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new Error("PORT must be an integer from 1 to 65535");
     // Reuse the production application handoff, including Python activation,

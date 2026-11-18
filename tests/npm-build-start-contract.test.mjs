@@ -29,10 +29,24 @@ test("Replit preview runs the documented development workflow while deployment s
 test("development preflight gates the unchanged application launcher", () => {
   const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
   assert.equal(scripts.dev, "node scripts/testing/repository-verification.mjs dev && bash scripts/start-dev.sh");
+  assert.equal(scripts.prod, "node scripts/start-production.mjs");
+  assert.equal(scripts.start, scripts.prod);
+  assert.equal(scripts["deployment:start"], "bash start.sh");
   assert.equal(scripts["completion:execute"], "node scripts/testing/repository-verification.mjs execute");
   assert.equal(scripts["completion:loop"], "node scripts/testing/completion-loop.mjs");
   assert.match(fs.readFileSync("scripts/start-dev.sh", "utf8"), /dev_acquire_instance_lock/);
   assert.match(scripts["verify:repository"], /repository-verification\.mjs full/);
+});
+
+test("ordinary production startup runs a bounded readiness report before launching services", () => {
+  const production = fs.readFileSync("scripts/start-production.mjs", "utf8");
+  const gate = fs.readFileSync("scripts/testing/production-readiness.mjs", "utf8");
+  assert.match(production, /runProductionStartupReadiness\([\s\S]*?validateBuild/);
+  assert.match(production, /ProductionReadiness.*READY/);
+  assert.match(gate, /Bounded, read-only preflight/);
+  assert.match(gate, /validateBuild\(root\)/);
+  assert.doesNotMatch(gate, /repository-verification\.mjs|completion-loop\.mjs|spawn\(|spawnSync\(/);
+  assert.match(gate, /Publishing must retain its capsule-aware build\.sh\/start\.sh path/);
 });
 
 test("development startup watches the application process during configured listener readiness", () => {
