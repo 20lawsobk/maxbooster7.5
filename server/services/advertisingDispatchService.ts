@@ -5,6 +5,7 @@ import { platformAPI } from "../platform-apis";
 import { adCampaigns, adCreatives, contentCalendar, socialAccounts } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
+import { autopilotLearningService } from "./autopilotLearningService.js";
 
 /**
  * Advertising Dispatch Service
@@ -316,6 +317,7 @@ export class AdvertisingDispatchService {
               reach: 0,
               engagementRate: 0,
             },
+            postedAt: new Date().toISOString(),
             organicBoost: 0,
             lastUpdated: new Date().toISOString(),
           };
@@ -397,6 +399,18 @@ export class AdvertisingDispatchService {
 
       // Update metrics for each post
       const updatedPosts = [];
+      const creatives = await db
+        .select()
+        .from(adCreatives)
+        .where(
+          and(
+            eq(adCreatives.campaignId, campaignId),
+            eq(adCreatives.userId, userId),
+          ),
+        );
+      const creativesById = new Map(
+        creatives.map((creative) => [creative.id, creative]),
+      );
       let totalImpressions = 0;
       let totalEngagements = 0;
       let totalReach = 0;
@@ -420,19 +434,114 @@ export class AdvertisingDispatchService {
           const updatedPost = {
             ...post,
             metrics: {
-              impressions: engagement.impressions || engagement?.views || 0,
+              impressions: Number(engagement?.impressions ?? engagement?.views) || 0,
+              likes: Number(engagement?.likes) || 0,
+              comments: Number(engagement?.comments) || 0,
+              shares: Number(engagement?.shares) || 0,
+              saves: Number(engagement?.saves) || 0,
+              clicks: Number(engagement?.clicks) || 0,
               engagements:
-                engagement?.likes + engagement?.comments + engagement?.shares,
-              shares: engagement.shares,
-              clicks: 0, // Not available from most platforms
-              reach: engagement.reach || engagement?.impressions || 0,
-              engagementRate: engagement.engagementRate || 0,
+                (Number(engagement?.likes) || 0) +
+                (Number(engagement?.comments) || 0) +
+                (Number(engagement?.shares) || 0),
+              reach: Number(engagement?.reach ?? engagement?.impressions) || 0,
+              engagementRate: Number(engagement?.engagementRate) || 0,
             },
             organicBoost: this.calculateOrganicBoost(engagement),
             lastUpdated: new Date().toISOString(),
           };
 
           updatedPosts?.push(updatedPost);
+          const oldMetrics = (post.metrics || {}) as Record<string, unknown>;
+          const currentMetrics = updatedPost.metrics;
+          const hasObservedData =
+            currentMetrics.impressions > 0 ||
+            currentMetrics.engagements > 0 ||
+            currentMetrics.reach > 0;
+          const metricsChanged = [
+            "impressions",
+            "likes",
+            "comments",
+            "shares",
+            "saves",
+            "clicks",
+            "engagements",
+            "reach",
+            "engagementRate",
+          ].some(
+            (key) =>
+              Number(oldMetrics[key] || 0) !==
+              Number(currentMetrics[key as keyof typeof currentMetrics] || 0),
+          );
+          if (hasObservedData && metricsChanged) {
+            const creative =
+              typeof post.creativeId === "string"
+                ? creativesById.get(post.creativeId)
+                : undefined;
+            const source =
+              (campaign.metadata as Record<string, unknown> | null)?.source ===
+              "advertising-autopilot"
+                ? "advertising_autopilot"
+                : "advertising_campaign";
+            const variants = (creative?.variants || {}) as Record<
+              string,
+              unknown
+            >;
+            const declaredMediaType = String(
+              variants.content_type ?? variants.mediaType ?? "",
+            );
+            const mediaType = ["text", "image", "video", "audio"].includes(
+              declaredMediaType,
+            )
+              ? declaredMediaType
+              : creative?.mediaUrl
+                ? "unknown"
+                : "text";
+            try {
+              await autopilotLearningService.recordPerformance(
+                userId,
+                {
+                  platform: post.platform,
+                  contentType: "advertising_campaign_post",
+                  hashtags: this.extractHashtags(
+                    creative?.description || creative?.headline || "",
+                  ),
+                  contentText: creative?.description || creative?.headline || "",
+                  mediaType,
+                  postId: post.postId,
+                  postedAt: post.postedAt
+                    ? new Date(post.postedAt)
+                    : new Date(
+                        (organicMetrics.activatedAt as string | undefined) ??
+                          Date.now(),
+                      ),
+                  metadata: {
+                    source,
+                    campaignId,
+                    creativeId:
+                      typeof post.creativeId === "string"
+                        ? post.creativeId
+                        : undefined,
+                  },
+                },
+                {
+                  impressions: currentMetrics.impressions,
+                  clicks: currentMetrics.clicks,
+                  shares: currentMetrics.shares,
+                  likes: currentMetrics.likes,
+                  comments: currentMetrics.comments,
+                  saves: currentMetrics.saves,
+                  reach: currentMetrics.reach,
+                  engagementRate: currentMetrics.engagementRate,
+                },
+              );
+            } catch (learningError) {
+              logger.warn(
+                { err: learningError, campaignId, postId: post.postId, userId },
+                "Failed to send measured advertising outcome to MaxCore learning",
+              );
+            }
+          }
           if (typeof post.creativeId === "string") {
             const current = creativeMetrics.get(post.creativeId) ?? {
               impressions: 0,

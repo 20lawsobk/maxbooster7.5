@@ -8644,13 +8644,15 @@ class ApiViralScoreRequest(BaseModel):
 
 
 class ApiTrainFeedbackRequest(BaseModel):
+    user_id: Optional[str] = Field(default=None, min_length=1, max_length=128)
+    feedback_id: Optional[str] = Field(default=None, max_length=128)
     source: str
     trigger: str
-    engagement_rate: float
-    platform: str
-    content_type: str
-    hook_type: str
-    media_type: str
+    engagement_rate: float = Field(ge=0.0, le=10_000.0, allow_inf_nan=False)
+    platform: str = Field(min_length=1, max_length=64)
+    content_type: str = Field(min_length=1, max_length=128)
+    hook_type: str = Field(min_length=1, max_length=128)
+    media_type: str = Field(min_length=1, max_length=64)
     curriculum_hint: Optional[str] = None
     dispatched_at: Optional[str] = None
     source_node: str = "maxbooster"
@@ -13070,18 +13072,46 @@ async def models_engagement_state(_key=Depends(require_scope("read"))):
 
 _feedback_records: List[dict] = []
 _feedback_lock    = threading.Lock()
+_FEEDBACK_LOG_PATH = Path(__file__).resolve().parent / "knowledge" / "feedback_log.json"
 
 @app.post("/api/train/feedback")
 async def train_feedback_endpoint(req: ApiTrainFeedbackRequest, _key=Depends(require_scope("train"))):
-    """Receive anonymised engagement signals for MaxCore retraining."""
+    """Persist scoped engagement outcomes; ownerless legacy signals stay audit-only."""
     record = {**req.model_dump(), "received_at": datetime.utcnow().isoformat() + "Z"}
+    curriculum_status = "not_recorded_ownerless"
+    if req.user_id:
+        try:
+            from storage_client import get_curriculum_client
+            style_tags = [
+                tag
+                for tag in (
+                    req.hook_type,
+                    req.media_type,
+                    req.curriculum_hint,
+                )
+                if tag and tag != "unknown"
+            ]
+            get_curriculum_client().record_feedback(
+                user_id=req.user_id,
+                platform=req.platform,
+                engagement_rate=req.engagement_rate,
+                content_type=req.content_type,
+                style_tags=style_tags,
+            )
+            curriculum_status = "recorded"
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="MaxCore curriculum storage did not acknowledge training feedback",
+            ) from exc
     with _feedback_lock:
         _feedback_records.append(record)
         if len(_feedback_records) > 10_000:
             _feedback_records[:] = _feedback_records[-10_000:]
-    # Attempt to persist
+    # Durable curriculum storage is authoritative; this file remains an audit
+    # copy and must not turn a successfully stored signal into a false failure.
     try:
-        fb_path = Path(__file__).resolve().parent / "knowledge" / "feedback_log.json"
+        fb_path = _FEEDBACK_LOG_PATH
         fb_path.parent.mkdir(parents=True, exist_ok=True)
         existing: list = []
         if fb_path.exists():
@@ -13090,7 +13120,12 @@ async def train_feedback_endpoint(req: ApiTrainFeedbackRequest, _key=Depends(req
         fb_path.write_text(json.dumps(existing[-10_000:], indent=2))
     except Exception as e:
         print(f"[Feedback] WARNING: could not persist: {e}", flush=True)
-    return {"ok": True}
+    return {
+        "ok": True,
+        "curriculum": curriculum_status,
+        "user_id": req.user_id,
+        "feedback_id": req.feedback_id,
+    }
 
 
 # ─── MaxBooster contract endpoints (aliases / new) ───────────────────────────

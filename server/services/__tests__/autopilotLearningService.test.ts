@@ -14,19 +14,28 @@ const mocks = vi.hoisted(() => {
 
   return {
     queryLimit: vi.fn(),
+    insertReturning: vi.fn(),
     maxCoreRequest: vi.fn(),
+    pushTrainingFeedback: vi.fn(),
     MockMaxCoreControlError,
   };
 });
 
 vi.mock("../../db.js", () => ({
   db: {
-    select: () => ({
-      from: () => ({
-        where: () => ({
-          orderBy: () => ({ limit: mocks.queryLimit }),
-        }),
-      }),
+    select: () => {
+      const query: any = {
+        from: () => query,
+        where: () => query,
+        orderBy: () => query,
+        limit: mocks.queryLimit,
+        then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
+          Promise.resolve([{ count: 1 }]).then(resolve, reject),
+      };
+      return query;
+    },
+    insert: () => ({
+      values: () => ({ returning: mocks.insertReturning }),
     }),
   },
 }));
@@ -46,7 +55,9 @@ vi.mock("drizzle-orm", () => ({
 vi.mock("../../logger.js", () => ({
   logger: { info: vi.fn(), warn: vi.fn() },
 }));
-vi.mock("../maxcoreSync.js", () => ({ pushTrainingFeedback: vi.fn() }));
+vi.mock("../maxcoreSync.js", () => ({
+  pushTrainingFeedback: mocks.pushTrainingFeedback,
+}));
 vi.mock("../maxcoreControlTransport.js", () => ({
   MaxCoreControlError: mocks.MockMaxCoreControlError,
   maxCoreControlTransport: { request: mocks.maxCoreRequest },
@@ -57,6 +68,9 @@ import { autopilotLearningService } from "../autopilotLearningService.js";
 describe("autopilot learning MaxCore integration", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mocks.queryLimit.mockResolvedValue([]);
+    mocks.insertReturning.mockResolvedValue([{ id: "learning-record-1" }]);
+    mocks.pushTrainingFeedback.mockResolvedValue(undefined);
   });
 
   it("forwards measured user history and optional context to MaxCore autopilot", async () => {
@@ -162,5 +176,70 @@ describe("autopilot learning MaxCore integration", () => {
       name: "MaxCoreControlError",
       status: 503,
     });
+  });
+
+  it("sends measured social outcomes to the matching user's MaxCore curriculum", async () => {
+    await autopilotLearningService.recordPerformance(
+      "admin-owner",
+      {
+        platform: "instagram",
+        contentType: "video",
+        hookType: "story",
+        contentText: "A verified published post",
+        postId: "post-123",
+      },
+      { impressions: 100, likes: 5 },
+    );
+
+    await vi.waitFor(() =>
+      expect(mocks.pushTrainingFeedback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: "admin-owner",
+          feedback_id: "learning-record-1",
+          platform: "instagram",
+          content_type: "video",
+          hook_type: "story",
+          engagement_rate: 5,
+          trigger: "measured_autopilot_outcome",
+        }),
+      ),
+    );
+  });
+
+  it("does not send an unmeasured publish as a training outcome", async () => {
+    await autopilotLearningService.recordPerformance(
+      "creator-1",
+      { platform: "tiktok", contentType: "text" },
+      {
+        impressions: 0,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        clicks: 0,
+        saves: 0,
+        reach: 0,
+      },
+    );
+
+    expect(mocks.pushTrainingFeedback).not.toHaveBeenCalled();
+  });
+
+  it("does not reinforce a measured low-engagement result as a winning example", async () => {
+    await autopilotLearningService.recordPerformance(
+      "creator-1",
+      { platform: "tiktok", contentType: "text" },
+      { impressions: 100, likes: 1 },
+    );
+
+    expect(mocks.pushTrainingFeedback).not.toHaveBeenCalled();
+  });
+
+  it("does not invent a percentage when exposure counts are missing", () => {
+    expect(
+      autopilotLearningService.calculateEngagementScore({
+        likes: 30,
+        comments: 8,
+      }),
+    ).toBe(0);
   });
 });

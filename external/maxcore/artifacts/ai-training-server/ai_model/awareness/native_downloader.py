@@ -3,6 +3,9 @@
 The registry contains only reviewed first-party source endpoints. A search
 result is never promoted into a download URL. Current platform policy blocks
 all direct collection, so the downloader records no successful page fetches.
+Configured source adapters invoke this downloader from the awareness engine's
+automatic startup/refresh cycle; the engine validates those observations and
+publishes the resulting awareness snapshot to its canonical store.
 """
 
 from __future__ import annotations

@@ -7,9 +7,9 @@
  *   1. Boot-time health probe — logs PDIM + MaxCore reachability on startup.
  *   2. Periodic state sync — reads MaxCore's authoritative model states for
  *      health/telemetry without copying weights into local models.
- *   3. Training feedback push — pushes anonymised engagement signals to both
- *      MaxCore (/train/feedback) and the PDIM queue (mbs:training:feedback)
- *      so MaxCore can consume them on its own schedule.
+ *   3. Training feedback push — pushes owner-scoped engagement signals to both
+ *      MaxCore's owner-scoped curriculum; the PDIM list is pending transport
+ *      only when MaxCore does not acknowledge storage.
  */
 
 import { logger } from "../logger.js";
@@ -281,7 +281,8 @@ async function syncWeightsFromMaxCore(): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface TrainingFeedbackPayload {
-  content: string; // The actual post text — required by MaxCore
+  user_id: string;
+  feedback_id?: string;
   source: string;
   trigger: string;
   engagement_rate: number;
@@ -293,15 +294,27 @@ export interface TrainingFeedbackPayload {
   dispatched_at: string;
 }
 
+function trainingFeedbackAcknowledged(value: unknown, userId: string): boolean {
+  return (
+    isRecord(value) &&
+    value.ok === true &&
+    value.curriculum === "recorded" &&
+    value.user_id === userId
+  );
+}
+
 /**
- * Push a training feedback signal to both MaxCore (HTTP) and PDIM (queue).
- * Called by autopilotLearningService when a post achieves high engagement.
+ * Push a measured positive outcome to MaxCore. PDIM is a pending queue only
+ * when MaxCore does not acknowledge storage; queue acceptance is not training.
  */
 export async function pushTrainingFeedback(
   payload: TrainingFeedbackPayload,
 ): Promise<void> {
+  if (typeof payload.user_id !== "string" || payload.user_id.trim() === "") {
+    throw new Error("MaxCore training feedback requires an owner user_id");
+  }
   const enriched = { ...payload, source_node: "maxbooster", version: "1.0" };
-  let delivered = false;
+  let curriculumRecorded = false;
 
   // HTTP push to training peer (with auth)
   const peerIsPdim = PEER_NODE?.startsWith("pdim://");
@@ -316,15 +329,21 @@ export async function pushTrainingFeedback(
         body: JSON.stringify(enriched),
         signal: AbortSignal.timeout(5_000),
       });
-      if (r?.ok) {
-        delivered = true;
+      const acknowledgement = r?.ok
+        ? await r.json().catch(() => null)
+        : null;
+      if (
+        r?.ok &&
+        trainingFeedbackAcknowledged(acknowledgement, payload.user_id)
+      ) {
+        curriculumRecorded = true;
         logger.info(
           `[MaxCoreSync] Training feedback sent — ${payload?.platform} ` +
             `${payload?.content_type} at ${payload?.engagement_rate.toFixed(2)}% engagement`,
         );
       } else {
         logger.warn(
-          `[MaxCoreSync] Training peer returned ${r?.status} — queuing to PDIM`,
+          `[MaxCoreSync] Training peer did not confirm owner curriculum storage (HTTP ${r?.status ?? "unavailable"}) — queuing to PDIM`,
         );
       }
     } catch {
@@ -332,24 +351,38 @@ export async function pushTrainingFeedback(
     }
   }
 
-  // PDIM queue push (durable, MaxCore picks up on its schedule)
-  delivered = (await pdimRpush("mbs:training:feedback", enriched)) || delivered;
-
   // Also notify inference server if different from training peer
-  if (AI_SERVER_URL && AI_SERVER_KEY && AI_SERVER_URL !== PEER_NODE) {
+  if (
+    !curriculumRecorded &&
+    AI_SERVER_URL &&
+    AI_SERVER_KEY &&
+    AI_SERVER_URL !== PEER_NODE
+  ) {
     const result = await fetchMaxCore("/api/train/feedback", {
       method: "POST",
       body: enriched,
       timeout: 3_000,
     });
-    delivered = result.ok || delivered;
+    if (trainingFeedbackAcknowledged(result.data, payload.user_id)) {
+      curriculumRecorded = true;
+    } else {
+      logger.warn(
+        `[MaxCoreSync] Inference server did not confirm owner curriculum storage (HTTP ${result.status ?? "unavailable"})`,
+      );
+    }
   }
 
-  if (!delivered) {
-    throw new Error(
-      "MaxCore training feedback is unavailable and no durable PDIM queue accepted the event",
-    );
-  }
+  if (curriculumRecorded) return;
+
+  const queuedForPendingDelivery = await pdimRpush(
+    "mbs:training:feedback",
+    enriched,
+  );
+  throw new Error(
+    queuedForPendingDelivery
+      ? "MaxCore did not acknowledge curriculum storage; feedback remains pending in PDIM"
+      : "MaxCore training feedback is unavailable and no PDIM pending queue accepted the event",
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

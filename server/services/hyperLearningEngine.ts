@@ -2391,10 +2391,15 @@ class HyperLearningEngine extends EventEmitter {
         signal: AbortSignal.timeout(5000),
       });
 
-      if (resp?.ok) {
+      const responseBody = await resp.json().catch(() => null);
+      if (resp?.ok && responseBody?.curriculum === "recorded") {
         logger.info(
-          `[HyperLearning] DiffusionTrainer notified — winner variant ${winner?.id}` +
+          `[HyperLearning] Owner-scoped MaxCore curriculum updated — winner variant ${winner?.id}` +
             ` (${winner?.engagementRate?.toFixed(2)}% engagement, ${test?.variants?.length} variates tested)`,
+        );
+      } else if (resp?.ok) {
+        logger.warn(
+          "[HyperLearning] Feedback was audited but not used for learning because it had no owner scope",
         );
       } else {
         logger.warn(

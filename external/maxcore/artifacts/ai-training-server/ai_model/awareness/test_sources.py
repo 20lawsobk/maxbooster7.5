@@ -1,3 +1,5 @@
+import threading
+import time
 import unittest
 from unittest.mock import patch
 from ai_model.awareness.sources import APP_RSS, configured_sources, rss, youtube
@@ -283,6 +285,78 @@ class SourceCoverageTests(unittest.TestCase):
         self.assertEqual(
             restarted.discovery_observations()[0]["discovery"]["content_hash"],
             observation["discovery"]["content_hash"],
+        )
+
+    def test_start_automatically_downloads_and_persists_awareness_snapshot(self):
+        from datetime import datetime, timezone
+        from ai_model.awareness.engine import (
+            BLOB, OBSERVATIONS_PREFIX, POINTER, Engine,
+        )
+        from ai_model.awareness.test_engine import MemoryStore
+
+        published = datetime.now(timezone.utc).isoformat()
+        xml = f"""<feed xmlns="http://www.w3.org/2005/Atom"
+        xmlns:media="http://search.yahoo.com/mrss/"><entry>
+        <title>A new independent music performance</title>
+        <link href="https://www.youtube.com/watch?v=autofetch1234"/>
+        <published>{published}</published>
+        <media:group><media:statistics views="75"/></media:group>
+        </entry></feed>""".encode()
+        feed = legacy.YOUTUBE_FEEDS[0]
+        source_name = "youtube_" + feed["name"]
+        download_started = threading.Event()
+
+        def download(*_args, **_kwargs):
+            download_started.set()
+            return xml
+
+        store = MemoryStore()
+        sources = {
+            source_name: (
+                "music", feed["url"],
+                lambda: youtube(feed["url"]),
+            ),
+        }
+        engine = Engine(sources=sources, store=store, timeout=1)
+        with patch(
+            "ai_model.awareness.native_downloader.download_registered_source",
+            side_effect=download,
+        ):
+            try:
+                self.assertTrue(engine.start())
+                deadline = time.monotonic() + 5
+                while time.monotonic() < deadline:
+                    if download_started.is_set() and engine.current_snapshot():
+                        break
+                    time.sleep(0.02)
+                self.assertTrue(
+                    download_started.is_set(),
+                    "startup did not fetch the registered source",
+                )
+                snapshot = engine.current_snapshot()
+                self.assertIsNotNone(
+                    snapshot, "startup did not publish an awareness snapshot"
+                )
+                self.assertEqual(store.get(POINTER), {"id": snapshot.id})
+                self.assertEqual(
+                    store.get(BLOB + snapshot.id)["id"],
+                    snapshot.id,
+                )
+                observations = store.get(OBSERVATIONS_PREFIX + source_name)
+                self.assertEqual(len(observations["records"]), 1)
+                self.assertEqual(
+                    observations["records"][0]["discovery"]["retrieval_method"],
+                    "direct_public",
+                )
+            finally:
+                self.assertTrue(engine.stop())
+
+        restarted = Engine(sources=sources, store=store, timeout=1)
+        restarted._load()
+        self.assertEqual(restarted.current_snapshot().id, snapshot.id)
+        self.assertEqual(
+            restarted.discovery_observations()[0]["discovery"]["content_hash"],
+            engine.discovery_observations()[0]["discovery"]["content_hash"],
         )
 
     def test_default_registry_contains_only_selected_platform_sources(self):
