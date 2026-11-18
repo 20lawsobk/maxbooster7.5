@@ -3,9 +3,11 @@ import net from "node:net";
 import dgram from "node:dgram";
 import http from "node:http";
 import { test } from "node:test";
+import { spawn } from "node:child_process";
 import {
   configuredPortSpecs,
   httpHealthy,
+  pidIsRunning,
   waitForConfiguredPorts,
 } from "../scripts/wait-configured-ports.mjs";
 
@@ -46,8 +48,14 @@ function listenHttp(statusCode = 200) {
 }
 
 test("dev and production readiness cover all twelve configured local listeners", () => {
-  const devPorts = configuredPortSpecs({ DNS_AUTHORITY_PORT: "1053" });
-  const productionPorts = configuredPortSpecs({});
+  const devPorts = configuredPortSpecs({
+    DNS_AUTHORITY_PORT: "1053",
+    MAXBOOSTER_DEV_PORTS: "1",
+  });
+  const productionPorts = configuredPortSpecs({
+    MAXBOOSTER_DEV_PORTS: "1",
+    NODE_ENV: "production",
+  });
   assert.equal(devPorts.length, 12);
   assert.equal(productionPorts.length, 12);
   assert.deepEqual(
@@ -66,6 +74,53 @@ test("dev and production readiness cover all twelve configured local listeners",
     devPorts.find(({ name }) => name === "local DNS health"),
     { name: "local DNS health", port: 5380, httpPath: "/health" },
   );
+  assert.deepEqual(
+    devPorts.filter(({ name }) => name.includes("MaxCore") || name === "web application")
+      .map(({ name, httpPath }) => [name, httpPath]),
+    [
+      ["web application", "/ready"],
+      ["MaxCore diffusion gateway", "/health"],
+      ["MaxCore API", "/healthz"],
+      ["MaxCore model API", "/api/ready"],
+      ["MaxCore model health", "/health"],
+      ["MaxCore proxy sidecar", undefined],
+    ],
+  );
+  for (const name of [
+    "web application",
+    "MaxCore diffusion gateway",
+    "MaxCore API",
+    "MaxCore model API",
+    "MaxCore model health",
+  ]) {
+    assert.equal(
+      productionPorts.find((entry) => entry.name === name)?.httpPath,
+      undefined,
+      `${name} keeps its existing production port-only readiness contract`,
+    );
+  }
+});
+
+test("web readiness waits for /ready rather than accepting a live but unready app", async () => {
+  const server = http.createServer((request, response) => {
+    response.writeHead(request.url === "/health" ? 200 : 503);
+    response.end("fixture");
+  });
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  try {
+    const result = await waitForConfiguredPorts([
+      { name: "web application", port: server.address().port, httpPath: "/ready" },
+    ], { timeoutMs: 20, intervalMs: 5 });
+    assert.deepEqual(result, {
+      ready: false,
+      missing: ["web application"],
+    });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
 
 test("readiness requires the DNS health listener to return HTTP 200", async () => {
@@ -101,6 +156,24 @@ test("DNS API readiness probes /ready rather than accepting a TCP-only listener"
   assert.equal(requestedPath, "/ready");
 });
 
+test("MaxCore model readiness rejects an open listener returning HTTP 503", async () => {
+  const unhealthy = await listenHttp(503);
+  try {
+    const result = await waitForConfiguredPorts([
+      { name: "MaxCore model API", port: unhealthy.port, httpPath: "/api/ready" },
+    ], {
+      timeoutMs: 20,
+      intervalMs: 5,
+    });
+    assert.deepEqual(result, {
+      ready: false,
+      missing: ["MaxCore model API"],
+    });
+  } finally {
+    await unhealthy.close();
+  }
+});
+
 test("readiness waits for TCP listeners and both DNS UDP sockets", async () => {
   const udp = await listenUdp();
   const tcp = await listenTcp(udp.port);
@@ -121,4 +194,35 @@ test("readiness reports listeners that remain closed", async () => {
   ], { timeoutMs: 20, intervalMs: 5 });
   assert.equal(result.ready, false);
   assert.deepEqual(result.missing, ["closed fixture"]);
+});
+
+test("readiness fails promptly when the watched application process exits", async () => {
+  const child = spawn(process.execPath, [
+    "-e",
+    "setTimeout(() => process.exit(134), 50)",
+  ], { stdio: "ignore" });
+  const exited = new Promise((resolve, reject) => {
+    child.once("error", reject);
+    child.once("exit", (code, signal) => resolve({ code, signal }));
+  });
+  const startedAt = Date.now();
+  try {
+    const result = await waitForConfiguredPorts([
+      { name: "required fixture listener", port: 65_000 },
+    ], {
+      timeoutMs: 10_000,
+      intervalMs: 5,
+      processProbe: () => pidIsRunning(child.pid),
+    });
+    const exit = await exited;
+    assert.deepEqual(result, {
+      ready: false,
+      missing: ["required fixture listener"],
+      processExited: true,
+    });
+    assert.deepEqual(exit, { code: 134, signal: null });
+    assert.ok(Date.now() - startedAt < 2_000, "failure should not wait for the readiness timeout");
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) child.kill("SIGTERM");
+  }
 });

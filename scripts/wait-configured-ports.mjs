@@ -11,9 +11,14 @@ function portFromEnv(env, name, fallback) {
 }
 
 export function configuredPortSpecs(env = process.env) {
+  const development = env.MAXBOOSTER_DEV_PORTS === "1" && env.NODE_ENV !== "production";
   return [
     { name: "authoritative DNS", port: portFromEnv(env, "DNS_AUTHORITY_PORT", 53), udp: true },
-    { name: "web application", port: portFromEnv(env, "PORT", 5000) },
+    {
+      name: "web application",
+      port: portFromEnv(env, "PORT", 5000),
+      ...(development ? { httpPath: "/ready" } : {}),
+    },
     { name: "local DNS node", port: portFromEnv(env, "DNS_NODE_LOCAL_PORT", 5353), udp: true },
     {
       name: "DNS API",
@@ -26,13 +31,49 @@ export function configuredPortSpecs(env = process.env) {
       httpPath: "/health",
     },
     { name: "PDIM", port: portFromEnv(env, "LOCAL_PDIM_PORT", 5556) },
-    { name: "MaxCore diffusion gateway", port: portFromEnv(env, "VIDEO_DIFFUSION_PORT", 8008) },
-    { name: "MaxCore API", port: portFromEnv(env, "MAXCORE_LOCAL_PORT", 8090) },
+    {
+      name: "MaxCore diffusion gateway",
+      port: portFromEnv(env, "VIDEO_DIFFUSION_PORT", 8008),
+      ...(development ? { httpPath: "/health" } : {}),
+    },
+    {
+      name: "MaxCore API",
+      port: portFromEnv(env, "MAXCORE_LOCAL_PORT", 8090),
+      ...(development ? { httpPath: "/healthz" } : {}),
+    },
     { name: "BoosterState", port: portFromEnv(env, "BOOSTERSTATE_SIDECAR_PORT", 9877) },
-    { name: "MaxCore model API", port: portFromEnv(env, "MODEL_API_PORT", 9878) },
-    { name: "MaxCore model health", port: portFromEnv(env, "MODEL_API_HEALTH_PORT", 9879) },
-    { name: "MaxCore proxy sidecar", port: portFromEnv(env, "PYTHON_AI_PORT", 9880) },
+    {
+      name: "MaxCore model API",
+      port: portFromEnv(env, "MODEL_API_PORT", 9878),
+      ...(development ? { httpPath: "/api/ready" } : {}),
+    },
+    {
+      name: "MaxCore model health",
+      port: portFromEnv(env, "MODEL_API_HEALTH_PORT", 9879),
+      ...(development ? { httpPath: "/health" } : {}),
+    },
+    {
+      name: "MaxCore proxy sidecar",
+      port: portFromEnv(env, "PYTHON_AI_PORT", 9880),
+    },
   ];
+}
+
+export function pidIsRunning(pid) {
+  if (!Number.isSafeInteger(pid) || pid < 1) return false;
+  try {
+    const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
+    const commandEnd = stat.lastIndexOf(")");
+    const state = stat.slice(commandEnd + 2, commandEnd + 3);
+    return state !== "Z" && state !== "X";
+  } catch {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch (error) {
+      return error?.code === "EPERM";
+    }
+  }
 }
 
 export function tcpReachable(port, host = "127.0.0.1", timeoutMs = 500) {
@@ -85,6 +126,7 @@ export async function waitForConfiguredPorts(ports, {
   tcpProbe = tcpReachable,
   udpProbe = udpBound,
   httpProbe = httpHealthy,
+  processProbe = null,
 } = {}) {
   const deadline = Date.now() + timeoutMs;
   let missing = [];
@@ -98,6 +140,9 @@ export async function waitForConfiguredPorts(ports, {
       return tcpOpen && udpOpen && httpOpen ? null : entry.name;
     }));
     missing = checks.filter(Boolean);
+    if (processProbe && !(await processProbe())) {
+      return { ready: false, missing, processExited: true };
+    }
     if (missing.length === 0) return { ready: true, missing: [] };
     const now = Date.now();
     if (now - lastLog >= 10_000) {
@@ -112,14 +157,28 @@ export async function waitForConfiguredPorts(ports, {
 if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
   const timeoutArg = process.argv.find((arg) => arg.startsWith("--timeout-ms="));
   const timeoutMs = timeoutArg ? Number(timeoutArg.split("=")[1]) : 300_000;
+  const watchPidArg = process.argv.find((arg) => arg.startsWith("--watch-pid="));
+  const watchPid = watchPidArg ? Number(watchPidArg.split("=")[1]) : null;
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) {
     console.error("[PortReadiness] invalid --timeout-ms");
     process.exitCode = 2;
+  } else if (watchPidArg && (!Number.isSafeInteger(watchPid) || watchPid < 1)) {
+    console.error("[PortReadiness] invalid --watch-pid");
+    process.exitCode = 2;
   } else {
     const ports = configuredPortSpecs();
-    const result = await waitForConfiguredPorts(ports, { timeoutMs });
+    const result = await waitForConfiguredPorts(ports, {
+      timeoutMs,
+      ...(watchPid === null ? {} : { processProbe: () => pidIsRunning(watchPid) }),
+    });
     if (result.ready) {
       console.log(`[PortReadiness] all ${ports.length} configured listeners are ready (including DNS UDP and HTTP health checks)`);
+    } else if (result.processExited) {
+      console.error(
+        `[PortReadiness] watched application process (pid ${watchPid}) exited before readiness; ` +
+        `not listening: ${result.missing.join(", ") || "none"}`,
+      );
+      process.exitCode = 2;
     } else {
       console.error(`[PortReadiness] timed out; not listening: ${result.missing.join(", ")}`);
       process.exitCode = 1;

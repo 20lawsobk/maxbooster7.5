@@ -41,6 +41,8 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 _http_responds() {
+  # Sidecar liveness only: the MaxCore proxy can return 503 until the main app
+  # starts its upstream, so readiness is checked later by the model API probe.
   node --input-type=module -e '
     try {
       await fetch(`http://127.0.0.1:${process.argv[1]}/health`, {
@@ -52,9 +54,17 @@ _http_responds() {
 }
 
 _wait_http() {
-  local name="$1" port="$2" attempt
+  local name="$1" port="$2" process_pid="${3:-}" attempt child_status
   for attempt in $(seq 1 80); do
     _http_responds "$port" && return 0
+    if [[ -n "$process_pid" ]] && ! _owned_process_is_alive "$process_pid"; then
+      set +e
+      wait "$process_pid"
+      child_status=$?
+      set -e
+      echo "[start-dev] FATAL: ${name} process (PID ${process_pid}) exited before HTTP readiness on port ${port} (exit status ${child_status})" >&2
+      return 1
+    fi
     sleep 0.25
   done
   echo "[start-dev] FATAL: ${name} did not open HTTP on port ${port}" >&2
@@ -158,11 +168,11 @@ fi
 # placeholder listeners. They bind loopback and are never the public web port.
 if ! _http_responds "$VIDEO_DIFFUSION_PORT"; then
   VIDEO_DIFFUSION_PORT="$VIDEO_DIFFUSION_PORT" NODE_ENV=development \
-    ./node_modules/.bin/tsx server/diffusion-gateway/index.ts \
+    node --import tsx server/diffusion-gateway/index.ts \
     >> /tmp/diffusion_gateway_dev.log 2>&1 &
   _DIFFUSION_PID=$!
   echo "[start-dev] MaxCore diffusion gateway starting on ${VIDEO_DIFFUSION_PORT}"
-  _wait_http "MaxCore diffusion gateway" "$VIDEO_DIFFUSION_PORT"
+  _wait_http "MaxCore diffusion gateway" "$VIDEO_DIFFUSION_PORT" "$_DIFFUSION_PID"
 fi
 
 if ! _http_responds "$PYTHON_AI_PORT"; then
@@ -185,15 +195,39 @@ if ! _http_responds "$PYTHON_AI_PORT"; then
     >> /tmp/ai_content_sidecar_dev.log 2>&1 &
   _AI_SIDECAR_PID=$!
   echo "[start-dev] MaxCore proxy sidecar starting on ${PYTHON_AI_PORT}"
-  _wait_http "MaxCore proxy sidecar" "$PYTHON_AI_PORT"
+  _wait_http "MaxCore proxy sidecar" "$PYTHON_AI_PORT" "$_AI_SIDECAR_PID"
 fi
 
 set +e
-NODE_ENV=development npx tsx server/index.ts &
+NODE_ENV=development node --import tsx server/index.ts &
 _APP_PID=$!
 set -e
 
-if ! node scripts/wait-configured-ports.mjs --timeout-ms=300000; then
+set +e
+node scripts/wait-configured-ports.mjs --timeout-ms=300000 --watch-pid="$_APP_PID"
+_READINESS_STATUS=$?
+set -e
+
+if [[ "$_READINESS_STATUS" == "2" ]]; then
+  _FAILED_APP_PID="$_APP_PID"
+  set +e
+  wait "$_APP_PID"
+  _APP_STATUS=$?
+  set -e
+  _APP_PID=""
+  _APP_EXIT_DETAIL="exit status ${_APP_STATUS}"
+  if (( _APP_STATUS >= 128 )); then
+    _APP_SIGNAL="$(kill -l "$((_APP_STATUS - 128))" 2>/dev/null || true)"
+    if [[ -n "$_APP_SIGNAL" ]]; then
+      _APP_EXIT_DETAIL="signal ${_APP_SIGNAL} (status ${_APP_STATUS})"
+    fi
+  fi
+  echo "[start-dev] FATAL: main application process (PID ${_FAILED_APP_PID}) exited before configured listeners were ready (${_APP_EXIT_DETAIL})" >&2
+  [[ "$_APP_STATUS" != "0" ]] && exit "$_APP_STATUS"
+  exit 1
+fi
+
+if [[ "$_READINESS_STATUS" != "0" ]]; then
   echo "[start-dev] FATAL: configured listeners did not become ready" >&2
   exit 1
 fi
@@ -202,4 +236,16 @@ set +e
 wait "$_APP_PID"
 _APP_STATUS=$?
 set -e
+_FAILED_APP_PID="$_APP_PID"
+_APP_PID=""
+if [[ "$_APP_STATUS" != "0" ]]; then
+  _APP_EXIT_DETAIL="exit status ${_APP_STATUS}"
+  if (( _APP_STATUS >= 128 )); then
+    _APP_SIGNAL="$(kill -l "$((_APP_STATUS - 128))" 2>/dev/null || true)"
+    if [[ -n "$_APP_SIGNAL" ]]; then
+      _APP_EXIT_DETAIL="signal ${_APP_SIGNAL} (status ${_APP_STATUS})"
+    fi
+  fi
+  echo "[start-dev] FATAL: main application process (PID ${_FAILED_APP_PID}) exited after readiness (${_APP_EXIT_DETAIL})" >&2
+fi
 exit "$_APP_STATUS"

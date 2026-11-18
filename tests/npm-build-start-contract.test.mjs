@@ -35,6 +35,35 @@ test("development preflight gates the unchanged application launcher", () => {
   assert.match(scripts["verify:repository"], /repository-verification\.mjs full/);
 });
 
+test("development startup watches the application process during configured listener readiness", () => {
+  const source = fs.readFileSync("scripts/start-dev.sh", "utf8");
+  assert.match(source, /node scripts\/wait-configured-ports\.mjs --timeout-ms=300000 --watch-pid="\$_APP_PID"/);
+  assert.match(source, /main application process \(PID \$\{_FAILED_APP_PID\}\) exited before configured listeners were ready/);
+  assert.match(source, /node --import tsx server\/index\.ts &/);
+  assert.match(source, /node --import tsx server\/diffusion-gateway\/index\.ts/);
+  assert.match(source, /_wait_http "MaxCore diffusion gateway" "\$VIDEO_DIFFUSION_PORT" "\$_DIFFUSION_PID"/);
+  assert.match(source, /_wait_http "MaxCore proxy sidecar" "\$PYTHON_AI_PORT" "\$_AI_SIDECAR_PID"/);
+  assert.match(source, /Sidecar liveness only:[\s\S]*?proxy can return 503 until the main app/);
+});
+
+test("development proxy liveness accepts HTTP 503 before its upstream starts", async t => {
+  const server = http.createServer((_req, res) => { res.writeHead(503); res.end("upstream not started"); });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const source = fs.readFileSync("scripts/start-dev.sh", "utf8");
+  const start = source.indexOf("_http_responds() {");
+  const helper = source.slice(start, source.indexOf("\n}\n", start) + 3);
+  const result = await new Promise((resolve, reject) => {
+    const child = spawn("bash", ["-c", helper + '\n_http_responds "$CHECK_PORT"'], {
+      env: { PATH: process.env.PATH, CHECK_PORT: String(server.address().port) },
+      stdio: "ignore",
+    });
+    child.once("error", reject);
+    child.once("exit", resolve);
+  });
+  assert.equal(result, 0);
+});
+
 test("legacy production shell delegates to the validated npm start path", () => {
   const source = fs.readFileSync("scripts/start-production.sh", "utf8");
   assert.match(source, /exec npm run start/);
