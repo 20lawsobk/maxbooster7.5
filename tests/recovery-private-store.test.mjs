@@ -98,6 +98,42 @@ test("fakeSDK: storage uses explicit bucket or validated sidecar default", async
   assert.equal(selected.bucketId, "verified-default");
 });
 
+test("fakeSDK: bounded read-client settings reach Storage without changing default clients", async () => {
+  const constructed = [];
+  class FakeStorage {
+    constructor(options) { constructed.push(options); }
+    bucket(name) { return { name }; }
+  }
+  await createRecoveryStorage({
+    bucketId: "private-recovery-bucket",
+    StorageClass: FakeStorage,
+    fetchImpl: () => { throw new Error("must not fetch"); },
+  });
+  await createRecoveryStorage({
+    bucketId: "private-recovery-bucket",
+    StorageClass: FakeStorage,
+    timeoutMs: 5_000,
+    retryOptions: { autoRetry: true, maxRetries: 1, totalTimeout: 7, maxRetryDelay: 1 },
+    fetchImpl: () => { throw new Error("must not fetch"); },
+  });
+  assert.equal("timeout" in constructed[0], false);
+  assert.equal("retryOptions" in constructed[0], false);
+  assert.equal(constructed[1].timeout, 5_000);
+  assert.deepEqual(constructed[1].retryOptions, {
+    autoRetry: true, maxRetries: 1, totalTimeout: 7, maxRetryDelay: 1,
+  });
+  await assert.rejects(createRecoveryStorage({
+    bucketId: "private-recovery-bucket",
+    StorageClass: FakeStorage,
+    timeoutMs: 0,
+  }), /timeout is invalid/);
+  await assert.rejects(createRecoveryStorage({
+    bucketId: "private-recovery-bucket",
+    StorageClass: FakeStorage,
+    retryOptions: { maxRetries: 99 },
+  }), /retry options are invalid/);
+});
+
 test("fakeSDK: managed privacy uses a random canary, anonymous denial, then cleanup", async () => {
   const fake = fakeSDK();
   const canary = Buffer.from("nonsensitive-random-canary");

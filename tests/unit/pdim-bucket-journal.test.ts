@@ -7,7 +7,19 @@ class Objects implements PdimObjectStore {
   counter = 0;
   failHead = false;
   loseReply = false;
-  async read(key: string) { return this.data.get(key) ?? null; }
+  readDelayMs = 0;
+  delayPhase?: string;
+  readHook?: (key: string, context?: import("../../server/lib/pdimBucketJournal").PdimReadContext) => Promise<void>;
+  async read(
+    key: string,
+    context?: import("../../server/lib/pdimBucketJournal").PdimReadContext,
+  ) {
+    if (this.readDelayMs && context?.phase && (!this.delayPhase || context.phase === this.delayPhase)) {
+      await new Promise(resolve => setTimeout(resolve, this.readDelayMs));
+    }
+    await this.readHook?.(key, context);
+    return this.data.get(key) ?? null;
+  }
   async write(key: string, bytes: Buffer, expected: string | 0) {
     if (this.failHead && key.endsWith("/HEAD")) throw new Error("unavailable");
     const actual = this.data.get(key)?.generation ?? 0;
@@ -57,6 +69,76 @@ describe("bucket PDIM durability", () => {
     await restored.acquire();
     expect((await restored.recover()).transactions).toEqual([{ n: 1 }, { n: 2 }]);
   });
+  it("replays 133 journal records and records a bounded timing result for every read", async () => {
+    const { journal } = await fixture();
+    for (let n = 1; n <= 133; n += 1) await journal.append({ n });
+
+    const reads: Array<{
+      phase: string; sequence?: number; elapsedMs: number; outcome: string;
+    }> = [];
+    const recovered = await journal.recover(undefined, {
+      timeoutMs: 10_000,
+      onRead: event => reads.push(event),
+    });
+
+    expect(recovered.transactions).toHaveLength(133);
+    expect(recovered.transactions[0]).toEqual({ n: 1 });
+    expect(recovered.transactions[132]).toEqual({ n: 133 });
+    expect(reads.filter(event => event.phase === "journal_frame")).toHaveLength(133);
+    expect(new Set(reads.filter(event => event.phase === "journal_frame")
+      .map(event => event.sequence))).toEqual(new Set(Array.from({ length: 133 }, (_, i) => i + 1)));
+    expect(reads.every(event => Number.isSafeInteger(event.elapsedMs) && event.elapsedMs >= 0)).toBe(true);
+    expect(reads.every(event => event.outcome === "ok")).toBe(true);
+  });
+  it("times out a stalled journal read without changing committed frames and recovers after release", async () => {
+    const { journal, objects, make } = await fixture();
+    await journal.append({ n: 1 });
+    const immutableBefore = [...objects.data.entries()]
+      .filter(([key]) => key.includes("/objects/"))
+      .map(([key, value]) => [key, Buffer.from(value.bytes), value.generation] as const);
+    objects.delayPhase = "journal_frame";
+    objects.readDelayMs = 40;
+    const reads: Array<{ phase: string; sequence?: number; outcome: string; failureCategory?: string }> = [];
+
+    await expect(journal.recover(undefined, {
+      timeoutMs: 8,
+      onRead: event => reads.push(event),
+    })).rejects.toMatchObject({ code: "PDIM_READ_TIMEOUT" });
+    expect(reads).toContainEqual(expect.objectContaining({
+      phase: "journal_frame", sequence: 1, outcome: "timeout", failureCategory: "timeout",
+    }));
+
+    objects.readDelayMs = 0;
+    await new Promise(resolve => setTimeout(resolve, 45));
+    await journal.release();
+    const restored = make();
+    await restored.acquire();
+    expect((await restored.recover()).transactions).toEqual([{ n: 1 }]);
+    expect([...objects.data.entries()]
+      .filter(([key]) => key.includes("/objects/"))
+      .map(([key, value]) => [key, value.bytes, value.generation]))
+      .toEqual(immutableBefore);
+  });
+  it("aborts recovery if the lease is lost while a journal frame is being read", async () => {
+    const { journal, objects, advance } = await fixture();
+    await journal.append({ n: 1 });
+    let started!: () => void;
+    let release!: () => void;
+    const startedRead = new Promise<void>(resolve => { started = resolve; });
+    const gatedRead = new Promise<void>(resolve => { release = resolve; });
+    objects.readHook = async (_key, context) => {
+      if (context?.phase === "journal_frame") {
+        started();
+        await gatedRead;
+      }
+    };
+
+    const recovery = journal.recover(undefined, { timeoutMs: 1_000 });
+    await startedRead;
+    advance();
+    release();
+    await expect(recovery).rejects.toThrow("ownership unavailable");
+  });
   it("rejects concurrent owners and fences an expired owner", async () => {
     const { journal, make, advance } = await fixture();
     await expect(make().acquire()).rejects.toThrow("Another process");
@@ -89,7 +171,9 @@ describe("bucket PDIM durability", () => {
     await journal.append({ n: 1 });
     const head = JSON.parse(objects.data.get("isolated-test/HEAD")!.bytes.toString());
     objects.data.get(`isolated-test/objects/${head.tip}`)!.bytes = Buffer.from("{}");
-    await expect(journal.recover()).rejects.toThrow("corrupt");
+    await expect(journal.recover()).rejects.toMatchObject({
+      code: "PDIM_STORAGE_READ_FAILURE", category: "integrity",
+    });
   });
   it("retains post-checkpoint writes and rejects an unrelated checkpoint", async () => {
     const { journal } = await fixture();
@@ -132,6 +216,24 @@ describe("bucket PDIM durability", () => {
     const bytes = await journal.readImmutable(id);
     const manifest = JSON.parse(bytes.toString());
     objects.data.delete(`isolated-test/objects/${manifest.chunks[0]}`);
-    await expect(readBucketSnapshot(journal, bytes, (_key, value) => value)).rejects.toThrow("missing");
+    await expect(readBucketSnapshot(journal, bytes, (_key, value) => value)).rejects.toMatchObject({
+      code: "PDIM_STORAGE_READ_FAILURE", category: "missing",
+    });
+  });
+  it("bounds snapshot-shard reads and reports the failed shard ordinal", async () => {
+    const { journal, objects } = await fixture();
+    const id = await writeBucketSnapshot(journal, [["key", "value"]], 0, 0);
+    const manifest = await journal.readImmutable(id);
+    objects.delayPhase = "snapshot_shard";
+    objects.readDelayMs = 40;
+    const reads: Array<{ phase: string; ordinal?: number; outcome: string }> = [];
+
+    await expect(readBucketSnapshot(journal, manifest, (_key, value) => value, undefined, {
+      timeoutMs: 8,
+      onRead: event => reads.push(event),
+    })).rejects.toMatchObject({ code: "PDIM_READ_TIMEOUT" });
+    expect(reads).toContainEqual(expect.objectContaining({
+      phase: "snapshot_shard", ordinal: 1, outcome: "timeout",
+    }));
   });
 });

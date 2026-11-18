@@ -1,5 +1,11 @@
 import type { PdimBucketJournal } from "./pdimBucketJournal.js";
+import {
+  DEFAULT_PDIM_RECOVERY_TIMEOUT_MS,
+  PdimBucketReadTimeout,
+  type PdimRecoveryReadEvent,
+} from "./pdimBucketJournal.js";
 import { createHash } from "node:crypto";
+import { performance } from "node:perf_hooks";
 
 type Snapshot = {
   format: "pdim-bucket-snapshot-v1";
@@ -58,7 +64,31 @@ export async function readBucketSnapshot<E>(
   manifestBytes: Buffer,
   validate: (key: string, entry: unknown) => E,
   onProgress?: (completed: number, total: number) => void,
+  options: {
+    deadlineAt?: number;
+    timeoutMs?: number;
+    onRead?: (event: PdimRecoveryReadEvent) => void;
+  } = {},
 ): Promise<{ entries: Map<string, E>; redisSequence: number; capsuleSequence: number }> {
+  const startedAt = performance.now();
+  if (options.timeoutMs !== undefined &&
+      (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1)) {
+    throw new Error("Invalid bucket PDIM snapshot read timeout");
+  }
+  const deadlineAt = options.deadlineAt ??
+    startedAt + (options.timeoutMs ?? DEFAULT_PDIM_RECOVERY_TIMEOUT_MS);
+  if (!Number.isFinite(deadlineAt) || deadlineAt <= startedAt) {
+    throw new PdimBucketReadTimeout("snapshot_shards", undefined, undefined, 0);
+  }
+  const assertDeadline = (ordinal?: number) => {
+    if (performance.now() >= deadlineAt) {
+      throw new PdimBucketReadTimeout(
+        "snapshot_shards", undefined, ordinal,
+        Math.max(0, Math.round(performance.now() - startedAt)),
+      );
+    }
+  };
+  assertDeadline();
   const manifest = JSON.parse(manifestBytes.toString()) as Snapshot;
   if (manifest.format !== "pdim-bucket-snapshot-v1" ||
       !validSequence(manifest.redisSequence) || !validSequence(manifest.capsuleSequence) ||
@@ -71,8 +101,14 @@ export async function readBucketSnapshot<E>(
   // Bound concurrent downloads; do not serialize hundreds of network round trips
   // or retain buffers for the entire snapshot during startup.
   for (let offset = 0; offset < manifest.chunks.length; offset += 4) {
+    assertDeadline(offset + 1);
     const buffers = await Promise.all(manifest.chunks.slice(offset, offset + 4)
-      .map(id => objects.readImmutable(id)));
+      .map((id, index) => objects.readImmutable(id, {
+        phase: "snapshot_shard",
+        ordinal: offset + index + 1,
+        deadlineAt,
+        onRead: options.onRead,
+      })));
     for (const buffer of buffers) {
     const rows: unknown = JSON.parse(buffer.toString());
     if (!Array.isArray(rows)) throw new Error("Invalid bucket PDIM snapshot chunk");
@@ -85,10 +121,12 @@ export async function readBucketSnapshot<E>(
     }
     }
     const completed = Math.min(offset + 4, manifest.chunks.length);
+    assertDeadline(completed);
     if (completed % 32 === 0 || completed === manifest.chunks.length) {
       onProgress?.(completed, manifest.chunks.length);
     }
   }
+  assertDeadline(manifest.chunks.length || undefined);
   if (entries.size !== manifest.count) throw new Error("Bucket PDIM snapshot count mismatch");
   return { entries, redisSequence: manifest.redisSequence, capsuleSequence: manifest.capsuleSequence };
 }

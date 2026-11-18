@@ -8,7 +8,7 @@ export interface PdimObjectStore {
   write(key: string, bytes: Buffer, generation: string | 0): Promise<string>;
 }
 
-export const DEFAULT_PD​IM_RECOVERY_TIMEOUT_MS = 180_000;
+export const DEFAULT_PDIM_RECOVERY_TIMEOUT_MS = 180_000;
 
 export type PdimReadContext = {
   phase: string;
@@ -54,7 +54,7 @@ const sequence = (value: unknown): value is number =>
   Number.isSafeInteger(value) && Number(value) >= 0;
 
 export class PdimBucketUnavailable extends Error {
-  readonly code = "PDIM_DURABILITY_FAILURE";
+  readonly code: string = "PDIM_DURABILITY_FAILURE";
 }
 export class PdimBucketReadTimeout extends PdimBucketUnavailable {
   readonly code = "PDIM_READ_TIMEOUT";
@@ -183,12 +183,6 @@ export class PdimBucketJournal<T> {
     let failureCategory: string | undefined;
     try {
       const key = `${this.prefix}/objects/${id}`;
-      let objectPromise: Promise<{ bytes: Buffer; generation: string } | null>;
-      try {
-        objectPromise = this.objects.read(key, context);
-      } catch (error) {
-        throw error;
-      }
       let object: { bytes: Buffer; generation: string } | null;
       if (context?.deadlineAt !== undefined) {
         const remainingMs = context.deadlineAt - performance.now();
@@ -201,7 +195,7 @@ export class PdimBucketJournal<T> {
         let timer: ReturnType<typeof setTimeout> | undefined;
         try {
           object = await Promise.race([
-            objectPromise,
+            this.objects.read(key, context),
             new Promise<never>((_resolve, reject) => {
               timer = setTimeout(() => reject(new PdimBucketReadTimeout(
                 context.phase, context.sequence, context.ordinal,
@@ -219,7 +213,7 @@ export class PdimBucketJournal<T> {
           );
         }
       } else {
-        object = await objectPromise;
+        object = await this.objects.read(key, context);
       }
       if (!object) throw new PdimBucketReadFailure("missing");
       if (digest(object.bytes) !== id) throw new PdimBucketReadFailure("integrity");
@@ -231,18 +225,14 @@ export class PdimBucketJournal<T> {
       throw error;
     } finally {
       if (context?.onRead) {
-        try {
-          context.onRead({
-            phase: context.phase,
-            ...(context.sequence === undefined ? {} : { sequence: context.sequence }),
-            ...(context.ordinal === undefined ? {} : { ordinal: context.ordinal }),
-            elapsedMs: Math.max(0, Math.round(performance.now() - startedAt)),
-            outcome,
-            ...(failureCategory ? { failureCategory } : {}),
-          });
-        } catch {
-          // Diagnostics must not change whether a verified read is accepted.
-        }
+        context.onRead({
+          phase: context.phase,
+          ...(context.sequence === undefined ? {} : { sequence: context.sequence }),
+          ...(context.ordinal === undefined ? {} : { ordinal: context.ordinal }),
+          elapsedMs: Math.max(0, Math.round(performance.now() - startedAt)),
+          outcome,
+          ...(failureCategory ? { failureCategory } : {}),
+        });
       }
     }
   }
@@ -362,24 +352,35 @@ export class PdimBucketJournal<T> {
       throw new Error("Invalid bucket PDIM recovery timeout");
     }
     const deadlineAt = options.deadlineAt ??
-      startedAt + (options.timeoutMs ?? DEFAULT_PD​IM_RECOVERY_TIMEOUT_MS);
+      startedAt + (options.timeoutMs ?? DEFAULT_PDIM_RECOVERY_TIMEOUT_MS);
     if (!Number.isFinite(deadlineAt) || deadlineAt <= startedAt) {
       throw new PdimBucketReadTimeout("recovery", undefined, undefined, 0);
     }
     const readContext = (phase: string, sequence?: number, ordinal?: number): PdimReadContext => ({
       phase, sequence, ordinal, deadlineAt, onRead: options.onRead,
     });
+    const assertDeadline = (sequence?: number) => {
+      if (performance.now() >= deadlineAt) {
+        throw new PdimBucketReadTimeout(
+          "journal_replay", sequence, undefined,
+          Math.max(0, Math.round(performance.now() - startedAt)),
+        );
+      }
+    };
     const head = { ...this.head! };
     const snapshot = await this.readImmutable(head.snapshot, readContext("snapshot_manifest"));
+    assertDeadline();
     const transactions: T[] = [];
     let tip = head.tip;
     let expected = head.sequence;
     onProgress?.(0, head.sequence - head.baseSequence);
     while (expected > head.baseSequence) {
+      assertDeadline(expected);
       if (!tip) throw new PdimBucketUnavailable("Bucket PDIM journal truncated");
       const frame = JSON.parse((await this.readImmutable(
         tip, readContext("journal_frame", expected),
       )).toString()) as Frame<T>;
+      assertDeadline(expected);
       if (frame.version !== 1 || frame.sequence !== expected ||
           !(frame.previous === null || hash(frame.previous)) || !this.validateValue(frame.value)) {
         throw new PdimBucketUnavailable("Bucket PDIM journal discontinuity or invalid transaction");
@@ -393,6 +394,7 @@ export class PdimBucketJournal<T> {
     }
     if (tip !== head.baseTip) throw new PdimBucketUnavailable("Bucket PDIM checkpoint ancestry mismatch");
     this.assertOwned();
+    assertDeadline();
     return { snapshot, transactions: transactions.reverse() };
   }
 
