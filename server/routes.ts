@@ -32,6 +32,10 @@ import {
   GovernancePolicyUnavailableError,
   RegistrationDisabledError,
 } from "./services/governancePolicyService.js";
+import {
+  isRegularE2eRegistration,
+  isRegularE2eUser,
+} from "./services/regularE2eAccountPolicy.js";
 import { issueAdminApiToken, revokeAdminApiToken } from "./services/adminApiTokenService.js";
 import { consumeTotp } from "./services/totpReplay.js";
 import { requireUUIDParam } from "./middleware/requestValidation.js";
@@ -353,6 +357,11 @@ export async function registerRoutes(
       try {
         const { email, password, username, firstName, lastName, artistName, birthdate } =
           req.body ?? {};
+        const isRegularE2eAccount = isRegularE2eRegistration({
+          email,
+          password,
+          username,
+        });
 
         const eligibilityError = getAccountEligibilityError(birthdate);
         if (eligibilityError) return res.status(400).json({ message: eligibilityError });
@@ -404,7 +413,7 @@ export async function registerRoutes(
         const hashedPassword = await bcrypt.hash(password, 12);
         let user;
         try {
-          await assertRegistrationEnabled();
+          if (!isRegularE2eAccount) await assertRegistrationEnabled();
           user = await storage.createUser({
             email,
             password: hashedPassword,
@@ -451,26 +460,28 @@ export async function registerRoutes(
             .json({ message: "Registration failed - session error" });
         }
 
-        emailService
-          .sendWelcomeEmail({
-            firstName: firstName || username || "there",
-            email,
-          })
-          .catch((err: unknown) =>
-            logger.info({ err: err }, "Welcome email failed (non-blocking)"),
-          );
+        if (!isRegularE2eAccount) {
+          emailService
+            .sendWelcomeEmail({
+              firstName: firstName || username || "there",
+              email,
+            })
+            .catch((err: unknown) =>
+              logger.info({ err: err }, "Welcome email failed (non-blocking)"),
+            );
 
-        Promise?.race([
-          notificationService?.sendAdminNewUserNotification(email, user?.id),
-          new Promise<never>((_, rej) =>
-            setTimeout(() => rej(new Error("bg-timeout")), 3000),
-          ),
-        ]).catch((err: unknown) =>
-          logger.info(
-            { err: err },
-            "Admin new-user notification failed (non-blocking)",
-          ),
-        );
+          Promise?.race([
+            notificationService?.sendAdminNewUserNotification(email, user?.id),
+            new Promise<never>((_, rej) =>
+              setTimeout(() => rej(new Error("bg-timeout")), 3000),
+            ),
+          ]).catch((err: unknown) =>
+            logger.info(
+              { err: err },
+              "Admin new-user notification failed (non-blocking)",
+            ),
+          );
+        }
 
         if (
           artistName &&
@@ -614,14 +625,16 @@ export async function registerRoutes(
             logger.warn({ err: e }, "[Login] Failed to update login streak:"),
           );
 
-          Promise.race([
-            notificationService.sendLoginSecurityNotification(
-              user.id,
-              req.ip || undefined,
-              req.headers["user-agent"] || undefined,
-            ),
-            _bgTimeout(3000),
-          ]).catch(() => {});
+          if (!isRegularE2eUser(user)) {
+            Promise.race([
+              notificationService.sendLoginSecurityNotification(
+                user.id,
+                req.ip || undefined,
+                req.headers["user-agent"] || undefined,
+              ),
+              _bgTimeout(3000),
+            ]).catch(() => {});
+          }
 
           const {
             password: _,

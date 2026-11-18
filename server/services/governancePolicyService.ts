@@ -1,6 +1,7 @@
 import { db } from "../db.js";
 import { systemSettings } from "../../shared/schema.js";
 import { isAdminOnlyMode } from "../../shared/adminAccessPolicy.mjs";
+import { isRegularE2eUser } from "./regularE2eAccountPolicy.js";
 export { isAdminOnlyMode } from "../../shared/adminAccessPolicy.mjs";
 import { inArray } from "drizzle-orm";
 import type { RequestHandler } from "express";
@@ -43,7 +44,11 @@ export async function readGovernancePolicy(): Promise<{
 }
 
 export const enforceMaintenance: RequestHandler = async (req, res, next) => {
-  if (isAdminOnlyMode() && req.user?.role !== "admin") {
+  if (
+    isAdminOnlyMode() &&
+    req.user?.role !== "admin" &&
+    !isRegularE2eUser(req.user)
+  ) {
     return res.status(403).json({
       error: "Administrator access only",
       code: "ADMIN_ONLY_MODE",

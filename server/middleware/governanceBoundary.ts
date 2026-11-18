@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import path from "node:path";
 import { enforceMaintenance } from "../services/governancePolicyService.js";
 import { enforceAssurance } from "./authAssurance.js";
+import { isRegularE2eRegistration } from "../services/regularE2eAccountPolicy.js";
 import { hasBearerSecret } from "../lib/internalServiceAuth.js";
 import {
   ensureDnsSyncSecret,
@@ -64,6 +65,16 @@ export const governanceBoundary: RequestHandler = async (req, res, next) => {
     if (!hasBearerSecret(req.get("authorization"), secret)) {
       return res.status(401).json({ error: "Authenticated internal training sync required" });
     }
+    return next();
+  }
+  // Public signup remains fail-closed. Only the exact owner-configured E2E
+  // identity may reach the registration handler, which independently applies
+  // the same check before bypassing the global registration policy.
+  if (
+    method === "POST" &&
+    path === "/api/auth/register" &&
+    isRegularE2eRegistration(req.body)
+  ) {
     return next();
   }
   if (recovery.has(`${method} ${path}`)) return next();
