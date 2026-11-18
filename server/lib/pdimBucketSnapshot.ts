@@ -16,6 +16,7 @@ type Snapshot = {
 };
 type Objects = Pick<PdimBucketJournal<unknown>, "putImmutable" | "readImmutable">;
 const validSequence = (n: unknown): n is number => Number.isSafeInteger(n) && Number(n) >= 0;
+const SNAPSHOT_READ_CONCURRENCY = 8;
 
 /** Chunk a previously captured, immutable entry view. Never create a whole-store
  * JSON string or a disk staging copy. The caller must capture mutable containers
@@ -98,11 +99,11 @@ export async function readBucketSnapshot<E>(
   }
   const entries = new Map<string, E>();
   onProgress?.(0, manifest.chunks.length);
-  // Bound concurrent downloads; do not serialize hundreds of network round trips
-  // or retain buffers for the entire snapshot during startup.
-  for (let offset = 0; offset < manifest.chunks.length; offset += 4) {
+  // Bound concurrent downloads while retaining only one batch of shard buffers.
+  // Snapshot chunks are independent immutable objects; journal frames are not.
+  for (let offset = 0; offset < manifest.chunks.length; offset += SNAPSHOT_READ_CONCURRENCY) {
     assertDeadline(offset + 1);
-    const buffers = await Promise.all(manifest.chunks.slice(offset, offset + 4)
+    const buffers = await Promise.all(manifest.chunks.slice(offset, offset + SNAPSHOT_READ_CONCURRENCY)
       .map((id, index) => objects.readImmutable(id, {
         phase: "snapshot_shard",
         ordinal: offset + index + 1,
@@ -120,7 +121,7 @@ export async function readBucketSnapshot<E>(
       entries.set(row[0], validate(row[0], row[1]));
     }
     }
-    const completed = Math.min(offset + 4, manifest.chunks.length);
+    const completed = Math.min(offset + SNAPSHOT_READ_CONCURRENCY, manifest.chunks.length);
     assertDeadline(completed);
     if (completed % 32 === 0 || completed === manifest.chunks.length) {
       onProgress?.(completed, manifest.chunks.length);

@@ -313,11 +313,29 @@
       }
       #mb-loader-bar-fill {
         height: 100%;
-        width: 0%;
+        width: 38%;
         background: linear-gradient(90deg, #3b82f6, #4a9eff);
         border-radius: 999px;
-        transition: width 0.6s ease;
-        will-change: width;
+        animation: mb-loader-progress 1.4s ease-in-out infinite alternate;
+        will-change: transform;
+      }
+      @keyframes mb-loader-progress {
+        from {
+          transform: translateX(-105%);
+        }
+        to {
+          transform: translateX(265%);
+        }
+      }
+      #mb-initial-loader {
+        transition:
+          opacity 180ms ease,
+          visibility 0s linear 180ms;
+      }
+      #mb-initial-loader.mb-loader-exit {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
       }
       #mb-loader-msg {
         color: #94a3b8;
@@ -352,6 +370,15 @@
       #mb-loader-reload:hover {
         opacity: 0.85;
       }
+      @media (prefers-reduced-motion: reduce) {
+        #mb-loader-bar-fill {
+          animation: none;
+          transform: translateX(80%);
+        }
+        #mb-initial-loader {
+          transition: none;
+        }
+      }
     </style>
 
     <!-- Instant dark/light theme — runs before first paint to prevent flash -->
@@ -360,32 +387,27 @@
   </head>
 
   <body class="bg-background text-foreground">
-    <div id="root">
-      <!--
-        Smart multi-phase loading screen.
-        – Shows a real animated progress bar so users know the app is working.
-        – Phases messages at 3s / 7s / 12s milestones.
-        – Detects slow connections (navigator.connection) and warns early.
-        – Shows a "Reload" button at 15s instead of waiting a full 60s.
-        – All inlined — zero extra network requests before React hydrates.
-      -->
-      <div
-        id="mb-initial-loader"
-        style="
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: #0f172a;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          font-family: Inter, system-ui, sans-serif;
-          z-index: 9999;
-        "
-      >
+    <div id="root"></div>
+    <!-- Initial overlay is outside React's root so React can mount underneath it. -->
+    <div
+      id="mb-initial-loader"
+      role="status"
+      aria-live="polite"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #0f172a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: Inter, system-ui, sans-serif;
+        z-index: 9999;
+      "
+    >
         <picture>
           <source srcset="/logo.webp" type="image/webp" />
           <img
@@ -439,7 +461,6 @@
         <p id="mb-loader-msg">Loading Max Booster...</p>
         <p id="mb-loader-sub"></p>
         <button id="mb-loader-reload">Reload</button>
-      </div>
     </div>
 
     <noscript>

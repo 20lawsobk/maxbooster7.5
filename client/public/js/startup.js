@@ -13,9 +13,6 @@
     });
   }
 
-  function setProgress(pct) {
-    if (bar && !gone) bar.style.width = pct + "%";
-  }
   function setMsg(text) {
     if (msg && !gone) msg.textContent = text;
   }
@@ -37,23 +34,13 @@
       conn.effectiveType === "slow-2g" ||
       conn.saveData);
 
-  setProgress(12);
   setTimeout(function () {
-    setProgress(30);
     setMsg("Initializing\u2026");
   }, 1200);
   setTimeout(function () {
-    setProgress(52);
-  }, 3000);
-  setTimeout(function () {
-    setProgress(68);
     setMsg("Almost ready\u2026");
   }, 5500);
   setTimeout(function () {
-    setProgress(82);
-  }, 8000);
-  setTimeout(function () {
-    setProgress(91);
     setMsg("Finishing up\u2026");
   }, 11000);
 
@@ -128,9 +115,20 @@
       gone = true;
       observer.disconnect();
 
+      var loader = document.getElementById("mb-initial-loader");
+      if (loader) {
+        loader.setAttribute("aria-hidden", "true");
+        loader.classList.add("mb-loader-exit");
+        var removeLoader = function () {
+          if (loader.parentNode) loader.parentNode.removeChild(loader);
+        };
+        loader.addEventListener("transitionend", removeLoader, { once: true });
+        setTimeout(removeLoader, 220);
+      }
+
       if (window.__MB_BOOT) {
         var bootMs = Date.now() - window.__MB_BOOT;
-        console.log("[MB] App hydrated in " + bootMs + " ms");
+        console.log("[MB] App rendered in " + bootMs + " ms");
       }
 
       if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {

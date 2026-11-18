@@ -211,6 +211,39 @@ describe("bucket PDIM durability", () => {
     await expect(verifyBucketSnapshot(journal, id,
       new Map([["first", "changed"], ["second", "second-value"]]), 25, 12)).rejects.toThrow("entry mismatch");
   });
+  it("reads independent snapshot shards with a bounded eight-request window", async () => {
+    const chunkIds = Array.from({ length: 19 }, (_, index) => String(index).padStart(64, "0"));
+    const manifest = Buffer.from(JSON.stringify({
+      format: "pdim-bucket-snapshot-v1",
+      redisSequence: 0,
+      capsuleSequence: 0,
+      count: chunkIds.length,
+      chunks: chunkIds,
+    }));
+    let active = 0;
+    let maximumActive = 0;
+    const objects = {
+      async putImmutable() {
+        throw new Error("Snapshot reads must not write objects");
+      },
+      async readImmutable(id: string) {
+        active++;
+        maximumActive = Math.max(maximumActive, active);
+        await new Promise(resolve => setTimeout(resolve, 8));
+        active--;
+        return Buffer.from(JSON.stringify([[id, id]]));
+      },
+    };
+
+    const restored = await readBucketSnapshot(objects, manifest, (_key, value) => {
+      if (typeof value !== "string") throw new Error("Invalid shard fixture");
+      return value;
+    });
+
+    expect(maximumActive).toBe(8);
+    expect([...restored.entries.keys()]).toEqual(chunkIds);
+    expect(restored.entries.size).toBe(chunkIds.length);
+  });
   it("rejects a missing snapshot shard instead of restoring partial state", async () => {
     const { journal, objects } = await fixture();
     const id = await writeBucketSnapshot(journal, [["key", "value"]], 0, 0);
