@@ -468,10 +468,10 @@ export class AutopilotEngine extends EventEmitter {
 
       this.emit("contentGenerated", { job, content });
     } catch (error: unknown) {
-      // If AI service is not configured, create a placeholder request
-      throw new Error(
-        "AI content generation service not configured. Please connect your AI service.",
-      );
+      // The job scheduler owns retry and failure state. Preserve the actual
+      // MaxCore, URL, or account-context failure so operators can diagnose it
+      // and callers never mistake a failed generation for a configuration issue.
+      throw error;
     }
   }
 
