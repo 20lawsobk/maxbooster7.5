@@ -42,10 +42,12 @@ from ai_model.awareness.platform_discovery import (
     validate_provenance,
 )
 from ai_model.awareness.sources import (
+    _provider_failure_category,
     platform_search,
     platform_search_with_backup,
     profile_source_status,
 )
+from ai_model.native_analysis.safe_http import SafeHTTPError
 from ai_model.awareness.test_engine import MemoryStore
 from ai_model.platform_optimization import ALIASES, PLATFORMS
 
@@ -77,6 +79,26 @@ class PlatformDiscoveryTests(unittest.TestCase):
         env = {"EXA_API_KEY": "fixture", "TAVILY_API_KEY": "fixture"}
         self.assertFalse(provider_state(env)["enabled"])
         self.assertEqual(source_specs(env), {})
+
+    def test_platform_search_preserves_only_safe_http_status_for_provider_diagnostics(self):
+        with patch.dict("os.environ", {
+            SEARCH_OPT_IN: "1",
+            SEARCH_PROVIDER_SETTING: "tavily",
+            "EXA_API_KEY": "fixture-exa",
+            "TAVILY_API_KEY": "fixture-tavily",
+        }):
+            with patch(
+                "trusted_http.request",
+                return_value=SimpleNamespace(status=429, body=b'{"error":"sensitive"}'),
+            ):
+                with self.assertRaises(SafeHTTPError) as raised:
+                    platform_search("tavily", "facebook")
+
+        self.assertEqual(
+            _provider_failure_category(raised.exception),
+            "http_429",
+        )
+        self.assertNotIn("sensitive", str(raised.exception))
 
     def test_explicit_provider_opt_in_registers_one_source_per_platform(self):
         env = {

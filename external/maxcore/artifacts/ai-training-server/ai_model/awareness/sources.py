@@ -341,7 +341,11 @@ def platform_search(provider, platform):
         body=json.dumps(payload).encode(), timeout=12, max_bytes=1024 * 1024,
     )
     if response.status != 200:
-        raise SafeHTTPError(f"Remote server returned HTTP {response.status}")
+        error = SafeHTTPError(f"Remote server returned HTTP {response.status}")
+        # Keep only the integer status for safe operational diagnostics. Never
+        # retain or log provider response bodies, which may contain sensitive data.
+        error.status = response.status
+        raise error
     document = json.loads(response.body)
     raw_results = document.get("results", []) if isinstance(document, dict) else None
     if not isinstance(raw_results, list):

@@ -5,7 +5,10 @@ import type { IncomingMessage } from "http";
 import { parse as parseUrl } from "url";
 import { parse as parseCookie } from "cookie";
 import * as Y from "yjs";
-import { yjsService } from "../services/yjsService.js";
+import {
+  REMOTE_YJS_UPDATE_ORIGIN,
+  yjsService,
+} from "../services/yjsService.js";
 import { presenceManager, type CursorPosition, type SelectionState } from "./presenceManager.js";
 import { jwtAuthService } from "../services/jwtAuthService.js";
 import { storage } from "../storage.js";
@@ -77,6 +80,7 @@ export class StudioCollabServer {
   private clients: Map<string, Set<CollabClient>> = new Map();
   private userConnectionCount: Map<string, number> = new Map();
   private documents: Map<string, Y.Doc> = new Map();
+  private documentLoads: Map<string, Promise<Y.Doc>> = new Map();
   private pingInterval: NodeJS.Timeout | null = null;
   private awarenessInterval: NodeJS.Timeout | null = null;
 
@@ -172,12 +176,23 @@ export class StudioCollabServer {
         _request: IncomingMessage,
         context: { userId: string; displayName: string; projectId: string },
       ) => {
-        await this.handleConnection(
+        void this.handleConnection(
           ws,
           context?.userId,
           context?.displayName,
           context?.projectId,
-        );
+        ).catch((error) => {
+          logger.warn(
+            {
+              projectId: context?.projectId,
+              error: error instanceof Error ? error.message : "unknown",
+            },
+            "[StudioCollab] Connection setup failed:",
+          );
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.close(1013, "Collaboration synchronization unavailable");
+          }
+        });
       },
     );
 
@@ -328,11 +343,7 @@ export class StudioCollabServer {
       ws.close(1008, "Project access revoked");
       return;
     }
-    let doc = this.documents.get(projectId);
-    if (!doc) {
-      doc = await yjsService?.loadDocument(projectId);
-      this.documents.set(projectId, doc);
-    }
+    const doc = await this.getOrLoadDocument(projectId);
 
     const presence = await presenceManager?.addCollaborator(
       projectId,
@@ -447,6 +458,60 @@ export class StudioCollabServer {
     logger.info(
       `[StudioCollab] Client connected: ${displayName} (${userId}) to project ${projectId}`,
     );
+  }
+
+  private async getOrLoadDocument(projectId: string): Promise<Y.Doc> {
+    const existing = this.documents.get(projectId);
+    if (existing) return existing;
+
+    const inFlight = this.documentLoads.get(projectId);
+    if (inFlight) return inFlight;
+
+    const pendingRemoteUpdates: Uint8Array[] = [];
+    const receiveRemoteUpdate = (update: Uint8Array) => {
+      const loaded = this.documents.get(projectId);
+      if (loaded) {
+        Y.applyUpdate(loaded, update, REMOTE_YJS_UPDATE_ORIGIN);
+      } else {
+        pendingRemoteUpdates.push(update);
+      }
+    };
+
+    const load = (async () => {
+      try {
+        // Subscribe before reading the cached/persisted snapshot. Updates that
+        // arrive during the load are buffered and applied before clients sync.
+        await yjsService.subscribeToProjectUpdates(
+          projectId,
+          receiveRemoteUpdate,
+        );
+        const doc = await yjsService.loadDocument(projectId);
+        this.documents.set(projectId, doc);
+        for (const update of pendingRemoteUpdates) {
+          Y.applyUpdate(doc, update, REMOTE_YJS_UPDATE_ORIGIN);
+        }
+        return doc;
+      } catch (error) {
+        const loaded = this.documents.get(projectId);
+        this.documents.delete(projectId);
+        await yjsService.unloadDocument(projectId, loaded).catch((unloadError) => {
+          logger.warn(
+            { projectId, error: unloadError instanceof Error ? unloadError.message : "unknown" },
+            "[StudioCollab] Failed to clean up a partial document load:",
+          );
+        });
+        throw error;
+      }
+    })();
+
+    this.documentLoads.set(projectId, load);
+    try {
+      return await load;
+    } finally {
+      if (this.documentLoads.get(projectId) === load) {
+        this.documentLoads.delete(projectId);
+      }
+    }
   }
 
   private async handleMessage(
@@ -589,7 +654,7 @@ export class StudioCollabServer {
           if (!remainingClients || remainingClients?.size === 0) {
             const doc = this.documents.get(client?.projectId);
             if (doc) {
-              await yjsService?.unloadDocument(client?.projectId, false);
+              await yjsService?.unloadDocument(client?.projectId, doc);
               this.documents.delete(client?.projectId);
               logger.info(
                 `[StudioCollab] Unloaded document for project ${client?.projectId}`,
@@ -730,10 +795,11 @@ export class StudioCollabServer {
 
     this.clients.clear();
 
-    for (const [projectId, _doc] of this.documents.entries()) {
-      await yjsService?.unloadDocument(projectId, false);
+    for (const [projectId, doc] of this.documents.entries()) {
+      await yjsService?.unloadDocument(projectId, doc);
     }
     this.documents.clear();
+    this.documentLoads.clear();
 
     await presenceManager?.shutdown();
 

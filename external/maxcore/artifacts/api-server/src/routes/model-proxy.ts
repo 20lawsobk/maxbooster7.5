@@ -322,6 +322,7 @@ async function proxyRequest(
   const isGet = req.method === "GET" || req.method === "HEAD";
   const awarenessOnly = path === "/api/awareness/unified/status" ||
     path === "/api/awareness/unified/ready" ||
+    path === "/api/awareness/unified/admin/source-status" ||
     path === "/api/awareness/unified/context" ||
     path === "/api/awareness/unified/profile-discover";
   const accountAnalytics = ["/api/analytics/capability", "/api/analytics/predict", "/api/analytics/insights"].includes(path);
@@ -1173,6 +1174,12 @@ router.post("/awareness/unified/context", async (req, res) => {
 });
 router.post("/awareness/unified/profile-discover", async (req, res) => {
   await proxyRequest(req, res, "/api/awareness/unified/profile-discover");
+});
+router.get("/awareness/unified/admin/source-status", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/admin/source-status");
+});
+router.post("/awareness/unified/admin/source-review", async (req, res) => {
+  await proxyRequest(req, res, "/api/awareness/unified/admin/source-review");
 });
 
 // Bounded, model-free statistics contract; never held behind weight recovery.

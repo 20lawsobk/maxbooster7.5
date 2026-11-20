@@ -81,9 +81,8 @@ if (cluster.isPrimary) {
     startKeepalive();
   }
 
-  // Warm-status observer: polls /api/warm/status until the deep-warm pass
-  // (fired by python-server.ts) reaches a terminal state; exposes the result
-  // via getWarmStatus() / waitUntilWarm() for the system-readiness endpoint.
+  // Warm-status observer: reports deep-warm completion or settles immediately
+  // when live-awareness serving is ready and checkpoint warm-up is deferred.
   startWarmService();
 
   for (let i = 0; i < NUM_WORKERS; i++) {
