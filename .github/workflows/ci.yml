@@ -253,25 +253,11 @@ jobs:
         # and let the next step decide whether to fail.
         run: npm audit --audit-level=high --json > audit-report.json || true
 
-      - name: Parse and display audit results
-        run: |
-          node -e "
-            const fs = require('fs');
-            const report = JSON.parse(fs.readFileSync('audit-report.json', 'utf8'));
-            const vulns = report.metadata?.vulnerabilities ?? {};
-            const total = Object.values(vulns).reduce((a, b) => a + b, 0);
-            console.log('== npm audit summary ==');
-            Object.entries(vulns).forEach(([sev, count]) => {
-              if (count > 0) console.log(\`  \${sev}: \${count}\`);
-            });
-            const highPlus = (vulns.high ?? 0) + (vulns.critical ?? 0);
-            if (highPlus > 0) {
-              console.error(\`❌ \${highPlus} high/critical vulnerabilities found\`);
-              process.exit(1);
-            } else {
-              console.log('✅ No high/critical vulnerabilities');
-            }
-          "
+      - name: Verify npm audit parser fail-closed cases
+        run: node --test tests/npm-audit-gate.test.mjs
+
+      - name: Parse and enforce npm audit results
+        run: node scripts/verify-npm-audit.mjs audit-report.json
 
       - name: Upload audit report
         uses: actions/upload-artifact@v4
