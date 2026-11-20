@@ -343,13 +343,13 @@ router.put(
         return res.status(409).json({ error: "Upload URL has already been used" });
       }
 
-      // Throws when neither local disk nor PDIM actually persisted the
-      // bytes — caught below, which cleans up and reports a real failure.
+      // A failed storage call may have committed bytes before its response was lost.
+      // Never delete this key until a durable ownership receipt is reconciled.
       await storageService.uploadFileAtKey(body, payload.k, payload.ct);
 
       const storageId = await ensureUserStorageRow(payload.u);
       if (!storageId) {
-        await storageService.deleteFile(payload.k);
+        logger.error({ key: payload.k }, "[Uploads] Storage receipt missing; preserve bytes for reconciliation");
         return res.status(500).json({ error: "Upload could not be recorded" });
       }
 
@@ -392,16 +392,11 @@ router.put(
         },
       });
     } catch (error) {
-      logger.error({ err: error }, `[Uploads] Direct upload failed for key=${payload.k}`);
-      try {
-        await storageService.deleteFile(payload.k);
-      } catch (cleanupError) {
-        logger.error(
-          { err: cleanupError },
-          `[Uploads] Cleanup failed for key=${payload.k}`,
-        );
-      }
-      return res.status(500).json({ error: "Failed to store uploaded file" });
+      // The byte write, SQL receipt, or URL lookup may already have committed.
+      // An unguarded delete can destroy a concurrent successful upload using
+      // the same signed token. Keep the object for durable reconciliation.
+      logger.error({ err: error, key: payload.k }, "[Uploads] Direct upload outcome uncertain; reconciliation required");
+      return res.status(500).json({ error: "Failed to complete uploaded file; check your files before retrying" });
     }
   },
 );
