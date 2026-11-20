@@ -4,9 +4,9 @@
 # separate from any deployment or inherited PDIM settings.
 configure_dev_pdim() {
   local workspace_root="$1"
-  local namespace="${MAXBOOSTER_DEV_PDIM_BUCKET_NAMESPACE:-maxbooster-workspace-dev-v1}"
+  local namespace="${MAXBOOSTER_DEV_PDIM_BUCKET_NAMESPACE:-maxbooster-workspace-dev-v2}"
   local production_namespace="${MAXBOOSTER_PRODUCTION_PDIM_BUCKET_NAMESPACE:-${PDIM_BUCKET_NAMESPACE:-}}"
-  local local_store="${workspace_root}/data/local-pdim-dev-v1-store.json"
+  local local_store="${workspace_root}/data/local-pdim-dev-v2-store.json"
   local inherited_store="${LOCAL_PDIM_STORE_FILE:-${workspace_root}/data/local-pdim-store.json}"
   local normalized_local normalized_inherited
 

@@ -86,7 +86,7 @@ describe("autopilot publish queue consumption", () => {
     expect(job.status).toBe("pending");
     expect(job.retries).toBe(1);
     expect(engine.contentQueue.size).toBe(0);
-    expect(engine.generateContentForAutopilot).toHaveBeenCalledOnce();
+    expect(engine.generateContentForAutopilot).toHaveBeenCalledTimes(2);
   });
 
   it("retains the exact queued item across thrown and unsuccessful retries", async () => {

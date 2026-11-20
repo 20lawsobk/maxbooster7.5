@@ -23,14 +23,14 @@ test("development ignores an inherited shared namespace and uses its own journal
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.stdout.trim().split("\n"), [
     "app-storage",
-    "maxbooster-workspace-dev-v1",
-    `${root}/data/local-pdim-dev-v1-store.json`,
+    "maxbooster-workspace-dev-v2",
+    `${root}/data/local-pdim-dev-v2-store.json`,
   ]);
 });
 
 test("development refuses a namespace explicitly configured for production", () => {
   const result = configure({
-    MAXBOOSTER_PRODUCTION_PDIM_BUCKET_NAMESPACE: "maxbooster-workspace-dev-v1",
+    MAXBOOSTER_PRODUCTION_PDIM_BUCKET_NAMESPACE: "maxbooster-workspace-dev-v2",
   });
 
   assert.notEqual(result.status, 0);
@@ -46,7 +46,7 @@ test("development rejects unsafe namespace syntax", () => {
 
 test("development refuses an explicitly shared local journal path", () => {
   const result = configure({
-    LOCAL_PDIM_STORE_FILE: `${root}/data/local-pdim-dev-v1-store.json`,
+    LOCAL_PDIM_STORE_FILE: `${root}/data/local-pdim-dev-v2-store.json`,
   });
 
   assert.notEqual(result.status, 0);
