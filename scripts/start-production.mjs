@@ -11,7 +11,13 @@ const required = ["dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs",
   "external/maxcore/artifacts/api-server/dist/index.mjs"];
 const digest = file => createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 function sourceInputs(root) {
-  const files = ["package.json", "package-lock.json", "vite.config.ts", "start.sh"];
+  const files = [
+    "package.json",
+    "package-lock.json",
+    "vite.config.ts",
+    "start.sh",
+    "scripts/deployment/ports.replit",
+  ];
   function walk(dir) {
     if (!fs.existsSync(path.join(root, dir))) return;
     for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {

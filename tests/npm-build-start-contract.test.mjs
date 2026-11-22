@@ -20,7 +20,7 @@ test("Replit preview runs the documented development workflow while deployment s
   const repl = fs.readFileSync(".replit", "utf8");
   const deploymentDocs = fs.readFileSync("docs/DEPLOYMENT.md", "utf8");
   assert.match(repl, /^run = "npm run dev"$/m);
-  assert.match(repl, /modules = \["python-3\.11", "nodejs-24"\]/);
+  assert.match(repl, /modules = \["nodejs-24", "python-3\.12"\]/);
   assert.match(repl, /name = "Start application"[\s\S]*?args = "npm run dev"[\s\S]*?waitForPort = 5000/);
   assert.match(repl, /\[deployment\][\s\S]*?run = \["npm", "run", "deployment:start"\]/);
   assert.match(deploymentDocs, /configured Node 24 runtime/);
@@ -51,6 +51,10 @@ test("ordinary production startup runs a bounded readiness report before launchi
   assert.match(gate, /validateBuild\(root\)/);
   assert.doesNotMatch(gate, /repository-verification\.mjs|completion-loop\.mjs|spawn\(|spawnSync\(/);
   assert.match(gate, /Publishing must retain its capsule-aware build\.sh\/start\.sh path/);
+  const start = fs.readFileSync("start.sh", "utf8");
+  const build = fs.readFileSync("build.sh", "utf8");
+  assert.match(start, /MAXBOOSTER_DEV_PORTS=0.*check-port-contract\.mjs/);
+  assert.match(build, /cp scripts\/deployment\/ports\.replit dist\/deployment\/ports\.replit/);
 });
 
 test("development startup watches the application process during configured listener readiness", () => {
@@ -187,7 +191,9 @@ test("production startup rejects missing, altered and stale build output", () =>
     assert.throws(() => validateBuild(root), /Run npm run build/);
     fs.mkdirSync(path.join(root, "dist/public"), { recursive: true });
     fs.mkdirSync(path.join(root, "external/maxcore/artifacts/api-server/dist"), { recursive: true });
+    fs.mkdirSync(path.join(root, "scripts/deployment"), { recursive: true });
     for (const file of ["package.json", "package-lock.json", "vite.config.ts", "start.sh",
+      "scripts/deployment/ports.replit",
       "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs", "dist/dns-node.mjs", "dist/dns-api.mjs",
       "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html",
       "external/maxcore/artifacts/api-server/dist/index.mjs"]) {
@@ -242,7 +248,14 @@ test("production startup rejects missing, altered and stale build output", () =>
  test("build input identity ignores nested dependency caches but tracks imported source", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "build-input-cache-"));
   try {
-    for (const file of ["package.json", "package-lock.json", "vite.config.ts", "start.sh"]) {
+    for (const file of [
+      "package.json",
+      "package-lock.json",
+      "vite.config.ts",
+      "start.sh",
+      "scripts/deployment/ports.replit",
+    ]) {
+      fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
       fs.writeFileSync(path.join(root, file), "fixture");
     }
     fs.mkdirSync(path.join(root, "server/services"), { recursive: true });
@@ -254,6 +267,7 @@ test("production startup rejects missing, altered and stale build output", () =>
     const before = readBuildInputs(root);
     assert.ok(Object.hasOwn(before, "server/services/ai_content_sidecar.py"));
     assert.ok(Object.hasOwn(before, "server/services/secure_http.py"));
+    assert.ok(Object.hasOwn(before, "scripts/deployment/ports.replit"));
     const cache = path.join(lib, "node_modules/.cache/jiti/generated.mjs");
     fs.writeFileSync(cache, "export default 1;");
     assert.deepEqual(readBuildInputs(root), before);
@@ -263,6 +277,8 @@ test("production startup rejects missing, altered and stale build output", () =>
     assert.notDeepEqual(readBuildInputs(root), before);
     fs.writeFileSync(path.join(lib, "added.ts"), "export default 1;");
     assert.ok(Object.hasOwn(readBuildInputs(root), "external/maxcore/lib/api-spec/added.ts"));
+    fs.writeFileSync(path.join(root, "scripts/deployment/ports.replit"), "changed");
+    assert.notDeepEqual(readBuildInputs(root), before);
     fs.writeFileSync(path.join(root, "server/services/ai_content_sidecar.py"), "print('updated sidecar')");
     assert.notDeepEqual(readBuildInputs(root), before);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }

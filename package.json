@@ -95,7 +95,7 @@
     "test:pages:isolated": "node scripts/testing/page80-acceptance.mjs",
     "prelaunch": "tsx scripts/pre-launch-check.ts",
     "simulate:production": "node scripts/simulate-production.mjs",
-    "check:ports": "PORT_CONTRACT_REQUIRE_ALL=1 tsx scripts/check-port-contract.ts",
+    "check:ports": "MAXBOOSTER_DEV_PORTS=1 PORT_CONTRACT_REQUIRE_ALL=1 DNS_AUTHORITY_PORT=1053 tsx scripts/check-port-contract.ts",
     "autofix:deploy": "node scripts/deployment-autofix.mjs",
     "validate:error-research": "node scripts/validate-error-research.mjs",
     "feature-matrix": "node scripts/generate-feature-matrix.mjs",

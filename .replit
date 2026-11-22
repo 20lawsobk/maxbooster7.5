@@ -33,11 +33,10 @@ MAXCORE_SERVING_RELEASE = "live-awareness"
 STRIPE_ALLOW_CATALOG_PROVISIONING = "0"
 
 [[ports]]
-localPort = 53
-externalPort = 3001
+localPort = 1053
 
 [[ports]]
-localPort = 1053
+localPort = 5380
 
 [[ports]]
 localPort = 5000

@@ -1,5 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -18,6 +24,7 @@ const portEnvironment: Record<string, string> = {
   MODEL_API_PORT: "9878",
   MODEL_API_HEALTH_PORT: "9879",
   PYTHON_AI_PORT: "9880",
+  MAXBOOSTER_DEV_PORTS: "1",
 };
 
 function checkPortConfig(
@@ -26,7 +33,13 @@ function checkPortConfig(
 ) {
   const directory = mkdtempSync(join(tmpdir(), "port-contract-"));
   temporaryDirectories.push(directory);
-  writeFileSync(join(directory, ".replit"), replitConfig);
+  const configPath = extraEnvironment.MAXBOOSTER_DEV_PORTS === "0"
+    ? join(directory, "dist", "deployment", "ports.replit")
+    : join(directory, ".replit");
+  if (extraEnvironment.MAXBOOSTER_DEV_PORTS === "0") {
+    mkdirSync(join(directory, "dist", "deployment"), { recursive: true });
+  }
+  writeFileSync(configPath, replitConfig);
 
   return spawnSync(
     tsx,
@@ -146,6 +159,37 @@ localPort = 9880
     expect(result.stdout).toContain("12 entries");
   });
 
+  it("keeps workspace DNS mappings private and matches the unprivileged dev port", () => {
+    const workspaceConfig = readFileSync(resolve(".replit"), "utf8");
+    const result = checkPortConfig(workspaceConfig, {
+      PORT_CONTRACT_REQUIRE_ALL: "1",
+      DNS_AUTHORITY_PORT: "1053",
+      DNS_NODE_LOCAL_PORT: "5353",
+      DNS_NODE_LOCAL_HEALTH_PORT: "5380",
+      DNS_API_PORT: "8080",
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("12 entries");
+    expect(result.stderr).not.toContain("3001");
+  });
+
+  it("keeps the production listener map private except for the web app", () => {
+    const productionConfig = readFileSync(
+      resolve("scripts/deployment/ports.replit"),
+      "utf8",
+    );
+    const result = checkPortConfig(productionConfig, {
+      PORT_CONTRACT_REQUIRE_ALL: "1",
+      MAXBOOSTER_DEV_PORTS: "0",
+      DNS_AUTHORITY_PORT: "53",
+      DNS_NODE_LOCAL_PORT: "5353",
+      DNS_NODE_LOCAL_HEALTH_PORT: "5380",
+      DNS_API_PORT: "8080",
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("12 entries");
+  });
+
   it("does not require a separate Replit map for the supervised DNS health listener", () => {
     const result = checkPortConfig(`
 [[ports]]
@@ -213,7 +257,7 @@ externalPort = 3000
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(
-      "[[ports]] block starting at line 2 is missing localPort",
+      "Port table block starting at line 2 is missing localPort",
     );
   });
 

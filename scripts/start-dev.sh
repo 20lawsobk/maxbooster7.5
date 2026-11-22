@@ -13,6 +13,7 @@ configure_dev_pdim "$(cd "${_SCRIPT_DIR}/.." && pwd)"
 source "${_SCRIPT_DIR}/process-ownership.sh"
 dev_acquire_instance_lock "$(cd "${_SCRIPT_DIR}/.." && pwd)"
 export MAXBOOSTER_DEV_PORTS=1
+export PORT_CONTRACT_REQUIRE_ALL=1
 source "${_SCRIPT_DIR}/port-contract.sh"
 source "${_SCRIPT_DIR}/redis-supervisor.sh"
 

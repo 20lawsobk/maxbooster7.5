@@ -115,8 +115,8 @@ source "$_SCRIPT_DIR/dist/deployment/port-contract.sh"
 # `npm ci` ahead of start.sh. Deferred until after the port-contract.sh env
 # vars above are exported so the check observes the exact values the app will.
 if [ -f "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs" ]; then
-  if ! "$_NODE_BIN" "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs"; then
-    echo "[start.sh] FATAL: port contract check failed against .replit; aborting startup" >&2
+  if ! MAXBOOSTER_DEV_PORTS=0 "$_NODE_BIN" "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs"; then
+    echo "[start.sh] FATAL: production port contract check failed; aborting startup" >&2
     exit 1
   fi
 else

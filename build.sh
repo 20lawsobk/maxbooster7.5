@@ -201,6 +201,7 @@ phase_packer() {
   mkdir -p dist/deployment
   cp script/deployment/*.mjs dist/deployment/
   cp script/deployment/image-size-gate.sh dist/deployment/
+  cp scripts/deployment/ports.replit dist/deployment/ports.replit
   cp script/lib/verify-utf8-root.py dist/deployment/
   cp scripts/port-contract.sh scripts/boot-stub-server.mjs dist/deployment/
 
