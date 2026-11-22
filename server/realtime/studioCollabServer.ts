@@ -15,6 +15,7 @@ import { storage } from "../storage.js";
 import { getStudioProjectAccess } from "../services/studioProjectAccess.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 import { logger } from "../logger.js";
+import { collaborationEventBus } from "../services/collaborationEventBus.js";
 
 interface CollabClient {
   ws: WebSocket;
@@ -81,6 +82,11 @@ export class StudioCollabServer {
   private userConnectionCount: Map<string, number> = new Map();
   private documents: Map<string, Y.Doc> = new Map();
   private documentLoads: Map<string, Promise<Y.Doc>> = new Map();
+  private projectEventSubscriptions = new Map<
+    string,
+    Promise<() => Promise<void>>
+  >();
+  private disconnectedClients = new WeakSet<CollabClient>();
   private pingInterval: NodeJS.Timeout | null = null;
   private awarenessInterval: NodeJS.Timeout | null = null;
 
@@ -339,11 +345,13 @@ export class StudioCollabServer {
     displayName: string,
     projectId: string,
   ): Promise<void> {
-    if (!(await this.checkProjectAccess(userId, projectId))) {
+    const access = await getStudioProjectAccess(userId, projectId);
+    if (!access.read) {
       ws.close(1008, "Project access revoked");
       return;
     }
     const doc = await this.getOrLoadDocument(projectId);
+    await this.ensureProjectEventSubscription(projectId);
 
     const presence = await presenceManager?.addCollaborator(
       projectId,
@@ -383,6 +391,7 @@ export class StudioCollabServer {
         displayName,
         color: presence.color,
         projectId,
+        permissions: access,
       },
     });
 
@@ -514,6 +523,29 @@ export class StudioCollabServer {
     }
   }
 
+  private async ensureProjectEventSubscription(
+    projectId: string,
+  ): Promise<void> {
+    const existing = this.projectEventSubscriptions.get(projectId);
+    if (existing) {
+      await existing;
+      return;
+    }
+
+    const pending = collaborationEventBus.subscribeToProject(projectId, (event) => {
+      this.broadcastToProject(projectId, event);
+    });
+    this.projectEventSubscriptions.set(projectId, pending);
+    try {
+      await pending;
+    } catch (error) {
+      if (this.projectEventSubscriptions.get(projectId) === pending) {
+        this.projectEventSubscriptions.delete(projectId);
+      }
+      throw error;
+    }
+  }
+
   private async handleMessage(
     client: CollabClient,
     message: IncomingCollabMessage,
@@ -634,6 +666,9 @@ export class StudioCollabServer {
   }
 
   private async handleDisconnect(client: CollabClient): Promise<void> {
+    if (this.disconnectedClients.has(client)) return;
+    this.disconnectedClients.add(client);
+
     // Decrement per-user connection counter
     const prev = this.userConnectionCount.get(client?.userId) ?? 1;
     if (prev <= 1) {
@@ -652,6 +687,22 @@ export class StudioCollabServer {
         setTimeout(async () => {
           const remainingClients = this.clients.get(client?.projectId);
           if (!remainingClients || remainingClients?.size === 0) {
+            const eventSubscription = this.projectEventSubscriptions.get(
+              client.projectId,
+            );
+            if (eventSubscription) {
+              try {
+                const unsubscribe = await eventSubscription;
+                await unsubscribe();
+              } catch (error) {
+                logger.warn(
+                  { projectId: client.projectId, err: error },
+                  "[StudioCollab] Failed to unsubscribe from room events:",
+                );
+              } finally {
+                this.projectEventSubscriptions.delete(client.projectId);
+              }
+            }
             const doc = this.documents.get(client?.projectId);
             if (doc) {
               await yjsService?.unloadDocument(client?.projectId, doc);
@@ -794,6 +845,19 @@ export class StudioCollabServer {
     }
 
     this.clients.clear();
+
+    for (const [projectId, subscription] of this.projectEventSubscriptions) {
+      try {
+        const unsubscribe = await subscription;
+        await unsubscribe();
+      } catch (error) {
+        logger.warn(
+          { projectId, err: error },
+          "[StudioCollab] Failed to unsubscribe from room events during shutdown:",
+        );
+      }
+    }
+    this.projectEventSubscriptions.clear();
 
     for (const [projectId, doc] of this.documents.entries()) {
       await yjsService?.unloadDocument(projectId, doc);

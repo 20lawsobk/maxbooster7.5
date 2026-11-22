@@ -8617,6 +8617,18 @@ export async function registerRoutes(
     );
   }
 
+  try {
+    const collaborationRoomsRouter = (
+      await import("./routes/collaborationRooms.js")
+    ).default;
+    app.use("/api/collaboration/rooms", collaborationRoomsRouter);
+    log("Collaboration room routes registered");
+  } catch (error) {
+    log(
+      `Warning: Could not load collaboration room routes - ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
   // Music Workflow Automations routes
   try {
     const musicWorkflowRouter = (
