@@ -5,9 +5,9 @@
 - A live session is bound to one project and a monotonically increasing room
   generation. Closing a room invalidates its WebSocket participants; reopening
   it creates a new generation.
-- Shared notes use the existing project Yjs document and persistence service.
-  WebSocket updates are accepted only while current project read/write access
-  remains valid.
+- Shared notes use room-and-generation-specific fields in the existing project
+  Yjs document and persistence service. WebSocket updates are accepted only
+  while current project read/write access remains valid.
 - Room chat is stored in PostgreSQL with a per-sender idempotency key. Redis/
   PDIM Pub/Sub distributes saved messages to connected app processes; delivery
   failures return an explicit error while preserving the stored message.

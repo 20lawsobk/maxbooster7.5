@@ -91,6 +91,20 @@ function normalizeMessage(
   };
 }
 
+export function collaborationNotesFieldName(
+  roomId: string,
+  roomGeneration: number,
+): string {
+  if (
+    !roomId.trim() ||
+    !Number.isSafeInteger(roomGeneration) ||
+    roomGeneration < 1
+  ) {
+    throw new Error("A valid collaboration room generation is required.");
+  }
+  return `collaboration-room:${encodeURIComponent(roomId)}:${roomGeneration}:sharedNotes`;
+}
+
 export function useCollaborationDocument(
   projectId: string,
   roomId: string,
@@ -135,7 +149,7 @@ export function useCollaborationDocument(
     let reconnectDelay = 500;
     const document = new Y.Doc();
     const text = document.getText(
-      `collaboration-room:${roomId}:${roomGeneration}:sharedNotes`,
+      collaborationNotesFieldName(roomId, roomGeneration),
     );
     documentRef.current = document;
     textRef.current = text;
