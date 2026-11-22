@@ -51,7 +51,7 @@ const NUM_WORKERS =
 if (cluster.isPrimary) {
   // Resource contract supplied by Max Booster's shared allocation supervisor.
   // Workers must not inherit the smaller coordinator heap, nor independently
-  // calculate a second host-sized memory pool. No lifecycle behavior changes.
+  // calculate a second host-sized memory pool.
   const workerHeap = process.env["MAXCORE_NODE_WORKER_HEAP_MB"];
   if (workerHeap !== undefined) {
     const heapMB = Number(workerHeap);
@@ -85,19 +85,22 @@ if (cluster.isPrimary) {
   // when live-awareness serving is ready and checkpoint warm-up is deferred.
   startWarmService();
 
-  for (let i = 0; i < NUM_WORKERS; i++) {
-    cluster.fork();
-  }
-
+  let shutdownRequested = false;
   cluster.on("exit", (worker, code, signal) => {
-    if (signal === "SIGTERM" || signal === "SIGINT") return;
+    if (shutdownRequested || signal === "SIGTERM" || signal === "SIGINT") return;
     console.log(
       `[Cluster] Worker ${worker.process.pid} died (code=${code ?? "?"}, signal=${signal ?? "none"}) — respawning…`,
     );
     cluster.fork();
   });
 
+  for (let i = 0; i < NUM_WORKERS; i++) {
+    cluster.fork();
+  }
+
   const shutdown = () => {
+    if (shutdownRequested) return;
+    shutdownRequested = true;
     console.log("[Cluster] Primary shutting down…");
     stopKeepalive();
     stopPythonServer();

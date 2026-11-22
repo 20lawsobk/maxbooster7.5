@@ -96,11 +96,13 @@ try {
   for (const file of baselineMigrations) {
     await client.query(fs.readFileSync(path.join(temporary, 'generated', file), 'utf8'));
   }
-  // This fixture starts from the current Drizzle schema, which includes 0100.
-  // The migration itself is validated against an empty disposable database.
+  // This fixture starts from the current Drizzle schema, which includes 0100
+  // and 0101. Their migration SQL is validated against empty disposable
+  // databases by the migration-specific tests.
   for (const file of fs.readdirSync('migrations').filter(file =>
     /^\d+.*\.sql$/.test(file) && Number(file.split('_')[0]) >= 20
-    && file !== '0100_maxcore_cognitive_registry.sql').sort()) {
+    && file !== '0100_maxcore_cognitive_registry.sql'
+    && file !== '0101_collaboration_rooms.sql').sort()) {
     await client.query(fs.readFileSync(path.join(root, 'migrations', file), 'utf8'));
   }
   const fixtureToken = randomBytes(32).toString('hex');

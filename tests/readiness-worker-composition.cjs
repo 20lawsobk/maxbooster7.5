@@ -12,9 +12,15 @@ const { scheduleDrainingWork, assertWorkerSchema } = mod.exports;
 
 test("schema failure prevents startup and probes are read only", async () => {
   const queries = [];
-  await assertWorkerSchema(async sql => queries.push(sql), true, true);
-  assert.equal(queries.length, 7);
-  assert.ok(queries.every(sql => /^SELECT .* LIMIT 0$/.test(sql)));
+  await assertWorkerSchema(async sql => {
+    queries.push(sql);
+    return queries.length === 1
+      ? { rows: [{ current_schema: "public", missing_relations: [] }] }
+      : { rows: [] };
+  }, false, false);
+  assert.equal(queries.length, 2);
+  assert.match(queries[0], /current_schema\(\)[\s\S]*to_regclass/);
+  assert.match(queries[1], /^SELECT .* LIMIT 0$/);
   await assert.rejects(assertWorkerSchema(async () => {
     throw new Error("migration missing");
   }, true, true), /migration missing/);

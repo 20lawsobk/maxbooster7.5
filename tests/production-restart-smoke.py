@@ -21,6 +21,23 @@ asset_phase = subprocess.run(
     ["bash", "build.sh", "--executive-task", "assets"],
     cwd=root, text=True, capture_output=True, timeout=120, check=False,
 )
+dns_database_url = (
+    f"postgresql://fixture@localhost:55436/postgres?host={pg / 'socket'}"
+)
+dns_migration = subprocess.run(
+    ["node", "scripts/migrate-dns-api-schema.mjs"],
+    cwd=root,
+    env={
+        "PATH": os.environ["PATH"],
+        "HOME": "/tmp",
+        "NODE_ENV": "production",
+        "DATABASE_URL": dns_database_url,
+    },
+    text=True,
+    capture_output=True,
+    timeout=60,
+    check=False,
+) if asset_phase.returncode == 0 else None
 manifest = json.loads((root / "dist/build-complete.json").read_text())
 manifest_bytes = (root / "dist/build-complete.json").read_bytes()
 expected = {
@@ -58,7 +75,7 @@ def startup_failure_class():
 cycles = []
 for cycle in (1, 2):
     result = subprocess.run([sys.executable, "-B", str(smoke), *sys.argv[1:], str(cycle)],
-                            timeout=160, check=False)
+                            timeout=390, check=False)
     results.append(result.returncode)
     readiness_path = pg / f"readiness-cycle-{cycle}.json"
     readiness = json.loads(readiness_path.read_text()) if readiness_path.exists() else None
@@ -87,6 +104,11 @@ report = {
         "exitCode": asset_phase.returncode,
         "passed": asset_phase.returncode == 0,
     },
+    "disposableDnsSchemaMigration": {
+        "exitCode": dns_migration.returncode if dns_migration else None,
+        "passed": dns_migration is not None and dns_migration.returncode == 0,
+        "schema": "dns_os",
+    },
     "scope": "Disposable PostgreSQL and production artifact copy; application external TCP/TLS and UDP denied",
     "networkNamespaceIsolated": True,
     "readinessGatePreserved": True,
@@ -95,6 +117,36 @@ report = {
         cycle["readiness"] is not None and
         cycle["readiness"].get("httpStatus") == 200 and
         cycle["readiness"].get("unifiedAwareness", {}).get("ready") is True
+        for cycle in cycles
+    ),
+    "applicationStartupAndConfiguredPortsPassedEveryCycle": all(
+        cycle["readiness"] is not None
+        and cycle["readiness"].get("applicationAvailability", {}).get("homepageStatus") == 200
+        and cycle["readiness"].get("applicationAvailability", {}).get("healthStatus") == 200
+        and cycle["readiness"].get("applicationAvailability", {})
+            .get("configuredPortsAfterLoad", {}).get("healthReady") is True
+        and cycle["readiness"].get("applicationAvailability", {})
+            .get("configuredPortsAfterLoad", {}).get("count") == 12
+        for cycle in cycles
+    ),
+    "applicationProcessAndRawListenersPassedEveryCycle": all(
+        cycle["readiness"] is not None
+        and cycle["readiness"].get("applicationAvailability", {}).get("homepageStatus") == 200
+        and cycle["readiness"].get("applicationAvailability", {}).get("healthStatus") == 200
+        and cycle["readiness"].get("applicationAvailability", {})
+            .get("configuredPortsAtLiveness", {}).get("ready") is True
+        and cycle["readiness"].get("applicationAvailability", {})
+            .get("configuredPortsAtLiveness", {}).get("count") == 12
+        and cycle["readiness"].get("applicationAvailability", {})
+            .get("configuredPortsAfterLoad", {}).get("ready") is True
+        and cycle["readiness"].get("applicationAvailability", {})
+            .get("configuredPortsAfterLoad", {}).get("count") == 12
+        for cycle in cycles
+    ),
+    "startCommandCompletedBeforeTestShutdownEveryCycle": all(
+        cycle["readiness"] is not None
+        and cycle["readiness"].get("applicationAvailability", {})
+            .get("startCommandStillWaitingForFullReadiness") is False
         for cycle in cycles
     ),
     "artifactIntegrityPassedEveryCycle": all(
@@ -109,8 +161,22 @@ report = {
         for cycle in cycles
     ),
     "cycles": cycles,
-    "status": "passed" if asset_phase.returncode == 0 and results == [0, 0] else "failed",
+    "status": "pending",
 }
+full_readiness_passed = report["readinessPassedEveryCycle"]
+lifecycle_passed = (
+    asset_phase.returncode == 0
+    and dns_migration is not None
+    and dns_migration.returncode == 0
+    and results == [0, 0]
+    and report["applicationProcessAndRawListenersPassedEveryCycle"]
+    and report["shutdownCompletedEveryCycle"]
+)
+report["status"] = (
+    "passed" if lifecycle_passed and full_readiness_passed
+    else "degraded" if lifecycle_passed
+    else "failed"
+)
 default_report_path = source / "reports/admin-gap-audit/packaged-restart.json"
 report_path = Path(os.environ.get("MAXBOOSTER_RESTART_REPORT", default_report_path))
 if not report_path.is_absolute():
@@ -122,4 +188,4 @@ if report_root not in report_path.parents:
 report_path.parent.mkdir(parents=True, exist_ok=True)
 report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
 print(f"Redacted restart evidence: {report_path.relative_to(source)}", flush=True)
-raise SystemExit(0 if asset_phase.returncode == 0 and results == [0, 0] else 1)
+raise SystemExit(0 if report["status"] == "passed" else 1)

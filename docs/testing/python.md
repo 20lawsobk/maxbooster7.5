@@ -44,26 +44,6003 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `d33649d75e7a0dffc80adf40fa410f4ee66b1984`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 133, "skipped": 2, "timeout": 0}.
-- JUnit cases: 1881; failures: 0; errors: 0; skipped: 17.
+- Source baseline: `abc79dad3dfdf936f5669585ee1336785632dab2`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 393, "empty": 0, "failed": 0, "passed": 0, "skipped": 0, "timeout": 0}.
+- JUnit cases: 0; failures: 0; errors: 0; skipped: 0.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
 
 The wrapper commands below reproduce the same isolated per-file execution. For blocked entries the command reports the missing prerequisite without contacting the running application. Live generation/load tools need a separately prepared disposable server at their documented ports; they must not be pointed at the developer or production server to make this report green.
 
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py`
+
+Tests for the Conductor (audio_analysis). Run:
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_bpm_detection`: bpm detection
+- `test_determinism`: determinism
+- `test_energy_and_sections`: energy and sections
+- `test_band_envelopes`: band envelopes
+- `test_totality`: totality
+- `test_encoder_integration`: encoder integration
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py`
+
+Regression tests for the release-campaign planner (``build_campaign``).
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_fifteen_posts`: fifteen posts
+- `test_hooks_all_distinct`: hooks all distinct
+- `test_bodies_not_near_identical`: No two bodies within a phase may be near-identical (the drift this planner exists to prevent), and no two bodies anywhere may be exactly equal.
+- `test_brief_never_leaks_into_copy`: The human-readable creative brief is an instruction — it must never appear inside the post's hook, body or caption (a known raw-templating failure).
+- `test_hashtags_are_clean`: Hashtags must be short single-token slugs, never whole-sentence slugs of a brief/caption (e.g. #AnnounceTheNewSingleIsComingAndRevealTheTitle).
+- `test_deterministic`: deterministic
+- `test_distinct_across_varied_inputs`: The distinctness guarantees hold across a wide sweep of artist/title/genre combinations, not just the happy-path fixture.
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py`
+
+Tests for the native SIMD kernel library.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_fallback_is_available_without_compiler`: fallback is available without compiler
+- `test_affine_relu_sq_correct`: affine relu sq correct
+- `test_hardswish_correct`: hardswish correct
+- `test_axpby_correct_and_shape_guard`: axpby correct and shape guard
+- `test_rmsnorm_rows_correct_and_guards`: rmsnorm rows correct and guards
+- `test_non_float32_input_routes_correctly`: non float32 input routes correctly
+- `test_silu_correct`: silu correct
+- `test_gelu_correct`: gelu correct
+- `test_softmax_rows_correct_and_guards`: softmax rows correct and guards
+- `test_layernorm_rows_correct_and_guards`: layernorm rows correct and guards
+- `test_row_kernels_empty_input_no_crash`: row kernels empty input no crash
+- `test_describe_never_claims_hardware`: describe never claims hardware
+- `test_compiler_cache_reuse`: compiler cache reuse
+- `test_never_raise_on_broken_cache_dir`: never raise on broken cache dir
+- `test_concurrent_same_key_compile_no_raise`: concurrent same key compile no raise
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py`
+
+Tests for the DigitalGPUBackend bridge methods: alloc/free/run_kernel.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_alloc_returns_usable_handle_and_free`: alloc returns usable handle and free
+- `test_alloc_rejects_negative`: alloc rejects negative
+- `test_alloc_rejects_fractional_size`: A fractional byte size must raise, not silently truncate.
+- `test_run_kernel_gemm_matches_numpy`: run kernel gemm matches numpy
+- `test_run_kernel_attention_matches_reference`: run kernel attention matches reference
+- `test_run_kernel_case_insensitive`: run kernel case insensitive
+- `test_run_kernel_refuses_fp8_sm102_kernel`: A hardware-implying name must raise, not silently run numpy.
+- `test_run_kernel_unknown_name_lists_supported`: run kernel unknown name lists supported
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py`
+
+Comprehensive tests for the digital GPU system.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestVRAM.test_alloc_returns_integer_handle`: alloc returns integer handle
+- `TestVRAM.test_alloc_non_ndarray_raises_type_error`: alloc non ndarray raises type error
+- `TestVRAM.test_get_returns_same_array`: get returns same array
+- `TestVRAM.test_get_invalid_handle_raises`: get invalid handle raises
+- `TestVRAM.test_meta_returns_shape_dtype_size`: meta returns shape dtype size
+- `TestVRAM.test_meta_invalid_handle_raises`: meta invalid handle raises
+- `TestVRAM.test_free_removes_handle`: free removes handle
+- `TestVRAM.test_handles_are_monotonically_increasing`: handles are monotonically increasing
+- `TestVRAM.test_free_nonexistent_handle_is_silent`: free nonexistent handle is silent
+- `TestSIMDCore.test_gemm_tiled_matches_numpy`: gemm tiled matches numpy
+- `TestSIMDCore.test_gemm_non_square_matches_numpy`: gemm non square matches numpy
+- `TestSIMDCore.test_gemm_1d_input_raises`: gemm 1d input raises
+- `TestSIMDCore.test_gemm_inner_dim_mismatch_raises`: gemm inner dim mismatch raises
+- `TestSIMDCore.test_add_correct`: add correct
+- `TestSIMDCore.test_add_shape_mismatch_raises`: add shape mismatch raises
+- `TestSIMDCore.test_add_dtype_mismatch_raises`: add dtype mismatch raises
+- `TestSIMDCore.test_softmax_rows_sum_to_one`: softmax rows sum to one
+- `TestSIMDCore.test_softmax_numerically_stable_large_values`: softmax numerically stable large values
+- `TestSIMDCore.test_softmax_axis_0`: softmax axis 0
+- `TestSIMDCore.test_attention_self_matches_reference`: attention self matches reference
+- `TestSIMDCore.test_attention_causal_masks_future`: attention causal masks future
+- `TestSIMDCore.test_attention_batched_higher_rank`: attention batched higher rank
+- `TestSIMDCore.test_attention_shape_mismatch_raises`: attention shape mismatch raises
+- `TestSIMDCore.test_attention_1d_raises`: attention 1d raises
+- `TestSIMDCore.test_gemm_bias_relu_nonnegative`: gemm bias relu nonnegative
+- `TestSIMDCore.test_gemm_bias_relu_matches_manual`: gemm bias relu matches manual
+- `TestSchedulerProgram.test_gemm_program_correct`: gemm program correct
+- `TestSchedulerProgram.test_add_program_correct`: add program correct
+- `TestSchedulerProgram.test_softmax_program_correct`: softmax program correct
+- `TestSchedulerProgram.test_multi_instruction_program_and_profile`: multi instruction program and profile
+- `TestSchedulerProgram.test_profile_opcode_names`: profile opcode names
+- `TestSchedulerProgram.test_bad_handle_raises_gpu_error`: bad handle raises gpu error
+- `TestDigitalGPUFunctional.test_gemm_matches_numpy`: gemm matches numpy
+- `TestDigitalGPUFunctional.test_add_matches_numpy`: add matches numpy
+- `TestDigitalGPUFunctional.test_softmax_sums_to_one`: softmax sums to one
+- `TestDigitalGPUFunctional.test_attention_shape_preserved`: attention shape preserved
+- `TestDigitalGPUFunctional.test_attention_causal_matches_reference`: attention causal matches reference
+- `TestDigitalGPUFunctional.test_gemm_bias_relu_nonneg`: gemm bias relu nonneg
+- `TestDigitalGPUFunctional.test_last_profile_populated_after_gemm`: last profile populated after gemm
+- `TestDigitalGPUFunctional.test_silicon_report_none_without_model`: silicon report none without model
+- `TestDigitalGPUHandleAPI.test_h_gemm_correct`: h gemm correct
+- `TestDigitalGPUHandleAPI.test_h_add_correct`: h add correct
+- `TestDigitalGPUHandleAPI.test_h_softmax_correct`: h softmax correct
+- `TestDigitalGPUHandleAPI.test_h_attention_shape`: h attention shape
+- `TestDigitalGPUHandleAPI.test_h_attention_causal`: h attention causal
+- `TestDigitalGPUHandleAPI.test_h_gemm_bias_relu_nonneg`: h gemm bias relu nonneg
+- `TestDigitalGPUHandleAPI.test_h_gemm_bad_handle_raises`: h gemm bad handle raises
+- `TestHyperVRAM.test_oom_raises_when_capacity_exceeded`: oom raises when capacity exceeded
+- `TestHyperVRAM.test_unlimited_capacity_accepts_large_array`: unlimited capacity accepts large array
+- `TestHyperVRAM.test_used_bytes_correct_after_alloc`: used bytes correct after alloc
+- `TestHyperVRAM.test_peak_bytes_tracks_high_water_mark`: peak bytes tracks high water mark
+- `TestHyperVRAM.test_flush_clears_all_handles`: flush clears all handles
+- `TestHyperVRAM.test_status_returns_expected_keys`: status returns expected keys
+- `TestMemoryPool.test_alloc_returns_id_and_array`: alloc returns id and array
+- `TestMemoryPool.test_get_returns_same_object`: get returns same object
+- `TestMemoryPool.test_get_invalid_handle_raises`: get invalid handle raises
+- `TestMemoryPool.test_free_reduces_current_bytes`: free reduces current bytes
+- `TestMemoryPool.test_peak_bytes_does_not_drop_on_free`: peak bytes does not drop on free
+- `TestMemoryPool.test_flush_returns_freed_bytes_and_clears`: flush returns freed bytes and clears
+- `TestMemoryPool.test_status_keys`: status keys
+- `TestMemoryPool.test_concurrent_alloc_free_no_crash`: concurrent alloc free no crash
+- `TestTensorCoreUnit.test_matmul_correct`: matmul correct
+- `TestTensorCoreUnit.test_matmul_increments_ops_and_flops`: matmul increments ops and flops
+- `TestTensorCoreUnit.test_mixed_precision_matmul_tolerance_from_precision_model`: mixed precision matmul tolerance from precision model
+- `TestTensorCoreUnit.test_mixed_precision_increments_flops_by_multiplier`: mixed precision increments flops by multiplier
+- `TestTensorCoreUnit.test_status_keys_and_types`: status keys and types
+- `TestHyperSIMDCore.test_tensor_core_gemm_correct`: tensor core gemm correct
+- `TestHyperSIMDCore.test_tensor_core_gemm_1d_raises`: tensor core gemm 1d raises
+- `TestHyperSIMDCore.test_tensor_core_gemm_inner_dim_mismatch_raises`: tensor core gemm inner dim mismatch raises
+- `TestHyperSIMDCore.test_tensor_core_gemm_increments_total_ops`: tensor core gemm increments total ops
+- `TestHyperSIMDCore.test_batched_gemm_3d_correct`: batched gemm 3d correct
+- `TestHyperSIMDCore.test_batched_gemm_2d_correct`: batched gemm 2d correct
+- `TestHyperSIMDCore.test_batched_gemm_inner_dim_mismatch_raises`: batched gemm inner dim mismatch raises
+- `TestHyperSIMDCore.test_mixed_precision_gemm_tolerance_from_precision_model`: mixed precision gemm tolerance from precision model
+- `TestHyperSIMDCore.test_mixed_precision_gemm_wrong_rank_raises`: mixed precision gemm wrong rank raises
+- `TestHyperSIMDCore.test_layer_norm_output_shape`: layer norm output shape
+- `TestHyperSIMDCore.test_layer_norm_zero_mean_unit_var`: layer norm zero mean unit var
+- `TestHyperSIMDCore.test_batch_norm_training_output_shape`: batch norm training output shape
+- `TestHyperSIMDCore.test_batch_norm_eval_without_running_stats_raises`: batch norm eval without running stats raises
+- `TestHyperSIMDCore.test_batch_norm_eval_with_running_stats`: batch norm eval with running stats
+- `TestHyperSIMDCore.test_gelu_shape_preserved`: gelu shape preserved
+- `TestHyperSIMDCore.test_gelu_matches_tanh_approximation`: gelu matches tanh approximation
+- `TestHyperSIMDCore.test_silu_shape_preserved`: silu shape preserved
+- `TestHyperSIMDCore.test_silu_matches_sigmoid_gate`: silu matches sigmoid gate
+- `TestHyperSIMDCore.test_conv3d_output_shape_no_padding`: conv3d output shape no padding
+- `TestHyperSIMDCore.test_conv3d_channel_mismatch_raises`: conv3d channel mismatch raises
+- `TestHyperSIMDCore.test_conv3d_wrong_rank_raises`: conv3d wrong rank raises
+- `TestHyperSIMDCore.test_grouped_gemm_all_correct`: grouped gemm all correct
+- `TestHyperSIMDCore.test_grouped_gemm_mismatched_count_raises`: grouped gemm mismatched count raises
+- `TestHyperSIMDCore.test_fused_attention_norm_shape`: fused attention norm shape
+- `TestHyperSIMDCore.test_fused_attention_norm_equals_attn_then_layernorm`: fused attention norm equals attn then layernorm
+- `TestHyperSIMDCore.test_status_has_expected_keys`: status has expected keys
+- `TestHyperGPU.test_attention_matches_flash`: attention matches flash
+- `TestHyperGPU.test_flash_attention_causal_differs_from_noncausal`: flash attention causal differs from noncausal
+- `TestHyperGPU.test_conv2d_output_shape`: conv2d output shape
+- `TestHyperGPU.test_conv3d_output_shape`: conv3d output shape
+- `TestHyperGPU.test_layer_norm_output_shape`: layer norm output shape
+- `TestHyperGPU.test_batch_norm_training_output_shape`: batch norm training output shape
+- `TestHyperGPU.test_gelu_shape_preserved`: gelu shape preserved
+- `TestHyperGPU.test_silu_shape_preserved`: silu shape preserved
+- `TestHyperGPU.test_softmax_sums_to_one`: softmax sums to one
+- `TestHyperGPU.test_add_correct`: add correct
+- `TestHyperGPU.test_grouped_gemm_all_correct`: grouped gemm all correct
+- `TestHyperGPU.test_fused_attention_norm_shape`: fused attention norm shape
+- `TestHyperGPU.test_flush_vram_no_crash`: flush vram no crash
+- `TestHyperGPU.test_silicon_report_none_without_model`: silicon report none without model
+- `TestHyperGPU.test_status_has_expected_keys`: status has expected keys
+- `TestHyperGPU.test_total_compute_ms_grows_after_ops`: total compute ms grows after ops
+- `TestHyperGPUGemmComputePath.test_gemm_matches_numpy_tight_tolerance`: gemm matches numpy tight tolerance
+- `TestHyperGPUGemmComputePath.test_mixed_gemm_tolerance_from_precision_model`: mixed gemm tolerance from precision model
+- `TestHyperGPUGemmComputePath.test_gemm_batched_matches_numpy_tight_tolerance`: gemm batched matches numpy tight tolerance
+- `TestPocketAcceleratorBehavior.test_first_call_is_miss_second_is_hit`: first call is miss second is hit
+- `TestPocketAcceleratorBehavior.test_stats_reflect_hit_and_miss`: stats reflect hit and miss
+- `TestPocketAcceleratorBehavior.test_different_values_produce_different_cache_entries`: different values produce different cache entries
+- `TestPocketAcceleratorBehavior.test_cached_value_is_numerically_identical_to_computed_value`: cached value is numerically identical to computed value
+- `TestPocketAcceleratorBehavior.test_disable_env_var_routes_all_calls_to_compute`: disable env var routes all calls to compute
+- `TestGPUClusterNode.test_initial_state_is_idle`: initial state is idle
+- `TestGPUClusterNode.test_assign_sets_busy`: assign sets busy
+- `TestGPUClusterNode.test_release_restores_idle`: release restores idle
+- `TestGPUClusterNode.test_status_has_expected_keys`: status has expected keys
+- `TestGPUCluster.test_num_nodes_correct`: num nodes correct
+- `TestGPUCluster.test_get_idle_node_returns_node`: get idle node returns node
+- `TestGPUCluster.test_get_idle_node_none_when_all_busy`: get idle node none when all busy
+- `TestGPUCluster.test_get_node_invalid_id_raises`: get node invalid id raises
+- `TestGPUCluster.test_all_reduce_gradients_averages`: all reduce gradients averages
+- `TestGPUCluster.test_all_reduce_empty_raises`: all reduce empty raises
+- `TestGPUCluster.test_scatter_data_splits_evenly`: scatter data splits evenly
+- `TestGPUCluster.test_gather_results_concatenates`: gather results concatenates
+- `TestGPUCluster.test_scatter_then_gather_roundtrip`: scatter then gather roundtrip
+- `TestGPUCluster.test_add_node_increments_count`: add node increments count
+- `TestGPUCluster.test_remove_node_decrements_count`: remove node decrements count
+- `TestGPUCluster.test_total_lanes_computed`: total lanes computed
+- `TestGPUCluster.test_total_tensor_cores_computed`: total tensor cores computed
+- `TestGPUCluster.test_flush_all_no_crash`: flush all no crash
+- `TestGPUCluster.test_status_has_expected_keys`: status has expected keys
+- `TestGPUCluster.test_run_distributed_correct`: run_distributed fans a lambda out across nodes and collects results.
+- `TestGPUCluster.test_run_distributed_correct_under_concurrency`: Four concurrent distributed jobs on disjoint node sets produce correct results.
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py`
+
+Regression tests for the redesigned HyperSIMDCore kernels.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_flash_matches_naive_self_attention`: flash matches naive self attention
+- `test_flash_cross_attention_tk_ne_tq`: flash cross attention tk ne tq
+- `test_flash_block_size_clamped_not_crashing`: flash block size clamped not crashing
+- `test_conv2d_preserves_input_dtype`: conv2d preserves input dtype
+- `test_conv2d_matches_naive_strided_padded`: conv2d matches naive strided padded
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py`
+
+Tests for the digital-silicon performance model and its wiring.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_report_is_labeled_estimate_not_measurement`: report is labeled estimate not measurement
+- `test_model_op_accumulates_estimates`: model op accumulates estimates
+- `test_gemm_routes_to_gemm_tile_attention_to_attention_tile`: gemm routes to gemm tile attention to attention tile
+- `test_simulate_drains_and_reports_cycles`: simulate drains and reports cycles
+- `test_attaching_silicon_does_not_change_digitalgpu_results`: attaching silicon does not change digitalgpu results
+- `test_attaching_silicon_does_not_change_hypergpu_results`: attaching silicon does not change hypergpu results
+- `test_mixed_gemm_with_silicon_does_not_crash`: mixed gemm with silicon does not crash
+- `test_concurrent_model_and_report_are_stable`: concurrent model and report are stable
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py`
+
+Tests for the honest backend auto-selector (registry.select_backend).
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_default_selects_runnable_backend`: Default preference returns a backend that actually reports available.
+- `test_digital_gpu_host_falls_through_from_cuda`: On a host without CUDA, 'gpu' is unavailable so we get the Digital GPU backend.
+- `test_never_returns_unavailable_backend`: The selector must not hand back a backend whose is_available() is False.
+- `test_gpu_device_cpu_validation_path_is_selectable`: GPUBackend(device='cpu') is runnable (torch-CPU validation path).
+- `test_empty_preference_still_yields_digital_gpu_fallback`: Even with an empty preference, the guaranteed Digital GPU safety net kicks in.
+- `test_unknown_preference_is_skipped_not_fatal`: An unknown backend name is skipped; a valid one after it still wins.
+- `test_gpu_only_kwarg_still_falls_back_to_digital_gpu`: `device="cuda"` on a Digital GPU host: gpu is unavailable and the kwarg is rejected by the DigitalGPUBackend constructor, but the no-kwarg Digital GPU safety net still wins.
+- `test_unexpected_probe_fault_is_surfaced_not_masked`: A real fault in a backend's is_available() must propagate, not be silently downgraded to Digital GPU — an operational bug can't masquerade as 'no hardware'.
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_gpu_native.py`
+
+benchmark_gpu_native.py — honest, CPU-only performance report and regression gate for the digital GPU's kernel and orchestration layers.
+
+Status: **blocked**. Native kernel performance benchmark; separate opt-in performance experiment, not an assertion suite.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_gpu_native.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_vs_reference_gpu.py`
+
+benchmark_vs_reference_gpu.py — functional / same-parameter comparison between this project's own software GPU-native stack (``SiliconSimtBackend``, executing on this container's CPU) and the published specifications of a real, physical, currently-shipping GPU.
+
+Status: **blocked**. Native/reference CPU/GPU performance comparison; no calibrated GPU hardware in this environment.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_vs_reference_gpu.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/endpoint_load_test.py`
+
+HTTP load / concurrency test for the live MaxCore generation endpoints.
+
+Status: **blocked**. Live endpoint load generator, not an offline unit suite; requires disposable operational model server.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/endpoint_load_test.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py`
+
+90M-scale concurrency smoke / load test for the MaxCore DigitalGPU stack.
+
+Status: **blocked**. 90M-scale CPU/concurrency benchmark; no bounded unit-test contract or isolated service fixture.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py`
+
+Tests for the from-scratch memory (VramPool) and orchestration (StreamScheduler) layers, and their integration into Runtime/DigitalGPU.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_pool_alloc_free_accounting`: pool alloc free accounting
+- `test_pool_bucket_reuse_does_not_grow_reservation`: pool bucket reuse does not grow reservation
+- `test_pool_oom_is_real_and_raised`: pool oom is real and raised
+- `test_pool_trim_reclaims_idle_slabs`: pool trim reclaims idle slabs
+- `test_pool_peak_tracking_survives_frees`: pool peak tracking survives frees
+- `test_pool_thread_safety_under_concurrent_alloc_free`: pool thread safety under concurrent alloc free
+- `test_assign_streams_keeps_dependency_chain_together`: assign streams keeps dependency chain together
+- `test_scheduler_produces_correct_results_for_diamond_graph`: scheduler produces correct results for diamond graph
+- `test_scheduler_achieves_real_wall_clock_overlap`: Proves genuine concurrency, not just non-crashing correctness: N independent sleeping nodes finish in roughly one sleep duration when given enough lanes, not N sleep durations.
+- `test_scheduler_propagates_error_without_hanging`: scheduler propagates error without hanging
+- `test_runtime_num_streams_does_not_change_numeric_result`: runtime num streams does not change numeric result
+- `test_runtime_frees_intermediate_tensors_but_not_outputs`: runtime frees intermediate tensors but not outputs
+- `test_runtime_vram_oom_propagates_through_graph_run`: runtime vram oom propagates through graph run
+- `test_smi_reports_backend_memory_and_streams`: smi reports backend memory and streams
+- `test_num_streams_env_var_default`: num streams env var default
+- `test_shm_tensor_payload_eligibility`: shm tensor payload eligibility
+- `test_shm_put_falls_back_when_not_tensor_or_arena_missing`: shm put falls back when not tensor or arena missing
+- `test_shm_fast_path_used_and_correct_for_large_tensors`: A graph run whose values are well above the 1MiB scratch floor must actually exercise the shared-memory arena (not silently fall back the whole time), and must still produce numerically correct results.
+- `test_shm_arena_grows_across_runs_and_stays_correct`: A pool that first runs a small graph, then a much larger one, must grow its arena rather than staying pinned to the first run's size -- and every value must still round-trip correctly across the resize.
+- `test_shm_shutdown_unlinks_arena_no_leak`: `shutdown()` must `unlink()` the arena it created -- leaving it behind would leak a real OS-level /dev/shm segment for every pool ever built.
+- `test_shm_alloc_bump_and_capacity_boundary`: shm alloc bump and capacity boundary
+- `test_shm_put_get_roundtrip_various_shapes_and_dtypes`: shm put get roundtrip various shapes and dtypes
+- `test_shm_put_falls_back_when_arena_is_full`: shm put falls back when arena is full
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py`
+
+Tests for the runtime thread/hardware configuration.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_single_worker_uses_all_cores`: single worker uses all cores
+- `test_reserve_cpus_for_scales_with_host_size`: reserve cpus for scales with host size
+- `test_reserve_cpus_for_rejects_invalid_cpus`: reserve cpus for rejects invalid cpus
+- `test_multi_worker_avoids_oversubscription`: multi worker avoids oversubscription
+- `test_reserve_keeps_cores_free`: reserve keeps cores free
+- `test_invalid_args_raise`: invalid args raise
+- `test_configure_respects_existing_then_overrides`: configure respects existing then overrides
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py`
+
+Tests for the MaxCore / DigitalGPU stack.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_ir_build_validate_hash`: ir build validate hash
+- `test_ir_rejects_undefined_input`: ir rejects undefined input
+- `test_compiler_fuses_gemm_add_relu`: compiler fuses gemm add relu
+- `test_compiler_cache_hit`: compiler cache hit
+- `test_gemm_matches_numpy`: gemm matches numpy
+- `test_attention_matches_reference`: attention matches reference
+- `test_conv2d_matches_naive`: conv2d matches naive
+- `test_reduce_ops`: reduce ops
+- `test_softmax_is_numerically_stable`: softmax is numerically stable
+- `test_text_to_mlp_end_to_end`: text to mlp end to end
+- `test_deterministic_run_repeatable`: deterministic run repeatable
+- `test_registry_and_future_backends_are_honest`: registry and future backends are honest
+- `test_gpu_backend_is_real_but_honest_without_hardware`: The gpu backend is a genuine torch implementation, not a stub. Without a CUDA device it reports unavailable and raises a clear, hardware-honest error (naming the missing device) instead of faking GPU compute on the Digital GPU engine.
+- `test_gpu_backend_reduce_parity_with_digital_gpu`: reduce() on the gpu backend must match DigitalGPUBackend for all ops and for multi-axis reductions (numpy supports tuple axes; torch's dim does not, so the backend folds them — this guards that parity).
+- `test_pdim_dedup_cache_hit`: pdim dedup cache hit
+- `test_pdim_single_flight_collapses_concurrent`: pdim single flight collapses concurrent
+- `test_pdim_durable_queue_roundtrip`: pdim durable queue roundtrip
+- `test_pdim_preview_policy_pluggable`: pdim preview policy pluggable
+- `test_batched_gemm_is_engine_served`: batched gemm is engine served
+- `test_softmax_any_axis_is_engine_served`: softmax any axis is engine served
+- `test_masked_multihead_attention_is_engine_served`: masked multihead attention is engine served
+- `test_pocket_matmul_correct_and_deduped_inside_one_pocket`: pocket matmul correct and deduped inside one pocket
+- `test_pocket_nesting_pockets_inside_one_pocket_are_isolated`: pocket nesting pockets inside one pocket are isolated
+- `test_pocket_matmul_batched_and_shape_errors`: pocket matmul batched and shape errors
+- `test_pocket_accelerator_hit_serves_repeat_at_hash_cost`: pocket accelerator hit serves repeat at hash cost
+- `test_pocket_accelerator_miss_result_mutation_cannot_poison_cache`: pocket accelerator miss result mutation cannot poison cache
+- `test_pocket_accelerator_adaptive_gating`: pocket accelerator adaptive gating
+- `test_pocket_accelerator_exposes_measured_admission_costs`: Task-170 step 3: hashing/lookup/copy/storage costs must be measured and exposed, not just implied by hit rate.
+- `test_pocket_bucket_admission_uses_measured_breakeven_not_just_hit_rate`: Task-170 step 3: 'admit reusable computations without charging one-shot work more than the compute it protects' — a pocket whose measured hash/lookup/store overhead is comparable to its own measured compute cost must be held to a stricter bar than the flat hit-rate floor, derived from those measured seconds. A pocket whose overhead is cheap relative to its (expensive) compute must NOT be over-muted — the static floor still governs there, unchanged from before.
+- `test_pocket_bucket_copy_cost_never_zerodivides_breakeven`: Degenerate edge case: if measured copy cost ever reached or exceeded measured compute+store (never expected for a real GEMM, where copying a result is far cheaper than computing it), the breakeven denominator would hit zero or go negative. `settle()` must skip the posterior adjustment for that call rather than raise ZeroDivisionError, and the pocket must fall back to the static floor, not the crash.
+- `test_digital_gpu_gemm_served_from_pocket_on_repeat`: digital gpu gemm served from pocket on repeat
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py`
+
+Tests for the precision/quantization numerics reference.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_quant_roundtrip_within_one_step`: quant roundtrip within one step
+- `test_int8_per_tensor_matmul_accurate`: int8 per tensor matmul accurate
+- `test_int4_per_channel_beats_per_tensor`: int4 per channel beats per tensor
+- `test_outliers_saturate_at_clip_boundary`: outliers saturate at clip boundary
+- `test_invalid_percentile_raises`: invalid percentile raises
+- `test_deterministic`: deterministic
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py`
+
+Tests for resource_plan.py — the CPU/memory/tile-size planning layer.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_planned_cpu_count_defaults_to_host`: planned cpu count defaults to host
+- `test_planned_cpu_count_override`: planned cpu count override
+- `test_planned_memory_bytes_default_is_positive`: planned memory bytes default is positive
+- `test_planned_memory_bytes_override`: planned memory bytes override
+- `test_effective_blas_threads_reads_own_process_env`: effective blas threads reads own process env
+- `test_effective_blas_threads_falls_back_to_reserved_single_stream_plan_when_unset`: effective blas threads falls back to reserved single stream plan when unset
+- `test_cache_budget_bytes_floor_and_ceiling`: cache budget bytes floor and ceiling
+- `test_cache_budget_bytes_mid_range_is_a_fraction_of_memory`: cache budget bytes mid range is a fraction of memory
+- `test_compute_resource_plan_synthetic_4_cpu_dev_profile`: compute resource plan synthetic 4 cpu dev profile
+- `test_compute_resource_plan_synthetic_8_cpu_profile`: compute resource plan synthetic 8 cpu profile
+- `test_compute_resource_plan_synthetic_16_cpu_production_profile`: compute resource plan synthetic 16 cpu production profile
+- `test_compute_resource_plan_defaults_num_streams_to_at_least_one`: compute resource plan defaults num streams to at least one
+- `test_gemm_tile_hint_reproduces_current_defaults_on_dev_host_threads`: gemm tile hint reproduces current defaults on dev host threads
+- `test_gemm_tile_hint_scales_up_boundedly`: gemm tile hint scales up boundedly
+- `test_gemm_tile_hint_handles_degenerate_input`: gemm tile hint handles degenerate input
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py`
+
+Correctness tests: SiliconSimtBackend vs. the reference DigitalGPUBackend / NumPy.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_gemm_matches_reference_small`: gemm matches reference small
+- `test_gemm_matches_reference_stft_shape`: Worst-realistic-case shape this backend must serve as the live default.
+- `test_gemm_bias_activation_variants`: gemm bias activation variants
+- `test_gemm_batched_and_vector_cases`: gemm batched and vector cases
+- `test_attention_plain`: attention plain
+- `test_attention_causal`: attention causal
+- `test_attention_masked`: attention masked
+- `test_conv2d_matches_reference`: conv2d matches reference
+- `test_conv2d_stride2_no_padding`: conv2d stride2 no padding
+- `test_mlp_matches_reference`: mlp matches reference
+- `test_softmax_matches_reference_multi_axis`: softmax matches reference multi axis
+- `test_reduce_all_ops`: reduce all ops
+- `test_add_and_relu`: add and relu
+- `test_default_backend_resolves_to_silicon_simt`: default backend resolves to silicon simt
+- `test_maxcore_backend_env_restores_legacy_engine`: maxcore backend env restores legacy engine
+- `test_explicit_backend_arg_overrides_env`: explicit backend arg overrides env
+- `test_registry_lists_silicon_simt`: registry lists silicon simt
+- `test_end_to_end_mlp_under_default_backend`: Mirrors a real caller: construct DigitalGPU() with no explicit backend (the default-unset path every confirmed call site uses) and run an op end to end through the facade.
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py`
+
+test text
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_counts_unicode_paragraphs_and_observed_tokens`: counts unicode paragraphs and observed tokens
+- `test_negation_is_auditable_and_inverts_lexical_match`: negation is auditable and inverts lexical match
+- `test_empty_text_has_explicit_non_applicable_readability`: empty text has explicit non applicable readability
+- `test_repeated_content_changes_keyword_and_ngram_measurements`: repeated content changes keyword and ngram measurements
+- `test_non_string_is_rejected_instead_of_coerced`: non string is rejected instead of coerced
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py`
+
+test website
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_extracts_actual_document_semantics_and_resolves_urls`: extracts actual document semantics and resolves urls
+- `test_visible_text_ignores_script_style_template_and_comments`: visible text ignores script style template and comments
+- `test_link_kinds_and_evidence_backed_issues`: link kinds and evidence backed issues
+- `test_malformed_html_and_empty_document_return_finite_envelopes`: malformed html and empty document return finite envelopes
+- `test_non_string_arguments_are_rejected_without_network_fallback`: non string arguments are rejected without network fallback
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py`
+
+Tests for Phase 4 — brand identity centroid, embedding cache, seeded-render dedupe, and the generated-asset ingestor.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_brand_centroid_mean`: brand centroid mean
+- `test_brand_centroid_replace_matches_rebuild`: brand centroid replace matches rebuild
+- `test_brand_centroid_survives_state_roundtrip`: brand centroid survives state roundtrip
+- `test_brand_centroid_remove_recomputes`: brand centroid remove recomputes
+- `test_embedding_cache_hit_and_copy`: embedding cache hit and copy
+- `test_embedding_cache_bypass`: embedding cache bypass
+- `test_seeded_render_reuses_file`: seeded render reuses file
+- `test_seeded_render_concurrent_dedupe`: seeded render concurrent dedupe
+- `test_ingestor_enqueue_dedupe_and_drain`: ingestor enqueue dedupe and drain
+- `test_ingestor_bad_path_retries_then_drops`: ingestor bad path retries then drops
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py`
+
+Tests for the retrieval real-asset pipeline (image features + anchor/seed library + gap ingestion). Renders REAL images via the in-house ImageEngine, so it is a slower integration test than test_retrieval.py.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_features_deterministic_and_dim`: features deterministic and dim
+- `test_seeded_render_is_idempotent_file`: seeded render is idempotent file
+- `test_features_total_on_garbage`: features total on garbage
+- `test_ensure_library_idempotent`: ensure library idempotent
+- `test_coverage_gate_healthy_after_library`: coverage gate healthy after library
+- `test_decode_scheme_valid`: decode scheme valid
+- `test_ingest_gaps_adds_real_asset`: ingest gaps adds real asset
+- `test_ingest_generated_asset`: ingest generated asset
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py`
+
+Tests for the live RCGS query path: the probe ring buffer, retrieval-conditioned background compositing, and the CoverageWatchdog's context-carrying probe handling.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_probes`: probes
+- `test_path_resolution`: path resolution
+- `test_condition_background`: condition background
+- `test_watchdog_probe_context`: watchdog probe context
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py`
+
+Tests for the retrieval spine (AssetIndex) and the self-healing CoverageWatchdog.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_cascade_rungs`: cascade rungs
+- `test_never_empty_when_nonempty`: never empty when nonempty
+- `test_totality`: totality
+- `test_determinism`: determinism
+- `test_coverage_gate`: coverage gate
+- `test_serialization_roundtrip`: serialization roundtrip
+- `test_watchdog_heals_missing_anchors`: watchdog heals missing anchors
+- `test_watchdog_enqueues_coverage_gaps`: watchdog enqueues coverage gaps
+- `test_watchdog_drains_via_ingestion`: watchdog drains via ingestion
+- `test_exact_key_replacement`: exact key replacement
+- `test_drain_atomic_no_loss`: drain atomic no loss
+- `test_drain_requeue_on_failure`: drain requeue on failure
+- `test_watchdog_check_isolation`: watchdog check isolation
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py`
+
+Regression tests for the RTA-1 fabric's strict correctness contracts.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_image_bytes_identical_across_processes`: Same inputs → byte-identical image across processes with different hash seeds.
+- `test_spectral_tail_reconstruction_non_hop_aligned`: The reconstructed tail of a non-hop-aligned clip is as accurate as the whole.
+- `test_fabric_self_test_all_mediums_and_gpu`: All three mediums render and the Digital-GPU GEMM counter increments.
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py`
+
+Tests for the quality-awareness buffer's editing-decision bridge. Run:
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_active_buffer_returns_pattern`: active buffer returns pattern
+- `test_retired_modality_returns_none`: retired modality returns none
+- `test_modalities_retire_independently`: modalities retire independently
+- `test_per_modality_env_override`: per modality env override
+- `test_no_genre_match_returns_none`: no genre match returns none
+- `test_missing_doc_never_raises`: missing doc never raises
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py`
+
+Direct endpoint verification — tests every route on the model server (port 9878) and the api-server proxy (port 8080) with correct minimal payloads.
+
+Status: **blocked**. Mutates a live model server, including training/admin routes; requires a disposable server and explicit test credentials.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py`
+
+Focused integration checks for audio dataset auto-growth.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestAutoGrowthStateUpdates.test_state_updated_on_success`: state updated on success
+- `TestAutoGrowthStateUpdates.test_counter_increments_across_multiple_seeds`: counter increments across multiple seeds
+- `TestRateLimitThrottle.test_throttled_within_interval`: throttled within interval
+- `TestRateLimitThrottle.test_not_throttled_after_interval_expires`: not throttled after interval expires
+- `TestAlreadySeedingHandled.test_already_seeding_is_graceful`: already seeding is graceful
+- `TestAlreadySeedingHandled.test_concurrent_lock_held_no_raise`: Simulate the real lock being held by another thread.
+- `TestAboveThresholdSkipped.test_above_threshold_no_seed`: above threshold no seed
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py`
+
+Audio BPM/key match validation — end-to-end + unit tests.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestSelectAudioSample.test_exact_key_match_is_preferred`: When a track with the exact requested key exists it is chosen.
+- `TestSelectAudioSample.test_key_match_case_insensitive`: Key comparison is case-insensitive.
+- `TestSelectAudioSample.test_no_key_match_returns_false_and_warns`: When no track matches the key, key_matched=False and all tracks are eligible.
+- `TestSelectAudioSample.test_empty_key_request_does_not_trigger_fallback`: An empty/None requested key should not be treated as a key to match.
+- `TestSelectAudioSample.test_closest_bpm_wins_within_key_pool`: Within key-matched tracks the one with closest BPM is selected.
+- `TestSelectAudioSample.test_zero_bpm_in_index_is_deprioritised`: Entries with bpm=0 (estimation failed) rank last on BPM.
+- `TestSelectAudioSample.test_zero_bpm_in_index_used_when_only_option`: If ALL entries have bpm=0 the selector still returns one entry.
+- `TestSelectAudioSample.test_genre_match_breaks_bpm_tie`: A genre-matching track is preferred over an equally-close BPM track.
+- `TestSelectAudioSample.test_genre_match_case_and_hyphen_normalised`: Genre comparison normalises hyphens and case.
+- `TestSelectAudioSample.test_no_preferred_genres_ignores_genre_field`: When no preferred genres are given genre_score is always 0 (neutral).
+- `TestSelectAudioSample.test_single_entry_index`: single entry index
+- `TestSelectAudioSample.test_empty_index_raises`: empty index raises
+- `TestSelectAudioSample.test_tiebreak_by_idx`: When genre and BPM are identical, the lower idx wins (deterministic).
+- `TestAudioBpmKeyMatchE2E.test_returned_bpm_within_tolerance`: Applied BPM in the response should be within BPM_TOLERANCE of the request.
+- `TestAudioBpmKeyMatchE2E.test_key_match_present_in_dataset`: When the dataset contains a track with the requested key, no warning is emitted.
+- `TestAudioBpmKeyMatchE2E.test_key_not_in_dataset_surfaces_warning`: When the requested key is absent from the dataset, selection_warning is set.
+- `TestAudioBpmKeyMatchE2E.test_source_sample_metadata_present`: Response includes source_sample so producers can audit which track was used.
+- `TestAudioBpmKeyMatchE2E.test_audio_file_is_served`: The URL in the response must actually serve a file (HTTP 200).
+- `TestGenreNormalization.test_numeric_fma_ids_map_to_names`: numeric fma ids map to names
+- `TestGenreNormalization.test_numeric_strings_map_to_names`: numeric strings map to names
+- `TestGenreNormalization.test_unknown_ids_kept_as_strings`: unknown ids kept as strings
+- `TestGenreNormalization.test_names_lowercased_and_dehyphenated`: names lowercased and dehyphenated
+- `TestGenreNormalization.test_awareness_genre_matches_fma_id_track`: awareness genre matches fma id track
+- `TestMoodAffinity.test_mood_breaks_tie_toward_affinity`: mood breaks tie toward affinity
+- `TestMoodAffinity.test_genre_intent_outranks_mood`: genre intent outranks mood
+- `TestMoodAffinity.test_unknown_mood_is_noop`: unknown mood is noop
+- `TestMoodAffinity.test_mood_with_numeric_fma_genres`: mood with numeric fma genres
+- `TestNormalizeGenresMalformed.test_scalar_string_not_iterated_charwise`: scalar string not iterated charwise
+- `TestNormalizeGenresMalformed.test_scalar_int`: scalar int
+- `TestNormalizeGenresMalformed.test_none`: none
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py`
+
+Tests for the audio-generation seeding guard.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_is_seeding_false_when_idle`: is seeding false when idle
+- `test_is_seeding_true_while_lock_held`: is seeding true while lock held
+- `test_wait_logic_concept`: Verify the wait logic concept: poll until chunk appears or deadline passes. This exercises the same pattern used in _render_audio_from_dataset without importing the full server.
+- `test_wait_logic_timeout`: If no chunk appears within the deadline, the loop exits without finding data.
+- `test_seeding_now_in_status_response_shape`: _audio_dataset_status() (called by GET /storage/datasets/audio/status) must include a 'seeding_now' field.  We test the function signature by reading the source rather than importing the full server.
+- `test_seeding_in_progress_early_exit_present`: Verify that the /api/generate/audio handler contains the early-exit 503 + seeding_in_progress block.
+- `test_render_fn_wait_block_present`: Verify _render_audio_from_dataset contains the wait-for-chunk loop.
+- `test_is_seeding_probe_is_fast`: is_seeding() must return in well under 1 ms (it's a non-blocking lock try).
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py`
+
+Awareness layer + content quality rating tests — digital GPU integration.
+
+Status: **blocked**. Requires a running generation-capable isolated MaxCore model server; live quality is not established by fixtures.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_awareness_quality_status`: awareness quality status
+- `test_awareness_self_sufficiency_formula`: buffer_weight must equal max(0, 1 - own_corpus / retire_threshold).
+- `test_awareness_status_fields_types`: awareness status fields types
+- `test_awareness_plain_string`: Plain string awareness passes through unchanged.
+- `test_awareness_structured_object`: Structured awareness {contextString, trendingGenres} must be normalised by _AwarenessMixin.
+- `test_awareness_empty_string_still_works`: Empty awareness must not crash generation.
+- `test_awareness_structured_empty_contextstring`: Structured awareness with empty contextString gracefully degrades.
+- `test_awareness_instruction_field`: instruction field feeds into awareness_from_direction as [HIGH] signals.
+- `test_awareness_content_themes`: content_themes feed into awareness_from_direction as bullet context.
+- `test_awareness_extra_context`: extra_context appended after instruction in the awareness pipeline.
+- `test_awareness_changes_output`: Same topic and platform with vs. without awareness must not produce identical captions. (Exact match would mean awareness is being ignored.)
+- `test_awareness_conditioning_quality_delta`: Awareness-conditioned output must produce valid scored output on both paths. Uses clean ASCII-only awareness strings to avoid unicode token fusion (known edge: non-ASCII chars in awareness can bleed into output and trip the garble guard — see idea-awareness-field-separation in memory).
+- `test_plain_awareness_used_and_intent_lines_never_leak`: Regression guards for the intent↔awareness synchronization work: 1. Plain (unprefixed) caller awareness must still influence output even    though the platform quality buffer always supplies [HIGH] signals    (previously the buffer drowned caller lines → awareness was a no-op). 2. Machine-readable [INTENT] key=value lines must NEVER leak verbatim    into user-facing hook/body/cta/caption text.
+- `test_awareness_multi_layer_live_signals`: Combined live signals + brand direction produces valid, non-garbled output.
+- `test_awareness_across_modalities_social`: awareness across modalities social
+- `test_awareness_across_modalities_video`: awareness across modalities video
+- `test_awareness_across_modalities_ads`: awareness across modalities ads
+- `test_quality_score_valid_range`: score_candidate must return a value in [0, 100] for typical responses.
+- `test_quality_no_garbled_output`: No content/generate response should trigger the garbled guard.
+- `test_quality_hook_non_empty`: hook field must be a non-empty string on every content/generate call.
+- `test_quality_cta_presence`: At least 80% of content responses should include a recognisable CTA.
+- `test_quality_viral_score_range`: viral_score must be in [0, 1] for all generated content.
+- `test_quality_source_field`: source should be 'model' when HyperGPU is powering inference.
+- `test_quality_processing_time_nonzero`: processing_time_ms must be > 0 when model inference ran.
+- `test_predict_engagement_viral_potential`: predict engagement viral potential
+- `test_predict_engagement_viral_potential_long_hook`: Content with a longer hook should produce higher hook_power → higher viral score.
+- `test_predict_engagement_best_time`: predict engagement best time
+- `test_predict_engagement_recommend_type`: predict engagement recommend type
+- `test_predict_engagement_confidence_range`: confidence must be in [0, 1] for all actions.
+- `test_variant_distinctness_social`: Multi-variant social generation: consecutive variants must not be byte-for-byte identical (Jaccard < 1.0).  We accept high lexical overlap at this model training stage — the important signal is that the server is not returning the exact same string for every slot. Ideal target is Jaccard < 0.85; we assert < 1.0 as the hard floor and print a warning when similarity exceeds 0.85 so it shows up in the quality log as a known model-maturity metric.
+- `test_variant_distinctness_content_platform`: Same content request across different platforms should yield platform-adapted output.
+- `test_platform_tiktok_hook_length`: TikTok hooks under 80 chars achieve hook_power = 1.0. Server formula: hook_power = min(1.0, len(hook)/80). We verify the hook is non-empty and score accordingly.
+- `test_platform_instagram_hashtags`: Instagram content with include_hashtags=True must return hashtags.
+- `test_platform_youtube_body_length`: YouTube descriptions benefit from longer body copy.
+- `test_platform_twitter_brevity`: Twitter/X content should produce a concise output.
+- `test_garble_guard_all_platforms`: Run content/generate for 6 platform+topic combos and assert none of the returned captions trigger looks_garbled().
+- `test_analyze_returns_intent_confidence`: analyze returns intent confidence
+- `test_analyze_url_modality_with_awareness`: analyze url modality with awareness
+- `test_awareness_layered_daw`: DAW generation with awareness should produce non-garbled lyric/hook.
+- `test_quality_leaderboard_content_types`: Generate one piece across all major content types. Every piece must: score > 0, not garbled, have non-empty hook or caption. Final leaderboard printed in summary.
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py`
+
+Tests for the expanded AwarenessConditioner vocab.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_no_duplicates`: no duplicates
+- `test_vocab_size_at_least_120`: vocab size at least 120
+- `test_new_platforms_in_vocab`: new platforms in vocab
+- `test_new_genres_in_vocab`: new genres in vocab
+- `test_new_production_terms_in_vocab`: new production terms in vocab
+- `test_new_mood_terms_in_vocab`: new mood terms in vocab
+- `test_new_visual_terms_in_vocab`: new visual terms in vocab
+- `test_amapiano_fires`: amapiano fires
+- `test_bluesky_fires`: bluesky fires
+- `test_threads_fires`: threads fires
+- `test_grime_fires`: grime fires
+- `test_synthwave_fires`: synthwave fires
+- `test_neon_aesthetic_fires`: neon aesthetic fires
+- `test_empty_awareness_is_zero`: empty awareness is zero
+- `test_unrecognised_term_is_zero`: A completely novel term not in VOCAB produces no signal (not a crash).
+- `test_high_signal_upweights`: high signal upweights
+- `test_high_upweight_capped_at_2`: high upweight capped at 2
+- `test_output_shape`: output shape
+- `test_deterministic`: deterministic
+- `test_different_awareness_different_tensor`: different awareness different tensor
+- `test_novel_term_shifts_tensor`: Adding a previously-absent vocab term must measurably shift the output.
+- `test_platform_term_shifts_tensor`: threads / bluesky (new platforms) must shift the tensor.
+- `test_detect_amapiano`: detect amapiano
+- `test_detect_city_pop`: detect city pop
+- `test_detect_grime`: detect grime
+- `test_detect_gospel`: detect gospel
+- `test_detect_synthwave`: detect synthwave
+- `test_detect_bedroom`: detect bedroom
+- `test_explicit_genre_wins`: explicit genre wins
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py`
+
+Beat-marketplace conditioning — regression guards.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_purchase_goal_aliases_to_conversion`: purchase goal aliases to conversion
+- `test_beat_context_awareness_lines_parse`: beat context awareness lines parse
+- `test_beat_context_never_raises_and_sanitizes`: beat context never raises and sanitizes
+- `test_purchase_cta_anchors`: purchase cta anchors
+- `test_platform_constraints`: platform constraints
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py`
+
+Content endpoint tests — digital GPU integration.
+
+Status: **blocked**. Requires a running generation-capable isolated MaxCore model server; includes media generation.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_health`: health
+- `test_gpu_hyper_status`: gpu hyper status
+- `test_model_status`: model status
+- `test_platform_model_info`: platform model info
+- `test_content_generate_tiktok`: content generate tiktok
+- `test_content_generate_instagram`: content generate instagram
+- `test_content_generate_youtube`: content generate youtube
+- `test_content_generate_has_processing_time`: content generate has processing time
+- `test_platform_social_instagram`: platform social instagram
+- `test_platform_social_tiktok_variants`: platform social tiktok variants
+- `test_platform_social_twitter`: platform social twitter
+- `test_platform_daw_lyrics`: platform daw lyrics
+- `test_platform_daw_hook`: platform daw hook
+- `test_platform_daw_beat_description`: platform daw beat description
+- `test_platform_distribution_plan`: platform distribution plan
+- `test_platform_video_youtube`: platform video youtube
+- `test_platform_video_tiktok_vertical`: platform video tiktok vertical
+- `test_analyze_text`: analyze text
+- `test_analyze_text_sentiment`: analyze text sentiment
+- `test_analyze_url_modality`: analyze url modality
+- `test_generate_text_content_mode`: generate text content mode
+- `test_generate_text_planner_mode`: generate text planner mode
+- `test_generate_audio`: generate audio
+- `test_generate_image`: generate image
+- `test_generate_video`: generate video
+- `test_ads_generate_meta`: ads generate meta
+- `test_ads_generate_tiktok`: ads generate tiktok
+- `test_pocket_multiply_2x2`: pocket multiply 2x2
+- `test_pocket_multiply_3x3`: pocket multiply 3x3
+- `test_pocket_multiply_dedup`: Same operands → second call should be served from cache.
+- `test_pocket_accelerator_stats`: pocket accelerator stats
+- `test_social_autopilot`: social autopilot
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py`
+
+Regression guard: get_diffusion_frame must denoise at native resolution.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_output_matches_requested_dimensions`: output matches requested dimensions
+- `test_generate_called_at_native_resolution`: The heavy generate() must receive resolution=RESOLUTION, never max(w,h).
+- `test_hi_res_request_stays_fast`: A 1920-tall request must cost ~native-res time (was ~28s pre-fix).
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py`
+
+test intent url reader safe http
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_read_url_uses_bounded_safe_transport`: read url uses bounded safe transport
+- `test_read_url_explicitly_rejects_unsafe_safe_http_result`: read url explicitly rejects unsafe safe http result
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py`
+
+Tiny fake native functions exercise real process isolation, never rendering.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `IsolationTests.test_terminal_job_states_cannot_be_overwritten`: terminal job states cannot be overwritten
+- `IsolationTests.test_success_promotes_only_completed_artifact`: success promotes only completed artifact
+- `IsolationTests.test_error_invalid_result_and_missing_artifact_cleanup`: error invalid result and missing artifact cleanup
+- `IsolationTests.test_native_hang_is_killed_and_slot_reusable`: native hang is killed and slot reusable
+- `IsolationTests.test_cancellation_terminates_worker`: cancellation terminates worker
+- `IsolationTests.test_sigkill_reclaims_uncooperative_descendant`: sigkill reclaims uncooperative descendant
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py`
+
+Isolated tests: no server startup, model loading, network, or live data.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `RetryTests.test_transient_retry_then_success`: transient retry then success
+- `RetryTests.test_exhaustion_is_terminal`: exhaustion is terminal
+- `RetryTests.test_deterministic_failure_not_retried`: deterministic failure not retried
+- `RetryTests.test_invalid_artifact_deadline_and_cancellation`: invalid artifact deadline and cancellation
+- `CheckpointTests.test_serving_model_retains_training_checkpoint_head_key`: serving model retains training checkpoint head key
+- `CheckpointTests.test_archive_loader_is_weights_only_and_validates_root`: archive loader is weights only and validates root
+- `CheckpointTests.test_quarantine_preserves_existing_candidate_and_records_provenance`: quarantine preserves existing candidate and records provenance
+- `CheckpointTests.test_quarantine_never_deletes_colliding_provenance`: quarantine never deletes colliding provenance
+- `CheckpointTests.test_watchdog_does_not_quarantine_operational_load_failure_or_raw_state`: watchdog does not quarantine operational load failure or raw state
+- `CheckpointTests.test_watchdog_quarantines_semantically_unusable_checkpoint`: watchdog quarantines semantically unusable checkpoint
+- `CheckpointTests.test_complete_and_prefixed`: complete and prefixed
+- `CheckpointTests.test_missing_shape_and_unexpected_rejected`: missing shape and unexpected rejected
+- `AudioTests.test_xfade_maps_required_audio_explicitly`: xfade maps required audio explicitly
+- `AudioTests.test_probe_rejects_silent_and_short_artifacts`: probe rejects silent and short artifacts
+- `AudioTests.test_narration_and_soundtrack_failure_propagate`: narration and soundtrack failure propagate
+- `ManifestTests.test_all_ten_images_reach_ordered_scene_references`: all ten images reach ordered scene references
+- `ManifestTests.test_manifest_validation`: manifest validation
+- `ManifestTests.test_measured_audio_onsets`: measured audio onsets
+- `ManifestTests.test_manifest_controls_reach_scenes`: manifest controls reach scenes
+- `ManifestTests.test_ten_real_images_condition_pixels`: ten real images condition pixels
+- `ManifestTests.test_logo_is_composited_into_real_pixels`: logo is composited into real pixels
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py`
+
+test native analysis api
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_text_requires_generation_auth_and_trusted_owner`: text requires generation auth and trusted owner
+- `test_real_image_upload_is_owner_scoped_then_consumed`: real image upload is owner scoped then consumed
+- `test_upload_rejects_mime_size_and_invalid_decode`: upload rejects mime size and invalid decode
+- `test_body_actor_is_ignored`: body actor is ignored
+- `test_expired_upload_is_rejected_and_removed`: expired upload is rejected and removed
+- `test_capacity_is_rejected_without_queuing`: capacity is rejected without queuing
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py`
+
+test native analysis safe http
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_rejects_non_public_and_non_http_urls`: rejects non public and non http urls
+- `test_dns_answer_is_rejected_if_any_address_is_private`: dns answer is rejected if any address is private
+- `test_rejects_ipv6_transition_addresses`: rejects ipv6 transition addresses
+- `test_redirect_target_is_validated_again`: redirect target is validated again
+- `test_host_header_brackets_ipv6_and_uses_scheme_default_port`: host header brackets ipv6 and uses scheme default port
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py`
+
+Regression coverage for awareness at native MaxCore consumer seams.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_native_request_models_preserve_structured_and_direction_context`: native request models preserve structured and direction context
+- `test_social_route_delivers_structured_envelope_to_agents`: social route delivers structured envelope to agents
+- `test_live_report_payload_conditions_real_agent_without_metadata_leak`: live report payload conditions real agent without metadata leak
+- `test_real_agent_honors_exact_opening_wording`: real agent honors exact opening wording
+- `test_real_agent_honors_structured_must_include_list`: real agent honors structured must include list
+- `test_max_knowledge_assistant_remains_local_exempt_source`: max knowledge assistant remains local exempt source
+- `test_daw_agents_receive_effective_awareness`: daw agents receive effective awareness
+- `test_distribution_agent_receives_effective_awareness`: distribution agent receives effective awareness
+- `test_audio_job_identity_contains_effective_awareness`: audio job identity contains effective awareness
+- `test_platform_video_coalescer_uses_consumed_awareness`: platform video coalescer uses consumed awareness
+- `test_campaign_post_composer_adds_slot_platform_awareness`: campaign post composer adds slot platform awareness
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py`
+
+test native media analysis
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_png_and_jpeg_have_content_dependent_pixel_measurements`: png and jpeg have content dependent pixel measurements
+- `test_generated_mp4_uses_real_probe_frames_and_transition_evidence`: generated mp4 uses real probe frames and transition evidence
+- `test_invalid_local_media_errors_are_typed`: invalid local media errors are typed
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py`
+
+test platform awareness wiring
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_api_content_awareness_bus_contains_shared_platform_profile_once`: api content awareness bus contains shared platform profile once
+- `test_awareness_bus_rejects_platforms_outside_the_closed_set`: awareness bus rejects platforms outside the closed set
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py`
+
+Focused regression tests for runtime SAST remediations.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PrefixCacheFormatTests.test_tensor_payload_round_trip_including_bfloat16`: tensor payload round trip including bfloat16
+- `PrefixCacheFormatTests.test_legacy_payload_is_rejected_without_deleting_state`: legacy payload is rejected without deleting state
+- `PrefixCacheFormatTests.test_exact_prompt_key_covers_suffix_shape_dtype_and_model_state`: exact prompt key covers suffix shape dtype and model state
+- `PrefixCacheFormatTests.test_over_256_token_cached_result_matches_uncached_result`: over 256 token cached result matches uncached result
+- `ProcessErrorBoundaryTests.test_custom_exception_graph_is_reduced_to_builtin_text`: custom exception graph is reduced to builtin text
+- `LoadBaseValidationTests.test_accepts_only_http_origins`: accepts only http origins
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py`
+
+Smoke load test — Digital GPU (HyperGPU) edition ================================================= Target: 90,000,000 unique requests — 100% success, GPU confirmed on every generation wave, throughput sampled and projected to 90M scale.
+
+Status: **blocked**. Live concurrent generation/load benchmark requires an isolated generation-capable model server.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py`
+
+Social + advertising quality beacon — regression guards.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_signal_lines_parse_into_actionable_signals`: signal lines parse into actionable signals
+- `test_no_unsupported_tier_tokens`: no unsupported tier tokens
+- `test_tag_sanitization`: tag sanitization
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py`
+
+test social generation controls
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_pydantic_schema_accepts_every_social_url_ui_control`: pydantic schema accepts every social url ui control
+- `test_platform_endpoint_schema_inherits_the_real_control_contract`: platform endpoint schema inherits the real control contract
+- `test_pydantic_schema_rejects_unsupported_controls`: pydantic schema rejects unsupported controls
+- `test_native_consumer_applies_length_cta_and_hashtag_controls`: native consumer applies length cta and hashtag controls
+- `test_trending_strategy_returns_only_explicitly_evidenced_tags`: trending strategy returns only explicitly evidenced tags
+- `test_native_script_agent_consumes_audience_format_length_and_cta`: native script agent consumes audience format length and cta
+- `test_url_parser_fetches_public_url_and_extracts_real_title`: url parser fetches public url and extracts real title
+- `test_url_parser_refuses_ssrf_target_without_fetching`: url parser refuses ssrf target without fetching
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py`
+
+Offline trust-boundary tests for configured service HTTP.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TrustedHTTPTests.test_local_only_rejects_non_loopback`: local only rejects non loopback
+- `TrustedHTTPTests.test_local_only_rejects_if_any_dns_answer_is_not_loopback`: local only rejects if any dns answer is not loopback
+- `TrustedHTTPTests.test_request_cannot_leave_configured_origin`: request cannot leave configured origin
+- `TrustedHTTPTests.test_redirect_is_rejected_without_following`: redirect is rejected without following
+- `TrustedHTTPTests.test_private_configured_origin_is_pinned_and_preserved`: private configured origin is pinned and preserved
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py`
+
+Contract guards for MaxCore capabilities that have no real model yet.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_missing_audio_and_video_inference_never_synthesizes_results`: missing audio and video inference never synthesizes results
+- `test_audio_endpoints_use_real_waveform_conductor`: audio endpoints use real waveform conductor
+- `test_audio_upload_contract_is_bounded_owner_scoped_and_validated`: audio upload contract is bounded owner scoped and validated
+- `test_real_conductor_analyzes_tiny_waveform`: real conductor analyzes tiny waveform
+- `test_text_content_mode_never_returns_template_fallback`: text content mode never returns template fallback
+- `test_model_readiness_reports_terminal_initialization_failure`: model readiness reports terminal initialization failure
+- `test_every_job_reader_enforces_durable_owner`: every job reader enforces durable owner
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py`
+
+Unit tests for the URL-parser label-echo garble guard.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestLabelEchoDetected.test_artist_label_line`: Artist: <name> at line start is a metadata echo.
+- `TestLabelEchoDetected.test_title_label_line`: title label line
+- `TestLabelEchoDetected.test_genre_label_line`: genre label line
+- `TestLabelEchoDetected.test_intent_label_line`: intent label line
+- `TestLabelEchoDetected.test_source_label_line`: source label line
+- `TestLabelEchoDetected.test_album_label_line`: album label line
+- `TestLabelEchoDetected.test_context_label_line`: context label line
+- `TestLabelEchoDetected.test_bpm_key_year_labels`: bpm key year labels
+- `TestLabelEchoDetected.test_tier_high_source_line`: [HIGH] Source: … is the awareness header format.
+- `TestLabelEchoDetected.test_tier_marker_alone`: tier marker alone
+- `TestLabelEchoDetected.test_med_tier_marker`: med tier marker
+- `TestLabelEchoDetected.test_low_tier_marker`: low tier marker
+- `TestLabelEchoDetected.test_full_awareness_block_echo`: Reproduces the exact format from _build_awareness_text().
+- `TestLabelEchoDetected.test_mixed_caption_with_label`: Even one label line in an otherwise fine caption should be caught.
+- `TestLabelEchoDetected.test_case_insensitive_label`: Labels must be detected regardless of capitalisation.
+- `TestMidLineLabelEchoDetected.test_caption_ending_in_pipe_mood_fragment`: caption ending in pipe mood fragment
+- `TestMidLineLabelEchoDetected.test_midline_bpm_key_fragment`: midline bpm key fragment
+- `TestMidLineLabelEchoDetected.test_midline_fragment_case_insensitive`: midline fragment case insensitive
+- `TestMidLineLabelEchoDetected.test_midline_label_never_whitelisted`: midline label never whitelisted
+- `TestLegitimateCaptionNotFlagged.test_artist_name_in_prose`: Mentioning 'Drake' naturally is fine.
+- `TestLegitimateCaptionNotFlagged.test_artist_name_whitelisted`: With the artist in the whitelist, name in a caption is clean.
+- `TestLegitimateCaptionNotFlagged.test_title_in_prose`: title in prose
+- `TestLegitimateCaptionNotFlagged.test_source_word_in_prose`: 'source' as a common English word should not trigger the guard.
+- `TestLegitimateCaptionNotFlagged.test_context_word_in_prose`: context word in prose
+- `TestLegitimateCaptionNotFlagged.test_key_word_in_prose`: key word in prose
+- `TestLegitimateCaptionNotFlagged.test_year_word_in_prose`: year word in prose
+- `TestLegitimateCaptionNotFlagged.test_genre_word_in_prose`: genre word in prose
+- `TestLegitimateCaptionNotFlagged.test_intent_word_in_prose`: intent word in prose
+- `TestLegitimateCaptionNotFlagged.test_pipes_in_ordinary_prose_not_flagged`: Pipes with non-awareness labels are normal event-flyer prose.
+- `TestLegitimateCaptionNotFlagged.test_pipe_separated_prose_without_labels`: pipe separated prose without labels
+- `TestLegitimateCaptionNotFlagged.test_normal_instagram_caption`: normal instagram caption
+- `TestLegitimateCaptionNotFlagged.test_spotify_tiktok_mention`: spotify tiktok mention
+- `TestLegitimateCaptionNotFlagged.test_label_word_mid_sentence`: 'Artist:' must only be caught at line boundaries, not mid-sentence.
+- `TestGuardCoversAllEmittedLabels.test_awareness_builder_emits_expected_baseline`: Sanity: the builder still emits the known core labels — if this fails, the extraction regex or the builder changed shape.
+- `TestGuardCoversAllEmittedLabels.test_every_emitted_label_triggers_guard`: THE cross-check: each emitted label prefix, alone at line start, must be flagged by looks_garbled.
+- `TestGuardCoversAllEmittedLabels.test_every_emitted_label_triggers_guard_midline`: Drift guard for the mid-line matcher: every emitted awareness label must also be caught when it appears pipe-preceded mid-line, so _MIDLINE_LABEL_RE can't fall out of sync with _URL_LABEL_RE when new fields are added to _build_awareness_text().
+- `TestGuardCoversAllEmittedLabels.test_full_emitted_block_triggers_guard`: The verbatim awareness block itself must always be flagged.
+- `TestGarbleReason.test_label_echo_reason`: label echo reason
+- `TestGarbleReason.test_tier_marker_reason`: tier marker reason
+- `TestGarbleReason.test_glue_tokens_reason`: glue tokens reason
+- `TestGarbleReason.test_clean_text_empty_reason`: clean text empty reason
+- `TestGarbleReason.test_looks_garbled_consistency`: looks_garbled must be exactly bool(garble_reason) for any input.
+- `TestGarbleReason.test_whitelist_respected_for_glue_but_not_labels`: whitelist respected for glue but not labels
+- `TestGuardLogsWarning.test_ranking_penalty_logs_reason`: ranking penalty logs reason
+- `TestGuardLogsWarning.test_script_agent_suppression_logs_reason`: When the model 'output' echoes awareness labels, ScriptAgent must fall back AND log the reason at WARNING level.
+- `TestGuardLogsWarning.test_distribution_agent_suppression_logs_reason`: distribution agent suppression logs reason
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py`
+
+Veo-parity feature guards: image conditioning, cinematography fusion, multi-sample seeds, and the /api/video/extend endpoint contract.
+
+Status: **blocked**. Live video/image generation parity suite targets fixed model port 9878 and requires operational generation.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_sdedit_decodes_init_frame_and_never_raises`: sdedit decodes init frame and never raises
+- `test_build_scenes_routes_frames_and_cinematography`: build scenes routes frames and cinematography
+- `test_build_scenes_backward_compatible_when_no_veo_params`: build scenes backward compatible when no veo params
+- `test_sample_count_returns_distinct_seeded_jobs`: sample count returns distinct seeded jobs
+- `test_extend_requires_idea_and_real_source`: extend requires idea and real source
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py`
+
+Voice-over synthesis regression tests (Task: birdcall narration fix).
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestCleanVoText.test_strips_emoji_hashtags_urls_tokens`: strips emoji hashtags urls tokens
+- `TestCleanVoText.test_empty_and_symbol_only`: empty and symbol only
+- `TestNarratorControls.test_valid_voices_pass_through`: valid voices pass through
+- `TestNarratorControls.test_invalid_voices_fall_back`: invalid voices fall back
+- `TestNarratorControls.test_valid_wpm_pass_through`: valid wpm pass through
+- `TestNarratorControls.test_invalid_wpm_fall_back`: invalid wpm fall back
+- `TestSynthesizeVoiceover.test_produces_speech_at_pipeline_rate`: produces speech at pipeline rate
+- `TestSynthesizeVoiceover.test_non_default_voice_and_pace`: non default voice and pace
+- `TestSynthesizeVoiceover.test_invalid_voice_and_pace_still_render`: invalid voice and pace still render
+- `TestSynthesizeVoiceover.test_empty_text_returns_false`: empty text returns false
+- `TestMixAndTrack.test_voice_dominates_ducked_music`: voice dominates ducked music
+- `TestMixAndTrack.test_voiceover_track_end_to_end`: voiceover track end to end
+- `TestMixAndTrack.test_never_raises_on_bad_music_path`: never raises on bad music path
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py`
+
+API-level regression tests: the voice-over flag must be strictly opt-in.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestGenerateVideoEndpoint.test_voiceover_omitted_is_off`: voiceover omitted is off
+- `TestGenerateVideoEndpoint.test_voiceover_false_is_off`: voiceover false is off
+- `TestGenerateVideoEndpoint.test_voiceover_true_reported`: voiceover true reported
+- `TestGenerateAiEndpoint.test_voiceover_omitted_is_off`: voiceover omitted is off
+- `TestGenerateAiEndpoint.test_voiceover_false_is_off`: voiceover false is off
+- `TestGenerateAiEndpoint.test_voiceover_true_reported`: voiceover true reported
+
+</details>
+
+### `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py`
+
+Wave 6 — throughput proof + content-generation quality verification =================================================================== Section 1 (throughput): models 90,000,000 distinct users each sending their own unique request simultaneously. 150 content-unique requests at 40 concurrent, latency measured and projected to 90M users.
+
+Status: **blocked**. 90M-model throughput and quality benchmark requires an isolated model server and bounded resource budget.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/evaluations/maxcore-quality/test_protocol.py`
+
+Fast evaluator-contract tests: no model import or inference.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/evaluations/maxcore-quality/test_protocol.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ProtocolTests.test_connected_runner_protects_checkpoint_and_generated_files`: connected runner protects checkpoint and generated files
+- `ProtocolTests.test_fixed_cases_and_seeds`: fixed cases and seeds
+- `ProtocolTests.test_overlap_is_detected_without_corpus_leakage`: overlap is detected without corpus leakage
+- `ProtocolTests.test_digest_and_normalization`: digest and normalization
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py`
+
+Tests for the Conductor (audio_analysis). Run:
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_bpm_detection`: bpm detection
+- `test_determinism`: determinism
+- `test_energy_and_sections`: energy and sections
+- `test_band_envelopes`: band envelopes
+- `test_totality`: totality
+- `test_encoder_integration`: encoder integration
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_controls.py`
+
+test controls
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_controls.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_real_short_piano_wav_decodes`: real short piano wav decodes
+- `test_instrument_isolation_and_rejection`: instrument isolation and rejection
+- `test_arrangement_stays_within_short_duration`: arrangement stays within short duration
+- `test_real_arrangement_control_changes_samples`: real arrangement control changes samples
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_media_facade.py`
+
+Real backend execution and decodes, not facade-call mocks.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_media_facade.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_media_facade_is_real_dispatch_and_unknown_ops_fail`: media facade is real dispatch and unknown ops fail
+- `test_dither_and_pcm_are_lossless_against_original_arithmetic`: dither and pcm are lossless against original arithmetic
+- `test_image_video_backgrounds_use_same_real_gradient_kernel`: image video backgrounds use same real gradient kernel
+- `test_actual_audio_artifact_depends_on_executed_kernel`: actual audio artifact depends on executed kernel
+- `test_all_supported_instruments_real_pcm_and_signal_dispatch`: all supported instruments real pcm and signal dispatch
+- `test_delay_and_glitch_signal_kernels_have_actual_effect`: delay and glitch signal kernels have actual effect
+- `test_rbj_coefficients_and_envelopes_match_reference`: rbj coefficients and envelopes match reference
+- `test_failed_signal_kernel_is_not_silently_bypassed`: failed signal kernel is not silently bypassed
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_short_duration.py`
+
+Short soundtrack planning regression; does not run native synthesis.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_short_duration.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ShortSoundtrackTest.test_short_lofi_has_chords_and_drums_not_intro_only`: short lofi has chords and drums not intro only
+- `ShortSoundtrackTest.test_intent_routes_to_lofi_piano_with_quieter_drums`: intent routes to lofi piano with quieter drums
+- `ShortSoundtrackTest.test_struck_string_has_harmonics_decay_and_damped_release`: struck string has harmonics decay and damped release
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py`
+
+Isolated fixtures only; never accesses production PDIM or live network.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AwarenessTests.test_topic_selection_is_shared_across_modalities_and_preserves_evidence`: topic selection is shared across modalities and preserves evidence
+- `AwarenessTests.test_source_observation_writes_are_fenced_by_ingest_ownership`: source observation writes are fenced by ingest ownership
+- `AwarenessTests.test_source_records_do_not_require_every_topic_bucket`: source records do not require every topic bucket
+- `AwarenessTests.test_ready_snapshot_does_not_claim_latest_scan_completed`: ready snapshot does not claim latest scan completed
+- `AwarenessTests.test_readiness_status_uses_only_bounded_in_memory_state`: readiness status uses only bounded in memory state
+- `AwarenessTests.test_worker_reports_and_retries_transient_lease_failures_with_bounded_backoff`: worker reports and retries transient lease failures with bounded backoff
+- `AwarenessTests.test_public_source_failure_classification_is_actionable_and_redacted`: public source failure classification is actionable and redacted
+- `AwarenessTests.test_scan_retains_source_failure_class_without_exception_details`: scan retains source failure class without exception details
+- `AwarenessTests.test_invalid_snapshot_reports_safe_failure_category`: invalid snapshot reports safe failure category
+- `AwarenessTests.test_clean_is_idempotent_after_nested_html_entity_decoding`: clean is idempotent after nested html entity decoding
+- `AwarenessTests.test_clean_reaches_a_fixed_point_after_all_sanitization_steps`: clean reaches a fixed point after all sanitization steps
+- `AwarenessTests.test_all_domains_provenance_hash_and_immutable_copy`: all domains provenance hash and immutable copy
+- `AwarenessTests.test_hash_and_pointer_validation_on_restart`: hash and pointer validation on restart
+- `AwarenessTests.test_incomplete_keeps_previous_only_until_ttl`: incomplete keeps previous only until ttl
+- `AwarenessTests.test_optional_facade_context_and_bound_snapshot_revalidation`: optional facade context and bound snapshot revalidation
+- `AwarenessTests.test_no_empty_or_all_failed_rehashed_snapshot`: no empty or all failed rehashed snapshot
+- `AwarenessTests.test_actual_kernel_numeric_ranking`: actual kernel numeric ranking
+- `AwarenessTests.test_untrusted_content`: untrusted content
+- `AwarenessTests.test_lifecycle_idempotent_and_stops`: lifecycle idempotent and stops
+- `AwarenessTests.test_refresh_publishes_with_partial_topic_coverage`: refresh publishes with partial topic coverage
+- `AwarenessTests.test_publication_failure_keeps_last_acknowledged_snapshot`: publication failure keeps last acknowledged snapshot
+- `AwarenessTests.test_fenced_publication_error_is_safely_classified`: fenced publication error is safely classified
+- `AwarenessTests.test_secondary_phrase_storage_failure_has_safe_operation_category`: secondary phrase storage failure has safe operation category
+- `AwarenessTests.test_malformed_optional_legacy_source_metadata_is_ignored`: malformed optional legacy source metadata is ignored
+- `AwarenessTests.test_publication_command_error_does_not_expose_exception_text`: publication command error does not expose exception text
+- `AwarenessTests.test_timeout_is_not_knowledge_and_retry_backs_off`: timeout is not knowledge and retry backs off
+- `AwarenessTests.test_nested_bind_restores_and_invalid_hash_is_rejected`: nested bind restores and invalid hash is rejected
+- `PeakObservationSelectionTests.test_contextual_headlines_and_unsupported_sources_do_not_become_peak_examples`: contextual headlines and unsupported sources do not become peak examples
+- `PeakObservationSelectionTests.test_full_content_top_engagement_within_source_domain_balance_and_policy_hash`: full content top engagement within source domain balance and policy hash
+- `PeakObservationSelectionTests.test_ledger_full_body_preserved_and_stale_observations_excluded`: ledger full body preserved and stale observations excluded
+- `PeakObservationSelectionTests.test_peak_selection_excludes_fake_origin_zero_and_irrelevant`: peak selection excludes fake origin zero and irrelevant
+- `PeakObservationSelectionTests.test_duplicate_full_content_does_not_amplify_training_weight`: duplicate full content does not amplify training weight
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py`
+
+Real Lua/Redis atomicity tests in an isolated temporary Unix-socket Redis.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AtomicLeaseTests.test_contenders_and_owner_checked_heartbeat_release`: contenders and owner checked heartbeat release
+- `AtomicLeaseTests.test_lost_lease_cannot_overwrite_successor_pointer`: lost lease cannot overwrite successor pointer
+- `AtomicLeaseTests.test_same_owner_out_of_order_publication_rejected`: same owner out of order publication rejected
+- `AtomicLeaseTests.test_server_clock_rejects_expired_publication`: server clock rejects expired publication
+- `AtomicLeaseTests.test_published_snapshot_loads_into_follower_without_ingest`: published snapshot loads into follower without ingest
+- `AtomicLeaseTests.test_previous_id_only_pointer_migrates_without_regression`: previous id only pointer migrates without regression
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py`
+
+Deterministic tests for the opt-in eight-platform awareness discovery layer.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PlatformDiscoveryTests.test_retrieval_method_counts_never_call_index_snippets_page_fetches`: retrieval method counts never call index snippets page fetches
+- `PlatformDiscoveryTests.test_registry_is_exact_and_aliases_are_canonical`: registry is exact and aliases are canonical
+- `PlatformDiscoveryTests.test_search_is_disabled_without_explicit_opt_in`: search is disabled without explicit opt in
+- `PlatformDiscoveryTests.test_explicit_provider_opt_in_registers_one_source_per_platform`: explicit provider opt in registers one source per platform
+- `PlatformDiscoveryTests.test_provider_fallback_uses_secondary_only_after_primary_has_no_usable_rows`: provider fallback uses secondary only after primary has no usable rows
+- `PlatformDiscoveryTests.test_provider_fallback_keeps_failures_bounded_and_does_not_leak_messages`: provider fallback keeps failures bounded and does not leak messages
+- `PlatformDiscoveryTests.test_provider_transport_failure_falls_back_to_the_other_configured_provider`: provider transport failure falls back to the other configured provider
+- `PlatformDiscoveryTests.test_router_provenance_records_the_provider_that_returned_the_observation`: router provenance records the provider that returned the observation
+- `PlatformDiscoveryTests.test_query_uses_a_rolling_window_without_a_frozen_year`: query uses a rolling window without a frozen year
+- `PlatformDiscoveryTests.test_url_classification_keeps_platform_and_independent_evidence_distinct`: url classification keeps platform and independent evidence distinct
+- `PlatformDiscoveryTests.test_all_eight_platform_content_paths_are_registered`: all eight platform content paths are registered
+- `PlatformDiscoveryTests.test_stale_indexed_content_cannot_enter_live_awareness`: stale indexed content cannot enter live awareness
+- `PlatformDiscoveryTests.test_provider_search_interval_is_bounded_and_not_applied_to_free_feeds`: provider search interval is bounded and not applied to free feeds
+- `PlatformDiscoveryTests.test_provider_search_is_bounded_temporal_and_provenance_labeled`: provider search is bounded temporal and provenance labeled
+- `PlatformDiscoveryTests.test_search_results_deduplicate_content_hashes_across_distinct_urls`: search results deduplicate content hashes across distinct urls
+- `PlatformDiscoveryTests.test_search_provider_denial_is_explicit_and_secret_free`: search provider denial is explicit and secret free
+- `PlatformDiscoveryTests.test_empty_provider_result_is_a_successful_scan_not_a_fake_observation`: empty provider result is a successful scan not a fake observation
+- `PlatformDiscoveryTests.test_engine_records_empty_scan_as_healthy_without_fabricating_content`: engine records empty scan as healthy without fabricating content
+- `PlatformDiscoveryTests.test_provider_search_quota_survives_engine_recreation`: provider search quota survives engine recreation
+- `PlatformDiscoveryTests.test_deferred_no_result_scan_does_not_serve_expired_rows`: deferred no result scan does not serve expired rows
+- `PlatformDiscoveryTests.test_admin_matrix_distinguishes_configured_search_from_real_ingestion`: admin matrix distinguishes configured search from real ingestion
+- `PlatformDiscoveryTests.test_admin_source_status_route_requires_admin_authentication`: admin source status route requires admin authentication
+- `PlatformDiscoveryTests.test_discovery_provenance_survives_snapshot_but_never_enters_training`: discovery provenance survives snapshot but never enters training
+- `PlatformDiscoveryTests.test_legacy_search_provider_text_is_not_training_data_without_rights`: legacy search provider text is not training data without rights
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_profile_quality.py`
+
+test profile quality
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_profile_quality.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ProfileQualityTests.test_policy_defines_a_provisional_potential_band_not_exact_similarity`: policy defines a provisional potential band not exact similarity
+- `ProfileQualityTests.test_quality_assessment_accepts_potential_without_exact_match`: quality assessment accepts potential without exact match
+- `ProfileQualityTests.test_required_benchmark_factors_and_evidence_coverage_are_mandatory`: required benchmark factors and evidence coverage are mandatory
+- `ProfileQualityTests.test_missing_optional_metrics_are_not_imputed`: missing optional metrics are not imputed
+- `ProfileQualityTests.test_global_cohort_range_reports_distribution_without_profile_thresholds`: global cohort range reports distribution without profile thresholds
+- `ProfileQualityTests.test_observation_cohort_ranking_does_not_grade_profile_identity`: observation cohort ranking does not grade profile identity
+- `ProfileQualityTests.test_scores_below_floor_are_rejected_and_scores_above_preferred_stay_eligible`: scores below floor are rejected and scores above preferred stay eligible
+- `ProfileQualityTests.test_invalid_measurements_fail_explicitly`: invalid measurements fail explicitly
+- `ProfileQualityTests.test_engine_enforces_floor_and_ranks_by_match_potential`: engine enforces floor and ranks by match potential
+- `ProfileQualityTests.test_scored_profile_records_reach_snapshot_and_above_95_remains_eligible`: scored profile records reach snapshot and above 95 remains eligible
+- `NativeProfileObservatoryTests.test_searches_local_public_index_and_returns_global_quality_cohort`: searches local public index and returns global quality cohort
+- `NativeProfileObservatoryTests.test_custom_benchmark_must_be_a_public_youtube_video`: custom benchmark must be a public youtube video
+- `NativeProfileObservatoryTests.test_lexically_unrelated_items_are_not_reported_as_matches`: lexically unrelated items are not reported as matches
+- `NativeProfileObservatoryTests.test_local_search_includes_first_party_index_rows_not_independent_reports`: local search includes first party index rows not independent reports
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_public_access.py`
+
+Robots and authorization gates for native platform-page access.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_public_access.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PublicAccessTests.test_exact_eight_are_fail_closed_without_authorization`: exact eight are fail closed without authorization
+- `PublicAccessTests.test_platform_specific_terms_restrictions_are_visible`: platform specific terms restrictions are visible
+- `PublicAccessTests.test_youtube_robots_disallow_prevents_feed_access`: youtube robots disallow prevents feed access
+- `PublicAccessTests.test_robots_allow_is_not_a_terms_or_permission_grant`: robots allow is not a terms or permission grant
+- `PublicAccessTests.test_robots_network_or_parse_failure_fails_closed`: robots network or parse failure fails closed
+- `PublicAccessTests.test_wrong_platform_host_is_rejected_before_robots_request`: wrong platform host is rejected before robots request
+- `PublicAccessTests.test_invalid_port_is_rejected_without_leaking_parser_errors`: invalid port is rejected without leaking parser errors
+- `PublicAccessTests.test_cache_bounds_robots_traffic`: cache bounds robots traffic
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_source_review.py`
+
+Administrator review annotations are durable but never grant training rights.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_source_review.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `SourceReviewTests.test_inventory_lists_adapters_and_discovered_records_as_pending_without_snippets`: inventory lists adapters and discovered records as pending without snippets
+- `SourceReviewTests.test_approval_is_read_back_durable_and_does_not_change_rights`: approval is read back durable and does not change rights
+- `SourceReviewTests.test_concurrent_approval_reports_only_records_inserted_by_this_request`: concurrent approval reports only records inserted by this request
+- `SourceReviewTests.test_new_source_and_record_remain_unreviewed_after_prior_approval`: new source and record remain unreviewed after prior approval
+- `SourceReviewTests.test_admin_route_denies_unauthenticated_calls_and_confirms_durable_approval`: admin route denies unauthenticated calls and confirms durable approval
+- `SourceReviewTests.test_review_storage_failure_is_not_acknowledged`: review storage failure is not acknowledged
+- `SourceReviewTests.test_v1_ledger_is_migrated_to_v2_without_deleting_legacy_evidence`: v1 ledger is migrated to v2 without deleting legacy evidence
+- `SourceReviewTests.test_canonical_review_storage_uses_atomic_hash_insert_and_pinned_readback`: canonical review storage uses atomic hash insert and pinned readback
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py`
+
+test sources
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `SourceCoverageTests.test_youtube_feed_uses_safe_parser_and_real_view_count`: youtube feed uses safe parser and real view count
+- `SourceCoverageTests.test_youtube_feed_omits_stale_items_from_live_awareness`: youtube feed omits stale items from live awareness
+- `SourceCoverageTests.test_youtube_feed_rejects_entity_declarations`: youtube feed rejects entity declarations
+- `SourceCoverageTests.test_youtube_profile_candidates_keep_public_evidence_and_missing_factors`: youtube profile candidates keep public evidence and missing factors
+- `SourceCoverageTests.test_profile_source_status_covers_all_registry_platforms_honestly`: profile source status covers all registry platforms honestly
+- `SourceCoverageTests.test_profile_source_quality_is_reported_as_global_content_cohorts`: profile source quality is reported as global content cohorts
+- `SourceCoverageTests.test_profile_snapshot_reports_candidate_citation_and_missing_measurements`: profile snapshot reports candidate citation and missing measurements
+- `SourceCoverageTests.test_all_ten_original_feeds_are_retained_without_keys`: all ten original feeds are retained without keys
+- `SourceCoverageTests.test_inherited_search_credentials_enable_both_providers`: inherited search credentials enable both providers
+- `SourceCoverageTests.test_atom_editorial_feed_is_not_invented_engagement`: atom editorial feed is not invented engagement
+- `LandscapeSourceTests.test_landscape_feed_empty_without_endpoint`: landscape feed empty without endpoint
+- `LandscapeSourceTests.test_landscape_feed_rejects_unknown_kind`: landscape feed rejects unknown kind
+- `LandscapeSourceTests.test_landscape_feed_parses_fixture`: landscape feed parses fixture
+- `LandscapeSourceTests.test_landscape_feed_degrades_on_bad_payloads`: landscape feed degrades on bad payloads
+- `LandscapeSourceTests.test_configured_sources_registers_landscape`: configured sources registers landscape
+- `LandscapeSourceTests.test_configured_sources_omits_landscape_without_config`: configured sources omits landscape without config
+- `LandscapeSourceTests.test_trends_lines_format`: trends lines format
+- `PeakSourceTests.test_complete_public_content_actual_counts_and_canonical_citation`: complete public content actual counts and canonical citation
+- `PeakSourceTests.test_no_missing_fabricated_negative_boolean_or_nonfinite_counts`: no missing fabricated negative boolean or nonfinite counts
+- `PeakSourceTests.test_old_future_irrelevant_short_instructions_and_oversized_posts_excluded`: old future irrelevant short instructions and oversized posts excluded
+- `PeakSourceTests.test_flagged_and_noncanonical_public_record_addresses_excluded`: flagged and noncanonical public record addresses excluded
+- `PeakSourceTests.test_mastodon_only_public_recent_complete_measured_posts_are_peak`: mastodon only public recent complete measured posts are peak
+- `PeakSourceTests.test_mastodon_context_omits_empty_unsafe_or_unresolvable_observations`: mastodon context omits empty unsafe or unresolvable observations
+- `PeakSourceTests.test_mastodon_short_zero_counter_context_is_canonical_not_a_peak_example`: mastodon short zero counter context is canonical not a peak example
+- `PeakSourceTests.test_mastodon_peak_combines_actual_trending_and_topic_counters_deduplicated`: mastodon peak combines actual trending and topic counters deduplicated
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py`
+
+test director
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `StoryBibleTests.test_build_bible`: build bible
+- `StoryBibleTests.test_for_platform`: for platform
+- `AwarenessBusTests.test_snapshot`: snapshot
+- `AwarenessBusTests.test_for_platform`: for platform
+- `PlatformTests.test_all_platforms`: all platforms
+- `PlatformTests.test_tiktok_specific`: tiktok specific
+- `CriticTests.test_critique_social`: critique social
+- `CampaignDirectorTests.test_full_campaign`: full campaign
+- `CampaignDirectorTests.test_multi_platform`: multi platform
+- `IterativeLoopTests.test_loop_improves`: loop improves
+- `IterativeLoopTests.test_loop_handles_generation_failure`: loop handles generation failure
+- `ConfigTests.test_defaults`: defaults
+- `ConfigTests.test_env_override`: env override
+- `PersistenceTests.test_save_load_bible`: save load bible
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py`
+
+Campaign generation must not substitute the retired template composer.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CampaignFailClosedTests.test_campaign_reports_unavailable_backend_without_snapshot_gate`: campaign reports unavailable backend without snapshot gate
+- `CampaignFailClosedTests.test_bound_campaign_explicitly_reports_missing_learned_backend`: bound campaign explicitly reports missing learned backend
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py`
+
+Tests for the native SIMD kernel library.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_fallback_is_available_without_compiler`: fallback is available without compiler
+- `test_affine_relu_sq_correct`: affine relu sq correct
+- `test_hardswish_correct`: hardswish correct
+- `test_axpby_correct_and_shape_guard`: axpby correct and shape guard
+- `test_rmsnorm_rows_correct_and_guards`: rmsnorm rows correct and guards
+- `test_non_float32_input_routes_correctly`: non float32 input routes correctly
+- `test_silu_correct`: silu correct
+- `test_gelu_correct`: gelu correct
+- `test_softmax_rows_correct_and_guards`: softmax rows correct and guards
+- `test_layernorm_rows_correct_and_guards`: layernorm rows correct and guards
+- `test_row_kernels_empty_input_no_crash`: row kernels empty input no crash
+- `test_describe_never_claims_hardware`: describe never claims hardware
+- `test_compiler_cache_reuse`: compiler cache reuse
+- `test_never_raise_on_broken_cache_dir`: never raise on broken cache dir
+- `test_concurrent_same_key_compile_no_raise`: concurrent same key compile no raise
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py`
+
+Tests for the DigitalGPUBackend bridge methods: alloc/free/run_kernel.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_alloc_returns_usable_handle_and_free`: alloc returns usable handle and free
+- `test_alloc_rejects_negative`: alloc rejects negative
+- `test_alloc_rejects_fractional_size`: A fractional byte size must raise, not silently truncate.
+- `test_run_kernel_gemm_matches_numpy`: run kernel gemm matches numpy
+- `test_run_kernel_attention_matches_reference`: run kernel attention matches reference
+- `test_run_kernel_case_insensitive`: run kernel case insensitive
+- `test_run_kernel_refuses_fp8_sm102_kernel`: A hardware-implying name must raise, not silently run numpy.
+- `test_run_kernel_unknown_name_lists_supported`: run kernel unknown name lists supported
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py`
+
+Comprehensive tests for the digital GPU system.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestVRAM.test_alloc_returns_integer_handle`: alloc returns integer handle
+- `TestVRAM.test_alloc_non_ndarray_raises_type_error`: alloc non ndarray raises type error
+- `TestVRAM.test_get_returns_same_array`: get returns same array
+- `TestVRAM.test_get_invalid_handle_raises`: get invalid handle raises
+- `TestVRAM.test_meta_returns_shape_dtype_size`: meta returns shape dtype size
+- `TestVRAM.test_meta_invalid_handle_raises`: meta invalid handle raises
+- `TestVRAM.test_free_removes_handle`: free removes handle
+- `TestVRAM.test_handles_are_monotonically_increasing`: handles are monotonically increasing
+- `TestVRAM.test_free_nonexistent_handle_is_silent`: free nonexistent handle is silent
+- `TestSIMDCore.test_gemm_tiled_matches_numpy`: gemm tiled matches numpy
+- `TestSIMDCore.test_gemm_non_square_matches_numpy`: gemm non square matches numpy
+- `TestSIMDCore.test_gemm_1d_input_raises`: gemm 1d input raises
+- `TestSIMDCore.test_gemm_inner_dim_mismatch_raises`: gemm inner dim mismatch raises
+- `TestSIMDCore.test_add_correct`: add correct
+- `TestSIMDCore.test_add_shape_mismatch_raises`: add shape mismatch raises
+- `TestSIMDCore.test_add_dtype_mismatch_raises`: add dtype mismatch raises
+- `TestSIMDCore.test_softmax_rows_sum_to_one`: softmax rows sum to one
+- `TestSIMDCore.test_softmax_numerically_stable_large_values`: softmax numerically stable large values
+- `TestSIMDCore.test_softmax_axis_0`: softmax axis 0
+- `TestSIMDCore.test_attention_self_matches_reference`: attention self matches reference
+- `TestSIMDCore.test_attention_causal_masks_future`: attention causal masks future
+- `TestSIMDCore.test_attention_batched_higher_rank`: attention batched higher rank
+- `TestSIMDCore.test_attention_shape_mismatch_raises`: attention shape mismatch raises
+- `TestSIMDCore.test_attention_1d_raises`: attention 1d raises
+- `TestSIMDCore.test_gemm_bias_relu_nonnegative`: gemm bias relu nonnegative
+- `TestSIMDCore.test_gemm_bias_relu_matches_manual`: gemm bias relu matches manual
+- `TestSchedulerProgram.test_gemm_program_correct`: gemm program correct
+- `TestSchedulerProgram.test_add_program_correct`: add program correct
+- `TestSchedulerProgram.test_softmax_program_correct`: softmax program correct
+- `TestSchedulerProgram.test_multi_instruction_program_and_profile`: multi instruction program and profile
+- `TestSchedulerProgram.test_profile_opcode_names`: profile opcode names
+- `TestSchedulerProgram.test_bad_handle_raises_gpu_error`: bad handle raises gpu error
+- `TestDigitalGPUFunctional.test_gemm_matches_numpy`: gemm matches numpy
+- `TestDigitalGPUFunctional.test_add_matches_numpy`: add matches numpy
+- `TestDigitalGPUFunctional.test_softmax_sums_to_one`: softmax sums to one
+- `TestDigitalGPUFunctional.test_attention_shape_preserved`: attention shape preserved
+- `TestDigitalGPUFunctional.test_attention_causal_matches_reference`: attention causal matches reference
+- `TestDigitalGPUFunctional.test_gemm_bias_relu_nonneg`: gemm bias relu nonneg
+- `TestDigitalGPUFunctional.test_last_profile_populated_after_gemm`: last profile populated after gemm
+- `TestDigitalGPUFunctional.test_silicon_report_none_without_model`: silicon report none without model
+- `TestDigitalGPUHandleAPI.test_h_gemm_correct`: h gemm correct
+- `TestDigitalGPUHandleAPI.test_h_add_correct`: h add correct
+- `TestDigitalGPUHandleAPI.test_h_softmax_correct`: h softmax correct
+- `TestDigitalGPUHandleAPI.test_h_attention_shape`: h attention shape
+- `TestDigitalGPUHandleAPI.test_h_attention_causal`: h attention causal
+- `TestDigitalGPUHandleAPI.test_h_gemm_bias_relu_nonneg`: h gemm bias relu nonneg
+- `TestDigitalGPUHandleAPI.test_h_gemm_bad_handle_raises`: h gemm bad handle raises
+- `TestHyperVRAM.test_oom_raises_when_capacity_exceeded`: oom raises when capacity exceeded
+- `TestHyperVRAM.test_unlimited_capacity_accepts_large_array`: unlimited capacity accepts large array
+- `TestHyperVRAM.test_used_bytes_correct_after_alloc`: used bytes correct after alloc
+- `TestHyperVRAM.test_peak_bytes_tracks_high_water_mark`: peak bytes tracks high water mark
+- `TestHyperVRAM.test_flush_clears_all_handles`: flush clears all handles
+- `TestHyperVRAM.test_status_returns_expected_keys`: status returns expected keys
+- `TestMemoryPool.test_alloc_returns_id_and_array`: alloc returns id and array
+- `TestMemoryPool.test_get_returns_same_object`: get returns same object
+- `TestMemoryPool.test_get_invalid_handle_raises`: get invalid handle raises
+- `TestMemoryPool.test_free_reduces_current_bytes`: free reduces current bytes
+- `TestMemoryPool.test_peak_bytes_does_not_drop_on_free`: peak bytes does not drop on free
+- `TestMemoryPool.test_flush_returns_freed_bytes_and_clears`: flush returns freed bytes and clears
+- `TestMemoryPool.test_status_keys`: status keys
+- `TestMemoryPool.test_concurrent_alloc_free_no_crash`: concurrent alloc free no crash
+- `TestTensorCoreUnit.test_matmul_correct`: matmul correct
+- `TestTensorCoreUnit.test_matmul_increments_ops_and_flops`: matmul increments ops and flops
+- `TestTensorCoreUnit.test_mixed_precision_matmul_tolerance_from_precision_model`: mixed precision matmul tolerance from precision model
+- `TestTensorCoreUnit.test_mixed_precision_increments_flops_by_multiplier`: mixed precision increments flops by multiplier
+- `TestTensorCoreUnit.test_status_keys_and_types`: status keys and types
+- `TestHyperSIMDCore.test_tensor_core_gemm_correct`: tensor core gemm correct
+- `TestHyperSIMDCore.test_tensor_core_gemm_1d_raises`: tensor core gemm 1d raises
+- `TestHyperSIMDCore.test_tensor_core_gemm_inner_dim_mismatch_raises`: tensor core gemm inner dim mismatch raises
+- `TestHyperSIMDCore.test_tensor_core_gemm_increments_total_ops`: tensor core gemm increments total ops
+- `TestHyperSIMDCore.test_batched_gemm_3d_correct`: batched gemm 3d correct
+- `TestHyperSIMDCore.test_batched_gemm_2d_correct`: batched gemm 2d correct
+- `TestHyperSIMDCore.test_batched_gemm_inner_dim_mismatch_raises`: batched gemm inner dim mismatch raises
+- `TestHyperSIMDCore.test_mixed_precision_gemm_tolerance_from_precision_model`: mixed precision gemm tolerance from precision model
+- `TestHyperSIMDCore.test_mixed_precision_gemm_wrong_rank_raises`: mixed precision gemm wrong rank raises
+- `TestHyperSIMDCore.test_layer_norm_output_shape`: layer norm output shape
+- `TestHyperSIMDCore.test_layer_norm_zero_mean_unit_var`: layer norm zero mean unit var
+- `TestHyperSIMDCore.test_batch_norm_training_output_shape`: batch norm training output shape
+- `TestHyperSIMDCore.test_batch_norm_eval_without_running_stats_raises`: batch norm eval without running stats raises
+- `TestHyperSIMDCore.test_batch_norm_eval_with_running_stats`: batch norm eval with running stats
+- `TestHyperSIMDCore.test_gelu_shape_preserved`: gelu shape preserved
+- `TestHyperSIMDCore.test_gelu_matches_tanh_approximation`: gelu matches tanh approximation
+- `TestHyperSIMDCore.test_silu_shape_preserved`: silu shape preserved
+- `TestHyperSIMDCore.test_silu_matches_sigmoid_gate`: silu matches sigmoid gate
+- `TestHyperSIMDCore.test_conv3d_output_shape_no_padding`: conv3d output shape no padding
+- `TestHyperSIMDCore.test_conv3d_channel_mismatch_raises`: conv3d channel mismatch raises
+- `TestHyperSIMDCore.test_conv3d_wrong_rank_raises`: conv3d wrong rank raises
+- `TestHyperSIMDCore.test_grouped_gemm_all_correct`: grouped gemm all correct
+- `TestHyperSIMDCore.test_grouped_gemm_mismatched_count_raises`: grouped gemm mismatched count raises
+- `TestHyperSIMDCore.test_fused_attention_norm_shape`: fused attention norm shape
+- `TestHyperSIMDCore.test_fused_attention_norm_equals_attn_then_layernorm`: fused attention norm equals attn then layernorm
+- `TestHyperSIMDCore.test_status_has_expected_keys`: status has expected keys
+- `TestHyperGPU.test_attention_matches_flash`: attention matches flash
+- `TestHyperGPU.test_flash_attention_causal_differs_from_noncausal`: flash attention causal differs from noncausal
+- `TestHyperGPU.test_conv2d_output_shape`: conv2d output shape
+- `TestHyperGPU.test_conv3d_output_shape`: conv3d output shape
+- `TestHyperGPU.test_layer_norm_output_shape`: layer norm output shape
+- `TestHyperGPU.test_batch_norm_training_output_shape`: batch norm training output shape
+- `TestHyperGPU.test_gelu_shape_preserved`: gelu shape preserved
+- `TestHyperGPU.test_silu_shape_preserved`: silu shape preserved
+- `TestHyperGPU.test_softmax_sums_to_one`: softmax sums to one
+- `TestHyperGPU.test_add_correct`: add correct
+- `TestHyperGPU.test_grouped_gemm_all_correct`: grouped gemm all correct
+- `TestHyperGPU.test_fused_attention_norm_shape`: fused attention norm shape
+- `TestHyperGPU.test_flush_vram_no_crash`: flush vram no crash
+- `TestHyperGPU.test_silicon_report_none_without_model`: silicon report none without model
+- `TestHyperGPU.test_status_has_expected_keys`: status has expected keys
+- `TestHyperGPU.test_total_compute_ms_grows_after_ops`: total compute ms grows after ops
+- `TestHyperGPUGemmComputePath.test_gemm_matches_numpy_tight_tolerance`: gemm matches numpy tight tolerance
+- `TestHyperGPUGemmComputePath.test_mixed_gemm_tolerance_from_precision_model`: mixed gemm tolerance from precision model
+- `TestHyperGPUGemmComputePath.test_gemm_batched_matches_numpy_tight_tolerance`: gemm batched matches numpy tight tolerance
+- `TestPocketAcceleratorBehavior.test_first_call_is_miss_second_is_hit`: first call is miss second is hit
+- `TestPocketAcceleratorBehavior.test_stats_reflect_hit_and_miss`: stats reflect hit and miss
+- `TestPocketAcceleratorBehavior.test_different_values_produce_different_cache_entries`: different values produce different cache entries
+- `TestPocketAcceleratorBehavior.test_cached_value_is_numerically_identical_to_computed_value`: cached value is numerically identical to computed value
+- `TestPocketAcceleratorBehavior.test_disable_env_var_routes_all_calls_to_compute`: disable env var routes all calls to compute
+- `TestGPUClusterNode.test_initial_state_is_idle`: initial state is idle
+- `TestGPUClusterNode.test_assign_sets_busy`: assign sets busy
+- `TestGPUClusterNode.test_release_restores_idle`: release restores idle
+- `TestGPUClusterNode.test_status_has_expected_keys`: status has expected keys
+- `TestGPUCluster.test_num_nodes_correct`: num nodes correct
+- `TestGPUCluster.test_get_idle_node_returns_node`: get idle node returns node
+- `TestGPUCluster.test_get_idle_node_none_when_all_busy`: get idle node none when all busy
+- `TestGPUCluster.test_get_node_invalid_id_raises`: get node invalid id raises
+- `TestGPUCluster.test_all_reduce_gradients_averages`: all reduce gradients averages
+- `TestGPUCluster.test_all_reduce_empty_raises`: all reduce empty raises
+- `TestGPUCluster.test_scatter_data_splits_evenly`: scatter data splits evenly
+- `TestGPUCluster.test_gather_results_concatenates`: gather results concatenates
+- `TestGPUCluster.test_scatter_then_gather_roundtrip`: scatter then gather roundtrip
+- `TestGPUCluster.test_add_node_increments_count`: add node increments count
+- `TestGPUCluster.test_remove_node_decrements_count`: remove node decrements count
+- `TestGPUCluster.test_total_lanes_computed`: total lanes computed
+- `TestGPUCluster.test_total_tensor_cores_computed`: total tensor cores computed
+- `TestGPUCluster.test_flush_all_no_crash`: flush all no crash
+- `TestGPUCluster.test_status_has_expected_keys`: status has expected keys
+- `TestGPUCluster.test_run_distributed_correct`: run_distributed fans a lambda out across nodes and collects results.
+- `TestGPUCluster.test_run_distributed_correct_under_concurrency`: Four concurrent distributed jobs on disjoint node sets produce correct results.
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py`
+
+Regression tests for the redesigned HyperSIMDCore kernels.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_flash_matches_naive_self_attention`: flash matches naive self attention
+- `test_flash_cross_attention_tk_ne_tq`: flash cross attention tk ne tq
+- `test_flash_block_size_clamped_not_crashing`: flash block size clamped not crashing
+- `test_conv2d_preserves_input_dtype`: conv2d preserves input dtype
+- `test_conv2d_matches_naive_strided_padded`: conv2d matches naive strided padded
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_pocket_execution.py`
+
+Real small-kernel/inference checks; no checkpoints or training involved.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_pocket_execution.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_real_prefill_decode_use_life_not_idle_model_gpu`: real prefill decode use life not idle model gpu
+- `test_concurrent_shared_proxy_isolation`: concurrent shared proxy isolation
+- `test_nested_scope_and_exception_cleanup`: nested scope and exception cleanup
+- `test_async_scope_propagates_to_thread`: async scope propagates to thread
+- `test_cancel_during_allocation_retires_unclaimed_life`: cancel during allocation retires unclaimed life
+- `test_existing_storage_disk_adapter_persists_lifecycle`: existing storage disk adapter persists lifecycle
+- `test_storage_failure_fails_admission_without_fake_life`: storage failure fails admission without fake life
+- `test_kernel_errors_propagate_without_math_fallback`: kernel errors propagate without math fallback
+- `test_silicon_failure_does_not_abort_real_kernel`: silicon failure does not abort real kernel
+- `test_lossless_state_roundtrip_and_decode`: lossless state roundtrip and decode
+- `test_canonical_pdim_state_roundtrip`: canonical pdim state roundtrip
+- `test_canonical_recursive_capsules_survive_owner_reconstruction`: canonical recursive capsules survive owner reconstruction
+- `test_array_decoder_rejects_corrupt_shape`: array decoder rejects corrupt shape
+- `test_inplace_kv_decode_state_recovery`: inplace kv decode state recovery
+- `test_cancelled_worker_drains_before_retirement`: cancelled worker drains before retirement
+- `test_pool_compute_totals_include_active_and_retired_once`: pool compute totals include active and retired once
+- `test_state_write_failure_keeps_actual_retired_compute_totals`: state write failure keeps actual retired compute totals
+- `test_concurrent_active_metrics_survive_worker_retirement`: concurrent active metrics survive worker retirement
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py`
+
+Tests for the digital-silicon performance model and its wiring.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_report_is_labeled_estimate_not_measurement`: report is labeled estimate not measurement
+- `test_model_op_accumulates_estimates`: model op accumulates estimates
+- `test_gemm_routes_to_gemm_tile_attention_to_attention_tile`: gemm routes to gemm tile attention to attention tile
+- `test_simulate_drains_and_reports_cycles`: simulate drains and reports cycles
+- `test_attaching_silicon_does_not_change_digitalgpu_results`: attaching silicon does not change digitalgpu results
+- `test_attaching_silicon_does_not_change_hypergpu_results`: attaching silicon does not change hypergpu results
+- `test_mixed_gemm_with_silicon_does_not_crash`: mixed gemm with silicon does not crash
+- `test_concurrent_model_and_report_are_stable`: concurrent model and report are stable
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/image/test_controls.py`
+
+test controls
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/image/test_controls.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_dedicated_poster_dimensions_and_real_decode`: dedicated poster dimensions and real decode
+- `test_unsupported_is_not_a_poster`: unsupported is not a poster
+- `test_real_compact_poster_exports_exact_dimensions`: real compact poster exports exact dimensions
+- `test_compact_supplied_background_is_not_forced_through_typography`: compact supplied background is not forced through typography
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/image/test_image_contract.py`
+
+Lightweight regression checks: no model inference or GPU needed.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/image/test_image_contract.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_typographic_poster_still_renders_release_text`: typographic poster still renders release text
+- `test_artwork_only_without_rendered_background_fails`: artwork only without rendered background fails
+- `test_typography_fits_measured_width_and_rejects_unfittable_words`: typography fits measured width and rejects unfittable words
+- `test_rta_requires_subject_and_rejects_unrepresentable_scene`: rta requires subject and rejects unrepresentable scene
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py`
+
+Tests for the honest backend auto-selector (registry.select_backend).
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_default_selects_runnable_backend`: Default preference returns a backend that actually reports available.
+- `test_digital_gpu_host_falls_through_from_cuda`: On a host without CUDA, 'gpu' is unavailable so we get the Digital GPU backend.
+- `test_never_returns_unavailable_backend`: The selector must not hand back a backend whose is_available() is False.
+- `test_gpu_device_cpu_validation_path_is_selectable`: GPUBackend(device='cpu') is runnable (torch-CPU validation path).
+- `test_empty_preference_still_yields_digital_gpu_fallback`: Even with an empty preference, the guaranteed Digital GPU safety net kicks in.
+- `test_unknown_preference_is_skipped_not_fatal`: An unknown backend name is skipped; a valid one after it still wins.
+- `test_gpu_only_kwarg_still_falls_back_to_digital_gpu`: `device="cuda"` on a Digital GPU host: gpu is unavailable and the kwarg is rejected by the DigitalGPUBackend constructor, but the no-kwarg Digital GPU safety net still wins.
+- `test_unexpected_probe_fault_is_surfaced_not_masked`: A real fault in a backend's is_available() must propagate, not be silently downgraded to Digital GPU — an operational bug can't masquerade as 'no hardware'.
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_gpu_native.py`
+
+benchmark_gpu_native.py — honest, CPU-only performance report and regression gate for the digital GPU's kernel and orchestration layers.
+
+Status: **blocked**. Native kernel performance benchmark; separate opt-in performance experiment, not an assertion suite.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_gpu_native.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_vs_reference_gpu.py`
+
+benchmark_vs_reference_gpu.py — functional / same-parameter comparison between this project's own software GPU-native stack (``SiliconSimtBackend``, executing on this container's CPU) and the published specifications of a real, physical, currently-shipping GPU.
+
+Status: **blocked**. Native/reference CPU/GPU performance comparison; no calibrated GPU hardware in this environment.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/benchmark_vs_reference_gpu.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/endpoint_load_test.py`
+
+HTTP load / concurrency test for the live MaxCore generation endpoints.
+
+Status: **blocked**. Live endpoint load generator, not an offline unit suite; requires disposable operational model server.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/endpoint_load_test.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py`
+
+90M-scale concurrency smoke / load test for the MaxCore DigitalGPU stack.
+
+Status: **blocked**. 90M-scale CPU/concurrency benchmark; no bounded unit-test contract or isolated service fixture.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py`
+
+Tests for the from-scratch memory (VramPool) and orchestration (StreamScheduler) layers, and their integration into Runtime/DigitalGPU.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_pool_alloc_free_accounting`: pool alloc free accounting
+- `test_pool_bucket_reuse_does_not_grow_reservation`: pool bucket reuse does not grow reservation
+- `test_pool_oom_is_real_and_raised`: pool oom is real and raised
+- `test_pool_trim_reclaims_idle_slabs`: pool trim reclaims idle slabs
+- `test_pool_peak_tracking_survives_frees`: pool peak tracking survives frees
+- `test_pool_thread_safety_under_concurrent_alloc_free`: pool thread safety under concurrent alloc free
+- `test_assign_streams_keeps_dependency_chain_together`: assign streams keeps dependency chain together
+- `test_scheduler_produces_correct_results_for_diamond_graph`: scheduler produces correct results for diamond graph
+- `test_scheduler_achieves_real_wall_clock_overlap`: Proves genuine concurrency, not just non-crashing correctness: N independent sleeping nodes finish in roughly one sleep duration when given enough lanes, not N sleep durations.
+- `test_scheduler_propagates_error_without_hanging`: scheduler propagates error without hanging
+- `test_runtime_num_streams_does_not_change_numeric_result`: runtime num streams does not change numeric result
+- `test_runtime_frees_intermediate_tensors_but_not_outputs`: runtime frees intermediate tensors but not outputs
+- `test_runtime_vram_oom_propagates_through_graph_run`: runtime vram oom propagates through graph run
+- `test_smi_reports_backend_memory_and_streams`: smi reports backend memory and streams
+- `test_num_streams_env_var_default`: num streams env var default
+- `test_shm_tensor_payload_eligibility`: shm tensor payload eligibility
+- `test_shm_put_falls_back_when_not_tensor_or_arena_missing`: shm put falls back when not tensor or arena missing
+- `test_shm_fast_path_used_and_correct_for_large_tensors`: A graph run whose values are well above the 1MiB scratch floor must actually exercise the shared-memory arena (not silently fall back the whole time), and must still produce numerically correct results.
+- `test_shm_arena_grows_across_runs_and_stays_correct`: A pool that first runs a small graph, then a much larger one, must grow its arena rather than staying pinned to the first run's size -- and every value must still round-trip correctly across the resize.
+- `test_shm_shutdown_unlinks_arena_no_leak`: `shutdown()` must `unlink()` the arena it created -- leaving it behind would leak a real OS-level /dev/shm segment for every pool ever built.
+- `test_shm_alloc_bump_and_capacity_boundary`: shm alloc bump and capacity boundary
+- `test_shm_put_get_roundtrip_various_shapes_and_dtypes`: shm put get roundtrip various shapes and dtypes
+- `test_shm_put_falls_back_when_arena_is_full`: shm put falls back when arena is full
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py`
+
+Tests for the runtime thread/hardware configuration.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_single_worker_uses_all_cores`: single worker uses all cores
+- `test_reserve_cpus_for_scales_with_host_size`: reserve cpus for scales with host size
+- `test_reserve_cpus_for_rejects_invalid_cpus`: reserve cpus for rejects invalid cpus
+- `test_multi_worker_avoids_oversubscription`: multi worker avoids oversubscription
+- `test_reserve_keeps_cores_free`: reserve keeps cores free
+- `test_invalid_args_raise`: invalid args raise
+- `test_configure_respects_existing_then_overrides`: configure respects existing then overrides
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py`
+
+Tests for the MaxCore / DigitalGPU stack.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_ir_build_validate_hash`: ir build validate hash
+- `test_ir_rejects_undefined_input`: ir rejects undefined input
+- `test_compiler_fuses_gemm_add_relu`: compiler fuses gemm add relu
+- `test_compiler_cache_hit`: compiler cache hit
+- `test_gemm_matches_numpy`: gemm matches numpy
+- `test_attention_matches_reference`: attention matches reference
+- `test_conv2d_matches_naive`: conv2d matches naive
+- `test_reduce_ops`: reduce ops
+- `test_softmax_is_numerically_stable`: softmax is numerically stable
+- `test_text_to_mlp_end_to_end`: text to mlp end to end
+- `test_deterministic_run_repeatable`: deterministic run repeatable
+- `test_registry_and_future_backends_are_honest`: registry and future backends are honest
+- `test_gpu_backend_is_real_but_honest_without_hardware`: The gpu backend is a genuine torch implementation, not a stub. Without a CUDA device it reports unavailable and raises a clear, hardware-honest error (naming the missing device) instead of faking GPU compute on the Digital GPU engine.
+- `test_gpu_backend_reduce_parity_with_digital_gpu`: reduce() on the gpu backend must match DigitalGPUBackend for all ops and for multi-axis reductions (numpy supports tuple axes; torch's dim does not, so the backend folds them — this guards that parity).
+- `test_pdim_dedup_cache_hit`: pdim dedup cache hit
+- `test_pdim_single_flight_collapses_concurrent`: pdim single flight collapses concurrent
+- `test_pdim_durable_queue_roundtrip`: pdim durable queue roundtrip
+- `test_pdim_preview_policy_pluggable`: pdim preview policy pluggable
+- `test_batched_gemm_is_engine_served`: batched gemm is engine served
+- `test_softmax_any_axis_is_engine_served`: softmax any axis is engine served
+- `test_masked_multihead_attention_is_engine_served`: masked multihead attention is engine served
+- `test_pocket_matmul_correct_and_deduped_inside_one_pocket`: pocket matmul correct and deduped inside one pocket
+- `test_pocket_nesting_pockets_inside_one_pocket_are_isolated`: pocket nesting pockets inside one pocket are isolated
+- `test_pocket_matmul_batched_and_shape_errors`: pocket matmul batched and shape errors
+- `test_pocket_accelerator_hit_serves_repeat_at_hash_cost`: pocket accelerator hit serves repeat at hash cost
+- `test_pocket_accelerator_miss_result_mutation_cannot_poison_cache`: pocket accelerator miss result mutation cannot poison cache
+- `test_pocket_accelerator_adaptive_gating`: pocket accelerator adaptive gating
+- `test_pocket_accelerator_exposes_measured_admission_costs`: Task-170 step 3: hashing/lookup/copy/storage costs must be measured and exposed, not just implied by hit rate.
+- `test_pocket_bucket_admission_uses_measured_breakeven_not_just_hit_rate`: Task-170 step 3: 'admit reusable computations without charging one-shot work more than the compute it protects' — a pocket whose measured hash/lookup/store overhead is comparable to its own measured compute cost must be held to a stricter bar than the flat hit-rate floor, derived from those measured seconds. A pocket whose overhead is cheap relative to its (expensive) compute must NOT be over-muted — the static floor still governs there, unchanged from before.
+- `test_pocket_bucket_copy_cost_never_zerodivides_breakeven`: Degenerate edge case: if measured copy cost ever reached or exceeded measured compute+store (never expected for a real GEMM, where copying a result is far cheaper than computing it), the breakeven denominator would hit zero or go negative. `settle()` must skip the posterior adjustment for that call rather than raise ZeroDivisionError, and the pocket must fall back to the static floor, not the crash.
+- `test_digital_gpu_gemm_served_from_pocket_on_repeat`: digital gpu gemm served from pocket on repeat
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py`
+
+Tests for the precision/quantization numerics reference.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_quant_roundtrip_within_one_step`: quant roundtrip within one step
+- `test_int8_per_tensor_matmul_accurate`: int8 per tensor matmul accurate
+- `test_int4_per_channel_beats_per_tensor`: int4 per channel beats per tensor
+- `test_outliers_saturate_at_clip_boundary`: outliers saturate at clip boundary
+- `test_invalid_percentile_raises`: invalid percentile raises
+- `test_deterministic`: deterministic
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py`
+
+Tests for resource_plan.py — the CPU/memory/tile-size planning layer.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_planned_cpu_count_defaults_to_host`: planned cpu count defaults to host
+- `test_planned_cpu_count_override`: planned cpu count override
+- `test_planned_memory_bytes_default_is_positive`: planned memory bytes default is positive
+- `test_planned_memory_bytes_override`: planned memory bytes override
+- `test_effective_blas_threads_reads_own_process_env`: effective blas threads reads own process env
+- `test_effective_blas_threads_falls_back_to_reserved_single_stream_plan_when_unset`: effective blas threads falls back to reserved single stream plan when unset
+- `test_cache_budget_bytes_floor_and_ceiling`: cache budget bytes floor and ceiling
+- `test_cache_budget_bytes_mid_range_is_a_fraction_of_memory`: cache budget bytes mid range is a fraction of memory
+- `test_compute_resource_plan_synthetic_4_cpu_dev_profile`: compute resource plan synthetic 4 cpu dev profile
+- `test_compute_resource_plan_synthetic_8_cpu_profile`: compute resource plan synthetic 8 cpu profile
+- `test_compute_resource_plan_synthetic_16_cpu_production_profile`: compute resource plan synthetic 16 cpu production profile
+- `test_compute_resource_plan_defaults_num_streams_to_at_least_one`: compute resource plan defaults num streams to at least one
+- `test_gemm_tile_hint_reproduces_current_defaults_on_dev_host_threads`: gemm tile hint reproduces current defaults on dev host threads
+- `test_gemm_tile_hint_scales_up_boundedly`: gemm tile hint scales up boundedly
+- `test_gemm_tile_hint_handles_degenerate_input`: gemm tile hint handles degenerate input
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py`
+
+Correctness tests: SiliconSimtBackend vs. the reference DigitalGPUBackend / NumPy.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_gemm_matches_reference_small`: gemm matches reference small
+- `test_gemm_matches_reference_stft_shape`: Worst-realistic-case shape this backend must serve as the live default.
+- `test_gemm_bias_activation_variants`: gemm bias activation variants
+- `test_gemm_batched_and_vector_cases`: gemm batched and vector cases
+- `test_attention_plain`: attention plain
+- `test_attention_causal`: attention causal
+- `test_attention_masked`: attention masked
+- `test_conv2d_matches_reference`: conv2d matches reference
+- `test_conv2d_stride2_no_padding`: conv2d stride2 no padding
+- `test_mlp_matches_reference`: mlp matches reference
+- `test_softmax_matches_reference_multi_axis`: softmax matches reference multi axis
+- `test_reduce_all_ops`: reduce all ops
+- `test_add_and_relu`: add and relu
+- `test_default_backend_resolves_to_silicon_simt`: default backend resolves to silicon simt
+- `test_maxcore_backend_env_restores_legacy_engine`: maxcore backend env restores legacy engine
+- `test_explicit_backend_arg_overrides_env`: explicit backend arg overrides env
+- `test_registry_lists_silicon_simt`: registry lists silicon simt
+- `test_end_to_end_mlp_under_default_backend`: Mirrors a real caller: construct DigitalGPU() with no explicit backend (the default-unset path every confirmed call site uses) and run an op end to end through the facade.
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/model/test_generation_regressions.py`
+
+Small, checkpoint-free regressions for the live generation contracts.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/model/test_generation_regressions.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AttentionShapeTests.test_real_hypergpu_prefix_and_kv_logits_agree`: real hypergpu prefix and kv logits agree
+- `AttentionShapeTests.test_batched_prefill_and_decode_use_per_head_gpu_gemm`: batched prefill and decode use per head gpu gemm
+- `AttentionShapeTests.test_gpu_failure_is_not_masked_with_cpu_attention`: gpu failure is not masked with cpu attention
+- `GenerationContractTests.test_live_awareness_serves_without_candidate_only_with_fresh_snapshot`: live awareness serves without candidate only with fresh snapshot
+- `GenerationContractTests.test_released_word_vocab_is_not_encoded_as_untrained_bpe`: released word vocab is not encoded as untrained bpe
+- `GenerationContractTests.test_script_prompt_bounds_awareness_and_excludes_plan_transport`: script prompt bounds awareness and excludes plan transport
+- `GenerationContractTests.test_canonical_awareness_context_is_added_once`: canonical awareness context is added once
+- `GenerationContractTests.test_incompatible_tokenizer_and_lost_prompt_are_explicit`: incompatible tokenizer and lost prompt are explicit
+- `GenerationContractTests.test_warmup_prompt_selection_uses_only_checkpoint_tokens`: warmup prompt selection uses only checkpoint tokens
+- `GenerationContractTests.test_prompt_loss_guard_accepts_exactly_40_percent_and_rejects_more`: prompt loss guard accepts exactly 40 percent and rejects more
+- `GenerationContractTests.test_unnamed_checkpoint_head_rows_cannot_decode_as_unknown`: unnamed checkpoint head rows cannot decode as unknown
+- `GenerationContractTests.test_only_generated_tokens_are_returned`: only generated tokens are returned
+- `GenerationContractTests.test_script_failure_does_not_claim_awareness_as_model_output`: script failure does not claim awareness as model output
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/model/test_sampling_context.py`
+
+Focused request-local replay tests; tiny deterministic logits, no checkpoints.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/model/test_sampling_context.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `SamplingTests.test_replay_without_cache_and_independent_concurrent_rngs`: replay without cache and independent concurrent rngs
+- `SamplingTests.test_active_plan_attribute_and_effective_dictionary_seed`: active plan attribute and effective dictionary seed
+- `SamplingTests.test_coalesced_rows_do_not_share_random_stream`: coalesced rows do not share random stream
+- `SamplingTests.test_cache_identity_and_gpu_errors`: cache identity and gpu errors
+- `SamplingTests.test_invalid_seed_rejected`: invalid seed rejected
+- `SamplingTests.test_prefix_keys_bind_plan_and_checkpoint`: prefix keys bind plan and checkpoint
+- `SamplingTests.test_candidate_native_sampling_replays_concurrently`: candidate native sampling replays concurrently
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py`
+
+test text
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_counts_unicode_paragraphs_and_observed_tokens`: counts unicode paragraphs and observed tokens
+- `test_negation_is_auditable_and_inverts_lexical_match`: negation is auditable and inverts lexical match
+- `test_empty_text_has_explicit_non_applicable_readability`: empty text has explicit non applicable readability
+- `test_repeated_content_changes_keyword_and_ngram_measurements`: repeated content changes keyword and ngram measurements
+- `test_non_string_is_rejected_instead_of_coerced`: non string is rejected instead of coerced
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py`
+
+test website
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_extracts_actual_document_semantics_and_resolves_urls`: extracts actual document semantics and resolves urls
+- `test_visible_text_ignores_script_style_template_and_comments`: visible text ignores script style template and comments
+- `test_link_kinds_and_evidence_backed_issues`: link kinds and evidence backed issues
+- `test_malformed_html_and_empty_document_return_finite_envelopes`: malformed html and empty document return finite envelopes
+- `test_non_string_arguments_are_rejected_without_network_fallback`: non string arguments are rejected without network fallback
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py`
+
+Tests for Phase 4 — brand identity centroid, embedding cache, seeded-render dedupe, and the generated-asset ingestor.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_brand_centroid_mean`: brand centroid mean
+- `test_brand_centroid_replace_matches_rebuild`: brand centroid replace matches rebuild
+- `test_brand_centroid_survives_state_roundtrip`: brand centroid survives state roundtrip
+- `test_brand_centroid_remove_recomputes`: brand centroid remove recomputes
+- `test_embedding_cache_hit_and_copy`: embedding cache hit and copy
+- `test_embedding_cache_bypass`: embedding cache bypass
+- `test_seeded_render_reuses_file`: seeded render reuses file
+- `test_seeded_render_concurrent_dedupe`: seeded render concurrent dedupe
+- `test_ingestor_enqueue_dedupe_and_drain`: ingestor enqueue dedupe and drain
+- `test_ingestor_bad_path_retries_then_drops`: ingestor bad path retries then drops
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py`
+
+Tests for the retrieval real-asset pipeline (image features + anchor/seed library + gap ingestion). Renders REAL images via the in-house ImageEngine, so it is a slower integration test than test_retrieval.py.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_features_deterministic_and_dim`: features deterministic and dim
+- `test_seeded_render_is_idempotent_file`: seeded render is idempotent file
+- `test_features_total_on_garbage`: features total on garbage
+- `test_ensure_library_idempotent`: ensure library idempotent
+- `test_coverage_gate_healthy_after_library`: coverage gate healthy after library
+- `test_decode_scheme_valid`: decode scheme valid
+- `test_ingest_gaps_adds_real_asset`: ingest gaps adds real asset
+- `test_ingest_generated_asset`: ingest generated asset
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py`
+
+Tests for the live RCGS query path: the probe ring buffer, retrieval-conditioned background compositing, and the CoverageWatchdog's context-carrying probe handling.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_probes`: probes
+- `test_path_resolution`: path resolution
+- `test_condition_background`: condition background
+- `test_watchdog_probe_context`: watchdog probe context
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py`
+
+Tests for the retrieval spine (AssetIndex) and the self-healing CoverageWatchdog.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_cascade_rungs`: cascade rungs
+- `test_never_empty_when_nonempty`: never empty when nonempty
+- `test_totality`: totality
+- `test_determinism`: determinism
+- `test_coverage_gate`: coverage gate
+- `test_serialization_roundtrip`: serialization roundtrip
+- `test_watchdog_heals_missing_anchors`: watchdog heals missing anchors
+- `test_watchdog_enqueues_coverage_gaps`: watchdog enqueues coverage gaps
+- `test_watchdog_drains_via_ingestion`: watchdog drains via ingestion
+- `test_exact_key_replacement`: exact key replacement
+- `test_drain_atomic_no_loss`: drain atomic no loss
+- `test_drain_requeue_on_failure`: drain requeue on failure
+- `test_watchdog_check_isolation`: watchdog check isolation
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py`
+
+Regression tests for the RTA-1 fabric's strict correctness contracts.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_image_bytes_identical_across_processes`: Same inputs → byte-identical image across processes with different hash seeds.
+- `test_spectral_tail_reconstruction_non_hop_aligned`: The reconstructed tail of a non-hop-aligned clip is as accurate as the whole.
+- `test_fabric_self_test_all_mediums_and_gpu`: All three mediums render and the Digital-GPU GEMM counter increments.
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py`
+
+Mandatory-awareness compatibility tests; replaces obsolete retirement tests.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `FacadeTests.test_missing_snapshot_returns_empty_context_without_blocking`: missing snapshot returns empty context without blocking
+- `FacadeTests.test_bound_knowledge_does_not_retire_and_secondary_is_preserved`: bound knowledge does not retire and secondary is preserved
+- `FacadeTests.test_own_corpus_retires_external_awareness_at_configured_threshold`: own corpus retires external awareness at configured threshold
+- `FacadeTests.test_unavailable_corpus_never_claims_retirement`: unavailable corpus never claims retirement
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/test_ranker_upgrades.py`
+
+test ranker upgrades
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/test_ranker_upgrades.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ArcAwareLengthTests.test_three_act_body_not_penalized`: three act body not penalized
+- `ArcAwareLengthTests.test_thin_caption_still_loses_on_substance`: thin caption still loses on substance
+- `SingleAskTests.test_multi_ask_penalized`: multi ask penalized
+- `SingleAskTests.test_ask_count`: ask count
+- `HookDiversityTests.test_repeat_hook_penalized`: repeat hook penalized
+- `HookDiversityTests.test_near_duplicate_hook_penalized`: near duplicate hook penalized
+- `KeywordDensityTests.test_stuffed_caption_capped`: stuffed caption capped
+- `ScorerGateTests.test_lowercase_hook_penalized`: lowercase hook penalized
+- `TopicHygieneTests.test_instruction_fragments_stripped`: instruction fragments stripped
+- `TopicHygieneTests.test_real_topic_survives`: real topic survives
+- `PlatformResearchTests.test_platform_cta_bonus`: platform cta bonus
+- `PlatformResearchTests.test_platform_bonus_influences_ranking`: platform bonus influences ranking
+- `ComposeCaptionTests.test_compose_caption_end_to_end`: compose caption end to end
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/test_request_intelligence_trends.py`
+
+test request intelligence trends
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/test_request_intelligence_trends.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TrendBonusTests.test_trends_fold_into_directives`: trends fold into directives
+- `TrendBonusTests.test_bonus_scales_with_hits`: bonus scales with hits
+- `TrendBonusTests.test_generic_single_words_do_not_false_positive`: generic single words do not false positive
+- `TrendBonusTests.test_bonus_capped_at_five`: bonus capped at five
+- `TrendBonusTests.test_no_bonus_without_trend_directives`: no bonus without trend directives
+- `TrendBonusTests.test_score_candidate_applies_bonus`: score candidate applies bonus
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate.py`
+
+test candidate
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CandidateTests.test_byte_complete`: byte complete
+- `CandidateTests.test_manifest_controls`: manifest controls
+- `CandidateTests.test_fail_closed`: fail closed
+- `CandidateTests.test_real_autograd_matches_torch`: real autograd matches torch
+- `CandidateTests.test_embedding_tanh_loss_and_sgd`: embedding tanh loss and sgd
+- `CandidateTests.test_transformer_causal_and_trainable`: transformer causal and trainable
+- `CandidateTests.test_no_native_torch_training_kernels`: no native torch training kernels
+- `CandidateTests.test_benchmark_fails_closed_before_inference`: benchmark fails closed before inference
+- `CandidateTests.test_attention_and_layernorm_gradients`: attention and layernorm gradients
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_generic.py`
+
+Real bounded runtime evidence tests, NOT synthetic quality-approval fixtures.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_generic.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `GenericCandidateTests.test_actual_manifest_training_registry_and_adapter`: actual manifest training registry and adapter
+- `GenericCandidateTests.test_generic_training_rejects_unfrozen_or_tampered_inputs`: generic training rejects unfrozen or tampered inputs
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_manual.py`
+
+test candidate manual
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_manual.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CandidateManualTests.test_full_manual_backward_and_update_match_autograd`: full manual backward and update match autograd
+- `CandidateManualTests.test_sample_replay_controls_and_no_native_inference`: sample replay controls and no native inference
+- `CandidateManualTests.test_sampling_kernel_constraints`: sampling kernel constraints
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_live_learning.py`
+
+Contract tests cover rolling live-source admission and candidate isolation.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_live_learning.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `LiveLearningTests.test_actual_router_auth_and_validation`: actual router auth and validation
+- `LiveLearningTests.test_public_observations_are_awareness_only_without_exact_rights`: public observations are awareness only without exact rights
+- `LiveLearningTests.test_live_observation_set_never_reaches_trainer_without_rights`: live observation set never reaches trainer without rights
+- `LiveLearningTests.test_signed_internal_bundle_is_admitted_as_review_only_candidate`: signed internal bundle is admitted as review only candidate
+- `LiveLearningTests.test_candidate_registry_rechecks_operator_rights_manifest`: candidate registry rechecks operator rights manifest
+- `LiveLearningTests.test_empty_observation_cache_blocks_without_starting_training`: empty observation cache blocks without starting training
+- `LiveLearningTests.test_server_wires_real_admin_and_keeps_write_guard`: server wires real admin and keeps write guard
+- `LiveLearningTests.test_status_endpoint_is_authorized_and_does_not_expose_text`: status endpoint is authorized and does not expose text
+- `LiveLearningTests.test_invalid_reports_always_fail_closed_and_record_terminal_result`: invalid reports always fail closed and record terminal result
+- `LiveLearningTests.test_interrupted_worker_never_passes_registry_and_list_reconciles`: interrupted worker never passes registry and list reconciles
+- `LiveLearningTests.test_inherited_worker_lock_defers_reconciliation_until_worker_exit`: inherited worker lock defers reconciliation until worker exit
+- `LiveLearningTests.test_concurrent_admission_blocked`: concurrent admission blocked
+- `LiveLearningTests.test_timeout_and_failure_are_not_success`: timeout and failure are not success
+- `LiveLearningTests.test_real_smoke_training_measures_updates_but_is_not_live_eligible`: real smoke training measures updates but is not live eligible
+- `LiveLearningTests.test_worker_has_independent_timeout_and_inherits_global_lock`: worker has independent timeout and inherits global lock
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_public_content_model.py`
+
+test public content model
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/training/test_public_content_model.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PublicContentModelTests.test_manual_gradients`: manual gradients
+- `PublicContentModelTests.test_causality_checkpoint_sampling`: causality checkpoint sampling
+- `PublicContentModelTests.test_bounds`: bounds
+- `PublicContentModelTests.test_adamw_matches_reference_and_resumes`: adamw matches reference and resumes
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_controls.py`
+
+test controls
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_controls.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_real_procedural_clip_decodes`: real procedural clip decodes
+- `test_unsupported_video_fails`: unsupported video fails
+- `test_real_storyboard_preserves_total_frames`: real storyboard preserves total frames
+- `test_invalid_storyboard_rejected`: invalid storyboard rejected
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_duration_contract.py`
+
+Cheap duration/transition regression checks; no model or video inference.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_duration_contract.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `DurationContractTest.test_four_seconds_are_not_promoted_to_three_minimum_scenes`: four seconds are not promoted to three minimum scenes
+- `DurationContractTest.test_xfade_budget_and_reported_duration_are_measured`: xfade budget and reported duration are measured
+- `DurationContractTest.test_one_frame_short_video_is_not_reported_as_four_seconds`: one frame short video is not reported as four seconds
+- `DurationContractTest.test_xfade_filter_has_frame_budget_and_audio_trim`: xfade filter has frame budget and audio trim
+- `DurationContractTest.test_real_ffmpeg_video_stream_and_container_are_four_seconds`: Cheap 32px inputs expose final-packet / stream-duration errors.
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_frame_continuity.py`
+
+Actual encoded-frame checks plus isolated continuity orchestration tests.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_frame_continuity.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `FrameContinuityTests.test_direct_agent_seeds_first_scene_without_leaking_between_requests`: direct agent seeds first scene without leaking between requests
+- `FrameContinuityTests.test_exact_terminal_frame_at_low_and_high_frame_rates`: exact terminal frame at low and high frame rates
+- `FrameContinuityTests.test_missing_video_is_an_explicit_failure`: missing video is an explicit failure
+- `FrameContinuityTests.test_rolling_references_reach_each_scene_and_preserve_explicit_ones`: rolling references reach each scene and preserve explicit ones
+- `FrameContinuityTests.test_extraction_failure_stops_chain_and_cleans_partial_output`: extraction failure stops chain and cleans partial output
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_production.py`
+
+test production
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_production.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_invalid_production_rejected`: invalid production rejected
+- `test_metadata_omits_source_bytes_without_mutating_input`: metadata omits source bytes without mutating input
+- `test_real_composition_with_image_logo_music_and_exact_timing`: real composition with image logo music and exact timing
+- `test_requested_narration_never_silently_dropped`: requested narration never silently dropped
+- `test_real_narration_composition`: real narration composition
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_sampler_upgrades.py`
+
+test sampler upgrades
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/video/test_sampler_upgrades.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TrimTests.test_trims_at_last_clause_boundary`: trims at last clause boundary
+- `TrimTests.test_reported_dangling_cases`: reported dangling cases
+- `TrimTests.test_no_dangling_function_word`: no dangling function word
+- `TrimTests.test_short_text_untouched`: short text untouched
+- `DiversityTests.test_repeated_picks_diversify`: repeated picks diversify
+- `DiversityTests.test_recency_penalty_decays`: recency penalty decays
+- `ScenePhraseScoreTests.test_placeholder_count_matters`: placeholder count matters
+- `ScenePhraseScoreTests.test_one_tap_cta_bonus`: one tap cta bonus
+- `ScenePhraseScoreTests.test_arc_markers`: arc markers
+- `SampleScenesTests.test_sample_all_scenes_runs`: sample all scenes runs
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_admin_content_loop.py`
+
+test admin content loop
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_admin_content_loop.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AdminContentLoopTests.test_cycle_uses_available_snapshot_and_feeds_admin_flywheel`: cycle uses available snapshot and feeds admin flywheel
+- `AdminContentLoopTests.test_cycle_generates_and_feeds_flywheel_without_any_snapshot`: cycle generates and feeds flywheel without any snapshot
+- `AdminContentLoopTests.test_retired_corpus_skips_external_awareness_generation`: retired corpus skips external awareness generation
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_admin_training_identity.py`
+
+test admin training identity
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_admin_training_identity.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AdminTrainingIdentityTests.test_only_owner_admin_credential_grants_owner_training_identity`: only owner admin credential grants owner training identity
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py`
+
+Direct endpoint verification — tests every route on the model server (port 9878) and the api-server proxy (port 8080) with correct minimal payloads.
+
+Status: **blocked**. Mutates a live model server, including training/admin routes; requires a disposable server and explicit test credentials.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_artifact_delivery_contract.py`
+
+Real encoded file checks; isolated receipt transport exercises retry semantics.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_artifact_delivery_contract.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ArtifactDeliveryTests.test_actual_duration_and_scratch_retained_until_journal_saved`: actual duration and scratch retained until journal saved
+- `ArtifactDeliveryTests.test_specification_is_not_media`: specification is not media
+- `ArtifactDeliveryTests.test_retry_keeps_identity_and_bytes`: retry keeps identity and bytes
+- `ArtifactDeliveryTests.test_wrong_owner_or_digest_never_completes`: wrong owner or digest never completes
+- `ArtifactDeliveryTests.test_cancel_does_not_upload`: cancel does not upload
+- `ArtifactDeliveryTests.test_manager_saves_receipt_before_cleanup`: manager saves receipt before cleanup
+- `ArtifactDeliveryTests.test_cancelled_manager_cannot_publish_and_removes_scratch`: cancelled manager cannot publish and removes scratch
+- `ArtifactDeliveryTests.test_interrupted_commit_recovers_without_rendering`: interrupted commit recovers without rendering
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py`
+
+Focused integration checks for audio dataset auto-growth.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestAutoGrowthStateUpdates.test_state_updated_on_success`: state updated on success
+- `TestAutoGrowthStateUpdates.test_counter_increments_across_multiple_seeds`: counter increments across multiple seeds
+- `TestRateLimitThrottle.test_throttled_within_interval`: throttled within interval
+- `TestRateLimitThrottle.test_not_throttled_after_interval_expires`: not throttled after interval expires
+- `TestAlreadySeedingHandled.test_already_seeding_is_graceful`: already seeding is graceful
+- `TestAlreadySeedingHandled.test_concurrent_lock_held_no_raise`: Simulate the real lock being held by another thread.
+- `TestAboveThresholdSkipped.test_above_threshold_no_seed`: above threshold no seed
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py`
+
+Audio BPM/key match validation — end-to-end + unit tests.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestSelectAudioSample.test_exact_key_match_is_preferred`: When a track with the exact requested key exists it is chosen.
+- `TestSelectAudioSample.test_key_match_case_insensitive`: Key comparison is case-insensitive.
+- `TestSelectAudioSample.test_no_key_match_returns_false_and_warns`: When no track matches the key, key_matched=False and all tracks are eligible.
+- `TestSelectAudioSample.test_empty_key_request_does_not_trigger_fallback`: An empty/None requested key should not be treated as a key to match.
+- `TestSelectAudioSample.test_closest_bpm_wins_within_key_pool`: Within key-matched tracks the one with closest BPM is selected.
+- `TestSelectAudioSample.test_zero_bpm_in_index_is_deprioritised`: Entries with bpm=0 (estimation failed) rank last on BPM.
+- `TestSelectAudioSample.test_zero_bpm_in_index_used_when_only_option`: If ALL entries have bpm=0 the selector still returns one entry.
+- `TestSelectAudioSample.test_genre_match_breaks_bpm_tie`: A genre-matching track is preferred over an equally-close BPM track.
+- `TestSelectAudioSample.test_genre_match_case_and_hyphen_normalised`: Genre comparison normalises hyphens and case.
+- `TestSelectAudioSample.test_no_preferred_genres_ignores_genre_field`: When no preferred genres are given genre_score is always 0 (neutral).
+- `TestSelectAudioSample.test_single_entry_index`: single entry index
+- `TestSelectAudioSample.test_empty_index_raises`: empty index raises
+- `TestSelectAudioSample.test_tiebreak_by_idx`: When genre and BPM are identical, the lower idx wins (deterministic).
+- `TestAudioBpmKeyMatchE2E.test_returned_bpm_within_tolerance`: Applied BPM in the response should be within BPM_TOLERANCE of the request.
+- `TestAudioBpmKeyMatchE2E.test_key_match_present_in_dataset`: When the dataset contains a track with the requested key, no warning is emitted.
+- `TestAudioBpmKeyMatchE2E.test_key_not_in_dataset_surfaces_warning`: When the requested key is absent from the dataset, selection_warning is set.
+- `TestAudioBpmKeyMatchE2E.test_source_sample_metadata_present`: Response includes source_sample so producers can audit which track was used.
+- `TestAudioBpmKeyMatchE2E.test_audio_file_is_served`: The URL in the response must actually serve a file (HTTP 200).
+- `TestGenreNormalization.test_numeric_fma_ids_map_to_names`: numeric fma ids map to names
+- `TestGenreNormalization.test_numeric_strings_map_to_names`: numeric strings map to names
+- `TestGenreNormalization.test_unknown_ids_kept_as_strings`: unknown ids kept as strings
+- `TestGenreNormalization.test_names_lowercased_and_dehyphenated`: names lowercased and dehyphenated
+- `TestGenreNormalization.test_awareness_genre_matches_fma_id_track`: awareness genre matches fma id track
+- `TestMoodAffinity.test_mood_breaks_tie_toward_affinity`: mood breaks tie toward affinity
+- `TestMoodAffinity.test_genre_intent_outranks_mood`: genre intent outranks mood
+- `TestMoodAffinity.test_unknown_mood_is_noop`: unknown mood is noop
+- `TestMoodAffinity.test_mood_with_numeric_fma_genres`: mood with numeric fma genres
+- `TestNormalizeGenresMalformed.test_scalar_string_not_iterated_charwise`: scalar string not iterated charwise
+- `TestNormalizeGenresMalformed.test_scalar_int`: scalar int
+- `TestNormalizeGenresMalformed.test_none`: none
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_finishing.py`
+
+test audio finishing
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_finishing.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_real_ducking_follows_speech_and_recovers_between_phrases`: real ducking follows speech and recovers between phrases
+- `test_two_pass_master_is_measured_and_preserves_source_and_duration`: two pass master is measured and preserves source and duration
+- `test_silence_cannot_receive_a_finishing_certificate`: silence cannot receive a finishing certificate
+- `test_standalone_synthesis_preserves_requested_pcm_contract_when_mastered`: standalone synthesis preserves requested pcm contract when mastered
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_job_storage.py`
+
+test audio job storage
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_job_storage.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AudioJobStorageTests.test_cancel_endpoint_purges_owned_terminal_job_and_rejects_other_owner`: cancel endpoint purges owned terminal job and rejects other owner
+- `AudioJobStorageTests.test_cancel_endpoint_reports_cancellation_then_requires_worker_stop_before_purge`: cancel endpoint reports cancellation then requires worker stop before purge
+- `AudioJobStorageTests.test_cache_hit_is_copied_to_independent_job_owned_files`: cache hit is copied to independent job owned files
+- `AudioJobStorageTests.test_purge_removes_only_job_files_and_is_idempotent`: purge removes only job files and is idempotent
+- `AudioJobStorageTests.test_purge_rejects_foreign_urls_and_traversal_without_deleting_files`: purge rejects foreign urls and traversal without deleting files
+- `AudioJobStorageTests.test_materialization_failure_cleans_its_partial_copies`: materialization failure cleans its partial copies
+- `AudioJobStorageTests.test_materialization_rejects_symlinked_cache_source`: materialization rejects symlinked cache source
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py`
+
+Tests for the audio-generation seeding guard.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_is_seeding_false_when_idle`: is seeding false when idle
+- `test_is_seeding_true_while_lock_held`: is seeding true while lock held
+- `test_wait_logic_concept`: Verify the wait logic concept: poll until chunk appears or deadline passes. This exercises the same pattern used in _render_audio_from_dataset without importing the full server.
+- `test_wait_logic_timeout`: If no chunk appears within the deadline, the loop exits without finding data.
+- `test_seeding_now_in_status_response_shape`: _audio_dataset_status() (called by GET /storage/datasets/audio/status) must include a 'seeding_now' field.  We test the function signature by reading the source rather than importing the full server.
+- `test_seeding_in_progress_early_exit_present`: Verify that the /api/generate/audio handler contains the early-exit 503 + seeding_in_progress block.
+- `test_render_fn_wait_block_present`: Verify _render_audio_from_dataset contains the wait-for-chunk loop.
+- `test_is_seeding_probe_is_fast`: is_seeding() must return in well under 1 ms (it's a non-blocking lock try).
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_auto_selection.py`
+
+Selection policy; real signatures and artifact verification covered by integration.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_auto_selection.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AutomaticSelectionTests.test_best_reviewed_candidate_without_downgrade_or_protocol_swap`: best reviewed candidate without downgrade or protocol swap
+- `AutomaticSelectionTests.test_unsigned_submission_cannot_change_selection`: unsigned submission cannot change selection
+- `AutomaticSelectionTests.test_public_path_rejects_traditional_mixed_smoke_and_private_sources`: public path rejects traditional mixed smoke and private sources
+- `AutomaticSelectionTests.test_new_unusable_candidate_retains_operational_incumbent`: new unusable candidate retains operational incumbent
+- `AutomaticSelectionTests.test_durable_root_rejects_relative_or_symlink_paths`: durable root rejects relative or symlink paths
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py`
+
+Selector scheduling/cache checks; capability itself keeps real-agent guards.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `SelectionScalingTests.test_newest_beyond_first_hundred_and_peak_only`: newest beyond first hundred and peak only
+- `SelectionScalingTests.test_two_new_probes_per_tick_and_cached_failures_progress`: two new probes per tick and cached failures progress
+- `SelectionScalingTests.test_fresh_scans_do_not_starve_older_capable_candidate`: fresh scans do not starve older capable candidate
+- `SelectionScalingTests.test_cache_binds_checkpoint_report_certificate_configuration_budget`: cache binds checkpoint report certificate configuration budget
+- `SelectionScalingTests.test_requested_peak_never_falls_back_to_reviewed_selection`: requested peak never falls back to reviewed selection
+- `SelectionScalingTests.test_operational_cache_is_scoped_to_the_actual_live_scan`: operational cache is scoped to the actual live scan
+- `SelectionScalingTests.test_missing_scan_is_not_cached_as_a_checkpoint_failure`: missing scan is not cached as a checkpoint failure
+- `SelectionScalingTests.test_deadline_interrupts_actual_kernel_generation`: deadline interrupts actual kernel generation
+- `SelectionScalingTests.test_retained_returns_only_validated_matching_policy_identity`: retained returns only validated matching policy identity
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py`
+
+Awareness layer + content quality rating tests — digital GPU integration.
+
+Status: **blocked**. Requires a running generation-capable isolated MaxCore model server; live quality is not established by fixtures.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_awareness_quality_status`: awareness quality status
+- `test_awareness_self_sufficiency_formula`: buffer_weight must equal max(0, 1 - own_corpus / retire_threshold).
+- `test_awareness_status_fields_types`: awareness status fields types
+- `test_awareness_plain_string`: Plain string awareness passes through unchanged.
+- `test_awareness_structured_object`: Structured awareness {contextString, trendingGenres} must be normalised by _AwarenessMixin.
+- `test_awareness_empty_string_still_works`: Empty awareness must not crash generation.
+- `test_awareness_structured_empty_contextstring`: Structured awareness with empty contextString gracefully degrades.
+- `test_awareness_instruction_field`: instruction field feeds into awareness_from_direction as [HIGH] signals.
+- `test_awareness_content_themes`: content_themes feed into awareness_from_direction as bullet context.
+- `test_awareness_extra_context`: extra_context appended after instruction in the awareness pipeline.
+- `test_awareness_changes_output`: Same topic and platform with vs. without awareness must not produce identical captions. (Exact match would mean awareness is being ignored.)
+- `test_awareness_conditioning_quality_delta`: Awareness-conditioned output must produce valid scored output on both paths. Uses clean ASCII-only awareness strings to avoid unicode token fusion (known edge: non-ASCII chars in awareness can bleed into output and trip the garble guard — see idea-awareness-field-separation in memory).
+- `test_plain_awareness_used_and_intent_lines_never_leak`: Regression guards for the intent↔awareness synchronization work: 1. Plain (unprefixed) caller awareness must still influence output even    though the platform quality buffer always supplies [HIGH] signals    (previously the buffer drowned caller lines → awareness was a no-op). 2. Machine-readable [INTENT] key=value lines must NEVER leak verbatim    into user-facing hook/body/cta/caption text.
+- `test_awareness_multi_layer_live_signals`: Combined live signals + brand direction produces valid, non-garbled output.
+- `test_awareness_across_modalities_social`: awareness across modalities social
+- `test_awareness_across_modalities_video`: awareness across modalities video
+- `test_awareness_across_modalities_ads`: awareness across modalities ads
+- `test_quality_score_valid_range`: score_candidate must return a value in [0, 100] for typical responses.
+- `test_quality_no_garbled_output`: No content/generate response should trigger the garbled guard.
+- `test_quality_hook_non_empty`: hook field must be a non-empty string on every content/generate call.
+- `test_quality_cta_presence`: At least 80% of content responses should include a recognisable CTA.
+- `test_quality_viral_score_range`: viral_score must be in [0, 1] for all generated content.
+- `test_quality_source_field`: source should be 'model' when HyperGPU is powering inference.
+- `test_quality_processing_time_nonzero`: processing_time_ms must be > 0 when model inference ran.
+- `test_predict_engagement_viral_potential`: predict engagement viral potential
+- `test_predict_engagement_viral_potential_long_hook`: Content with a longer hook should produce higher hook_power → higher viral score.
+- `test_predict_engagement_best_time`: predict engagement best time
+- `test_predict_engagement_recommend_type`: predict engagement recommend type
+- `test_predict_engagement_confidence_range`: confidence must be in [0, 1] for all actions.
+- `test_variant_distinctness_social`: Multi-variant social generation: consecutive variants must not be byte-for-byte identical (Jaccard < 1.0).  We accept high lexical overlap at this model training stage — the important signal is that the server is not returning the exact same string for every slot. Ideal target is Jaccard < 0.85; we assert < 1.0 as the hard floor and print a warning when similarity exceeds 0.85 so it shows up in the quality log as a known model-maturity metric.
+- `test_variant_distinctness_content_platform`: Same content request across different platforms should yield platform-adapted output.
+- `test_platform_tiktok_hook_length`: TikTok hooks under 80 chars achieve hook_power = 1.0. Server formula: hook_power = min(1.0, len(hook)/80). We verify the hook is non-empty and score accordingly.
+- `test_platform_instagram_hashtags`: Instagram content with include_hashtags=True must return hashtags.
+- `test_platform_youtube_body_length`: YouTube descriptions benefit from longer body copy.
+- `test_platform_twitter_brevity`: Twitter/X content should produce a concise output.
+- `test_garble_guard_all_platforms`: Run content/generate for 6 platform+topic combos and assert none of the returned captions trigger looks_garbled().
+- `test_analyze_returns_intent_confidence`: analyze returns intent confidence
+- `test_analyze_url_modality_with_awareness`: analyze url modality with awareness
+- `test_awareness_layered_daw`: DAW generation with awareness should produce non-garbled lyric/hook.
+- `test_quality_leaderboard_content_types`: Generate one piece across all major content types. Every piece must: score > 0, not garbled, have non-empty hook or caption. Final leaderboard printed in summary.
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py`
+
+Tests for the expanded AwarenessConditioner vocab.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_no_duplicates`: no duplicates
+- `test_vocab_size_at_least_120`: vocab size at least 120
+- `test_new_platforms_in_vocab`: new platforms in vocab
+- `test_new_genres_in_vocab`: new genres in vocab
+- `test_new_production_terms_in_vocab`: new production terms in vocab
+- `test_new_mood_terms_in_vocab`: new mood terms in vocab
+- `test_new_visual_terms_in_vocab`: new visual terms in vocab
+- `test_amapiano_fires`: amapiano fires
+- `test_bluesky_fires`: bluesky fires
+- `test_threads_fires`: threads fires
+- `test_grime_fires`: grime fires
+- `test_synthwave_fires`: synthwave fires
+- `test_neon_aesthetic_fires`: neon aesthetic fires
+- `test_empty_awareness_is_zero`: empty awareness is zero
+- `test_unrecognised_term_is_zero`: A completely novel term not in VOCAB produces no signal (not a crash).
+- `test_high_signal_upweights`: high signal upweights
+- `test_high_upweight_capped_at_2`: high upweight capped at 2
+- `test_output_shape`: output shape
+- `test_deterministic`: deterministic
+- `test_different_awareness_different_tensor`: different awareness different tensor
+- `test_novel_term_shifts_tensor`: Adding a previously-absent vocab term must measurably shift the output.
+- `test_platform_term_shifts_tensor`: threads / bluesky (new platforms) must shift the tensor.
+- `test_detect_amapiano`: detect amapiano
+- `test_detect_city_pop`: detect city pop
+- `test_detect_grime`: detect grime
+- `test_detect_gospel`: detect gospel
+- `test_detect_synthwave`: detect synthwave
+- `test_detect_bedroom`: detect bedroom
+- `test_explicit_genre_wins`: explicit genre wins
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_batching_bootstrap_metadata.py`
+
+Batching metadata must not turn infrastructure startup into inference.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_batching_bootstrap_metadata.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `BatchingBootstrapMetadata.test_unavailable_model_metadata_does_not_require_a_release`: unavailable model metadata does not require a release
+- `BatchingBootstrapMetadata.test_saved_instance_callable_is_preserved_without_delegating`: saved instance callable is preserved without delegating
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py`
+
+Beat-marketplace conditioning — regression guards.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_purchase_goal_aliases_to_conversion`: purchase goal aliases to conversion
+- `test_beat_context_awareness_lines_parse`: beat context awareness lines parse
+- `test_beat_context_never_raises_and_sanitizes`: beat context never raises and sanitizes
+- `test_purchase_cta_anchors`: purchase cta anchors
+- `test_platform_constraints`: platform constraints
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py`
+
+Real rollout assembly with a controlled inference boundary and public scan.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_unverified_release_keeps_all_slots_without_invented_milestones`: unverified release keeps all slots without invented milestones
+- `test_multiplatform_campaign_keeps_normalized_names_and_actual_sections`: multiplatform campaign keeps normalized names and actual sections
+- `test_backend_provenance_failure_never_substitutes_complete_template`: backend provenance failure never substitutes complete template
+- `test_backend_exception_aborts_whole_campaign_without_leaking_plan`: backend exception aborts whole campaign without leaking plan
+- `test_unverified_metrics_links_and_marketing_claims_fail_explicitly`: unverified metrics links and marketing claims fail explicitly
+- `test_invalid_campaign_controls_fail_before_any_backend_call`: invalid campaign controls fail before any backend call
+- `test_failed_optional_asset_is_explicit_without_inventing_delivery`: failed optional asset is explicit without inventing delivery
+- `test_actual_script_agent_runs_under_unique_slot_plans_and_one_public_scan`: actual script agent runs under unique slot plans and one public scan
+- `test_specification_or_unsafe_asset_identifiers_never_count_as_generated_images`: specification or unsafe asset identifiers never count as generated images
+- `test_expired_inherited_budget_blocks_inference_and_preserves_context`: expired inherited budget blocks inference and preserves context
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_candidate_utf8.py`
+
+Encoding constraints are not language-quality claims or output repairs.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_candidate_utf8.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `Utf8GenerationTests.test_allowed_bytes_match_independent_python_decoder`: allowed bytes match independent python decoder
+- `Utf8GenerationTests.test_budget_cannot_start_an_incomplete_character`: budget cannot start an incomplete character
+- `Utf8GenerationTests.test_unicode_boundaries_roundtrip_without_replacement`: unicode boundaries roundtrip without replacement
+- `Utf8GenerationTests.test_backend_masks_before_argmax_and_nucleus_selection`: backend masks before argmax and nucleus selection
+- `Utf8GenerationTests.test_real_legacy_and_incremental_generation_return_strict_utf8`: real legacy and incremental generation return strict utf8
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_checkpoint_release.py`
+
+test checkpoint release
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_checkpoint_release.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CheckpointReleaseTests.test_materializes_verified_source_once_even_with_concurrent_preparers`: materializes verified source once even with concurrent preparers
+- `CheckpointReleaseTests.test_reuses_lfs_cache_without_rewriting_tracked_pointer`: reuses lfs cache without rewriting tracked pointer
+- `CheckpointReleaseTests.test_pointer_only_checkout_is_actionable_and_never_creates_weights`: pointer only checkout is actionable and never creates weights
+- `CheckpointReleaseTests.test_bad_active_checkpoint_is_preserved_and_rejected`: bad active checkpoint is preserved and rejected
+- `CheckpointReleaseTests.test_supplied_artifact_requires_the_same_release_digest`: supplied artifact requires the same release digest
+- `CheckpointReleaseTests.test_manifest_must_bind_to_its_git_pointer`: manifest must bind to its git pointer
+- `CheckpointReleaseTests.test_missing_bytes_block_before_model_or_gpu_allocation`: missing bytes block before model or gpu allocation
+- `CheckpointReleaseTests.test_verified_archive_loads_complete_tensor_state_for_numerical_execution`: verified archive loads complete tensor state for numerical execution
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_content_breakpoints.py`
+
+Failure-boundary tests: invalid requests must stop before expensive work.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_content_breakpoints.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_text_limits_include_ellipsis_and_unbroken_tokens`: text limits include ellipsis and unbroken tokens
+- `test_final_caption_respects_short_limit_even_with_long_hook`: final caption respects short limit even with long hook
+- `test_extreme_integer_is_a_validation_error_not_overflow`: extreme integer is a validation error not overflow
+- `test_image_rejects_malformed_controls_before_rendering`: image rejects malformed controls before rendering
+- `test_audio_rejects_malformed_or_overbudget_requests_before_synthesis`: audio rejects malformed or overbudget requests before synthesis
+- `test_video_rejects_malformed_or_overbudget_requests_before_encoding`: video rejects malformed or overbudget requests before encoding
+- `test_oversized_source_image_rejected_without_allocating_full_pixels`: oversized source image rejected without allocating full pixels
+- `test_nonfinite_synth_output_never_written`: nonfinite synth output never written
+- `test_valid_wav_header_does_not_hide_silence_or_dc_output`: valid wav header does not hide silence or dc output
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py`
+
+Content endpoint tests — digital GPU integration.
+
+Status: **blocked**. Requires a running generation-capable isolated MaxCore model server; includes media generation.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_health`: health
+- `test_gpu_hyper_status`: gpu hyper status
+- `test_model_status`: model status
+- `test_platform_model_info`: platform model info
+- `test_content_generate_tiktok`: content generate tiktok
+- `test_content_generate_instagram`: content generate instagram
+- `test_content_generate_youtube`: content generate youtube
+- `test_content_generate_has_processing_time`: content generate has processing time
+- `test_platform_social_instagram`: platform social instagram
+- `test_platform_social_tiktok_variants`: platform social tiktok variants
+- `test_platform_social_twitter`: platform social twitter
+- `test_platform_daw_lyrics`: platform daw lyrics
+- `test_platform_daw_hook`: platform daw hook
+- `test_platform_daw_beat_description`: platform daw beat description
+- `test_platform_distribution_plan`: platform distribution plan
+- `test_platform_video_youtube`: platform video youtube
+- `test_platform_video_tiktok_vertical`: platform video tiktok vertical
+- `test_analyze_text`: analyze text
+- `test_analyze_text_sentiment`: analyze text sentiment
+- `test_analyze_url_modality`: analyze url modality
+- `test_generate_text_content_mode`: generate text content mode
+- `test_generate_text_planner_mode`: generate text planner mode
+- `test_generate_audio`: generate audio
+- `test_generate_image`: generate image
+- `test_generate_video`: generate video
+- `test_ads_generate_meta`: ads generate meta
+- `test_ads_generate_tiktok`: ads generate tiktok
+- `test_pocket_multiply_2x2`: pocket multiply 2x2
+- `test_pocket_multiply_3x3`: pocket multiply 3x3
+- `test_pocket_multiply_dedup`: Same operands → second call should be served from cache.
+- `test_pocket_accelerator_stats`: pocket accelerator stats
+- `test_social_autopilot`: social autopilot
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py`
+
+Handler/legacy body contracts, distinct from real media route admission.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_ads_meta_uses_social_awareness_but_keeps_network_identity`: ads meta uses social awareness but keeps network identity
+- `test_ad_script_uses_agent_run_and_exposes_source`: ad script uses agent run and exposes source
+- `test_ad_script_failure_is_not_disguised_as_template`: ad script failure is not disguised as template
+- `test_ad_awareness_fallback_is_not_claimed_as_generated`: ad awareness fallback is not claimed as generated
+- `test_campaign_passes_platform_specific_awareness_to_builder`: campaign passes platform specific awareness to builder
+- `test_studio_soundtrack_deadline_covers_admission_and_render`: studio soundtrack deadline covers admission and render
+- `test_internal_model_and_health_listeners_are_loopback_only`: internal model and health listeners are loopback only
+- `test_requested_pathtrace_passes_subject_and_rejects_unsupported`: requested pathtrace passes subject and rejects unsupported
+- `test_soundtrack_passes_genre_mood_and_intent_to_isolated_renderer`: soundtrack passes genre mood and intent to isolated renderer
+- `test_dataset_audio_reports_bytes_and_targets_not_invented_measurements`: dataset audio reports bytes and targets not invented measurements
+- `test_model_script_guard_rejects_template_and_awareness`: model script guard rejects template and awareness
+- `test_generic_content_rejects_stale_cached_awareness`: generic content rejects stale cached awareness
+- `test_api_content_rejects_cached_fake_score`: api content rejects cached fake score
+- `test_api_text_rejects_legacy_cached_score`: api text rejects legacy cached score
+- `test_api_content_fresh_copy_is_model_text_without_fake_scores`: api content fresh copy is model text without fake scores
+- `test_alias_media_bodies_mark_asset_identifiers_as_specs`: alias media bodies mark asset identifiers as specs
+- `test_live_awareness_media_routes_reject_ownerless_jobs_before_rendering`: live awareness media routes reject ownerless jobs before rendering
+- `test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool`: audio explicit direction reaches synth and avoids genre pool
+- `test_audio_synth_receives_actual_instrument_and_prompt`: audio synth receives actual instrument and prompt
+- `test_audio_reference_body_rejects_unfulfillable_piano_direction`: audio reference body rejects unfulfillable piano direction
+- `test_audio_internal_body_caller_mood_and_targets_beat_fast_priors`: audio internal body caller mood and targets beat fast priors
+- `test_daw_and_social_model_failures_are_service_unavailable`: daw and social model failures are service unavailable
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_dedicated_media_http.py`
+
+Real procedural artifacts through actual ASGI admission and private delivery.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_dedicated_media_http.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `DedicatedMediaHTTP.test_real_image_audio_video_artifacts_without_language_checkpoint`: real image audio video artifacts without language checkpoint
+- `DedicatedMediaHTTP.test_raw_video_alias_runs_the_same_explicit_procedural_contract`: raw video alias runs the same explicit procedural contract
+- `DedicatedMediaHTTP.test_production_composition_uses_owner_scoped_durable_delivery`: production composition uses owner scoped durable delivery
+- `DedicatedMediaHTTP.test_legacy_checkpoint_generation_stays_blocked_without_candidate`: legacy checkpoint generation stays blocked without candidate
+- `DedicatedMediaHTTP.test_missing_or_stale_awareness_never_dispatches_a_renderer`: missing or stale awareness never dispatches a renderer
+- `DedicatedMediaHTTP.test_semantic_controls_and_unrelated_routes_cannot_select_procedural_success`: semantic controls and unrelated routes cannot select procedural success
+- `DedicatedMediaHTTP.test_real_private_owner_middleware_blocks_spoofed_or_missing_identity`: real private owner middleware blocks spoofed or missing identity
+- `DedicatedMediaHTTP.test_video_audio_references_are_resolved_only_for_the_private_owner`: video audio references are resolved only for the private owner
+- `DedicatedMediaHTTP.test_video_muxes_a_real_owner_upload_but_rejects_other_owner_and_symlink`: video muxes a real owner upload but rejects other owner and symlink
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_checkpoints.py`
+
+Checkpoint lifecycle tests, not evidence of learned visual quality.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_checkpoints.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `DiffusionCheckpointTests.test_diffusion_honors_model_state_configuration`: diffusion honors model state configuration
+- `DiffusionCheckpointTests.test_absent_checkpoints_block_inference_without_allocating_models`: absent checkpoints block inference without allocating models
+- `DiffusionCheckpointTests.test_training_initialization_cannot_generate`: training initialization cannot generate
+- `DiffusionCheckpointTests.test_serving_refreshes_published_weights_without_mutating_old_requests`: serving refreshes published weights without mutating old requests
+- `DiffusionCheckpointTests.test_continuously_changing_checkpoints_never_publish_a_mixed_snapshot`: continuously changing checkpoints never publish a mixed snapshot
+- `DiffusionCheckpointTests.test_readiness_distinguishes_bundle_presence_from_training_evidence`: readiness distinguishes bundle presence from training evidence
+- `DiffusionCheckpointTests.test_atomic_bundle_roundtrip_preserves_all_components_and_eval_mode`: atomic bundle roundtrip preserves all components and eval mode
+- `DiffusionCheckpointTests.test_invalid_reload_does_not_replace_any_live_component`: invalid reload does not replace any live component
+- `DiffusionCheckpointTests.test_failed_save_keeps_previous_bundle_and_removes_temporary_files`: failed save keeps previous bundle and removes temporary files
+- `DiffusionCheckpointTests.test_nonfinite_parameters_and_unknown_schema_are_rejected`: nonfinite parameters and unknown schema are rejected
+- `DiffusionCheckpointTests.test_legacy_set_requires_all_parameters`: legacy set requires all parameters
+- `DiffusionCheckpointTests.test_serving_errors_are_not_converted_to_empty_frames`: serving errors are not converted to empty frames
+- `DiffusionCheckpointTests.test_request_inputs_reach_conditioner_alongside_live_context`: request inputs reach conditioner alongside live context
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py`
+
+Regression guard: get_diffusion_frame must denoise at native resolution.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_output_matches_requested_dimensions`: output matches requested dimensions
+- `test_generate_called_at_native_resolution`: The heavy generate() must receive resolution=RESOLUTION, never max(w,h).
+- `test_hi_res_request_stays_fast`: A 1920-tall request must cost ~native-res time (was ~28s pre-fix).
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py`
+
+Offline stack contracts: no server startup, storage, weights, or training.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_executor_propagates_isolated_request_context`: executor propagates isolated request context
+- `test_executor_cancellation_waits_for_actual_worker_exit`: executor cancellation waits for actual worker exit
+- `test_literal_direction_composes_real_model_without_claiming_raw_provenance`: literal direction composes real model without claiming raw provenance
+- `test_awareness_prompt_does_not_invent_checkpoint_special_tokens`: awareness prompt does not invent checkpoint special tokens
+- `test_prompt_keeps_user_words_and_punctuation_without_fabricated_suffixes`: prompt keeps user words and punctuation without fabricated suffixes
+- `test_composition_provenance_allowed_but_templates_still_rejected`: composition provenance allowed but templates still rejected
+- `test_planner_routes_all_documented_modalities_without_claiming_model`: planner routes all documented modalities without claiming model
+- `test_planner_topic_shorthand_retains_request_and_builds_real_slot`: planner topic shorthand retains request and builds real slot
+- `test_social_profile_identity_reaches_inference_without_fabricated_fetch`: social profile identity reaches inference without fabricated fetch
+- `test_profile_identity_never_turns_private_or_post_urls_into_claimed_content`: profile identity never turns private or post urls into claimed content
+- `test_video_checkpoint_unavailable_maps_to_503_not_500`: video checkpoint unavailable maps to 503 not 500
+- `test_model_failure_never_runs_awareness_template_substitute`: model failure never runs awareness template substitute
+- `test_private_supervisor_auth_requires_secret_and_loopback`: private supervisor auth requires secret and loopback
+- `test_render_worker_owns_gpu_until_it_returns`: render worker owns gpu until it returns
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_capability.py`
+
+Operational admission executes real agent guards without training fixtures.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_capability.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `GenerationCapabilityTests.test_missing_awareness_is_retryable_and_never_probes_an_unconditioned_model`: missing awareness is retryable and never probes an unconditioned model
+- `GenerationCapabilityTests.test_rejects_empty_garble_metadata_and_missing_sections`: rejects empty garble metadata and missing sections
+- `GenerationCapabilityTests.test_real_agent_accepts_complete_generated_sections_and_preserves_context`: real agent accepts complete generated sections and preserves context
+- `GenerationCapabilityTests.test_unusable_public_selected_model_cannot_report_active_release`: unusable public selected model cannot report active release
+- `GenerationCapabilityTests.test_a_scan_refresh_between_cases_cannot_change_the_pinned_probe`: a scan refresh between cases cannot change the pinned probe
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_capability_version.py`
+
+Generation metadata and readiness route contracts for MaxCore ASGI.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_capability_version.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `GenerationCapabilityVersion.test_advertised_version_matches_actual_plans_for_all_supported_modalities`: advertised version matches actual plans for all supported modalities
+- `GenerationCapabilityVersion.test_static_metadata_preserves_unverified_runtime_quality_and_detached_renderers`: static metadata preserves unverified runtime quality and detached renderers
+- `GenerationCapabilityVersion.test_training_progress_reports_real_awareness_use_separately_from_checkpoint`: training progress reports real awareness use separately from checkpoint
+- `GenerationCapabilityVersion.test_generation_capabilities_reports_unavailable_instead_of_asserting_serving`: generation capabilities reports unavailable instead of asserting serving
+- `GenerationCapabilityVersion.test_live_awareness_readiness_fails_when_text_runtime_is_missing`: live awareness readiness fails when text runtime is missing
+- `GenerationCapabilityVersion.test_awareness_ready_route_does_not_claim_generation_ready_without_runtime`: awareness ready route does not claim generation ready without runtime
+- `GenerationCapabilityVersion.test_ready_exposes_each_generation_route_and_actual_renderer_gate`: ready exposes each generation route and actual renderer gate
+- `GenerationCapabilityVersion.test_ready_fails_when_a_required_modality_runtime_dependency_is_missing`: ready fails when a required modality runtime dependency is missing
+- `GenerationCapabilityVersion.test_health_liveness_includes_route_catalog_without_claiming_checkpoint_loaded`: health liveness includes route catalog without claiming checkpoint loaded
+- `GenerationCapabilityVersion.test_warm_status_includes_runtime_routes_and_remains_read_only`: warm status includes runtime routes and remains read only
+- `GenerationCapabilityVersion.test_health_stays_live_but_fails_closed_when_endpoint_inspection_errors`: health stays live but fails closed when endpoint inspection errors
+- `GenerationCapabilityVersion.test_warm_status_remains_available_but_blocks_generation_on_catalog_error`: warm status remains available but blocks generation on catalog error
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_durable_delivery.py`
+
+Real WAV commit validation; synthetic awareness and renderer fixtures, no quality claim.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_durable_delivery.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `DeliveryTests.test_actual_invalid_compact_image_control_is_terminal_failed`: actual invalid compact image control is terminal failed
+- `DeliveryTests.test_renderer_failure_cleans_only_its_owned_partial_scratch`: renderer failure cleans only its owned partial scratch
+- `DeliveryTests.test_delivery_failure_stays_committing_and_preserves_rendered_bytes`: delivery failure stays committing and preserves rendered bytes
+- `DeliveryTests.test_restart_marks_running_failed_without_rerender_or_unsafe_cleanup`: restart marks running failed without rerender or unsafe cleanup
+- `DeliveryTests.test_http_private_node_header_contract_against_actual_middleware`: http private node header contract against actual middleware
+- `DeliveryTests.test_private_identity_requires_exact_channel_and_actual_loopback`: private identity requires exact channel and actual loopback
+- `DeliveryTests.test_commit_journal_then_cleanup_and_delivery_only_recovery`: commit journal then cleanup and delivery only recovery
+- `DeliveryTests.test_cancelled_job_never_calls_transport`: cancelled job never calls transport
+- `DeliveryTests.test_successful_delivery_does_not_delete_unowned_renderer_cache`: successful delivery does not delete unowned renderer cache
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_plan_contract.py`
+
+Offline handler-contract tests. No server startup, media render or weight access.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_plan_contract.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `GenerationPlanTests.test_immutable_nested_data_and_stable_hash`: immutable nested data and stable hash
+- `GenerationPlanTests.test_invalid_plan_and_real_text_validation`: invalid plan and real text validation
+- `GenerationPlanTests.test_job_cache_identity_includes_all_plan_context`: job cache identity includes all plan context
+- `GenerationPlanTests.test_handler_context_lifecycle_and_spec_honesty`: handler context lifecycle and spec honesty
+- `GenerationPlanTests.test_handler_failure_does_not_retry_or_manufacture_copy`: handler failure does not retry or manufacture copy
+- `GenerationPlanTests.test_dedicated_handler_preserves_exact_controls`: dedicated handler preserves exact controls
+- `GenerationPlanTests.test_actual_entry_points_are_wrapped`: actual entry points are wrapped
+- `GenerationPlanTests.test_actual_api_handlers_dispatch_dedicated_controls`: actual api handlers dispatch dedicated controls
+- `GenerationPlanTests.test_render_manager_recovers_journals_and_uses_verified_owner`: render manager recovers journals and uses verified owner
+- `GenerationPlanTests.test_dedicated_handler_requires_authenticated_owner`: dedicated handler requires authenticated owner
+- `GenerationPlanTests.test_reviewed_candidate_allows_current_sampling_pipeline`: reviewed candidate allows current sampling pipeline
+- `GenerationPlanTests.test_candidate_context_error_cannot_be_swallowed_into_template_success`: candidate context error cannot be swallowed into template success
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_release_selection.py`
+
+Startup selection tests, with no model initialization/training or server start.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_release_selection.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ReleaseSelectionTests.test_default_and_no_selection_leave_explicit_legacy_release`: default and no selection leave explicit legacy release
+- `ReleaseSelectionTests.test_live_mode_requires_a_certified_live_run_and_never_legacy_weights`: live mode requires a certified live run and never legacy weights
+- `ReleaseSelectionTests.test_selected_adapter_always_requires_review_and_exclusive_policy`: selected adapter always requires review and exclusive policy
+- `ReleaseSelectionTests.test_invalid_selected_startup_never_falls_back_and_fails_readiness`: invalid selected startup never falls back and fails readiness
+- `ReleaseSelectionTests.test_release_metadata_comes_from_current_adapter_not_greedy_constants`: release metadata comes from current adapter not greedy constants
+- `ReleaseSelectionTests.test_adapter_preserves_current_stochastic_sampling_parameters`: adapter preserves current stochastic sampling parameters
+- `ReleaseSelectionTests.test_actual_context_limit_rejects_full_prompt_without_compute`: actual context limit rejects full prompt without compute
+- `ReleaseSelectionTests.test_blocked_selected_release_health_remains_liveness`: blocked selected release health remains liveness
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_restart_reconciliation.py`
+
+Exercise registered startup handlers with isolated on-disk production journals.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_restart_reconciliation.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `RestartTests.test_registered_startup_reconciles_legacy_without_touching_delivery_or_owners`: registered startup reconciles legacy without touching delivery or owners
+- `RestartTests.test_delivery_outage_keeps_journal_bytes_and_allows_later_delivery_only_retry`: delivery outage keeps journal bytes and allows later delivery only retry
+- `RestartTests.test_dedicated_interrupt_and_completed_cleanup_are_ownership_scoped`: dedicated interrupt and completed cleanup are ownership scoped
+- `RestartTests.test_gc_retains_retryable_manager_delivery_but_expires_terminal_jobs`: gc retains retryable manager delivery but expires terminal jobs
+- `RestartTests.test_readiness_accepts_trained_model_or_fresh_live_awareness`: readiness accepts trained model or fresh live awareness
+- `RestartTests.test_invalid_journal_names_rejected_before_reconciliation_or_delivery`: invalid journal names rejected before reconciliation or delivery
+- `RestartTests.test_terminal_gc_retries_failed_owned_unlink_before_deleting_journal`: terminal gc retries failed owned unlink before deleting journal
+- `RestartTests.test_terminal_gc_never_deletes_unowned_or_symlink_scratch`: terminal gc never deletes unowned or symlink scratch
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_route_bindings.py`
+
+Exercise production gates without importing server's background daemons.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_route_bindings.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `RouteBindings.test_main_generation_conditions_on_live_snapshot_even_with_large_corpus`: main generation conditions on live snapshot even with large corpus
+- `RouteBindings.test_raw_dictionary_nested_alias_calls_acquire_once`: raw dictionary nested alias calls acquire once
+- `RouteBindings.test_http_request_body_media_runs_without_snapshot_gate`: http request body media runs without snapshot gate
+- `RouteBindings.test_missing_snapshot_does_not_gate_generation_but_bad_request_does`: missing snapshot does not gate generation but bad request does
+- `RouteBindings.test_stream_and_thread_keep_snapshot_and_fail_before_headers`: stream and thread keep snapshot and fail before headers
+- `RouteBindings.test_async_job_uses_fresh_saved_scan_and_continues_after_expiry`: async job uses fresh saved scan and continues after expiry
+- `DirectContracts.test_request_schema_preserves_seed_and_complete_additive_context`: request schema preserves seed and complete additive context
+- `DirectContracts.test_installed_batching_accepts_sampling_api_and_retains_plan`: installed batching accepts sampling api and retains plan
+- `DirectContracts.test_actual_batch_worker_preserves_each_row_and_partitions_snapshots`: actual batch worker preserves each row and partitions snapshots
+- `DirectContracts.test_selected_adapter_generates_without_awareness_snapshot`: selected adapter generates without awareness snapshot
+- `DirectContracts.test_stream_adapter_retains_snapshot_when_consumed_later`: stream adapter retains snapshot when consumed later
+- `DirectContracts.test_agents_require_generation_plan_but_not_snapshot_before_model_use`: agents require generation plan but not snapshot before model use
+- `DirectContracts.test_agent_runs_with_plan_when_scan_is_unavailable`: agent runs with plan when scan is unavailable
+- `DirectContracts.test_agent_sampling_and_full_context_reach_actual_model_call`: agent sampling and full context reach actual model call
+- `DirectContracts.test_defaults_only_use_measured_absent_compatible_controls`: defaults only use measured absent compatible controls
+- `DirectContracts.test_all_generation_and_ad_aliases_are_decorated`: all generation and ad aliases are decorated
+- `DirectContracts.test_serving_checkpoint_writes_reject_explicitly`: serving checkpoint writes reject explicitly
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_snapshot_contract.py`
+
+Focused immutable plan and fail-closed binding regressions.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_generation_snapshot_contract.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `SnapshotContractTests.test_direct_plan_is_valid_without_awareness_snapshot`: direct plan is valid without awareness snapshot
+- `SnapshotContractTests.test_invalid_and_empty_snapshots_rejected`: invalid and empty snapshots rejected
+- `SnapshotContractTests.test_snapshot_checkpoint_and_facts_change_identity`: snapshot checkpoint and facts change identity
+- `SnapshotContractTests.test_explicit_seed_and_invalid_seed`: explicit seed and invalid seed
+- `SnapshotContractTests.test_binding_cleanup_after_error`: binding cleanup after error
+- `SnapshotContractTests.test_context_copy_retains_exact_snapshot`: context copy retains exact snapshot
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_incremental_candidate_inference.py`
+
+Incremental v2 inference must preserve full causal computation, not its tape.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_incremental_candidate_inference.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `IncrementalCandidateInferenceTests.test_every_position_matches_full_causal_and_independent_reference`: every position matches full causal and independent reference
+- `IncrementalCandidateInferenceTests.test_context_boundary_and_cache_model_ownership`: context boundary and cache model ownership
+- `IncrementalCandidateInferenceTests.test_interleaved_caches_are_isolated`: interleaved caches are isolated
+- `IncrementalCandidateInferenceTests.test_generation_determinism_concurrency_and_legacy_path`: generation determinism concurrency and legacy path
+- `IncrementalCandidateInferenceTests.test_seeded_sampling_matches_original_full_prefix_computation`: seeded sampling matches original full prefix computation
+- `IncrementalCandidateInferenceTests.test_deadline_rejects_output_without_poisoning_next_request`: deadline rejects output without poisoning next request
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py`
+
+test intent url reader safe http
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_read_url_uses_bounded_safe_transport`: read url uses bounded safe transport
+- `test_read_url_explicitly_rejects_unsafe_safe_http_result`: read url explicitly rejects unsafe safe http result
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_internal_training_sources.py`
+
+test internal training sources
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_internal_training_sources.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `InternalTrainingSourcesTests.test_generates_full_dual_track_ten_year_cycle_and_advances_rolling_state`: generates full dual track ten year cycle and advances rolling state
+- `InternalTrainingSourcesTests.test_owner_content_requires_owner_admin_and_excludes_awareness_mixtures`: owner content requires owner admin and excludes awareness mixtures
+- `InternalTrainingSourcesTests.test_internal_bundle_and_candidate_manifest_reject_tampering`: internal bundle and candidate manifest reject tampering
+- `InternalTrainingSourcesTests.test_corrupt_or_unacknowledged_segment_is_never_accepted`: corrupt or unacknowledged segment is never accepted
+- `InternalTrainingSourcesTests.test_storage_authority_reports_bucket_backed_pdim_when_enabled`: storage authority reports bucket backed pdim when enabled
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py`
+
+Tiny fake native functions exercise real process isolation, never rendering.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `IsolationTests.test_terminal_job_states_cannot_be_overwritten`: terminal job states cannot be overwritten
+- `IsolationTests.test_success_promotes_only_completed_artifact`: success promotes only completed artifact
+- `IsolationTests.test_error_invalid_result_and_missing_artifact_cleanup`: error invalid result and missing artifact cleanup
+- `IsolationTests.test_native_hang_is_killed_and_slot_reusable`: native hang is killed and slot reusable
+- `IsolationTests.test_cancellation_terminates_worker`: cancellation terminates worker
+- `IsolationTests.test_sigkill_reclaims_uncooperative_descendant`: sigkill reclaims uncooperative descendant
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_live_awareness_planner_http.py`
+
+Real ASGI planner requests without server startup, weights or provider calls.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_live_awareness_planner_http.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `LiveAwarenessPlannerHTTP.test_multimodal_planner_uses_fresh_awareness_without_model`: multimodal planner uses fresh awareness without model
+- `LiveAwarenessPlannerHTTP.test_live_awareness_readiness_does_not_claim_a_trained_model`: live awareness readiness does not claim a trained model
+- `LiveAwarenessPlannerHTTP.test_live_awareness_is_a_generation_release_without_claiming_loaded_weights`: live awareness is a generation release without claiming loaded weights
+- `LiveAwarenessPlannerHTTP.test_real_script_agent_composes_from_bound_live_awareness_without_checkpoint`: real script agent composes from bound live awareness without checkpoint
+- `LiveAwarenessPlannerHTTP.test_orchestrator_text_content_uses_the_same_live_awareness_release`: orchestrator text content uses the same live awareness release
+- `LiveAwarenessPlannerHTTP.test_awareness_context_use_signals_learning_outside_request_path`: awareness context use signals learning outside request path
+- `LiveAwarenessPlannerHTTP.test_api_planner_alias_keeps_one_snapshot_and_caller_request`: api planner alias keeps one snapshot and caller request
+- `LiveAwarenessPlannerHTTP.test_generation_without_a_live_composer_or_checkpoint_remains_unavailable`: generation without a live composer or checkpoint remains unavailable
+- `LiveAwarenessPlannerHTTP.test_missing_or_expired_awareness_does_not_become_planner_success`: missing or expired awareness does not become planner success
+- `LiveAwarenessPlannerHTTP.test_planner_preserves_validation_and_cannot_dispatch_render_controls`: planner preserves validation and cannot dispatch render controls
+- `LiveAwarenessPlannerHTTP.test_actual_route_dependencies_still_require_generation_authentication`: actual route dependencies still require generation authentication
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py`
+
+test live serving
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `LiveServingTests.test_fresh_observations_train_but_cannot_promote_themselves`: fresh observations train but cannot promote themselves
+- `LiveServingTests.test_internal_owner_and_simulation_source_uses_existing_candidate_worker`: internal owner and simulation source uses existing candidate worker
+- `LiveServingTests.test_awareness_use_wakes_the_existing_worker_with_bounded_coalescing`: awareness use wakes the existing worker with bounded coalescing
+- `LiveServingTests.test_recovered_training_and_selection_clear_previous_error_labels`: recovered training and selection clear previous error labels
+- `LiveServingTests.test_selected_release_activates_even_while_training_is_on_cooldown`: selected release activates even while training is on cooldown
+- `LiveServingTests.test_restart_and_timestamp_only_refresh_do_not_retrain_same_content`: restart and timestamp only refresh do not retrain same content
+- `LiveServingTests.test_restart_reports_retained_candidate_while_cooling_down`: restart reports retained candidate while cooling down
+- `LiveServingTests.test_interrupted_attempt_cannot_be_reported_as_success_after_restart`: interrupted attempt cannot be reported as success after restart
+- `LiveServingTests.test_blocked_training_rights_remains_honest_across_restart_and_cooldown`: blocked training rights remains honest across restart and cooldown
+- `LiveServingTests.test_failed_worker_keeps_durable_cooldown_and_retries_later`: failed worker keeps durable cooldown and retries later
+- `LiveServingTests.test_bad_selected_update_retains_the_previous_verified_model`: bad selected update retains the previous verified model
+- `LiveServingTests.test_observation_failure_does_not_stop_loading_reviewed_releases`: observation failure does not stop loading reviewed releases
+- `LiveServingTests.test_two_owners_cannot_train_concurrently`: two owners cannot train concurrently
+- `LiveServingTests.test_stop_prevents_new_training_and_activation`: stop prevents new training and activation
+- `LiveServingTests.test_inflight_requests_and_executor_threads_pin_the_old_release`: inflight requests and executor threads pin the old release
+- `LiveServingTests.test_runtime_only_adapter_is_never_activated`: runtime only adapter is never activated
+- `LiveServingTests.test_default_startup_uses_live_pipeline_without_legacy_checkpoint`: default startup uses live pipeline without legacy checkpoint
+- `LiveServingTests.test_expanded_context_is_stored_loaded_and_used_without_truncation`: expanded context is stored loaded and used without truncation
+- `LiveServingTests.test_expanded_context_real_manual_training_survives_reload`: expanded context real manual training survives reload
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_live_serving_integration.py`
+
+Rights-safe live learning and reviewed-candidate integration contracts.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_live_serving_integration.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `LiveServingIntegrationTests.test_direct_manifest_worker_cannot_bypass_live_text_rights`: direct manifest worker cannot bypass live text rights
+- `LiveServingIntegrationTests.test_public_awareness_text_is_blocked_before_candidate_creation`: public awareness text is blocked before candidate creation
+- `LiveServingIntegrationTests.test_operator_authored_candidate_requires_independent_signed_review`: operator authored candidate requires independent signed review
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_live_tempo_controls.py`
+
+test live tempo controls
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_live_tempo_controls.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_explicit_live_tempo_uses_measurement_not_renderer_default`: explicit live tempo uses measurement not renderer default
+- `test_missing_or_invalid_measurements_fail_explicitly`: missing or invalid measurements fail explicitly
+- `test_explicit_bpm_is_preserved_and_conflicts_are_rejected`: explicit bpm is preserved and conflicts are rejected
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_local_canonical_storage.py`
+
+Private local PDIM transport contracts; no real service or SQLite opened.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_local_canonical_storage.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_canonical_missing_value_never_replays_stale_local_copy`: canonical missing value never replays stale local copy
+- `test_canonical_failure_is_explicit_not_sqlite_success`: canonical failure is explicit not sqlite success
+- `test_local_secret_cannot_be_sent_to_stale_external_origin`: local secret cannot be sent to stale external origin
+- `test_raw_owner_wire_protocol_over_loopback_http`: Exercise real trusted transport against the owner's raw JSON protocol.
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py`
+
+Isolated tests: no server startup, model loading, network, or live data.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `RetryTests.test_transient_retry_then_success`: transient retry then success
+- `RetryTests.test_exhaustion_is_terminal`: exhaustion is terminal
+- `RetryTests.test_deterministic_failure_not_retried`: deterministic failure not retried
+- `RetryTests.test_invalid_artifact_deadline_and_cancellation`: invalid artifact deadline and cancellation
+- `CheckpointTests.test_serving_model_retains_training_checkpoint_head_key`: serving model retains training checkpoint head key
+- `CheckpointTests.test_archive_loader_is_weights_only_and_validates_root`: archive loader is weights only and validates root
+- `CheckpointTests.test_quarantine_preserves_existing_candidate_and_records_provenance`: quarantine preserves existing candidate and records provenance
+- `CheckpointTests.test_quarantine_never_deletes_colliding_provenance`: quarantine never deletes colliding provenance
+- `CheckpointTests.test_watchdog_does_not_quarantine_operational_load_failure_or_raw_state`: watchdog does not quarantine operational load failure or raw state
+- `CheckpointTests.test_watchdog_quarantines_semantically_unusable_checkpoint`: watchdog quarantines semantically unusable checkpoint
+- `CheckpointTests.test_complete_and_prefixed`: complete and prefixed
+- `CheckpointTests.test_missing_shape_and_unexpected_rejected`: missing shape and unexpected rejected
+- `AudioTests.test_xfade_maps_required_audio_explicitly`: xfade maps required audio explicitly
+- `AudioTests.test_probe_rejects_silent_and_short_artifacts`: probe rejects silent and short artifacts
+- `AudioTests.test_narration_and_soundtrack_failure_propagate`: narration and soundtrack failure propagate
+- `ManifestTests.test_all_ten_images_reach_ordered_scene_references`: all ten images reach ordered scene references
+- `ManifestTests.test_manifest_validation`: manifest validation
+- `ManifestTests.test_measured_audio_onsets`: measured audio onsets
+- `ManifestTests.test_manifest_controls_reach_scenes`: manifest controls reach scenes
+- `ManifestTests.test_ten_real_images_condition_pixels`: ten real images condition pixels
+- `ManifestTests.test_logo_is_composited_into_real_pixels`: logo is composited into real pixels
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_media_learning.py`
+
+test media learning
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_media_learning.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `MediaLearningTests.test_valid_corpus_is_not_claimed_decodable_or_trainable`: valid corpus is not claimed decodable or trainable
+- `MediaLearningTests.test_rights_must_be_explicit_and_current`: rights must be explicit and current
+- `MediaLearningTests.test_mutation_and_source_leakage_rejected`: mutation and source leakage rejected
+- `MediaLearningTests.test_duplicate_content_rejected`: duplicate content rejected
+- `MediaLearningTests.test_normalized_observation_overlap_rejected_across_splits`: normalized observation overlap rejected across splits
+- `MediaLearningTests.test_guard_never_trains_or_changes_files`: guard never trains or changes files
+- `MediaLearningTests.test_invalid_corpus_returns_explicit_blocker`: invalid corpus returns explicit blocker
+- `MediaLearningTests.test_routes_require_admin_before_preflight`: routes require admin before preflight
+- `MediaLearningTests.test_routes_supported_modalities_return_full_blocked_report`: routes supported modalities return full blocked report
+- `MediaLearningTests.test_post_validates_only_operator_configured_corpus`: post validates only operator configured corpus
+- `MediaLearningTests.test_post_without_root_is_explicitly_blocked`: post without root is explicitly blocked
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_model_state_provenance.py`
+
+Execute the real state-reporting function without starting live services.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_model_state_provenance.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ModelStateProvenance.test_all_domains_report_unavailable_without_fabricated_provenance`: all domains report unavailable without fabricated provenance
+- `ModelStateProvenance.test_ready_model_reports_only_recorded_architecture_and_provenance`: ready model reports only recorded architecture and provenance
+- `ModelStateProvenance.test_ready_release_without_metadata_does_not_invent_missing_values`: ready release without metadata does not invent missing values
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py`
+
+test native analysis api
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_text_requires_generation_auth_and_trusted_owner`: text requires generation auth and trusted owner
+- `test_real_image_upload_is_owner_scoped_then_consumed`: real image upload is owner scoped then consumed
+- `test_upload_rejects_mime_size_and_invalid_decode`: upload rejects mime size and invalid decode
+- `test_body_actor_is_ignored`: body actor is ignored
+- `test_expired_upload_is_rejected_and_removed`: expired upload is rejected and removed
+- `test_capacity_is_rejected_without_queuing`: capacity is rejected without queuing
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py`
+
+test native analysis safe http
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_rejects_non_public_and_non_http_urls`: rejects non public and non http urls
+- `test_dns_answer_is_rejected_if_any_address_is_private`: dns answer is rejected if any address is private
+- `test_rejects_ipv6_transition_addresses`: rejects ipv6 transition addresses
+- `test_redirect_target_is_validated_again`: redirect target is validated again
+- `test_host_header_brackets_ipv6_and_uses_scheme_default_port`: host header brackets ipv6 and uses scheme default port
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py`
+
+Regression coverage for awareness at native MaxCore consumer seams.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_native_profile_discovery_route_reads_local_index_without_external_search`: native profile discovery route reads local index without external search
+- `test_native_request_models_preserve_structured_and_direction_context`: native request models preserve structured and direction context
+- `test_social_route_delivers_structured_envelope_to_agents`: social route delivers structured envelope to agents
+- `test_social_route_generates_from_live_awareness_without_trained_candidate`: social route generates from live awareness without trained candidate
+- `test_live_report_payload_conditions_real_agent_without_metadata_leak`: live report payload conditions real agent without metadata leak
+- `test_real_agent_honors_exact_opening_wording`: real agent honors exact opening wording
+- `test_real_agent_honors_structured_must_include_list`: real agent honors structured must include list
+- `test_max_knowledge_assistant_remains_local_exempt_source`: max knowledge assistant remains local exempt source
+- `test_daw_agents_receive_effective_awareness`: daw agents receive effective awareness
+- `test_distribution_agent_receives_effective_awareness`: distribution agent receives effective awareness
+- `test_audio_job_identity_contains_effective_awareness`: audio job identity contains effective awareness
+- `test_platform_video_coalescer_uses_consumed_awareness`: platform video coalescer uses consumed awareness
+- `test_campaign_script_backend_receives_canonical_slot_and_caller_awareness`: campaign script backend receives canonical slot and caller awareness
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py`
+
+test native media analysis
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_png_and_jpeg_have_content_dependent_pixel_measurements`: png and jpeg have content dependent pixel measurements
+- `test_generated_mp4_uses_real_probe_frames_and_transition_evidence`: generated mp4 uses real probe frames and transition evidence
+- `test_invalid_local_media_errors_are_typed`: invalid local media errors are typed
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py`
+
+Offline, lightweight contract tests for the original quality runner.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `RunnerContractTests.test_local_origin_only`: local origin only
+- `RunnerContractTests.test_hashes_match_unchanged_sources`: hashes match unchanged sources
+- `RunnerContractTests.test_counters_exclude_text_and_do_not_subtract_booleans`: counters exclude text and do not subtract booleans
+- `RunnerContractTests.test_subprocess_failure_and_timeout_are_recorded`: subprocess failure and timeout are recorded
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py`
+
+test platform awareness wiring
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_api_content_awareness_bus_contains_shared_platform_profile_once`: api content awareness bus contains shared platform profile once
+- `test_awareness_bus_rejects_platforms_outside_the_closed_set`: awareness bus rejects platforms outside the closed set
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_public_fetch_proxy.py`
+
+test public fetch proxy
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_public_fetch_proxy.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PublicFetchProxyTests.test_explicit_proxy_tunnels_the_validated_ip_and_never_leaks_proxy_auth`: explicit proxy tunnels the validated ip and never leaks proxy auth
+- `PublicFetchProxyTests.test_https_keeps_original_sni_and_certificate_verification`: https keeps original sni and certificate verification
+- `PublicFetchProxyTests.test_proxy_cannot_bypass_public_address_validation`: proxy cannot bypass public address validation
+- `PublicFetchProxyTests.test_proxy_dns_answer_cannot_introduce_a_private_or_transition_address`: proxy dns answer cannot introduce a private or transition address
+- `PublicFetchProxyTests.test_invalid_proxy_origin_is_rejected`: invalid proxy origin is rejected
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py`
+
+Rights-gated public observations and bounded owned-fixture training checks.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PublicPeakCurriculumTests.test_public_peak_observations_without_operator_rights_never_reach_worker`: public peak observations without operator rights never reach worker
+- `PublicPeakCurriculumTests.test_invalid_explicit_rights_block_before_worker_and_preserve_awareness`: invalid explicit rights block before worker and preserve awareness
+- `PublicPeakCurriculumTests.test_legacy_mode_cannot_bypass_invalid_explicit_rights`: legacy mode cannot bypass invalid explicit rights
+- `PublicPeakCurriculumTests.test_peak_training_rights_never_infer_license_from_public_metadata`: peak training rights never infer license from public metadata
+- `PublicPeakCurriculumTests.test_explicit_owned_licensed_manifest_still_trains_real_weights`: explicit owned licensed manifest still trains real weights
+- `PublicPeakCurriculumTests.test_stage_supervision_preserves_exact_words_and_requires_real_cta`: stage supervision preserves exact words and requires real cta
+- `PublicPeakCurriculumTests.test_current_curriculum_teaches_source_spans_without_inventing_cta`: current curriculum teaches source spans without inventing cta
+- `PublicPeakCurriculumTests.test_partial_stages_do_not_add_empty_bodies_or_interpret_injected_tags`: partial stages do not add empty bodies or interpret injected tags
+- `PublicPeakCurriculumTests.test_cta_before_social_footer_preserves_source_and_historical_policy`: cta before social footer preserves source and historical policy
+- `PublicPeakCurriculumTests.test_new_policy_does_not_relabel_non_footer_prose_as_cta`: new policy does not relabel non footer prose as cta
+- `PublicPeakCurriculumTests.test_legacy_curricula_reproduce_exact_text_and_metadata`: legacy curricula reproduce exact text and metadata
+- `PublicPeakCurriculumTests.test_bootstrap_replays_fresh_content_with_durable_budget_then_changed_only`: bootstrap replays fresh content with durable budget then changed only
+- `PublicPeakCurriculumTests.test_missing_peak_content_never_falls_back_to_context`: missing peak content never falls back to context
+- `PublicPeakCurriculumTests.test_refresh_reuses_validated_peak_adapter_without_reloading_probes`: refresh reuses validated peak adapter without reloading probes
+- `PublicPeakCurriculumTests.test_waiting_peak_selector_does_not_load_old_context_pointer`: waiting peak selector does not load old context pointer
+- `PublicPeakCurriculumTests.test_iterative_ancestry_exceeds_128_and_rejects_cycles`: iterative ancestry exceeds 128 and rejects cycles
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_safe_feed_xml.py`
+
+test safe feed xml
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_safe_feed_xml.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `SafeFeedXMLTests.test_rss_and_atom`: rss and atom
+- `SafeFeedXMLTests.test_rejects_dtd_entities_and_encoded_variants`: rejects dtd entities and encoded variants
+- `SafeFeedXMLTests.test_bounded_structure_and_bytes`: bounded structure and bytes
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py`
+
+Focused regression tests for runtime SAST remediations.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PrefixCacheFormatTests.test_tensor_payload_round_trip_including_bfloat16`: tensor payload round trip including bfloat16
+- `PrefixCacheFormatTests.test_legacy_payload_is_rejected_without_deleting_state`: legacy payload is rejected without deleting state
+- `PrefixCacheFormatTests.test_exact_prompt_key_covers_suffix_shape_dtype_and_model_state`: exact prompt key covers suffix shape dtype and model state
+- `PrefixCacheFormatTests.test_over_256_token_cached_result_matches_uncached_result`: over 256 token cached result matches uncached result
+- `ProcessErrorBoundaryTests.test_custom_exception_graph_is_reduced_to_builtin_text`: custom exception graph is reduced to builtin text
+- `LoadBaseValidationTests.test_accepts_only_http_origins`: accepts only http origins
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_scoped_batch_admission.py`
+
+Model admission belongs to executing work, not queued callers or caches.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_scoped_batch_admission.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_batch_admitted_once_and_snapshots_actual_scoped_execution`: batch admitted once and snapshots actual scoped execution
+- `test_batch_failure_is_explicit_and_never_unscoped_retry`: batch failure is explicit and never unscoped retry
+- `test_disabled_batching_still_scopes_actual_model`: disabled batching still scopes actual model
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_script_byte_budget.py`
+
+Token-unit boundary tests; no generated prose fixtures or fallback output.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_script_byte_budget.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ScriptByteBudgetTests.test_full_utf8_prompt_and_caption_budget`: full utf8 prompt and caption budget
+- `ScriptByteBudgetTests.test_script_boundary_passes_declared_budget_unchanged`: script boundary passes declared budget unchanged
+- `ScriptByteBudgetTests.test_legacy_boundary_keeps_eighty_word_budget`: legacy boundary keeps eighty word budget
+- `ScriptByteBudgetTests.test_actual_v2_kernels_generate_beyond_smoke_limit`: actual v2 kernels generate beyond smoke limit
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py`
+
+Smoke load test — Digital GPU (HyperGPU) edition ================================================= Target: 90,000,000 unique requests — 100% success, GPU confirmed on every generation wave, throughput sampled and projected to 90M scale.
+
+Status: **blocked**. Live concurrent generation/load benchmark requires an isolated generation-capable model server.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py`
+
+Social + advertising quality beacon — regression guards.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_signal_lines_parse_into_actionable_signals`: signal lines parse into actionable signals
+- `test_no_unsupported_tier_tokens`: no unsupported tier tokens
+- `test_tag_sanitization`: tag sanitization
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py`
+
+test social generation controls
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_pydantic_schema_accepts_every_social_url_ui_control`: pydantic schema accepts every social url ui control
+- `test_platform_endpoint_schema_inherits_the_real_control_contract`: platform endpoint schema inherits the real control contract
+- `test_verified_first_party_context_enters_native_social_awareness`: verified first party context enters native social awareness
+- `test_pydantic_schema_rejects_unsupported_controls`: pydantic schema rejects unsupported controls
+- `test_native_consumer_applies_length_cta_and_hashtag_controls`: native consumer applies length cta and hashtag controls
+- `test_trending_strategy_returns_only_explicitly_evidenced_tags`: trending strategy returns only explicitly evidenced tags
+- `test_native_script_agent_consumes_audience_format_length_and_cta`: native script agent consumes audience format length and cta
+- `test_url_parser_fetches_public_url_and_extracts_real_title`: url parser fetches public url and extracts real title
+- `test_url_parser_refuses_ssrf_target_without_fetching`: url parser refuses ssrf target without fetching
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py`
+
+Operator receipts bind test-authored posts; no source permissions are inferred.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TextTrainingRightsTests.test_exact_operator_grants_attach_bound_receipts_without_relabeling_awareness`: exact operator grants attach bound receipts without relabeling awareness
+- `TextTrainingRightsTests.test_missing_either_operator_configuration_value_cannot_grant_permission`: missing either operator configuration value cannot grant permission
+- `TextTrainingRightsTests.test_receipts_supplied_as_record_metadata_are_not_operator_configuration`: receipts supplied as record metadata are not operator configuration
+- `TextTrainingRightsTests.test_public_visibility_and_legacy_flag_do_not_authorize_training`: public visibility and legacy flag do not authorize training
+- `TextTrainingRightsTests.test_trusted_live_admission_rejects_corruption_private_and_spoofed_receipts`: trusted live admission rejects corruption private and spoofed receipts
+- `TextTrainingRightsTests.test_trusted_live_admission_does_not_ignore_explicit_broken_grant_policy`: trusted live admission does not ignore explicit broken grant policy
+- `TextTrainingRightsTests.test_trusted_live_admission_requires_one_nonempty_observation_set`: trusted live admission requires one nonempty observation set
+- `TextTrainingRightsTests.test_live_execute_without_operator_grants_never_reaches_worker`: live execute without operator grants never reaches worker
+- `TextTrainingRightsTests.test_manifest_and_evidence_mutations_fail_closed`: manifest and evidence mutations fail closed
+- `TextTrainingRightsTests.test_source_domain_citation_and_complete_text_must_match`: source domain citation and complete text must match
+- `TextTrainingRightsTests.test_permission_license_purpose_and_dated_evidence_are_required`: permission license purpose and dated evidence are required
+- `TextTrainingRightsTests.test_invalid_batches_never_partially_attach_receipts`: invalid batches never partially attach receipts
+- `TextTrainingRightsTests.test_duplicate_grants_and_oversized_manifest_are_refused`: duplicate grants and oversized manifest are refused
+- `TextTrainingRightsTests.test_ambiguous_or_excessively_nested_json_fails_closed`: ambiguous or excessively nested json fails closed
+- `TextTrainingRightsTests.test_evidence_cannot_escape_local_directory_or_use_symlinks`: evidence cannot escape local directory or use symlinks
+- `TextTrainingRightsTests.test_symlink_directories_and_writable_evidence_are_refused`: symlink directories and writable evidence are refused
+- `TextTrainingRightsTests.test_private_record_is_not_licensed_by_a_matching_public_receipt`: private record is not licensed by a matching public receipt
+- `TextTrainingRightsTests.test_live_execute_with_grants_still_requires_separate_frozen_holdout`: live execute with grants still requires separate frozen holdout
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py`
+
+Offline trust-boundary tests for configured service HTTP.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TrustedHTTPTests.test_local_only_rejects_non_loopback`: local only rejects non loopback
+- `TrustedHTTPTests.test_local_only_rejects_if_any_dns_answer_is_not_loopback`: local only rejects if any dns answer is not loopback
+- `TrustedHTTPTests.test_request_cannot_leave_configured_origin`: request cannot leave configured origin
+- `TrustedHTTPTests.test_redirect_is_rejected_without_following`: redirect is rejected without following
+- `TrustedHTTPTests.test_private_configured_origin_is_pinned_and_preserved`: private configured origin is pinned and preserved
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py`
+
+Contract guards for MaxCore capabilities that have no real model yet.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_missing_audio_and_video_inference_never_synthesizes_results`: missing audio and video inference never synthesizes results
+- `test_audio_endpoints_use_real_waveform_conductor`: audio endpoints use real waveform conductor
+- `test_audio_upload_contract_is_bounded_owner_scoped_and_validated`: audio upload contract is bounded owner scoped and validated
+- `test_real_conductor_analyzes_tiny_waveform`: real conductor analyzes tiny waveform
+- `test_text_content_mode_never_returns_template_fallback`: text content mode never returns template fallback
+- `test_model_readiness_reports_terminal_initialization_failure`: model readiness reports terminal initialization failure
+- `test_every_job_reader_enforces_durable_owner`: every job reader enforces durable owner
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py`
+
+Unit tests for the URL-parser label-echo garble guard.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestLabelEchoDetected.test_artist_label_line`: Artist: <name> at line start is a metadata echo.
+- `TestLabelEchoDetected.test_title_label_line`: title label line
+- `TestLabelEchoDetected.test_genre_label_line`: genre label line
+- `TestLabelEchoDetected.test_intent_label_line`: intent label line
+- `TestLabelEchoDetected.test_source_label_line`: source label line
+- `TestLabelEchoDetected.test_album_label_line`: album label line
+- `TestLabelEchoDetected.test_context_label_line`: context label line
+- `TestLabelEchoDetected.test_bpm_key_year_labels`: bpm key year labels
+- `TestLabelEchoDetected.test_tier_high_source_line`: [HIGH] Source: … is the awareness header format.
+- `TestLabelEchoDetected.test_tier_marker_alone`: tier marker alone
+- `TestLabelEchoDetected.test_med_tier_marker`: med tier marker
+- `TestLabelEchoDetected.test_low_tier_marker`: low tier marker
+- `TestLabelEchoDetected.test_full_awareness_block_echo`: Reproduces the exact format from _build_awareness_text().
+- `TestLabelEchoDetected.test_mixed_caption_with_label`: Even one label line in an otherwise fine caption should be caught.
+- `TestLabelEchoDetected.test_case_insensitive_label`: Labels must be detected regardless of capitalisation.
+- `TestMidLineLabelEchoDetected.test_caption_ending_in_pipe_mood_fragment`: caption ending in pipe mood fragment
+- `TestMidLineLabelEchoDetected.test_midline_bpm_key_fragment`: midline bpm key fragment
+- `TestMidLineLabelEchoDetected.test_midline_fragment_case_insensitive`: midline fragment case insensitive
+- `TestMidLineLabelEchoDetected.test_midline_label_never_whitelisted`: midline label never whitelisted
+- `TestLegitimateCaptionNotFlagged.test_artist_name_in_prose`: Mentioning 'Drake' naturally is fine.
+- `TestLegitimateCaptionNotFlagged.test_artist_name_whitelisted`: With the artist in the whitelist, name in a caption is clean.
+- `TestLegitimateCaptionNotFlagged.test_title_in_prose`: title in prose
+- `TestLegitimateCaptionNotFlagged.test_source_word_in_prose`: 'source' as a common English word should not trigger the guard.
+- `TestLegitimateCaptionNotFlagged.test_context_word_in_prose`: context word in prose
+- `TestLegitimateCaptionNotFlagged.test_key_word_in_prose`: key word in prose
+- `TestLegitimateCaptionNotFlagged.test_year_word_in_prose`: year word in prose
+- `TestLegitimateCaptionNotFlagged.test_genre_word_in_prose`: genre word in prose
+- `TestLegitimateCaptionNotFlagged.test_intent_word_in_prose`: intent word in prose
+- `TestLegitimateCaptionNotFlagged.test_pipes_in_ordinary_prose_not_flagged`: Pipes with non-awareness labels are normal event-flyer prose.
+- `TestLegitimateCaptionNotFlagged.test_pipe_separated_prose_without_labels`: pipe separated prose without labels
+- `TestLegitimateCaptionNotFlagged.test_normal_instagram_caption`: normal instagram caption
+- `TestLegitimateCaptionNotFlagged.test_spotify_tiktok_mention`: spotify tiktok mention
+- `TestLegitimateCaptionNotFlagged.test_label_word_mid_sentence`: 'Artist:' must only be caught at line boundaries, not mid-sentence.
+- `TestGuardCoversAllEmittedLabels.test_awareness_builder_emits_expected_baseline`: Sanity: the builder still emits the known core labels — if this fails, the extraction regex or the builder changed shape.
+- `TestGuardCoversAllEmittedLabels.test_every_emitted_label_triggers_guard`: THE cross-check: each emitted label prefix, alone at line start, must be flagged by looks_garbled.
+- `TestGuardCoversAllEmittedLabels.test_every_emitted_label_triggers_guard_midline`: Drift guard for the mid-line matcher: every emitted awareness label must also be caught when it appears pipe-preceded mid-line, so _MIDLINE_LABEL_RE can't fall out of sync with _URL_LABEL_RE when new fields are added to _build_awareness_text().
+- `TestGuardCoversAllEmittedLabels.test_full_emitted_block_triggers_guard`: The verbatim awareness block itself must always be flagged.
+- `TestGarbleReason.test_label_echo_reason`: label echo reason
+- `TestGarbleReason.test_tier_marker_reason`: tier marker reason
+- `TestGarbleReason.test_glue_tokens_reason`: glue tokens reason
+- `TestGarbleReason.test_clean_text_empty_reason`: clean text empty reason
+- `TestGarbleReason.test_looks_garbled_consistency`: looks_garbled must be exactly bool(garble_reason) for any input.
+- `TestGarbleReason.test_whitelist_respected_for_glue_but_not_labels`: whitelist respected for glue but not labels
+- `TestGuardLogsWarning.test_ranking_penalty_logs_reason`: ranking penalty logs reason
+- `TestGuardLogsWarning.test_script_agent_suppression_logs_reason`: When the model 'output' echoes awareness labels, ScriptAgent must reject the candidate AND log the reason at WARNING level.
+- `TestGuardLogsWarning.test_distribution_agent_suppression_logs_reason`: distribution agent suppression logs reason
+- `TestGuardLogsWarning.test_distribution_agent_rejects_structured_control_keys`: distribution agent rejects structured control keys
+- `TestGuardLogsWarning.test_distribution_agent_preserves_meaningful_caption_and_sampling_identity`: distribution agent preserves meaningful caption and sampling identity
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py`
+
+Veo-parity feature guards: image conditioning, cinematography fusion, multi-sample seeds, and the /api/video/extend endpoint contract.
+
+Status: **blocked**. Live video/image generation parity suite targets fixed model port 9878 and requires operational generation.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_sdedit_decodes_init_frame_and_never_raises`: sdedit decodes init frame and never raises
+- `test_build_scenes_routes_frames_and_cinematography`: build scenes routes frames and cinematography
+- `test_build_scenes_backward_compatible_when_no_veo_params`: build scenes backward compatible when no veo params
+- `test_sample_count_returns_distinct_seeded_jobs`: sample count returns distinct seeded jobs
+- `test_extend_requires_idea_and_real_source`: extend requires idea and real source
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py`
+
+Voice-over synthesis regression tests (Task: birdcall narration fix).
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestCleanVoText.test_strips_emoji_hashtags_urls_tokens`: strips emoji hashtags urls tokens
+- `TestCleanVoText.test_empty_and_symbol_only`: empty and symbol only
+- `TestNarratorControls.test_valid_voices_pass_through`: valid voices pass through
+- `TestNarratorControls.test_invalid_voices_fall_back`: invalid voices fall back
+- `TestNarratorControls.test_valid_wpm_pass_through`: valid wpm pass through
+- `TestNarratorControls.test_invalid_wpm_fall_back`: invalid wpm fall back
+- `TestSynthesizeVoiceover.test_produces_speech_at_pipeline_rate`: produces speech at pipeline rate
+- `TestSynthesizeVoiceover.test_non_default_voice_and_pace`: non default voice and pace
+- `TestSynthesizeVoiceover.test_invalid_voice_and_pace_still_render`: invalid voice and pace still render
+- `TestSynthesizeVoiceover.test_empty_text_returns_false`: empty text returns false
+- `TestMixAndTrack.test_voice_dominates_ducked_music`: voice dominates ducked music
+- `TestMixAndTrack.test_voiceover_track_end_to_end`: voiceover track end to end
+- `TestMixAndTrack.test_missing_requested_music_never_returns_narration_as_success`: missing requested music never returns narration as success
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py`
+
+API-level regression tests: the voice-over flag must be strictly opt-in.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestGenerateVideoEndpoint.test_voiceover_omitted_is_off`: voiceover omitted is off
+- `TestGenerateVideoEndpoint.test_voiceover_false_is_off`: voiceover false is off
+- `TestGenerateVideoEndpoint.test_voiceover_true_reported`: voiceover true reported
+- `TestGenerateAiEndpoint.test_voiceover_omitted_is_off`: voiceover omitted is off
+- `TestGenerateAiEndpoint.test_voiceover_false_is_off`: voiceover false is off
+- `TestGenerateAiEndpoint.test_voiceover_true_reported`: voiceover true reported
+
+</details>
+
+### `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py`
+
+Wave 6 — throughput proof + content-generation quality verification =================================================================== Section 1 (throughput): models 90,000,000 distinct users each sending their own unique request simultaneously. 150 content-unique requests at 40 concurrent, latency measured and projected to 90M users.
+
+Status: **blocked**. 90M-model throughput and quality benchmark requires an isolated model server and bounded resource budget.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-210-head/agros/test_admin_release.py`
+
+test admin release
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/aso/pr-reconciliation/pr-210-head/agros/test_admin_release.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AdminReleaseTests.test_unconfigured_acceptance_remains_unverified`: unconfigured acceptance remains unverified
+- `AdminReleaseTests.test_private_readiness_separate_from_public_coverage`: private readiness separate from public coverage
+- `AdminReleaseTests.test_missing_stale_skipped_invalid_and_failed_evidence_never_pass`: missing stale skipped invalid and failed evidence never pass
+- `AdminReleaseTests.test_security_start_and_artifact_failures_still_block_admin`: security start and artifact failures still block admin
+- `AdminReleaseTests.test_public_success_cannot_override_failed_admin_acceptance`: public success cannot override failed admin acceptance
+- `AdminReleaseTests.test_admin_policy_contract_rejects_missing_binding_placeholder`: admin policy contract rejects missing binding placeholder
+- `AdminReleaseTests.test_full_coordinator_reports_admin_and_public_decisions_separately`: full coordinator reports admin and public decisions separately
+
+</details>
+
+### `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-210-head/agros/test_agros.py`
+
+test agros
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/aso/pr-reconciliation/pr-210-head/agros/test_agros.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `RunnerTests.test_missing_gates_rejected`: missing gates rejected
+- `RunnerTests.test_threshold_cannot_drop`: threshold cannot drop
+- `RunnerTests.test_all_pass`: all pass
+- `RunnerTests.test_missing_evidence_blocks`: missing evidence blocks
+- `RunnerTests.test_failed_command_blocks`: failed command blocks
+- `RunnerTests.test_mutation_invalidates_evidence`: mutation invalidates evidence
+- `RunnerTests.test_numeric_threshold`: numeric threshold
+- `RunnerTests.test_timeout`: timeout
+- `RunnerTests.test_missing_executable`: missing executable
+- `RunnerTests.test_repair_candidate_is_verified_and_source_untouched`: repair candidate is verified and source untouched
+- `RunnerTests.test_protected_change_is_rejected`: protected change is rejected
+- `RunnerTests.test_fixed_metric_limits_cannot_be_removed_or_weakened`: fixed metric limits cannot be removed or weakened
+- `RunnerTests.test_evidence_cannot_override_failed_prerequisite`: evidence cannot override failed prerequisite
+- `RunnerTests.test_numeric_policy_validation`: numeric policy validation
+- `RunnerTests.test_boolean_metric_rejected`: boolean metric rejected
+- `RunnerTests.test_policy_mutation_invalidates_and_preserves_used_digest`: policy mutation invalidates and preserves used digest
+- `RunnerTests.test_snapshot_tracks_file_modes_and_whitespace_paths`: snapshot tracks file modes and whitespace paths
+- `RunnerTests.test_rename_out_of_protected_directory_retains_deleted_path`: rename out of protected directory retains deleted path
+- `RunnerTests.test_stale_foreign_report_is_rejected`: stale foreign report is rejected
+- `RunnerTests.test_adapter_commit_is_rejected`: adapter commit is rejected
+- `RunnerTests.test_newly_passing_gate_cannot_regress_on_next_attempt`: newly passing gate cannot regress on next attempt
+- `RunnerTests.test_repeated_candidate_stops_before_attempt_budget`: repeated candidate stops before attempt budget
+- `RunnerTests.test_generated_build_outputs_do_not_invalidate_source`: generated build outputs do not invalidate source
+- `RunnerTests.test_fixture_dist_and_unknown_dist_remain_source`: fixture dist and unknown dist remain source
+- `RunnerTests.test_only_exact_generated_endpoint_reports_are_excluded`: only exact generated endpoint reports are excluded
+- `RunnerTests.test_generated_cache_exclusions_are_explicit`: generated cache exclusions are explicit
+- `RunnerTests.test_failed_or_unconfigured_artifact_contract_blocks_readiness`: failed or unconfigured artifact contract blocks readiness
+- `RunnerTests.test_stronger_coverage_requirement_is_preserved`: stronger coverage requirement is preserved
+- `RunnerTests.test_generated_dirty_checkout_still_allows_source_repair`: generated dirty checkout still allows source repair
+- `RunnerTests.test_artifact_contract_regression_stops_repair`: artifact contract regression stops repair
+- `RunnerTests.test_gate_evidence_destinations_are_outside_checkout`: gate evidence destinations are outside checkout
+- `RunnerTests.test_sigterm_cleans_up_active_command`: sigterm cleans up active command
+- `RunnerTests.test_repair_unconfigured`: repair unconfigured
+
+</details>
+
+### `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-210-head/agros/test_team.py`
+
+Adversarial contracts for specialist dispatch using real local subprocesses.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/aso/pr-reconciliation/pr-210-head/agros/test_team.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TeamTests.test_plan_expands_domain_and_dependency_closure`: plan expands domain and dependency closure
+- `TeamTests.test_catalog_rejects_cycles_unknown_roles_and_traversal`: catalog rejects cycles unknown roles and traversal
+- `TeamTests.test_settings_reject_invalid_limits_and_missing_response_placeholder`: settings reject invalid limits and missing response placeholder
+- `TeamTests.test_missing_adapter_and_check_block_without_false_completion`: missing adapter and check block without false completion
+- `TeamTests.test_valid_owner_check_review_generates_bound_receipt`: valid owner check review generates bound receipt
+- `TeamTests.test_dependency_handoffs_and_budget_resume`: dependency handoffs and budget resume
+- `TeamTests.test_failed_prerequisite_prevents_dependent_dispatch`: failed prerequisite prevents dependent dispatch
+- `TeamTests.test_zero_exit_without_response_is_failure`: zero exit without response is failure
+- `TeamTests.test_stale_nonce_is_failure`: stale nonce is failure
+- `TeamTests.test_missing_steps_and_acceptance_are_failures`: missing steps and acceptance are failures
+- `TeamTests.test_artifact_traversal_and_symlink_are_failures`: artifact traversal and symlink are failures
+- `TeamTests.test_analysis_worker_cannot_mutate_source`: analysis worker cannot mutate source
+- `TeamTests.test_change_worker_must_stay_in_scope`: change worker must stay in scope
+- `TeamTests.test_change_worker_cannot_weaken_protected_tests`: change worker cannot weaken protected tests
+- `TeamTests.test_legitimate_source_change_receipt_pins_before_and_after`: legitimate source change receipt pins before and after
+- `TeamTests.test_reviewer_cannot_mutate_source`: reviewer cannot mutate source
+- `TeamTests.test_reviewer_cannot_mutate_artifact`: reviewer cannot mutate artifact
+- `TeamTests.test_rejection_blocks_completion`: rejection blocks completion
+- `TeamTests.test_independent_checker_failure_blocks_review`: independent checker failure blocks review
+- `TeamTests.test_checker_cannot_mutate_source`: checker cannot mutate source
+- `TeamTests.test_worker_cannot_commit`: worker cannot commit
+- `TeamTests.test_timeout_bounds_worker`: timeout bounds worker
+- `TeamTests.test_resume_rejects_external_source_change`: resume rejects external source change
+- `TeamTests.test_resume_rejects_catalog_or_configuration_change`: resume rejects catalog or configuration change
+- `TeamTests.test_resume_rejects_tampered_completed_artifact`: resume rejects tampered completed artifact
+- `TeamTests.test_no_blind_retry_after_failure`: no blind retry after failure
+- `TeamTests.test_plan_override_cannot_remove_acceptance`: plan override cannot remove acceptance
+- `TeamTests.test_state_cannot_be_inside_source`: state cannot be inside source
+- `TeamTests.test_completed_state_without_evidence_cannot_bypass_workers`: completed state without evidence cannot bypass workers
+- `TeamTests.test_evidence_anchor_symlink_rejected`: evidence anchor symlink rejected
+- `TeamTests.test_missing_security_executor_blocks_feature_dispatch`: missing security executor blocks feature dispatch
+- `TeamTests.test_domain_waits_for_explicit_platform_handoff`: domain waits for explicit platform handoff
+- `TeamTests.test_release_waits_for_domains_and_cross_scope_cycles_fail`: release waits for domains and cross scope cycles fail
+- `TeamTests.test_admin_access_gap_is_security_blocker_despite_passing_dependency_audit`: admin access gap is security blocker despite passing dependency audit
+
+</details>
+
+### `.task123-publishing-candidate/reports/coverage-producer/2026-10-29-producer-foundation/candidate/tests/testing/test_coverage_command_binding.py`
+
+Real subprocesses exercise producer-time byte/nonce/count binding.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/coverage-producer/2026-10-29-producer-foundation/candidate/tests/testing/test_coverage_command_binding.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CoverageCommandBindingTests.test_real_child_binds_exact_fresh_junit_and_public_outcome_bytes`: real child binds exact fresh junit and public outcome bytes
+- `CoverageCommandBindingTests.test_bound_hash_rejects_subsequent_one_vs_2771_replacement`: bound hash rejects subsequent one vs 2771 replacement
+- `CoverageCommandBindingTests.test_each_invocation_has_fresh_nonce_and_rewritten_identical_xml_is_bound`: each invocation has fresh nonce and rewritten identical xml is bound
+- `CoverageCommandBindingTests.test_reused_run_id_cannot_overwrite_previous_actual_outcome`: reused run id cannot overwrite previous actual outcome
+- `CoverageCommandBindingTests.test_threshold_exit_is_retained_without_becoming_an_assertion_failure`: threshold exit is retained without becoming an assertion failure
+- `CoverageCommandBindingTests.test_unhandled_error_with_passing_junit_is_bound_but_never_eligible`: unhandled error with passing junit is bound but never eligible
+- `CoverageCommandBindingTests.test_unhandled_with_zero_exit_still_fails_guard_without_coercing_exit`: unhandled with zero exit still fails guard without coercing exit
+- `CoverageCommandBindingTests.test_real_assertion_failure_is_retained_without_eligibility`: real assertion failure is retained without eligibility
+- `CoverageCommandBindingTests.test_skips_and_interruption_are_never_eligible`: skips and interruption are never eligible
+- `CoverageCommandBindingTests.test_real_child_rejections`: real child rejections
+- `CoverageCommandBindingTests.test_unchanged_previous_junit_and_outcome_rejected`: unchanged previous junit and outcome rejected
+- `CoverageCommandBindingTests.test_symlink_artifact_and_parent_are_rejected_before_child`: symlink artifact and parent are rejected before child
+- `CoverageCommandBindingTests.test_command_must_select_outcome_reporter_exactly_once`: command must select outcome reporter exactly once
+
+</details>
+
+### `.task123-publishing-candidate/reports/coverage-producer/2026-10-29-producer-foundation/parent/candidate/tests/testing/test_coverage_command_binding.py`
+
+Real subprocesses exercise producer-time byte/nonce/count binding.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/coverage-producer/2026-10-29-producer-foundation/parent/candidate/tests/testing/test_coverage_command_binding.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CoverageCommandBindingTests.test_real_child_binds_exact_fresh_junit_and_public_outcome_bytes`: real child binds exact fresh junit and public outcome bytes
+- `CoverageCommandBindingTests.test_bound_hash_rejects_subsequent_one_vs_2771_replacement`: bound hash rejects subsequent one vs 2771 replacement
+- `CoverageCommandBindingTests.test_each_invocation_has_fresh_nonce_and_rewritten_identical_xml_is_bound`: each invocation has fresh nonce and rewritten identical xml is bound
+- `CoverageCommandBindingTests.test_reused_run_id_cannot_overwrite_previous_actual_outcome`: reused run id cannot overwrite previous actual outcome
+- `CoverageCommandBindingTests.test_threshold_exit_is_retained_without_becoming_an_assertion_failure`: threshold exit is retained without becoming an assertion failure
+- `CoverageCommandBindingTests.test_unhandled_error_with_passing_junit_is_bound_but_never_eligible`: unhandled error with passing junit is bound but never eligible
+- `CoverageCommandBindingTests.test_unhandled_with_zero_exit_still_fails_guard_without_coercing_exit`: unhandled with zero exit still fails guard without coercing exit
+- `CoverageCommandBindingTests.test_real_assertion_failure_is_retained_without_eligibility`: real assertion failure is retained without eligibility
+- `CoverageCommandBindingTests.test_skips_and_interruption_are_never_eligible`: skips and interruption are never eligible
+- `CoverageCommandBindingTests.test_real_child_rejections`: real child rejections
+- `CoverageCommandBindingTests.test_unchanged_previous_junit_and_outcome_rejected`: unchanged previous junit and outcome rejected
+- `CoverageCommandBindingTests.test_symlink_artifact_and_parent_are_rejected_before_child`: symlink artifact and parent are rejected before child
+- `CoverageCommandBindingTests.test_command_must_select_outcome_reporter_exactly_once`: command must select outcome reporter exactly once
+
+</details>
+
+### `.task123-publishing-candidate/reports/coverage-producer/2026-10-29-producer-foundation/parent/history/pre-repeat-safe/candidate/tests/testing/test_coverage_command_binding.py`
+
+Real subprocesses exercise producer-time byte/nonce/count binding.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/coverage-producer/2026-10-29-producer-foundation/parent/history/pre-repeat-safe/candidate/tests/testing/test_coverage_command_binding.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CoverageCommandBindingTests.test_real_child_binds_exact_fresh_junit_and_public_outcome_bytes`: real child binds exact fresh junit and public outcome bytes
+- `CoverageCommandBindingTests.test_bound_hash_rejects_subsequent_one_vs_2771_replacement`: bound hash rejects subsequent one vs 2771 replacement
+- `CoverageCommandBindingTests.test_each_invocation_has_fresh_nonce_and_rewritten_identical_xml_is_bound`: each invocation has fresh nonce and rewritten identical xml is bound
+- `CoverageCommandBindingTests.test_threshold_exit_is_retained_without_becoming_an_assertion_failure`: threshold exit is retained without becoming an assertion failure
+- `CoverageCommandBindingTests.test_unhandled_error_with_passing_junit_is_bound_but_never_eligible`: unhandled error with passing junit is bound but never eligible
+- `CoverageCommandBindingTests.test_unhandled_with_zero_exit_still_fails_guard_without_coercing_exit`: unhandled with zero exit still fails guard without coercing exit
+- `CoverageCommandBindingTests.test_real_assertion_failure_is_retained_without_eligibility`: real assertion failure is retained without eligibility
+- `CoverageCommandBindingTests.test_skips_and_interruption_are_never_eligible`: skips and interruption are never eligible
+- `CoverageCommandBindingTests.test_real_child_rejections`: real child rejections
+- `CoverageCommandBindingTests.test_unchanged_previous_junit_and_outcome_rejected`: unchanged previous junit and outcome rejected
+- `CoverageCommandBindingTests.test_symlink_artifact_and_parent_are_rejected_before_child`: symlink artifact and parent are rejected before child
+- `CoverageCommandBindingTests.test_command_must_select_outcome_reporter_exactly_once`: command must select outcome reporter exactly once
+
+</details>
+
+### `.task123-publishing-candidate/reports/mapping-audit/2026-10-28-topology-final/candidate/tests/testing/test_endpoint_mount_resolution.py`
+
+The actual registry consumer must retain source topology uncertainty.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/mapping-audit/2026-10-28-topology-final/candidate/tests/testing/test_endpoint_mount_resolution.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `MountResolutionConsumer.test_high_confidence_mounted_path_is_retained`: high confidence mounted path is retained
+- `MountResolutionConsumer.test_medium_confidence_mounted_path_is_retained`: medium confidence mounted path is retained
+- `MountResolutionConsumer.test_unmounted_fallback_path_never_becomes_a_resolved_mount`: unmounted fallback path never becomes a resolved mount
+- `MountResolutionConsumer.test_unknown_confidence_cannot_claim_a_verified_mount`: unknown confidence cannot claim a verified mount
+- `MountResolutionConsumer.test_missing_full_path_remains_unresolved`: missing full path remains unresolved
+- `MountResolutionConsumer.test_existing_unique_source_route_identity_is_unchanged`: existing unique source route identity is unchanged
+- `MountResolutionConsumer.test_same_source_url_in_distinct_processes_has_distinct_actual_consumer_ids`: same source url in distinct processes has distinct actual consumer ids
+
+</details>
+
+### `.task123-publishing-candidate/reports/mapping-audit/2026-10-29-python-factory-final/test_python_factory_mounts.py`
+
+Static factory topology must preserve declarations and fail closed on ambiguity.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/mapping-audit/2026-10-29-python-factory-final/test_python_factory_mounts.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `FactoryMounts.test_direct_import_alias_and_prefixes`: direct import alias and prefixes
+- `FactoryMounts.test_constructor_alias_is_resolved_in_its_lexical_scope`: constructor alias is resolved in its lexical scope
+- `FactoryMounts.test_same_module_factory_and_relative_import`: same module factory and relative import
+- `FactoryMounts.test_assigned_router_and_optional_none_remain_conditional`: assigned router and optional none remain conditional
+- `FactoryMounts.test_optional_fastapi_none_fallback_requires_same_import_try`: optional fastapi none fallback requires same import try
+- `FactoryMounts.test_conditional_application_constructor_import_is_retained`: conditional application constructor import is retained
+- `FactoryMounts.test_module_app_and_router_binding_shadowing_reject`: module app and router binding shadowing reject
+- `FactoryMounts.test_nested_scope_shadowing_does_not_replace_outer_bindings`: nested scope shadowing does not replace outer bindings
+- `FactoryMounts.test_decorated_async_generator_early_or_implicit_return_factories_reject`: decorated async generator early or implicit return factories reject
+- `FactoryMounts.test_deferred_loop_comprehension_with_match_mounts_reject`: deferred loop comprehension with match mounts reject
+- `FactoryMounts.test_ordinary_if_and_try_mounts_record_conditions`: ordinary if and try mounts record conditions
+- `FactoryMounts.test_invalid_prefix_and_dynamic_spreads_reject`: invalid prefix and dynamic spreads reject
+- `FactoryMounts.test_constructor_and_factory_call_before_import_reject`: constructor and factory call before import reject
+- `FactoryMounts.test_ambiguous_packages_and_reexport_cycles_reject`: ambiguous packages and reexport cycles reject
+- `FactoryMounts.test_router_lifecycle_decorator_preserves_direct_route_topology`: router lifecycle decorator preserves direct route topology
+- `FactoryMounts.test_source_is_never_executed_and_unicode_prefix_preserved`: source is never executed and unicode prefix preserved
+- `FactoryMounts.test_finite_file_budget_fails_closed`: finite file budget fails closed
+- `FactoryMounts.test_importlib_consumer_loads_paired_helpers_without_sys_path`: importlib consumer loads paired helpers without sys path
+- `FactoryMounts.test_actual_consumer_retains_declaration_check_and_unknown_identities`: actual consumer retains declaration check and unknown identities
+- `FactoryMounts.test_multiple_mounts_retain_original_declaration_and_explicit_unknown`: multiple mounts retain original declaration and explicit unknown
+- `FactoryMounts.test_nonliteral_decorator_path_remains_unresolved`: nonliteral decorator path remains unresolved
+
+</details>
+
+### `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/testing/test_platform_evidence.py`
+
+Explicit feature proofs require every exact current passing case.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/testing/test_platform_evidence.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_complete_explicit_bundle_preserves_all_exact_case_identities`: complete explicit bundle preserves all exact case identities
+- `test_legacy_single_exact_case_remains_supported`: legacy single exact case remains supported
+- `test_one_nonpassing_required_case_rejects_the_entire_bundle`: one nonpassing required case rejects the entire bundle
+- `test_changed_platform_source_rejects_otherwise_passing_cases`: changed platform source rejects otherwise passing cases
+- `test_changed_test_bytes_reject_old_passing_receipt`: changed test bytes reject old passing receipt
+- `test_deleted_test_cannot_be_a_current_proof`: deleted test cannot be a current proof
+- `test_static_or_approximate_associations_do_not_close_a_check`: static or approximate associations do not close a check
+- `test_malformed_or_empty_bundle_cannot_prove_acceptance`: malformed or empty bundle cannot prove acceptance
+- `test_mixed_legacy_and_bundle_identities_are_ambiguous_and_rejected`: mixed legacy and bundle identities are ambiguous and rejected
+- `test_duplicate_case_does_not_count_as_two_independent_required_cases`: duplicate case does not count as two independent required cases
+- `test_unknown_or_malformed_check_never_becomes_verified`: unknown or malformed check never becomes verified
+- `test_unregistered_test_cannot_borrow_an_existing_exact_passing_identity`: unregistered test cannot borrow an existing exact passing identity
+- `test_validator_does_not_mutate_the_declared_proof`: validator does not mutate the declared proof
+- `test_generator_refuses_old_execution_even_when_candidate_digest_is_rewritten`: Exercise the actual main linker, not a replacement of its acceptance rule.
+- `test_actual_selected_producer_can_prove_only_its_exact_current_cases`: actual selected producer can prove only its exact current cases
+- `test_execution_metadata_cannot_be_relabelled_as_current_proof`: execution metadata cannot be relabelled as current proof
+- `test_refreshing_case_results_does_not_refresh_stale_underlying_artifacts`: refreshing case results does not refresh stale underlying artifacts
+- `test_case_results_must_match_actual_bound_passing_xml`: case results must match actual bound passing xml
+- `test_failed_or_skipped_xml_cannot_borrow_a_pass_label`: failed or skipped xml cannot borrow a pass label
+- `test_changed_python_source_hash_cannot_borrow_default_file_identity`: changed python source hash cannot borrow default file identity
+- `test_malformed_case_results_fail_closed`: malformed case results fail closed
+- `test_supplemental_node_cases_need_the_actual_current_successful_file_run`: supplemental node cases need the actual current successful file run
+- `test_malformed_supplemental_node_reports_fail_closed`: malformed supplemental node reports fail closed
+- `test_malformed_supplemental_browser_reports_fail_closed`: malformed supplemental browser reports fail closed
+- `test_postprocessing_ledger_updates_preserve_exact_stable_execution_binding`: postprocessing ledger updates preserve exact stable execution binding
+- `test_duplicate_xml_identity_is_ambiguous_even_if_one_occurrence_passes`: duplicate xml identity is ambiguous even if one occurrence passes
+- `test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof`: partial or ambiguous producer bindings never become leaf proof
+- `test_aggregate_browser_tap_cannot_assign_cases_to_files`: aggregate browser tap cannot assign cases to files
+- `test_default_file_producer_requires_exact_command_and_numeric_success`: default file producer requires exact command and numeric success
+- `test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass`: Both occurrences really execute the same unchanged owned source.
+
+</details>
+
+### `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/testing/test_summary_results.py`
+
+Retain every case in mixed Node/Vitest JUnit layouts without double counts.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/testing/test_summary_results.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_mixed_root_cases_and_nested_suites_keep_skips_and_each_case_once`: mixed root cases and nested suites keep skips and each case once
+- `test_suite_names_and_explicit_file_survive_without_default_file`: suite names and explicit file survive without default file
+- `test_master_plan_keeps_sandbox_mutations_opt_in_and_builds_before_http_load`: master plan keeps sandbox mutations opt in and builds before http load
+- `test_source_identity_detects_new_code_changes_and_excludes_generated_private_state`: source identity detects new code changes and excludes generated private state
+- `test_provider_parse_exclusions_cannot_be_mistaken_for_complete_coverage`: provider parse exclusions cannot be mistaken for complete coverage
+- `test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units`: coverage only database cases are retained without repeating ordinary units
+
+</details>
+
+### `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/testing/test_platform_evidence.py`
+
+Explicit feature proofs require every exact current passing case.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/testing/test_platform_evidence.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_complete_explicit_bundle_preserves_all_exact_case_identities`: complete explicit bundle preserves all exact case identities
+- `test_legacy_single_exact_case_remains_supported`: legacy single exact case remains supported
+- `test_one_nonpassing_required_case_rejects_the_entire_bundle`: one nonpassing required case rejects the entire bundle
+- `test_changed_platform_source_rejects_otherwise_passing_cases`: changed platform source rejects otherwise passing cases
+- `test_changed_test_bytes_reject_old_passing_receipt`: changed test bytes reject old passing receipt
+- `test_deleted_test_cannot_be_a_current_proof`: deleted test cannot be a current proof
+- `test_static_or_approximate_associations_do_not_close_a_check`: static or approximate associations do not close a check
+- `test_malformed_or_empty_bundle_cannot_prove_acceptance`: malformed or empty bundle cannot prove acceptance
+- `test_mixed_legacy_and_bundle_identities_are_ambiguous_and_rejected`: mixed legacy and bundle identities are ambiguous and rejected
+- `test_duplicate_case_does_not_count_as_two_independent_required_cases`: duplicate case does not count as two independent required cases
+- `test_unknown_or_malformed_check_never_becomes_verified`: unknown or malformed check never becomes verified
+- `test_unregistered_test_cannot_borrow_an_existing_exact_passing_identity`: unregistered test cannot borrow an existing exact passing identity
+- `test_validator_does_not_mutate_the_declared_proof`: validator does not mutate the declared proof
+- `test_generator_refuses_old_execution_even_when_candidate_digest_is_rewritten`: Exercise the actual main linker, not a replacement of its acceptance rule.
+- `test_actual_selected_producer_can_prove_only_its_exact_current_cases`: actual selected producer can prove only its exact current cases
+- `test_execution_metadata_cannot_be_relabelled_as_current_proof`: execution metadata cannot be relabelled as current proof
+- `test_refreshing_case_results_does_not_refresh_stale_underlying_artifacts`: refreshing case results does not refresh stale underlying artifacts
+- `test_case_results_must_match_actual_bound_passing_xml`: case results must match actual bound passing xml
+- `test_failed_or_skipped_xml_cannot_borrow_a_pass_label`: failed or skipped xml cannot borrow a pass label
+- `test_changed_python_source_hash_cannot_borrow_default_file_identity`: changed python source hash cannot borrow default file identity
+- `test_malformed_case_results_fail_closed`: malformed case results fail closed
+- `test_supplemental_node_cases_need_the_actual_current_successful_file_run`: supplemental node cases need the actual current successful file run
+- `test_malformed_supplemental_node_reports_fail_closed`: malformed supplemental node reports fail closed
+- `test_malformed_supplemental_browser_reports_fail_closed`: malformed supplemental browser reports fail closed
+- `test_postprocessing_ledger_updates_preserve_exact_stable_execution_binding`: postprocessing ledger updates preserve exact stable execution binding
+- `test_duplicate_xml_identity_is_ambiguous_even_if_one_occurrence_passes`: duplicate xml identity is ambiguous even if one occurrence passes
+- `test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof`: partial or ambiguous producer bindings never become leaf proof
+- `test_aggregate_browser_tap_cannot_assign_cases_to_files`: aggregate browser tap cannot assign cases to files
+- `test_default_file_producer_requires_exact_command_and_numeric_success`: default file producer requires exact command and numeric success
+- `test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass`: Both occurrences really execute the same unchanged owned source.
+- `test_real_python_class_scopes_share_extractor_and_linker_identity`: Real pytest classnames separate methods; outcome and producer guards remain.
+- `test_duplicate_fully_qualified_python_scope_cannot_union_a_pass`: Disambiguating distinct classes must not disambiguate real duplicates.
+
+</details>
+
+### `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/testing/test_summary_results.py`
+
+Retain every case in mixed Node/Vitest JUnit layouts without double counts.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/testing/test_summary_results.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_mixed_root_cases_and_nested_suites_keep_skips_and_each_case_once`: mixed root cases and nested suites keep skips and each case once
+- `test_suite_names_and_explicit_file_survive_without_default_file`: suite names and explicit file survive without default file
+- `test_master_plan_keeps_sandbox_mutations_opt_in_and_builds_before_http_load`: master plan keeps sandbox mutations opt in and builds before http load
+- `test_source_identity_detects_new_code_changes_and_excludes_generated_private_state`: source identity detects new code changes and excludes generated private state
+- `test_provider_parse_exclusions_cannot_be_mistaken_for_complete_coverage`: provider parse exclusions cannot be mistaken for complete coverage
+- `test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units`: coverage only database cases are retained without repeating ordinary units
+- `test_python_scopes_qualify_only_ambiguous_explicit_classes`: python scopes qualify only ambiguous explicit classes
+- `test_python_missing_class_scope_stays_ambiguous`: python missing class scope stays ambiguous
+- `test_python_missing_names_or_blank_classes_never_acquire_a_usable_identity`: python missing names or blank classes never acquire a usable identity
+
+</details>
+
+### `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_catalog_snapshot_ownership.py`
+
+Keep report-owned source in the catalog without registering historical suites.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_catalog_snapshot_ownership.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CatalogSnapshotOwnership.test_current_suite_is_canonical_and_report_copy_is_hashed_only`: current suite is canonical and report copy is hashed only
+- `CatalogSnapshotOwnership.test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression`: report ownership covers plain and snapshot paths without filename suppression
+- `CatalogSnapshotOwnership.test_existing_current_classifications_and_assertions_are_preserved`: existing current classifications and assertions are preserved
+- `CatalogSnapshotOwnership.test_unique_report_replay_sources_remain_documented_without_active_commands`: unique report replay sources remain documented without active commands
+- `CatalogSnapshotOwnership.test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors`: actual node builder admits generated commands and rejects report selectors
+- `CatalogSnapshotOwnership.test_census_is_read_only_and_preserves_every_input_hash_and_result_counter`: census is read only and preserves every input hash and result counter
+
+</details>
+
+### `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py`
+
+Exercise the real legacy-commerce selector boundary without SQL or providers.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CommerceSubjectSelectorTests.test_missing_subject_selector_rejected`: missing subject selector rejected
+- `CommerceSubjectSelectorTests.test_relative_report_rejected`: relative report rejected
+- `CommerceSubjectSelectorTests.test_absolute_subject_rejected`: absolute subject rejected
+- `CommerceSubjectSelectorTests.test_traversal_subject_rejected`: traversal subject rejected
+- `CommerceSubjectSelectorTests.test_unregistered_subject_rejected`: unregistered subject rejected
+- `CommerceSubjectSelectorTests.test_unknown_duplicate_or_ignored_arguments_rejected`: unknown duplicate or ignored arguments rejected
+- `CommerceSubjectSelectorTests.test_missing_registered_file_rejected`: missing registered file rejected
+- `CommerceSubjectSelectorTests.test_symlink_redirection_outside_repository_rejected`: symlink redirection outside repository rejected
+- `CommerceSubjectSelectorTests.test_config_include_mismatch_rejected`: config include mismatch rejected
+- `CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected`: selection changing or dynamic config rejected
+- `CommerceSubjectSelectorTests.test_validated_subject_drives_actual_spawn_and_owned_cleanup`: validated subject drives actual spawn and owned cleanup
+- `CommerceSubjectSelectorTests.test_runner_forwards_recorded_subject_and_strips_application_credentials`: runner forwards recorded subject and strips application credentials
+
+</details>
+
+### `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/candidate/tests/testing/test_catalog_snapshot_ownership.py`
+
+Keep report-owned source in the catalog without registering historical suites.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/catalog/candidate/tests/testing/test_catalog_snapshot_ownership.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CatalogSnapshotOwnership.test_current_suite_is_canonical_and_report_copy_is_hashed_only`: current suite is canonical and report copy is hashed only
+- `CatalogSnapshotOwnership.test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression`: report ownership covers plain and snapshot paths without filename suppression
+- `CatalogSnapshotOwnership.test_existing_current_classifications_and_assertions_are_preserved`: existing current classifications and assertions are preserved
+- `CatalogSnapshotOwnership.test_unique_report_replay_sources_remain_documented_without_active_commands`: unique report replay sources remain documented without active commands
+- `CatalogSnapshotOwnership.test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors`: actual node builder admits generated commands and rejects report selectors
+- `CatalogSnapshotOwnership.test_census_is_read_only_and_preserves_every_input_hash_and_result_counter`: census is read only and preserves every input hash and result counter
+
+</details>
+
+### `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py`
+
+Exercise the real legacy-commerce selector boundary without SQL or providers.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CommerceSubjectSelectorTests.test_missing_subject_selector_rejected`: missing subject selector rejected
+- `CommerceSubjectSelectorTests.test_relative_report_rejected`: relative report rejected
+- `CommerceSubjectSelectorTests.test_absolute_subject_rejected`: absolute subject rejected
+- `CommerceSubjectSelectorTests.test_traversal_subject_rejected`: traversal subject rejected
+- `CommerceSubjectSelectorTests.test_unregistered_subject_rejected`: unregistered subject rejected
+- `CommerceSubjectSelectorTests.test_unknown_duplicate_or_ignored_arguments_rejected`: unknown duplicate or ignored arguments rejected
+- `CommerceSubjectSelectorTests.test_missing_registered_file_rejected`: missing registered file rejected
+- `CommerceSubjectSelectorTests.test_symlink_redirection_outside_repository_rejected`: symlink redirection outside repository rejected
+- `CommerceSubjectSelectorTests.test_config_include_mismatch_rejected`: config include mismatch rejected
+- `CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected`: selection changing or dynamic config rejected
+- `CommerceSubjectSelectorTests.test_validated_subject_drives_actual_spawn_and_owned_cleanup`: validated subject drives actual spawn and owned cleanup
+- `CommerceSubjectSelectorTests.test_runner_forwards_recorded_subject_and_strips_application_credentials`: runner forwards recorded subject and strips application credentials
+
+</details>
+
+### `.task123-publishing-candidate/reports/runner-repairs/2026-10-29/node/candidate/tests/testing/test_catalog_snapshot_ownership.py`
+
+Keep report-owned source in the catalog without registering historical suites.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/runner-repairs/2026-10-29/node/candidate/tests/testing/test_catalog_snapshot_ownership.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CatalogSnapshotOwnership.test_current_suite_is_canonical_and_report_copy_is_hashed_only`: current suite is canonical and report copy is hashed only
+- `CatalogSnapshotOwnership.test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression`: report ownership covers plain and snapshot paths without filename suppression
+- `CatalogSnapshotOwnership.test_existing_current_classifications_and_assertions_are_preserved`: existing current classifications and assertions are preserved
+- `CatalogSnapshotOwnership.test_unique_report_replay_sources_remain_documented_without_active_commands`: unique report replay sources remain documented without active commands
+- `CatalogSnapshotOwnership.test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors`: actual node builder admits generated commands and rejects report selectors
+- `CatalogSnapshotOwnership.test_census_is_read_only_and_preserves_every_input_hash_and_result_counter`: census is read only and preserves every input hash and result counter
+
+</details>
+
+### `.task123-publishing-candidate/reports/runner-repairs/2026-10-29/progress/baseline/tests/testing/test_report_progress.py`
+
+Behavior and malformed-evidence checks for the counted progress report.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/runner-repairs/2026-10-29/progress/baseline/tests/testing/test_report_progress.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CountedProgressTests.test_independent_denominators_and_no_invented_implementation_or_test_total`: independent denominators and no invented implementation or test total
+- `CountedProgressTests.test_green_color_requires_all_gates_checks_and_no_blockers`: green color requires all gates checks and no blockers
+- `CountedProgressTests.test_stale_keeps_only_historical_observation_and_no_current_pass_credit`: stale keeps only historical observation and no current pass credit
+- `CountedProgressTests.test_raw_fraction_is_separate_from_istanbul_truncated_percent`: raw fraction is separate from istanbul truncated percent
+- `CountedProgressTests.test_missing_page_and_duplicate_page_cannot_reduce_eighty_page_target`: missing page and duplicate page cannot reduce eighty page target
+- `CountedProgressTests.test_summary_counts_must_equal_actual_rows`: summary counts must equal actual rows
+- `CountedProgressTests.test_boolean_counts_are_rejected`: boolean counts are rejected
+- `CountedProgressTests.test_plan_and_readiness_statuses_must_agree`: plan and readiness statuses must agree
+- `CountedProgressTests.test_duplicate_check_identity_is_not_counted_twice`: duplicate check identity is not counted twice
+- `CountedProgressTests.test_coverage_overflow_negative_boolean_and_stale_summary_are_rejected`: coverage overflow negative boolean and stale summary are rejected
+- `CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent`: zero denominator has no fabricated completion percent
+- `CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged`: real collection leaves all git visible files unchanged
+- `CountedProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two`: missing input cli writes unavailable and returns two
+
+</details>
+
+### `.task123-publishing-candidate/reports/runner-repairs/2026-10-29/progress/candidate/tests/testing/test_report_progress.py`
+
+Behavior and malformed-evidence checks for the counted progress report.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/runner-repairs/2026-10-29/progress/candidate/tests/testing/test_report_progress.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CountedProgressTests.test_independent_denominators_and_no_invented_implementation_or_test_total`: independent denominators and no invented implementation or test total
+- `CountedProgressTests.test_green_color_requires_all_gates_checks_and_no_blockers`: green color requires all gates checks and no blockers
+- `CountedProgressTests.test_stale_keeps_only_historical_observation_and_no_current_pass_credit`: stale keeps only historical observation and no current pass credit
+- `CountedProgressTests.test_complete_current_launch_uses_audit_and_master_not_summary_approval`: complete current launch uses audit and master not summary approval
+- `CountedProgressTests.test_complete_green_cannot_override_missing_failed_or_stale_master`: complete green cannot override missing failed or stale master
+- `CountedProgressTests.test_summary_claim_cannot_override_partial_or_unapproved_launch`: summary claim cannot override partial or unapproved launch
+- `CountedProgressTests.test_raw_fraction_is_separate_from_istanbul_truncated_percent`: raw fraction is separate from istanbul truncated percent
+- `CountedProgressTests.test_missing_page_and_duplicate_page_cannot_reduce_eighty_page_target`: missing page and duplicate page cannot reduce eighty page target
+- `CountedProgressTests.test_summary_counts_must_equal_actual_rows`: summary counts must equal actual rows
+- `CountedProgressTests.test_boolean_counts_are_rejected`: boolean counts are rejected
+- `CountedProgressTests.test_plan_and_readiness_statuses_must_agree`: plan and readiness statuses must agree
+- `CountedProgressTests.test_duplicate_check_identity_is_not_counted_twice`: duplicate check identity is not counted twice
+- `CountedProgressTests.test_coverage_overflow_negative_boolean_and_stale_summary_are_rejected`: coverage overflow negative boolean and stale summary are rejected
+- `CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent`: zero denominator has no fabricated completion percent
+- `CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged`: real collection leaves all git visible files unchanged
+- `CountedProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two`: missing input cli writes unavailable and returns two
+
+</details>
+
+### `.task123-publishing-candidate/reports/runner-repairs/2026-10-29/python/candidate/tests/testing/test_python_runner_scheduling.py`
+
+Exercise Python worker isolation and quiescent read-only scheduling with real children.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/reports/runner-repairs/2026-10-29/python/candidate/tests/testing/test_python_runner_scheduling.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PythonRunnerScheduling.test_reader_waits_for_actual_writer_cleanup_and_result_files`: reader waits for actual writer cleanup and result files
+- `PythonRunnerScheduling.test_ordinary_suites_retain_real_parallelism`: ordinary suites retain real parallelism
+- `PythonRunnerScheduling.test_failed_ordinary_suite_is_retained_and_does_not_suppress_reader`: failed ordinary suite is retained and does not suppress reader
+- `PythonRunnerScheduling.test_timed_out_ordinary_suite_is_retained_and_reader_executes`: timed out ordinary suite is retained and reader executes
+- `PythonRunnerScheduling.test_report_owned_and_state_copies_are_retained_without_execution`: report owned and state copies are retained without execution
+- `PythonRunnerScheduling.test_retained_copy_selector_is_rejected_instead_of_running_history`: retained copy selector is rejected instead of running history
+- `PythonRunnerScheduling.test_quiescent_only_selector_retains_exact_selection`: quiescent only selector retains exact selection
+
+</details>
+
+### `.task123-publishing-candidate/tests/awareness-public-read-smoke.py`
+
+Read-only live feed check, separate from the no-egress production rehearsal.
+
+Status: **blocked**. Reads live public feeds and needs proxy/TLS networking. Kept outside the no-egress test run.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/awareness-public-read-smoke.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/tests/chaos/harness.py`
+
+Chaos scenario runner — shared harness.
+
+Status: **blocked**. Shared chaos harness; not standalone tests.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/chaos/harness.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/tests/chaos/scenarios.py`
+
+Chaos scenarios 1-7: Redis and Postgres failure injection.
+
+Status: **blocked**. Injects Redis/PostgreSQL failures; requires a disposable service topology and explicit fault-injection isolation.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/chaos/scenarios.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/tests/dns-production-smoke.py`
+
+Exercise the compiled DNS artifact without credentials or network egress.
+
+Status: **blocked**. Requires a new user/network namespace (unshare -Urn) and a current built DNS artifact.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/dns-production-smoke.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/tests/npm-start-isolated-smoke.py`
+
+Run under `unshare -Urn` with disposable app and PostgreSQL directories.
+
+Status: **blocked**. Requires disposable production fixture and isolated user/network namespace; never run against the workspace DB.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/npm-start-isolated-smoke.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/tests/pdim-retained-inventory.py`
+
+Read-only, bounded-memory inventory of retained checkpoint candidates.
+
+Status: **blocked**. Read-only operator inventory of retained state; not an assertion suite and must not read private state in an offline run.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/pdim-retained-inventory.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/tests/prepare-production-fixture.py`
+
+Prepare disposable production artifacts; never copy workspace credentials/DB data.
+
+Status: **blocked**. Fixture preparation utility, not standalone tests.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/prepare-production-fixture.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/tests/production-restart-smoke.py`
+
+Two complete start/stop cycles in the same disposable network namespace.
+
+Status: **blocked**. Runs two production start/stop cycles; requires disposable fixture and network namespace.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/production-restart-smoke.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/tests/production_fixture_support.py`
+
+Safety checks shared by the disposable production rehearsal.
+
+Status: **blocked**. Fixture safety helper module, exercised by test_production_fixture_support.py.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/production_fixture_support.py --output /tmp/maxbooster-python-single
+```
+
+### `.task123-publishing-candidate/tests/test_ltx_adapter_download.py`
+
+test ltx adapter download
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/test_ltx_adapter_download.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_finished_video_has_explicit_bound_and_oversize_is_failure`: finished video has explicit bound and oversize is failure
+
+</details>
+
+### `.task123-publishing-candidate/tests/test_portable_rust_toolchain.py`
+
+Portable compiler verification must fail before an altered compiler is run.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/test_portable_rust_toolchain.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PortableRustVerification.test_intact_toolchain_checks_exact_versions`: intact toolchain checks exact versions
+- `PortableRustVerification.test_altered_or_added_toolchain_file_rejected_before_execution`: altered or added toolchain file rejected before execution
+- `PortableRustVerification.test_unpinned_archive_provenance_rejected`: unpinned archive provenance rejected
+- `RustGlibcTunables.test_sets_minimum_static_tls_without_disabling_other_tunables`: sets minimum static tls without disabling other tunables
+- `RustGlibcTunables.test_preserves_a_higher_existing_static_tls_reserve`: preserves a higher existing static tls reserve
+- `RustGlibcTunables.test_deduplicates_static_tls_and_uses_the_largest_existing_value`: deduplicates static tls and uses the largest existing value
+- `RustGlibcTunables.test_rejects_malformed_existing_tunable_instead_of_silently_dropping_it`: rejects malformed existing tunable instead of silently dropping it
+
+</details>
+
+### `.task123-publishing-candidate/tests/test_production_fixture_support.py`
+
+test production fixture support
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/test_production_fixture_support.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `FixtureContracts.test_missing_binary_fails_instead_of_skipping`: missing binary fails instead of skipping
+- `FixtureContracts.test_prefers_packaged_binary_and_rejects_non_executable`: prefers packaged binary and rejects non executable
+- `FixtureContracts.test_listener_is_detected_and_closed_port_passes`: listener is detected and closed port passes
+
+</details>
+
+### `.task123-publishing-candidate/tests/test_secure_http.py`
+
+test secure http
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/test_secure_http.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `SecureHTTPPolicyTests.test_public_policy_rejects_private_address`: public policy rejects private address
+- `SecureHTTPPolicyTests.test_loopback_policy_accepts_only_loopback`: loopback policy accepts only loopback
+- `SecureHTTPPolicyTests.test_target_must_match_trusted_origin_before_network`: target must match trusted origin before network
+- `SecureHTTPPolicyTests.test_custom_schemes_are_rejected`: custom schemes are rejected
+- `SecureHTTPPolicyTests.test_redirect_is_refused`: redirect is refused
+- `SecureHTTPPolicyTests.test_ipv6_host_header_uses_brackets_and_scheme_default_port`: ipv6 host header uses brackets and scheme default port
+
+</details>
+
+### `.task123-publishing-candidate/tests/test_torch_provenance.py`
+
+Regression tests for the supplemental CPU Torch integrity gate.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/test_torch_provenance.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ProvenanceTests.test_installed_record_verifies_real_bytes_then_rejects_tampering_and_missing_file`: installed record verifies real bytes then rejects tampering and missing file
+- `ProvenanceTests.test_only_unique_official_frozen_wheel_is_accepted`: only unique official frozen wheel is accepted
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_archived_quality_verifiers.py`
+
+Archive integrity must stay distinct from missing current inference evidence.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_archived_quality_verifiers.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_completed_archives_validate_without_requiring_obsolete_serving_weights`: completed archives validate without requiring obsolete serving weights
+- `test_current_identity_check_fails_when_model_bytes_are_missing`: current identity check fails when model bytes are missing
+- `test_incomplete_later_archive_cannot_be_promoted_to_verified_evidence`: incomplete later archive cannot be promoted to verified evidence
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_assertion_oracles.py`
+
+Real pytest must reject false checks in canonical custom assertion helpers.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_assertion_oracles.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_false_condition_is_one_real_pytest_assertion_failure`: false condition is one real pytest assertion failure
+- `test_true_condition_passes_without_recording_a_failure`: true condition passes without recording a failure
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_catalog_snapshot_ownership.py`
+
+Keep report-owned source in the catalog without registering historical suites.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_catalog_snapshot_ownership.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CatalogSnapshotOwnership.test_custom_output_paths_are_written_and_checked_without_touching_defaults`: custom output paths are written and checked without touching defaults
+- `CatalogSnapshotOwnership.test_current_suite_is_canonical_and_report_copy_is_hashed_only`: current suite is canonical and report copy is hashed only
+- `CatalogSnapshotOwnership.test_report_ownership_covers_plain_and_snapshot_paths_without_filename_suppression`: report ownership covers plain and snapshot paths without filename suppression
+- `CatalogSnapshotOwnership.test_existing_current_classifications_and_assertions_are_preserved`: existing current classifications and assertions are preserved
+- `CatalogSnapshotOwnership.test_unique_report_replay_sources_remain_documented_without_active_commands`: unique report replay sources remain documented without active commands
+- `CatalogSnapshotOwnership.test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors`: actual node builder admits generated commands and rejects report selectors
+- `CatalogSnapshotOwnership.test_census_is_read_only_and_preserves_every_input_hash_and_result_counter`: census is read only and preserves every input hash and result counter
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_command_harness.py`
+
+test command harness
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_command_harness.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CommandHarnessTests.test_invalid_environment_is_reported_without_aborting_orchestration`: invalid environment is reported without aborting orchestration
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_commerce_subject_selector.py`
+
+Exercise the real legacy-commerce selector boundary without SQL or providers.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_commerce_subject_selector.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CommerceSubjectSelectorTests.test_missing_subject_selector_rejected`: missing subject selector rejected
+- `CommerceSubjectSelectorTests.test_relative_report_rejected`: relative report rejected
+- `CommerceSubjectSelectorTests.test_absolute_subject_rejected`: absolute subject rejected
+- `CommerceSubjectSelectorTests.test_traversal_subject_rejected`: traversal subject rejected
+- `CommerceSubjectSelectorTests.test_unregistered_subject_rejected`: unregistered subject rejected
+- `CommerceSubjectSelectorTests.test_unknown_duplicate_or_ignored_arguments_rejected`: unknown duplicate or ignored arguments rejected
+- `CommerceSubjectSelectorTests.test_missing_registered_file_rejected`: missing registered file rejected
+- `CommerceSubjectSelectorTests.test_symlink_redirection_outside_repository_rejected`: symlink redirection outside repository rejected
+- `CommerceSubjectSelectorTests.test_config_include_mismatch_rejected`: config include mismatch rejected
+- `CommerceSubjectSelectorTests.test_selection_changing_or_dynamic_config_rejected`: selection changing or dynamic config rejected
+- `CommerceSubjectSelectorTests.test_validated_subject_drives_actual_spawn_and_owned_cleanup`: validated subject drives actual spawn and owned cleanup
+- `CommerceSubjectSelectorTests.test_runner_forwards_recorded_subject_and_strips_application_credentials`: runner forwards recorded subject and strips application credentials
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_coverage_command_binding.py`
+
+Real subprocesses exercise producer-time byte/nonce/count binding.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_coverage_command_binding.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CoverageCommandBindingTests.test_real_child_binds_exact_fresh_junit_and_public_outcome_bytes`: real child binds exact fresh junit and public outcome bytes
+- `CoverageCommandBindingTests.test_bound_hash_rejects_subsequent_one_vs_2771_replacement`: bound hash rejects subsequent one vs 2771 replacement
+- `CoverageCommandBindingTests.test_each_invocation_has_fresh_nonce_and_rewritten_identical_xml_is_bound`: each invocation has fresh nonce and rewritten identical xml is bound
+- `CoverageCommandBindingTests.test_reused_run_id_cannot_overwrite_previous_actual_outcome`: reused run id cannot overwrite previous actual outcome
+- `CoverageCommandBindingTests.test_threshold_exit_is_retained_without_becoming_an_assertion_failure`: threshold exit is retained without becoming an assertion failure
+- `CoverageCommandBindingTests.test_unhandled_error_with_passing_junit_is_bound_but_never_eligible`: unhandled error with passing junit is bound but never eligible
+- `CoverageCommandBindingTests.test_unhandled_with_zero_exit_still_fails_guard_without_coercing_exit`: unhandled with zero exit still fails guard without coercing exit
+- `CoverageCommandBindingTests.test_real_assertion_failure_is_retained_without_eligibility`: real assertion failure is retained without eligibility
+- `CoverageCommandBindingTests.test_skips_and_interruption_are_never_eligible`: skips and interruption are never eligible
+- `CoverageCommandBindingTests.test_real_child_rejections`: real child rejections
+- `CoverageCommandBindingTests.test_unchanged_previous_junit_and_outcome_rejected`: unchanged previous junit and outcome rejected
+- `CoverageCommandBindingTests.test_symlink_artifact_and_parent_are_rejected_before_child`: symlink artifact and parent are rejected before child
+- `CoverageCommandBindingTests.test_command_must_select_outcome_reporter_exactly_once`: command must select outcome reporter exactly once
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_endpoint_mount_resolution.py`
+
+The actual registry consumer must retain source topology uncertainty.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_endpoint_mount_resolution.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `MountResolutionConsumer.test_high_confidence_mounted_path_is_retained`: high confidence mounted path is retained
+- `MountResolutionConsumer.test_medium_confidence_mounted_path_is_retained`: medium confidence mounted path is retained
+- `MountResolutionConsumer.test_unmounted_fallback_path_never_becomes_a_resolved_mount`: unmounted fallback path never becomes a resolved mount
+- `MountResolutionConsumer.test_unknown_confidence_cannot_claim_a_verified_mount`: unknown confidence cannot claim a verified mount
+- `MountResolutionConsumer.test_missing_full_path_remains_unresolved`: missing full path remains unresolved
+- `MountResolutionConsumer.test_existing_unique_source_route_identity_is_unchanged`: existing unique source route identity is unchanged
+- `MountResolutionConsumer.test_same_source_url_in_distinct_processes_has_distinct_actual_consumer_ids`: same source url in distinct processes has distinct actual consumer ids
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_junit_multiple_failures.py`
+
+JUnit evidence must retain failed cases with multiple assertion details.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_junit_multiple_failures.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `JunitMultipleFailures.test_multiple_failures_remain_one_failed_case`: multiple failures remain one failed case
+- `JunitMultipleFailures.test_conflicting_outcomes_are_rejected`: conflicting outcomes are rejected
+- `JunitMultipleFailures.test_failure_cannot_be_hidden_by_success_counters`: failure cannot be hidden by success counters
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_launch_readiness_audit.py`
+
+Fail-closed launch decisions and exact inventory/provenance regressions.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_launch_readiness_audit.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_missing_quality_domain_is_rejected`: missing quality domain is rejected
+- `test_any_nonpassing_domain_prevents_green`: any nonpassing domain prevents green
+- `test_full_page_domain_score_cannot_override_production_blocker`: full page domain score cannot override production blocker
+- `test_only_complete_conjunction_can_green`: only complete conjunction can green
+- `test_all_80_alias_declarations_and_every_section_dimension_retained`: all 80 alias declarations and every section dimension retained
+- `test_inventory_loss_or_corruption_is_rejected`: inventory loss or corruption is rejected
+- `test_empty_evidence_never_green_even_when_all_source_checks_pass`: empty evidence never green even when all source checks pass
+- `test_full_page_criteria_and_global_gap_proofs_do_not_close_missing_exact_section_work`: full page criteria and global gap proofs do not close missing exact section work
+- `test_full_producer_can_green_only_with_every_retained_requirement_and_dimension`: full producer can green only with every retained requirement and dimension
+- `test_unrouted_backend_and_consumer_work_cannot_disappear_from_green_conjunction`: unrouted backend and consumer work cannot disappear from green conjunction
+- `test_stale_evidence_cannot_contribute_to_verified_percentage`: stale evidence cannot contribute to verified percentage
+- `test_current_source_hash_paths_digest_and_test_provenance_all_required`: current source hash paths digest and test provenance all required
+- `test_passing_test_hash_change_invalidates_source_snapshot`: passing test hash change invalidates source snapshot
+- `test_full_repository_manifest_changes_in_sql_and_tests_invalidate_old_proof`: full repository manifest changes in sql and tests invalidate old proof
+- `test_regenerated_inventory_does_not_relabel_historical_master_execution`: regenerated inventory does not relabel historical master execution
+- `test_custom_input_manifest_binds_selected_actual_files`: custom input manifest binds selected actual files
+- `test_criterion_requires_exact_actual_passing_current_test`: criterion requires exact actual passing current test
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_maxcore_analytics.py`
+
+Real authenticated FastAPI contracts for transient MaxCore account analytics.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_maxcore_analytics.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_all_routes_require_generation_authorization`: all routes require generation authorization
+- `test_capability_advertises_real_methods_without_weights_or_private_retention`: capability advertises real methods without weights or private retention
+- `test_exact_linear_calendar_series_has_correct_horizon_and_first_day`: exact linear calendar series has correct horizon and first day
+- `test_calendar_gaps_remain_missing_and_do_not_compress_the_regression_axis`: calendar gaps remain missing and do not compress the regression axis
+- `test_insufficient_history_never_produces_values_or_a_fake_accuracy`: insufficient history never produces values or a fake accuracy
+- `test_noise_produces_finite_widening_residual_intervals_with_explicit_assumptions`: noise produces finite widening residual intervals with explicit assumptions
+- `test_zero_constant_and_decreasing_series_stay_finite_nonnegative`: zero constant and decreasing series stay finite nonnegative
+- `test_prediction_rejects_invalid_authority_dates_horizons_and_values`: prediction rejects invalid authority dates horizons and values
+- `test_overflowing_json_exponent_is_rejected_before_error_serialization`: overflowing json exponent is rejected before error serialization
+- `test_insights_report_measured_totals_and_calendar_comparisons_without_causality`: insights report measured totals and calendar comparisons without causality
+- `test_empty_and_sparse_insights_do_not_invent_zero_performance`: empty and sparse insights do not invent zero performance
+- `test_zero_and_tiny_denominator_comparisons_are_explicit_and_finite`: zero and tiny denominator comparisons are explicit and finite
+- `test_insights_enforce_same_bounded_private_aggregate_contract`: insights enforce same bounded private aggregate contract
+- `test_public_context_is_separate_fresh_metadata_and_never_receives_private_points`: public context is separate fresh metadata and never receives private points
+- `test_missing_invalid_or_expired_public_context_does_not_masquerade_as_fresh`: missing invalid or expired public context does not masquerade as fresh
+- `test_snapshot_failure_leaves_statistical_computation_available_and_no_data_is_retained`: snapshot failure leaves statistical computation available and no data is retained
+- `test_canonical_server_mounts_router_with_generation_scope_and_read_only_snapshot`: canonical server mounts router with generation scope and read only snapshot
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_platform_evidence.py`
+
+Explicit feature proofs require every exact current passing case.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_platform_evidence.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_complete_explicit_bundle_preserves_all_exact_case_identities`: complete explicit bundle preserves all exact case identities
+- `test_legacy_single_exact_case_remains_supported`: legacy single exact case remains supported
+- `test_one_nonpassing_required_case_rejects_the_entire_bundle`: one nonpassing required case rejects the entire bundle
+- `test_changed_platform_source_rejects_otherwise_passing_cases`: changed platform source rejects otherwise passing cases
+- `test_changed_test_bytes_reject_old_passing_receipt`: changed test bytes reject old passing receipt
+- `test_deleted_test_cannot_be_a_current_proof`: deleted test cannot be a current proof
+- `test_static_or_approximate_associations_do_not_close_a_check`: static or approximate associations do not close a check
+- `test_malformed_or_empty_bundle_cannot_prove_acceptance`: malformed or empty bundle cannot prove acceptance
+- `test_mixed_legacy_and_bundle_identities_are_ambiguous_and_rejected`: mixed legacy and bundle identities are ambiguous and rejected
+- `test_duplicate_case_does_not_count_as_two_independent_required_cases`: duplicate case does not count as two independent required cases
+- `test_unknown_or_malformed_check_never_becomes_verified`: unknown or malformed check never becomes verified
+- `test_unregistered_test_cannot_borrow_an_existing_exact_passing_identity`: unregistered test cannot borrow an existing exact passing identity
+- `test_validator_does_not_mutate_the_declared_proof`: validator does not mutate the declared proof
+- `test_generator_refuses_old_execution_even_when_candidate_digest_is_rewritten`: Exercise the actual main linker, not a replacement of its acceptance rule.
+- `test_actual_selected_producer_can_prove_only_its_exact_current_cases`: actual selected producer can prove only its exact current cases
+- `test_execution_metadata_cannot_be_relabelled_as_current_proof`: execution metadata cannot be relabelled as current proof
+- `test_refreshing_case_results_does_not_refresh_stale_underlying_artifacts`: refreshing case results does not refresh stale underlying artifacts
+- `test_case_results_must_match_actual_bound_passing_xml`: case results must match actual bound passing xml
+- `test_failed_or_skipped_xml_cannot_borrow_a_pass_label`: failed or skipped xml cannot borrow a pass label
+- `test_changed_python_source_hash_cannot_borrow_default_file_identity`: changed python source hash cannot borrow default file identity
+- `test_malformed_case_results_fail_closed`: malformed case results fail closed
+- `test_supplemental_node_cases_need_the_actual_current_successful_file_run`: supplemental node cases need the actual current successful file run
+- `test_malformed_supplemental_node_reports_fail_closed`: malformed supplemental node reports fail closed
+- `test_malformed_supplemental_browser_reports_fail_closed`: malformed supplemental browser reports fail closed
+- `test_postprocessing_ledger_updates_preserve_exact_stable_execution_binding`: postprocessing ledger updates preserve exact stable execution binding
+- `test_duplicate_xml_identity_is_ambiguous_even_if_one_occurrence_passes`: duplicate xml identity is ambiguous even if one occurrence passes
+- `test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof`: partial or ambiguous producer bindings never become leaf proof
+- `test_aggregate_browser_tap_cannot_assign_cases_to_files`: aggregate browser tap cannot assign cases to files
+- `test_default_file_producer_requires_exact_command_and_numeric_success`: default file producer requires exact command and numeric success
+- `test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass`: Both occurrences really execute the same unchanged owned source.
+- `test_real_python_class_scopes_share_extractor_and_linker_identity`: Real pytest classnames separate methods; outcome and producer guards remain.
+- `test_duplicate_fully_qualified_python_scope_cannot_union_a_pass`: Disambiguating distinct classes must not disambiguate real duplicates.
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_platform_plan.py`
+
+Exhaustive ledger preserves aliases, unresolved work and exact evidence states.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_platform_plan.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_preserves_all_details_aliases_unrouted_entities_and_original_statuses`: preserves all details aliases unrouted entities and original statuses
+- `test_missing_reference_or_template_and_page_deduplication_fail_closed`: missing reference or template and page deduplication fail closed
+- `test_emitted_work_validator_detects_lost_details_and_missing_tasks`: emitted work validator detects lost details and missing tasks
+- `test_business_sections_bind_exact_pages_and_mark_invented_references_incomplete`: business sections bind exact pages and mark invented references incomplete
+- `test_human_output_contains_all_aliases_controls_contracts_and_global_unknowns`: human output contains all aliases controls contracts and global unknowns
+- `test_all_page_sections_and_exact_work_dimensions_become_distinct_actions`: all page sections and exact work dimensions become distinct actions
+- `test_both_supplement_source_inventory_schemas_detect_stale_analysis`: both supplement source inventory schemas detect stale analysis
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_python_factory_mounts.py`
+
+Static factory topology must preserve declarations and fail closed on ambiguity.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_python_factory_mounts.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `FactoryMounts.test_direct_import_alias_and_prefixes`: direct import alias and prefixes
+- `FactoryMounts.test_constructor_alias_is_resolved_in_its_lexical_scope`: constructor alias is resolved in its lexical scope
+- `FactoryMounts.test_same_module_factory_and_relative_import`: same module factory and relative import
+- `FactoryMounts.test_assigned_router_and_optional_none_remain_conditional`: assigned router and optional none remain conditional
+- `FactoryMounts.test_optional_fastapi_none_fallback_requires_same_import_try`: optional fastapi none fallback requires same import try
+- `FactoryMounts.test_conditional_application_constructor_import_is_retained`: conditional application constructor import is retained
+- `FactoryMounts.test_module_app_and_router_binding_shadowing_reject`: module app and router binding shadowing reject
+- `FactoryMounts.test_nested_scope_shadowing_does_not_replace_outer_bindings`: nested scope shadowing does not replace outer bindings
+- `FactoryMounts.test_decorated_async_generator_early_or_implicit_return_factories_reject`: decorated async generator early or implicit return factories reject
+- `FactoryMounts.test_deferred_loop_comprehension_with_match_mounts_reject`: deferred loop comprehension with match mounts reject
+- `FactoryMounts.test_ordinary_if_and_try_mounts_record_conditions`: ordinary if and try mounts record conditions
+- `FactoryMounts.test_invalid_prefix_and_dynamic_spreads_reject`: invalid prefix and dynamic spreads reject
+- `FactoryMounts.test_constructor_and_factory_call_before_import_reject`: constructor and factory call before import reject
+- `FactoryMounts.test_ambiguous_packages_and_reexport_cycles_reject`: ambiguous packages and reexport cycles reject
+- `FactoryMounts.test_router_lifecycle_decorator_preserves_direct_route_topology`: router lifecycle decorator preserves direct route topology
+- `FactoryMounts.test_source_is_never_executed_and_unicode_prefix_preserved`: source is never executed and unicode prefix preserved
+- `FactoryMounts.test_finite_file_budget_fails_closed`: finite file budget fails closed
+- `FactoryMounts.test_importlib_consumer_loads_paired_helpers_without_sys_path`: importlib consumer loads paired helpers without sys path
+- `FactoryMounts.test_actual_consumer_retains_declaration_check_and_unknown_identities`: actual consumer retains declaration check and unknown identities
+- `FactoryMounts.test_multiple_mounts_retain_original_declaration_and_explicit_unknown`: multiple mounts retain original declaration and explicit unknown
+- `FactoryMounts.test_nonliteral_decorator_path_remains_unresolved`: nonliteral decorator path remains unresolved
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_python_runner_scheduling.py`
+
+Exercise Python worker isolation and quiescent read-only scheduling with real children.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_python_runner_scheduling.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PythonRunnerScheduling.test_reader_waits_for_actual_writer_cleanup_and_result_files`: reader waits for actual writer cleanup and result files
+- `PythonRunnerScheduling.test_ordinary_suites_retain_real_parallelism`: ordinary suites retain real parallelism
+- `PythonRunnerScheduling.test_failed_ordinary_suite_is_retained_and_does_not_suppress_reader`: failed ordinary suite is retained and does not suppress reader
+- `PythonRunnerScheduling.test_timed_out_ordinary_suite_is_retained_and_reader_executes`: timed out ordinary suite is retained and reader executes
+- `PythonRunnerScheduling.test_report_owned_and_state_copies_are_retained_without_execution`: report owned and state copies are retained without execution
+- `PythonRunnerScheduling.test_retained_copy_selector_is_rejected_instead_of_running_history`: retained copy selector is rejected instead of running history
+- `PythonRunnerScheduling.test_quiescent_only_selector_retains_exact_selection`: quiescent only selector retains exact selection
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_readiness_catalog.py`
+
+test readiness catalog
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_readiness_catalog.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `ReadinessCatalog.test_preserves_items_and_input_digest_without_claiming_readiness`: preserves items and input digest without claiming readiness
+- `ReadinessCatalog.test_empty_inventory_cannot_imply_success`: empty inventory cannot imply success
+- `ReadinessCatalog.test_duplicate_ids_cannot_hide_missing_items`: duplicate ids cannot hide missing items
+- `ReadinessCatalog.test_missing_closure_contract_is_rejected`: missing closure contract is rejected
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_remediation.py`
+
+Pure-data contracts for the master verification's repair guide.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_remediation.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_empty_or_malformed_evidence_cannot_produce_a_closed_strict_run`: empty or malformed evidence cannot produce a closed strict run
+- `test_unrecognized_assertion_retains_exact_source_case_and_unconfirmed_cause`: unrecognized assertion retains exact source case and unconfirmed cause
+- `test_managed_browser_policy_has_a_supported_remedy_without_an_override`: managed browser policy has a supported remedy without an override
+- `test_new_successful_master_audit_supersedes_its_older_failed_snapshot`: new successful master audit supersedes its older failed snapshot
+- `test_istanbul_gaps_retain_statement_function_and_branch_locations`: istanbul gaps retain statement function and branch locations
+- `test_one_case_diagnosis_does_not_borrow_another_cases_junit_error`: one case diagnosis does not borrow another cases junit error
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_report_progress.py`
+
+Behavior and malformed-evidence checks for the counted progress report.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_report_progress.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CountedProgressTests.test_independent_denominators_and_no_invented_implementation_or_test_total`: independent denominators and no invented implementation or test total
+- `CountedProgressTests.test_green_color_requires_all_gates_checks_and_no_blockers`: green color requires all gates checks and no blockers
+- `CountedProgressTests.test_stale_keeps_only_historical_observation_and_no_current_pass_credit`: stale keeps only historical observation and no current pass credit
+- `CountedProgressTests.test_complete_current_launch_uses_audit_and_master_not_summary_approval`: complete current launch uses audit and master not summary approval
+- `CountedProgressTests.test_complete_green_cannot_override_missing_failed_or_stale_master`: complete green cannot override missing failed or stale master
+- `CountedProgressTests.test_summary_claim_cannot_override_partial_or_unapproved_launch`: summary claim cannot override partial or unapproved launch
+- `CountedProgressTests.test_raw_fraction_is_separate_from_istanbul_truncated_percent`: raw fraction is separate from istanbul truncated percent
+- `CountedProgressTests.test_missing_page_and_duplicate_page_cannot_reduce_eighty_page_target`: missing page and duplicate page cannot reduce eighty page target
+- `CountedProgressTests.test_summary_counts_must_equal_actual_rows`: summary counts must equal actual rows
+- `CountedProgressTests.test_boolean_counts_are_rejected`: boolean counts are rejected
+- `CountedProgressTests.test_plan_and_readiness_statuses_must_agree`: plan and readiness statuses must agree
+- `CountedProgressTests.test_duplicate_check_identity_is_not_counted_twice`: duplicate check identity is not counted twice
+- `CountedProgressTests.test_coverage_overflow_negative_boolean_and_stale_summary_are_rejected`: coverage overflow negative boolean and stale summary are rejected
+- `CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent`: zero denominator has no fabricated completion percent
+- `CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged`: real collection leaves all git visible files unchanged
+- `MasterRunnerProgressTests.test_master_writes_running_report_before_first_command`: master writes running report before first command
+- `MasterRunnerProgressTests.test_http_group_uses_resolved_application_python_runtime`: http group uses resolved application python runtime
+- `MasterRunnerProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two`: missing input cli writes unavailable and returns two
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_summary_results.py`
+
+Retain every case in mixed Node/Vitest JUnit layouts without double counts.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_summary_results.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_mixed_root_cases_and_nested_suites_keep_skips_and_each_case_once`: mixed root cases and nested suites keep skips and each case once
+- `test_suite_names_and_explicit_file_survive_without_default_file`: suite names and explicit file survive without default file
+- `test_master_plan_keeps_sandbox_mutations_opt_in_and_builds_before_http_load`: master plan keeps sandbox mutations opt in and builds before http load
+- `test_source_identity_detects_new_code_changes_and_excludes_generated_private_state`: source identity detects new code changes and excludes generated private state
+- `test_provider_parse_exclusions_cannot_be_mistaken_for_complete_coverage`: provider parse exclusions cannot be mistaken for complete coverage
+- `test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units`: coverage only database cases are retained without repeating ordinary units
+- `test_python_scopes_qualify_only_ambiguous_explicit_classes`: python scopes qualify only ambiguous explicit classes
+- `test_python_missing_class_scope_stays_ambiguous`: python missing class scope stays ambiguous
+- `test_python_missing_names_or_blank_classes_never_acquire_a_usable_identity`: python missing names or blank classes never acquire a usable identity
+
+</details>
+
+### `.task123-publishing-candidate/tests/testing/test_untracked_suite_discovery.py`
+
+Exercise suite discovery against real Git indexes and working trees.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tests/testing/test_untracked_suite_discovery.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `SuiteDiscovery.test_node_includes_untracked_and_respects_ignored_files`: node includes untracked and respects ignored files
+- `SuiteDiscovery.test_python_includes_untracked_and_respects_ignored_files`: python includes untracked and respects ignored files
+- `SuiteDiscovery.test_catalog_includes_new_nested_first_party_tests`: catalog includes new nested first party tests
+
+</details>
+
+### `.task123-publishing-candidate/tools/sophia-agent-runner/tests/test_sophia.py`
+
+test sophia
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file .task123-publishing-candidate/tools/sophia-agent-runner/tests/test_sophia.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `TestSophia.test_payload_uses_saved_agent_and_selected_overrides`: payload uses saved agent and selected overrides
+- `TestSophia.test_text_response_schema_complete_and_strict_objects`: text response schema complete and strict objects
+- `TestSophia.test_sse_multiline_and_final_frame`: sse multiline and final frame
+- `TestSophia.test_unknown_tool_returns_error_not_fake_success`: unknown tool returns error not fake success
+- `TestSophia.test_url_is_quoted`: url is quoted
+
+</details>
+
 ### `evaluations/maxcore-quality/test_protocol.py`
 
 Fast evaluator-contract tests: no model import or inference.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file evaluations/maxcore-quality/test_protocol.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -79,13 +6056,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Tests for the Conductor (audio_analysis). Run:
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -103,13 +6078,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 test controls
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_controls.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -125,13 +6098,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Real backend execution and decodes, not facade-call mocks.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_media_facade.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -151,13 +6122,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Short soundtrack planning regression; does not run native synthesis.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_short_duration.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -172,13 +6141,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Isolated fixtures only; never accesses production PDIM or live network.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 45}.
 
 <details>
 <summary>What each case checks</summary>
@@ -188,6 +6155,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 45}.
 - `AwarenessTests.test_source_records_do_not_require_every_topic_bucket`: source records do not require every topic bucket
 - `AwarenessTests.test_ready_snapshot_does_not_claim_latest_scan_completed`: ready snapshot does not claim latest scan completed
 - `AwarenessTests.test_readiness_status_uses_only_bounded_in_memory_state`: readiness status uses only bounded in memory state
+- `AwarenessTests.test_worker_reports_and_retries_transient_lease_failures_with_bounded_backoff`: worker reports and retries transient lease failures with bounded backoff
 - `AwarenessTests.test_public_source_failure_classification_is_actionable_and_redacted`: public source failure classification is actionable and redacted
 - `AwarenessTests.test_scan_retains_source_failure_class_without_exception_details`: scan retains source failure class without exception details
 - `AwarenessTests.test_invalid_snapshot_reports_safe_failure_category`: invalid snapshot reports safe failure category
@@ -221,13 +6189,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 45}.
 
 Real Lua/Redis atomicity tests in an isolated temporary Unix-socket Redis.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -241,24 +6207,54 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 </details>
 
+### `external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_native_downloader.py`
+
+Policy and transport bounds for the native awareness source downloader.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_native_downloader.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `NativeDownloaderTests.test_registry_covers_eight_canonical_platforms_without_unapproved_sources`: registry covers eight canonical platforms without unapproved sources
+- `NativeDownloaderTests.test_all_eight_platforms_report_policy_block_without_fake_attempts`: all eight platforms report policy block without fake attempts
+- `NativeDownloaderTests.test_scheduled_youtube_policy_denial_is_reported_as_blocked`: scheduled youtube policy denial is reported as blocked
+- `NativeDownloaderTests.test_blocked_youtube_feed_does_not_request_robots_or_content`: blocked youtube feed does not request robots or content
+- `NativeDownloaderTests.test_unregistered_and_malformed_urls_are_rejected_before_authorization`: unregistered and malformed urls are rejected before authorization
+- `NativeDownloaderTests.test_registry_rejects_unsafe_or_noncanonical_endpoints`: registry rejects unsafe or noncanonical endpoints
+- `NativeDownloaderTests.test_authorized_fixture_fetch_uses_native_http_limits_and_no_redirects`: authorized fixture fetch uses native http limits and no redirects
+- `NativeDownloaderTests.test_redirect_and_oversize_results_are_rejected_without_fallback`: redirect and oversize results are rejected without fallback
+- `NativeDownloaderTests.test_policy_authorization_requires_both_policy_and_rights_evidence`: policy authorization requires both policy and rights evidence
+- `NativeDownloaderTests.test_authorization_for_one_feed_does_not_enable_another_registered_feed`: authorization for one feed does not enable another registered feed
+
+</details>
+
 ### `external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py`
 
 Deterministic tests for the opt-in eight-platform awareness discovery layer.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
-
 <details>
 <summary>What each case checks</summary>
 
+- `PlatformDiscoveryTests.test_retrieval_method_counts_never_call_index_snippets_page_fetches`: retrieval method counts never call index snippets page fetches
 - `PlatformDiscoveryTests.test_registry_is_exact_and_aliases_are_canonical`: registry is exact and aliases are canonical
 - `PlatformDiscoveryTests.test_search_is_disabled_without_explicit_opt_in`: search is disabled without explicit opt in
+- `PlatformDiscoveryTests.test_platform_search_preserves_only_safe_http_status_for_provider_diagnostics`: platform search preserves only safe http status for provider diagnostics
 - `PlatformDiscoveryTests.test_explicit_provider_opt_in_registers_one_source_per_platform`: explicit provider opt in registers one source per platform
+- `PlatformDiscoveryTests.test_provider_fallback_uses_secondary_only_after_primary_has_no_usable_rows`: provider fallback uses secondary only after primary has no usable rows
+- `PlatformDiscoveryTests.test_provider_fallback_keeps_failures_bounded_and_does_not_leak_messages`: provider fallback keeps failures bounded and does not leak messages
+- `PlatformDiscoveryTests.test_provider_transport_failure_falls_back_to_the_other_configured_provider`: provider transport failure falls back to the other configured provider
+- `PlatformDiscoveryTests.test_router_provenance_records_the_provider_that_returned_the_observation`: router provenance records the provider that returned the observation
 - `PlatformDiscoveryTests.test_query_uses_a_rolling_window_without_a_frozen_year`: query uses a rolling window without a frozen year
 - `PlatformDiscoveryTests.test_url_classification_keeps_platform_and_independent_evidence_distinct`: url classification keeps platform and independent evidence distinct
 - `PlatformDiscoveryTests.test_all_eight_platform_content_paths_are_registered`: all eight platform content paths are registered
@@ -270,9 +6266,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 - `PlatformDiscoveryTests.test_empty_provider_result_is_a_successful_scan_not_a_fake_observation`: empty provider result is a successful scan not a fake observation
 - `PlatformDiscoveryTests.test_engine_records_empty_scan_as_healthy_without_fabricating_content`: engine records empty scan as healthy without fabricating content
 - `PlatformDiscoveryTests.test_provider_search_quota_survives_engine_recreation`: provider search quota survives engine recreation
+- `PlatformDiscoveryTests.test_native_policy_block_and_hourly_quota_survive_engine_recreation`: native policy block and hourly quota survive engine recreation
 - `PlatformDiscoveryTests.test_deferred_no_result_scan_does_not_serve_expired_rows`: deferred no result scan does not serve expired rows
 - `PlatformDiscoveryTests.test_admin_matrix_distinguishes_configured_search_from_real_ingestion`: admin matrix distinguishes configured search from real ingestion
-- `PlatformDiscoveryTests.test_admin_source_status_route_requires_admin_authentication`: admin source status route requires admin authentication
+- `PlatformDiscoveryTests.test_admin_source_status_and_refresh_routes_require_admin_authentication`: admin source status and refresh routes require admin authentication
+- `PlatformDiscoveryTests.test_admin_refresh_returns_outcome_and_redacted_status_on_failure`: admin refresh returns outcome and redacted status on failure
 - `PlatformDiscoveryTests.test_discovery_provenance_survives_snapshot_but_never_enters_training`: discovery provenance survives snapshot but never enters training
 - `PlatformDiscoveryTests.test_legacy_search_provider_text_is_not_training_data_without_rights`: legacy search provider text is not training data without rights
 
@@ -282,13 +6280,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 test profile quality
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_profile_quality.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 <details>
 <summary>What each case checks</summary>
@@ -314,24 +6310,49 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 Robots and authorization gates for native platform-page access.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_public_access.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
-
 <details>
 <summary>What each case checks</summary>
 
 - `PublicAccessTests.test_exact_eight_are_fail_closed_without_authorization`: exact eight are fail closed without authorization
+- `PublicAccessTests.test_platform_specific_terms_restrictions_are_visible`: platform specific terms restrictions are visible
 - `PublicAccessTests.test_youtube_robots_disallow_prevents_feed_access`: youtube robots disallow prevents feed access
 - `PublicAccessTests.test_robots_allow_is_not_a_terms_or_permission_grant`: robots allow is not a terms or permission grant
 - `PublicAccessTests.test_robots_network_or_parse_failure_fails_closed`: robots network or parse failure fails closed
 - `PublicAccessTests.test_wrong_platform_host_is_rejected_before_robots_request`: wrong platform host is rejected before robots request
 - `PublicAccessTests.test_invalid_port_is_rejected_without_leaking_parser_errors`: invalid port is rejected without leaking parser errors
 - `PublicAccessTests.test_cache_bounds_robots_traffic`: cache bounds robots traffic
+- `PublicAccessTests.test_current_policy_blocks_feed_before_any_network_request`: current policy blocks feed before any network request
+- `PublicAccessTests.test_expired_or_wrong_source_authorization_stays_blocked`: expired or wrong source authorization stays blocked
+
+</details>
+
+### `external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_source_review.py`
+
+Administrator review annotations are durable but never grant training rights.
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_source_review.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `SourceReviewTests.test_inventory_lists_adapters_and_discovered_records_as_pending_without_snippets`: inventory lists adapters and discovered records as pending without snippets
+- `SourceReviewTests.test_approval_is_read_back_durable_and_does_not_change_rights`: approval is read back durable and does not change rights
+- `SourceReviewTests.test_concurrent_approval_reports_only_records_inserted_by_this_request`: concurrent approval reports only records inserted by this request
+- `SourceReviewTests.test_new_source_and_record_remain_unreviewed_after_prior_approval`: new source and record remain unreviewed after prior approval
+- `SourceReviewTests.test_admin_route_denies_unauthenticated_calls_and_confirms_durable_approval`: admin route denies unauthenticated calls and confirms durable approval
+- `SourceReviewTests.test_review_storage_failure_is_not_acknowledged`: review storage failure is not acknowledged
+- `SourceReviewTests.test_v1_ledger_is_migrated_to_v2_without_deleting_legacy_evidence`: v1 ledger is migrated to v2 without deleting legacy evidence
+- `SourceReviewTests.test_canonical_review_storage_uses_atomic_hash_insert_and_pinned_readback`: canonical review storage uses atomic hash insert and pinned readback
 
 </details>
 
@@ -339,13 +6360,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 test sources
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 34}.
 
 <details>
 <summary>What each case checks</summary>
@@ -355,16 +6374,19 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 34}.
 - `SourceCoverageTests.test_youtube_feed_rejects_entity_declarations`: youtube feed rejects entity declarations
 - `SourceCoverageTests.test_youtube_profile_candidates_keep_public_evidence_and_missing_factors`: youtube profile candidates keep public evidence and missing factors
 - `SourceCoverageTests.test_profile_source_status_covers_all_registry_platforms_honestly`: profile source status covers all registry platforms honestly
+- `SourceCoverageTests.test_profile_status_reports_policy_blocked_feed_attempt_truthfully`: profile status reports policy blocked feed attempt truthfully
 - `SourceCoverageTests.test_profile_source_quality_is_reported_as_global_content_cohorts`: profile source quality is reported as global content cohorts
 - `SourceCoverageTests.test_profile_snapshot_reports_candidate_citation_and_missing_measurements`: profile snapshot reports candidate citation and missing measurements
-- `SourceCoverageTests.test_all_ten_original_feeds_are_retained_without_keys`: all ten original feeds are retained without keys
-- `SourceCoverageTests.test_inherited_search_credentials_enable_both_providers`: inherited search credentials enable both providers
+- `SourceCoverageTests.test_native_feed_ingest_persists_provenance_and_stays_out_of_training`: native feed ingest persists provenance and stays out of training
+- `SourceCoverageTests.test_start_automatically_downloads_and_persists_awareness_snapshot`: start automatically downloads and persists awareness snapshot
+- `SourceCoverageTests.test_default_registry_contains_only_selected_platform_sources`: default registry contains only selected platform sources
+- `SourceCoverageTests.test_opted_in_discovery_registers_only_the_selected_platforms`: opted in discovery registers only the selected platforms
+- `SourceCoverageTests.test_unapproved_feeds_stay_unregistered_with_other_endpoints_configured`: unapproved feeds stay unregistered with other endpoints configured
 - `SourceCoverageTests.test_atom_editorial_feed_is_not_invented_engagement`: atom editorial feed is not invented engagement
 - `LandscapeSourceTests.test_landscape_feed_empty_without_endpoint`: landscape feed empty without endpoint
 - `LandscapeSourceTests.test_landscape_feed_rejects_unknown_kind`: landscape feed rejects unknown kind
 - `LandscapeSourceTests.test_landscape_feed_parses_fixture`: landscape feed parses fixture
 - `LandscapeSourceTests.test_landscape_feed_degrades_on_bad_payloads`: landscape feed degrades on bad payloads
-- `LandscapeSourceTests.test_configured_sources_registers_landscape`: configured sources registers landscape
 - `LandscapeSourceTests.test_configured_sources_omits_landscape_without_config`: configured sources omits landscape without config
 - `LandscapeSourceTests.test_trends_lines_format`: trends lines format
 - `PeakSourceTests.test_complete_public_content_actual_counts_and_canonical_citation`: complete public content actual counts and canonical citation
@@ -382,13 +6404,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 34}.
 
 test director
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 <details>
 <summary>What each case checks</summary>
@@ -414,13 +6434,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 Campaign generation must not substitute the retired template composer.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -434,13 +6452,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 Tests for the native SIMD kernel library.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 <details>
 <summary>What each case checks</summary>
@@ -467,13 +6483,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 Tests for the DigitalGPUBackend bridge methods: alloc/free/run_kernel.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -493,13 +6507,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Comprehensive tests for the digital GPU system.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 137}.
 
 <details>
 <summary>What each case checks</summary>
@@ -648,13 +6660,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 137}.
 
 Regression tests for the redesigned HyperSIMDCore kernels.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -671,13 +6681,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Real small-kernel/inference checks; no checkpoints or training involved.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_pocket_execution.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 1, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
@@ -707,13 +6715,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 1, "tests": 18}.
 
 Tests for the digital-silicon performance model and its wiring.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -733,13 +6739,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 test controls
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/image/test_controls.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -755,13 +6759,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Lightweight regression checks: no model inference or GPU needed.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/image/test_image_contract.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -777,13 +6779,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Tests for the honest backend auto-selector (registry.select_backend).
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -843,13 +6843,11 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the from-scratch memory (VramPool) and orchestration (StreamScheduler) layers, and their integration into Runtime/DigitalGPU.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 23}.
 
 <details>
 <summary>What each case checks</summary>
@@ -884,13 +6882,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 23}.
 
 Tests for the runtime thread/hardware configuration.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -909,13 +6905,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 Tests for the MaxCore / DigitalGPU stack.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 31}.
 
 <details>
 <summary>What each case checks</summary>
@@ -958,13 +6952,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 31}.
 
 Tests for the precision/quantization numerics reference.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -982,13 +6974,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 Tests for resource_plan.py — the CPU/memory/tile-size planning layer.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1015,13 +7005,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 Correctness tests: SiliconSimtBackend vs. the reference DigitalGPUBackend / NumPy.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1051,13 +7039,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 Small, checkpoint-free regressions for the live generation contracts.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/model/test_generation_regressions.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1082,13 +7068,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 Focused request-local replay tests; tiny deterministic logits, no checkpoints.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/model/test_sampling_context.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1107,13 +7091,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 test text
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1130,13 +7112,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 test website
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1153,13 +7133,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Tests for Phase 4 — brand identity centroid, embedding cache, seeded-render dedupe, and the generated-asset ingestor.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1181,13 +7159,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 Tests for the retrieval real-asset pipeline (image features + anchor/seed library + gap ingestion). Renders REAL images via the in-house ImageEngine, so it is a slower integration test than test_retrieval.py.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1207,13 +7183,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Tests for the live RCGS query path: the probe ring buffer, retrieval-conditioned background compositing, and the CoverageWatchdog's context-carrying probe handling.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1229,13 +7203,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Tests for the retrieval spine (AssetIndex) and the self-healing CoverageWatchdog.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1260,13 +7232,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 Regression tests for the RTA-1 fabric's strict correctness contracts.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1281,13 +7251,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Mandatory-awareness compatibility tests; replaces obsolete retirement tests.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1303,13 +7271,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 test ranker upgrades
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_ranker_upgrades.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1334,13 +7300,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 test request intelligence trends
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_request_intelligence_trends.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1358,13 +7322,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 test candidate
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1385,13 +7347,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 Real bounded runtime evidence tests, NOT synthetic quality-approval fixtures.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_generic.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1405,13 +7365,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 test candidate manual
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_manual.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1426,13 +7384,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Contract tests cover rolling live-source admission and candidate isolation.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_live_learning.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 24}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1440,6 +7396,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 24}.
 - `LiveLearningTests.test_actual_router_auth_and_validation`: actual router auth and validation
 - `LiveLearningTests.test_public_observations_are_awareness_only_without_exact_rights`: public observations are awareness only without exact rights
 - `LiveLearningTests.test_live_observation_set_never_reaches_trainer_without_rights`: live observation set never reaches trainer without rights
+- `LiveLearningTests.test_signed_internal_bundle_is_admitted_as_review_only_candidate`: signed internal bundle is admitted as review only candidate
 - `LiveLearningTests.test_candidate_registry_rechecks_operator_rights_manifest`: candidate registry rechecks operator rights manifest
 - `LiveLearningTests.test_empty_observation_cache_blocks_without_starting_training`: empty observation cache blocks without starting training
 - `LiveLearningTests.test_server_wires_real_admin_and_keeps_write_guard`: server wires real admin and keeps write guard
@@ -1458,13 +7415,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 24}.
 
 test public content model
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_public_content_model.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1480,13 +7435,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 test controls
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_controls.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1502,13 +7455,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 Cheap duration/transition regression checks; no model or video inference.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_duration_contract.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1525,13 +7476,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 Actual encoded-frame checks plus isolated continuity orchestration tests.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_frame_continuity.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1548,13 +7497,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 test production
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_production.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1571,13 +7518,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 test sampler upgrades
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_sampler_upgrades.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1599,13 +7544,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 test admin content loop
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_admin_content_loop.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1613,6 +7556,23 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 - `AdminContentLoopTests.test_cycle_uses_available_snapshot_and_feeds_admin_flywheel`: cycle uses available snapshot and feeds admin flywheel
 - `AdminContentLoopTests.test_cycle_generates_and_feeds_flywheel_without_any_snapshot`: cycle generates and feeds flywheel without any snapshot
 - `AdminContentLoopTests.test_retired_corpus_skips_external_awareness_generation`: retired corpus skips external awareness generation
+
+</details>
+
+### `external/maxcore/artifacts/ai-training-server/tests/test_admin_training_identity.py`
+
+test admin training identity
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_admin_training_identity.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AdminTrainingIdentityTests.test_only_owner_admin_credential_grants_owner_training_identity`: only owner admin credential grants owner training identity
 
 </details>
 
@@ -1630,13 +7590,11 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real encoded file checks; isolated receipt transport exercises retry semantics.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_artifact_delivery_contract.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1656,13 +7614,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Focused integration checks for audio dataset auto-growth.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1681,13 +7637,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 Audio BPM/key match validation — end-to-end + unit tests.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 5, "tests": 30}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1729,13 +7683,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 5, "tests": 30}.
 
 test audio finishing
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_finishing.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1747,17 +7699,38 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 </details>
 
+### `external/maxcore/artifacts/ai-training-server/tests/test_audio_job_storage.py`
+
+test audio job storage
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_job_storage.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `AudioJobStorageTests.test_cancel_endpoint_purges_owned_terminal_job_and_rejects_other_owner`: cancel endpoint purges owned terminal job and rejects other owner
+- `AudioJobStorageTests.test_cancel_endpoint_reports_cancellation_then_requires_worker_stop_before_purge`: cancel endpoint reports cancellation then requires worker stop before purge
+- `AudioJobStorageTests.test_cache_hit_is_copied_to_independent_job_owned_files`: cache hit is copied to independent job owned files
+- `AudioJobStorageTests.test_purge_removes_only_job_files_and_is_idempotent`: purge removes only job files and is idempotent
+- `AudioJobStorageTests.test_purge_rejects_foreign_urls_and_traversal_without_deleting_files`: purge rejects foreign urls and traversal without deleting files
+- `AudioJobStorageTests.test_materialization_failure_cleans_its_partial_copies`: materialization failure cleans its partial copies
+- `AudioJobStorageTests.test_materialization_rejects_symlinked_cache_source`: materialization rejects symlinked cache source
+
+</details>
+
 ### `external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py`
 
 Tests for the audio-generation seeding guard.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1777,19 +7750,21 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Selection policy; real signatures and artifact verification covered by integration.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_auto_selection.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `AutomaticSelectionTests.test_best_reviewed_candidate_without_downgrade_or_protocol_swap`: best reviewed candidate without downgrade or protocol swap
 - `AutomaticSelectionTests.test_unsigned_submission_cannot_change_selection`: unsigned submission cannot change selection
+- `AutomaticSelectionTests.test_signed_internal_candidate_is_selected_before_unreviewed_live_runs`: signed internal candidate is selected before unreviewed live runs
+- `AutomaticSelectionTests.test_internal_candidate_submission_still_fails_closed_without_signed_eligibility`: internal candidate submission still fails closed without signed eligibility
+- `AutomaticSelectionTests.test_invalid_selected_internal_candidate_is_reported_not_retained`: invalid selected internal candidate is reported not retained
+- `AutomaticSelectionTests.test_registry_validation_error_blocks_selection_and_marks_active_release_invalid`: registry validation error blocks selection and marks active release invalid
 - `AutomaticSelectionTests.test_public_path_rejects_traditional_mixed_smoke_and_private_sources`: public path rejects traditional mixed smoke and private sources
 - `AutomaticSelectionTests.test_new_unusable_candidate_retains_operational_incumbent`: new unusable candidate retains operational incumbent
 - `AutomaticSelectionTests.test_durable_root_rejects_relative_or_symlink_paths`: durable root rejects relative or symlink paths
@@ -1800,13 +7775,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 Selector scheduling/cache checks; capability itself keeps real-agent guards.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1820,6 +7793,26 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 - `SelectionScalingTests.test_missing_scan_is_not_cached_as_a_checkpoint_failure`: missing scan is not cached as a checkpoint failure
 - `SelectionScalingTests.test_deadline_interrupts_actual_kernel_generation`: deadline interrupts actual kernel generation
 - `SelectionScalingTests.test_retained_returns_only_validated_matching_policy_identity`: retained returns only validated matching policy identity
+
+</details>
+
+### `external/maxcore/artifacts/ai-training-server/tests/test_autopilot_feedback_ingestion.py`
+
+test autopilot feedback ingestion
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_autopilot_feedback_ingestion.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_autopilot_feedback_enters_owner_scoped_maxcore_curriculum`: autopilot feedback enters owner scoped maxcore curriculum
+- `test_autopilot_feedback_fails_closed_when_curriculum_storage_is_unavailable`: autopilot feedback fails closed when curriculum storage is unavailable
+- `test_ownerless_legacy_feedback_is_audited_without_entering_user_curriculum`: ownerless legacy feedback is audited without entering user curriculum
+- `test_curriculum_feedback_is_isolated_between_accounts`: curriculum feedback is isolated between accounts
 
 </details>
 
@@ -1883,13 +7876,11 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the expanded AwarenessConditioner vocab.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1930,13 +7921,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 Batching metadata must not turn infrastructure startup into inference.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_batching_bootstrap_metadata.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1950,13 +7939,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 Beat-marketplace conditioning — regression guards.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1973,13 +7960,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Real rollout assembly with a controlled inference boundary and public scan.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2001,13 +7986,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 Encoding constraints are not language-quality claims or output repairs.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_candidate_utf8.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2024,13 +8007,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 test checkpoint release
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_checkpoint_release.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2050,13 +8031,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Failure-boundary tests: invalid requests must stop before expensive work.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_content_breakpoints.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 53}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2125,18 +8104,23 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Handler/legacy body contracts, distinct from real media route admission.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 23}.
-
 <details>
 <summary>What each case checks</summary>
 
 - `test_ads_meta_uses_social_awareness_but_keeps_network_identity`: ads meta uses social awareness but keeps network identity
+- `test_social_autopilot_conditions_base_model_on_requested_account_curriculum`: social autopilot conditions base model on requested account curriculum
+- `test_social_autopilot_does_not_hide_account_curriculum_storage_failure`: social autopilot does not hide account curriculum storage failure
+- `test_ads_generation_does_not_hide_account_curriculum_storage_failure`: ads generation does not hide account curriculum storage failure
+- `test_social_generation_does_not_silently_use_base_tone_when_curriculum_fails`: social generation does not silently use base tone when curriculum fails
+- `test_video_generation_does_not_silently_use_base_tone_when_curriculum_fails`: video generation does not silently use base tone when curriculum fails
+- `test_ads_autopilot_does_not_generate_from_cold_audience_after_curriculum_failure`: ads autopilot does not generate from cold audience after curriculum failure
+- `test_ads_audience_does_not_return_cold_segments_after_curriculum_failure`: ads audience does not return cold segments after curriculum failure
 - `test_ad_script_uses_agent_run_and_exposes_source`: ad script uses agent run and exposes source
 - `test_ad_script_failure_is_not_disguised_as_template`: ad script failure is not disguised as template
 - `test_ad_awareness_fallback_is_not_claimed_as_generated`: ad awareness fallback is not claimed as generated
@@ -2165,13 +8149,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 23}.
 
 Real procedural artifacts through actual ASGI admission and private delivery.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_media_http.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 16}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2192,13 +8174,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 16}.
 
 Checkpoint lifecycle tests, not evidence of learned visual quality.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_diffusion_checkpoints.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2223,13 +8203,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 Regression guard: get_diffusion_frame must denoise at native resolution.
 
-Status: **skipped**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 5, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2244,13 +8222,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 5, "tests": 5}.
 
 Offline stack contracts: no server startup, storage, weights, or training.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 20}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2276,13 +8252,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 20}.
 
 Operational admission executes real agent guards without training fixtures.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_capability.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2297,21 +8271,30 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 ### `external/maxcore/artifacts/ai-training-server/tests/test_generation_capability_version.py`
 
-Actual capability ASGI output matches the immutable plan version.
+Generation metadata and readiness route contracts for MaxCore ASGI.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_capability_version.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `GenerationCapabilityVersion.test_advertised_version_matches_actual_plans_for_all_supported_modalities`: advertised version matches actual plans for all supported modalities
 - `GenerationCapabilityVersion.test_static_metadata_preserves_unverified_runtime_quality_and_detached_renderers`: static metadata preserves unverified runtime quality and detached renderers
+- `GenerationCapabilityVersion.test_training_progress_reports_real_awareness_use_separately_from_checkpoint`: training progress reports real awareness use separately from checkpoint
+- `GenerationCapabilityVersion.test_loaded_live_generation_adapter_is_not_reported_as_trained_checkpoint`: loaded live generation adapter is not reported as trained checkpoint
+- `GenerationCapabilityVersion.test_generation_capabilities_reports_unavailable_instead_of_asserting_serving`: generation capabilities reports unavailable instead of asserting serving
+- `GenerationCapabilityVersion.test_live_awareness_readiness_fails_when_text_runtime_is_missing`: live awareness readiness fails when text runtime is missing
+- `GenerationCapabilityVersion.test_awareness_ready_route_does_not_claim_generation_ready_without_runtime`: awareness ready route does not claim generation ready without runtime
+- `GenerationCapabilityVersion.test_ready_exposes_each_generation_route_and_actual_renderer_gate`: ready exposes each generation route and actual renderer gate
+- `GenerationCapabilityVersion.test_ready_fails_when_a_required_modality_runtime_dependency_is_missing`: ready fails when a required modality runtime dependency is missing
+- `GenerationCapabilityVersion.test_health_liveness_includes_route_catalog_without_claiming_checkpoint_loaded`: health liveness includes route catalog without claiming checkpoint loaded
+- `GenerationCapabilityVersion.test_warm_status_includes_runtime_routes_and_remains_read_only`: warm status includes runtime routes and remains read only
+- `GenerationCapabilityVersion.test_health_stays_live_but_fails_closed_when_endpoint_inspection_errors`: health stays live but fails closed when endpoint inspection errors
+- `GenerationCapabilityVersion.test_warm_status_remains_available_but_blocks_generation_on_catalog_error`: warm status remains available but blocks generation on catalog error
 
 </details>
 
@@ -2319,13 +8302,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Real WAV commit validation; synthetic awareness and renderer fixtures, no quality claim.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_durable_delivery.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2346,13 +8327,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 Offline handler-contract tests. No server startup, media render or weight access.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_plan_contract.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2376,13 +8355,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Startup selection tests, with no model initialization/training or server start.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_release_selection.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2392,6 +8369,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 - `ReleaseSelectionTests.test_selected_adapter_always_requires_review_and_exclusive_policy`: selected adapter always requires review and exclusive policy
 - `ReleaseSelectionTests.test_invalid_selected_startup_never_falls_back_and_fails_readiness`: invalid selected startup never falls back and fails readiness
 - `ReleaseSelectionTests.test_release_metadata_comes_from_current_adapter_not_greedy_constants`: release metadata comes from current adapter not greedy constants
+- `ReleaseSelectionTests.test_live_runtime_accepts_only_signed_internal_training_as_trained`: live runtime accepts only signed internal training as trained
 - `ReleaseSelectionTests.test_adapter_preserves_current_stochastic_sampling_parameters`: adapter preserves current stochastic sampling parameters
 - `ReleaseSelectionTests.test_actual_context_limit_rejects_full_prompt_without_compute`: actual context limit rejects full prompt without compute
 - `ReleaseSelectionTests.test_blocked_selected_release_health_remains_liveness`: blocked selected release health remains liveness
@@ -2402,13 +8380,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Exercise registered startup handlers with isolated on-disk production journals.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_restart_reconciliation.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2428,13 +8404,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 Exercise production gates without importing server's background daemons.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_route_bindings.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 17}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2463,13 +8437,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 17}.
 
 Focused immutable plan and fail-closed binding regressions.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_snapshot_contract.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2487,13 +8459,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 Incremental v2 inference must preserve full causal computation, not its tape.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_incremental_candidate_inference.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2511,13 +8481,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 test intent url reader safe http
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2527,17 +8495,36 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 </details>
 
+### `external/maxcore/artifacts/ai-training-server/tests/test_internal_training_sources.py`
+
+test internal training sources
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_internal_training_sources.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `InternalTrainingSourcesTests.test_generates_full_dual_track_ten_year_cycle_and_advances_rolling_state`: generates full dual track ten year cycle and advances rolling state
+- `InternalTrainingSourcesTests.test_owner_content_requires_owner_admin_and_excludes_awareness_mixtures`: owner content requires owner admin and excludes awareness mixtures
+- `InternalTrainingSourcesTests.test_internal_bundle_and_candidate_manifest_reject_tampering`: internal bundle and candidate manifest reject tampering
+- `InternalTrainingSourcesTests.test_corrupt_or_unacknowledged_segment_is_never_accepted`: corrupt or unacknowledged segment is never accepted
+- `InternalTrainingSourcesTests.test_storage_authority_reports_bucket_backed_pdim_when_enabled`: storage authority reports bucket backed pdim when enabled
+
+</details>
+
 ### `external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py`
 
 Tiny fake native functions exercise real process isolation, never rendering.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2555,13 +8542,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 Real ASGI planner requests without server startup, weights or provider calls.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_awareness_planner_http.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 21}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2584,18 +8569,17 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 21}.
 
 test live serving
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
-
 <details>
 <summary>What each case checks</summary>
 
 - `LiveServingTests.test_fresh_observations_train_but_cannot_promote_themselves`: fresh observations train but cannot promote themselves
+- `LiveServingTests.test_internal_owner_and_simulation_source_uses_existing_candidate_worker`: internal owner and simulation source uses existing candidate worker
 - `LiveServingTests.test_awareness_use_wakes_the_existing_worker_with_bounded_coalescing`: awareness use wakes the existing worker with bounded coalescing
 - `LiveServingTests.test_recovered_training_and_selection_clear_previous_error_labels`: recovered training and selection clear previous error labels
 - `LiveServingTests.test_selected_release_activates_even_while_training_is_on_cooldown`: selected release activates even while training is on cooldown
@@ -2610,6 +8594,8 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 - `LiveServingTests.test_stop_prevents_new_training_and_activation`: stop prevents new training and activation
 - `LiveServingTests.test_inflight_requests_and_executor_threads_pin_the_old_release`: inflight requests and executor threads pin the old release
 - `LiveServingTests.test_runtime_only_adapter_is_never_activated`: runtime only adapter is never activated
+- `LiveServingTests.test_currently_selected_candidate_is_unloaded_when_evidence_becomes_invalid`: currently selected candidate is unloaded when evidence becomes invalid
+- `LiveServingTests.test_loaded_candidate_is_unloaded_when_selection_disappears`: loaded candidate is unloaded when selection disappears
 - `LiveServingTests.test_default_startup_uses_live_pipeline_without_legacy_checkpoint`: default startup uses live pipeline without legacy checkpoint
 - `LiveServingTests.test_expanded_context_is_stored_loaded_and_used_without_truncation`: expanded context is stored loaded and used without truncation
 - `LiveServingTests.test_expanded_context_real_manual_training_survives_reload`: expanded context real manual training survives reload
@@ -2620,13 +8606,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 Rights-safe live learning and reviewed-candidate integration contracts.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_serving_integration.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2641,13 +8625,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 test live tempo controls
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_tempo_controls.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2662,19 +8644,19 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Private local PDIM transport contracts; no real service or SQLite opened.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_local_canonical_storage.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `test_canonical_missing_value_never_replays_stale_local_copy`: canonical missing value never replays stale local copy
 - `test_canonical_failure_is_explicit_not_sqlite_success`: canonical failure is explicit not sqlite success
+- `test_curriculum_read_distinguishes_authoritative_empty_from_failure`: curriculum read distinguishes authoritative empty from failure
+- `test_legacy_curriculum_read_does_not_use_empty_fallback_on_pdim_failure`: legacy curriculum read does not use empty fallback on pdim failure
 - `test_local_secret_cannot_be_sent_to_stale_external_origin`: local secret cannot be sent to stale external origin
 - `test_raw_owner_wire_protocol_over_loopback_http`: Exercise real trusted transport against the owner's raw JSON protocol.
 
@@ -2684,13 +8666,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Isolated tests: no server startup, model loading, network, or live data.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 21}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2723,13 +8703,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 21}.
 
 test media learning
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_media_learning.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 24}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2752,13 +8730,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 24}.
 
 Execute the real state-reporting function without starting live services.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_model_state_provenance.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2773,13 +8749,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 test native analysis api
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2797,13 +8771,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 test native analysis safe http
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2820,13 +8792,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 Regression coverage for awareness at native MaxCore consumer seams.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2834,6 +8804,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 - `test_native_profile_discovery_route_reads_local_index_without_external_search`: native profile discovery route reads local index without external search
 - `test_native_request_models_preserve_structured_and_direction_context`: native request models preserve structured and direction context
 - `test_social_route_delivers_structured_envelope_to_agents`: social route delivers structured envelope to agents
+- `test_social_route_generates_from_live_awareness_without_trained_candidate`: social route generates from live awareness without trained candidate
 - `test_live_report_payload_conditions_real_agent_without_metadata_leak`: live report payload conditions real agent without metadata leak
 - `test_real_agent_honors_exact_opening_wording`: real agent honors exact opening wording
 - `test_real_agent_honors_structured_must_include_list`: real agent honors structured must include list
@@ -2850,13 +8821,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 test native media analysis
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2871,13 +8840,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Offline, lightweight contract tests for the original quality runner.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2893,13 +8860,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 test platform awareness wiring
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2909,17 +8874,36 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 </details>
 
+### `external/maxcore/artifacts/ai-training-server/tests/test_private_generated_assets.py`
+
+test private generated assets
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_private_generated_assets.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `PrivateGeneratedAssetTests.test_static_mount_requires_current_owner_and_manifest_for_every_file`: static mount requires current owner and manifest for every file
+- `PrivateGeneratedAssetTests.test_manifest_is_durable_owner_scoped_and_revocable`: manifest is durable owner scoped and revocable
+- `PrivateGeneratedAssetTests.test_expired_media_manifest_revokes_access_without_deleting_bytes`: expired media manifest revokes access without deleting bytes
+- `PrivateGeneratedAssetTests.test_manifest_registration_rejects_symlink_escape_and_ownerless_assets`: manifest registration rejects symlink escape and ownerless assets
+- `PrivateGeneratedAssetTests.test_completed_audio_and_video_jobs_register_their_real_output_owners`: completed audio and video jobs register their real output owners
+
+</details>
+
 ### `external/maxcore/artifacts/ai-training-server/tests/test_public_fetch_proxy.py`
 
 test public fetch proxy
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_public_fetch_proxy.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2936,13 +8920,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Rights-gated public observations and bounded owned-fixture training checks.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 19}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2970,13 +8952,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 19}.
 
 test safe feed xml
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_safe_feed_xml.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2991,13 +8971,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Focused regression tests for runtime SAST remediations.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3015,13 +8993,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Model admission belongs to executing work, not queued callers or caches.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_scoped_batch_admission.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3036,13 +9012,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Token-unit boundary tests; no generated prose fixtures or fallback output.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_script_byte_budget.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3068,13 +9042,11 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Social + advertising quality beacon — regression guards.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3089,13 +9061,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 test social generation controls
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3116,13 +9086,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Operator receipts bind test-authored posts; no source permissions are inferred.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 48}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3152,13 +9120,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 48}.
 
 Offline trust-boundary tests for configured service HTTP.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3175,13 +9141,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Contract guards for MaxCore capabilities that have no real model yet.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3200,13 +9164,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 Unit tests for the URL-parser label-echo garble guard.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 48}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3287,13 +9249,11 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Voice-over synthesis regression tests (Task: birdcall narration fix).
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3318,13 +9278,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 API-level regression tests: the voice-over flag must be strictly opt-in.
 
-Status: **skipped**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 6, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3392,7 +9350,7 @@ python3 scripts/testing/run-python-suites.py --file tests/dns-production-smoke.p
 
 Real filesystem/template consumers, without network or app database access.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/fsspec-advisories.py --output /tmp/maxbooster-python-single
@@ -3452,13 +9410,11 @@ python3 scripts/testing/run-python-suites.py --file tests/production_fixture_sup
 
 test ltx adapter download
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_ltx_adapter_download.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 1}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3471,13 +9427,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 1}.
 
 Portable compiler verification must fail before an altered compiler is run.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_portable_rust_toolchain.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3485,6 +9439,10 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 - `PortableRustVerification.test_intact_toolchain_checks_exact_versions`: intact toolchain checks exact versions
 - `PortableRustVerification.test_altered_or_added_toolchain_file_rejected_before_execution`: altered or added toolchain file rejected before execution
 - `PortableRustVerification.test_unpinned_archive_provenance_rejected`: unpinned archive provenance rejected
+- `RustGlibcTunables.test_sets_minimum_static_tls_without_disabling_other_tunables`: sets minimum static tls without disabling other tunables
+- `RustGlibcTunables.test_preserves_a_higher_existing_static_tls_reserve`: preserves a higher existing static tls reserve
+- `RustGlibcTunables.test_deduplicates_static_tls_and_uses_the_largest_existing_value`: deduplicates static tls and uses the largest existing value
+- `RustGlibcTunables.test_rejects_malformed_existing_tunable_instead_of_silently_dropping_it`: rejects malformed existing tunable instead of silently dropping it
 
 </details>
 
@@ -3492,13 +9450,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 test production fixture support
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_production_fixture_support.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3513,13 +9469,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 test secure http
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_secure_http.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3537,13 +9491,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 Regression tests for the supplemental CPU Torch integrity gate.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_torch_provenance.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3557,13 +9509,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 Archive integrity must stay distinct from missing current inference evidence.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_archived_quality_verifiers.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3578,13 +9528,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Real pytest must reject false checks in canonical custom assertion helpers.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_assertion_oracles.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3598,13 +9546,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 Keep report-owned source in the catalog without registering historical suites.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_catalog_snapshot_ownership.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3619,17 +9565,32 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 </details>
 
+### `tests/testing/test_command_harness.py`
+
+test command harness
+
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_command_harness.py --output /tmp/maxbooster-python-single
+```
+
+<details>
+<summary>What each case checks</summary>
+
+- `CommandHarnessTests.test_invalid_environment_is_reported_without_aborting_orchestration`: invalid environment is reported without aborting orchestration
+
+</details>
+
 ### `tests/testing/test_commerce_subject_selector.py`
 
 Exercise the real legacy-commerce selector boundary without SQL or providers.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_commerce_subject_selector.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 22}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3653,13 +9614,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 22}.
 
 Real subprocesses exercise producer-time byte/nonce/count binding.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_coverage_command_binding.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 46}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3684,13 +9643,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 46}.
 
 The actual registry consumer must retain source topology uncertainty.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_endpoint_mount_resolution.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3709,13 +9666,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 JUnit evidence must retain failed cases with multiple assertion details.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_junit_multiple_failures.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3730,13 +9685,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Fail-closed launch decisions and exact inventory/provenance regressions.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_launch_readiness_audit.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 42}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3765,13 +9718,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 42}.
 
 Real authenticated FastAPI contracts for transient MaxCore account analytics.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_maxcore_analytics.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 59}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3800,13 +9751,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 59}.
 
 Explicit feature proofs require every exact current passing case.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_evidence.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 83}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3850,13 +9799,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 83}.
 
 Exhaustive ledger preserves aliases, unresolved work and exact evidence states.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_plan.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3875,13 +9822,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 Static factory topology must preserve declarations and fail closed on ambiguity.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_factory_mounts.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 62}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3914,13 +9859,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 62}.
 
 Exercise Python worker isolation and quiescent read-only scheduling with real children.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_python_runner_scheduling.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3939,13 +9882,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 test readiness catalog
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_readiness_catalog.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3961,13 +9902,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Pure-data contracts for the master verification's repair guide.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_remediation.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3985,13 +9924,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 Behavior and malformed-evidence checks for the counted progress report.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_report_progress.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 38}.
 
 <details>
 <summary>What each case checks</summary>
@@ -4012,6 +9949,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 38}.
 - `CountedProgressTests.test_zero_denominator_has_no_fabricated_completion_percent`: zero denominator has no fabricated completion percent
 - `CountedProgressTests.test_real_collection_leaves_all_git_visible_files_unchanged`: real collection leaves all git visible files unchanged
 - `MasterRunnerProgressTests.test_master_writes_running_report_before_first_command`: master writes running report before first command
+- `MasterRunnerProgressTests.test_http_group_uses_resolved_application_python_runtime`: http group uses resolved application python runtime
 - `MasterRunnerProgressTests.test_missing_input_cli_writes_unavailable_and_returns_two`: missing input cli writes unavailable and returns two
 
 </details>
@@ -4020,13 +9958,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 38}.
 
 Retain every case in mixed Node/Vitest JUnit layouts without double counts.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_summary_results.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -4047,13 +9983,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 Exercise suite discovery against real Git indexes and working trees.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_untracked_suite_discovery.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -4068,13 +10002,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Real loopback streaming regressions, runnable with both app interpreters.
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/urllib3-security-paths.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 <details>
 <summary>What each case checks</summary>
@@ -4089,13 +10021,11 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 test sophia
 
-Status: **passed**.
+Status: **blocked**. Install coverage>=7.13,<8 into the interpreter selected by --python; no uninstrumented fallback was run
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tools/sophia-agent-runner/tests/test_sophia.py --output /tmp/maxbooster-python-single
 ```
-
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 <details>
 <summary>What each case checks</summary>

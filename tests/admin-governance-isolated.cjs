@@ -36,12 +36,15 @@ function load(file, boundaries = {}, runtimeEnv = {}) {
       desc: a => a, sql: (parts, ...values) => ({ parts, values }),
     };
     if (name === "node:crypto") return crypto;
+    if (name === "./regularE2eAccountPolicy.js") {
+      return load("server/services/regularE2eAccountPolicy.ts", {}, env);
+    }
     if (name === "zod") return require("zod");
     if (name === "../../shared/supportTicketValidation.js") return load("shared/supportTicketValidation.ts");
     if (name === "./kycReviewRevision.js") return load("server/services/kycReviewRevision.ts");
     throw new Error(`Unmocked external boundary: ${name}`);
   };
-  vm.runInNewContext(output.outputText, { module, exports: module.exports, require: requireMock, console, Date, Set, process: { env } });
+  vm.runInNewContext(output.outputText, { module, exports: module.exports, require: requireMock, console, Date, Set, Buffer, process: { env } });
   return module.exports;
 }
 

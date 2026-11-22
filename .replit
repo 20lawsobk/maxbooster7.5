@@ -1,5 +1,5 @@
 entrypoint = "server/index.ts"
-modules = ["python-3.11", "nodejs-24"]
+modules = ["nodejs-24", "python-3.12"]
 run = "npm run dev"
 
 [gitHubImport]
@@ -31,6 +31,10 @@ MAXCORE_LOCAL = "1"
 PDIM_FORCE_REMOTE = "0"
 MAXCORE_SERVING_RELEASE = "live-awareness"
 STRIPE_ALLOW_CATALOG_PROVISIONING = "0"
+
+[[ports]]
+localPort = 53
+externalPort = 3001
 
 [[ports]]
 localPort = 1053

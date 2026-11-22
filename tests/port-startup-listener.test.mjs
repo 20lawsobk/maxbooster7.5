@@ -82,21 +82,22 @@ test("dev and production readiness cover all twelve configured local listeners",
       ["MaxCore diffusion gateway", "/health"],
       ["MaxCore API", "/healthz"],
       ["MaxCore model API", "/api/ready"],
-      ["MaxCore model health", "/health"],
-      ["MaxCore proxy sidecar", undefined],
+      ["MaxCore model health", "/healthz"],
+      ["MaxCore proxy sidecar", "/health"],
     ],
   );
-  for (const name of [
-    "web application",
-    "MaxCore diffusion gateway",
-    "MaxCore API",
-    "MaxCore model API",
-    "MaxCore model health",
+  for (const [name, httpPath] of [
+    ["web application", "/ready"],
+    ["MaxCore diffusion gateway", "/health"],
+    ["MaxCore API", "/healthz"],
+    ["MaxCore model API", "/api/ready"],
+    ["MaxCore model health", "/healthz"],
+    ["MaxCore proxy sidecar", "/health"],
   ]) {
     assert.equal(
       productionPorts.find((entry) => entry.name === name)?.httpPath,
-      undefined,
-      `${name} keeps its existing production port-only readiness contract`,
+      httpPath,
+      `${name} uses the same verified HTTP readiness in production`,
     );
   }
 });

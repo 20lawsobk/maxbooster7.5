@@ -69,9 +69,8 @@ test("historical fast build and compiling build refresh subsystem dependencies b
   const shell = fs.readFileSync("build.sh", "utf8");
   const compile = fs.readFileSync("script/build.ts", "utf8");
   assert.ok(shell.indexOf("bash script/sync-subsystem-dependencies.sh") < shell.indexOf("FAST_PATH=1"));
-  for (const scope of ["maxcore", "pdim"]) {
-    assert.ok(shell.includes(`_pdim_pack "external/${scope}" "external_${scope}.pdim"`));
-    assert.ok(compile.includes(`dir: "external/${scope}"`));
-  }
+  assert.ok(shell.includes('_pack_directory_capsule external/maxcore external_maxcore.pdim "MaxCore"'));
+  assert.ok(shell.includes('_pack_directory_capsule external/pdim external_pdim.pdim "Pocket Dimension"'));
+  for (const scope of ["maxcore", "pdim"]) assert.ok(compile.includes(`dir: "external/${scope}"`));
   assert.ok(compile.indexOf("bash script/sync-subsystem-dependencies.sh") < compile.indexOf("node node_modules/vite/bin/vite.js build"));
 });

@@ -999,6 +999,7 @@ try {
     // The current Drizzle schema already creates these objects; applying the
     // upgrade migration over that generated baseline causes duplicate DDL.
     "0100_maxcore_cognitive_registry.sql",
+    "0101_collaboration_rooms.sql",
   ]);
   for (const file of readdirSync(join(root, "migrations")).filter((name) => /^\d+.*\.sql$/.test(name) && Number(name.split("_")[0]) >= 20).sort()) {
     if (schemaManagedMigrations.has(file)) {

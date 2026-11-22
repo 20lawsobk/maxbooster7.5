@@ -247,22 +247,15 @@ describe("Critical Path Tests - Production Readiness", () => {
   describe("4. Social Media Management", () => {
     let postId: string;
 
-    it("should schedule a post", async () => {
+    it("requires a connected platform before scheduling publication", async () => {
       const res = await api("POST", "/api/social/schedule-post", {
         platform: "instagram",
         content: "Test post content #newmusic",
         scheduledAt: new Date(Date.now() + 86400000).toISOString(),
       });
-      expect(res.status).toBe(201);
-      expect(res.json.success).toBe(true);
-      expect(res.json.queued).toBe(true);
-      expect(res.json.post.status).toBe("pending");
-      postId = res.json.post.id;
-      expect(typeof postId).toBe("string");
-      const persisted = await api("GET", "/api/social/posts");
-      expect(persisted.status).toBe(200);
-      // The UI projection calls a future pending queue item "scheduled".
-      expect(persisted.json.find((post: { id: string }) => post.id === postId)).toMatchObject({ id: postId, status: "scheduled" });
+      expect(res.status).toBe(409);
+      expect(res.json.code).toBe("PUBLISHING_CONNECTION_REQUIRED");
+      expect(res.json.success).toBe(false);
     });
 
     it("should reject post without required fields", async () => {
@@ -279,6 +272,15 @@ describe("Critical Path Tests - Production Readiness", () => {
     });
 
     it("does not claim publication before a platform connection and provider confirmation", async () => {
+      const draft = await api("POST", "/api/social/calendar", {
+        platform: "instagram",
+        content: "Draft awaiting an authorized platform connection",
+        status: "draft",
+      });
+      expect(draft.status).toBe(201);
+      postId = draft.json.id;
+      expect(typeof postId).toBe("string");
+
       const res = await api("POST", `/api/social/calendar/${postId}/publish`);
       expect(res.status).toBe(409);
       expect(res.json.code).toBe("PUBLISHING_CONNECTION_REQUIRED");

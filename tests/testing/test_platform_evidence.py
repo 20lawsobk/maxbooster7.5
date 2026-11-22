@@ -9,7 +9,13 @@ import sys
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-TEST_PYTHON = os.environ.get("MAXBOOSTER_TEST_PYTHON", sys.executable)
+TEST_RUNNER_PYTHON = os.environ.get("MAXBOOSTER_TEST_RUNNER_PYTHON")
+TEST_DEPENDENCY_PYTHON = ROOT / ".pythonlibs/bin/python"
+TEST_PYTHON = (
+    TEST_RUNNER_PYTHON
+    or (str(TEST_DEPENDENCY_PYTHON) if TEST_DEPENDENCY_PYTHON.is_file() else None)
+    or os.environ.get("MAXBOOSTER_TEST_PYTHON", sys.executable)
+)
 SPEC = importlib.util.spec_from_file_location("platform_register", ROOT / "scripts/testing/platform-register.py")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)

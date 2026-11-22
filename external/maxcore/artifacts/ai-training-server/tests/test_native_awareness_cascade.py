@@ -193,6 +193,16 @@ def test_social_route_delivers_structured_envelope_to_agents(monkeypatch):
     monkeypatch.setattr(server, "_script_agent", Agent())
     monkeypatch.setattr(server, "_distribution_agent", Agent())
     monkeypatch.setattr(server, "_fw_ingest", lambda *args, **kwargs: None)
+    curriculum_reads = []
+
+    def available_curriculum():
+        return SimpleNamespace(
+            get_top_performers=lambda user_id, **_kwargs: (
+                curriculum_reads.append(user_id) or []
+            )
+        )
+
+    monkeypatch.setattr("storage_client.get_curriculum_client", available_curriculum)
 
     # Construct the real Pydantic route model from a JSON-shaped payload.
     req = server.PlatformSocialRequest.model_validate({
@@ -208,6 +218,7 @@ def test_social_route_delivers_structured_envelope_to_agents(monkeypatch):
     result = _run(server.platform_social_generate(req, _key={}))
 
     assert result["success"] is True
+    assert curriculum_reads == ["artist-structured"]
     assert len(seen) == 2
     for consumed in seen:
         assert '"goal":"distinctive-intent-482"' in consumed.awareness

@@ -65,11 +65,12 @@ class DurationContractTest(unittest.TestCase):
             clips = []
             for i, count in enumerate((40, 40, 40)):
                 path = root / f"scene{i}.mp4"
+                # Fixture quality is irrelevant here; bound encoder work while preserving H.264 timestamps.
                 subprocess.run([
                     "ffmpeg", "-v", "error", "-y", "-f", "lavfi",
                     "-i", f"color=c={'red' if i == 0 else 'blue'}:s=32x32:r=24",
-                    "-frames:v", str(count), "-c:v", "libx264", "-pix_fmt",
-                    "yuv420p", str(path),
+                    "-frames:v", str(count), "-c:v", "libx264", "-preset", "ultrafast",
+                    "-threads", "1", "-pix_fmt", "yuv420p", str(path),
                 ], check=True, capture_output=True, timeout=15)
                 clips.append(str(path))
             audio = root / "sound.wav"

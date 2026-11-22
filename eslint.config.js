@@ -50,6 +50,10 @@ export default [
       "client/public/**",
       "ReleasePackage/**",
       "reports/**",
+      // Historical script snapshots and isolated task copies are evidence, not
+      // executable source for the current app's lint gate.
+      "docs/archive/**",
+      ".task123-publishing-candidate/**",
     ],
   },
   js.configs.recommended,

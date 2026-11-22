@@ -71,7 +71,9 @@ try {
   const baselineMigrations=fs.readdirSync(path.join(temp,'generated')).filter(file=>file.endsWith('.sql')).sort();
   if(!baselineMigrations.length||baselineMigrations.some(file=>!fs.readFileSync(path.join(temp,'generated',file),'utf8').trim()))throw Error('Schema generator produced no usable SQL; exit zero alone does not establish a fixture schema');
   for(const file of baselineMigrations)docker(['exec','-i',db,'psql','-U','packed','-d','postgres','-v','ON_ERROR_STOP=1'],{input:fs.readFileSync(path.join(temp,'generated',file),'utf8')});
-  for(const file of fs.readdirSync(path.join(root,'migrations')).filter(file=>/^\d+.*\.sql$/.test(file)&&Number(file.split('_')[0])>=20).sort())docker(['exec','-i',db,'psql','-U','packed','-d','postgres','-v','ON_ERROR_STOP=1'],{input:fs.readFileSync(path.join(root,'migrations',file),'utf8')});
+  // The generated baseline is from the current Drizzle schema, which includes
+  // migrations 0100 and 0101. Their SQL runs in separate migration tests.
+  for(const file of fs.readdirSync(path.join(root,'migrations')).filter(file=>/^\d+.*\.sql$/.test(file)&&Number(file.split('_')[0])>=20&&file!=='0100_maxcore_cognitive_registry.sql'&&file!=='0101_collaboration_rooms.sql').sort())docker(['exec','-i',db,'psql','-U','packed','-d','postgres','-v','ON_ERROR_STOP=1'],{input:fs.readFileSync(path.join(root,'migrations',file),'utf8')});
   fs.unlinkSync(path.join(temp,'node_modules'));evidence.ephemeralDatabase='pass';
   const fixture=path.join(temp,'fixture');fs.mkdirSync(fixture);
   const guard=fs.readFileSync(path.join(root,'scripts/readiness-egress-guard.mjs'),'utf8').split('for (const method of [')[0].replace('const allowedHosts = new Set([',`const allowedHosts = new Set([${JSON.stringify(databaseIp)},`)+'\nsyncBuiltinESMExports();\n';

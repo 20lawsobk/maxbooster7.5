@@ -94,11 +94,12 @@ try {
   for (const file of baselineMigrations) {
     await cluster.pool.query(await readFile(path.join(temp, 'generated', file), 'utf8'));
   }
-  // The generated baseline already contains the MaxCore registry from 0100.
-  // Its actual SQL is exercised independently by the migration-specific test.
+  // The generated baseline already contains the schemas from 0100 and 0101.
+  // Their actual SQL is exercised independently by migration-specific tests.
   for (const file of (await readdir('migrations')).filter(f =>
     /^\d+.*\.sql$/.test(f) && Number(f.split('_')[0]) >= 20
-    && f !== '0100_maxcore_cognitive_registry.sql').sort()) {
+    && f !== '0100_maxcore_cognitive_registry.sql'
+    && f !== '0101_collaboration_rooms.sql').sort()) {
     await cluster.pool.query(await readFile(path.join('migrations', file), 'utf8'));
   }
   const url = new URL(`postgresql://${cluster.pool.options.user}@localhost/postgres`);

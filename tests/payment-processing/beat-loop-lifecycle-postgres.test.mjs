@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { mkdtemp, mkdir, symlink, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -7,6 +8,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { createHash } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { createPythonChildEnvironment, resolvePythonRuntime } from '../../scripts/testing/python-runtime-env.mjs';
 import { startDisposablePostgres, loadDatabaseSubject } from './helpers-database-postgres.mjs';
 
 // Real orchestration, PostgreSQL, transactions and codecs; renderer/storage/social
@@ -36,11 +38,12 @@ test('Beat Money Loop lifecycle on a disposable PostgreSQL database', { timeout:
   for (const file of generatedFiles) {
     await pg.pool.query(await readFile(path.join(root, 'generated', file), 'utf8'));
   }
-  // The current-schema baseline includes the MaxCore registry introduced by
-  // 0100; replay that DDL separately in its migration-specific test instead.
+  // The current-schema baseline includes the MaxCore registry and room tables
+  // from 0100/0101; replay those separately in their migration-specific tests.
   for (const file of (await readdir('migrations')).filter(f =>
     /^\d+.*\.sql$/.test(f) && Number(f.split('_')[0]) >= 20
-    && f !== '0100_maxcore_cognitive_registry.sql').sort()) {
+    && f !== '0100_maxcore_cognitive_registry.sql'
+    && f !== '0101_collaboration_rooms.sql').sort()) {
     await pg.pool.query(await readFile(path.join('migrations', file), 'utf8'));
   }
   const assets = new Map(); const requests = []; let failAudio = false; let postsCreated = 1;
@@ -229,10 +232,15 @@ test('Beat Money Loop lifecycle on a disposable PostgreSQL database', { timeout:
     const port = listener.address().port;
     await new Promise(resolve => listener.close(resolve));
     const pythonRoot = path.join(root, 'python-media');
-    const child = spawn(process.env.MAXBOOSTER_TEST_PYTHON || 'python3', [
+    const packagedPython = path.resolve('python_runtime/bin/python3');
+    const pythonRuntime = resolvePythonRuntime(process.cwd(),
+      process.env.MAXBOOSTER_TEST_PYTHON || (existsSync(packagedPython) ? packagedPython : undefined),
+      process.env);
+    const child = spawn(pythonRuntime.executable, [
       'tests/payment-processing/helpers-beat-media-asgi.py', pythonRoot, String(port),
-    ], { env: { PATH: process.env.PATH, HOME: root, LANG: 'C',
-      ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}) },
+    ], { env: createPythonChildEnvironment(pythonRuntime, {
+      PATH: process.env.PATH, HOME: root, LANG: 'C', TZ: 'UTC',
+    }),
     stdio: ['ignore', 'pipe', 'pipe'] });
     let diagnostics = ''; child.stdout.on('data', chunk => { diagnostics = (diagnostics + chunk).slice(-3000); });
     child.stderr.on('data', chunk => { diagnostics = (diagnostics + chunk).slice(-3000); });

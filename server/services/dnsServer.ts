@@ -24,6 +24,7 @@
  */
 
 import dns2 from "dns2";
+import { isIP } from "node:net";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db.js";
 import { storefrontDomains, dnsZoneRecords, dnsZones } from "@shared/schema";
@@ -36,6 +37,10 @@ import {
   rrToA,
   TYPE_A as REC_TYPE_A,
 } from "./recursiveResolver.js";
+import {
+  mapAZoneRecords,
+  mapSrvZoneRecords,
+} from "./dnsZoneRecordAnswers.js";
 
 // ── Feature flags ─────────────────────────────────────────────────────────────
 const DNSSEC_ENABLED = process.env.DNSSEC_ENABLED === "true";
@@ -171,7 +176,14 @@ async function resolveFromZoneRecords(
   qname: string,
   qtype: string,
 ): Promise<
-  Array<{ name: string; value: string; ttl: number; priority?: number }>
+  Array<{
+    name: string;
+    value: string;
+    ttl: number;
+    priority?: number;
+    weight?: number;
+    port?: number;
+  }> | null
 > {
   try {
     // Determine the zone domain and relative name
@@ -185,6 +197,8 @@ async function resolveFromZoneRecords(
         value: dnsZoneRecords.value,
         ttl: dnsZoneRecords.ttl,
         priority: dnsZoneRecords.priority,
+        weight: dnsZoneRecords.weight,
+        port: dnsZoneRecords.port,
       })
       .from(dnsZoneRecords)
       .innerJoin(dnsZones, eq(dnsZoneRecords.zoneId, dnsZones.id))
@@ -201,10 +215,12 @@ async function resolveFromZoneRecords(
       value: r.value,
       ttl: r.ttl ?? 300,
       priority: r.priority ?? undefined,
+      weight: r.weight ?? undefined,
+      port: r.port ?? undefined,
     }));
   } catch (err) {
     logger.warn({ err, qname, qtype }, "[DNS] resolveFromZoneRecords error");
-    return [];
+    return null;
   }
 }
 
@@ -277,7 +293,7 @@ function makeA(name: string, ip: string) {
 
 // ─── Request handler ──────────────────────────────────────────────────────────
 
-async function handleRequest(
+export async function handleDnsRequest(
   request: Record<string, unknown>,
   send: (response: Record<string, unknown>) => void,
 ): Promise<void> {
@@ -383,10 +399,36 @@ async function handleRequest(
 
   switch (qtype) {
     case (Packet as any).TYPE.A: {
+      const aRecords = await resolveFromZoneRecords(name, "A");
+      if (aRecords === null) {
+        response.header.rcode = 2;
+        break;
+      }
+      if (aRecords.length > 0) {
+        const mapped = mapAZoneRecords(name, aRecords);
+        if (mapped.invalidRecord) {
+          response.header.rcode = 2;
+          break;
+        }
+        for (const record of mapped.answers) {
+          response.answers.push({
+            name: record.name,
+            type: (Packet as any).TYPE.A,
+            class: (Packet as any).CLASS.IN,
+            ttl: record.ttl,
+            address: record.value,
+          });
+        }
+        break;
+      }
       const ip = await resolveGeoIP(
         ((request as Record<string, unknown>)._rawBuffer as Buffer | undefined) ?? Buffer.alloc(0),
         (request as Record<string, unknown>)._srcIp as string | undefined,
       );
+      if (typeof ip !== "string" || isIP(ip) !== 4) {
+        response.header.rcode = 2;
+        break;
+      }
       response.answers.push(makeA(name, ip));
       break;
     }
@@ -404,7 +446,9 @@ async function handleRequest(
 
     case (Packet as any).TYPE.TXT: {
       const txtRecords = await resolveFromZoneRecords(name, "TXT");
-      if (txtRecords.length > 0) {
+      if (txtRecords === null) {
+        response.header.rcode = 2;
+      } else if (txtRecords.length > 0) {
         for (const r of txtRecords) {
           response.answers.push({
             name: r.name,
@@ -422,7 +466,9 @@ async function handleRequest(
 
     case (Packet as any).TYPE.MX: {
       const mxRecords = await resolveFromZoneRecords(name, "MX");
-      if (mxRecords.length > 0) {
+      if (mxRecords === null) {
+        response.header.rcode = 2;
+      } else if (mxRecords.length > 0) {
         for (const r of mxRecords) {
           response.answers.push({
             name: r.name,
@@ -439,9 +485,39 @@ async function handleRequest(
       break;
     }
 
+    case (Packet as any).TYPE.SRV: {
+      const srvRecords = await resolveFromZoneRecords(name, "SRV");
+      if (srvRecords === null) {
+        response.header.rcode = 2;
+      } else if (srvRecords.length > 0) {
+        const mapped = mapSrvZoneRecords(name, srvRecords);
+        if (mapped.invalidRecord) {
+          response.header.rcode = 2;
+          break;
+        }
+        for (const record of mapped.answers) {
+          response.answers.push({
+            name: record.name,
+            type: (Packet as any).TYPE.SRV,
+            class: (Packet as any).CLASS.IN,
+            ttl: record.ttl,
+            priority: record.priority,
+            weight: record.weight,
+            port: record.port,
+            target: record.value,
+          });
+        }
+      } else {
+        response.authorities.push(makeSOA(zone));
+      }
+      break;
+    }
+
     case (Packet as any).TYPE.CNAME: {
       const cnameRecords = await resolveFromZoneRecords(name, "CNAME");
-      if (cnameRecords.length > 0) {
+      if (cnameRecords === null) {
+        response.header.rcode = 2;
+      } else if (cnameRecords.length > 0) {
         response.answers.push({
           name: cnameRecords[0].name,
           type: (Packet as any).TYPE.CNAME,
@@ -457,7 +533,9 @@ async function handleRequest(
 
     case (Packet as any).TYPE.AAAA: {
       const aaaaRecords = await resolveFromZoneRecords(name, "AAAA");
-      if (aaaaRecords.length > 0) {
+      if (aaaaRecords === null) {
+        response.header.rcode = 2;
+      } else if (aaaaRecords.length > 0) {
         for (const r of aaaaRecords) {
           response.answers.push({
             name: r.name,
@@ -475,7 +553,9 @@ async function handleRequest(
 
     case 257: /* CAA */ {
       const caaRecords = await resolveFromZoneRecords(name, "CAA");
-      if (caaRecords.length > 0) {
+      if (caaRecords === null) {
+        response.header.rcode = 2;
+      } else if (caaRecords.length > 0) {
         for (const r of caaRecords) {
           // CAA wire format: flags(1) + tag_length(1) + tag + value
           // We store as: "0 issue \"letsencrypt.org\""
@@ -557,7 +637,7 @@ export async function startDNSServer(): Promise<void> {
       const server = (createServer as any)({
         udp: true,
         tcp: true,
-        handle: handleRequest,
+        handle: handleDnsRequest,
       });
 
       let settled = false;

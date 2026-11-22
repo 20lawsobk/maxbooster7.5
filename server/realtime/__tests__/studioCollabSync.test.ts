@@ -6,7 +6,8 @@ const mocks = vi.hoisted(() => ({
   load: vi.fn(),
   unload: vi.fn(),
   verifyAccessToken: vi.fn(),
-  redisGet: vi.fn(),
+  sessionUserId: vi.fn(),
+  storageGetUser: vi.fn(),
   projectAccess: vi.fn(),
   logger: { warn: vi.fn(), info: vi.fn() },
 }));
@@ -23,12 +24,14 @@ vi.mock("../../realtime/presenceManager.js", () => ({ presenceManager: {} }));
 vi.mock("../../services/jwtAuthService.js", () => ({
   jwtAuthService: { verifyAccessToken: mocks.verifyAccessToken },
 }));
-vi.mock("../../storage.js", () => ({ storage: {} }));
+vi.mock("../../storage.js", () => ({
+  storage: { getUser: mocks.storageGetUser },
+}));
+vi.mock("../sessionAuth.js", () => ({
+  authenticateRealtimeSession: mocks.sessionUserId,
+}));
 vi.mock("../../services/studioProjectAccess.js", () => ({
   getStudioProjectAccess: mocks.projectAccess,
-}));
-vi.mock("../../lib/redisConnectionFactory.js", () => ({
-  getRedisClient: vi.fn(async () => ({ get: mocks.redisGet })),
 }));
 vi.mock("../../logger.js", () => ({ logger: mocks.logger }));
 
@@ -104,22 +107,42 @@ describe("StudioCollabServer shared document loading", () => {
       ),
     ).resolves.toBe(false);
 
-    mocks.redisGet.mockResolvedValue(
-      JSON.stringify({ passport: { user: "user-one" } }),
-    );
+    mocks.sessionUserId.mockResolvedValue("user-one");
     await expect(
       server.isCredentialStillValid(
-        { headers: { cookie: "connect.sid=s%3Asession-id.signature" } },
+        { headers: { cookie: "sessionId=s%3Asession-id.signature" } },
         "user-one",
       ),
     ).resolves.toBe(true);
-    mocks.redisGet.mockResolvedValue(null);
+    mocks.sessionUserId.mockResolvedValue(null);
     await expect(
       server.isCredentialStillValid(
-        { headers: { cookie: "connect.sid=s%3Asession-id.signature" } },
+        { headers: { cookie: "sessionId=s%3Asession-id.signature" } },
         "user-one",
       ),
     ).resolves.toBe(false);
+  });
+
+  it("authenticates collaboration sockets through the configured app session store", async () => {
+    const server = new StudioCollabServer() as any;
+    const request = {
+      headers: { cookie: "sessionId=s%3Asession-id.signature" },
+      url: "/ws/studio?projectId=project-one",
+    };
+    mocks.sessionUserId.mockResolvedValue("user-one");
+    mocks.storageGetUser.mockResolvedValue({
+      id: "user-one",
+      firstName: "Real",
+      lastName: "Collaborator",
+      email: "real@example.test",
+    });
+
+    await expect(server.authenticateRequest(request)).resolves.toEqual({
+      authenticated: true,
+      userId: "user-one",
+      displayName: "Real Collaborator",
+    });
+    expect(mocks.sessionUserId).toHaveBeenCalledWith(request);
   });
 
   it("closes active collaboration sockets when project read access is revoked", async () => {

@@ -842,7 +842,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       // Pass the already-initialized session store to WebSocket for secure authentication
       const { setSessionStore } = await import("./realtime/index.js");
       if (typeof setSessionStore === "function" && activeSessionStore) {
-        setSessionStore(activeSessionStore as unknown as Record<string, unknown>);
+        setSessionStore(activeSessionStore, sessionConfig.secret);
       }
       (initializeRealtimeServer as (server: import("http").Server) => void)(httpServer);
       logger.info("Realtime collaboration server initialized");

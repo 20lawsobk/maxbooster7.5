@@ -15,7 +15,13 @@ import unittest
 
 REPO = Path(os.environ.get('MAXBOOSTER_TEST_REPO_ROOT', Path(__file__).resolve().parents[2]))
 RUNNER = Path(os.environ.get('MAXBOOSTER_PYTHON_RUNNER_SOURCE', REPO / 'scripts/testing/run-python-suites.py'))
-TEST_PYTHON = os.environ.get('MAXBOOSTER_TEST_PYTHON', sys.executable)
+TEST_RUNNER_PYTHON = os.environ.get('MAXBOOSTER_TEST_RUNNER_PYTHON')
+TEST_DEPENDENCY_PYTHON = REPO / '.pythonlibs/bin/python'
+TEST_PYTHON = (
+    TEST_RUNNER_PYTHON
+    or (str(TEST_DEPENDENCY_PYTHON) if TEST_DEPENDENCY_PYTHON.is_file() else None)
+    or os.environ.get('MAXBOOSTER_TEST_PYTHON', sys.executable)
+)
 QUIESCENT = 'tests/testing/test_report_progress.py'
 
 WRITER = '''from pathlib import Path
@@ -131,7 +137,9 @@ def test_worker_overlap():
     def test_report_owned_and_state_copies_are_retained_without_execution(self):
         historical = ('reports/cohort/tests/test_archived.py',
                       'reports/cohort/test-archived.py',
-                      '.pdim-backup/tests/test_archived.py')
+                      '.pdim-backup/tests/test_archived.py',
+                      '.task123-publishing-candidate/external/maxcore/tests/test_candidate.py',
+                      'maxbooster7.5/tests/test_nested_copy.py')
         for name in historical:
             self.put(name, 'raise RuntimeError("historical copy must never execute")\ndef test_old():\n    assert False\n')
         current = 'reports-archive/tests/test_current.py'

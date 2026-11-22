@@ -5197,6 +5197,101 @@ function _normalizeLuaResult(val) {
   for (const k of keys) out[k] = _normalizeLuaResult(obj[k]);
   return out;
 }
+function isTransientPdimReadinessError(error) {
+  if (!(error instanceof Error)) return false;
+  if (error.name === "TimeoutError" || error.name === "AbortError") return true;
+  if (error instanceof TypeError && /fetch failed|failed to fetch/i.test(error.message)) {
+    return true;
+  }
+  return /PDIM HTTP (?:3\d\d|429|5\d\d)|circuit open|ECONN(?:RESET|REFUSED)|EHOSTUNREACH|ETIMEDOUT/i.test(error.message);
+}
+async function probePdimQueueReadiness(execUrl, bearerToken, signal) {
+  const deadline = Date.now() + PDIM_QUEUE_READY_TIMEOUT_MS;
+  let attempts = 0;
+  let consecutiveSuccesses = 0;
+  let lastError;
+  while (Date.now() < deadline) {
+    attempts++;
+    try {
+      const response = await fetch(execUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}
+        },
+        body: JSON.stringify({ cmd: "PING", args: [] }),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(5e3)]),
+        redirect: "manual"
+      });
+      if (!response.ok) {
+        const error = new Error(`PDIM readiness returned HTTP ${response.status}`);
+        if (!isTransientPdimReadinessError(error)) throw error;
+        lastError = error;
+        consecutiveSuccesses = 0;
+      } else {
+        const result = await response.json();
+        const pingResult = result && typeof result === "object" && "result" in result ? result.result : result;
+        if (pingResult !== "PONG") {
+          throw new Error("PDIM readiness returned an invalid PING response");
+        }
+        consecutiveSuccesses++;
+        if (consecutiveSuccesses >= 2) {
+          logger.info(
+            `[PDIM] Queue readiness confirmed by ${attempts} probes; BullMQ connections may start`
+          );
+          return;
+        }
+      }
+    } catch (error) {
+      if (signal.aborted) throw signal.reason ?? error;
+      if (!isTransientPdimReadinessError(error)) throw error;
+      lastError = error;
+      consecutiveSuccesses = 0;
+    }
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        signal.removeEventListener("abort", onAbort);
+        resolve();
+      }, Math.min(PDIM_QUEUE_READY_RETRY_MS, remainingMs));
+      timer.unref?.();
+      const onAbort = () => {
+        clearTimeout(timer);
+        reject(signal.reason ?? new Error("PDIM readiness probe was cancelled"));
+      };
+      if (signal.aborted) onAbort();
+      else signal.addEventListener("abort", onAbort, { once: true });
+    });
+  }
+  if (signal.aborted) {
+    throw signal.reason ?? new Error("PDIM readiness probe was cancelled");
+  }
+  throw new Error(
+    `PDIM did not become ready for BullMQ within ${PDIM_QUEUE_READY_TIMEOUT_MS / 1e3}s`,
+    { cause: lastError }
+  );
+}
+function waitForPdimQueueReadiness(context, execUrl, bearerToken) {
+  if (context.ready) return Promise.resolve();
+  if (!context.promise) {
+    context.controller = new AbortController();
+    const probe = probePdimQueueReadiness(
+      execUrl,
+      bearerToken,
+      context.controller.signal
+    ).then(() => {
+      context.ready = true;
+    }).finally(() => {
+      if (context.promise === probe) {
+        context.promise = null;
+        context.controller = null;
+      }
+    });
+    context.promise = probe;
+  }
+  return context.promise;
+}
 function getPdimClient() {
   if (!_pdimInstance) {
     _pdimInstance = new PdimRedisClient();
@@ -5266,7 +5361,7 @@ function startPdimDirectProber() {
   }, DIRECT_PROBE_INTERVAL_MS);
   _directProbeTimer.unref?.();
 }
-var clusterWorkers, cpuCores, autoMultiplier, _PDIM_GAP_FLOOR_BASE_MS, _PDIM_GAP_FLOOR_WORKER_MIN, _PDIM_GAP_FLOOR_MS, _PDIM_GAP_CEIL_MS, _PDIM_GAP_INIT_MS, _PDIM_MULT_429, _PDIM_JITTER_INIT_MS, _pdimGapMs, _pdimQueueDepth, _PDIM_DIRECT_LANES, _pdimDirectChains, _pdimDirectLaneRR, _pdimScriptChain, _directQueueDepth, _scriptQueueDepth, _MAX_DIRECT_WAIT_MS, _fastFailLoggedAt, _last429At, _PASSIVE_DECAY_INTERVAL_MS, _PASSIVE_DECAY_FACTOR, _PASSIVE_DECAY_IDLE_QUIET_MS, _SCRIPT_CALL_GAP_MS, _429_DEDUP_MS, _last429LoggedAt, _suppressed429Count, _EXEC_DEDUP_WINDOW_MS, _lastExecErrorStatus, _lastExecErrorLoggedAt, _suppressedExecErrors, _NET_ERROR_DEDUP_MS, _lastNetErrorMsg, _lastNetErrorLoggedAt, _suppressedNetErrors, L1_MAX_ENTRIES, L1_TTL_MS, _l1, PdimRedisClient, _pdimInstance, DIRECT_PROBE_INTERVAL_MS, DIRECT_PROBE_TIMEOUT_MS, PDIM_EXEC_TIMEOUT_MS, MAX_HTTP_BZPOP_WAIT_SECONDS, _directProbeTimer;
+var clusterWorkers, cpuCores, autoMultiplier, _PDIM_GAP_FLOOR_BASE_MS, _PDIM_GAP_FLOOR_WORKER_MIN, _PDIM_GAP_FLOOR_MS, _PDIM_GAP_CEIL_MS, _PDIM_GAP_INIT_MS, _PDIM_MULT_429, _PDIM_JITTER_INIT_MS, _pdimGapMs, _pdimQueueDepth, _PDIM_DIRECT_LANES, _pdimDirectChains, _pdimDirectLaneRR, _pdimScriptChain, _directQueueDepth, _scriptQueueDepth, _MAX_DIRECT_WAIT_MS, _fastFailLoggedAt, _last429At, _PASSIVE_DECAY_INTERVAL_MS, _PASSIVE_DECAY_FACTOR, _PASSIVE_DECAY_IDLE_QUIET_MS, _SCRIPT_CALL_GAP_MS, _429_DEDUP_MS, _last429LoggedAt, _suppressed429Count, _EXEC_DEDUP_WINDOW_MS, _lastExecErrorStatus, _lastExecErrorLoggedAt, _suppressedExecErrors, _NET_ERROR_DEDUP_MS, _lastNetErrorMsg, _lastNetErrorLoggedAt, _suppressedNetErrors, L1_MAX_ENTRIES, L1_TTL_MS, _l1, PDIM_QUEUE_READY_TIMEOUT_MS, PDIM_QUEUE_READY_RETRY_MS, PdimRedisClient, _pdimInstance, DIRECT_PROBE_INTERVAL_MS, DIRECT_PROBE_TIMEOUT_MS, PDIM_EXEC_TIMEOUT_MS, MAX_HTTP_BZPOP_WAIT_SECONDS, _directProbeTimer;
 var init_pdimClient = __esm({
   "server/lib/pdimClient.ts"() {
     "use strict";
@@ -5335,15 +5430,17 @@ var init_pdimClient = __esm({
     L1_MAX_ENTRIES = 2e3;
     L1_TTL_MS = 5 * 60 * 1e3;
     _l1 = /* @__PURE__ */ new Map();
+    PDIM_QUEUE_READY_TIMEOUT_MS = 18e4;
+    PDIM_QUEUE_READY_RETRY_MS = 1e3;
     PdimRedisClient = class _PdimRedisClient extends EventEmitter2 {
-      constructor(execUrl, bearerToken) {
+      constructor(execUrl, bearerToken, readinessContext) {
         super();
         this.status = "connecting";
         this.disconnected = false;
         this.lifecycleController = new AbortController();
         this.disconnectedError = Object.assign(
           new Error("[PDIM] Redis client disconnected"),
-          { name: "ConnectionError" }
+          { name: "ConnectionError", disconnectSource: "" }
         );
         this.pubSubChannels = /* @__PURE__ */ new Set();
         this.pubSubPatterns = /* @__PURE__ */ new Set();
@@ -5417,22 +5514,31 @@ var init_pdimClient = __esm({
         this.pTtl = (k) => this.pttl(k);
         this.execUrl = execUrl || process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL || "";
         this.bearerToken = bearerToken || process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN || "";
+        this.readinessContext = readinessContext ?? {
+          promise: null,
+          controller: null,
+          ready: false,
+          waiters: 0
+        };
         if (!this.execUrl) {
           throw new Error("PDIM_HTTP_EXEC_URL is required for PdimRedisClient");
         }
       }
       assertConnected() {
-        if (this.disconnected) throw this.disconnectedError;
+        if (this.isDisconnected()) throw this.disconnectedError;
       }
-      requestSignal(timeoutMs = PDIM_EXEC_TIMEOUT_MS) {
-        if (timeoutMs === null) return this.lifecycleController.signal;
+      isDisconnected() {
+        return this.disconnected || this.status === "end";
+      }
+      requestSignal(timeoutMs = PDIM_EXEC_TIMEOUT_MS, lifecycleController = this.lifecycleController) {
+        if (timeoutMs === null) return lifecycleController.signal;
         return AbortSignal.any([
-          this.lifecycleController.signal,
+          lifecycleController.signal,
           AbortSignal.timeout(timeoutMs)
         ]);
       }
       awaitOrDisconnect(operation) {
-        if (this.disconnected) return Promise.reject(this.disconnectedError);
+        if (this.isDisconnected()) return Promise.reject(this.disconnectedError);
         return new Promise((resolve, reject) => {
           const cleanup = () => {
             this.lifecycleController.signal.removeEventListener("abort", onAbort);
@@ -5455,7 +5561,7 @@ var init_pdimClient = __esm({
         });
       }
       delay(ms) {
-        if (this.disconnected) return Promise.reject(this.disconnectedError);
+        if (this.isDisconnected()) return Promise.reject(this.disconnectedError);
         if (ms <= 0) return Promise.resolve();
         return new Promise((resolve, reject) => {
           const cleanup = () => {
@@ -5519,7 +5625,7 @@ var init_pdimClient = __esm({
       async runPubSubLoop(controller, generation, markReady, rejectBeforeReady) {
         let retryMs = 200;
         let initialReady = false;
-        const isCurrent = () => !this.disconnected && !controller.signal.aborted && !this.lifecycleController.signal.aborted && generation === this.pubSubGeneration;
+        const isCurrent = () => !this.isDisconnected() && !controller.signal.aborted && !this.lifecycleController.signal.aborted && generation === this.pubSubGeneration;
         while (isCurrent()) {
           let reader;
           try {
@@ -5648,7 +5754,8 @@ var init_pdimClient = __esm({
         }
       }
       exec(command, options = {}) {
-        if (this.disconnected) return Promise.reject(this.disconnectedError);
+        if (this.isDisconnected()) return Promise.reject(this.disconnectedError);
+        const requestLifecycle = this.lifecycleController;
         const [cmd, ...rawArgs] = command;
         if (typeof cmd !== "string" || !cmd.trim()) {
           throw new TypeError("[PDIM] command must be a non-empty string");
@@ -5663,10 +5770,16 @@ var init_pdimClient = __esm({
           );
         }
         const run = async () => {
+          if (requestLifecycle.signal.aborted) {
+            throw requestLifecycle.signal.reason ?? this.disconnectedError;
+          }
           this.assertConnected();
           const rlWait = _PdimRedisClient?._rateLimitedUntil - Date?.now();
           if (rlWait > 0) {
             await this.delay(rlWait);
+          }
+          if (requestLifecycle.signal.aborted) {
+            throw requestLifecycle.signal.reason ?? this.disconnectedError;
           }
           this.assertConnected();
           let counted = false;
@@ -5678,7 +5791,7 @@ var init_pdimClient = __esm({
                 Authorization: `Bearer ${this.bearerToken}`
               },
               body: JSON.stringify({ cmd, args }),
-              signal: this.requestSignal(options.requestTimeoutMs),
+              signal: this.requestSignal(options.requestTimeoutMs, requestLifecycle),
               // Do not follow redirects automatically — if PDIM's proxy returns 302
               // (Replit redirecting to an error/login page when the service is down)
               // we need to see the raw 302 status so our 3xx handler can trip the
@@ -5770,7 +5883,10 @@ var init_pdimClient = __esm({
             }
             return data;
           } catch (err) {
-            if (this.disconnected) throw this.disconnectedError;
+            if (requestLifecycle.signal.aborted) {
+              throw requestLifecycle.signal.reason ?? this.disconnectedError;
+            }
+            if (this.isDisconnected()) throw this.disconnectedError;
             const isTimeout = !counted && (err?.name === "TimeoutError" || err?.name === "AbortError");
             const isCircuitMsg = !counted && err?.message.startsWith("[PDIM] Circuit");
             if (!counted && !isTimeout && !isCircuitMsg) {
@@ -5936,21 +6052,86 @@ var init_pdimClient = __esm({
         return this.createPipeline(true);
       }
       duplicate() {
-        return new _PdimRedisClient(this.execUrl, this.bearerToken);
+        const connection = new _PdimRedisClient(
+          this.execUrl,
+          this.bearerToken,
+          this.readinessContext
+        );
+        queueMicrotask(() => {
+          void connection.connect().catch(async (error) => {
+            if (connection.status === "end") return;
+            logger.warn(
+              {
+                errorType: error instanceof Error ? error.name : typeof error
+              },
+              "[PDIM] Duplicated Redis connection failed its readiness probe"
+            );
+            if (connection.listenerCount("error") > 0) {
+              connection.emit("error", error);
+            }
+            await connection.quit();
+          });
+        });
+        return connection;
       }
       // Required by BullMQ's isRedisInstance() check: ['connect', 'disconnect', 'duplicate']
       async connect() {
-        this.assertConnected();
-        await this.ping();
+        if (this.disconnected) throw this.disconnectedError;
+        if (this.status === "end") {
+          this.lifecycleController = new AbortController();
+          this.disconnectedError = Object.assign(
+            new Error("[PDIM] Redis client disconnected"),
+            { name: "ConnectionError", disconnectSource: "" }
+          );
+          this.status = "connecting";
+        }
+        const context = this.readinessContext;
+        if (context.ready) {
+          if (this.status !== "ready") {
+            this.status = "ready";
+            this.emit("connect");
+            this.emit("ready");
+          }
+          return;
+        }
+        context.waiters++;
+        try {
+          await this.awaitOrDisconnect(
+            waitForPdimQueueReadiness(context, this.execUrl, this.bearerToken)
+          );
+          this.assertConnected();
+          if (this.status !== "ready") {
+            this.status = "ready";
+            this.emit("connect");
+            this.emit("ready");
+          }
+        } finally {
+          context.waiters--;
+          if (!context.ready && context.waiters === 0) {
+            context.controller?.abort(this.disconnectedError);
+          }
+        }
       }
       async quit() {
-        await this.disconnect();
+        if (this.status !== "end") await this.disconnect();
+        this.disconnected = true;
+        this.disconnectedError = Object.assign(
+          new Error("[PDIM] Redis client disconnected"),
+          { name: "ConnectionError", disconnectSource: "" }
+        );
         return "OK";
       }
-      async disconnect() {
-        if (this.disconnected) return;
-        this.disconnected = true;
+      async disconnect(_reconnect = false) {
+        if (this.disconnected || this.status === "end") return;
         this.status = "end";
+        const disconnectSource = new Error("PDIM client disconnect origin").stack?.split("\n").slice(2, 8).join("\n") ?? "unavailable";
+        this.disconnectedError = Object.assign(
+          new Error("Connection is closed."),
+          {
+            name: "ConnectionClosedError",
+            disconnectSource
+          }
+        );
         this.pubSubGeneration++;
         this.pubSubController?.abort(this.disconnectedError);
         this.lifecycleController.abort(this.disconnectedError);
@@ -6104,7 +6285,7 @@ var init_pdimClient = __esm({
             }
             return data;
           } catch (err) {
-            if (this.disconnected) throw this.disconnectedError;
+            if (this.isDisconnected()) throw this.disconnectedError;
             const isTimeout = !counted && (err?.name === "TimeoutError" || err?.name === "AbortError");
             const isCircuitMsg = !counted && err?.message?.startsWith("[PDIM] Circuit");
             if (!counted && !isTimeout && !isCircuitMsg) {
@@ -6565,7 +6746,7 @@ var init_pdimClient = __esm({
           }
           return result;
         } catch (error) {
-          if (!this.disconnected) this.status = "reconnecting";
+          if (!this.isDisconnected()) this.status = "reconnecting";
           throw error;
         }
       }
@@ -11509,6 +11690,8 @@ __export(schema_exports, {
   collaborationAccessRequests: () => collaborationAccessRequests,
   collaborationComments: () => collaborationComments,
   collaborationProjects: () => collaborationProjects,
+  collaborationRoomMessages: () => collaborationRoomMessages,
+  collaborationRooms: () => collaborationRooms,
   collaborationVersions: () => collaborationVersions,
   commerceAllocations: () => commerceAllocations,
   commerceDraws: () => commerceDraws,
@@ -11634,6 +11817,8 @@ __export(schema_exports, {
   insertCollaborationAccessRequestSchema: () => insertCollaborationAccessRequestSchema,
   insertCollaborationCommentSchema: () => insertCollaborationCommentSchema,
   insertCollaborationProjectSchema: () => insertCollaborationProjectSchema,
+  insertCollaborationRoomMessageSchema: () => insertCollaborationRoomMessageSchema,
+  insertCollaborationRoomSchema: () => insertCollaborationRoomSchema,
   insertCollaborationVersionSchema: () => insertCollaborationVersionSchema,
   insertCompetitorProfileSchema: () => insertCompetitorProfileSchema,
   insertContentCalendarSchema: () => insertContentCalendarSchema,
@@ -11985,7 +12170,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var users, insertUserSchema, sessions, pgSessions2, insertSessionSchema, analytics, insertAnalyticsSchema, subscriptions, insertSubscriptionSchema, projects, insertProjectSchema, studioTemplates, insertStudioTemplateSchema, studioRecentFiles, insertStudioRecentFileSchema, studioPinnedFolders, insertStudioPinnedFolderSchema, studioProjects, insertStudioProjectSchema, releases, insertReleaseSchema, campaigns, insertCampaignSchema, socialCampaigns, insertSocialCampaignSchema, storefronts, insertStorefrontSchema, updateStorefrontSchema, dnsRecordCache, insertDnsRecordCacheSchema, storefrontDomains, insertStorefrontDomainSchema, storefrontHosts, insertStorefrontHostSchema, dnsTemplates, insertDnsTemplateSchema, dnsProviderCredentials, insertDnsProviderCredentialsSchema, dnsZones, insertDnsZoneSchema, dnsZoneRecords, insertDnsZoneRecordSchema, membershipTiers, insertMembershipTierSchema, updateMembershipTierSchema, beats, beatMoneyLoopState, beatMoneyLoopCycles, hyperFollowPages, distroReleases, distroTracks, dspProviders, customerMemberships, insertCustomerMembershipSchema, statusPageIncidents, statusPageIncidentServices, dmcaNotices, dmcaStrikes, listings, insertListingSchema, listingLicenseTiers, storefrontFollows, storefrontLikes, storefrontRatings, beatLikes, licenseTemplates, storefrontOrders, contractTemplates, insertContractTemplateSchema, generatedContracts, marketplaceDisputes, insertMarketplaceDisputeSchema, statusPageIncidentUpdates, statusPageServices, storefrontTemplates, storefrontsRelations, legalHolds, isrcRegistry, statusPageSubscribers, upcRegistry, statusPageUptimeMetrics, catalogImportJobs, catalogImportRows, releaseWorkflowRequests, releaseVersionHistory, releaseScheduledActions, preSaveCampaigns, insertPreSaveCampaignSchema, preSaveEntries, insertPreSaveEntrySchema, distributionSLAMetrics, insertDistributionSLAMetricSchema, contentIdRegistrations, insertContentIdRegistrationSchema, syncLicenses, insertSyncLicenseSchema, syncLicenseInquiries, insertSyncLicenseInquirySchema, royaltySplits, insertRoyaltySplitSchema, royaltyTransactions, insertRoyaltyTransactionSchema, revenueEvents, recoupmentAccounts, splitContracts, dspRates, exchangeRates, projectRoyaltySplits, instantPayouts, refunds, insertRefundSchema, ledgerEntries, insertLedgerEntrySchema, taxForms, insertTaxFormSchema, royaltyStatements, royaltyDisputes, disputeMessages, invoices, insertInvoiceSchema, splitPayments, insertSplitPaymentSchema, kycDocuments, notifications, pushSubscriptions, supportTickets, insertSupportTicketSchema, securityThreats, insertSecurityThreatSchema, ipBlacklist, insertIpBlacklistSchema, posts, audioClips, midiClips, midiNotes, markers, pluginCatalog, workspaceAuditLog, insertWorkspaceAuditLogSchema, apiKeys, dspAnalytics, orders, kycVerifications, approvalHistory, scheduledPostBatches, compVersions, pluginInstances, stemExports, warpMarkers, insertWarpMarkerSchema, workspaceCatalogs, insertWorkspaceCatalogSchema, apiUsage, alertIncidents, dspUserPlatformStatus, dspSyncStatus, toolostConnection, youtubeConnections, youtubeUploads, emailEvents, requestInstantPayoutSchema, approvePostSchema, bulkSchedulePostSchema, takeGroups, pluginPresets, studioTracks, workspaceInvitations, insertWorkspaceInvitationSchema, alertRules, playlistAttributions, insertPlaylistAttributionSchema, emailMessages, rejectPostSchema, bulkValidatePostSchema, takeLanes, updateWarpMarkerSchema, workspaceMembers, insertWorkspaceMemberSchema, systemMetrics, listenerCohorts, submitForReviewSchema, socialAccounts, takeSegments, workspaceRoles, revenueForecasts, workspaces, insertWorkspaceSchema, approvalRequests, approvalSteps, approvalWorkflows, ssoConfigs, platformApiConfigs, adCampaigns, insertAdCampaignSchema, adCreatives, insertAdCreativeSchema, adDeliveryLogs, contentCalendar, insertContentCalendarSchema, aiModels, insertAiModelSchema, userBrandVoices, insertUserBrandVoiceSchema, inferenceRuns, insertInferenceRunSchema, hashtagResearch, insertHashtagResearchSchema, explanationLogs, insertExplanationLogSchema, bestPostingTimes, insertBestPostingTimeSchema, aiModelVersions, insertAiModelVersionSchema, userTasteProfiles, insertUserTasteProfileSchema, beatInteractions, insertBeatInteractionSchema, userStorage, insertUserStorageSchema, userStorageFiles, insertUserStorageFileSchema, beatDiscoveryScores, insertBeatDiscoveryScoreSchema, playlistJourneys, insertPlaylistJourneySchema, syncPlacements, insertSyncPlacementSchema, historicalAnalytics, insertHistoricalAnalyticSchema, arDiscoveries, insertArDiscoverySchema, platformDataSources, insertPlatformDataSourceSchema, globalRankings, insertGlobalRankingSchema, nlpQueryLogs, insertNlpQueryLogSchema, preSavePages, insertPreSavePageSchema, promoCards, insertPromoCardSchema, miniVideos, insertMiniVideoSchema, spotifyCanvases, insertSpotifyCanvasSchema, lyricsSyncs, insertLyricsSyncSchema, artistScores, insertArtistScoreSchema, marketplaceRecommendations, insertMarketplaceRecommendationSchema, beatPromotions, insertBeatPromotionSchema, bogoPromotions, insertBogoPromotionSchema, systemSettings, insertSystemSettingSchema, socialAutopilotContent, insertSocialAutopilotContentSchema, fanSegments, insertFanSegmentSchema, musicImpactMetrics, insertMusicImpactMetricSchema, socialPatternAggregates, insertSocialPatternAggregateSchema, generationArmStats, insertGenerationArmStatSchema, generationHistory, insertGenerationHistorySchema, organicAssets, insertOrganicAssetSchema, organicChannels, insertOrganicChannelSchema, organicRoiSnapshots, insertOrganicRoiSnapshotSchema, organicAssetLifetime, insertOrganicAssetLifetimeSchema, autopilotCrossInsights, insertAutopilotCrossInsightSchema, socialMentions, insertSocialMentionSchema, socialKeywords, insertSocialKeywordSchema, competitorProfiles, insertCompetitorProfileSchema, socialInboxMessages, insertSocialInboxMessageSchema, socialReplyTemplates, insertSocialReplyTemplateSchema, onboardingTasks, insertOnboardingTaskSchema, userOnboarding, insertUserOnboardingSchema, artistProgressSnapshots, insertArtistProgressSnapshotSchema, achievements, insertAchievementSchema, userAchievements, insertUserAchievementSchema, userStreaks, insertUserStreakSchema, careerCoachRecommendations, insertCareerCoachRecommendationSchema, careerGoals, insertCareerGoalSchema, emailPreferences, insertEmailPreferenceSchema, sentEmails, insertSentEmailSchema, artistConnections, insertArtistConnectionSchema, collaborationProjects, insertCollaborationProjectSchema, projectMembers, insertProjectMemberSchema, collabSnapshots, insertCollabSnapshotSchema, releaseCountdowns, insertReleaseCountdownSchema, countdownTasks, insertCountdownTaskSchema, countdownAnalytics, insertCountdownAnalyticSchema, autopilotLearningData, insertAutopilotLearningDataSchema, autopilotInsights, insertAutopilotInsightSchema, autopilotPreferences, insertAutopilotPreferenceSchema, systemLogs, insertSystemLogSchema, auditLogs, insertAuditLogSchema, splitSheets, insertSplitSheetSchema, batchTemplates, insertBatchTemplateSchema, shareLinks, insertShareLinkSchema, collaborationComments, insertCollaborationCommentSchema, collaborationVersions, insertCollaborationVersionSchema, collaborationAccessRequests, insertCollaborationAccessRequestSchema, searchHistory, filterPresets, musicWorkflowAutomations, musicWorkflowExecutionLogs, artistProfiles, insertArtistProfileSchema, artistProfileReleases, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports, insertTakeGroupSchema, insertPluginPresetSchema, insertStudioTrackSchema, insertAlertRuleSchema, insertEmailMessageSchema, insertTakeLaneSchema, insertSystemMetricSchema, insertListenerCohortSchema, insertSocialAccountSchema, insertTakeSegmentSchema, insertWorkspaceRoleSchema, insertRevenueForecastSchema, insertApprovalRequestSchema, insertApprovalStepSchema, insertApprovalWorkflowSchema, insertSsoConfigSchema, fabricPockets, fabricVolumes, fabricStorageNodes, fabricObjects, fabricChunks, fabricCatalogFence, fabricObjectDependencies, fabricDeletionObjects, fabricDeletionChunks, fabricMigrationJobs, insertFabricPocketSchema, insertFabricVolumeSchema, insertFabricStorageNodeSchema, insertFabricObjectSchema, insertFabricChunkSchema, customerHealthScores, insertCustomerHealthScoreSchema, npsResponses, insertNpsResponseSchema, cancellationFeedback, insertCancellationFeedbackSchema, featureEvents, insertFeatureEventSchema, dunningState, insertDunningStateSchema, fanSubscribers, fanMessages, insertFanSubscriberSchema, insertFanMessageSchema, pressKits, insertPressKitSchema, playlistPitches, insertPlaylistPitchSchema, shows, setlists, insertShowSchema, insertSetlistSchema, merchItems, merchOrders, insertMerchItemSchema, insertMerchOrderSchema, syncSubmissions, insertSyncSubmissionSchema, publishingRights, insertPublishingRightSchema, labelSubmissions, insertLabelSubmissionSchema, radioPitches, insertRadioPitchSchema, venueContacts, insertVenueContactSchema, projectBudgets, insertProjectBudgetSchema, budgetLineItems, insertBudgetLineItemSchema, sampleClearances, insertSampleClearanceSchema, musicVideoProductions, insertMusicVideoProductionSchema, songwritingSessions, insertSongwritingSessionSchema, fanCampaigns, insertFanCampaignSchema, customWorkflows, insertCustomWorkflowSchema, jwtTokens, insertJwtTokenSchema, refreshTokens, insertRefreshTokenSchema, assistantConversations, insertAssistantConversationSchema, assistantMessages, insertAssistantMessageSchema, platformRoyaltyRates, insertPlatformRoyaltyRateSchema, taxTreatyRates, insertTaxTreatyRateSchema, studioSamples, insertStudioSampleSchema, labelSettings, insertLabelSettingSchema, listingStems, insertListingStemSchema, mobileDeviceTokens, insertMobileDeviceTokenSchema, claimedDomains, insertClaimedDomainSchema, domainContacts, insertDomainContactSchema, domainEvents, insertDomainEventSchema, dnssecKeys, insertDnssecKeySchema, hnsAuctions, insertHnsAuctionSchema, fanWallets, fanCreditTransactions, insertFanCreditTransactionSchema, fanLoyaltyConfigs, insertFanLoyaltyConfigSchema, outreachCampaigns, insertOutreachCampaignSchema, outreachPitches, insertOutreachPitchSchema, beatPricingSnapshots, insertBeatPricingSnapshotSchema, hybridStorageFiles, hybridStorageImports, socialMediaJobs, maxcoreCognitiveEntities, maxcoreCognitiveRelationships;
+var users, insertUserSchema, sessions, pgSessions2, insertSessionSchema, analytics, insertAnalyticsSchema, subscriptions, insertSubscriptionSchema, projects, insertProjectSchema, studioTemplates, insertStudioTemplateSchema, studioRecentFiles, insertStudioRecentFileSchema, studioPinnedFolders, insertStudioPinnedFolderSchema, studioProjects, insertStudioProjectSchema, releases, insertReleaseSchema, campaigns, insertCampaignSchema, socialCampaigns, insertSocialCampaignSchema, storefronts, insertStorefrontSchema, updateStorefrontSchema, dnsRecordCache, insertDnsRecordCacheSchema, storefrontDomains, insertStorefrontDomainSchema, storefrontHosts, insertStorefrontHostSchema, dnsTemplates, insertDnsTemplateSchema, dnsProviderCredentials, insertDnsProviderCredentialsSchema, dnsZones, insertDnsZoneSchema, dnsZoneRecords, insertDnsZoneRecordSchema, membershipTiers, insertMembershipTierSchema, updateMembershipTierSchema, beats, beatMoneyLoopState, beatMoneyLoopCycles, hyperFollowPages, distroReleases, distroTracks, dspProviders, customerMemberships, insertCustomerMembershipSchema, statusPageIncidents, statusPageIncidentServices, dmcaNotices, dmcaStrikes, listings, insertListingSchema, listingLicenseTiers, storefrontFollows, storefrontLikes, storefrontRatings, beatLikes, licenseTemplates, storefrontOrders, contractTemplates, insertContractTemplateSchema, generatedContracts, marketplaceDisputes, insertMarketplaceDisputeSchema, statusPageIncidentUpdates, statusPageServices, storefrontTemplates, storefrontsRelations, legalHolds, isrcRegistry, statusPageSubscribers, upcRegistry, statusPageUptimeMetrics, catalogImportJobs, catalogImportRows, releaseWorkflowRequests, releaseVersionHistory, releaseScheduledActions, preSaveCampaigns, insertPreSaveCampaignSchema, preSaveEntries, insertPreSaveEntrySchema, distributionSLAMetrics, insertDistributionSLAMetricSchema, contentIdRegistrations, insertContentIdRegistrationSchema, syncLicenses, insertSyncLicenseSchema, syncLicenseInquiries, insertSyncLicenseInquirySchema, royaltySplits, insertRoyaltySplitSchema, royaltyTransactions, insertRoyaltyTransactionSchema, revenueEvents, recoupmentAccounts, splitContracts, dspRates, exchangeRates, projectRoyaltySplits, instantPayouts, refunds, insertRefundSchema, ledgerEntries, insertLedgerEntrySchema, taxForms, insertTaxFormSchema, royaltyStatements, royaltyDisputes, disputeMessages, invoices, insertInvoiceSchema, splitPayments, insertSplitPaymentSchema, kycDocuments, notifications, pushSubscriptions, supportTickets, insertSupportTicketSchema, securityThreats, insertSecurityThreatSchema, ipBlacklist, insertIpBlacklistSchema, posts, audioClips, midiClips, midiNotes, markers, pluginCatalog, workspaceAuditLog, insertWorkspaceAuditLogSchema, apiKeys, dspAnalytics, orders, kycVerifications, approvalHistory, scheduledPostBatches, compVersions, pluginInstances, stemExports, warpMarkers, insertWarpMarkerSchema, workspaceCatalogs, insertWorkspaceCatalogSchema, apiUsage, alertIncidents, dspUserPlatformStatus, dspSyncStatus, toolostConnection, youtubeConnections, youtubeUploads, emailEvents, requestInstantPayoutSchema, approvePostSchema, bulkSchedulePostSchema, takeGroups, pluginPresets, studioTracks, workspaceInvitations, insertWorkspaceInvitationSchema, alertRules, playlistAttributions, insertPlaylistAttributionSchema, emailMessages, rejectPostSchema, bulkValidatePostSchema, takeLanes, updateWarpMarkerSchema, workspaceMembers, insertWorkspaceMemberSchema, systemMetrics, listenerCohorts, submitForReviewSchema, socialAccounts, takeSegments, workspaceRoles, revenueForecasts, workspaces, insertWorkspaceSchema, approvalRequests, approvalSteps, approvalWorkflows, ssoConfigs, platformApiConfigs, adCampaigns, insertAdCampaignSchema, adCreatives, insertAdCreativeSchema, adDeliveryLogs, contentCalendar, insertContentCalendarSchema, aiModels, insertAiModelSchema, userBrandVoices, insertUserBrandVoiceSchema, inferenceRuns, insertInferenceRunSchema, hashtagResearch, insertHashtagResearchSchema, explanationLogs, insertExplanationLogSchema, bestPostingTimes, insertBestPostingTimeSchema, aiModelVersions, insertAiModelVersionSchema, userTasteProfiles, insertUserTasteProfileSchema, beatInteractions, insertBeatInteractionSchema, userStorage, insertUserStorageSchema, userStorageFiles, insertUserStorageFileSchema, beatDiscoveryScores, insertBeatDiscoveryScoreSchema, playlistJourneys, insertPlaylistJourneySchema, syncPlacements, insertSyncPlacementSchema, historicalAnalytics, insertHistoricalAnalyticSchema, arDiscoveries, insertArDiscoverySchema, platformDataSources, insertPlatformDataSourceSchema, globalRankings, insertGlobalRankingSchema, nlpQueryLogs, insertNlpQueryLogSchema, preSavePages, insertPreSavePageSchema, promoCards, insertPromoCardSchema, miniVideos, insertMiniVideoSchema, spotifyCanvases, insertSpotifyCanvasSchema, lyricsSyncs, insertLyricsSyncSchema, artistScores, insertArtistScoreSchema, marketplaceRecommendations, insertMarketplaceRecommendationSchema, beatPromotions, insertBeatPromotionSchema, bogoPromotions, insertBogoPromotionSchema, systemSettings, insertSystemSettingSchema, socialAutopilotContent, insertSocialAutopilotContentSchema, fanSegments, insertFanSegmentSchema, musicImpactMetrics, insertMusicImpactMetricSchema, socialPatternAggregates, insertSocialPatternAggregateSchema, generationArmStats, insertGenerationArmStatSchema, generationHistory, insertGenerationHistorySchema, organicAssets, insertOrganicAssetSchema, organicChannels, insertOrganicChannelSchema, organicRoiSnapshots, insertOrganicRoiSnapshotSchema, organicAssetLifetime, insertOrganicAssetLifetimeSchema, autopilotCrossInsights, insertAutopilotCrossInsightSchema, socialMentions, insertSocialMentionSchema, socialKeywords, insertSocialKeywordSchema, competitorProfiles, insertCompetitorProfileSchema, socialInboxMessages, insertSocialInboxMessageSchema, socialReplyTemplates, insertSocialReplyTemplateSchema, onboardingTasks, insertOnboardingTaskSchema, userOnboarding, insertUserOnboardingSchema, artistProgressSnapshots, insertArtistProgressSnapshotSchema, achievements, insertAchievementSchema, userAchievements, insertUserAchievementSchema, userStreaks, insertUserStreakSchema, careerCoachRecommendations, insertCareerCoachRecommendationSchema, careerGoals, insertCareerGoalSchema, emailPreferences, insertEmailPreferenceSchema, sentEmails, insertSentEmailSchema, artistConnections, insertArtistConnectionSchema, collaborationProjects, insertCollaborationProjectSchema, projectMembers, insertProjectMemberSchema, collabSnapshots, insertCollabSnapshotSchema, collaborationRooms, insertCollaborationRoomSchema, collaborationRoomMessages, insertCollaborationRoomMessageSchema, releaseCountdowns, insertReleaseCountdownSchema, countdownTasks, insertCountdownTaskSchema, countdownAnalytics, insertCountdownAnalyticSchema, autopilotLearningData, insertAutopilotLearningDataSchema, autopilotInsights, insertAutopilotInsightSchema, autopilotPreferences, insertAutopilotPreferenceSchema, systemLogs, insertSystemLogSchema, auditLogs, insertAuditLogSchema, splitSheets, insertSplitSheetSchema, batchTemplates, insertBatchTemplateSchema, shareLinks, insertShareLinkSchema, collaborationComments, insertCollaborationCommentSchema, collaborationVersions, insertCollaborationVersionSchema, collaborationAccessRequests, insertCollaborationAccessRequestSchema, searchHistory, filterPresets, musicWorkflowAutomations, musicWorkflowExecutionLogs, artistProfiles, insertArtistProfileSchema, artistProfileReleases, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports, insertTakeGroupSchema, insertPluginPresetSchema, insertStudioTrackSchema, insertAlertRuleSchema, insertEmailMessageSchema, insertTakeLaneSchema, insertSystemMetricSchema, insertListenerCohortSchema, insertSocialAccountSchema, insertTakeSegmentSchema, insertWorkspaceRoleSchema, insertRevenueForecastSchema, insertApprovalRequestSchema, insertApprovalStepSchema, insertApprovalWorkflowSchema, insertSsoConfigSchema, fabricPockets, fabricVolumes, fabricStorageNodes, fabricObjects, fabricChunks, fabricCatalogFence, fabricObjectDependencies, fabricDeletionObjects, fabricDeletionChunks, fabricMigrationJobs, insertFabricPocketSchema, insertFabricVolumeSchema, insertFabricStorageNodeSchema, insertFabricObjectSchema, insertFabricChunkSchema, customerHealthScores, insertCustomerHealthScoreSchema, npsResponses, insertNpsResponseSchema, cancellationFeedback, insertCancellationFeedbackSchema, featureEvents, insertFeatureEventSchema, dunningState, insertDunningStateSchema, fanSubscribers, fanMessages, insertFanSubscriberSchema, insertFanMessageSchema, pressKits, insertPressKitSchema, playlistPitches, insertPlaylistPitchSchema, shows, setlists, insertShowSchema, insertSetlistSchema, merchItems, merchOrders, insertMerchItemSchema, insertMerchOrderSchema, syncSubmissions, insertSyncSubmissionSchema, publishingRights, insertPublishingRightSchema, labelSubmissions, insertLabelSubmissionSchema, radioPitches, insertRadioPitchSchema, venueContacts, insertVenueContactSchema, projectBudgets, insertProjectBudgetSchema, budgetLineItems, insertBudgetLineItemSchema, sampleClearances, insertSampleClearanceSchema, musicVideoProductions, insertMusicVideoProductionSchema, songwritingSessions, insertSongwritingSessionSchema, fanCampaigns, insertFanCampaignSchema, customWorkflows, insertCustomWorkflowSchema, jwtTokens, insertJwtTokenSchema, refreshTokens, insertRefreshTokenSchema, assistantConversations, insertAssistantConversationSchema, assistantMessages, insertAssistantMessageSchema, platformRoyaltyRates, insertPlatformRoyaltyRateSchema, taxTreatyRates, insertTaxTreatyRateSchema, studioSamples, insertStudioSampleSchema, labelSettings, insertLabelSettingSchema, listingStems, insertListingStemSchema, mobileDeviceTokens, insertMobileDeviceTokenSchema, claimedDomains, insertClaimedDomainSchema, domainContacts, insertDomainContactSchema, domainEvents, insertDomainEventSchema, dnssecKeys, insertDnssecKeySchema, hnsAuctions, insertHnsAuctionSchema, fanWallets, fanCreditTransactions, insertFanCreditTransactionSchema, fanLoyaltyConfigs, insertFanLoyaltyConfigSchema, outreachCampaigns, insertOutreachCampaignSchema, outreachPitches, insertOutreachPitchSchema, beatPricingSnapshots, insertBeatPricingSnapshotSchema, hybridStorageFiles, hybridStorageImports, socialMediaJobs, maxcoreCognitiveEntities, maxcoreCognitiveRelationships;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -16350,6 +16535,63 @@ var init_schema = __esm({
     });
     insertCollabSnapshotSchema = createInsertSchema(
       collabSnapshots
+    ).omit({ id: true, createdAt: true });
+    collaborationRooms = pgTable2("collaboration_rooms", {
+      id: varchar2("id").primaryKey().default(sql2`gen_random_uuid()::text`),
+      projectId: varchar2("project_id").notNull().unique(),
+      state: text2("state").notNull().default("active"),
+      generation: integer2("generation").notNull().default(1),
+      mediaState: text2("media_state").notNull().default("unavailable"),
+      mediaRegion: varchar2("media_region"),
+      participantLimit: integer2("participant_limit"),
+      createdBy: varchar2("created_by").references(() => users.id, {
+        onDelete: "set null"
+      }),
+      createdAt: timestamp2("created_at").notNull().defaultNow(),
+      updatedAt: timestamp2("updated_at").notNull().defaultNow(),
+      endedAt: timestamp2("ended_at")
+    }, (table) => ({
+      stateCheck: check2(
+        "collaboration_rooms_state_check",
+        sql2`${table.state} IN ('active', 'closed')`
+      ),
+      generationCheck: check2(
+        "collaboration_rooms_generation_check",
+        sql2`${table.generation} > 0`
+      ),
+      mediaStateCheck: check2(
+        "collaboration_rooms_media_state_check",
+        sql2`${table.mediaState} IN ('unavailable', 'available', 'degraded')`
+      ),
+      participantLimitCheck: check2(
+        "collaboration_rooms_participant_limit_check",
+        sql2`${table.participantLimit} IS NULL OR ${table.participantLimit} > 0`
+      )
+    }));
+    insertCollaborationRoomSchema = createInsertSchema(
+      collaborationRooms
+    ).omit({ id: true, createdAt: true, updatedAt: true });
+    collaborationRoomMessages = pgTable2(
+      "collaboration_room_messages",
+      {
+        id: varchar2("id").primaryKey().default(sql2`gen_random_uuid()::text`),
+        roomId: varchar2("room_id").notNull().references(() => collaborationRooms.id, { onDelete: "cascade" }),
+        senderId: varchar2("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+        clientMessageId: varchar2("client_message_id", { length: 36 }).notNull(),
+        content: text2("content").notNull(),
+        createdAt: timestamp2("created_at").notNull().defaultNow()
+      },
+      (table) => ({
+        roomCreatedAtIdx: index2("collaboration_room_messages_room_created_idx").on(table.roomId, table.createdAt),
+        idempotencyKey: unique2("collaboration_room_messages_idempotency_unique").on(table.roomId, table.senderId, table.clientMessageId),
+        contentCheck: check2(
+          "collaboration_room_messages_content_check",
+          sql2`length(btrim(${table.content})) BETWEEN 1 AND 4000`
+        )
+      })
+    );
+    insertCollaborationRoomMessageSchema = createInsertSchema(
+      collaborationRoomMessages
     ).omit({ id: true, createdAt: true });
     releaseCountdowns = pgTable2("release_countdowns", {
       id: varchar2("id").primaryKey().default(sql2`gen_random_uuid()`),

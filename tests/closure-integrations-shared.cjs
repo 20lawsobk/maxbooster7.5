@@ -72,7 +72,7 @@ test("raw engagement replacement and malformed result arrays fail before writing
 
 test("digest is schema-gated and registered with the real draining lifecycle", () => {
   const source = fs.readFileSync("server/index.ts", "utf8");
-  const check = source.indexOf("FROM integration_notification_digest LIMIT 0");
+  const check = source.indexOf("FROM public.integration_notification_digest LIMIT 0");
   assert.ok(check > 0);
   assert.ok(check < source.indexOf("databaseBackupService.initialize()"));
   assert.ok(check < source.indexOf("scheduleDrainingWork(runCatalogDiscoveryJobs"));

@@ -3,100 +3,75 @@ TAP version 13
     # Subtest: concurrent initialization creates exactly one paused state row
     ok 1 - concurrent initialization creates exactly one paused state row
       ---
-      duration_ms: 20.817148
+      duration_ms: 124.502364
       type: 'test'
       ...
     # Subtest: generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership
     ok 2 - generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership
       ---
-      duration_ms: 854.751862
+      duration_ms: 5605.015903
       type: 'test'
       ...
     # Subtest: a second replica cannot run or orphan an active cycle while its database lock is held
     ok 3 - a second replica cannot run or orphan an active cycle while its database lock is held
       ---
-      duration_ms: 5.206266
+      duration_ms: 30.69118
       type: 'test'
       ...
     # Subtest: only a completed marketplace settlement marks sold; replay does not duplicate seller earnings
     ok 4 - only a completed marketplace settlement marks sold; replay does not duplicate seller earnings
       ---
-      duration_ms: 31.493114
+      duration_ms: 80.453591
       type: 'test'
       ...
     # Subtest: zero published posts is reported honestly while retaining the payable listing
     ok 5 - zero published posts is reported honestly while retaining the payable listing
       ---
-      duration_ms: 870.992366
+      duration_ms: 5562.190431
       type: 'test'
       ...
     # Subtest: concurrent manual requests cannot overlap and pause clears queued cycles
     ok 6 - concurrent manual requests cannot overlap and pause clears queued cycles
       ---
-      duration_ms: 812.361806
+      duration_ms: 5610.295576
       type: 'test'
       ...
     # Subtest: listing failure rolls back beat and royalty rows and removes public/audio uploads
     ok 7 - listing failure rolls back beat and royalty rows and removes public/audio uploads
       ---
-      duration_ms: 801.578625
+      duration_ms: 5522.406138
       type: 'test'
       ...
     # Subtest: silent audio is rejected before listing even without renderer quality metadata
     ok 8 - silent audio is rejected before listing even without renderer quality metadata
       ---
-      duration_ms: 496.586137
+      duration_ms: 3271.629011
       type: 'test'
       ...
     # Subtest: renderer failure lists nothing, releases the slot and records backoff
     ok 9 - renderer failure lists nothing, releases the slot and records backoff
       ---
-      duration_ms: 14.355554
+      duration_ms: 29.16267
       type: 'test'
       ...
     # Subtest: real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint
-    not ok 10 - real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint
+    ok 10 - real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint
       ---
-      duration_ms: 12272.450529
+      duration_ms: 18580.940532
       type: 'test'
-      location: '/home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:226:11'
-      failureType: 'testCodeFailure'
-      error: |-
-        {"cycle":{"cycleId":"0e6aaf1f-5a6d-41aa-a5ee-8ab2bcef3be9","status":"failed","durationMs":23,"error":"MaxCore audio generation failed — Expected values to be strictly equal:\n\n500 !== 200\n"},"diagnostics":" call_next(request)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    raise app_exc from app_exc.__cause__ or app_exc.__context__\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    await self.app(scope, receive_or_disconnect, send_no_error)\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/routing.py\", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/routing.py\", line 680, in app\n    await route.handle(scope, receive, send)\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/routing.py\", line 276, in handle\n    await self.app(scope, receive, send)\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/fastapi/routing.py\", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/fastapi/routing.py\", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/fastapi/routing.py\", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/python_runtime/lib/python3.12/site-packages/fastapi/routing.py\", line 328, in run_endpoint_function\n    return await dependant.call(**values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/workspace/external/maxcore/artifacts/ai-training-server/server.py\", line 2745, in unified_awareness_context\n    _request_live_learning_check()\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name '_request_live_learning_check' is not defined\n","responses":[]}
-        + actual - expected
-        
-        + 'failed'
-        - 'awaiting_sale'
-        
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: 'awaiting_sale'
-      actual: 'failed'
-      operator: 'strictEqual'
-      stack: |-
-        TestContext.<anonymous> (file:///home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:254:14)
-        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-        async Test.run (node:internal/test_runner/test:1054:7)
-        async TestContext.<anonymous> (file:///home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:226:3)
-        async Test.run (node:internal/test_runner/test:1054:7)
-        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
       ...
     1..10
-not ok 1 - Beat Money Loop lifecycle on a disposable PostgreSQL database
+ok 1 - Beat Money Loop lifecycle on a disposable PostgreSQL database
   ---
-  duration_ms: 34887.647718
+  duration_ms: 61414.464007
   type: 'test'
-  location: '/home/runner/workspace/tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs:14:1'
-  failureType: 'subtestsFailed'
-  error: '1 subtest failed'
-  code: 'ERR_TEST_FAILURE'
   ...
 1..1
 # tests 11
 # suites 0
-# pass 9
-# fail 2
+# pass 11
+# fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 37868.466553
+# duration_ms 64065.39195

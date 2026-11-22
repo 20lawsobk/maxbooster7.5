@@ -69,10 +69,10 @@ phase_dependencies() {
         -s "$frontend" &&
         -s "$server" &&
         -s "$cluster" ]]; then
-    FAST_PATH=1
     echo '==> Installing locked dependencies for artifact inputs'
     npm ci --include=dev --no-audit --no-fund
     bash script/sync-subsystem-dependencies.sh
+    FAST_PATH=1
   else
     [[ -d client && -d server ]] ||
       fail 'Compilation requires both client/ and server/'

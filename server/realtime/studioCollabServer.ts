@@ -3,7 +3,6 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { Server } from "http";
 import type { IncomingMessage } from "http";
 import { createHash } from "node:crypto";
-import { parse as parseCookie } from "cookie";
 import * as Y from "yjs";
 import {
   REMOTE_YJS_UPDATE_ORIGIN,
@@ -13,8 +12,8 @@ import { presenceManager, type CursorPosition, type SelectionState } from "./pre
 import { jwtAuthService } from "../services/jwtAuthService.js";
 import { storage } from "../storage.js";
 import { getStudioProjectAccess } from "../services/studioProjectAccess.js";
-import { getRedisClient } from "../lib/redisConnectionFactory.js";
 import { logger } from "../logger.js";
+import { authenticateRealtimeSession } from "./sessionAuth.js";
 import { collaborationEventBus } from "../services/collaborationEventBus.js";
 import { collaborationRooms } from "@shared/schema";
 import { db } from "../db.js";
@@ -301,48 +300,25 @@ export class StudioCollabServer {
       }
     }
 
-    const cookies = request?.headers.cookie;
-    if (cookies) {
-      const parsed = parseCookie(cookies);
-      const sessionId = parsed["connect.sid"] || parsed["sid"];
-
-      if (sessionId) {
-        try {
-          const redis = await getRedisClient();
-          if (redis) {
-            const cleanSessionId = sessionId?.startsWith("s:")
-              ? sessionId?.slice(2).split(".")[0]
-              : sessionId?.split(".")[0];
-
-            const sessionData = await (redis as any)?.get(
-              `maxbooster:sess:${cleanSessionId}`,
-            );
-
-            if (sessionData) {
-              const session = JSON.parse(sessionData);
-              const userId = session?.passport?.user || session?.userId;
-
-              if (userId) {
-                const user = await storage.getUser(userId);
-                if (user) {
-                  return {
-                    authenticated: true,
-                    userId: user.id,
-                    displayName:
-                      `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-                      user?.email,
-                  };
-                }
-              }
-            }
-          }
-        } catch (error) {
-          logger.warn(
-            { err: error },
-            "[StudioCollab] Session verification failed:",
-          );
+    try {
+      const userId = await authenticateRealtimeSession(request);
+      if (userId) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          return {
+            authenticated: true,
+            userId: user.id,
+            displayName:
+              `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+              user?.email,
+          };
         }
       }
+    } catch (error) {
+      logger.warn(
+        { err: error },
+        "[StudioCollab] Session verification failed:",
+      );
     }
 
     const url = new URL(
@@ -388,27 +364,8 @@ export class StudioCollabServer {
       return decoded?.userId === expectedUserId;
     }
 
-    const cookies = request?.headers.cookie;
-    if (cookies) {
-      const parsed = parseCookie(cookies);
-      const sessionId = parsed["connect.sid"] || parsed["sid"];
-      if (sessionId) {
-        const redis = await getRedisClient();
-        const cleanSessionId = sessionId.startsWith("s:")
-          ? sessionId.slice(2).split(".")[0]
-          : sessionId.split(".")[0];
-        const rawSession = await (redis as any)?.get(
-          `maxbooster:sess:${cleanSessionId}`,
-        );
-        if (rawSession) {
-          const session = JSON.parse(rawSession);
-          if (
-            (session?.passport?.user || session?.userId) === expectedUserId
-          ) {
-            return true;
-          }
-        }
-      }
+    if ((await authenticateRealtimeSession(request)) === expectedUserId) {
+      return true;
     }
 
     const url = new URL(

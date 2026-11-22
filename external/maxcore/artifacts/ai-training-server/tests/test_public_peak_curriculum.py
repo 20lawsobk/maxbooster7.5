@@ -281,6 +281,7 @@ class PublicPeakCurriculumTests(unittest.TestCase):
                           {"checkpoint_sha256": "same-verified-checkpoint"})
             loop = LiveLearningLoop(peak_engine, model, Path(directory), model_config=CONFIG)
             selected = {"state": "retained", "checkpoint_sha256": "same-verified-checkpoint",
+                        "policy": "certified-public-live-v1",
                         "learning_policy": PEAK_POLICY, "validated_selected": True}
             with patch("ai_model.training.auto_selection.auto_select", return_value=selected), \
                  patch("ai_model.generation.release.load_selected_release") as reload_release:

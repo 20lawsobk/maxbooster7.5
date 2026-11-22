@@ -139,6 +139,9 @@ def test_curriculum_feedback_is_isolated_between_accounts() -> None:
             assert isinstance(values, list)
             return values[start : stop + 1]
 
+        def lrange_strict(self, key: str, start: int, stop: int) -> list[dict]:
+            return self.lrange(key, start, stop)
+
         def hgetall(self, key: str) -> dict:
             value = self.values.get(key, {})
             assert isinstance(value, dict)

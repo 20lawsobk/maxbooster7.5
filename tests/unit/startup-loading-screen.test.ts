@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
 
 const html = readFileSync(resolve(process.cwd(), "client/index.html"), "utf8");
@@ -76,32 +77,23 @@ describe("initial loading screen", () => {
     const location = { reload: vi.fn() };
     const timers: Array<{ callback: () => void; delay: number }> = [];
     const consoleLog = vi.fn();
-    new Function(
-      "window",
-      "document",
-      "navigator",
-      "MutationObserver",
-      "setTimeout",
-      "location",
-      "console",
-      startup,
-    )(
-      {
+    runInNewContext(startup, {
+      window: {
         __MB_BOOT: Date.now(),
         addEventListener(name: string, callback: (event: { message: string }) => void) {
           if (name === "error") errorHandler = callback;
         },
       },
       document,
-      { userAgent: "test" },
-      TestMutationObserver,
-      (callback: () => void, delay: number) => {
+      navigator: { userAgent: "test" },
+      MutationObserver: TestMutationObserver,
+      setTimeout: (callback: () => void, delay: number) => {
         timers.push({ callback, delay });
         return timers.length;
       },
       location,
-      { log: consoleLog },
-    );
+      console: { log: consoleLog },
+    });
 
     expect(removed).toBe(false);
     timers.find(timer => timer.delay === 20000)?.callback();

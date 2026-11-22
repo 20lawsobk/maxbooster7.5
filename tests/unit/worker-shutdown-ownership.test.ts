@@ -17,4 +17,41 @@ describe("embedded worker shutdown ownership", () => {
       node.getText(ast).includes('process.on(signal'));
     expect(guarded).toBeDefined();
   });
+
+  it("does not respawn cleanly exited MaxCore workers after primary shutdown", () => {
+    const source = fs.readFileSync(
+      "external/maxcore/artifacts/api-server/src/index.ts",
+      "utf8",
+    );
+    const ast = ts.createSourceFile("index.ts", source, ts.ScriptTarget.Latest, true);
+    let exitHandler: ts.ArrowFunction | undefined;
+    let shutdownHandler: ts.ArrowFunction | undefined;
+    const visit = (node: ts.Node) => {
+      if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)
+        && node.expression.expression.getText(ast) === "cluster"
+        && node.expression.name.text === "on"
+        && node.arguments[0]?.getText(ast) === '"exit"'
+        && ts.isArrowFunction(node.arguments[1])) {
+        exitHandler = node.arguments[1];
+      }
+      if (ts.isVariableDeclaration(node) && node.name.getText(ast) === "shutdown"
+        && node.initializer && ts.isArrowFunction(node.initializer)) {
+        const body = node.initializer.body.getText(ast);
+        if (body.includes("cluster.workers") && body.includes("stopPythonServer")) {
+          shutdownHandler = node.initializer;
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(ast);
+
+    expect(exitHandler).toBeDefined();
+    expect(exitHandler!.body.getText(ast)).toContain("shutdownRequested");
+    expect(shutdownHandler).toBeDefined();
+    const shutdownBody = shutdownHandler!.body.getText(ast);
+    expect(shutdownBody.indexOf("shutdownRequested = true")).toBeGreaterThanOrEqual(0);
+    expect(shutdownBody.indexOf("cluster.workers")).toBeGreaterThan(
+      shutdownBody.indexOf("shutdownRequested = true"),
+    );
+  });
 });

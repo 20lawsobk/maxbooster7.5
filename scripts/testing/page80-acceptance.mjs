@@ -599,8 +599,29 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
 
     const artistName = `Acceptance artist ${randomBytes(4).toString("hex")}`;
     const bio = "Disposable artist biography saved through the actual browser form.";
-    await navigateUntil("/press-kit", "Boolean(document.querySelector('form #artistName'))");
-    await evaluate(`(()=>{for(const [id,value] of Object.entries(${JSON.stringify({ artistName, bio, shortBio: "A saved browser press kit", genres: "Electronic", contactEmail: "artist@example.test", bookingEmail: "booking@example.test", website: "https://example.test" })})){const input=document.getElementById(id);if(!input)throw Error('Missing press kit field '+id);const proto=input instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));}document.querySelector('form').requestSubmit();return true})()`);
+    const pressKitValues = {
+      artistName, bio, shortBio: "A saved browser press kit", genres: "Electronic",
+      contactEmail: "artist@example.test", bookingEmail: "booking@example.test",
+      website: "https://example.test",
+    };
+    // Wait for and submit from the same document evaluation. Separating the
+    // readiness query from the form action allowed a React route transition to
+    // replace the form between two CDP commands.
+    await navigateUntil("/press-kit", `(()=> {
+      const form=document.querySelector('form');
+      const values=${JSON.stringify(pressKitValues)};
+      if(!form)return false;
+      const missing=Object.keys(values).filter(id=>!form.querySelector('#'+CSS.escape(id)));
+      if(missing.length)return false;
+      for(const [id,value] of Object.entries(values)){
+        const input=form.querySelector('#'+CSS.escape(id));
+        const proto=input instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;
+        Object.getOwnPropertyDescriptor(proto,'value').set.call(input,value);
+        input.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+      form.requestSubmit();
+      return true;
+    })()`, "Press Kit form did not expose every required field before the browser acceptance deadline");
     let savedKit;
     const saveDeadline = Date.now() + 15_000;
     while (Date.now() < saveDeadline) {
@@ -1088,11 +1109,12 @@ try {
   for (const file of baselineMigrations) {
     await client.query(readFileSync(join(temp, "generated", file), "utf8"));
   }
-  // The current Drizzle baseline already contains the 0100 MaxCore registry.
-  // That migration is validated separately on an empty disposable database.
+  // The current Drizzle baseline already contains the 0100 MaxCore registry
+  // and 0101 collaboration rooms. Their migration SQL is validated separately.
   for (const file of readdirSync(join(root, "migrations")).filter((name) =>
     /^\d+.*\.sql$/.test(name) && Number(name.split("_")[0]) >= 20
-    && name !== "0100_maxcore_cognitive_registry.sql").sort()) {
+    && name !== "0100_maxcore_cognitive_registry.sql"
+    && name !== "0101_collaboration_rooms.sql").sort()) {
     await client.query(readFileSync(join(root, "migrations", file), "utf8"));
   }
   evidence.postgres = "pass";

@@ -3,6 +3,10 @@ import { Router } from "express";
 import { pool } from "../db.js";
 import { z } from "zod";
 import { logger } from "../logger.js";
+import {
+  isValidIpv4Address,
+  isValidSrvTarget,
+} from "../services/dnsZoneRecordAnswers.js";
 
 const router = Router();
 
@@ -83,15 +87,8 @@ const recordSchema = z.object({
 function validateRecord(r: z.infer<typeof recordSchema>): string | null {
   switch (r?.type) {
     case "A": {
-      const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
-      if (!ipv4?.test(r?.value)) return "A record must be a valid IPv4 address";
-      if (
-        r?.value
-          .split(".")
-          .map(Number)
-          .some((p) => p > 255)
-      )
-        return "Invalid IPv4 address";
+      if (!isValidIpv4Address(r.value))
+        return "A record must be a valid IPv4 address";
       break;
     }
     case "AAAA": {
@@ -115,6 +112,8 @@ function validateRecord(r: z.infer<typeof recordSchema>): string | null {
       if (r?.priority === undefined) return "SRV records require priority";
       if (r?.weight === undefined) return "SRV records require weight";
       if (r?.port === undefined) return "SRV records require port";
+      if (!isValidSrvTarget(r.value))
+        return "SRV target must be a valid hostname or '.'";
       break;
     case "CAA":
       if (!r?.tag)
