@@ -1,6 +1,5 @@
 import { Router, type Request, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
-import { z } from "zod";
 import {
   collaborationRoomMessages,
   collaborationRooms,
@@ -13,17 +12,13 @@ import {
   collaborationEventBus,
   type CollaborationRoomMessageEvent,
 } from "../services/collaborationEventBus.js";
+import {
+  collaborationRoomMessageRequestSchema,
+  openRoomRequestSchema,
+} from "../services/collaborationRoomContracts.js";
 import { logger } from "../logger.js";
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: string };
-}
-
-const openRoomSchema = z.object({}).strict();
-const roomMessageSchema = z.object({
-  clientMessageId: z.string().uuid(),
-  content: z.string().trim().min(1).max(4_000),
-}).strict();
+type AuthenticatedRequest = Request;
 
 function senderName(user: {
   username: string | null;
@@ -85,7 +80,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const body = openRoomSchema.safeParse(req.body ?? {});
+      const body = openRoomRequestSchema.safeParse(req.body ?? {});
       if (!body.success) {
         return res.status(400).json({ error: "Invalid room request" });
       }
@@ -200,7 +195,7 @@ router.post(
   "/:projectId/messages",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const parsed = roomMessageSchema.safeParse(req.body);
+    const parsed = collaborationRoomMessageRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
         error: "Invalid room message",
