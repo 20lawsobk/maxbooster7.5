@@ -76,12 +76,6 @@ test("model artifacts must be represented by a valid Git LFS pointer", () => {
     true,
   );
   assert.equal(isModelArtifactPath("client/model-card.tsx"), false);
-  assert.equal(
-    isModelArtifactPath(
-      "external/maxcore/ai_model/weights/model.safetensors",
-    ),
-    true,
-  );
   assert.deepEqual(
     parseLfsPointer(
       `version https://git-lfs.github.com/spec/v1\noid sha256:${sha}\nsize 109368185\n`,

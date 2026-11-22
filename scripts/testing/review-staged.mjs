@@ -117,6 +117,13 @@ export function buildReviewPlan(paths, { root = ROOT } = {}) {
     add("Client browser tests", "npm", ["run", "test:browser"]);
   }
   if (pythonPaths.length > 0) {
+    for (const file of pythonPaths) {
+      add(`Python syntax: ${file}`, "python3", [
+        "-c",
+        'import ast,pathlib,sys; ast.parse(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))',
+        file,
+      ]);
+    }
     add("Python test suites", "npm", ["run", "test:python:all"]);
   }
   if (rustPaths.length > 0) {
@@ -131,6 +138,7 @@ export function buildReviewPlan(paths, { root = ROOT } = {}) {
         "--manifest-path",
         manifest,
       ]);
+    }
   }
   if (shellPaths.length > 0) {
     for (const file of shellPaths) {
