@@ -40,7 +40,8 @@ class RestartTests(unittest.TestCase):
             "_request_job_owner": ContextVar("test_owner", default=None),
             "_api_jobs_lock": threading.Lock(), "_active_jobs_lock": threading.Lock(),
             "_active_jobs": {}, "_JOB_TTL_S": 600, "_render_manager": None,
-            "_model_ready": False, "_create_durable_render_manager": Mock(return_value=object()),
+            "_model_ready": False, "_trained_checkpoint_loaded": False,
+            "_create_durable_render_manager": Mock(return_value=object()),
             "_model_init_error": None, "_serving_release_status": {},
             "_script_agent": SimpleNamespace(run_live_awareness=lambda _request: None),
             "_live_learning_loop": None, "_live_serving_model": None,
@@ -133,9 +134,16 @@ class RestartTests(unittest.TestCase):
         self.assertIsNone(self.read("failed"))
 
     def test_readiness_accepts_trained_model_or_fresh_live_awareness(self):
-        for model, awareness, expected in ((False, False, 503), (False, True, 200),
-                                           (True, False, 503), (True, True, 200)):
+        cases = (
+            (False, False, False, 503, "unavailable"),
+            (False, False, True, 200, "live_awareness"),
+            (True, False, True, 200, "live_awareness"),
+            (True, True, False, 503, "unavailable"),
+            (True, True, True, 200, "trained_checkpoint"),
+        )
+        for model, trained, awareness, expected, expected_mode in cases:
             self.scope["_model_ready"] = model
+            self.scope["_trained_checkpoint_loaded"] = trained
             engine = Mock()
             engine.readiness_status.return_value = {"ready": awareness}
             renderers = {
@@ -150,11 +158,7 @@ class RestartTests(unittest.TestCase):
             self.assertEqual(response.status_code, expected)
             body = json.loads(response.body)
             self.assertEqual(body["ready"], expected == 200)
-            self.assertEqual(
-                body["generation_mode"],
-                ("live_awareness" if not model and awareness else
-                 "trained_checkpoint" if model and awareness else "unavailable"),
-            )
+            self.assertEqual(body["generation_mode"], expected_mode)
 
     def test_invalid_journal_names_rejected_before_reconciliation_or_delivery(self):
         self.save("valid", status="running")

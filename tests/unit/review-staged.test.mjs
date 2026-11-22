@@ -69,9 +69,10 @@ test("NUL-delimited Git paths preserve names containing spaces", () => {
 test("model artifacts must be represented by a valid Git LFS pointer", () => {
   const sha = "a".repeat(64);
   assert.equal(isModelArtifactPath("model.corrupt"), true);
+  assert.equal(isModelArtifactPath("external/model.corrupt"), true);
   assert.equal(
     isModelArtifactPath(
-      "external/maxcore/ai_model/weights/model.safetensors",
+      "external/maxcore/ai_model/model/release.safetensors",
     ),
     true,
   );

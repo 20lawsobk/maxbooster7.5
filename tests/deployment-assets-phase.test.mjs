@@ -31,6 +31,14 @@ async function createFixture(t) {
     path.join(root, "scripts/start-production.mjs"),
   );
   for (const file of [
+    "scripts/testing/production-readiness.mjs",
+    "scripts/wait-configured-ports.mjs",
+  ]) {
+    const destination = path.join(root, file);
+    await mkdir(path.dirname(destination), { recursive: true });
+    await copyFile(path.join(sourceRoot, file), destination);
+  }
+  for (const file of [
     "package.json",
     "package-lock.json",
     "vite.config.ts",

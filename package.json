@@ -12,7 +12,7 @@
   "packageManager": "npm@11.19.1",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "node scripts/testing/repository-verification.mjs dev && bash scripts/start-dev.sh",
+    "dev": "bash scripts/start-dev.sh",
     "model:prepare": "node scripts/prepare-maxcore-checkpoint.mjs",
     "build": "node scripts/build-production.mjs",
     "deployment:build": "bash build.sh",

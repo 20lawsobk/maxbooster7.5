@@ -27,10 +27,12 @@ _BOOSTER_PID=""
 _APP_PID=""
 _DIFFUSION_PID=""
 _AI_SIDECAR_PID=""
+_VERIFICATION_PID=""
 _stop_owned() {
   dev_stop_owned_tree "$1"
 }
 cleanup() {
+  _stop_owned "$_VERIFICATION_PID"
   _stop_owned "$_APP_PID"
   _stop_owned "$_AI_SIDECAR_PID"
   _stop_owned "$_DIFFUSION_PID"
@@ -231,12 +233,42 @@ if [[ "$_READINESS_STATUS" != "0" ]]; then
   exit 1
 fi
 
-set +e
-wait "$_APP_PID"
-_APP_STATUS=$?
-set -e
-_FAILED_APP_PID="$_APP_PID"
-_APP_PID=""
+echo "[start-dev] Configured listeners are ready; starting repository completion analysis"
+node scripts/testing/repository-verification.mjs dev &
+_VERIFICATION_PID=$!
+
+_APP_STATUS=0
+while [[ -n "$_APP_PID" || -n "$_VERIFICATION_PID" ]]; do
+  _WAIT_PIDS=()
+  [[ -n "$_APP_PID" ]] && _WAIT_PIDS+=("$_APP_PID")
+  [[ -n "$_VERIFICATION_PID" ]] && _WAIT_PIDS+=("$_VERIFICATION_PID")
+  _EXITED_PID=""
+  set +e
+  wait -n -p _EXITED_PID "${_WAIT_PIDS[@]}"
+  _WAIT_STATUS=$?
+  set -e
+
+  if [[ -n "$_VERIFICATION_PID" && "$_EXITED_PID" == "$_VERIFICATION_PID" ]]; then
+    _VERIFICATION_PID=""
+    if [[ "$_WAIT_STATUS" == "0" ]]; then
+      echo "[start-dev] Repository completion analysis finished successfully"
+    else
+      echo "[start-dev] WARNING: repository completion analysis exited ${_WAIT_STATUS}; application remains running" >&2
+    fi
+    continue
+  fi
+  if [[ -n "$_APP_PID" && "$_EXITED_PID" == "$_APP_PID" ]]; then
+    _APP_STATUS=$_WAIT_STATUS
+    _FAILED_APP_PID="$_APP_PID"
+    _APP_PID=""
+    _stop_owned "$_VERIFICATION_PID"
+    _VERIFICATION_PID=""
+    break
+  fi
+  echo "[start-dev] FATAL: could not identify a completed child process" >&2
+  exit 1
+done
+
 if [[ "$_APP_STATUS" != "0" ]]; then
   _APP_EXIT_DETAIL="exit status ${_APP_STATUS}"
   if (( _APP_STATUS >= 128 )); then

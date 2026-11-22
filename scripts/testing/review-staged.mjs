@@ -39,8 +39,8 @@ export function parseLfsPointer(value) {
 
 export function isModelArtifactPath(filePath) {
   return (
-    filePath === "model.corrupt" ||
-    /(^|\/)weights\/[^/]+\.(?:pt|pth|safetensors|ckpt|bin|corrupt)$/i.test(
+    /(^|\/)model\.corrupt$/i.test(filePath) ||
+    /(^|\/)(?:model|weights)\/[^/]+\.(?:pt|pth|safetensors|ckpt|bin|corrupt)$/i.test(
       filePath,
     )
   );
@@ -226,13 +226,16 @@ function stagedBlob(root, filePath, maxBuffer = 4096) {
   });
 }
 
-function verifyStagedModelPointers(root, paths) {
+function verifyStagedModelPointers(root, paths, deletedPaths) {
   for (const file of paths.filter(isModelArtifactPath)) {
+    if (deletedPaths.has(file)) continue;
     const exists = run("git", ["cat-file", "-e", `:${file}`], {
       cwd: root,
       capture: true,
     });
-    if (exists.status !== 0) continue;
+    if (exists.status !== 0) {
+      throw new Error(`Could not read staged model artifact: ${file}`);
+    }
     const sizeResult = run("git", ["cat-file", "-s", `:${file}`], {
       cwd: root,
       capture: true,
@@ -255,10 +258,13 @@ function verifyStagedModelPointers(root, paths) {
   }
 }
 
-function verifyStagedJson(root, paths) {
+function verifyStagedJson(root, paths, deletedPaths) {
   for (const file of paths.filter((item) => item.endsWith(".json"))) {
+    if (deletedPaths.has(file)) continue;
     const content = stagedBlob(root, file);
-    if (content.status !== 0) continue;
+    if (content.status !== 0) {
+      throw new Error(`Could not read staged JSON file: ${file}`);
+    }
     try {
       JSON.parse(content.stdout);
     } catch (error) {
@@ -296,23 +302,45 @@ function main() {
     console.error("Review gate failed: staged diff has whitespace errors.");
     return whitespace.status ?? 1;
   }
+  const deletedResult = run(
+    "git",
+    ["diff", "--cached", "--name-only", "--diff-filter=D", "-z"],
+    { cwd: root, capture: true },
+  );
+  if (deletedResult.status !== 0) {
+    console.error("Could not determine deleted staged paths.");
+    return 2;
+  }
+  const deletedPaths = new Set(parseNulPaths(deletedResult.stdout));
   try {
     const unstaged = run("git", ["diff", "--quiet", "--", ...paths], {
       cwd: root,
+      capture: true,
     });
-    if (unstaged.status !== 0) {
+    if (unstaged.status === 1 && !unstaged.stderr) {
       throw new Error(
         "Staged files also have unstaged edits. Stage or discard those edits so checks match the commit contents.",
       );
     }
-    verifyStagedJson(root, paths);
-    verifyStagedModelPointers(root, paths);
+    if (unstaged.status !== 0) {
+      throw new Error(
+        `Could not compare the staged snapshot with the working tree: ${unstaged.stderr.trim()}`,
+      );
+    }
+    verifyStagedJson(root, paths, deletedPaths);
+    verifyStagedModelPointers(root, paths, deletedPaths);
   } catch (error) {
     console.error(`Review gate failed: ${error.message}`);
     return 1;
   }
 
-  const plan = buildReviewPlan(paths);
+  let plan;
+  try {
+    plan = buildReviewPlan(paths, { root });
+  } catch (error) {
+    console.error(`Review gate failed: ${error.message}`);
+    return 1;
+  }
   console.log(`Review gate: ${paths.length} staged path(s).`);
   for (const item of plan) {
     console.log(`\n[review] ${item.name}`);

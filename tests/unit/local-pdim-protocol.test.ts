@@ -149,7 +149,7 @@ describe("local PDIM real HTTP protocol", () => {
         ),
       ])).resolves.toEqual([key, "wake", "1"]);
     } finally {
-      await consumer.disconnect();
+      await consumer.quit();
       await client.del(key);
     }
 
@@ -163,7 +163,75 @@ describe("local PDIM real HTTP protocol", () => {
       new Promise<never>((_resolve, reject) =>
         setTimeout(() => reject(new Error("disconnect did not cancel blocking pop")), 1_000),
       ),
-    ])).rejects.toThrow(/disconnected/i);
+    ])).rejects.toThrow(/closed/i);
+    await cancellable.quit();
+  }, 5_000);
+
+  it("keeps BullMQ duplicates pending through transient PDIM startup timeouts", async () => {
+    const originalFetch = globalThis.fetch;
+    let pingAttempts = 0;
+    globalThis.fetch = async (input, init) => {
+      let command = "";
+      try {
+        command = String(JSON.parse(String(init?.body ?? "{}")).cmd ?? "").toUpperCase();
+      } catch {
+        command = "";
+      }
+      if (command === "PING") {
+        pingAttempts++;
+        if (pingAttempts <= 2) {
+          throw Object.assign(new Error("simulated PDIM startup timeout"), {
+            name: "TimeoutError",
+          });
+        }
+      }
+      return originalFetch(input, init);
+    };
+
+    const duplicates = [client.duplicate(), client.duplicate(), client.duplicate()];
+    try {
+      await Promise.race([
+        Promise.all(duplicates.map((duplicate) =>
+          duplicate.status === "ready"
+            ? Promise.resolve()
+            : new Promise<void>((resolve, reject) => {
+                duplicate.once("ready", resolve);
+                duplicate.once("error", reject);
+              }),
+        )),
+        new Promise<never>((_resolve, reject) =>
+          setTimeout(() => reject(new Error("PDIM readiness gate did not recover")), 10_000),
+        ),
+      ]);
+
+      expect(pingAttempts).toBe(4);
+      expect(duplicates.every((duplicate) => duplicate.status === "ready")).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+      await Promise.all(duplicates.map((duplicate) => duplicate.disconnect()));
+    }
+  }, 15_000);
+
+  it("reconnects a BullMQ-style blocking client after its wait is interrupted", async () => {
+    const key = `test:local-pdim:reconnect:${process.pid}`;
+    const connection = client.duplicate();
+    try {
+      await connection.connect();
+      const blocked = connection.bzpopmin(key, 0);
+      await new Promise((resolve) => setTimeout(resolve, 30));
+
+      await connection.disconnect(true);
+      await expect(blocked).rejects.toMatchObject({
+        message: "Connection is closed.",
+      });
+
+      await connection.connect();
+      await expect(connection.ping()).resolves.toBe("PONG");
+      expect(connection.status).toBe("ready");
+    } finally {
+      await connection.quit();
+      await client.del(key);
+    }
   }, 5_000);
 
   it("delivers Pub/Sub messages between separate PDIM HTTP clients", async () => {
@@ -405,6 +473,7 @@ describe("local PDIM real HTTP protocol", () => {
         }
       };
       const executions = new Map<string, number>();
+      const workerErrors: Error[] = [];
       let markStalledWorkerStarted = () => {};
       const stalledWorkerStarted = new Promise<void>((resolve) => {
         markStalledWorkerStarted = resolve;
@@ -437,10 +506,12 @@ describe("local PDIM real HTTP protocol", () => {
         {
           connection: newBullMQRedisConnection() as never,
           concurrency: 1,
+          drainDelay: 1,
           lockDuration: 3_000,
           stalledInterval: 1_500,
         },
       );
+      worker!.on("error", (error) => workerErrors.push(error));
       await withDeadline(worker.waitUntilReady(), "worker readiness");
 
       const completionFor = (
@@ -565,6 +636,13 @@ describe("local PDIM real HTTP protocol", () => {
         execution: 1,
       });
       expect(executions.get("repeat-probe")).toBe(1);
+
+      await new Promise((resolve) => setTimeout(resolve, 3_200));
+      expect(
+        workerErrors.filter((error) =>
+          /connection is closed|redis client disconnected/i.test(error.message),
+        ),
+      ).toEqual([]);
     } finally {
       await worker?.close();
       await queue?.close();

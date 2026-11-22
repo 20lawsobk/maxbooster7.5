@@ -31,15 +31,20 @@ class AutomaticSelectionTests(unittest.TestCase):
                                          "protocol_sha256": item["protocol"], "review_sha256": registry.sha256(Path(item["review"]))}}
             def select(**item):
                 (registry.REGISTRY / "selected.json").write_text(json.dumps({
+                    "eligibility_policy": "signed-review-v1",
                     "evidence": item, "fingerprints": decision(**item)["fingerprints"]}))
-            with patch.object(registry, "eligibility", side_effect=decision), \
-                 patch.object(registry, "select_candidate", side_effect=select) as selected:
+            with (
+                patch.object(registry, "eligibility", side_effect=decision),
+                patch.object(registry, "select_candidate", side_effect=select) as selected,
+                patch("ai_model.training.auto_selection._operational_candidate", return_value=True) as probe,
+            ):
                 submit_reviewed(**evidence("live-low", 1))
                 submit_reviewed(**evidence("live-best", 2))
                 with self.assertRaisesRegex(ValueError, "invalid signature"):
                     submit_reviewed(**evidence("live-invalid", 2))
                 self.assertEqual(auto_select()["checkpoint_sha256"], "live-best")
                 self.assertEqual(auto_select()["state"], "retained")
+                self.assertEqual(probe.call_count, 0)
                 submit_reviewed(**{**evidence("live-other", 2), "protocol": "protocol-b"})
                 self.assertEqual(auto_select()["state"], "retained")
                 self.assertEqual(selected.call_count, 1)
@@ -55,6 +60,103 @@ class AutomaticSelectionTests(unittest.TestCase):
             self.assertEqual(result["state"], "waiting_for_candidate")
             self.assertEqual(result["rejected"], 1)
             self.assertFalse((Path(folder) / "selected.json").exists())
+
+    def test_signed_internal_candidate_is_selected_before_unreviewed_live_runs(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(
+            registry, "REGISTRY", Path(folder) / "registry"
+        ):
+            review = Path(folder) / "internal-review.json"
+            review.write_text(json.dumps({"case_scores": {"case": {
+                "coherence": 2, "grounding": 2, "relevance": 2,
+            }}}))
+            submission = {
+                "run": str(Path(folder) / "internal-owner-simulation"),
+                "review": str(review),
+                "protocol": str(Path(folder) / "protocol"),
+                "evaluation": str(Path(folder) / "evaluation"),
+                "signature": str(Path(folder) / "signature"),
+            }
+
+            def decision(**item):
+                return {
+                    "eligible": True,
+                    "reasons": [],
+                    "fingerprints": {
+                        "checkpoint_sha256": "verified-internal-checkpoint",
+                        "protocol_sha256": "frozen-protocol",
+                        "review_sha256": registry.sha256(Path(item["review"])),
+                    },
+                }
+
+            with patch.object(registry, "eligibility", side_effect=decision), \
+                 patch.object(registry, "select_candidate") as select, \
+                 patch("ai_model.training.auto_selection._operational_candidate", return_value=True), \
+                 patch("ai_model.training.auto_selection._public_selection", return_value={
+                     "state": "waiting_for_candidate", "rejected": 1,
+                 }):
+                submit_reviewed(**submission)
+                result = auto_select()
+
+            self.assertEqual(result["state"], "selected")
+            self.assertEqual(result["checkpoint_sha256"], "verified-internal-checkpoint")
+            self.assertEqual(result["eligibility_policy"], "signed-review-v1")
+            self.assertEqual(result["release_source"], "owner_and_simulation")
+            self.assertTrue(result["trained_checkpoint_loaded"])
+            select.assert_called_once()
+
+    def test_internal_candidate_submission_still_fails_closed_without_signed_eligibility(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(
+            registry, "REGISTRY", Path(folder) / "registry"
+        ), patch.object(registry, "eligibility", return_value={
+            "eligible": False, "reasons": ["Independent review signature invalid"],
+        }):
+            review = Path(folder) / "review.json"
+            review.write_text(json.dumps({"case_scores": {"case": {
+                "coherence": 2, "grounding": 2, "relevance": 2,
+            }}}))
+            with self.assertRaisesRegex(ValueError, "signature invalid"):
+                submit_reviewed(
+                    run=str(Path(folder) / "internal-untrusted"),
+                    evaluation="evaluation",
+                    protocol="protocol",
+                    review=str(review),
+                    signature="signature",
+                )
+
+    def test_invalid_selected_internal_candidate_is_reported_not_retained(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(
+            registry, "REGISTRY", Path(folder) / "registry"
+        ):
+            registry.safe_registry()
+            pointer = registry.REGISTRY / "selected.json"
+            pointer.write_text(json.dumps({
+                "schema": 1,
+                "scope": "candidate-only-not-production",
+                "eligibility_policy": "signed-review-v1",
+                "evidence": {
+                    "run": str(Path(folder) / "internal-stale"),
+                    "evaluation": "evaluation",
+                    "protocol": "protocol",
+                    "review": "review",
+                    "signature": "signature",
+                },
+                "fingerprints": {"checkpoint_sha256": "stale-checkpoint"},
+            }))
+            with patch.object(registry, "eligibility", return_value={
+                "eligible": False, "reasons": ["review trust policy changed"],
+                "fingerprints": {},
+            }), patch("ai_model.training.auto_selection._public_selection", return_value=None):
+                result = auto_select()
+            self.assertEqual(result["state"], "waiting_for_candidate")
+            self.assertTrue(result["selected_candidate_invalid"])
+
+    def test_registry_validation_error_blocks_selection_and_marks_active_release_invalid(self):
+        with patch("ai_model.training.auto_selection._reviewed_selection",
+                   side_effect=ValueError("registry contains a symlink")):
+            result = auto_select()
+        self.assertEqual(result["state"], "blocked_registry")
+        self.assertTrue(result["selected_candidate_invalid"])
+        self.assertEqual(result["reason"], "reviewed_selection_validation_failed")
 
     def test_public_path_rejects_traditional_mixed_smoke_and_private_sources(self):
         public = {"provenance_type": "maxcore_live_awareness_observation",

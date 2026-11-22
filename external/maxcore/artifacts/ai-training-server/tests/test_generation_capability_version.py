@@ -65,6 +65,7 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
             "require_scope": lambda _scope: lambda: {"scope": "generate"},
             "verify_admin": lambda: {"role": "admin"},
             "_serving_release_status": self.serving, "_model_ready": self.model_ready,
+            "_trained_checkpoint_loaded": False,
             "_model_init_error": None,
             "_script_agent": self.script_agent, "_live_learning_loop": self.learning_loop,
             "_live_serving_model": self.live_serving_model,
@@ -180,6 +181,14 @@ class GenerationCapabilityVersion(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(progress["model_loaded"])
         self.assertTrue(progress["learning"]["running"])
         self.assertEqual(progress["learning"]["awareness_endpoint_usage"]["uses"], 7)
+
+    async def test_loaded_live_generation_adapter_is_not_reported_as_trained_checkpoint(self):
+        self.scope["_model_ready"] = True
+        status, result = await get_capabilities(self.app, "/ready")
+        self.assertEqual(status, 200, result)
+        self.assertTrue(result["generation_model_loaded"])
+        self.assertFalse(result["model_loaded"])
+        self.assertEqual(result["generation_mode"], "live_awareness")
 
     async def test_generation_capabilities_reports_unavailable_instead_of_asserting_serving(self):
         self.awareness.readiness_status = lambda: {"ready": False}

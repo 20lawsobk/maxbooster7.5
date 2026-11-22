@@ -44,6 +44,7 @@ describe("Automation action honesty", () => {
       process.stdout.write("\\n${marker}" + JSON.stringify(result) + "\\n", () => process.exit(0));
     `;
     const env = { ...process.env };
+    delete env.NEON_PRIMARY_URL;
     delete env.NEON_DATABASE_URL;
     delete env.DATABASE_URL;
     const result = spawnSync(
@@ -58,7 +59,9 @@ describe("Automation action honesty", () => {
     const resultLine = result.stdout.slice(resultIndex + marker.length).split(/\r?\n/, 1)[0];
     const actionResult = JSON.parse(resultLine);
     expect(actionResult).toMatchObject({ success: false });
-    expect(actionResult.message).toContain("DATABASE_URL must be set");
+    expect(actionResult.message).toContain(
+      "DATABASE_URL must be set. Did you forget to provision a database?",
+    );
   }, 25_000);
 
   it("send-notification reports failure (not success) with zero recipients", async () => {

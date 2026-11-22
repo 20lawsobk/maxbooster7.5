@@ -26,15 +26,19 @@ test("Replit preview runs the documented development workflow while deployment s
   assert.match(deploymentDocs, /configured Node 24 runtime/);
 });
 
-test("development preflight gates the unchanged application launcher", () => {
+test("development startup launches the app before repository completion analysis", () => {
   const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  assert.equal(scripts.dev, "node scripts/testing/repository-verification.mjs dev && bash scripts/start-dev.sh");
+  assert.equal(scripts.dev, "bash scripts/start-dev.sh");
   assert.equal(scripts.prod, "node scripts/start-production.mjs");
   assert.equal(scripts.start, scripts.prod);
   assert.equal(scripts["deployment:start"], "bash start.sh");
   assert.equal(scripts["completion:execute"], "node scripts/testing/repository-verification.mjs execute");
   assert.equal(scripts["completion:loop"], "node scripts/testing/completion-loop.mjs");
-  assert.match(fs.readFileSync("scripts/start-dev.sh", "utf8"), /dev_acquire_instance_lock/);
+  const devLauncher = fs.readFileSync("scripts/start-dev.sh", "utf8");
+  assert.match(devLauncher, /dev_acquire_instance_lock/);
+  assert.ok(devLauncher.indexOf('if [[ "$_READINESS_STATUS" != "0" ]]') <
+    devLauncher.indexOf("node scripts/testing/repository-verification.mjs dev &"));
+  assert.match(devLauncher, /wait -n -p _EXITED_PID/);
   assert.match(scripts["verify:repository"], /repository-verification\.mjs full/);
 });
 

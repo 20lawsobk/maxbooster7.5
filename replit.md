@@ -106,7 +106,7 @@ Use `docs/sophia-agent-evaluation.md` as the acceptance scorecard for consequent
 
 Use the admin account for all further testing in this project, not Demo Mode. Use authorized access; do not alter real account data or perform destructive or externally consequential actions merely to test a feature.
 
-The main workflow is **"Start application"** — starts Redis then the Express + Vite dev server on port 5000.
+The main workflow is **"Start application"**. It starts the Express + Vite dev server and configured local services first, then runs the repository completion analysis after all configured listeners pass readiness. This keeps the full-repository analysis from consuming the app's startup window.
 
 ```bash
 npm run dev
@@ -134,7 +134,7 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 
 | Script | Purpose |
 |---|---|
-| `npm run dev` | Start development server (Express + Vite HMR) |
+| `npm run dev` | Start development server, then run bounded repository completion analysis after listener readiness |
 | `npm run build` | Production build to `dist/` |
 | `npm run check` | TypeScript check — server + client (split configs, OOM-safe) |
 | `npm run check:server` | TypeScript check — server only |

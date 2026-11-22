@@ -230,6 +230,37 @@ class LiveServingTests(unittest.TestCase):
             self.model.install(adapter, status)
         self.assertFalse(self.model.available)
 
+    def test_currently_selected_candidate_is_unloaded_when_evidence_becomes_invalid(self):
+        adapter, status = release("stale")
+        self.model.install(adapter, {**status, "trained_checkpoint_loaded": True})
+        loop = LiveLearningLoop(
+            lambda: self.engine, self.model, Path(self.temp.name),
+            peak_content=False, interval=60, poll=1, clock=lambda: self.now,
+        )
+        with patch("ai_model.training.auto_selection.auto_select", return_value={
+            "state": "waiting_for_candidate",
+            "selected_candidate_invalid": True,
+        }):
+            loop._refresh_release()
+        self.assertFalse(self.model.available)
+        self.assertEqual(loop.status()["serving"], "blocked_release")
+        self.assertEqual(loop.status()["release_error"], "SelectedCandidateInvalid")
+
+    def test_loaded_candidate_is_unloaded_when_selection_disappears(self):
+        adapter, status = release("withdrawn")
+        self.model.install(adapter, {**status, "trained_checkpoint_loaded": True})
+        loop = LiveLearningLoop(
+            lambda: self.engine, self.model, Path(self.temp.name),
+            peak_content=False, interval=60, poll=1, clock=lambda: self.now,
+        )
+        with patch("ai_model.training.auto_selection.auto_select", return_value={
+            "state": "waiting_for_candidate",
+        }):
+            loop._refresh_release()
+        self.assertFalse(self.model.available)
+        self.assertEqual(loop.status()["serving"], "blocked_release")
+        self.assertTrue(loop.status()["selection"]["selected_candidate_invalid"])
+
     def test_default_startup_uses_live_pipeline_without_legacy_checkpoint(self):
         tree = ast.parse((ROOT / "server.py").read_text())
         node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "_init_ai_model")

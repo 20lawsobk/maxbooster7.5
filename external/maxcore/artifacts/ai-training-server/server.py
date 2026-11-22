@@ -757,6 +757,7 @@ threading.Thread(target=_uploads_janitor_loop, name="uploads-janitor",
 # ─── AI Model Globals ────────────────────────────────────────────────────────
 
 _model_ready = False
+_trained_checkpoint_loaded = False
 _model_init_error = None
 _tokenizer = None
 _creative_model = None
@@ -845,9 +846,13 @@ def _init_live_awareness_model():
         return collect_internal_training_bundle()
 
     def changed(ready, status):
-        global _model_ready, _model_init_error, _serving_release_status, _tokenizer
+        global _model_ready, _trained_checkpoint_loaded
+        global _model_init_error, _serving_release_status, _tokenizer
         with _model_lock:
             _model_ready = ready
+            _trained_checkpoint_loaded = (
+                ready is True and status.get("trained_checkpoint_loaded") is True
+            )
             _model_init_error = None if ready else status.get(
                 "unavailable_reason", "No operationally capable public peak-content model is selected")
             _serving_release_status = status
@@ -875,11 +880,13 @@ def _init_live_awareness_model():
 
 def _init_ai_model():
     global _serving_release_status, _model_ready, _model_init_error
+    global _trained_checkpoint_loaded
     global _creative_model, _tokenizer, _script_agent, _visual_spec_agent
     global _distribution_agent, _optimization_agent, _repo, _adapter, _render_manager
     global _image_engine, _model_config
     mode = os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness")
     _model_ready = False
+    _trained_checkpoint_loaded = False
     try:
         if mode == "live-awareness":
             _init_live_awareness_model()
@@ -935,9 +942,14 @@ def _init_ai_model():
         _model_config = {"release": "reviewed-candidate", "sampling": status["supported_sampling"]}
         _model_init_error = None
         _model_ready = True
+        _trained_checkpoint_loaded = (
+            status.get("trained_checkpoint_loaded") is True
+            and bool(status.get("checkpoint_sha256"))
+        )
     except Exception as exc:
         # A selected candidate failure cannot enter legacy checkpoint fallback.
         _model_ready = False
+        _trained_checkpoint_loaded = False
         _model_init_error = f"{type(exc).__name__}: {exc}"
         _serving_release_status = {
             "requested": mode, "active": None, "candidate_quality": "blocked",
@@ -2682,7 +2694,9 @@ def _live_awareness_capability(awareness_ready):
             and callable(getattr(_script_agent, "run_live_awareness", None))
             and _model_ready is not True
         ),
-        "trained_model_loaded": _model_ready is True,
+        "trained_model_loaded": _trained_checkpoint_loaded is True,
+        "trained_checkpoint_loaded": _trained_checkpoint_loaded is True,
+        "generation_model_loaded": _model_ready is True,
         "trained_candidate_serving": bool(serving and serving.available),
         "learning_loop_running": learning.get("running") is True,
         "learning_state": learning.get("training", "disabled"),
@@ -2694,7 +2708,11 @@ def _live_awareness_capability(awareness_ready):
 def _generation_readiness(awareness_ready: bool) -> dict:
     """The active serving contract may be live awareness before trained weights."""
     mode = os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness").strip().lower()
-    trained_ready = _model_ready is True and awareness_ready is True
+    trained_ready = (
+        _trained_checkpoint_loaded is True
+        and _model_ready is True
+        and awareness_ready is True
+    )
     live_runtime_ready = callable(
         getattr(_script_agent, "run_live_awareness", None)
     )
@@ -2942,7 +2960,8 @@ async def live_learning_status(_admin=Depends(verify_admin)):
     generation = _generation_readiness(awareness_ready)
     return {
         "mode": os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness"),
-        "model_loaded": _model_ready is True,
+        "model_loaded": _trained_checkpoint_loaded is True,
+        "generation_model_loaded": _model_ready is True,
         "awareness_ready": awareness_ready,
         "generation_ready": generation["ready"],
         "generation_mode": generation["generation_mode"],
@@ -3038,7 +3057,8 @@ async def generation_readiness():
     )
     ready = endpoint_routes["readiness"]["ready"]
     return JSONResponse(status_code=200 if ready else 503, content={
-        "model_loaded": _model_ready, "awareness": awareness,
+        "model_loaded": _trained_checkpoint_loaded, "generation_model_loaded": _model_ready,
+        "awareness": awareness,
         "live_awareness": _live_awareness_capability(awareness_ready),
         **generation,
         "generation_ready": ready,
@@ -3090,7 +3110,8 @@ async def health():
         "status": "healthy",
         "model_blocked": blocked,
         "readiness_endpoint": "/ready",
-        "model_loaded": _model_ready,
+        "model_loaded": _trained_checkpoint_loaded,
+        "generation_model_loaded": _model_ready,
         "generation_ready": endpoint_routes.get("readiness", {}).get("ready") is True,
         "generation_mode": generation["generation_mode"],
         "awareness": {"ready": awareness_ready},
@@ -3227,7 +3248,8 @@ async def model_status():
     vocab_size = (getattr(_tokenizer, "vocab_size", None)
                   or len(getattr(_tokenizer, "vocab", {}))) if _tokenizer else 0
     return {
-        "model_loaded": _model_ready,
+        "model_loaded": _trained_checkpoint_loaded,
+        "generation_model_loaded": _model_ready,
         "serving_release": _serving_release_status,
         "vocab_size": vocab_size,
         "device": "digital_gpu",
@@ -13190,7 +13212,8 @@ async def api_health():
     """Health probe under the /api prefix — MaxCoreAIClient.isAvailable() polls this."""
     return {
         "status": "healthy",
-        "model_loaded": _model_ready,
+        "model_loaded": _trained_checkpoint_loaded,
+        "generation_model_loaded": _model_ready,
         "uptime_seconds": time.time() - _start_time,
         "version": "1.0.0",
         "storage_mode": _get_storage_mode(),

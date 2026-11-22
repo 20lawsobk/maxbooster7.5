@@ -89,8 +89,8 @@ class FailClosedCandidateAdapter:
 
 
 def load_selected_release(mode="legacy", *, registry=None, factory=None):
-    if mode not in {"legacy", "reviewed-candidate", "live-awareness"}:
-        raise ValueError("MAXCORE_SERVING_RELEASE must be legacy, reviewed-candidate or live-awareness")
+    if mode not in {"legacy", "reviewed-candidate", "live-awareness", "live-or-trained"}:
+        raise ValueError("Unsupported MAXCORE serving release mode")
     status = {"requested": mode, "active": None, "candidate_quality": "not_selected",
               "backend_exclusive": "not_verified"}
     if mode == "legacy":
@@ -107,11 +107,25 @@ def load_selected_release(mode="legacy", *, registry=None, factory=None):
     selected = json.loads(raw)
     if selected.get("schema") != 1 or selected.get("scope") != "candidate-only-not-production":
         raise ValueError("Invalid selected candidate registry schema/scope")
-    public_live = selected.get("eligibility_policy") == "certified-public-live-v1"
+    policy = selected.get("eligibility_policy")
+    fingerprints = selected.get("fingerprints")
+    run_identity = fingerprints.get("run") if isinstance(fingerprints, dict) else None
+    if not isinstance(run_identity, str):
+        raise ValueError("Selected candidate run identity is missing")
+    run_name = Path(run_identity).name
+    public_live = policy == "certified-public-live-v1"
+    signed_review = policy == "signed-review-v1"
     if mode == "reviewed-candidate" and public_live:
         raise ValueError("Reviewed-candidate mode requires signed review selection")
-    if mode == "live-awareness" and not Path(selected["fingerprints"]["run"]).name.startswith("live-"):
+    if mode == "live-awareness" and not (public_live and run_name.startswith("live-")):
         raise ValueError("Live-awareness serving requires a certified live-observation candidate")
+    if mode == "reviewed-candidate" and not signed_review:
+        raise ValueError("Reviewed-candidate mode requires signed review selection")
+    if mode == "live-or-trained" and not (
+        (public_live and run_name.startswith("live-"))
+        or (signed_review and run_name.startswith(("internal-", "live-")))
+    ):
+        raise ValueError("Live serving accepts only certified live or reviewed owner/simulation candidates")
     if factory is None:
         from ai_model.model.candidate_serving import create_candidate_adapter
         factory = create_candidate_adapter
@@ -125,7 +139,7 @@ def load_selected_release(mode="legacy", *, registry=None, factory=None):
     if not getattr(adapter, "backend_exclusive", False):
         raise ValueError("Selected candidate cannot satisfy production backend policy")
     capability = None
-    if public_live:
+    if public_live or signed_review:
         from .capability import verify_text_capability
         capability = verify_text_capability(adapter)
     parameters = inspect.signature(adapter.generate).parameters
@@ -133,11 +147,21 @@ def load_selected_release(mode="legacy", *, registry=None, factory=None):
                 if name in {"temperature", "top_p", "top_k", "repetition_penalty", "min_length", "seed"}
                 and parameter.default is not inspect.Parameter.empty}
     return FailClosedCandidateAdapter(adapter), {
-        **status, "active": ("certified-live-awareness" if public_live else
-                    "reviewed-live-awareness" if mode == "live-awareness" else "reviewed-candidate"),
+        **status, "active": (
+            "certified-live-awareness" if public_live else
+            "reviewed-owner-simulation-training" if run_name.startswith("internal-") else
+            "reviewed-candidate"
+        ),
         "checkpoint_sha256": selected["fingerprints"]["checkpoint_sha256"],
         "candidate_quality": ("runtime_verified_public_live_not_quality_evaluated" if public_live
                               else "independently_reviewed_not_general_quality_certification"),
+        "trained_checkpoint_loaded": signed_review,
+        "release_source": (
+            "certified_public_live_observations" if public_live else
+            "owner_and_simulation" if run_name.startswith("internal-") else
+            "reviewed_live_observations" if run_name.startswith("live-") else
+            "independently_reviewed_candidate"
+        ),
         "review_required": not public_live,
         "operational_text_capability": capability,
         "backend_exclusive": bool(getattr(adapter, "training_backend_exclusive", False)),

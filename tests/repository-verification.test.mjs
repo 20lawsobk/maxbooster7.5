@@ -4,7 +4,6 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { spawn } from "node:child_process";
 import {
   buildInventory,
   canonical,
@@ -120,38 +119,17 @@ test("explicit cancellation returns after terminating the owned process group", 
   }
 });
 
-test("npm development command does not launch the app after a required preflight failure", async () => {
+test("npm development command does not wait for repository analysis before application startup", async () => {
   const project = JSON.parse(await fs.readFile("package.json", "utf8"));
   const command = project.scripts.dev;
-  assert.match(command, /repository-verification\.mjs dev && bash scripts\/start-dev\.sh$/);
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "repository-verify-startup-"));
-  const bin = path.join(root, "bin");
-  const marker = path.join(root, "launcher-started");
-  const realBash = execFileSync("bash", ["-c", "command -v bash"], { encoding: "utf8" }).trim();
-  await fs.mkdir(bin, { recursive: true });
-  await fs.writeFile(path.join(bin, "node"), `#!/bin/sh\nexit 31\n`);
-  await fs.writeFile(path.join(bin, "bash"), `#!/bin/sh\nprintf started > '${marker}'\nexec '${realBash}' "$@"\n`);
-  await fs.chmod(path.join(bin, "node"), 0o755);
-  await fs.chmod(path.join(bin, "bash"), 0o755);
-  try {
-    const child = spawn("/bin/sh", ["-c", command], {
-      cwd: process.cwd(),
-      env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let output = "";
-    child.stdout.on("data", chunk => { output += chunk; });
-    child.stderr.on("data", chunk => { output += chunk; });
-    const exitCode = await new Promise((resolve, reject) => {
-      child.once("error", reject);
-      child.once("close", resolve);
-      setTimeout(() => child.kill("SIGKILL"), 10_000).unref();
-    });
-    assert.notEqual(exitCode, 0, output);
-    await assert.rejects(fs.access(marker));
-  } finally {
-    await fs.rm(root, { recursive: true, force: true });
-  }
+  const launcher = await fs.readFile("scripts/start-dev.sh", "utf8");
+  assert.equal(command, "bash scripts/start-dev.sh");
+  const readinessGate = launcher.indexOf('if [[ "$_READINESS_STATUS" != "0" ]]');
+  const completionAnalysis = launcher.indexOf("node scripts/testing/repository-verification.mjs dev &");
+  assert.ok(readinessGate >= 0);
+  assert.ok(completionAnalysis > readinessGate);
+  assert.match(launcher, /wait -n -p _EXITED_PID/);
+  assert.match(launcher, /_stop_owned "\$_VERIFICATION_PID"/);
 });
 
 test("preflight command environment excludes application credentials", () => {

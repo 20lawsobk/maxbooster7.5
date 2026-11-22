@@ -71,6 +71,7 @@ describe("MaxCore generation surface inventory", () => {
 
   it("routes studio patterns, autopilot media, and owner-bound content through shared MaxCore clients", () => {
     const studioTransport = readFileSync(path.join(root, "server/services/studioMaxCoreTransport.ts"), "utf8");
+    const generationService = readFileSync(path.join(root, "server/services/maxcoreGenerationService.ts"), "utf8");
     const contentService = readFileSync(path.join(root, "server/services/aiContentService.ts"), "utf8");
     const adapter = readFileSync(path.join(root, "server/services/maxcoreDomainAdapter.ts"), "utf8");
     const unified = readFileSync(path.join(root, "server/services/unifiedAIController.ts"), "utf8");
@@ -78,10 +79,16 @@ describe("MaxCore generation surface inventory", () => {
     const socialRoutes = readFileSync(path.join(root, "server/routes/socialMedia.ts"), "utf8");
     const advertisingRoutes = readFileSync(path.join(root, "server/routes/advertising.ts"), "utf8");
     const autoPost = readFileSync(path.join(root, "server/services/autoPostGenerator.ts"), "utf8");
-    expect(studioTransport).toContain("MaxCoreAIClient.generate<T>(pathName, body ?? {}, userId");
+    expect(studioTransport).toContain(
+      'export { maxCoreStudioJson } from "./maxcoreGenerationService.js";',
+    );
+    expect(generationService).toMatch(
+      /export async function maxCoreStudioJson<T>\([\s\S]*?MaxCoreAIClient\.generate<T>\(pathName, body \?\? \{\}, userId, 60_000\)/,
+    );
     expect(contentService).toContain('"/api/generate/image"');
     expect(contentService).toContain("generateMaxCoreAudio");
-    expect(adapter).toContain("body.user_id");
+    expect(adapter).toContain('from "./maxcoreGenerationService.js"');
+    expect(generationService).toContain("body.user_id");
     expect(unified).toContain("options.userId");
     expect(adRunner).toContain("userId,");
     expect(socialRoutes).toMatch(

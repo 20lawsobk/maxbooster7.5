@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import config from "../../vite.config";
+import { createClientViteConfig } from "../../vite.config";
 
 describe("production client chunk classification", () => {
+  const config = createClientViteConfig("production");
   const manualChunks = config.build?.rollupOptions?.output?.manualChunks;
 
   it("routes UI, form and telemetry packages away from the core React chunk", () => {

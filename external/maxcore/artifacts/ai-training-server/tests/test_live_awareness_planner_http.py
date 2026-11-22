@@ -87,8 +87,9 @@ def planner_app(model, learning_loop=None, script_agent=None):
     scope = {"app": app, "Any": Any, "Dict": Dict, "List": List, "Optional": Optional,
              "BaseModel": BaseModel, "Field": Field, "model_validator": model_validator,
              "Depends": Depends, "HTTPException": HTTPException, "Request": Request, "os": os,
-             "require_scope": require_scope, "json": json, "time": time, "uuid": uuid,
-              "_model_ready": False, "_script_agent": script_agent, "_distribution_agent": None,
+              "require_scope": require_scope, "json": json, "time": time, "uuid": uuid,
+              "_model_ready": False, "_trained_checkpoint_loaded": False,
+              "_script_agent": script_agent, "_distribution_agent": None,
              "_live_serving_model": model,
              "_live_learning_loop": learning_loop,
               "_model_init_error": None,
@@ -223,8 +224,8 @@ class LiveAwarenessPlannerHTTP(unittest.IsolatedAsyncioTestCase):
         status, _ = await get_json(self.app, "/api/awareness/unified/ready", authenticated=False)
         self.assertEqual(status, 401)
         status, result = await get_json(self.app, "/api/awareness/unified/ready")
-        self.assertEqual(status, 200, result)
-        self.assertTrue(result["ready"])
+        self.assertEqual(status, 503, result)
+        self.assertFalse(result["ready"])
         self.assertTrue(result["live_model"]["available"])
         self.assertFalse(result["live_model"]["trained_model_loaded"])
         self.assertFalse(result["generation_ready"])

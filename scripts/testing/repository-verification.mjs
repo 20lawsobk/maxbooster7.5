@@ -477,28 +477,32 @@ async function localPreflight(root, runDirectory, inventory) {
   try {
     manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
     const dev = manifest?.scripts?.dev;
-    if (dev !== "node scripts/testing/repository-verification.mjs dev && bash scripts/start-dev.sh") {
-      throw new Error("package.json dev script does not run completion automation before the existing launcher");
+    const launcher = await fs.readFile(path.join(root, "scripts", "start-dev.sh"), "utf8");
+    const readinessGate = launcher.indexOf('if [[ "$_READINESS_STATUS" != "0" ]]');
+    const completionAnalysis = launcher.indexOf("node scripts/testing/repository-verification.mjs dev &");
+    if (dev !== "bash scripts/start-dev.sh" || readinessGate < 0 ||
+        completionAnalysis <= readinessGate) {
+      throw new Error("npm run dev must start the app directly and defer repository completion analysis until listener readiness");
     }
     checks.push({
       id: "startup-contract",
-      command: ["read package.json", "verify the completion-automation-to-launcher ordering"],
+      command: ["read package.json and scripts/start-dev.sh", "verify app-first startup and readiness-gated completion analysis"],
       status: "PASS",
       exitCode: 0,
       timedOut: false,
       durationMs: 0,
-      output: "The development command runs bounded preflight, repository understanding, and Atlas before the unchanged launcher.",
+      output: "The development command starts the app directly; bounded repository understanding and Atlas start after configured listeners are ready.",
     });
   } catch (error) {
     checks.push({
       id: "startup-contract",
-      command: ["read package.json", "verify the completion-automation-to-launcher ordering"],
+      command: ["read package.json and scripts/start-dev.sh", "verify app-first startup and readiness-gated completion analysis"],
       status: "FAIL",
       exitCode: 1,
       timedOut: false,
       durationMs: 0,
       output: error.message,
-      nextAction: "Restore the bounded completion-automation dev command and preserve scripts/start-dev.sh as the application launcher.",
+      nextAction: "Restore the app-first npm dev launcher and run completion analysis only after configured listener readiness.",
     });
   }
 

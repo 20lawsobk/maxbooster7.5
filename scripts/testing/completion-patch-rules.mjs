@@ -12,13 +12,12 @@ import {
 const RULE_ID = "sync-dev-start-contract";
 const TEST_FILE = "tests/npm-build-start-contract.test.mjs";
 const PACKAGE_FILE = "package.json";
-const TARGET_TEST_NAME = "development preflight gates the unchanged application launcher";
+const TARGET_TEST_NAME = "development startup launches the app before repository completion analysis";
 const TARGET_TEST_TIMEOUT_MS = 30_000;
 const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
-const EXPECTED_CURRENT_DEV =
-  "node scripts/testing/repository-verification.mjs dev && bash scripts/start-dev.sh";
+const EXPECTED_CURRENT_DEV = "bash scripts/start-dev.sh";
 const STALE_TEST_DEV =
-  "node scripts/testing/repository-verification.mjs preflight && bash scripts/start-dev.sh";
+  "node scripts/testing/repository-verification.mjs dev && bash scripts/start-dev.sh";
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -132,7 +131,15 @@ export async function generateEvidenceBasedPlans({
   const testSource = testBytes.toString("utf8");
   const assertion = findDevAssertion(testSource);
   if (!assertion || assertion[2] !== STALE_TEST_DEV) {
-    return { status: "NO_MATCH", reason: "no-known-stale-launcher-assertion", plans: [] };
+    return {
+      status: "NO_MATCH",
+      reason: "no-known-stale-launcher-assertion",
+      plans: [],
+      evidence: {
+        observedAssertion: assertion?.[2] ?? null,
+        expectedStaleAssertion: STALE_TEST_DEV,
+      },
+    };
   }
 
   const evidenceDirectory = path.join(
@@ -211,7 +218,7 @@ export async function generateEvidenceBasedPlans({
     automationEvidence: {
       schemaVersion: 1,
       ruleId: RULE_ID,
-      instruction: "Synchronize the stale development-launcher assertion with the configured npm dev command.",
+      instruction: "Synchronize the stale development-launcher assertion with the app-first npm dev command.",
       reportSha256: report.integrity.reportSha256,
       reportPath: path.relative(root, reportPath),
       learningSha256: sha256(learningBytes),
@@ -263,7 +270,7 @@ export async function generateEvidenceBasedPlans({
 export const deterministicPatchRuleIds = Object.freeze([RULE_ID]);
 export const deterministicPatchRuleEvidence = Object.freeze({
   [RULE_ID]: Object.freeze({
-    instruction: "Synchronize the stale development-launcher assertion with the configured npm dev command.",
+    instruction: "Synchronize the stale development-launcher assertion with the app-first npm dev command.",
     testName: TARGET_TEST_NAME,
     testFile: TEST_FILE,
     expected: STALE_TEST_DEV,

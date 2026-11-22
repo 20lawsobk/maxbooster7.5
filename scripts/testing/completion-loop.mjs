@@ -973,8 +973,13 @@ export async function runCompletionLoop({
           }
           if (outcome.verified) break;
         }
-      } catch {
-        patchOutcome = { status: "GENERATION_FAILED", reason: "evidence-based-plan-generation-or-validation-failed", plans: [] };
+      } catch (error) {
+        patchOutcome = {
+          status: "GENERATION_FAILED",
+          reason: "evidence-based-plan-generation-or-validation-failed",
+          diagnostic: String(error instanceof Error ? error.message : error).slice(0, 500),
+          plans: [],
+        };
       }
       if (patchOutcome) {
         const updatedRecord = { ...cycleRecord, patchGeneration: patchOutcome };

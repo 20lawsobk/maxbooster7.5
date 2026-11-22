@@ -10,9 +10,9 @@ import { buildInventory, sealReport } from "../scripts/testing/repository-verifi
 import { generateEvidenceBasedPlans } from "../scripts/testing/completion-patch-rules.mjs";
 
 const roots = [];
-const CURRENT_DEV = "node scripts/testing/repository-verification.mjs dev && bash scripts/start-dev.sh";
-const STALE_DEV = "node scripts/testing/repository-verification.mjs preflight && bash scripts/start-dev.sh";
-const TEST_NAME = "development preflight gates the unchanged application launcher";
+const CURRENT_DEV = "bash scripts/start-dev.sh";
+const STALE_DEV = "node scripts/testing/repository-verification.mjs dev && bash scripts/start-dev.sh";
+const TEST_NAME = "development startup launches the app before repository completion analysis";
 
 function hash(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -130,10 +130,14 @@ test("deterministic patch plan applies through the existing executor and passes 
   assert.match(testSource, new RegExp(CURRENT_DEV.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.equal(cycle, 2);
   assert.equal(result.status, "LIMIT_REACHED");
-  assert.equal(result.plansAppliedThisInvocation, 1);
   const state = JSON.parse(await fs.readFile(
     path.join(root, ".local/repository-verification/completion-loop/state.json"), "utf8",
   ));
+  assert.equal(
+    result.plansAppliedThisInvocation,
+    1,
+    JSON.stringify(state.cycles.map(item => item.patchGeneration), null, 2),
+  );
   assert.equal(state.appliedPlans.length, 1);
   assert.equal(state.appliedPlans[0].ruleId, "sync-dev-start-contract");
   assert.equal(state.appliedPlans[0].status, "APPLIED_VERIFIED");

@@ -32,6 +32,10 @@ class LiveServingModel:
             raise ValueError("Live serving requires a verified certified or reviewed adapter")
         self._active = (adapter, dict(status))
 
+    def clear(self):
+        """Stop serving a release whose current selection evidence is invalid."""
+        self._active = None
+
     @property
     def available(self):
         return self._active is not None
@@ -44,6 +48,7 @@ class LiveServingModel:
             "unavailable_reason": "no_operationally_capable_certified_public_live_candidate",
             "review_required": True,
             "backend_exclusive": "not_verified",
+            "trained_checkpoint_loaded": False,
         }
 
     @contextmanager
@@ -225,24 +230,51 @@ class LiveLearningLoop:
                 raise AwarenessUnavailable("Fresh public awareness required for live release admission")
             load_release = True
             selected_checkpoint = None
+            release_mode = "live-or-trained"
             if self.loader is None:
                 from ai_model.training.auto_selection import auto_select
-                selection_options = {"learning_policy": "public-peak-shortform-v1"} if self.peak_content else {}
-                selection = auto_select(**selection_options)
+                selection = auto_select()
                 self._status = {**self._status, "selection": selection}
-                if (selection.get("state") in {"selected", "retained"}
-                        and (not self.peak_content or (
-                            selection.get("validated_selected") is True
-                            and selection.get("learning_policy") == "public-peak-shortform-v1"))):
+                if selection.get("selected_candidate_invalid") is True:
+                    self.model.clear()
+                reviewed_training = (
+                    selection.get("eligibility_policy") == "signed-review-v1"
+                    and selection.get("trained_checkpoint_loaded") is True
+                    and selection.get("release_source") in {
+                        "owner_and_simulation", "reviewed_live_observations",
+                    }
+                )
+                public_live = (
+                    selection.get("policy") == "certified-public-live-v1"
+                    and selection.get("validated_selected") is True
+                    and selection.get("learning_policy") == "public-peak-shortform-v1"
+                )
+                if selection.get("state") in {"selected", "retained"} and (
+                    reviewed_training or public_live
+                ):
                     selected_checkpoint = selection.get("checkpoint_sha256")
-                if self.peak_content and not selected_checkpoint:
+                    release_mode = "live-or-trained" if reviewed_training else "live-awareness"
+                if (
+                    self.model.available
+                    and not selected_checkpoint
+                    and selection.get("state") not in {
+                        "disabled", "another_selector_running",
+                    }
+                ):
+                    selection = {
+                        **selection,
+                        "selected_candidate_invalid": True,
+                    }
+                    self._status = {**self._status, "selection": selection}
+                    self.model.clear()
+                if not selected_checkpoint:
                     # A historical context pointer is never a peak release.
                     load_release = False
                 if selected_checkpoint and selected_checkpoint == self.model.status().get("checkpoint_sha256"):
                     # Selection has just validated immutable runtime evidence;
                     # retain the pinned RAM adapter without rerunning probes.
                     load_release = False
-            adapter, status = ((self.loader or load_selected_release)("live-awareness")
+            adapter, status = ((self.loader or load_selected_release)(release_mode)
                                if load_release else (None, {}))
             if selected_checkpoint and adapter is not None and status.get("checkpoint_sha256") != selected_checkpoint:
                 raise ValueError("Selected checkpoint changed before live release load")
@@ -252,10 +284,24 @@ class LiveLearningLoop:
                 self._status = {**self._status, "serving": "active", "release_error": None,
                                 "unavailable_reason": None}
             else:
-                self._status = {**self._status, "serving": "active" if self.model.available else "waiting_for_candidate",
-                                "release_error": None,
-                                "unavailable_reason": (None if self.model.available else
-                                                       self.model.status().get("unavailable_reason"))}
+                invalid_selected = (
+                    self._status.get("selection", {}).get("selected_candidate_invalid") is True
+                )
+                self._status = {
+                    **self._status,
+                    "serving": (
+                        "blocked_release" if invalid_selected else
+                        "active" if self.model.available else
+                        "waiting_for_candidate"
+                    ),
+                    "release_error": "SelectedCandidateInvalid" if invalid_selected else None,
+                    "unavailable_reason": (
+                        "Selected candidate failed current evidence validation"
+                        if invalid_selected else
+                        None if self.model.available else
+                        self.model.status().get("unavailable_reason")
+                    ),
+                }
         except Exception as exc:
             # A rejected update must not replace a previously loaded good model.
             self._status = {**self._status, "serving": "active" if self.model.available else "blocked_release",
