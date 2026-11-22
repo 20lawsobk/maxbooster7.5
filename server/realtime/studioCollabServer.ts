@@ -82,10 +82,7 @@ export class StudioCollabServer {
   private userConnectionCount: Map<string, number> = new Map();
   private documents: Map<string, Y.Doc> = new Map();
   private documentLoads: Map<string, Promise<Y.Doc>> = new Map();
-  private projectEventSubscriptions = new Map<
-    string,
-    Promise<() => Promise<void>>
-  >();
+  private eventBusSubscription: Promise<() => void> | null = null;
   private disconnectedClients = new WeakSet<CollabClient>();
   private pingInterval: NodeJS.Timeout | null = null;
   private awarenessInterval: NodeJS.Timeout | null = null;
@@ -97,6 +94,19 @@ export class StudioCollabServer {
       noServer: true,
       maxPayload: 1 * 1024 * 1024,
     });
+    if (!this.eventBusSubscription) {
+      this.eventBusSubscription = collaborationEventBus
+        .subscribe((projectId, event) => {
+          this.broadcastToProject(projectId, event);
+        })
+        .catch((error) => {
+          this.eventBusSubscription = null;
+          this.wss?.close();
+          this.wss = null;
+          throw error;
+        });
+    }
+    await this.eventBusSubscription;
 
     server?.on("upgrade", async (request, socket, head) => {
       const pathname = parseUrl(request?.url || "").pathname;
@@ -351,7 +361,6 @@ export class StudioCollabServer {
       return;
     }
     const doc = await this.getOrLoadDocument(projectId);
-    await this.ensureProjectEventSubscription(projectId);
 
     const presence = await presenceManager?.addCollaborator(
       projectId,
@@ -523,29 +532,6 @@ export class StudioCollabServer {
     }
   }
 
-  private async ensureProjectEventSubscription(
-    projectId: string,
-  ): Promise<void> {
-    const existing = this.projectEventSubscriptions.get(projectId);
-    if (existing) {
-      await existing;
-      return;
-    }
-
-    const pending = collaborationEventBus.subscribeToProject(projectId, (event) => {
-      this.broadcastToProject(projectId, event);
-    });
-    this.projectEventSubscriptions.set(projectId, pending);
-    try {
-      await pending;
-    } catch (error) {
-      if (this.projectEventSubscriptions.get(projectId) === pending) {
-        this.projectEventSubscriptions.delete(projectId);
-      }
-      throw error;
-    }
-  }
-
   private async handleMessage(
     client: CollabClient,
     message: IncomingCollabMessage,
@@ -687,22 +673,6 @@ export class StudioCollabServer {
         setTimeout(async () => {
           const remainingClients = this.clients.get(client?.projectId);
           if (!remainingClients || remainingClients?.size === 0) {
-            const eventSubscription = this.projectEventSubscriptions.get(
-              client.projectId,
-            );
-            if (eventSubscription) {
-              try {
-                const unsubscribe = await eventSubscription;
-                await unsubscribe();
-              } catch (error) {
-                logger.warn(
-                  { projectId: client.projectId, err: error },
-                  "[StudioCollab] Failed to unsubscribe from room events:",
-                );
-              } finally {
-                this.projectEventSubscriptions.delete(client.projectId);
-              }
-            }
             const doc = this.documents.get(client?.projectId);
             if (doc) {
               await yjsService?.unloadDocument(client?.projectId, doc);
@@ -846,18 +816,19 @@ export class StudioCollabServer {
 
     this.clients.clear();
 
-    for (const [projectId, subscription] of this.projectEventSubscriptions) {
+    if (this.eventBusSubscription) {
       try {
-        const unsubscribe = await subscription;
-        await unsubscribe();
+        const unsubscribe = await this.eventBusSubscription;
+        unsubscribe();
       } catch (error) {
         logger.warn(
-          { projectId, err: error },
+          { err: error },
           "[StudioCollab] Failed to unsubscribe from room events during shutdown:",
         );
       }
     }
-    this.projectEventSubscriptions.clear();
+    this.eventBusSubscription = null;
+    await collaborationEventBus.shutdown();
 
     for (const [projectId, doc] of this.documents.entries()) {
       await yjsService?.unloadDocument(projectId, doc);

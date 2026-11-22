@@ -2,7 +2,7 @@ import { createRedisClient, getRedisClient } from "../lib/redisConnectionFactory
 import { isPdimConfigured } from "../lib/pdimClient.js";
 import { logger } from "../logger.js";
 
-const CHANNEL_PREFIX = "maxbooster:collaboration:events:";
+const CHANNEL = "maxbooster:collaboration:room-events";
 const MAX_EVENT_BYTES = 16 * 1024;
 
 export interface CollaborationRoomMessageEvent {
@@ -17,7 +17,15 @@ export interface CollaborationRoomMessageEvent {
   };
 }
 
-type EventCallback = (event: CollaborationRoomMessageEvent) => void;
+export type CollaborationEventListener = (
+  projectId: string,
+  event: CollaborationRoomMessageEvent,
+) => void;
+
+interface EventEnvelope {
+  projectId: string;
+  event: CollaborationRoomMessageEvent;
+}
 
 function isRoomMessageEvent(value: unknown): value is CollaborationRoomMessageEvent {
   if (!value || typeof value !== "object") return false;
@@ -35,12 +43,21 @@ function isRoomMessageEvent(value: unknown): value is CollaborationRoomMessageEv
   );
 }
 
+function isEventEnvelope(value: unknown): value is EventEnvelope {
+  if (!value || typeof value !== "object") return false;
+  const envelope = value as Partial<EventEnvelope>;
+  return (
+    typeof envelope.projectId === "string" &&
+    envelope.projectId.length > 0 &&
+    envelope.projectId.length <= 255 &&
+    isRoomMessageEvent(envelope.event)
+  );
+}
+
 export class CollaborationEventBus {
   private subscriber: Record<string, unknown> | null = null;
   private initialization: Promise<void> | null = null;
-  private callbacks = new Map<string, Set<EventCallback>>();
-  private subscriptions = new Map<string, Promise<void>>();
-  private subscribedProjects = new Set<string>();
+  private listeners = new Set<CollaborationEventListener>();
 
   private async initialize(): Promise<void> {
     if (!isPdimConfigured()) {
@@ -58,89 +75,46 @@ export class CollaborationEventBus {
         }
         this.subscriber = client as Record<string, unknown>;
         (this.subscriber as any).on("message", (channel: string, message: string) => {
-          if (!channel?.startsWith(CHANNEL_PREFIX)) return;
-          const projectId = channel.slice(CHANNEL_PREFIX.length);
-          if (!projectId || Buffer.byteLength(message) > MAX_EVENT_BYTES) return;
+          if (channel !== CHANNEL || Buffer.byteLength(message) > MAX_EVENT_BYTES) {
+            return;
+          }
           try {
-            const event: unknown = JSON.parse(message);
-            if (!isRoomMessageEvent(event)) return;
-            for (const callback of this.callbacks.get(projectId) ?? []) {
+            const envelope: unknown = JSON.parse(message);
+            if (!isEventEnvelope(envelope)) return;
+            for (const listener of this.listeners) {
               try {
-                callback(event);
+                listener(envelope.projectId, envelope.event);
               } catch (error) {
                 logger.warn(
-                  { projectId, err: error },
-                  "Collaboration event subscriber callback failed",
+                  { projectId: envelope.projectId, err: error },
+                  "Collaboration event listener failed",
                 );
               }
             }
           } catch (error) {
-            logger.warn(
-              { projectId, err: error },
-              "Invalid collaboration event received from PDIM",
-            );
+            logger.warn({ err: error }, "Invalid collaboration event received");
           }
         });
+        await (this.subscriber as any).subscribe(CHANNEL);
       })().catch((error) => {
         this.initialization = null;
+        this.subscriber = null;
         throw error;
       });
     }
     await this.initialization;
   }
 
-  async subscribeToProject(
-    projectId: string,
-    callback: EventCallback,
-  ): Promise<() => Promise<void>> {
-    if (!projectId || projectId.length > 255) {
-      throw new Error("A valid collaboration project ID is required");
-    }
+  async subscribe(
+    listener: CollaborationEventListener,
+  ): Promise<() => void> {
     await this.initialize();
-    let callbacks = this.callbacks.get(projectId);
-    if (!callbacks) {
-      callbacks = new Set();
-      this.callbacks.set(projectId, callbacks);
-    }
-    callbacks.add(callback);
-
-    if (!this.subscribedProjects.has(projectId)) {
-      let subscription = this.subscriptions.get(projectId);
-      if (!subscription) {
-        subscription = Promise.resolve()
-          .then(() => (this.subscriber as any).subscribe(`${CHANNEL_PREFIX}${projectId}`))
-          .then(() => {
-            this.subscribedProjects.add(projectId);
-          });
-        this.subscriptions.set(projectId, subscription);
-      }
-      try {
-        await subscription;
-      } catch (error) {
-        callbacks.delete(callback);
-        if (!callbacks.size) this.callbacks.delete(projectId);
-        throw error;
-      } finally {
-        if (this.subscriptions.get(projectId) === subscription) {
-          this.subscriptions.delete(projectId);
-        }
-      }
-    }
-
+    this.listeners.add(listener);
     let unsubscribed = false;
-    return async () => {
+    return () => {
       if (unsubscribed) return;
       unsubscribed = true;
-      const current = this.callbacks.get(projectId);
-      current?.delete(callback);
-      if (current?.size) return;
-      this.callbacks.delete(projectId);
-      const pending = this.subscriptions.get(projectId);
-      if (pending) await pending.catch(() => undefined);
-      if (!this.subscribedProjects.has(projectId) || !this.subscriber) return;
-      await (this.subscriber as any).unsubscribe(`${CHANNEL_PREFIX}${projectId}`);
-      this.subscribedProjects.delete(projectId);
-      this.subscriptions.delete(projectId);
+      this.listeners.delete(listener);
     };
   }
 
@@ -151,10 +125,14 @@ export class CollaborationEventBus {
     if (!isPdimConfigured()) {
       throw new Error("PDIM is required for cross-instance collaboration events");
     }
-    if (!projectId || projectId.length > 255 || !isRoomMessageEvent(event)) {
+    if (
+      !projectId ||
+      projectId.length > 255 ||
+      !isRoomMessageEvent(event)
+    ) {
       throw new Error("Invalid collaboration event");
     }
-    const encoded = JSON.stringify(event);
+    const encoded = JSON.stringify({ projectId, event } satisfies EventEnvelope);
     if (Buffer.byteLength(encoded) > MAX_EVENT_BYTES) {
       throw new Error("Collaboration event exceeds the size limit");
     }
@@ -162,9 +140,19 @@ export class CollaborationEventBus {
     if (!publisher || typeof (publisher as any).publish !== "function") {
       throw new Error("PDIM collaboration event publisher is unavailable");
     }
-    return Number(
-      await (publisher as any).publish(`${CHANNEL_PREFIX}${projectId}`, encoded),
-    );
+    return Number(await (publisher as any).publish(CHANNEL, encoded));
+  }
+
+  async shutdown(): Promise<void> {
+    const subscriber = this.subscriber as any;
+    if (subscriber && this.initialization) {
+      await this.initialization.catch(() => undefined);
+      await subscriber.unsubscribe?.(CHANNEL);
+      await subscriber.quit?.();
+    }
+    this.listeners.clear();
+    this.subscriber = null;
+    this.initialization = null;
   }
 }
 
