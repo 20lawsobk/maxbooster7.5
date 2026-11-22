@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { WebSocketServer, WebSocket } from "ws";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { Server } from "http";
@@ -46,6 +45,10 @@ interface CollabMessage {
   type: string;
   payload?: unknown;
 }
+
+type AuthenticatedRequest =
+  | { authenticated: true; userId: string; displayName: string }
+  | { authenticated: false };
 
 interface YjsUpdateMessage extends CollabMessage {
   type: "yjs:update";
@@ -159,7 +162,7 @@ export class StudioCollabServer {
 
           const authResult = await this.authenticateRequest(request);
 
-          if (!authResult?.authenticated) {
+          if (!authResult.authenticated) {
             socket?.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
             socket?.destroy();
             return;
@@ -167,10 +170,10 @@ export class StudioCollabServer {
 
           // Per-user studio connection cap
           const userCount =
-            this.userConnectionCount.get(authResult?.userId) ?? 0;
+            this.userConnectionCount.get(authResult.userId) ?? 0;
           if (userCount >= MAX_STUDIO_WS_PER_USER) {
             logger.warn(
-              `[StudioCollab] Per-user connection limit reached for ${authResult?.userId}`,
+              `[StudioCollab] Per-user studio connection limit reached.`,
             );
             socket?.write(
               "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n",
@@ -201,7 +204,7 @@ export class StudioCollabServer {
           }
 
           const hasAccess = await this.checkProjectAccess(
-            authResult?.userId,
+            authResult.userId,
             projectId,
           );
 
@@ -213,8 +216,8 @@ export class StudioCollabServer {
 
           this.wss!.handleUpgrade(request, socket, head, (ws) => {
             this.wss!.emit("connection", ws, request, {
-              userId: authResult.userId!,
-              displayName: authResult.displayName!,
+              userId: authResult.userId,
+              displayName: authResult.displayName,
               projectId,
               roomId,
               roomGeneration,
@@ -273,11 +276,9 @@ export class StudioCollabServer {
     logger.info(`[StudioCollab] WebSocket server initialized on path: ${path}`);
   }
 
-  private async authenticateRequest(request: IncomingMessage): Promise<{
-    authenticated: boolean;
-    userId?: string;
-    displayName?: string;
-  }> {
+  private async authenticateRequest(
+    request: IncomingMessage,
+  ): Promise<AuthenticatedRequest> {
     const authHeader = request?.headers["authorization"];
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader?.substring(7);

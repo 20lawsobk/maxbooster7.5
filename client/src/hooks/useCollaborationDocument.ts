@@ -134,7 +134,9 @@ export function useCollaborationDocument(
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectDelay = 500;
     const document = new Y.Doc();
-    const text = document.getText("sharedNotes");
+    const text = document.getText(
+      `collaboration-room:${roomId}:${roomGeneration}:sharedNotes`,
+    );
     documentRef.current = document;
     textRef.current = text;
     setSharedTextState(text.toString());

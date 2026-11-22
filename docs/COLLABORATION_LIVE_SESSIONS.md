@@ -25,9 +25,11 @@
 ## Required schema migration
 
 `migrations/0101_collaboration_rooms.sql` creates the durable room and message
-tables. The migration has not been applied to either database by this change.
-Apply it through the repository's approved database migration process before
-enabling collaboration sessions.
+tables. It was applied and verified against the configured application database
+for this workspace. At that time, `NEON_PRIMARY_URL` and `NEON_DATABASE_URL`
+resolved to the same connection string, so this run did not prove a second,
+independent Neon database was migrated. Apply and verify the migration against
+each distinct target before enabling sessions in another environment.
 
 ## Regional media configuration
 
