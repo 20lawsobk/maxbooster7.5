@@ -1,8 +1,12 @@
 import { Router, type Request, type Response } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import {
+  collaborationProjects,
   collaborationRoomMessages,
   collaborationRooms,
+  projectMembers,
+  projects,
+  studioProjects,
   users,
 } from "@shared/schema";
 import { requireAuth } from "../middleware/auth.js";
@@ -10,6 +14,7 @@ import { db } from "../db.js";
 import { getStudioProjectAccess } from "../services/studioProjectAccess.js";
 import {
   collaborationEventBus,
+  type CollaborationRoomClosedEvent,
   type CollaborationRoomMessageEvent,
 } from "../services/collaborationEventBus.js";
 import {
@@ -30,6 +35,43 @@ function senderName(user: {
     [user.firstName, user.lastName].filter(Boolean).join(" ") ||
     "Collaborator"
   );
+}
+
+async function canManageProject(userId: string, projectId: string): Promise<boolean> {
+  const [studio] = await db
+    .select({ ownerId: studioProjects.userId })
+    .from(studioProjects)
+    .where(eq(studioProjects.id, projectId))
+    .limit(1);
+  const [project] = studio
+    ? []
+    : await db
+        .select({ ownerId: projects.userId })
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1);
+  const [collaboration] = studio || project
+    ? []
+    : await db
+        .select({ ownerId: collaborationProjects.ownerId })
+        .from(collaborationProjects)
+        .where(eq(collaborationProjects.id, projectId))
+        .limit(1);
+
+  const ownerId = studio?.ownerId ?? project?.ownerId ?? collaboration?.ownerId;
+  if (ownerId === userId) return true;
+  const [membership] = await db
+    .select({ role: projectMembers.role })
+    .from(projectMembers)
+    .where(
+      and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId),
+        eq(projectMembers.status, "active"),
+      ),
+    )
+    .limit(1);
+  return ["owner", "admin"].includes(membership?.role ?? "");
 }
 
 const router = Router();
@@ -60,6 +102,7 @@ router.get(
           id: room.id,
           projectId: room.projectId,
           state: room.state,
+          generation: room.generation,
           mediaState: room.mediaState,
           mediaRegion: room.mediaRegion,
           participantLimit: room.participantLimit,
@@ -67,6 +110,7 @@ router.get(
           updatedAt: room.updatedAt,
         },
         permissions: access,
+        canManage: await canManageProject(req.user!.id, projectId),
       });
     } catch (error) {
       logger.warn({ projectId: req.params.projectId, err: error }, "Collaboration room read failed");
@@ -101,6 +145,26 @@ router.post(
           target: collaborationRooms.projectId,
           set: {
             state: "active",
+            generation: sql`CASE
+              WHEN ${collaborationRooms.state} = 'closed'
+                THEN ${collaborationRooms.generation} + 1
+              ELSE ${collaborationRooms.generation}
+            END`,
+            mediaState: sql`CASE
+              WHEN ${collaborationRooms.state} = 'closed'
+                THEN 'unavailable'
+              ELSE ${collaborationRooms.mediaState}
+            END`,
+            mediaRegion: sql`CASE
+              WHEN ${collaborationRooms.state} = 'closed'
+                THEN NULL
+              ELSE ${collaborationRooms.mediaRegion}
+            END`,
+            participantLimit: sql`CASE
+              WHEN ${collaborationRooms.state} = 'closed'
+                THEN NULL
+              ELSE ${collaborationRooms.participantLimit}
+            END`,
             endedAt: null,
             updatedAt: new Date(),
           },
@@ -112,6 +176,7 @@ router.post(
           id: room.id,
           projectId: room.projectId,
           state: room.state,
+          generation: room.generation,
           mediaState: room.mediaState,
           mediaRegion: room.mediaRegion,
           participantLimit: room.participantLimit,
@@ -119,10 +184,81 @@ router.post(
           updatedAt: room.updatedAt,
         },
         permissions: access,
+        canManage: await canManageProject(req.user!.id, projectId),
       });
     } catch (error) {
       logger.warn({ projectId: req.params.projectId, err: error }, "Collaboration room open failed");
       return res.status(503).json({ error: "Collaboration room could not be opened" });
+    }
+  },
+);
+
+router.post(
+  "/:projectId/close",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const projectId = String(req.params.projectId ?? "");
+    try {
+      const access = await getStudioProjectAccess(req.user!.id, projectId);
+      if (!access.read) return res.status(403).json({ error: "Access denied" });
+      if (!(await canManageProject(req.user!.id, projectId))) {
+        return res.status(403).json({ error: "Project owner or administrator required" });
+      }
+
+      const [room] = await db
+        .select({
+          id: collaborationRooms.id,
+          generation: collaborationRooms.generation,
+        })
+        .from(collaborationRooms)
+        .where(
+          and(
+            eq(collaborationRooms.projectId, projectId),
+            eq(collaborationRooms.state, "active"),
+          ),
+        )
+        .limit(1);
+      if (!room) return res.status(404).json({ error: "No active room" });
+
+      const closedAt = new Date();
+      const [closed] = await db
+        .update(collaborationRooms)
+        .set({ state: "closed", endedAt: closedAt, updatedAt: closedAt })
+        .where(
+          and(
+            eq(collaborationRooms.id, room.id),
+            eq(collaborationRooms.state, "active"),
+          ),
+        )
+        .returning({ id: collaborationRooms.id });
+      if (!closed) {
+        return res.status(409).json({ error: "The room is already closed" });
+      }
+
+      const event: CollaborationRoomClosedEvent = {
+        type: "room:closed",
+        payload: {
+          roomId: room.id,
+          roomGeneration: room.generation,
+          closedAt: closedAt.toISOString(),
+        },
+      };
+      try {
+        await collaborationEventBus.publishProjectEvent(projectId, event);
+      } catch (error) {
+        logger.warn(
+          { projectId, roomId: room.id, err: error },
+          "Room closed but live participant notification failed",
+        );
+        return res.status(503).json({
+          error: "Room was closed, but participants could not be notified yet",
+          persisted: true,
+        });
+      }
+      return res.json({ closed: true, roomId: room.id, closedAt });
+    } catch (error) {
+      logger.warn({ projectId, err: error }, "Collaboration room close failed");
+      return res.status(503).json({ error: "Collaboration room could not be closed" });
     }
   },
 );

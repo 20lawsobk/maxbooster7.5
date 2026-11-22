@@ -14,10 +14,30 @@ type ConnectionState =
   | "syncing"
   | "connected"
   | "reconnecting"
-  | "denied";
+  | "denied"
+  | "ended";
+
+export interface CollaborationMediaAvailability {
+  available: boolean;
+  state: "unavailable" | "degraded" | "available";
+  region: string | null;
+  participantLimit: number | null;
+  reason: string | null;
+}
+
+export interface CollaborationCallEvent {
+  event: string;
+  userId?: string;
+  producerId?: string;
+  kind?: "audio" | "video";
+  audioEnabled?: boolean;
+  videoEnabled?: boolean;
+}
 
 const SERVER_UPDATE_ORIGIN = Symbol("collaboration-server-update");
 const MAX_ROOM_MESSAGES = 200;
+const MAX_CALL_EVENTS = 100;
+const CALL_REQUEST_TIMEOUT_MS = 15_000;
 
 function toBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -71,7 +91,11 @@ function normalizeMessage(
   };
 }
 
-export function useCollaborationDocument(projectId: string) {
+export function useCollaborationDocument(
+  projectId: string,
+  roomId: string,
+  roomGeneration: number,
+) {
   const [sharedText, setSharedTextState] = useState("");
   const [connectionState, setConnectionState] =
     useState<ConnectionState>("connecting");
@@ -80,10 +104,29 @@ export function useCollaborationDocument(projectId: string) {
     CollaborationRoomMessage[]
   >([]);
   const [connectionEpoch, setConnectionEpoch] = useState(0);
+  const [mediaAvailability, setMediaAvailability] =
+    useState<CollaborationMediaAvailability>({
+      available: false,
+      state: "unavailable",
+      region: null,
+      participantLimit: null,
+      reason: "Checking regional media availability.",
+    });
+  const [callEvents, setCallEvents] = useState<CollaborationCallEvent[]>([]);
   const documentRef = useRef<Y.Doc | null>(null);
   const textRef = useRef<Y.Text | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const canWriteRef = useRef(false);
+  const pendingCallRequests = useRef(
+    new Map<
+      string,
+      {
+        resolve: (value: unknown) => void;
+        reject: (error: Error) => void;
+        timeout: ReturnType<typeof setTimeout>;
+      }
+    >(),
+  );
 
   useEffect(() => {
     let stopped = false;
@@ -98,18 +141,20 @@ export function useCollaborationDocument(projectId: string) {
     setCanWrite(false);
     canWriteRef.current = false;
     setConnectionState("connecting");
+    setCallEvents([]);
+    setMediaAvailability({
+      available: false,
+      state: "unavailable",
+      region: null,
+      participantLimit: null,
+      reason: "Checking regional media availability.",
+    });
 
     const onTextChange = () => setSharedTextState(text.toString());
     text.observe(onTextChange);
 
-    const sendFullDocument = (socket: WebSocket) => {
-      if (
-        !canWriteRef.current ||
-        socket.readyState !== WebSocket.OPEN
-      ) {
-        return;
-      }
-      const update = Y.encodeStateAsUpdate(document);
+    const sendUpdate = (socket: WebSocket, update: Uint8Array) => {
+      if (!canWriteRef.current || socket.readyState !== WebSocket.OPEN) return;
       socket.send(
         JSON.stringify({
           type: "yjs:update",
@@ -122,7 +167,7 @@ export function useCollaborationDocument(projectId: string) {
       if (stopped || denied) return;
       setConnectionState(reconnectDelay === 500 ? "connecting" : "reconnecting");
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const url = `${protocol}//${window.location.host}/ws/studio?projectId=${encodeURIComponent(projectId)}`;
+      const url = `${protocol}//${window.location.host}/ws/studio?projectId=${encodeURIComponent(projectId)}&roomId=${encodeURIComponent(roomId)}&roomGeneration=${roomGeneration}`;
       const socket = new WebSocket(url);
       socketRef.current = socket;
 
@@ -147,9 +192,56 @@ export function useCollaborationDocument(projectId: string) {
           setCanWrite(write);
           return;
         }
+        if (message.type === "call:availability") {
+          const payload = message.payload;
+          if (
+            payload &&
+            typeof payload === "object" &&
+            typeof (payload as CollaborationMediaAvailability).available ===
+              "boolean" &&
+            ["unavailable", "degraded", "available"].includes(
+              String((payload as CollaborationMediaAvailability).state),
+            )
+          ) {
+            setMediaAvailability(payload as CollaborationMediaAvailability);
+          }
+          return;
+        }
+        if (message.type === "call:response") {
+          const payload = message as {
+            requestId?: unknown;
+            ok?: unknown;
+            payload?: unknown;
+            error?: unknown;
+          };
+          if (typeof payload.requestId !== "string") return;
+          const pending = pendingCallRequests.current.get(payload.requestId);
+          if (!pending) return;
+          clearTimeout(pending.timeout);
+          pendingCallRequests.current.delete(payload.requestId);
+          if (payload.ok === true) pending.resolve(payload.payload);
+          else {
+            pending.reject(
+              new Error(
+                typeof payload.error === "string"
+                  ? payload.error
+                  : "Call request failed.",
+              ),
+            );
+          }
+          return;
+        }
+        if (message.type === "call:event") {
+          const payload = message.payload;
+          if (!payload || typeof payload !== "object") return;
+          const event = payload as CollaborationCallEvent;
+          if (typeof event.event !== "string") return;
+          setCallEvents((current) => [...current, event].slice(-MAX_CALL_EVENTS));
+          return;
+        }
         if (message.type === "yjs:sync" || message.type === "yjs:update") {
           const payload = message.payload as
-            | { state?: string; update?: string }
+            | { state?: string; stateVector?: string; update?: string }
             | undefined;
           const encoded =
             message.type === "yjs:sync" ? payload?.state : payload?.update;
@@ -159,7 +251,21 @@ export function useCollaborationDocument(projectId: string) {
             if (message.type === "yjs:sync") {
               setConnectionState("connected");
               setConnectionEpoch((value) => value + 1);
-              sendFullDocument(socket);
+              if (typeof payload?.stateVector === "string") {
+                const serverVector = fromBase64(payload.stateVector);
+                const localVector = Y.encodeStateVector(document);
+                const vectorsMatch =
+                  localVector.length === serverVector.length &&
+                  localVector.every(
+                    (byte, index) => byte === serverVector[index],
+                  );
+                if (!vectorsMatch) {
+                  sendUpdate(
+                    socket,
+                    Y.encodeStateAsUpdate(document, serverVector),
+                  );
+                }
+              }
             }
           } catch {
             socket.close(1002, "Invalid shared document update");
@@ -195,10 +301,20 @@ export function useCollaborationDocument(projectId: string) {
       socket.onclose = (event) => {
         canWriteRef.current = false;
         setCanWrite(false);
+        for (const [requestId, pending] of pendingCallRequests.current) {
+          clearTimeout(pending.timeout);
+          pending.reject(new Error("Call signaling connection closed."));
+          pendingCallRequests.current.delete(requestId);
+        }
         if (stopped) return;
         if (event.code === 1008) {
           denied = true;
           setConnectionState("denied");
+          return;
+        }
+        if (event.code === 4001) {
+          denied = true;
+          setConnectionState("ended");
           return;
         }
         setConnectionState("reconnecting");
@@ -218,12 +334,7 @@ export function useCollaborationDocument(projectId: string) {
         canWriteRef.current &&
         socket?.readyState === WebSocket.OPEN
       ) {
-        socket.send(
-          JSON.stringify({
-            type: "yjs:update",
-            payload: { update: toBase64(update) },
-          }),
-        );
+        sendUpdate(socket, update);
       }
     });
 
@@ -234,11 +345,16 @@ export function useCollaborationDocument(projectId: string) {
       text.unobserve(onTextChange);
       socketRef.current?.close(1000, "Room closed");
       socketRef.current = null;
+      for (const [requestId, pending] of pendingCallRequests.current) {
+        clearTimeout(pending.timeout);
+        pending.reject(new Error("Collaboration room closed."));
+        pendingCallRequests.current.delete(requestId);
+      }
       document.destroy();
       documentRef.current = null;
       textRef.current = null;
     };
-  }, [projectId]);
+  }, [projectId, roomId, roomGeneration]);
 
   const setSharedText = useCallback(
     (nextText: string) => {
@@ -300,6 +416,44 @@ export function useCollaborationDocument(projectId: string) {
     });
   }, []);
 
+  const requestCall = useCallback(
+    <T,>(
+      type: string,
+      payload: Record<string, unknown> = {},
+    ): Promise<T> =>
+      new Promise<T>((resolve, reject) => {
+        const socket = socketRef.current;
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          reject(new Error("Call signaling is not connected."));
+          return;
+        }
+        const requestId = crypto.randomUUID();
+        const timeout = setTimeout(() => {
+          pendingCallRequests.current.delete(requestId);
+          reject(new Error("Call request timed out."));
+        }, CALL_REQUEST_TIMEOUT_MS);
+        pendingCallRequests.current.set(requestId, {
+          resolve: (value) => resolve(value as T),
+          reject,
+          timeout,
+        });
+        try {
+          socket.send(JSON.stringify({ type, requestId, payload }));
+        } catch (error) {
+          clearTimeout(timeout);
+          pendingCallRequests.current.delete(requestId);
+          reject(
+            error instanceof Error
+              ? error
+              : new Error("Call request could not be sent."),
+          );
+        }
+      }),
+    [],
+  );
+
+  const clearCallEvents = useCallback(() => setCallEvents([]), []);
+
   return {
     sharedText,
     setSharedText,
@@ -309,5 +463,9 @@ export function useCollaborationDocument(projectId: string) {
     connectionEpoch,
     replaceRoomMessages,
     addRoomMessage,
+    mediaAvailability,
+    callEvents,
+    clearCallEvents,
+    requestCall,
   };
 }

@@ -2028,6 +2028,17 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   }
 
   try {
+    // Close the native mediasoup worker before the database pool and process exit.
+    const { collaborationMediaPlane } = await import(
+      "./services/collaborationMediaPlane.js"
+    );
+    await collaborationMediaPlane.shutdown();
+    logger.info("[Shutdown] Collaboration media worker stopped");
+  } catch (err) {
+    logger.warn({ err }, "[Shutdown] Collaboration media cleanup failed");
+  }
+
+  try {
     // 4. Stop the platform auto-fixer probe loop.
     const { platformAutoFixer } = await import(
       "./services/platformAutoFixer.js"

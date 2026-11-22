@@ -2,6 +2,7 @@ CREATE TABLE "collaboration_rooms" (
   "id" varchar PRIMARY KEY DEFAULT gen_random_uuid()::text NOT NULL,
   "project_id" varchar NOT NULL UNIQUE,
   "state" text DEFAULT 'active' NOT NULL,
+  "generation" integer DEFAULT 1 NOT NULL,
   "media_state" text DEFAULT 'unavailable' NOT NULL,
   "media_region" varchar,
   "participant_limit" integer,
@@ -11,6 +12,8 @@ CREATE TABLE "collaboration_rooms" (
   "ended_at" timestamp,
   CONSTRAINT "collaboration_rooms_state_check"
     CHECK ("state" IN ('active', 'closed')),
+  CONSTRAINT "collaboration_rooms_generation_check"
+    CHECK ("generation" > 0),
   CONSTRAINT "collaboration_rooms_media_state_check"
     CHECK ("media_state" IN ('unavailable', 'available', 'degraded')),
   CONSTRAINT "collaboration_rooms_participant_limit_check"

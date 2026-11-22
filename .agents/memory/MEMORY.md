@@ -30,3 +30,4 @@
 - [Read-only Git inventory](read-only-git-inventory.md) — set `GIT_OPTIONAL_LOCKS=0` on audit subprocesses to avoid optional index writes in isolated worktrees.
 - [Deterministic completion patches](completion-loop-patching.md) — generate only registered, evidence-bound local fixes and route all writes through the existing isolated executor.
 - [Drizzle public schema](drizzle-public-schema.md) — this Drizzle version rejects `pgSchema("public")`; keep public tables on `pgTable` and qualify raw SQL explicitly.
+- [Collaboration region routing](collaboration-region-routing.md) — use Max Booster’s built-in DNS/storefront for regional discovery; verify media health and capacity separately.

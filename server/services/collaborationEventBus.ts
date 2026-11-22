@@ -17,14 +17,27 @@ export interface CollaborationRoomMessageEvent {
   };
 }
 
+export interface CollaborationRoomClosedEvent {
+  type: "room:closed";
+  payload: {
+    roomId: string;
+    roomGeneration: number;
+    closedAt: string;
+  };
+}
+
+export type CollaborationRoomEvent =
+  | CollaborationRoomMessageEvent
+  | CollaborationRoomClosedEvent;
+
 export type CollaborationEventListener = (
   projectId: string,
-  event: CollaborationRoomMessageEvent,
+  event: CollaborationRoomEvent,
 ) => void;
 
 interface EventEnvelope {
   projectId: string;
-  event: CollaborationRoomMessageEvent;
+  event: CollaborationRoomEvent;
 }
 
 function isRoomMessageEvent(value: unknown): value is CollaborationRoomMessageEvent {
@@ -43,6 +56,22 @@ function isRoomMessageEvent(value: unknown): value is CollaborationRoomMessageEv
   );
 }
 
+function isRoomClosedEvent(value: unknown): value is CollaborationRoomClosedEvent {
+  if (!value || typeof value !== "object") return false;
+  const event = value as Partial<CollaborationRoomClosedEvent>;
+  return (
+    event.type === "room:closed" &&
+    typeof event.payload?.roomId === "string" &&
+    Number.isInteger(event.payload?.roomGeneration) &&
+    Number(event.payload?.roomGeneration) > 0 &&
+    typeof event.payload?.closedAt === "string"
+  );
+}
+
+function isCollaborationRoomEvent(value: unknown): value is CollaborationRoomEvent {
+  return isRoomMessageEvent(value) || isRoomClosedEvent(value);
+}
+
 function isEventEnvelope(value: unknown): value is EventEnvelope {
   if (!value || typeof value !== "object") return false;
   const envelope = value as Partial<EventEnvelope>;
@@ -50,7 +79,7 @@ function isEventEnvelope(value: unknown): value is EventEnvelope {
     typeof envelope.projectId === "string" &&
     envelope.projectId.length > 0 &&
     envelope.projectId.length <= 255 &&
-    isRoomMessageEvent(envelope.event)
+    isCollaborationRoomEvent(envelope.event)
   );
 }
 
@@ -120,7 +149,7 @@ export class CollaborationEventBus {
 
   async publishProjectEvent(
     projectId: string,
-    event: CollaborationRoomMessageEvent,
+    event: CollaborationRoomEvent,
   ): Promise<number> {
     if (!isPdimConfigured()) {
       throw new Error("PDIM is required for cross-instance collaboration events");
@@ -128,7 +157,7 @@ export class CollaborationEventBus {
     if (
       !projectId ||
       projectId.length > 255 ||
-      !isRoomMessageEvent(event)
+      !isCollaborationRoomEvent(event)
     ) {
       throw new Error("Invalid collaboration event");
     }
@@ -140,19 +169,32 @@ export class CollaborationEventBus {
     if (!publisher || typeof (publisher as any).publish !== "function") {
       throw new Error("PDIM collaboration event publisher is unavailable");
     }
-    return Number(await (publisher as any).publish(CHANNEL, encoded));
+    const subscriberCount = Number(
+      await (publisher as any).publish(CHANNEL, encoded),
+    );
+    if (!Number.isInteger(subscriberCount) || subscriberCount < 1) {
+      throw new Error("No collaboration event subscribers are available");
+    }
+    return subscriberCount;
   }
 
   async shutdown(): Promise<void> {
     const subscriber = this.subscriber as any;
-    if (subscriber && this.initialization) {
-      await this.initialization.catch(() => undefined);
-      await subscriber.unsubscribe?.(CHANNEL);
-      await subscriber.quit?.();
+    try {
+      if (this.initialization) await this.initialization;
+      await subscriber?.unsubscribe?.(CHANNEL);
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to unsubscribe collaboration events");
     }
-    this.listeners.clear();
-    this.subscriber = null;
-    this.initialization = null;
+    try {
+      await subscriber?.quit?.();
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to close collaboration event subscriber");
+    } finally {
+      this.listeners.clear();
+      this.subscriber = null;
+      this.initialization = null;
+    }
   }
 }
 

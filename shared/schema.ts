@@ -6109,6 +6109,7 @@ export const collaborationRooms = pgTable("collaboration_rooms", {
     .default(sql`gen_random_uuid()::text`),
   projectId: varchar("project_id").notNull().unique(),
   state: text("state").notNull().default("active"),
+  generation: integer("generation").notNull().default(1),
   mediaState: text("media_state").notNull().default("unavailable"),
   mediaRegion: varchar("media_region"),
   participantLimit: integer("participant_limit"),
@@ -6122,6 +6123,10 @@ export const collaborationRooms = pgTable("collaboration_rooms", {
   stateCheck: check(
     "collaboration_rooms_state_check",
     sql`${table.state} IN ('active', 'closed')`,
+  ),
+  generationCheck: check(
+    "collaboration_rooms_generation_check",
+    sql`${table.generation} > 0`,
   ),
   mediaStateCheck: check(
     "collaboration_rooms_media_state_check",

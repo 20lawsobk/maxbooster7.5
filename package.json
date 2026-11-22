@@ -329,6 +329,8 @@
     "libphonenumber-js": "^1.12.42",
     "lucide-react": "^0.564.0",
     "maxmind": "^5.0.6",
+    "mediasoup": "^3.32.2",
+    "mediasoup-client": "^3.26.0",
     "memoizee": "^0.4.17",
     "memorystore": "^1.6.7",
     "msgpackr": "^2.0.5",

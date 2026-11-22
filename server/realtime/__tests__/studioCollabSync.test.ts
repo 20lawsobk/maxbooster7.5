@@ -5,6 +5,9 @@ const mocks = vi.hoisted(() => ({
   subscribe: vi.fn(),
   load: vi.fn(),
   unload: vi.fn(),
+  verifyAccessToken: vi.fn(),
+  redisGet: vi.fn(),
+  projectAccess: vi.fn(),
   logger: { warn: vi.fn(), info: vi.fn() },
 }));
 
@@ -17,13 +20,15 @@ vi.mock("../../services/yjsService.js", () => ({
   },
 }));
 vi.mock("../../realtime/presenceManager.js", () => ({ presenceManager: {} }));
-vi.mock("../../services/jwtAuthService.js", () => ({ jwtAuthService: {} }));
+vi.mock("../../services/jwtAuthService.js", () => ({
+  jwtAuthService: { verifyAccessToken: mocks.verifyAccessToken },
+}));
 vi.mock("../../storage.js", () => ({ storage: {} }));
 vi.mock("../../services/studioProjectAccess.js", () => ({
-  getStudioProjectAccess: vi.fn(),
+  getStudioProjectAccess: mocks.projectAccess,
 }));
 vi.mock("../../lib/redisConnectionFactory.js", () => ({
-  getRedisClient: vi.fn(),
+  getRedisClient: vi.fn(async () => ({ get: mocks.redisGet })),
 }));
 vi.mock("../../logger.js", () => ({ logger: mocks.logger }));
 
@@ -81,5 +86,93 @@ describe("StudioCollabServer shared document loading", () => {
     expect(secondDoc).toBe(doc);
     expect(mocks.load).toHaveBeenCalledTimes(1);
     expect(mocks.subscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it("revalidates bearer and session credentials for active connections", async () => {
+    const server = new StudioCollabServer() as any;
+    mocks.verifyAccessToken.mockResolvedValue({ userId: "user-one" });
+    await expect(
+      server.isCredentialStillValid(
+        { headers: { authorization: "Bearer signed-token" } },
+        "user-one",
+      ),
+    ).resolves.toBe(true);
+    await expect(
+      server.isCredentialStillValid(
+        { headers: { authorization: "Bearer signed-token" } },
+        "user-two",
+      ),
+    ).resolves.toBe(false);
+
+    mocks.redisGet.mockResolvedValue(
+      JSON.stringify({ passport: { user: "user-one" } }),
+    );
+    await expect(
+      server.isCredentialStillValid(
+        { headers: { cookie: "connect.sid=s%3Asession-id.signature" } },
+        "user-one",
+      ),
+    ).resolves.toBe(true);
+    mocks.redisGet.mockResolvedValue(null);
+    await expect(
+      server.isCredentialStillValid(
+        { headers: { cookie: "connect.sid=s%3Asession-id.signature" } },
+        "user-one",
+      ),
+    ).resolves.toBe(false);
+  });
+
+  it("closes active collaboration sockets when project read access is revoked", async () => {
+    mocks.verifyAccessToken.mockResolvedValue({ userId: "user-one" });
+    mocks.projectAccess.mockResolvedValue({ read: false, write: false });
+    const server = new StudioCollabServer() as any;
+    const client = {
+      ws: { readyState: 1, close: vi.fn(), ping: vi.fn() },
+      userId: "user-one",
+      projectId: "project-one",
+      roomId: null,
+      roomGeneration: null,
+      authFingerprint: "auth-one",
+      request: { headers: { authorization: "Bearer signed-token" } },
+      isAlive: true,
+      inCall: false,
+      publishingMedia: false,
+    };
+    server.clients.set("project-one", new Set([client]));
+    vi.spyOn(server, "handleDisconnect").mockResolvedValue(undefined);
+
+    await server.refreshActiveConnections();
+
+    expect(client.ws.close).toHaveBeenCalledWith(1008, "Project access revoked");
+  });
+
+  it("closes active media publishers when project write access is revoked", async () => {
+    mocks.verifyAccessToken.mockResolvedValue({ userId: "user-one" });
+    mocks.projectAccess.mockResolvedValue({ read: true, write: false });
+    const server = new StudioCollabServer() as any;
+    const client = {
+      ws: { readyState: 1, close: vi.fn(), ping: vi.fn() },
+      userId: "user-one",
+      projectId: "project-one",
+      roomId: null,
+      roomGeneration: null,
+      authFingerprint: "auth-one",
+      request: { headers: { authorization: "Bearer signed-token" } },
+      isAlive: true,
+      inCall: true,
+      publishingMedia: true,
+    };
+    server.clients.set("project-one", new Set([client]));
+    vi.spyOn(server, "handleDisconnect").mockResolvedValue(undefined);
+    const checkAccess = vi.spyOn(server, "checkProjectAccess");
+
+    await server.refreshActiveConnections();
+
+    expect(client.ws.close).toHaveBeenCalledWith(1008, "Project access revoked");
+    expect(checkAccess).toHaveBeenCalledWith(
+      "user-one",
+      "project-one",
+      "write",
+    );
   });
 });

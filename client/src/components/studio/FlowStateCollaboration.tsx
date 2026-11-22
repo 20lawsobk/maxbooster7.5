@@ -10,12 +10,24 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { CollaborationCallControls } from "@/components/studio/CollaborationCallControls";
 import {
   useCollaborationDocument,
   type CollaborationRoomMessage,
@@ -26,9 +38,11 @@ interface CollaborationRoom {
   id: string;
   projectId: string;
   state: "active" | "closed";
+  generation: number;
   mediaState: "unavailable" | "available" | "degraded";
   mediaRegion: string | null;
   participantLimit: number | null;
+  canManage: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,11 +101,16 @@ export function FlowStateCollaboration({
           );
         }
         if (!response.ok) throw new Error(await readError(response));
-        const result = (await response.json()) as { room?: CollaborationRoom };
+        const result = (await response.json()) as {
+          room?: Omit<CollaborationRoom, "canManage">;
+          canManage?: boolean;
+        };
         if (!result.room?.id || result.room.projectId !== projectId) {
           throw new Error("The server returned an invalid collaboration room");
         }
-        if (!cancelled) setRoom(result.room);
+        if (!cancelled) {
+          setRoom({ ...result.room, canManage: result.canManage === true });
+        }
       } catch (error) {
         if (!cancelled) {
           setRoomError(
@@ -174,9 +193,15 @@ function ActiveCollaborationRoom({
     connectionEpoch,
     replaceRoomMessages,
     addRoomMessage,
-  } = useCollaborationDocument(projectId);
+    mediaAvailability,
+    callEvents,
+    clearCallEvents,
+    requestCall,
+  } = useCollaborationDocument(projectId, room.id, room.generation);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [roomEnded, setRoomEnded] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -258,13 +283,53 @@ function ActiveCollaborationRoom({
     }
   };
 
+  const endRoom = async () => {
+    if (!room.canManage || closing) return;
+    setClosing(true);
+    try {
+      const csrfToken = getCsrfTokenFromCookie();
+      const response = await fetch(
+        `/api/collaboration/rooms/${encodeURIComponent(projectId)}/close`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+        },
+      );
+      const result = (await response.json()) as {
+        error?: string;
+        persisted?: boolean;
+      };
+      if (!response.ok && !result.persisted) {
+        throw new Error(result.error || `Close failed (${response.status})`);
+      }
+      setRoomEnded(true);
+      toast({
+        title: "Session ended",
+        description: result.persisted
+          ? "The room is closed. Connected participants will be removed as room state refreshes."
+          : "The room is closed and participants have been notified.",
+      });
+    } catch (error) {
+      toast({
+        title: "Could not end session",
+        description: error instanceof Error ? error.message : "Please retry",
+        variant: "destructive",
+      });
+    } finally {
+      setClosing(false);
+    }
+  };
+
   const connectionLabel = {
     connecting: "Connecting",
     syncing: "Syncing",
     connected: "Live",
     reconnecting: "Reconnecting",
     denied: "Access ended",
+    ended: "Session ended",
   }[connectionState];
+  const visibleConnectionLabel = roomEnded ? "Session ended" : connectionLabel;
 
   return (
     <div className={cn("flex h-full min-h-[36rem] flex-col bg-background", className)}>
@@ -277,17 +342,50 @@ function ActiveCollaborationRoom({
           </div>
         </div>
         <Badge
-          variant={connectionState === "connected" ? "default" : "secondary"}
+          variant={
+            connectionState === "connected" && !roomEnded ? "default" : "secondary"
+          }
           className="gap-1"
           role="status"
         >
-          {connectionState === "connected" ? (
+          {connectionState === "connected" && !roomEnded ? (
             <Wifi className="h-3 w-3" />
           ) : (
             <WifiOff className="h-3 w-3" />
           )}
-          {connectionLabel}
+          {visibleConnectionLabel}
         </Badge>
+        {room.canManage && !roomEnded && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                End session
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>End this collaboration session?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Everyone currently connected to this project room will be
+                  disconnected. The room can be reopened later by an authorized
+                  project member.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep session open</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void endRoom();
+                  }}
+                  disabled={closing}
+                >
+                  {closing ? "Ending…" : "End session"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </header>
 
       <div className="grid min-h-0 flex-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.75fr)]">
@@ -302,12 +400,14 @@ function ActiveCollaborationRoom({
             aria-label="Shared collaboration notes"
             value={sharedText}
             onChange={(event) => setSharedText(event.target.value)}
-            disabled={!canWrite || connectionState !== "connected"}
+            disabled={
+              roomEnded || !canWrite || connectionState !== "connected"
+            }
             placeholder="Write lyrics or notes for this project…"
             className="min-h-[18rem] flex-1 resize-none"
           />
           <p className="text-xs text-muted-foreground">
-            Changes are synchronized through the project’s persisted Yjs document.
+              Changes are synchronized through the project&apos;s persisted Yjs document.
           </p>
 
           <Card className="mt-2">
@@ -318,17 +418,14 @@ function ActiveCollaborationRoom({
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              {room.mediaState === "available" && room.mediaRegion ? (
-                <>
-                  Media capacity is assigned in region{" "}
-                  <strong>{room.mediaRegion}</strong>
-                  {room.participantLimit
-                    ? `, with a tested limit of ${room.participantLimit} participants.`
-                    : ". The tested participant limit is not published yet."}
-                </>
-              ) : (
-                "Calls are unavailable: no healthy, load-tested self-managed media region is assigned to this room."
-              )}
+              <CollaborationCallControls
+                availability={mediaAvailability}
+                callEvents={callEvents}
+                clearCallEvents={clearCallEvents}
+                connectionState={connectionState}
+                currentUserId={currentUserId}
+                requestCall={requestCall}
+              />
             </CardContent>
           </Card>
         </section>
@@ -381,7 +478,9 @@ function ActiveCollaborationRoom({
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               maxLength={4_000}
-              disabled={!canWrite || connectionState !== "connected" || sending}
+              disabled={
+                roomEnded || !canWrite || connectionState !== "connected" || sending
+              }
               placeholder={canWrite ? "Write a room message…" : "Read-only access"}
               aria-label="Room message"
             />
@@ -390,6 +489,7 @@ function ActiveCollaborationRoom({
               size="icon"
               disabled={
                 !draft.trim() ||
+                roomEnded ||
                 !canWrite ||
                 connectionState !== "connected" ||
                 sending

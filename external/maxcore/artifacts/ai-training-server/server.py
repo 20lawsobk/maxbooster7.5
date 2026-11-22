@@ -878,7 +878,6 @@ def _init_ai_model():
     global _creative_model, _tokenizer, _script_agent, _visual_spec_agent
     global _distribution_agent, _optimization_agent, _repo, _adapter, _render_manager
     global _image_engine, _model_config
-    from ai_model.generation.release import load_selected_release
     mode = os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness")
     _model_ready = False
     try:
@@ -893,6 +892,10 @@ def _init_ai_model():
                 Path(__file__).parent / "ai_model" / "weights",
                 supplied_path=os.environ.get("MAXCORE_CHECKPOINT_PATH"),
             )
+        # Delay the generation package and its numerical dependencies until the
+        # requested release has passed its file/provenance preflight.
+        from ai_model.generation.release import load_selected_release
+
         selected, status = load_selected_release(mode)
         _serving_release_status = status
         if selected is None:
