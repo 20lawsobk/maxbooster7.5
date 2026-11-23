@@ -284,12 +284,27 @@ def consent(args, n_hint=""):
 # --------------------------------------------------------------------------
 
 class AIRemediator:
-    def __init__(self, root, cfg, args, extra_env=None, backup_dir=None, model_fn=None):
+    def __init__(
+        self,
+        root,
+        cfg,
+        args,
+        extra_env=None,
+        backup_dir=None,
+        model_fn=None,
+        audit_module=None,
+    ):
         self.root = Path(root).resolve()
         self.cfg, self.a, self.backup_dir = cfg, args, backup_dir
+        self.audit = audit_module or pa
         self.model_fn = model_fn or (lambda system, user: call_model(system, user, self.a.model))
         self.test_cmd = shlex.split(args.test_cmd) if args.test_cmd else detect_test_cmd(self.root)
-        self.env = {**os.environ, "CI": "1", "PYTHONDONTWRITEBYTECODE": "1", **(extra_env or {})}
+        self.env = {**os.environ, "CI": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+        for name, value in (extra_env or {}).items():
+            if value is None:
+                self.env.pop(name, None)
+            else:
+                self.env[name] = value
         self.calls = 0
         self.records, self.touched, self.created = [], set(), set()
         self.deferred, self.attempted = set(), set()
@@ -339,7 +354,7 @@ class AIRemediator:
         return self.model_fn(SYSTEM_PROMPT, user)
 
     def scan(self, rel):
-        return pa.scan_file((str(self.root / rel), rel, self.cfg))
+        return self.audit.scan_file((str(self.root / rel), rel, self.cfg))
 
     def metrics(self, res, rules):
         """Lower is better. Hit rules count occurrences; repo rules are 0/1 flags."""
@@ -446,7 +461,7 @@ class AIRemediator:
         return re.sub(r"^test_|_test$", "", stem)
 
     def tested_stems(self, eng):
-        return {self.norm_stem(rel) for _full, rel in eng.discover() if pa.is_test_path(rel)}
+        return {self.norm_stem(rel) for _full, rel in eng.discover() if self.audit.is_test_path(rel)}
 
     def collect_work(self, eng, rep):
         self.tested = self.tested_stems(eng)
@@ -476,7 +491,7 @@ class AIRemediator:
             if ext not in set(self.cfg["code_exts"]):
                 continue
             base = os.path.basename(rel)
-            if pa.is_test_path(rel):
+            if self.audit.is_test_path(rel):
                 stem = os.path.splitext(base)[0]
                 stem = re.sub(r"\.(test|spec)$", "", stem)
                 stem = re.sub(r"^test_|_test$", "", stem)
@@ -639,7 +654,7 @@ class AIRemediator:
                 path = self.safe_path(f.get("path") if isinstance(f, dict) else None)
                 content = f.get("content") if isinstance(f, dict) else None
                 frel = f.get("path") if isinstance(f, dict) else None
-                if (path is None or not isinstance(content, str) or not pa.is_test_path(frel)
+                if (path is None or not isinstance(content, str) or not self.audit.is_test_path(frel)
                         or path.exists() or len(content) > 40000 or not ASSERT_RE.search(content)):
                     bad = f"invalid test file {frel!r} (must be a new test path with real assertions)"
                     break
@@ -835,8 +850,18 @@ def render_policy(pol):
 
 
 class AgentRemediator(AIRemediator):
-    def __init__(self, root, cfg, args, extra_env=None, backup_dir=None, model_fn=None, chat_fn=None):
-        super().__init__(root, cfg, args, extra_env, backup_dir, model_fn)
+    def __init__(
+        self,
+        root,
+        cfg,
+        args,
+        extra_env=None,
+        backup_dir=None,
+        model_fn=None,
+        chat_fn=None,
+        audit_module=None,
+    ):
+        super().__init__(root, cfg, args, extra_env, backup_dir, model_fn, audit_module)
         self.chat_fn = chat_fn or (lambda s, m, t: call_model_tools(s, m, t, self.a.model, thinking=self.a.ai_thinking))
         self._profile = None
         self._active = None
@@ -857,7 +882,7 @@ class AgentRemediator(AIRemediator):
         entries = []
         for dirpath, dirs, files in os.walk(self.root):
             depth = os.path.relpath(dirpath, self.root).count(os.sep)
-            dirs[:] = sorted(d for d in dirs if d not in pa.SKIP_DIRS and not d.startswith("."))
+            dirs[:] = sorted(d for d in dirs if d not in self.audit.SKIP_DIRS and not d.startswith("."))
             if depth >= 2:
                 dirs[:] = []
             for f in sorted(files):
@@ -876,18 +901,17 @@ class AgentRemediator(AIRemediator):
 
     def denied_read(self, rel):
         base = os.path.basename(rel)
-        if re.match(r"^\.env", base) and not base.endswith(pa.ENV_SAFE_SUFFIXES):
+        if re.match(r"^\.env", base) and not base.endswith(self.audit.ENV_SAFE_SUFFIXES):
             return "environment file"
         p = self.root / rel
-        if pa.is_binary(str(p)):
+        if self.audit.is_binary(str(p)):
             return "binary file"
         if any(h[0] == "secret" for h in self.scan(rel)["hits"]) and not self.a.ai_send_secrets:
             return "file contains a possible secret"
         return None
 
-    @staticmethod
-    def redact_line(line):
-        if any(rx.search(line) for _l, rx in pa.SECRET_RULES) or pa.GENERIC_SECRET_RE.search(line):
+    def redact_line(self, line):
+        if any(rx.search(line) for _l, rx in self.audit.SECRET_RULES) or self.audit.GENERIC_SECRET_RE.search(line):
             return "[line redacted: possible secret]"
         return line
 
@@ -1200,7 +1224,7 @@ class AgentRemediator(AIRemediator):
             return "file already exists; use edit_file"
         if not isinstance(content, str) or not content.strip() or len(content) > 40000:
             return "content must be non-empty and under 40KB"
-        if pa.is_test_path(rel) or ext not in set(self.cfg["code_exts"]):
+        if self.audit.is_test_path(rel) or ext not in set(self.cfg["code_exts"]):
             return "must be a non-test source file"
         inh, d = self.inhouse_dir.strip("/"), os.path.dirname(rel)
         tdir = os.path.dirname(st["rel"]) if st["rel"] else None
@@ -1243,7 +1267,7 @@ class AgentRemediator(AIRemediator):
         header = "Reference for BEHAVIOR ANALYSIS only. Write original code; do not copy it.\n"
         if p.is_dir():
             return header + "\n".join(sorted(os.listdir(p))[:100])
-        if not p.is_file() or pa.is_binary(str(p)):
+        if not p.is_file() or self.audit.is_binary(str(p)):
             return "not a readable text file"
         lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
         start = max(1, int(inp.get("start_line") or 1))
@@ -1253,7 +1277,7 @@ class AgentRemediator(AIRemediator):
     def iter_code_files(self):
         exts = set(self.cfg["code_exts"])
         for dirpath, dirs, files in os.walk(self.root):
-            dirs[:] = [d for d in dirs if d not in pa.SKIP_DIRS]
+            dirs[:] = [d for d in dirs if d not in self.audit.SKIP_DIRS]
             for fn in files:
                 if os.path.splitext(fn)[1].lower() in exts:
                     full = os.path.join(dirpath, fn)
@@ -1277,7 +1301,7 @@ class AgentRemediator(AIRemediator):
                 if not p.is_dir():
                     return "not a directory", None
                 names = [n + ("/" if (p / n).is_dir() else "") for n in sorted(os.listdir(p))
-                         if n not in pa.SKIP_DIRS][:200]
+                         if n not in self.audit.SKIP_DIRS][:200]
                 return "\n".join(names) or "(empty)", None
             if name == "read_file":
                 return self.t_read(inp), None
@@ -1338,14 +1362,14 @@ class AgentRemediator(AIRemediator):
         glob = inp.get("glob")
         out, scanned = [], 0
         for dirpath, dirs, files in os.walk(self.root):
-            dirs[:] = [d for d in dirs if d not in pa.SKIP_DIRS]
+            dirs[:] = [d for d in dirs if d not in self.audit.SKIP_DIRS]
             for fn in files:
                 rel = os.path.relpath(os.path.join(dirpath, fn), self.root).replace(os.sep, "/")
                 if (glob and not fnmatch.fnmatch(rel, glob)) or re.match(r"^\.env", fn):
                     continue
                 full = os.path.join(dirpath, fn)
                 try:
-                    if os.path.getsize(full) > 1_000_000 or pa.is_binary(full):
+                    if os.path.getsize(full) > 1_000_000 or self.audit.is_binary(full):
                         continue
                 except OSError:
                     continue
@@ -1366,7 +1390,7 @@ class AgentRemediator(AIRemediator):
         rel = self.rel_of(inp.get("path"))
         base = os.path.basename(rel)
         fresh = rel in st["created"] or rel in st["new_src"]
-        if pa.is_test_path(rel) and rel not in st["created"]:
+        if self.audit.is_test_path(rel) and rel not in st["created"]:
             return "existing tests may not be modified"
         if (base in DENY_EDIT_NAMES or rel.startswith(".github/")) and not self.a.ai_allow_manifests:
             return "dependency manifests, build config and CI files may not be edited in this mode"
@@ -1396,7 +1420,7 @@ class AgentRemediator(AIRemediator):
         content = inp.get("content")
         if (self.root / frel).exists():
             return "file already exists; only new test files may be created"
-        if not isinstance(content, str) or not pa.is_test_path(frel) or len(content) > 40000:
+        if not isinstance(content, str) or not self.audit.is_test_path(frel) or len(content) > 40000:
             return "must be a new file at a test path (tests/, *_test.*, *.test.*, test_*) under 40KB"
         if not ASSERT_RE.search(content):
             return "test file has no assertions"
@@ -1524,13 +1548,13 @@ class AgentRemediator(AIRemediator):
             if not st["new_src"]:
                 problems.append("create the in-house module with create_module")
             remaining = [rel for _f, rel in self.iter_code_files()
-                         if not pa.is_test_path(rel) and name in pau.third_party_imports(rel, self.read(rel) or "", ctx)]
+                         if not self.audit.is_test_path(rel) and name in pau.third_party_imports(rel, self.read(rel) or "", ctx)]
             if remaining:
                 problems.append(f"`{name}` is still imported by: {remaining[:6]}")
             for r in st["created"]:
                 if name in pau.third_party_imports(r, self.read(r) or "", ctx):
                     problems.append(f"test {r} imports `{name}`: freeze the original's outputs as golden values instead")
-            st["tests_import_dep"] = [rel for _f, rel in self.iter_code_files() if pa.is_test_path(rel)
+            st["tests_import_dep"] = [rel for _f, rel in self.iter_code_files() if self.audit.is_test_path(rel)
                                       and rel not in st["created"] and name in pau.third_party_imports(rel, self.read(rel) or "", ctx)]
 
         removed = 0

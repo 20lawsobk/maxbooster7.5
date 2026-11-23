@@ -18,6 +18,28 @@ client against the configured .NET SDK and restores its pinned NuGet dependency
 when needed. It can roll forward to a later installed .NET runtime.
 All runtimes require `ANTHROPIC_API_KEY` in the process environment.
 
+`production_audit_suite.py` uses the same runtime selector for its optional
+`--ai-review` and `--ai-remediate` modes. The default audit remains local and
+deterministic. AI modes require an API key and explicit confirmation
+(`--confirm-ai` for non-interactive use). Review sends a bounded audit summary;
+remediation can inspect eligible repository files, edit files, and run the
+selected test command. Remediation continues to withhold files containing
+detected secrets, refuse manifest edits, and revert changes that fail its
+syntax, audit-regression, or test gates. Backups are written outside the
+repository by default.
+
+Example:
+
+```sh
+python3 production_audit_suite.py --ai-review --sdk-runtime node --confirm-ai
+```
+
+Set the key through the workspace secrets manager before running the command.
+
+Use `--ai-remediate` instead of `--ai-review` only when you intend to permit
+guarded code edits and local test execution. This does not make the heuristic
+audit a production certification.
+
 Model-assisted repository analysis sends eligible source excerpts to Anthropic
 only after the existing source-upload confirmation. Files flagged by the
 secret scanner remain withheld. Model-assisted remediation continues to apply
