@@ -1,26 +1,20 @@
 #!/usr/bin/env python3
 # audit:ignore-file  (this file defines the audit's own detection vocabulary and test fixtures)
 """
-REPAIR SCOPE: The supplied source ended inside _build_repo_findings. This
-file repairs that audit-engine portion and adds its missing _log and
-calculate_score methods. Import ProductionAuditEngine to use this portion.
-The original usage notes below describe code that was not supplied: there is
-no CLI entry point, AI/remediation pipeline, or --self-test implementation here.
+Production audit engine and command-line runner (stdlib only, Python 3.9+).
 
-Original header (for context; its commands require the missing remainder):
-production_audit_suite.py: audit -> understand -> remediate -> re-audit, in one file (stdlib only, Python 3.9+).
+  python production_audit_suite.py                   audit the current folder
+  python production_audit_suite.py --repo PATH       audit another folder
+  python production_audit_suite.py --json            print the report as JSON
+  python production_audit_suite.py --help            show all scan options
 
-  python production_audit_suite.py --repo PATH --audit-only              audit and report only
-  python production_audit_suite.py --repo PATH                           dry run: audit + planned fixes + diff
-  python production_audit_suite.py --repo PATH --apply [--commit]        apply safe fixes, then re-audit
-  python production_audit_suite.py --repo PATH --apply --ai              + AI agent for TODOs, logging, tests, ...
-  python production_audit_suite.py --repo PATH --apply --ai --build      + finish unfinished features from the intent map
-  python production_audit_suite.py --repo PATH --apply --ai --replace-third-party [PKG ...]
-  python production_audit_suite.py --repo PATH --ai --understand         analysis only: writes understanding/intent_map.*
-  python production_audit_suite.py --self-test                           verify the whole pipeline end to end (offline)
+The default run scans files and prints findings; it does not modify the repo.
+No third-party packages or API keys are required. AI/remediation routines were
+not included in the supplied source and are not implemented here.
 
-AI modes need ANTHROPIC_API_KEY. Everything the AI changes passes hard gates (syntax, audit regression, tests,
-no new third-party imports, documented decisions) or is rolled back. Read the report and diff before merging.
+Exit codes: 0 = audit completed; 1 = findings with --fail-on-findings;
+2 = invalid arguments or an execution error; 130 = interrupted.
+The score and readiness flag represent heuristic checks, not certification.
 """
 
 # ==========================================================================
@@ -38,6 +32,7 @@ import sys
 from collections import Counter, defaultdict
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from datetime import datetime, timezone
+from multiprocessing import freeze_support
 from pathlib import Path
 
 # --------------------------------------------------------------------------
@@ -473,3 +468,114 @@ class ProductionAuditEngine:
         """Write progress to stderr, honoring quiet mode when provided."""
         if not getattr(self.args, "quiet", False):
             print(message, file=sys.stderr, flush=True)
+
+
+# --------------------------------------------------------------------------
+# Command-line runner
+# --------------------------------------------------------------------------
+
+def build_parser():
+    parser = argparse.ArgumentParser(
+        description="Audit the current folder or --repo PATH and print findings.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--repo", type=Path, default=Path("."), metavar="PATH",
+                        help="Repository folder to scan")
+    parser.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 1),
+                        help="Number of scanner processes")
+    parser.add_argument("--scan-all", action="store_true",
+                        help="Check markers in all text files, not just code")
+    parser.add_argument("--no-git", action="store_true",
+                        help="Walk the folder instead of using git ls-files")
+    parser.add_argument("--include", action="append", default=[], metavar="GLOB",
+                        help="Include matching relative paths; repeat as needed")
+    parser.add_argument("--exclude", action="append", default=[], metavar="GLOB",
+                        help="Exclude matching relative paths; repeat as needed")
+    parser.add_argument("--extra-code-ext", action="append", default=[], metavar="EXT",
+                        help="Additional code extension, such as .ipynb; repeat as needed")
+    parser.add_argument("--max-scan-mb", type=float, default=10.0,
+                        help="Maximum file size in MiB; 0 removes the size limit")
+    parser.add_argument("--max-hits-per-file", type=int, default=100,
+                        help="Maximum detailed hits per rule per file")
+    parser.add_argument("--large-file-lines", type=int, default=1000,
+                        help="Report source files longer than this many lines")
+    parser.add_argument("--ready-threshold", type=int, default=90,
+                        help="Minimum heuristic score for the audit gate (0-100)")
+    parser.add_argument("--quiet", action="store_true",
+                        help="Suppress progress messages; still print the report")
+    parser.add_argument("--json", dest="json_output", action="store_true",
+                        help="Print JSON instead of the readable report")
+    parser.add_argument("--audit-only", action="store_true",
+                        help="Audit and report only (already the default)")
+    parser.add_argument("--fail-on-findings", action="store_true",
+                        help="Exit with status 1 when the audit reports any findings")
+    return parser
+
+
+def print_report(report):
+    stats = report["stats"]
+    print("Production audit report")
+    print(f"Repository: {report['repository']}")
+    print(f"Score: {report['production_score']}/100")
+    gate = "PASS" if report["production_ready"] else "FAIL"
+    print(f"Audit gate: {gate} (heuristic checks only)")
+    print(f"Files scanned: {stats.get('files', 0)} | "
+          f"Source: {stats.get('source_files', 0)} | Tests: {stats.get('test_files', 0)}")
+    print(f"Findings: {report['finding_count']} | Blockers: {report['blockers']}")
+    print(f"Skipped: {stats.get('skipped', 0)} | Binary: {stats.get('binary', 0)}")
+    if not report["findings"]:
+        print("\nNo findings detected by the configured checks.")
+    for finding in sorted(
+        report["findings"],
+        key=lambda f: (SEVERITY_ORDER.index(f["severity"]), f["file"], f["rule"]),
+    ):
+        print(f"\n[{finding['severity']}] {finding['file']}: {finding['title']} "
+              f"({finding['count']} occurrence(s))")
+        print(f"  {finding['details']}")
+        print(f"  Recommendation: {finding['recommendation']}")
+
+
+def main(argv=None):
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    for option in ("workers", "max_hits_per_file", "large_file_lines"):
+        if getattr(args, option) < 1:
+            parser.error(f"--{option.replace('_', '-')} must be at least 1")
+    if sys.platform == "win32" and args.workers > 61:
+        parser.error("--workers must not exceed 61 on Windows")
+    if not math.isfinite(args.max_scan_mb) or args.max_scan_mb < 0:
+        parser.error("--max-scan-mb must be a finite number greater than or equal to 0")
+    if not 0 <= args.ready_threshold <= 100:
+        parser.error("--ready-threshold must be between 0 and 100")
+    extensions = []
+    for extension in args.extra_code_ext:
+        extension = extension.strip().lower()
+        if not extension or extension == "." or "/" in extension or "\\" in extension:
+            parser.error("--extra-code-ext must be a file extension, such as .ipynb")
+        extensions.append(extension if extension.startswith(".") else "." + extension)
+    args.extra_code_ext = extensions
+
+    try:
+        repo = args.repo.expanduser().resolve()
+        if not repo.is_dir():
+            parser.error(f"--repo must point to an existing directory: {repo}")
+        # Detect an unreadable root before discovery can skip directory errors.
+        with os.scandir(repo):
+            pass
+        report = ProductionAuditEngine(repo, args).execute()
+        if args.json_output:
+            print(json.dumps(report, indent=2))
+        else:
+            print_report(report)
+    except KeyboardInterrupt:
+        print("Audit interrupted.", file=sys.stderr)
+        return 130
+    except (OSError, RuntimeError) as exc:
+        print(f"Audit failed: {exc}", file=sys.stderr)
+        return 2
+    return 1 if args.fail_on_findings and report["finding_count"] else 0
+
+
+if __name__ == "__main__":
+    freeze_support()
+    raise SystemExit(main())
