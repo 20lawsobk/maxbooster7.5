@@ -80,6 +80,7 @@
     "review:install": "node scripts/install-review-hook.mjs",
     "completion:understand": "node scripts/testing/completion-understanding.mjs",
     "completion:understand:python": "python3 production_audit_understand.py",
+    "test:anthropic-sdk:node": "node --test tests/testing/anthropic-sdk-node.test.mjs",
     "atlas": "node scripts/testing/atlas-runtime.mjs",
     "test:progress": "python3 scripts/testing/report-progress.py --output reports/progress/current",
     "test:platform:coverage": "vitest run --config vitest.platform.config.ts",

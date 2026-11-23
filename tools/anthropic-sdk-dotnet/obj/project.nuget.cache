@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "Iny9BbM2SLc=",
+  "success": true,
+  "projectFilePath": "/home/runner/workspace/tools/anthropic-sdk-dotnet/AnthropicSdkClient.csproj",
+  "expectedPackageFiles": [
+    "/home/runner/.nuget/packages/anthropic/13.12.0/anthropic.13.12.0.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.extensions.ai.abstractions/10.5.1/microsoft.extensions.ai.abstractions.10.5.1.nupkg.sha512"
+  ],
+  "logs": []
+}

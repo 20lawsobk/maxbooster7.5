@@ -24,16 +24,15 @@ import shlex
 import shutil
 import subprocess
 import sys
-import time
-import urllib.error
-import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
 import production_audit as pa
 
-API_URL = "https://api.anthropic.com/v1/messages"
 DEFAULT_MODEL = "claude-sonnet-5-5"
+DEFAULT_SDK_RUNTIME = "python"
+SDK_RUNTIMES = {"python", "node", "dotnet"}
+SDK_TIMEOUT_SECONDS = 330
 MAX_FULL_FILE_CHARS = 60000
 WINDOW = 80
 TEST_EXT = {".py", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".go"}
@@ -76,29 +75,93 @@ RULE_INSTRUCTIONS = {
 # Model I/O
 # --------------------------------------------------------------------------
 
-def call_model(system, user, model, max_tokens=8000):
+def _sdk_runtime():
+    runtime = os.environ.get("ANTHROPIC_SDK_RUNTIME", DEFAULT_SDK_RUNTIME).strip().lower()
+    if runtime not in SDK_RUNTIMES:
+        raise RuntimeError(
+            "ANTHROPIC_SDK_RUNTIME must be one of: " + ", ".join(sorted(SDK_RUNTIMES))
+        )
+    return runtime
+
+
+def _run_sdk_process(runtime, request):
+    root = Path(__file__).resolve().parent
+    if runtime == "node":
+        command = ["node", str(root / "scripts" / "anthropic-sdk-client.mjs")]
+    elif runtime == "dotnet":
+        command = [
+            "dotnet",
+            "run",
+            "--project",
+            str(root / "tools" / "anthropic-sdk-dotnet" / "AnthropicSdkClient.csproj"),
+            "--configuration",
+            "Release",
+            "--no-launch-profile",
+        ]
+    else:
+        raise ValueError(f"unsupported subprocess SDK runtime: {runtime}")
+
+    try:
+        result = subprocess.run(
+            command,
+            input=json.dumps(request),
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=SDK_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"Anthropic {runtime} SDK client timed out") from exc
+    except OSError as exc:
+        raise RuntimeError(f"Anthropic {runtime} SDK runtime could not be started") from exc
+    if result.returncode != 0:
+        # SDK subprocesses deliberately report only error classes, never request
+        # bodies, credentials, or provider response bodies.
+        detail = result.stderr.strip().splitlines()[-1:] or ["client failed"]
+        raise RuntimeError(f"Anthropic {runtime} SDK client failed: {detail[0][:240]}")
+    try:
+        response = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Anthropic {runtime} SDK client returned invalid JSON") from exc
+    if not isinstance(response, dict) or not isinstance(response.get("content"), list):
+        raise RuntimeError(f"Anthropic {runtime} SDK client returned an invalid message response")
+    return response
+
+
+def _call_sdk(request):
     key = os.environ.get("ANTHROPIC_API_KEY")
     if not key:
         raise RuntimeError("ANTHROPIC_API_KEY is not set")
-    body = json.dumps({"model": model, "max_tokens": max_tokens, "system": system,
-                       "messages": [{"role": "user", "content": user}]}).encode()
-    req = urllib.request.Request(API_URL, data=body, method="POST", headers={
-        "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01"})
-    for attempt in range(5):
-        try:
-            with urllib.request.urlopen(req, timeout=300) as r:
-                data = json.load(r)
-            return "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
-        except urllib.error.HTTPError as e:
-            if e.code in (429, 500, 502, 503, 529) and attempt < 4:
-                time.sleep(2 ** attempt * 2)
-                continue
-            raise RuntimeError(f"API error {e.code}: {e.read()[:300]!r}")
-        except (urllib.error.URLError, TimeoutError):
-            if attempt < 4:
-                time.sleep(2 ** attempt * 2)
-                continue
-            raise
+    runtime = _sdk_runtime()
+    if runtime != "python":
+        return _run_sdk_process(runtime, request)
+
+    from anthropic import Anthropic, APIConnectionError, APIStatusError
+
+    try:
+        with Anthropic(api_key=key, max_retries=4, timeout=300) as client:
+            response = client.messages.create(**request)
+        return response.model_dump(mode="json")
+    except APIStatusError as exc:
+        raise RuntimeError(f"Anthropic request failed with HTTP {exc.status_code}") from None
+    except APIConnectionError as exc:
+        raise RuntimeError("Anthropic SDK could not connect to the service") from exc
+
+
+def call_model(system, user, model, max_tokens=8000):
+    request = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "system": system,
+        "messages": [{"role": "user", "content": user}],
+    }
+    response = _call_sdk(request)
+    return "".join(
+        block.get("text", "")
+        for block in response.get("content", [])
+        if block.get("type") == "text"
+    )
 
 
 def parse_json(text):
@@ -678,29 +741,17 @@ TOOLS = [
 
 
 def call_model_tools(system, messages, tools, model, max_tokens=8000, thinking=0):
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
-        raise RuntimeError("ANTHROPIC_API_KEY is not set")
-    body = {"model": model, "max_tokens": max_tokens, "system": system, "messages": messages, "tools": tools}
+    request = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "system": system,
+        "messages": messages,
+        "tools": tools,
+    }
     if thinking:
-        body["thinking"] = {"type": "enabled", "budget_tokens": thinking}
-        body["max_tokens"] = max_tokens + thinking
-    req = urllib.request.Request(API_URL, data=json.dumps(body).encode(), method="POST", headers={
-        "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01"})
-    for attempt in range(5):
-        try:
-            with urllib.request.urlopen(req, timeout=300) as r:
-                return json.load(r)
-        except urllib.error.HTTPError as e:
-            if e.code in (429, 500, 502, 503, 529) and attempt < 4:
-                time.sleep(2 ** attempt * 2)
-                continue
-            raise RuntimeError(f"API error {e.code}: {e.read()[:300]!r}")
-        except (urllib.error.URLError, TimeoutError):
-            if attempt < 4:
-                time.sleep(2 ** attempt * 2)
-                continue
-            raise
+        request["thinking"] = {"type": "enabled", "budget_tokens": thinking}
+        request["max_tokens"] = max_tokens + thinking
+    return _call_sdk(request)
 
 
 DEFAULT_POLICY = {

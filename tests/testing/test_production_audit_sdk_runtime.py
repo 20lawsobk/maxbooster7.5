@@ -1,0 +1,156 @@
+import json
+import os
+import subprocess
+import unittest
+from unittest.mock import patch
+
+import production_audit_ai as audit_ai
+
+
+class _FakeResponse:
+    def __init__(self, content):
+        self.content = content
+
+    def model_dump(self, mode):
+        if mode != "json":
+            raise AssertionError("SDK response must be normalized as JSON")
+        return {
+            "id": "msg_test",
+            "type": "message",
+            "content": self.content,
+            "stop_reason": "end_turn",
+        }
+
+
+class _FakeClient:
+    def __init__(self, response):
+        self.response = response
+        self.request = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    class _Messages:
+        def __init__(self, owner):
+            self.owner = owner
+
+        def create(self, **request):
+            self.owner.request = request
+            return self.owner.response
+
+    @property
+    def messages(self):
+        return self._Messages(self)
+
+
+class ProductionAuditSdkRuntimeTests(unittest.TestCase):
+    def test_python_sdk_handles_text_generation_and_normalizes_response(self):
+        response = _FakeResponse([
+            {"type": "text", "text": "first"},
+            {"type": "thinking", "thinking": "private reasoning"},
+            {"type": "text", "text": " second"},
+        ])
+        fake_client = _FakeClient(response)
+        with patch.dict(os.environ, {
+            "ANTHROPIC_API_KEY": "test-only-not-a-real-key",
+            "ANTHROPIC_SDK_RUNTIME": "python",
+        }), patch("anthropic.Anthropic", return_value=fake_client) as sdk:
+            result = audit_ai.call_model("system prompt", "user prompt", "model-x", 900)
+
+        self.assertEqual(result, "first second")
+        sdk.assert_called_once_with(
+            api_key="test-only-not-a-real-key",
+            max_retries=4,
+            timeout=300,
+        )
+        self.assertEqual(fake_client.request["model"], "model-x")
+        self.assertEqual(fake_client.request["max_tokens"], 900)
+        self.assertEqual(fake_client.request["messages"][0]["content"], "user prompt")
+
+    def test_python_sdk_preserves_tool_use_blocks(self):
+        tool_block = {
+            "type": "tool_use",
+            "id": "tool_123",
+            "name": "read_file",
+            "input": {"path": "README.md"},
+        }
+        fake_client = _FakeClient(_FakeResponse([tool_block]))
+        with patch.dict(os.environ, {
+            "ANTHROPIC_API_KEY": "test-only-not-a-real-key",
+            "ANTHROPIC_SDK_RUNTIME": "python",
+        }), patch("anthropic.Anthropic", return_value=fake_client):
+            result = audit_ai.call_model_tools(
+                "system prompt",
+                [{"role": "user", "content": "inspect README"}],
+                [{"name": "read_file", "input_schema": {"type": "object"}}],
+                "model-y",
+                max_tokens=1000,
+                thinking=1200,
+            )
+
+        self.assertEqual(result["content"], [tool_block])
+        self.assertEqual(fake_client.request["thinking"], {
+            "type": "enabled",
+            "budget_tokens": 1200,
+        })
+        self.assertEqual(fake_client.request["max_tokens"], 2200)
+        self.assertEqual(fake_client.request["tools"][0]["name"], "read_file")
+
+    def test_key_is_required_before_any_runtime_is_started(self):
+        with patch.dict(os.environ, {"ANTHROPIC_SDK_RUNTIME": "node"}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "ANTHROPIC_API_KEY is not set"):
+                audit_ai.call_model("system", "user", "model")
+
+    def test_unknown_sdk_runtime_fails_closed(self):
+        with patch.dict(os.environ, {
+            "ANTHROPIC_API_KEY": "test-only-not-a-real-key",
+            "ANTHROPIC_SDK_RUNTIME": "unknown",
+        }):
+            with self.assertRaisesRegex(RuntimeError, "ANTHROPIC_SDK_RUNTIME must be one of"):
+                audit_ai.call_model("system", "user", "model")
+
+    def test_node_and_dotnet_adapters_use_argv_and_json_stdin(self):
+        expected = {
+            "id": "msg_test",
+            "content": [{"type": "text", "text": "ok"}],
+        }
+        for runtime in ("node", "dotnet"):
+            with self.subTest(runtime=runtime), patch.dict(os.environ, {
+                "ANTHROPIC_API_KEY": "test-only-not-a-real-key",
+                "ANTHROPIC_SDK_RUNTIME": runtime,
+            }), patch(
+                "production_audit_ai.subprocess.run",
+                return_value=subprocess.CompletedProcess(
+                    args=[], returncode=0, stdout=json.dumps(expected), stderr="",
+                ),
+            ) as run:
+                result = audit_ai.call_model("system", "user", "model-z")
+
+            self.assertEqual(result, "ok")
+            command = run.call_args.args[0]
+            options = run.call_args.kwargs
+            self.assertFalse(options.get("shell", False))
+            self.assertEqual(json.loads(options["input"])["model"], "model-z")
+            self.assertNotIn("test-only-not-a-real-key", options["input"])
+            self.assertEqual(command[0], "node" if runtime == "node" else "dotnet")
+            self.assertGreater(options["timeout"], 0)
+
+    def test_invalid_subprocess_response_fails_closed(self):
+        with patch.dict(os.environ, {
+            "ANTHROPIC_API_KEY": "test-only-not-a-real-key",
+            "ANTHROPIC_SDK_RUNTIME": "node",
+        }), patch(
+            "production_audit_ai.subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                args=[], returncode=0, stdout='{"content":null}', stderr="",
+            ),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "invalid message response"):
+                audit_ai.call_model("system", "user", "model")
+
+
+if __name__ == "__main__":
+    unittest.main()
