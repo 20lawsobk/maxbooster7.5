@@ -18,15 +18,19 @@ client against the configured .NET SDK and restores its pinned NuGet dependency
 when needed. It can roll forward to a later installed .NET runtime.
 All runtimes require `ANTHROPIC_API_KEY` in the process environment.
 
-`production_audit_suite.py` uses the same runtime selector for its optional
-`--ai-review` and `--ai-remediate` modes. The default audit remains local and
-deterministic. AI modes require an API key and explicit confirmation
-(`--confirm-ai` for non-interactive use). Review sends a bounded audit summary;
-remediation can inspect eligible repository files, edit files, and run the
-selected test command. Remediation continues to withhold files containing
-detected secrets, refuse manifest edits, and revert changes that fail its
-syntax, audit-regression, or test gates. Backups are written outside the
-repository by default.
+`production_audit_suite.py` uses the same runtime selector. A normal launch
+selects both read-only `--ai-review` and guarded `--ai-remediate`; it asks for
+confirmation before sending findings or making changes. Non-interactive use
+must pass `--confirm-ai`. The run requires `ANTHROPIC_API_KEY` and fails closed
+if it is absent. Use `--local-only` (or its `--audit-only` alias) to bypass AI
+and run only the deterministic local audit. Passing only `--ai-review` or only
+`--ai-remediate` selects that single mode.
+
+Review sends a bounded audit summary. Remediation can inspect eligible
+repository files, edit files, and run the selected test command. It continues
+to withhold files containing detected secrets, refuse manifest edits, and
+revert changes that fail its syntax, audit-regression, or test gates. Backups
+are written outside the repository by default.
 
 Example:
 
@@ -35,10 +39,12 @@ python3 production_audit_suite.py --ai-review --sdk-runtime node --confirm-ai
 ```
 
 Set the key through the workspace secrets manager before running the command.
+The command above selects review only; omit the mode flags to run the full
+confirmed review-and-remediation sequence by default.
 
-Use `--ai-remediate` instead of `--ai-review` only when you intend to permit
-guarded code edits and local test execution. This does not make the heuristic
-audit a production certification.
+Use `--local-only` when running in CI or another environment where external
+model calls and repository edits are not intended. Neither AI mode makes the
+heuristic audit a production certification.
 
 Model-assisted repository analysis sends eligible source excerpts to Anthropic
 only after the existing source-upload confirmation. Files flagged by the
@@ -46,5 +52,5 @@ secret scanner remain withheld. Model-assisted remediation continues to apply
 the existing file-scope, deterministic executor, test, and rollback gates; an
 SDK response is never applied directly.
 
-The normal deterministic audit does not require the API key or any Claude SDK
-call. No live API request is made by the automated tests.
+The deterministic `--local-only` audit does not require the API key or any
+Claude SDK call. No live API request is made by the automated tests.

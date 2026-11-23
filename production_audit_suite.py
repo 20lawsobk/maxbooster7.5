@@ -3,14 +3,16 @@
 """
 Production audit engine and command-line runner (Python 3.9+).
 
-  python production_audit_suite.py                   audit the current folder
+  python production_audit_suite.py                   audit and run confirmed AI self-review/remediation
+  python production_audit_suite.py --local-only       run the deterministic audit only
   python production_audit_suite.py --repo PATH       audit another folder
   python production_audit_suite.py --json            print the report as JSON
   python production_audit_suite.py --help            show all scan options
 
-The default run scans files and prints findings; it does not modify the repo or
-make network requests. Optional, explicitly confirmed AI review and remediation
-use the official Anthropic SDK selected with --sdk-runtime.
+The default run performs a local audit, then an explicitly confirmed AI review
+and guarded remediation using the official Anthropic SDK selected with
+--sdk-runtime. Use --local-only for a deterministic audit without network calls
+or file changes.
 
 Exit codes: 0 = audit completed; 1 = findings with --fail-on-findings;
 2 = invalid arguments or an execution error; 130 = interrupted.
@@ -507,8 +509,8 @@ def build_parser():
                         help="Suppress progress messages; still print the report")
     parser.add_argument("--json", dest="json_output", action="store_true",
                         help="Print JSON instead of the readable report")
-    parser.add_argument("--audit-only", action="store_true",
-                        help="Audit and report only (already the default)")
+    parser.add_argument("--local-only", "--audit-only", dest="local_only", action="store_true",
+                        help="Run deterministic audit only; skip AI network calls and remediation")
     parser.add_argument("--ai-review", action="store_true",
                         help="Ask Claude to prioritize and explain the audit findings (read-only)")
     parser.add_argument("--ai-remediate", action="store_true",
@@ -712,6 +714,9 @@ def print_report(report):
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
+    if not args.local_only and not (args.ai_review or args.ai_remediate):
+        args.ai_review = True
+        args.ai_remediate = True
     for option in ("workers", "max_hits_per_file", "large_file_lines"):
         if getattr(args, option) < 1:
             parser.error(f"--{option.replace('_', '-')} must be at least 1")
@@ -726,6 +731,8 @@ def main(argv=None):
             parser.error(f"--{option.replace('_', '-')} must be at least 1")
     if args.confirm_ai and not (args.ai_review or args.ai_remediate):
         parser.error("--confirm-ai requires --ai-review or --ai-remediate")
+    if args.local_only and (args.ai_review or args.ai_remediate):
+        parser.error("--local-only cannot be combined with --ai-review or --ai-remediate")
     extensions = []
     for extension in args.extra_code_ext:
         extension = extension.strip().lower()

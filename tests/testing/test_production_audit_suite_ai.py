@@ -90,14 +90,42 @@ class ProductionAuditSuiteAiTests(unittest.TestCase):
             "runtime selection must not leak after an AI operation",
         )
 
-    def test_default_suite_mode_does_not_require_or_call_an_sdk(self):
+    def test_default_launch_selects_review_and_remediation(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            observed = {}
+
+            def deny_and_capture(args):
+                observed["review"] = args.ai_review
+                observed["remediate"] = args.ai_remediate
+                return False
+
+            with patch("production_audit_suite._confirm_ai", side_effect=deny_and_capture), \
+                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                result = suite.main(["--repo", temp_dir, "--workers", "1", "--quiet"])
+        self.assertEqual(result, 2)
+        self.assertEqual(observed, {"review": True, "remediate": True})
+
+    def test_default_launch_fails_closed_without_sdk_key(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            errors = io.StringIO()
+            with patch.dict(os.environ, {}, clear=True), \
+                    patch.object(
+                        suite.ProductionAuditEngine,
+                        "execute",
+                        side_effect=AssertionError("must fail before audit execution"),
+                    ), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(errors):
+                result = suite.main(["--repo", temp_dir, "--quiet"])
+        self.assertEqual(result, 2)
+        self.assertIn("AI mode requires ANTHROPIC_API_KEY", errors.getvalue())
+
+    def test_local_only_mode_does_not_require_or_call_an_sdk(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             Path(temp_dir, "app.py").write_text("def run():\n    return True\n", encoding="utf-8")
             output = io.StringIO()
             with patch.dict(os.environ, {}, clear=True), \
                     patch("production_audit_ai.call_model", side_effect=AssertionError("must stay local")), \
                     contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
-                result = suite.main(["--repo", temp_dir, "--workers", "1", "--quiet"])
+                result = suite.main(["--repo", temp_dir, "--workers", "1", "--quiet", "--local-only"])
         self.assertEqual(result, 0)
         self.assertIn("Production audit report", output.getvalue())
 
