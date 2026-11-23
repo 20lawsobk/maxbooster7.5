@@ -13,8 +13,9 @@ multiple runtimes for one operation; the adapters are alternatives, not a
 fan-out, so a single audit request is not billed three times.
 
 The Python SDK is used by default. Node selection requires the project Node
-dependencies to be installed. .NET selection builds/runs the small client with
-the installed .NET 10 SDK and restores its pinned NuGet dependency when needed.
+dependencies to be installed. .NET selection builds/runs the small `net9.0`
+client against the configured .NET SDK and restores its pinned NuGet dependency
+when needed. It can roll forward to a later installed .NET runtime.
 All runtimes require `ANTHROPIC_API_KEY` in the process environment.
 
 Model-assisted repository analysis sends eligible source excerpts to Anthropic

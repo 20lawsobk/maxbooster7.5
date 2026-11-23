@@ -17,20 +17,37 @@ static async Task<int> MainAsync()
     try
     {
         using var input = new MemoryStream();
-        await Console.OpenStandardInput().CopyToAsync(input);
-        if (input.Length > RequestLimitBytes)
+        var standardInput = Console.OpenStandardInput();
+        var readBuffer = new byte[81920];
+        while (true)
         {
-            Console.Error.WriteLine("Claude SDK request exceeds the 24 MiB limit");
-            return 2;
+            var bytesRead = await standardInput.ReadAsync(readBuffer.AsMemory());
+            if (bytesRead == 0)
+            {
+                break;
+            }
+            if (input.Length + bytesRead > RequestLimitBytes)
+            {
+                Console.Error.WriteLine("Claude SDK request exceeds the 24 MiB limit");
+                return 2;
+            }
+            input.Write(readBuffer, 0, bytesRead);
         }
 
-        var requestJson = System.Text.Encoding.UTF8.GetString(input.ToArray());
-        var parameters = JsonSerializer.Deserialize<MessageCreateParams>(requestJson);
-        if (parameters is null)
+        using var requestDocument = JsonDocument.Parse(input.ToArray());
+        if (requestDocument.RootElement.ValueKind != JsonValueKind.Object)
         {
             Console.Error.WriteLine("Claude SDK request must be a JSON object");
             return 2;
         }
+
+        var requestFields = requestDocument.RootElement
+            .EnumerateObject()
+            .ToDictionary(field => field.Name, field => field.Value.Clone());
+        var parameters = MessageCreateParams.FromRawUnchecked(
+            new Dictionary<string, JsonElement>(),
+            new Dictionary<string, JsonElement>(),
+            requestFields);
 
         using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
         var client = new AnthropicClient
@@ -45,9 +62,12 @@ static async Task<int> MainAsync()
         Console.Out.WriteLine(JsonSerializer.Serialize(response));
         return 0;
     }
-    catch (JsonException)
+    catch (JsonException error)
     {
-        Console.Error.WriteLine("Claude SDK request is invalid JSON or has an unsupported message shape");
+        // JsonException.Path identifies the failing field without echoing the
+        // request body, which may contain private prompts or user data.
+        Console.Error.WriteLine(
+            $"Claude SDK request is invalid JSON or has an unsupported message shape at {error.Path ?? "root"}");
         return 2;
     }
     catch (OperationCanceledException)

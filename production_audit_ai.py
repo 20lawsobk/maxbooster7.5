@@ -86,7 +86,7 @@ def _sdk_runtime():
 
 def _dotnet_sdk_command(root):
     project = root / "tools" / "anthropic-sdk-dotnet" / "AnthropicSdkClient.csproj"
-    output = project.parent / "bin" / "Release" / "net10.0" / "AnthropicSdkClient.dll"
+    output = project.parent / "bin" / "Release" / "net9.0" / "AnthropicSdkClient.dll"
     if not output.is_file() or max(
         project.stat().st_mtime,
         (project.parent / "Program.cs").stat().st_mtime,

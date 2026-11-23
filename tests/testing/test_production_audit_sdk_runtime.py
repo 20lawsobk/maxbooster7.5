@@ -140,6 +140,26 @@ class ProductionAuditSdkRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "ANTHROPIC_SDK_RUNTIME must be one of"):
                 audit_ai.call_model("system", "user", "model")
 
+    def test_python_sdk_sends_one_request_to_local_test_endpoint(self):
+        server = ThreadingHTTPServer(("127.0.0.1", 0), _AnthropicTestEndpoint)
+        server.requests = []
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        with patch.dict(os.environ, {
+            "ANTHROPIC_API_KEY": "test-only-not-a-real-key",
+            "ANTHROPIC_SDK_RUNTIME": "python",
+            "ANTHROPIC_BASE_URL": f"http://127.0.0.1:{server.server_address[1]}",
+        }):
+            self.assertEqual(
+                audit_ai.call_model("test system", "test user", "claude-test", 32),
+                "local sdk response",
+            )
+        self.assertEqual(len(server.requests), 1)
+        self.assertEqual(server.requests[0]["model"], "claude-test")
+        self.assertEqual(server.requests[0]["messages"][0]["content"], "test user")
+
     def test_node_and_dotnet_adapters_use_argv_and_json_stdin(self):
         expected = {
             "id": "msg_test",
@@ -200,9 +220,27 @@ class ProductionAuditSdkRuntimeTests(unittest.TestCase):
                 audit_ai.call_model("test system", "test user", "claude-test", 32),
                 "local sdk response",
             )
-        self.assertEqual(len(server.requests), 1)
+            tool_response = audit_ai.call_model_tools(
+                "test system",
+                [{"role": "user", "content": "inspect README"}],
+                [{
+                    "name": "read_file",
+                    "description": "Read a repository file",
+                    "input_schema": {"type": "object", "properties": {"path": {"type": "string"}}},
+                }],
+                "claude-test",
+                max_tokens=64,
+                thinking=1024,
+            )
+        self.assertEqual(tool_response["content"][0]["text"], "local sdk response")
+        self.assertEqual(len(server.requests), 2)
         self.assertEqual(server.requests[0]["model"], "claude-test")
         self.assertEqual(server.requests[0]["messages"][0]["content"], "test user")
+        self.assertEqual(server.requests[1]["tools"][0]["name"], "read_file")
+        self.assertEqual(server.requests[1]["thinking"], {
+            "type": "enabled",
+            "budget_tokens": 1024,
+        })
 
 
 if __name__ == "__main__":
