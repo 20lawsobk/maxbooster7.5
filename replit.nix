@@ -2,6 +2,7 @@
   # System dependencies shared by the app, MaxCore, and PDIM.
   # Use plain package attributes for Replit's dependency parser.
   deps = [
+    pkgs.dotnetCorePackages.sdk_9_0-bin
     pkgs.nodejs_24
     pkgs.ffmpeg-full
     # Runtimes and package tools; npm is included with Node.js.
