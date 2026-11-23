@@ -38,6 +38,8 @@ static async Task<int> MainAsync()
             ApiKey = apiKey,
             MaxRetries = 4,
             Timeout = TimeSpan.FromSeconds(TimeoutSeconds),
+            BaseUrl = Environment.GetEnvironmentVariable("ANTHROPIC_BASE_URL")
+                ?? "https://api.anthropic.com",
         };
         var response = await client.Messages.Create(parameters, cancellation.Token);
         Console.Out.WriteLine(JsonSerializer.Serialize(response));

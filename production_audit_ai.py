@@ -84,20 +84,42 @@ def _sdk_runtime():
     return runtime
 
 
+def _dotnet_sdk_command(root):
+    project = root / "tools" / "anthropic-sdk-dotnet" / "AnthropicSdkClient.csproj"
+    output = project.parent / "bin" / "Release" / "net9.0" / "AnthropicSdkClient.dll"
+    if not output.is_file() or max(
+        project.stat().st_mtime,
+        (project.parent / "Program.cs").stat().st_mtime,
+    ) > output.stat().st_mtime:
+        try:
+            build = subprocess.run(
+                ["dotnet", "build", str(project), "--configuration", "Release", "--nologo"],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=180,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError("Anthropic .NET SDK client build timed out") from exc
+        except OSError as exc:
+            raise RuntimeError("Anthropic .NET SDK runtime could not be started") from exc
+        if build.returncode != 0:
+            detail = (build.stderr + "\n" + build.stdout).strip().splitlines()[-1:] or [
+                "client build failed"
+            ]
+            raise RuntimeError(f"Anthropic .NET SDK client build failed: {detail[0][:240]}")
+        if not output.is_file():
+            raise RuntimeError("Anthropic .NET SDK client build did not produce its executable")
+    return ["dotnet", str(output)]
+
+
 def _run_sdk_process(runtime, request):
     root = Path(__file__).resolve().parent
     if runtime == "node":
         command = ["node", str(root / "scripts" / "anthropic-sdk-client.mjs")]
     elif runtime == "dotnet":
-        command = [
-            "dotnet",
-            "run",
-            "--project",
-            str(root / "tools" / "anthropic-sdk-dotnet" / "AnthropicSdkClient.csproj"),
-            "--configuration",
-            "Release",
-            "--no-launch-profile",
-        ]
+        command = _dotnet_sdk_command(root)
     else:
         raise ValueError(f"unsupported subprocess SDK runtime: {runtime}")
 
