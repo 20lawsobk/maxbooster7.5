@@ -10,6 +10,7 @@ import {
   classifyPath,
   cleanEnvironment,
   runOwned,
+  runPythonRepositoryInventory,
   sealReport,
   verifyReport,
 } from "../scripts/testing/repository-verification.mjs";
@@ -98,6 +99,65 @@ test("missing executable is reported as blocked rather than passed", async () =>
   }
 });
 
+test("dev completion runs a full local Python inventory bound to the verified source identity", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "repository-python-understanding-"));
+  const runDirectory = path.join(root, ".local", "repository-verification", "runs", "fixture");
+  try {
+    execFileSync("git", ["init", "-q"], { cwd: root });
+    execFileSync("git", ["config", "user.email", "verification@example.invalid"], { cwd: root });
+    execFileSync("git", ["config", "user.name", "Verification Fixture"], { cwd: root });
+    await fs.writeFile(path.join(root, ".gitignore"), ".local/\n");
+    await fs.writeFile(path.join(root, "main.py"), "def run(value):\n    return value\n");
+    for (const file of [
+      "production_audit.py",
+      "production_audit_ai.py",
+      "production_audit_understand.py",
+    ]) {
+      await fs.copyFile(path.resolve(file), path.join(root, file));
+    }
+    execFileSync("git", ["add", ".gitignore", "main.py", "production_audit.py",
+      "production_audit_ai.py", "production_audit_understand.py"], { cwd: root });
+    execFileSync("git", ["commit", "-qm", "fixture"], { cwd: root });
+    const inventory = await buildInventory(root);
+    const report = {
+      mode: "dev",
+      sourceIdentity: inventory.sourceIdentity,
+      checks: [{ id: "source-drift", status: "PASS" }],
+    };
+
+    const result = await runPythonRepositoryInventory({ root, runDirectory, report });
+
+    assert.equal(result.status, "GENERATED", result.reason);
+    assert.equal(result.sourceIdentityMatches, true);
+    const dossier = JSON.parse(await fs.readFile(path.join(root, result.reportPath), "utf8"));
+    assert.equal(result.role, "supplemental-local-inventory");
+    assert.equal(result.readinessImpact, "NONE");
+    assert.equal(dossier.scan_scope.external_analysis, false);
+    assert.equal((await fs.stat(path.join(root, result.reportDirectory))).mode & 0o777, 0o700);
+    assert.deepEqual(dossier.scan_scope.verification_source_identity, {
+      inputInventorySha256: inventory.sourceIdentity.inputInventorySha256,
+      dirtyInputSha256: inventory.sourceIdentity.dirtyInputSha256,
+    });
+    assert.equal(dossier.modules["main.py"].symbols[0].qualname, "run");
+    const stale = await runPythonRepositoryInventory({
+      root,
+      runDirectory,
+      report,
+      runner: async () => ({ status: "PASS", exitCode: 0, timedOut: false, durationMs: 1 }),
+      inventoryBuilder: async () => ({
+        sourceIdentity: {
+          inputInventorySha256: "0".repeat(64),
+          dirtyInputSha256: "1".repeat(64),
+        },
+      }),
+    });
+    assert.equal(stale.status, "STALE");
+    assert.equal(stale.sourceIdentityMatches, false);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
 test("explicit cancellation returns after terminating the owned process group", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "repository-verify-cancel-"));
   const controller = new AbortController();
@@ -124,12 +184,17 @@ test("npm development command does not wait for repository analysis before appli
   const command = project.scripts.dev;
   const launcher = await fs.readFile("scripts/start-dev.sh", "utf8");
   assert.equal(command, "bash scripts/start-dev.sh");
+  assert.equal(project.scripts["completion:understand:python"],
+    "python3 production_audit_understand.py");
   const readinessGate = launcher.indexOf('if [[ "$_READINESS_STATUS" != "0" ]]');
   const completionAnalysis = launcher.indexOf("node scripts/testing/repository-verification.mjs dev &");
   assert.ok(readinessGate >= 0);
   assert.ok(completionAnalysis > readinessGate);
   assert.match(launcher, /wait -n -p _EXITED_PID/);
   assert.match(launcher, /_stop_owned "\$_VERIFICATION_PID"/);
+  const verification = await fs.readFile("scripts/testing/repository-verification.mjs", "utf8");
+  assert.match(verification, /runPythonRepositoryInventory\(\{ root, runDirectory, report \}\)/);
+  assert.match(verification, /timeoutMs: 180_000/);
 });
 
 test("preflight command environment excludes application credentials", () => {

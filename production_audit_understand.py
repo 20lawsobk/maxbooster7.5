@@ -653,7 +653,12 @@ def intent_slice(imap, inv, rel, qualnames=None, max_chars=6000):
 
 def write_outputs(out_dir, inv, imap, deps):
     out = Path(out_dir) / "understanding"
+    if out.is_symlink():
+        raise ValueError("The output understanding directory must not be a symlink")
     out.mkdir(parents=True, exist_ok=True)
+    if out.is_symlink() or not out.is_dir():
+        raise ValueError("The output understanding path must be a real directory")
+    os.chmod(out, 0o700)
     imap = dict(imap, dependencies=deps)
     write_text_atomically(out / "intent_map.json", json.dumps(imap, indent=2) + "\n")
     L = ["# Intent map", "", f"Generated: {imap['generated']}", "", "## Architecture", "",
@@ -811,6 +816,14 @@ def _build_parser():
         help="Walk the filesystem instead of using Git's tracked/unignored file list.",
     )
     parser.add_argument(
+        "--source-input-sha256",
+        help="Optional verified input-inventory SHA-256 for the invoking workflow.",
+    )
+    parser.add_argument(
+        "--source-dirty-sha256",
+        help="Optional verified dirty-input SHA-256 for the invoking workflow.",
+    )
+    parser.add_argument(
         "--model-assisted",
         action="store_true",
         help="Send eligible source excerpts to Anthropic for intent analysis.",
@@ -852,11 +865,23 @@ def main(argv=None):
         parser.error("--max-modules and --max-calls must both be positive")
     if args.confirm_source_upload and not args.model_assisted:
         parser.error("--confirm-source-upload requires --model-assisted")
+    if bool(args.source_input_sha256) != bool(args.source_dirty_sha256):
+        parser.error("--source-input-sha256 and --source-dirty-sha256 must be supplied together")
+    for value in (args.source_input_sha256, args.source_dirty_sha256):
+        if value is not None and not re.fullmatch(r"[a-f0-9]{64}", value):
+            parser.error("source fingerprint arguments must be lowercase SHA-256 digests")
 
     output = Path(args.output).expanduser()
     if not output.is_absolute():
         output = root / output
-    output = output.resolve()
+    output = Path(os.path.abspath(output))
+    cursor = output
+    while True:
+        if cursor.is_symlink():
+            parser.error(f"--output may not contain a symbolic link: {cursor}")
+        if cursor == cursor.parent:
+            break
+        cursor = cursor.parent
     if output == root:
         parser.error("--output must not be the repository root")
 
@@ -948,6 +973,14 @@ def main(argv=None):
             "secrets are never explicitly authorized for upload."
         ),
         "external_analysis": bool(args.model_assisted),
+        "verification_source_identity": (
+            {
+                "inputInventorySha256": args.source_input_sha256,
+                "dirtyInputSha256": args.source_dirty_sha256,
+            }
+            if args.source_input_sha256 is not None
+            else None
+        ),
     }
     deps = dependency_report(inv, root)
     out = write_outputs(output, inv, imap, deps)

@@ -39,7 +39,17 @@ class ProductionAuditUnderstandCliTests(unittest.TestCase):
             env = dict(os.environ)
             env.pop("ANTHROPIC_API_KEY", None)
 
-            result = self.run_cli("--repo", repo, "--output", output, env=env)
+            result = self.run_cli(
+                "--repo",
+                repo,
+                "--output",
+                output,
+                "--source-input-sha256",
+                "a" * 64,
+                "--source-dirty-sha256",
+                "b" * 64,
+                env=env,
+            )
 
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("deterministic local inventory", result.stdout)
@@ -48,6 +58,10 @@ class ProductionAuditUnderstandCliTests(unittest.TestCase):
                 (report_root / "intent_map.json").read_text(encoding="utf-8")
             )
             self.assertIn("app.py", intent_json["modules"])
+            self.assertEqual(
+                intent_json["scan_scope"]["verification_source_identity"],
+                {"inputInventorySha256": "a" * 64, "dirtyInputSha256": "b" * 64},
+            )
             symbols = intent_json["modules"]["app.py"]["symbols"]
             unfinished = next(item for item in symbols if item["qualname"] == "unfinished")
             self.assertEqual(unfinished["status"], "stub")
@@ -64,6 +78,26 @@ class ProductionAuditUnderstandCliTests(unittest.TestCase):
             self.assertEqual(result.returncode, 2)
             self.assertIn("--repo must point to an existing directory", result.stderr)
             self.assertFalse(output.exists())
+
+    def test_output_path_rejects_symlink_ancestors(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary) / "repo"
+            outside = Path(temporary) / "outside"
+            repo.mkdir()
+            outside.mkdir()
+            (repo / "app.py").write_text("def run():\n    return True\n", encoding="utf-8")
+            (repo / "audit_reports").symlink_to(outside, target_is_directory=True)
+
+            result = self.run_cli("--repo", repo, "--output", repo / "audit_reports")
+
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("--output may not contain a symbolic link", result.stderr)
+            self.assertFalse((outside / "understanding").exists())
+
+    def test_source_fingerprints_must_be_valid_sha256_pairs(self):
+        result = self.run_cli("--source-input-sha256", "not-a-hash")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("must be supplied together", result.stderr)
 
     def test_model_mode_fails_closed_without_api_key(self):
         with tempfile.TemporaryDirectory() as temporary:

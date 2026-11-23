@@ -828,6 +828,11 @@ export async function recordLearningOutcome({
       reason: repositoryUnderstanding?.reason ?? null,
       artifact: repositoryUnderstanding?.artifact ?? null,
       atlas: repositoryUnderstanding?.atlas ?? { status: "NOT_RUN" },
+      pythonInventory: repositoryUnderstanding?.pythonInventory ?? {
+        role: "supplemental-local-inventory",
+        readinessImpact: "NONE",
+        status: "NOT_RUN",
+      },
       sourceIdentity: repositoryUnderstanding?.dossier?.sourceIdentity ? {
         gitRevision: repositoryUnderstanding.dossier.sourceIdentity.gitRevision,
         sourceFileManifestSha256: repositoryUnderstanding.dossier.sourceIdentity.sourceFileManifestSha256,

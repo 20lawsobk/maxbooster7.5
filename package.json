@@ -79,6 +79,7 @@
     "review:staged": "node scripts/testing/review-staged.mjs",
     "review:install": "node scripts/install-review-hook.mjs",
     "completion:understand": "node scripts/testing/completion-understanding.mjs",
+    "completion:understand:python": "python3 production_audit_understand.py",
     "atlas": "node scripts/testing/atlas-runtime.mjs",
     "test:progress": "python3 scripts/testing/report-progress.py --output reports/progress/current",
     "test:platform:coverage": "vitest run --config vitest.platform.config.ts",

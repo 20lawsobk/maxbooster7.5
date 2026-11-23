@@ -366,6 +366,28 @@ async function writeAtomic(file, content) {
   await fs.rename(temp, file);
 }
 
+async function ensurePrivateDirectory(root, parts) {
+  let current = root;
+  for (const part of parts) {
+    current = path.join(current, part);
+    try {
+      const stat = await fs.lstat(current);
+      if (stat.isSymbolicLink() || !stat.isDirectory()) {
+        throw new Error(`Private output path is not a real directory: ${path.relative(root, current)}`);
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+      await fs.mkdir(current, { mode: 0o700 });
+      const created = await fs.lstat(current);
+      if (created.isSymbolicLink() || !created.isDirectory()) {
+        throw new Error(`Private output path changed during creation: ${path.relative(root, current)}`);
+      }
+    }
+  }
+  await fs.chmod(current, 0o700);
+  return current;
+}
+
 async function runOwned(command, args, {
   cwd,
   timeoutMs,
@@ -1045,6 +1067,104 @@ async function main(args = process.argv.slice(2)) {
   return report.gateStatus === "PASS" ? 0 : 1;
 }
 
+export async function runPythonRepositoryInventory({
+  root,
+  runDirectory,
+  report,
+  runner = runOwned,
+  inventoryBuilder = buildInventory,
+} = {}) {
+  const sourceIdentity = report?.sourceIdentity;
+  const driftCheck = report?.checks?.find(check => check.id === "source-drift");
+  if (report?.mode !== "dev" || driftCheck?.status !== "PASS") {
+    return {
+      role: "supplemental-local-inventory",
+      readinessImpact: "NONE",
+      status: "BLOCKED",
+      reason: "Python inventory requires a passing dev source-drift check.",
+    };
+  }
+  if (!/^[a-f0-9]{64}$/.test(sourceIdentity?.inputInventorySha256 ?? "") ||
+      !/^[a-f0-9]{64}$/.test(sourceIdentity?.dirtyInputSha256 ?? "")) {
+    return {
+      role: "supplemental-local-inventory",
+      readinessImpact: "NONE",
+      status: "BLOCKED",
+      reason: "The dev verification report lacks valid source identity digests.",
+    };
+  }
+
+  root = path.resolve(root);
+  const scriptPath = path.join(root, "production_audit_understand.py");
+  const outputDirectory = path.join(root, ".local", "repository-verification", "python-inventory");
+  const reportDirectory = path.join(outputDirectory, "understanding");
+  const logPath = path.join(runDirectory, "logs", "python-repository-understanding.log");
+  try {
+    const scriptInfo = await fs.lstat(scriptPath);
+    if (scriptInfo.isSymbolicLink() || !scriptInfo.isFile() || scriptInfo.size > 2 * 1024 * 1024) {
+      throw new Error("Python understanding entry point is not a bounded regular file");
+    }
+    await ensurePrivateDirectory(root, [".local", "repository-verification", "python-inventory"]);
+    const args = [
+      scriptPath,
+      "--repo", root,
+      "--output", outputDirectory,
+      "--source-input-sha256", sourceIdentity.inputInventorySha256,
+      "--source-dirty-sha256", sourceIdentity.dirtyInputSha256,
+    ];
+    const result = await runner("python3", args, {
+      cwd: root,
+      timeoutMs: 180_000,
+      logPath,
+      env: cleanEnvironment(),
+    });
+    if (result.status !== "PASS") {
+      return {
+        role: "supplemental-local-inventory",
+        readinessImpact: "NONE",
+        status: result.status,
+        exitCode: result.exitCode,
+        timedOut: result.timedOut,
+        durationMs: result.durationMs,
+        reportDirectory: path.relative(root, reportDirectory),
+        log: path.relative(root, logPath),
+        reason: result.nextAction ?? "The Python source inventory did not complete.",
+      };
+    }
+
+    const after = await inventoryBuilder(root);
+    const sourceIdentityMatches =
+      after.sourceIdentity?.inputInventorySha256 === sourceIdentity.inputInventorySha256 &&
+      after.sourceIdentity?.dirtyInputSha256 === sourceIdentity.dirtyInputSha256;
+    return {
+      role: "supplemental-local-inventory",
+      readinessImpact: "NONE",
+      status: sourceIdentityMatches ? "GENERATED" : "STALE",
+      exitCode: 0,
+      timedOut: false,
+      durationMs: result.durationMs,
+      reportDirectory: path.relative(root, reportDirectory),
+      reportPath: path.relative(root, path.join(reportDirectory, "intent_map.json")),
+      log: path.relative(root, logPath),
+      sourceIdentityMatches,
+      reason: sourceIdentityMatches
+        ? null
+        : "Repository inputs changed while the Python inventory was running.",
+    };
+  } catch (error) {
+    return {
+      role: "supplemental-local-inventory",
+      readinessImpact: "NONE",
+      status: error.code === "ENOENT" && error.path === scriptPath ? "UNAVAILABLE" : "FAILED",
+      reportDirectory: path.relative(root, reportDirectory),
+      log: path.relative(root, logPath),
+      reason: error.code === "ENOENT" && error.path === scriptPath
+        ? "This repository does not contain the Python inventory entry point."
+        : String(error.message ?? error).slice(0, 500),
+    };
+  }
+}
+
 export async function reportLearningOutcome(
   root,
   runDirectory,
@@ -1159,6 +1279,20 @@ export async function reportLearningOutcome(
         status: "BLOCKED",
         reason: `Repository understanding could not be generated: ${error.message}`,
       };
+    }
+  }
+  if (report.mode === "dev") {
+    const pythonInventory = await runPythonRepositoryInventory({ root, runDirectory, report });
+    repositoryUnderstanding = {
+      ...(repositoryUnderstanding ?? { status: "NOT_RUN" }),
+      pythonInventory,
+    };
+    console.log(
+      `[completion-learning] Python inventory ${pythonInventory.status}` +
+      `${pythonInventory.reportPath ? `: ${pythonInventory.reportPath}` : ""}`,
+    );
+    if (pythonInventory.reason) {
+      console.error(`[completion-learning] Python inventory note: ${pythonInventory.reason}`);
     }
   }
   try {

@@ -104,6 +104,35 @@ test("records repeated failures and produces source-bound proposals without raw 
   }
 });
 
+test("keeps Python inventory diagnostics non-gating in completion learning", async () => {
+  const { root, runDirectory } = await fixture();
+  try {
+    const run = await runDirectory("python-inventory-diagnostic");
+    const learning = await recordLearningOutcome({
+      root,
+      runDirectory: run,
+      report: report(),
+      durableHistory: false,
+      repositoryUnderstanding: {
+        status: "CURRENT",
+        pythonInventory: {
+          role: "supplemental-local-inventory",
+          readinessImpact: "NONE",
+          status: "GENERATED",
+          sourceIdentityMatches: true,
+          reportPath: ".local/repository-verification/python-inventory/understanding/intent_map.json",
+        },
+      },
+    });
+    assert.equal(learning.summary.repositoryUnderstanding.pythonInventory.status, "GENERATED");
+    assert.equal(learning.summary.repositoryUnderstanding.pythonInventory.readinessImpact, "NONE");
+    assert.equal(learning.summary.readinessStatus, "UNVERIFIED");
+    assert.equal(learning.summary.productionReady, false);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
 test("records only fully verified completion plans as learned interventions", async () => {
   const { root, runDirectory } = await fixture();
   try {
