@@ -297,9 +297,12 @@ async function fetchJsonFromPort(port, path) {
 }
 
 async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
-  const chromium = ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome", "/repl/tools/bin/chromium",
-    ...String(browserEnv.PATH ?? "").split(":").map(directory => join(directory, "chromium"))]
-    .find(candidate => { try { accessSync(candidate, constants.X_OK); return true; } catch { return false; } });
+  const configuredChromium = process.env.MAXBOOSTER_TEST_CHROMIUM;
+  const candidates = configuredChromium ? [resolve(configuredChromium)] : ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome", "/repl/tools/bin/chromium",
+    ...String(browserEnv.PATH ?? "").split(":").map(directory => join(directory, "chromium"))];
+  const chromium = candidates.find(candidate => {
+    try { accessSync(candidate, constants.X_OK); return true; } catch { return false; }
+  });
   if (!chromium) throw new Error("Install Chromium or add its executable to PATH before browser acceptance");
   const debuggerPort = await reserveEphemeralPort();
   const profile = join(temp, "chromium-profile");
@@ -505,6 +508,7 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
     } catch (error) {
       screenshotEvidence = `unavailable: ${error.message}`;
     }
+    evidence.browser = { engine: "Chromium CDP", hydrated, screenshot: screenshotEvidence };
     if (!hydrated) {
       const diagnosis = await evaluate(`({href:location.href,title:document.title,text:(document.body?.innerText||'').slice(0,160),scripts:[...document.scripts].map(s=>s.src).slice(0,4)})`);
       throw new Error(`login page did not hydrate: ${JSON.stringify(diagnosis)}`);
@@ -1097,10 +1101,11 @@ try {
   evidence.schemaGeneration = "pass";
 
   run("initdb", ["-D", join(temp, "pg"), "-U", "acceptance", "--auth=trust", "--no-locale", "--encoding=UTF8"], baseEnv);
+  // Every fixture client uses loopback TCP, so no Unix socket is needed.
   run("pg_ctl", [
     "-D", join(temp, "pg"),
     "-l", join(temp, "postgres.log"),
-    "-o", `-h 127.0.0.1 -k ${temp} -p ${pgPort} -c shared_buffers=32MB -c max_connections=30`,
+    "-o", `-h 127.0.0.1 -c unix_socket_directories= -p ${pgPort} -c shared_buffers=32MB -c max_connections=30`,
     "-w", "start",
   ], baseEnv);
   postgresStarted = true;
@@ -1276,8 +1281,8 @@ try {
         : "Investigate the recorded browser login failure against the current built asset.";
       evidence.browser = {
         engine: "Chromium CDP",
-        hydrated: true,
-        screenshot: "reports/readiness-implementation/assembled-acceptance-login.png",
+        hydrated: false,
+        ...(typeof evidence.browser === "object" ? evidence.browser : {}),
         formLogin: "fail",
         failure: browserFailure,
         prerequisite,
@@ -1335,7 +1340,7 @@ try {
       ? "Explicit load-only mode did not launch Chromium; the default invocation retains its browser flow."
       : evidence.browser.formLogin === true
       ? "A real headless Chromium page hydrated the login UI, submitted the login form, persisted its cookie session, logged out, and captured a pre-credential screenshot."
-      : "A real headless Chromium page hydrated the login UI and captured a pre-credential screenshot, but the assembled browser login failed; HTTP auth evidence remains distinct and the artifact prerequisite is recorded.",
+      : "Chromium did not complete the browser acceptance journey. The report records the observed browser and HTTP authentication results.",
   );
   if (ready.status !== 503 || readyBody.unifiedAwareness?.ready !== false) {
     failures.push(

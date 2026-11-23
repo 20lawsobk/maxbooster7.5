@@ -11,7 +11,6 @@ import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const checker = resolve("scripts/check-port-contract.ts");
-const tsx = resolve("node_modules/.bin/tsx");
 const temporaryDirectories: string[] = [];
 const portEnvironment: Record<string, string> = {
   PATH: process.env.PATH ?? "",
@@ -42,8 +41,8 @@ function checkPortConfig(
   writeFileSync(configPath, replitConfig);
 
   return spawnSync(
-    tsx,
-    [checker],
+    process.execPath,
+    ["--import", resolve("node_modules/tsx/dist/loader.mjs"), checker],
     {
       cwd: directory,
       encoding: "utf8",

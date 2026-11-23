@@ -18,24 +18,28 @@ function sourceInputs(root) {
     "start.sh",
     "scripts/deployment/ports.replit",
   ];
-  function walk(dir) {
+  function walk(dir, include) {
     if (!fs.existsSync(path.join(root, dir))) return;
     for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
       const name = `${dir}/${entry.name}`;
       // Dependencies are represented by lockfiles, not generated loader caches.
       // Imported workspace packages can have nested node_modules directories.
-      if (entry.isDirectory() && entry.name !== "node_modules") walk(name);
-      else if (/\.(ts|tsx|js|jsx|mjs|cjs|sh)$/.test(name) ||
-               (name.startsWith("shared/") && name.endsWith(".json"))) files.push(name);
+      if (entry.isDirectory() && entry.name !== "node_modules") walk(name, include);
+      else if (!entry.isDirectory() && include(name)) files.push(name);
     }
   }
-  for (const dir of ["server", "client", "shared", "src", "script", "scripts", "dns-node/src",
-    "dns-os/services/dns-api/src"]) walk(dir);
-  for (const dir of ["external/maxcore/artifacts/api-server/src", "external/maxcore/lib"]) walk(dir);
+  const isSourceFile = name => /\.(ts|tsx|js|jsx|mjs|cjs|sh)$/.test(name) ||
+    (name.startsWith("shared/") && name.endsWith(".json"));
+  for (const dir of ["server", "shared", "src", "script", "scripts", "dns-node/src",
+    "dns-os/services/dns-api/src", "external/maxcore/artifacts/api-server/src",
+    "external/maxcore/lib"]) walk(dir, isSourceFile);
+  // Vite bundles styles and imported assets, and copies client/public as-is.
+  walk("client", name => name.startsWith("client/src/") ||
+    name.startsWith("client/public/") || isSourceFile(name));
   if (fs.existsSync(path.join(root, "external/maxcore/artifacts/api-server/build.ts"))) {
     files.push("external/maxcore/artifacts/api-server/build.ts");
   }
-  for (const file of ["client/index.html", "dns-node/package.json", "dns-node/tsconfig.json",
+  for (const file of ["client/index.html", "tailwind.config.ts", "postcss.config.js", "dns-node/package.json", "dns-node/tsconfig.json",
     "dns-os/db/migrations/001_init.sql", "dns-os/db/migrations/002_audit.sql",
     "server/services/ai_content_sidecar.py", "server/services/secure_http.py",
     "tsconfig.json", "tsconfig.server.json", "tsconfig.client.json", ".replit",

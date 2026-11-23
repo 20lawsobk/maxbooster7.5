@@ -43,6 +43,7 @@ async function createFixture(t) {
     "package-lock.json",
     "vite.config.ts",
     "start.sh",
+    "scripts/deployment/ports.replit",
     "client/index.html",
     "server/index.ts",
   ]) {

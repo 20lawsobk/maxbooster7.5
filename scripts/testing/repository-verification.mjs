@@ -1106,7 +1106,7 @@ export async function runPythonRepositoryInventory({
     }
     await ensurePrivateDirectory(root, [".local", "repository-verification", "python-inventory"]);
     const args = [
-      scriptPath,
+      "-B", scriptPath,
       "--repo", root,
       "--output", outputDirectory,
       "--source-input-sha256", sourceIdentity.inputInventorySha256,

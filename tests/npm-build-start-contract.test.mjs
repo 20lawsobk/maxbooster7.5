@@ -20,7 +20,7 @@ test("Replit preview runs the documented development workflow while deployment s
   const repl = fs.readFileSync(".replit", "utf8");
   const deploymentDocs = fs.readFileSync("docs/DEPLOYMENT.md", "utf8");
   assert.match(repl, /^run = "npm run dev"$/m);
-  assert.match(repl, /modules = \["nodejs-24", "python-3\.12"\]/);
+  assert.match(repl, /modules = \["nodejs-24", "python-3\.12", "dotnet-10\.0"\]/);
   assert.match(repl, /name = "Start application"[\s\S]*?args = "npm run dev"[\s\S]*?waitForPort = 5000/);
   assert.match(repl, /\[deployment\][\s\S]*?run = \["npm", "run", "deployment:start"\]/);
   assert.match(deploymentDocs, /configured Node 24 runtime/);
@@ -201,6 +201,16 @@ test("production startup rejects missing, altered and stale build output", () =>
     }
     writeBuildContract(root);
     assert.doesNotThrow(() => validateBuild(root));
+    for (const file of ["client/src/theme.css", "client/public/icon.svg"]) {
+      const input = path.join(root, file);
+      fs.mkdirSync(path.dirname(input), { recursive: true });
+      fs.writeFileSync(input, "original");
+      assert.throws(() => validateBuild(root), /Source file list changed since build/);
+      writeBuildContract(root);
+      fs.writeFileSync(input, "changed");
+      assert.throws(() => validateBuild(root), /Changed since build/);
+      writeBuildContract(root);
+    }
     // An unexpected file added after compilation must invalidate the asset contract.
     fs.writeFileSync(path.join(root, "dist/public/untracked.html"), "unexpected");
     assert.throws(() => validateBuild(root), /Public build asset list changed/);

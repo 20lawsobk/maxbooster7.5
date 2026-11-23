@@ -37,7 +37,7 @@ to `bash start.sh`.
 **Do not run `build.sh` in the editor checkout or a source workspace.** Normal
 source builds use `npm run build`.
 
-The Node 24 and Python 3.11 modules supply editor/build tools. The portable
+The Node 24, Python 3.12, and .NET 10 modules supply editor/build tools. The portable
 deployed Node runtime is pinned to Node 24.22.1; root package installation uses
 npm 11.19.1. `replit.nix` also declares `nodejs_24` and `nix`
 (including `nix-shell`). Run `npm run check:tools` to verify all five requested
