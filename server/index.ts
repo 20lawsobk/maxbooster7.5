@@ -41,6 +41,7 @@ import {
 import path from "path";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import type { ViteRuntime } from "./vite.js";
+import { verificationTextForHost } from "./services/tiktokSiteVerification.js";
 
 // MANDATORY safety imports - these MUST load successfully
 import { initializeSafetySystems, applyMandatoryMiddleware, globalErrorHandler as safetyErrorHandler, sanitizationMiddleware, killSwitch } from "./safety/index.js";
@@ -199,12 +200,12 @@ try {
 app.use(sanitizationMiddleware);
 
 // TikTok Developers Site Verification
-app.get("/tiktok-developers-site-verification.txt", (_req, res) => {
-  res
-    .type("text/plain")
-    .send(
-      "tiktok-developers-site-verification=hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx",
-    );
+app.get("/tiktok-developers-site-verification.txt", (req, res) => {
+  const verification = verificationTextForHost(
+    req.get("host"),
+    process.env.REPLIT_DEV_DOMAIN,
+  );
+  res.type("text/plain").send(verification);
 });
 app.get(
   "/tiktok-developers-site-hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx",
