@@ -24,6 +24,9 @@ const developmentVerificationText =
 const existingVerificationText =
   "tiktok-developers-site-verification=hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx";
 
+export const developmentVerificationFilePath =
+  "/tiktokYuaYzlWqoobUDQLsXg8nt8UAv5y5jBxr.txt";
+
 export function verificationTextForHost(
   requestHost: string | null | undefined,
   configuredDevHost: string | null | undefined,

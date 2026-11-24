@@ -1,8 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { verificationTextForHost } from "../server/services/tiktokSiteVerification.js";
+import {
+  developmentVerificationFilePath,
+  verificationTextForHost,
+} from "../server/services/tiktokSiteVerification.js";
 
 test("TikTok verification serves the submitted token only on the configured dev host", () => {
+  assert.equal(
+    developmentVerificationFilePath,
+    "/tiktokYuaYzlWqoobUDQLsXg8nt8UAv5y5jBxr.txt",
+  );
   assert.equal(
     verificationTextForHost(
       "a28d7898-bbab-4e83-93d1-b2a6ecd20030-00-hv6pcaw3lbdn.spock.replit.dev",
