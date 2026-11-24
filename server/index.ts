@@ -603,6 +603,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   if (developmentMode) {
     const { createViteRuntime } = await import("./vite.js");
     viteRuntime = await createViteRuntime(httpServer);
+    viteRuntime.registerVerificationRoot(app);
     // Vite's dev modules are static code, not user requests. Serve them before
     // express-session so a cold PDIM/session store cannot stall the mobile
     // preview's initial JavaScript graph. The SPA fallback stays after API
