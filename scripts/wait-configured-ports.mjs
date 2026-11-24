@@ -11,12 +11,17 @@ function portFromEnv(env, name, fallback) {
 }
 
 export function configuredPortSpecs(env = process.env) {
+  // Development must keep the preview available while optional subsystems
+  // (notably trained-model readiness) are degraded. Use liveness there; keep
+  // production's stricter readiness contract unchanged.
+  const useDevelopmentLiveness =
+    env.NODE_ENV !== "production" && env.MAXBOOSTER_DEV_PORTS === "1";
   return [
     { name: "authoritative DNS", port: portFromEnv(env, "DNS_AUTHORITY_PORT", 53), udp: true },
     {
       name: "web application",
       port: portFromEnv(env, "PORT", 5000),
-      httpPath: "/ready",
+      httpPath: useDevelopmentLiveness ? "/api/health" : "/ready",
     },
     { name: "local DNS node", port: portFromEnv(env, "DNS_NODE_LOCAL_PORT", 5353), udp: true },
     {
@@ -44,7 +49,7 @@ export function configuredPortSpecs(env = process.env) {
     {
       name: "MaxCore model API",
       port: portFromEnv(env, "MODEL_API_PORT", 9878),
-      httpPath: "/api/ready",
+      httpPath: useDevelopmentLiveness ? "/api/health" : "/api/ready",
     },
     {
       name: "MaxCore model health",
@@ -174,7 +179,7 @@ if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
       ...(watchPid === null ? {} : { processProbe: () => pidIsRunning(watchPid) }),
     });
     if (result.ready) {
-      console.log(`[PortReadiness] all ${ports.length} configured listeners are ready (including DNS UDP and HTTP health checks)`);
+      console.log(`[PortReadiness] all ${ports.length} configured listeners are responding (including DNS UDP and HTTP checks)`);
     } else if (result.processExited) {
       console.error(
         `[PortReadiness] watched application process (pid ${watchPid}) exited before readiness; ` +

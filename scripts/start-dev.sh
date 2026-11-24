@@ -234,7 +234,7 @@ if [[ "$_READINESS_STATUS" != "0" ]]; then
   exit 1
 fi
 
-echo "[start-dev] Configured listeners are ready; starting repository completion analysis"
+echo "[start-dev] Configured listeners are responding; starting repository completion analysis"
 node scripts/testing/repository-verification.mjs dev &
 _VERIFICATION_PID=$!
 

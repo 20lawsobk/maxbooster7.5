@@ -78,10 +78,10 @@ test("dev and production readiness cover all twelve configured local listeners",
     devPorts.filter(({ name }) => name.includes("MaxCore") || name === "web application")
       .map(({ name, httpPath }) => [name, httpPath]),
     [
-      ["web application", "/ready"],
+      ["web application", "/api/health"],
       ["MaxCore diffusion gateway", "/health"],
       ["MaxCore API", "/healthz"],
-      ["MaxCore model API", "/api/ready"],
+      ["MaxCore model API", "/api/health"],
       ["MaxCore model health", "/healthz"],
       ["MaxCore proxy sidecar", "/health"],
     ],
@@ -102,9 +102,9 @@ test("dev and production readiness cover all twelve configured local listeners",
   }
 });
 
-test("web readiness waits for /ready rather than accepting a live but unready app", async () => {
+test("development startup accepts live web app while production readiness stays strict", async () => {
   const server = http.createServer((request, response) => {
-    response.writeHead(request.url === "/health" ? 200 : 503);
+    response.writeHead(request.url === "/api/health" ? 200 : 503);
     response.end("fixture");
   });
   await new Promise((resolve, reject) => {
@@ -112,10 +112,22 @@ test("web readiness waits for /ready rather than accepting a live but unready ap
     server.listen(0, "127.0.0.1", resolve);
   });
   try {
-    const result = await waitForConfiguredPorts([
-      { name: "web application", port: server.address().port, httpPath: "/ready" },
-    ], { timeoutMs: 20, intervalMs: 5 });
-    assert.deepEqual(result, {
+    const port = server.address().port;
+    const devWeb = configuredPortSpecs({ MAXBOOSTER_DEV_PORTS: "1" })
+      .find(({ name }) => name === "web application");
+    const devResult = await waitForConfiguredPorts(
+      [{ ...devWeb, port }],
+      { timeoutMs: 100, intervalMs: 5 },
+    );
+    assert.deepEqual(devResult, { ready: true, missing: [] });
+
+    const productionWeb = configuredPortSpecs({ NODE_ENV: "production" })
+      .find(({ name }) => name === "web application");
+    const productionResult = await waitForConfiguredPorts(
+      [{ ...productionWeb, port }],
+      { timeoutMs: 20, intervalMs: 5 },
+    );
+    assert.deepEqual(productionResult, {
       ready: false,
       missing: ["web application"],
     });
@@ -157,21 +169,37 @@ test("DNS API readiness probes /ready rather than accepting a TCP-only listener"
   assert.equal(requestedPath, "/ready");
 });
 
-test("MaxCore model readiness rejects an open listener returning HTTP 503", async () => {
-  const unhealthy = await listenHttp(503);
+test("development checks model liveness while production checks trained readiness", async () => {
+  const server = http.createServer((request, response) => {
+    response.writeHead(request.url === "/api/health" ? 200 : 503);
+    response.end("fixture");
+  });
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
   try {
-    const result = await waitForConfiguredPorts([
-      { name: "MaxCore model API", port: unhealthy.port, httpPath: "/api/ready" },
-    ], {
-      timeoutMs: 20,
-      intervalMs: 5,
-    });
-    assert.deepEqual(result, {
+    const port = server.address().port;
+    const devModel = configuredPortSpecs({ MAXBOOSTER_DEV_PORTS: "1" })
+      .find(({ name }) => name === "MaxCore model API");
+    const devResult = await waitForConfiguredPorts(
+      [{ ...devModel, port }],
+      { timeoutMs: 100, intervalMs: 5 },
+    );
+    assert.deepEqual(devResult, { ready: true, missing: [] });
+
+    const productionModel = configuredPortSpecs({ NODE_ENV: "production" })
+      .find(({ name }) => name === "MaxCore model API");
+    const productionResult = await waitForConfiguredPorts(
+      [{ ...productionModel, port }],
+      { timeoutMs: 20, intervalMs: 5 },
+    );
+    assert.deepEqual(productionResult, {
       ready: false,
       missing: ["MaxCore model API"],
     });
   } finally {
-    await unhealthy.close();
+    await new Promise((resolve) => server.close(resolve));
   }
 });
 
