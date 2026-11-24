@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-11-24T20:36:59.881882+00:00",
+  "repository": "/home/runner/workspace",
+  "production_score": 75,
+  "production_ready": false,
+  "finding_count": 4,
+  "blockers": 4,
+  "stats": {
+    "files": 8,
+    "text": 8,
+    "lines": 8033,
+    "source_files": 7,
+    "logging_files": 5,
+    "error_handling_files": 7,
+    "scoped": 1
+  },
+  "findings": [
+    {
+      "rule": "placeholder",
+      "severity": "HIGH",
+      "category": "Placeholder Logic",
+      "file": "production_audit.py",
+      "title": "Mock/stub/placeholder in non-test code",
+      "details": "L51: placeholder; L82: mock; L104: placeholder; L105: dummy; L224: placeholder; L485: placeholder",
+      "recommendation": "Replace with production implementation",
+      "production_blocker": true,
+      "count": 6
+    },
+    {
+      "rule": "placeholder",
+      "severity": "HIGH",
+      "category": "Placeholder Logic",
+      "file": "production_audit_ai.py",
+      "title": "Mock/stub/placeholder in non-test code",
+      "details": "L6: placeholder; L49: mock; L61: placeholder; L63: placeholder; L483: placeholder; L649: mock; L776: placeholder; L822: stub; L823: fake; L827: mock; +6 more",
+      "recommendation": "Replace with production implementation",
+      "production_blocker": true,
+      "count": 16
+    },
+    {
+      "rule": "placeholder",
+      "severity": "HIGH",
+      "category": "Placeholder Logic",
+      "file": "production_audit_understand.py",
+      "title": "Mock/stub/placeholder in non-test code",
+      "details": "L6: stub; L9: stub; L234: stub; L249: stub; L279: stub; L296: stub; L483: stub; L488: stub; L508: stub; L555: stub; +8 more",
+      "recommendation": "Replace with production implementation",
+      "production_blocker": true,
+      "count": 18
+    },
+    {
+      "rule": "todo",
+      "severity": "HIGH",
+      "category": "Incomplete Implementation",
+      "file": "production_audit.py",
+      "title": "TODO/FIXME markers",
+      "details": "L80: TODO",
+      "recommendation": "Complete or ticket the unfinished work",
+      "production_blocker": true,
+      "count": 1
+    }
+  ]
+}

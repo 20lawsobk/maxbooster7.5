@@ -426,8 +426,20 @@ class ProductionAuditEngine:
                 self._add(rule, "*", f"{overflow[rule]} additional hits beyond per-file cap",
                           count=overflow[rule])
 
+    def _ci_on_disk(self):
+        for h in CI_HINTS:
+            p = self.repo_root / h
+            if p.is_file() or (p.is_dir() and any(p.iterdir())):
+                return True
+        return False
+
     def _build_repo_findings(self):
         s = self.stats
+        if self.args.include:
+            # A scoped run only sees part of the repo, so repo-wide conclusions (tests, logging, README, CI...)
+            # would be wrong. File-level findings still apply.
+            s["scoped"] = 1
+            return
         src = s["source_files"]
         if src:
             if s["test_files"] == 0:
@@ -438,12 +450,15 @@ class ProductionAuditEngine:
                 self._add("no_logging", "*", "No logging framework usage found in source")
             if s["error_handling_files"] == 0:
                 self._add("no_error_handling", "*", "No exception handling found in source")
-        names = {n.lower() for n in self.top_level}
+        try:
+            names = {n.lower() for n in os.listdir(self.repo_root)}
+        except OSError:
+            names = {n.lower() for n in self.top_level}
         if not any(n.startswith("readme") for n in names):
             self._add("no_readme", "*", "No README at repository root")
         if not any(n.startswith(("license", "licence", "copying")) for n in names):
             self._add("no_license", "*", "No LICENSE at repository root")
-        if not self.has_ci and s["files"]:
+        if not self.has_ci and not self._ci_on_disk() and s["files"]:
             self._add("no_ci", "*", "No known CI config found")
         if ".gitignore" not in names and not self.args.no_git:
             self._add("no_gitignore", "*", "No .gitignore at repository root")
@@ -3087,7 +3102,16 @@ class Remediator:
             self.ensure_gitignore(ENV_IGNORE_LINES, "secret", "ignore real env files")
         return self
 
+    def _ci_exists(self):
+        for h in CI_HINTS:
+            p = self.root / h
+            if p.is_file() or (p.is_dir() and any(p.iterdir())):
+                return True
+        return False
+
     def fix_gitignore(self):
+        if (self.root / ".gitignore").exists():
+            return  # never regenerate an existing .gitignore
         lines = list(GITIGNORE_BLOCKS["base"])
         for s in self.stacks:
             lines += GITIGNORE_BLOCKS.get(s, [])
@@ -3185,6 +3209,8 @@ class Remediator:
             self.write(rel, new, "bare_except", f"narrowed {n} bare 'except:' to 'except Exception:'")
 
     def fix_readme(self):
+        if any(n.lower().startswith("readme") for n in os.listdir(self.root)):
+            return  # never overwrite an existing README
         name = self.root.name
         entries = sorted(e for e in os.listdir(self.root)
                          if not e.startswith(".") and e not in SKIP_DIRS)[:20]
@@ -3213,6 +3239,8 @@ class Remediator:
         self.write("README.md", text, "no_readme", "generated README skeleton (description left for you)")
 
     def fix_license(self):
+        if any(n.lower().startswith(("license", "licence", "copying")) for n in os.listdir(self.root)):
+            return  # never overwrite an existing license
         if self.args.license != "MIT" or not self.args.license_holder:
             self.manual.append(("no_license", "*",
                                 "choosing a license is your call: rerun with --license MIT --license-holder NAME"))
@@ -3221,6 +3249,8 @@ class Remediator:
                    "no_license", "added MIT license")
 
     def fix_ci(self):
+        if self._ci_exists():
+            return  # never overwrite existing CI configuration
         r, jobs = self.root, []
         if "python" in self.stacks:
             install = ("pip install -r requirements.txt" if (r / "requirements.txt").exists()
@@ -3639,6 +3669,26 @@ def _selftest_deterministic(root, out, check):
           _sh(root, "git", "branch", "--show-current").stdout.strip().startswith("audit-fixes-"))
 
 
+def _selftest_scoped(root, out, check):
+    _init_repo(root, {
+        "README.md": "REAL README\n", ".gitignore": "node_modules/\n", "LICENSE": "REAL LICENSE\n",
+        ".github/workflows/ci.yml": "name: REAL CI\n",
+        "src/a.py": '"""Doc."""\nimport logging\n\n\ndef f():\n    try:\n        return 1\n    except:\n        logging.exception("x")\n',
+        "other/b.py": "x = 1\n"})
+    rc, log = _run_cli(["--repo", str(root), "--output", str(out), "--include", "src/*", "--apply", "--commit"])
+    check("scoped run exits cleanly", rc == 0 or print(log[-800:]))
+    before = json.loads((out / "audit_before.json").read_text())
+    rules = {f["rule"] for f in before["findings"]}
+    check("scoped run skips repo-wide findings (no false README/CI/tests claims)",
+          not rules & {"no_readme", "no_license", "no_ci", "no_gitignore", "no_tests", "no_logging"} and "bare_except" in rules)
+    check("existing README, license, .gitignore and CI were left untouched",
+          (root / "README.md").read_text() == "REAL README\n" and (root / "LICENSE").read_text() == "REAL LICENSE\n"
+          and (root / ".gitignore").read_text() == "node_modules/\n"
+          and (root / ".github/workflows/ci.yml").read_text() == "name: REAL CI\n")
+    check("only in-scope files were fixed", "except Exception:" in (root / "src/a.py").read_text()
+          and (root / "other/b.py").read_text() == "x = 1\n")
+
+
 def _selftest_ai(root, out, site, check):
     pkg = site / "tinyslug"
     pkg.mkdir(parents=True)
@@ -3900,6 +3950,8 @@ def _self_test():
     try:
         print("Self-test 1/3: deterministic remediation (audit -> fix -> re-audit)")
         _selftest_deterministic(tmp / "det", tmp / "out_det", check)
+        print("Self-test 1b: scoped runs must not misreport or overwrite repo-level files")
+        _selftest_scoped(tmp / "scoped", tmp / "out_scoped", check)
         print("Self-test 2/3: Anthropic SDK layer (python / node / .NET adapters, stand-in SDKs)")
         _selftest_sdk(check)
         print("Self-test 3/3: AI agent + deep understanding + feature completion + in-house replacement (scripted model)")
