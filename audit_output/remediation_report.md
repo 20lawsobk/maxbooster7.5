@@ -1,15 +1,205 @@
 # Remediation Report
 
-**DRY RUN** (nothing was changed). Current score: 75  
+**DRY RUN** (nothing was changed). Current score: 3  
 
 ## Planned changes
 
-- none
+- [secret] `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/admin-account-parity.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/content-analysis-entitlement.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts`: replaced 2 hardcoded value(s) with env lookups (CLIENT_SECRET, CLIENT_SECRET)
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts`: replaced 2 hardcoded value(s) with env lookups (CLIENT_SECRET, CLIENT_SECRET)
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/scripts/simulate-production.mjs`: replaced 5 hardcoded value(s) with env lookups (PASSWORD, CONFIRM_PASSWORD, SESSION_SECRET, PASSWORD, CONFIRM_PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/admin-account-parity.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/ai-analytics-integration.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/auth-2fa.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/auth-flows.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/billing-lifecycle.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/content-analysis-entitlement.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/critical-paths.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/direct-upload.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/fabric-root-storage-postgres.test.mjs`: replaced 1 hardcoded value(s) with env lookups (SESSION_SECRET)
+- [secret] `.task123-publishing-candidate/tests/feature-catalog-production.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/feature-marketplace-distribution.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/feature-press-pitching-ar.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/feature-revenue-merch.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/feature-storefront-dns.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/file-management.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/p0-verification.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/paid-user-e2e.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/payment-processing/outbound-services-webhooks.mjs`: replaced 1 hardcoded value(s) with env lookups (STRIPE_WEBHOOK_SECRET)
+- [secret] `.task123-publishing-candidate/tests/private-admin-http.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/security-hardening.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/unit/generation-reliability-gate.test.mjs`: replaced 1 hardcoded value(s) with env lookups (MAXBOOSTER_GENERATION_E2_E_PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/unit/schema-validators.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `.task123-publishing-candidate/tests/unit/stripe-credentials.test.ts`: replaced 2 hardcoded value(s) with env lookups (STRIPE_TEST_SECRET, STRIPE_TEST_SECRET)
+- [secret] `.task123-publishing-candidate/tests/unit/subscriptionCheckout.test.ts`: replaced 2 hardcoded value(s) with env lookups (CLIENT_SECRET, CLIENT_SECRET)
+- [secret] `reports/aso/pr-reconciliation/pr-211-head/tests/admin-account-parity.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `reports/aso/pr-reconciliation/pr-211-head/tests/content-analysis-entitlement.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts`: replaced 2 hardcoded value(s) with env lookups (CLIENT_SECRET, CLIENT_SECRET)
+- [secret] `reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts`: replaced 2 hardcoded value(s) with env lookups (CLIENT_SECRET, CLIENT_SECRET)
+- [secret] `reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `scripts/simulate-production.mjs`: replaced 5 hardcoded value(s) with env lookups (PASSWORD, CONFIRM_PASSWORD, SESSION_SECRET, PASSWORD, CONFIRM_PASSWORD)
+- [secret] `tests/admin-account-parity.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/ai-analytics-integration.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/auth-2fa.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/auth-flows.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/billing-lifecycle.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/content-analysis-entitlement.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/critical-paths.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/direct-upload.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/fabric-root-storage-postgres.test.mjs`: replaced 1 hardcoded value(s) with env lookups (SESSION_SECRET)
+- [secret] `tests/feature-catalog-production.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/feature-marketplace-distribution.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/feature-press-pitching-ar.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/feature-revenue-merch.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/feature-storefront-dns.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/file-management.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/p0-verification.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/paid-user-e2e.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/payment-processing/outbound-services-webhooks.mjs`: replaced 1 hardcoded value(s) with env lookups (STRIPE_WEBHOOK_SECRET)
+- [secret] `tests/private-admin-http.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/security-hardening.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/unit/generation-reliability-gate.test.mjs`: replaced 1 hardcoded value(s) with env lookups (MAXBOOSTER_GENERATION_E2_E_PASSWORD)
+- [secret] `tests/unit/schema-validators.test.ts`: replaced 1 hardcoded value(s) with env lookups (PASSWORD)
+- [secret] `tests/unit/stripe-credentials.test.ts`: replaced 2 hardcoded value(s) with env lookups (STRIPE_TEST_SECRET, STRIPE_TEST_SECRET)
+- [secret] `tests/unit/subscriptionCheckout.test.ts`: replaced 2 hardcoded value(s) with env lookups (CLIENT_SECRET, CLIENT_SECRET)
+- [secret] `.env.example`: documented 5 variable name(s) (no values)
+- [secret] `.gitignore`: ignore real env files
 
 ## Needs a human
 
-- [placeholder] 40 remaining: Replace mock/stub/placeholder logic with real implementations.
-- [todo] 1 remaining: Finish or ticket the unfinished work; this needs a developer.
+- [secret] `.agents/memory/maxcore-test-suite-auth.md`: unsupported file type: move the secret out by hand
+- [secret] `.task123-publishing-candidate/client/src/i18n/locales/ja.json`: unsupported file type: move the secret out by hand
+- [secret] `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/admin-account-parity.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/content-analysis-entitlement.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703493686/server/services/mobilePushService.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703851828/server/services/mobilePushService.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/source.patch`: unsupported file type: move the secret out by hand
+- [secret] `.task123-publishing-candidate/reports/readiness-audit/scanner-dependencies.json`: unsupported file type: move the secret out by hand
+- [secret] `.task123-publishing-candidate/scripts/production-provider-simulation.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/scripts/readiness-gauge/lib/checks.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/scripts/rehearse-publishing-start.sh`: unsupported file type: move the secret out by hand
+- [secret] `.task123-publishing-candidate/scripts/simulate-production.mjs`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/scripts/testing/run-pdim-smoke.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/server/services/acmeCrypto.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/server/services/mobilePushService.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/admin-account-parity.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/ai-analytics-integration.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/auth-2fa.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/auth-flows.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/billing-lifecycle.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/content-analysis-entitlement.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/critical-paths.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/current-storage-joint-recovery.test.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/direct-upload.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/fabric-migration-outbox-postgres.test.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/fabric-root-storage-postgres.test.mjs`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/feature-catalog-production.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/feature-marketplace-distribution.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/feature-press-pitching-ar.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/feature-revenue-merch.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/feature-storefront-dns.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/file-management.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/p0-verification.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/paid-user-e2e.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/payment-processing/outbound-services-webhooks.mjs`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/private-admin-http.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/security-hardening.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/testing/test_commerce_subject_selector.py`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/acmeCrypto.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/api-request-csrf.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/auth-page-contracts.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/auto-posting-recovery.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/checkout-subscription-page-contracts.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/client-auth-beta-contracts.test.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/developer-api-page-backend.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/generation-reliability-gate.test.mjs`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/unit/growth-rights.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/maxcore-connector-contract.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/readiness-gauge.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tests/unit/schema-validators.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/unit/stripe-credentials.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/unit/subscriptionCheckout.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `.task123-publishing-candidate/tests/unit/toolost-release-transport.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `.task123-publishing-candidate/tools/legacy-security-update.json`: unsupported file type: move the secret out by hand
+- [secret] `client/src/i18n/locales/ja.json`: unsupported file type: move the secret out by hand
+- [secret] `external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py`: no safe automatic rewrite found: fix by hand
+- [secret] `reports/aso/pr-reconciliation/pr-211-head/tests/admin-account-parity.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `reports/aso/pr-reconciliation/pr-211-head/tests/content-analysis-entitlement.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `reports/fix-all/.snapshots/ts-server-1785703493686/server/services/mobilePushService.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `reports/fix-all/.snapshots/ts-server-1785703851828/server/services/mobilePushService.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py`: no safe automatic rewrite found: fix by hand
+- [secret] `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py`: no safe automatic rewrite found: fix by hand
+- [secret] `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/source.patch`: unsupported file type: move the secret out by hand
+- [secret] `reports/readiness-audit/scanner-dependencies.json`: unsupported file type: move the secret out by hand
+- [secret] `scripts/production-provider-simulation.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `scripts/readiness-gauge/lib/checks.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `scripts/rehearse-publishing-start.sh`: unsupported file type: move the secret out by hand
+- [secret] `scripts/simulate-production.mjs`: ROTATE the removed credential(s): they remain in git history
+- [secret] `scripts/testing/run-pdim-smoke.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `server/services/acmeCrypto.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `server/services/mobilePushService.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/admin-account-parity.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/ai-analytics-integration.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/auth-2fa.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/auth-flows.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/billing-lifecycle.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/completion-understanding.test.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/content-analysis-entitlement.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/critical-paths.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/current-storage-joint-recovery.test.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/direct-upload.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/fabric-migration-outbox-postgres.test.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/fabric-root-storage-postgres.test.mjs`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/feature-catalog-production.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/feature-marketplace-distribution.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/feature-press-pitching-ar.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/feature-revenue-merch.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/feature-storefront-dns.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/file-management.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/p0-verification.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/paid-user-e2e.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/payment-processing/outbound-services-webhooks.mjs`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/private-admin-http.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/security-hardening.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/testing/test_commerce_subject_selector.py`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/testing/test_production_audit_understand_cli.py`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/acmeCrypto.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/api-request-csrf.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/auth-page-contracts.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/auto-posting-recovery.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/checkout-subscription-page-contracts.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/client-auth-beta-contracts.test.mjs`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/developer-api-page-backend.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/generation-reliability-gate.test.mjs`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/unit/growth-rights.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/maxcore-connector-contract.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/readiness-gauge.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tests/unit/schema-validators.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/unit/stripe-credentials.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/unit/subscriptionCheckout.test.ts`: ROTATE the removed credential(s): they remain in git history
+- [secret] `tests/unit/toolost-release-transport.test.ts`: no safe automatic rewrite found: fix by hand
+- [secret] `tools/legacy-security-update.json`: unsupported file type: move the secret out by hand
+- [no_license] `*`: choosing a license is your call: rerun with --license MIT --license-holder NAME
+- [bare_except] 1198 remaining: Remaining hits are swallowed exceptions (pass / empty catch): handle or log them.
+- [placeholder] 1163 remaining: Replace mock/stub/placeholder logic with real implementations.
+- [large_file] 380 remaining: Split oversized modules by responsibility.
+- [secret] 176 remaining: Remaining hits are known-format tokens, dict entries or unsupported languages: fix by hand.
+- [todo] 98 remaining: Finish or ticket the unfinished work; this needs a developer.
 
 ## Caveats
 

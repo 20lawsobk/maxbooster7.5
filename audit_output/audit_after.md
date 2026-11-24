@@ -1,0 +1,790 @@
+# Production Audit Report
+
+Generated: 2026-11-24T22:50:30.750706+00:00
+Repository: `/home/runner/workspace`
+
+**Production Score:** 3/100  
+**Production Ready:** False  
+**Blockers:** 655  
+
+## Scan Summary
+
+- Files: 28140 (text 27391, binary 749, skipped 0)
+- Lines scanned: 59408763
+- Source files: 11746, test files: 3590
+
+## Security (65)
+
+- **[CRITICAL] Potential hardcoded secret** — `.agents/memory/maxcore-test-suite-auth.md`
+  - Details: L5: Assigned API_KEY: $MAX…[18 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/client/src/i18n/locales/ja.json`
+  - Details: L24: Assigned Password: パスワー…[13 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py`
+  - Details: L107: Assigned API_KEY: fixt…[12 chars]; L108: Assigned API_KEY: fixt…[12 chars]; L134: Assigned API_KEY: fixt…[12 chars]; L135: Assigned API_KEY: fixt…[12 chars]; L151: Assigned API_KEY: fixt…[12 chars]; L152: Assigned API_KEY: fixt…[12 chars]; L281: Assigned API_KEY: fixt…[12 chars]; L346: Assigned API_KEY: fixt…[23 chars]; L409: Assigned API_KEY: fixt…[23 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703493686/server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703851828/server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py`
+  - Details: L120: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py`
+  - Details: L120: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/source.patch`
+  - Details: L253: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/readiness-audit/scanner-dependencies.json`
+  - Details: L7053: Assigned secret: /tmp…[33 chars]; L12339: Assigned secret: /tmp…[33 chars]; L16970: AWS access key: ASIA…[20 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/scripts/production-provider-simulation.mjs`
+  - Details: L50: Assigned SECRET: simu…[56 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/scripts/readiness-gauge/lib/checks.ts`
+  - Details: L93: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/scripts/rehearse-publishing-start.sh`
+  - Details: L23: Assigned SECRET: isol…[47 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/scripts/simulate-production.mjs`
+  - Details: L1640: Assigned TOKEN: prod…[32 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/scripts/testing/run-pdim-smoke.mjs`
+  - Details: L74: Assigned TOKEN: isol…[22 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/server/services/acmeCrypto.ts`
+  - Details: L136: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/current-storage-joint-recovery.test.mjs`
+  - Details: L41: Assigned SECRET: owne…[42 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/fabric-migration-outbox-postgres.test.mjs`
+  - Details: L190: Assigned SECRET: isol…[60 chars]; L194: Assigned SECRET: isol…[60 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/payment-processing/outbound-services-webhooks.mjs`
+  - Details: L298: Assigned SECRET: whse…[14 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/testing/test_commerce_subject_selector.py`
+  - Details: L120: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/acmeCrypto.test.ts`
+  - Details: L46: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/api-request-csrf.test.ts`
+  - Details: L30: Assigned token: fixt…[18 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/auth-page-contracts.test.ts`
+  - Details: L300: Assigned Token: boot…[22 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/auto-posting-recovery.test.ts`
+  - Details: L226: Assigned Token: isol…[22 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/checkout-subscription-page-contracts.test.ts`
+  - Details: L268: Assigned Secret: mont…[19 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/client-auth-beta-contracts.test.mjs`
+  - Details: L21: Assigned secret: simu…[21 chars]; L35: Assigned password: pass…[16 chars]; L60: Assigned password: pass…[16 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/developer-api-page-backend.test.ts`
+  - Details: L31: Assigned apiKey: fixt…[12 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/growth-rights.test.ts`
+  - Details: L45: Assigned API_KEY: isol…[23 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/maxcore-connector-contract.test.ts`
+  - Details: L67: Assigned TOKEN: priv…[12 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/readiness-gauge.test.ts`
+  - Details: L437: Private key block: ----…[27 chars]; L443: Private key block: ----…[31 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/toolost-release-transport.test.ts`
+  - Details: L72: Assigned SECRET: olde…[20 chars]; L73: Assigned SECRET: sand…[14 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tools/legacy-security-update.json`
+  - Details: L287: Private key block: ----…[27 chars]; L294: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `client/src/i18n/locales/ja.json`
+  - Details: L24: Assigned Password: パスワー…[13 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py`
+  - Details: L88: Assigned API_KEY: fixt…[14 chars]; L130: Assigned API_KEY: fixt…[12 chars]; L131: Assigned API_KEY: fixt…[12 chars]; L157: Assigned API_KEY: fixt…[12 chars]; L158: Assigned API_KEY: fixt…[12 chars]; L174: Assigned API_KEY: fixt…[12 chars]; L175: Assigned API_KEY: fixt…[12 chars]; L304: Assigned API_KEY: fixt…[12 chars]; L376: Assigned API_KEY: fixt…[23 chars]; L436: Assigned API_KEY: fixt…[23 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/fix-all/.snapshots/ts-server-1785703493686/server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/fix-all/.snapshots/ts-server-1785703851828/server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py`
+  - Details: L120: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py`
+  - Details: L120: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/source.patch`
+  - Details: L253: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/readiness-audit/scanner-dependencies.json`
+  - Details: L7053: Assigned secret: /tmp…[33 chars]; L12339: Assigned secret: /tmp…[33 chars]; L16970: AWS access key: ASIA…[20 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/production-provider-simulation.mjs`
+  - Details: L50: Assigned SECRET: simu…[56 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/readiness-gauge/lib/checks.ts`
+  - Details: L93: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/rehearse-publishing-start.sh`
+  - Details: L23: Assigned SECRET: isol…[47 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/simulate-production.mjs`
+  - Details: L1640: Assigned TOKEN: prod…[32 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/testing/run-pdim-smoke.mjs`
+  - Details: L74: Assigned TOKEN: isol…[22 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `server/services/acmeCrypto.ts`
+  - Details: L136: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/completion-understanding.test.mjs`
+  - Details: L188: Assigned API_KEY: fixt…[20 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/current-storage-joint-recovery.test.mjs`
+  - Details: L41: Assigned SECRET: owne…[42 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/fabric-migration-outbox-postgres.test.mjs`
+  - Details: L190: Assigned SECRET: isol…[60 chars]; L194: Assigned SECRET: isol…[60 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- …and 15 more (see JSON report)
+
+## Placeholder Logic (510)
+
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-dashboard/src/components/ui/select.tsx`
+  - Details: L22: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py`
+  - Details: L848: placeholder; L849: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/content_playbook.py`
+  - Details: L439: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/orchestrator.py`
+  - Details: L228: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/future_backends.py`
+  - Details: L55: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/pdim/orchestrator.py`
+  - Details: L14: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/request_intelligence.py`
+  - Details: L1904: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/asset_index.py`
+  - Details: L5: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/__init__.py`
+  - Details: L16: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/fabric/graph.py`
+  - Details: L6: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/image/path_tracer.py`
+  - Details: L16: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/maxcore_server.py`
+  - Details: L910: stub; L912: stub; L1179: stub; L1225: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/workers/admin_content_loop.py`
+  - Details: L136: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/workers/quality_harvester.py`
+  - Details: L14: fake; L406: fake; L610: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/mockup-sandbox/src/components/ui/select.tsx`
+  - Details: L22: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-dashboard/src/components/ui/select.tsx`
+  - Details: L22: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py`
+  - Details: L848: placeholder; L849: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/content_playbook.py`
+  - Details: L439: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/orchestrator.py`
+  - Details: L228: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/future_backends.py`
+  - Details: L55: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/pdim/orchestrator.py`
+  - Details: L14: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/request_intelligence.py`
+  - Details: L1904: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/asset_index.py`
+  - Details: L5: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/__init__.py`
+  - Details: L16: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/fabric/graph.py`
+  - Details: L6: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/image/path_tracer.py`
+  - Details: L16: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/maxcore_server.py`
+  - Details: L910: stub; L912: stub; L1179: stub; L1225: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/workers/admin_content_loop.py`
+  - Details: L136: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/workers/quality_harvester.py`
+  - Details: L14: fake; L406: fake; L610: fake
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/mockup-sandbox/src/components/ui/select.tsx`
+  - Details: L22: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/AI enhancements/creativeModelService.ts`
+  - Details: L32: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/AI enhancements/socialMedia.ts`
+  - Details: L2282: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/build.sh`
+  - Details: L205: stub
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/automations/CustomWorkflowBuilder.tsx`
+  - Details: L68: placeholder; L175: placeholder; L208: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/batch/BatchEditDialog.tsx`
+  - Details: L44: placeholder; L580: placeholder; L596: placeholder; L612: placeholder; L622: placeholder; L646: placeholder; L655: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/batch/BulkCreateDialog.tsx`
+  - Details: L57: placeholder; L337: placeholder; L479: placeholder; L727: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/batch/BulkEditDialog.tsx`
+  - Details: L34: placeholder; L302: placeholder; L318: placeholder; L334: placeholder; L344: placeholder; L361: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/batch/BulkEditForm.tsx`
+  - Details: L48: placeholder; L382: placeholder; L402: placeholder; L426: placeholder; L438: placeholder; L471: placeholder; L483: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/marketplace/DNSZoneEditor.tsx`
+  - Details: L510: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/marketplace/StorefrontDnsZoneManager.tsx`
+  - Details: L1298: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/search/GlobalSearch.tsx`
+  - Details: L40: placeholder; L236: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/social/CompetitorBenchmark.tsx`
+  - Details: L175: mock
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/studio/AIMusicGenerator.tsx`
+  - Details: L612: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/studio/FlowStateCollaboration.tsx`
+  - Details: L480: mock
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/studio/FlowStateReferenceMatch.tsx`
+  - Details: L81: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/studio/HighPerformanceDAW.tsx`
+  - Details: L1284: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/studio/LyricsPanel.tsx`
+  - Details: L263: placeholder; L299: placeholder; L320: placeholder; L1054: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/studio/MobileLyricsPanel.tsx`
+  - Details: L239: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/studio/PluginBrowser.tsx`
+  - Details: L196: placeholder
+  - Fix: Replace with production implementation
+- **[HIGH] Mock/stub/placeholder in non-test code** — `.task123-publishing-candidate/client/src/components/studio/StudioOneDAW.tsx`
+  - Details: L3930: placeholder; L4737: placeholder
+  - Fix: Replace with production implementation
+- …and 460 more (see JSON report)
+
+## Incomplete Implementation (80)
+
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/aso/isolated-full-20261106T233139Z/toolchains/rust-1.93.1/lib/rustlib/etc/lldb_providers.py`
+  - Details: L1398: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/aso/isolated-full-20261106T233139Z/toolchains/rust-1.93.1/lib/rustlib/uninstall.sh`
+  - Details: L574: HACK; L828: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703493686/server/services/algorithmIntelligence.ts`
+  - Details: L833: WIP
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703493686/server/services/distributionService.ts`
+  - Details: L753: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703493686/server/services/labelGridService.ts`
+  - Details: L405: XXX; L407: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703493686/server/services/royaltyExports.ts`
+  - Details: L12: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703851828/server/services/algorithmIntelligence.ts`
+  - Details: L833: WIP
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703851828/server/services/distributionService.ts`
+  - Details: L753: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703851828/server/services/labelGridService.ts`
+  - Details: L405: XXX; L407: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703851828/server/services/royaltyExports.ts`
+  - Details: L12: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1786084146412/server/services/algorithmIntelligence.ts`
+  - Details: L833: WIP
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1786084146412/server/services/distributionService.ts`
+  - Details: L753: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1786084146412/server/services/labelGridService.ts`
+  - Details: L405: XXX; L407: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1786084146412/server/services/royaltyExports.ts`
+  - Details: L12: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1786102456133/server/services/algorithmIntelligence.ts`
+  - Details: L833: WIP
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1786102456133/server/services/distributionService.ts`
+  - Details: L753: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1786102456133/server/services/labelGridService.ts`
+  - Details: L405: XXX; L407: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1786102456133/server/services/royaltyExports.ts`
+  - Details: L12: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/mapping-audit/2026-10-28-python-factory-proposal/platform-register.next.py`
+  - Details: L307: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/mapping-audit/2026-10-28-topology-final/candidate/scripts/audit-endpoints.mjs`
+  - Details: L22: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/mapping-audit/2026-10-28-topology-final/candidate/scripts/testing/platform-register.py`
+  - Details: L587: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/mapping-audit/2026-10-29-python-factory-final/platform-register.next.py`
+  - Details: L315: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/scripts/testing/platform-register.py`
+  - Details: L307: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/scripts/testing/platform-register.py`
+  - Details: L312: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/test-verification/final-map-refresh/toolchains/rust-1.93.1/lib/rustlib/etc/lldb_providers.py`
+  - Details: L1398: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/test-verification/final-map-refresh/toolchains/rust-1.93.1/lib/rustlib/uninstall.sh`
+  - Details: L574: HACK; L828: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/test-verification/final-plan-fix/toolchains/rust-1.93.1/lib/rustlib/etc/lldb_providers.py`
+  - Details: L1398: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/test-verification/final-plan-fix/toolchains/rust-1.93.1/lib/rustlib/uninstall.sh`
+  - Details: L574: HACK; L828: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/test-verification/full-current/toolchains/rust-1.93.1/lib/rustlib/etc/lldb_providers.py`
+  - Details: L1398: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/reports/test-verification/full-current/toolchains/rust-1.93.1/lib/rustlib/uninstall.sh`
+  - Details: L574: HACK; L828: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/scripts/audit-endpoints.mjs`
+  - Details: L22: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/scripts/testing/launch-readiness-audit.py`
+  - Details: L213: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/scripts/testing/platform-register.py`
+  - Details: L315: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/server/services/algorithmIntelligence.ts`
+  - Details: L834: WIP
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/server/services/distributionService.ts`
+  - Details: L676: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/server/services/labelGridService.ts`
+  - Details: L406: XXX; L408: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/server/services/royaltyExports.ts`
+  - Details: L14: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `.task123-publishing-candidate/tests/unit/readiness-gauge.test.ts`
+  - Details: L573: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `production_audit.py`
+  - Details: L80: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/aso/isolated-full-20261106T233139Z/toolchains/rust-1.93.1/lib/rustlib/etc/lldb_providers.py`
+  - Details: L1398: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/aso/isolated-full-20261106T233139Z/toolchains/rust-1.93.1/lib/rustlib/uninstall.sh`
+  - Details: L574: HACK; L828: FIXME
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/fix-all/.snapshots/ts-server-1785703493686/server/services/algorithmIntelligence.ts`
+  - Details: L833: WIP
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/fix-all/.snapshots/ts-server-1785703493686/server/services/distributionService.ts`
+  - Details: L753: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/fix-all/.snapshots/ts-server-1785703493686/server/services/labelGridService.ts`
+  - Details: L405: XXX; L407: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/fix-all/.snapshots/ts-server-1785703493686/server/services/royaltyExports.ts`
+  - Details: L12: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/fix-all/.snapshots/ts-server-1785703851828/server/services/algorithmIntelligence.ts`
+  - Details: L833: WIP
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/fix-all/.snapshots/ts-server-1785703851828/server/services/distributionService.ts`
+  - Details: L753: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/fix-all/.snapshots/ts-server-1785703851828/server/services/labelGridService.ts`
+  - Details: L405: XXX; L407: XXX
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/fix-all/.snapshots/ts-server-1785703851828/server/services/royaltyExports.ts`
+  - Details: L12: TODO
+  - Fix: Complete or ticket the unfinished work
+- **[HIGH] TODO/FIXME markers** — `reports/fix-all/.snapshots/ts-server-1786084146412/server/services/algorithmIntelligence.ts`
+  - Details: L833: WIP
+  - Fix: Complete or ticket the unfinished work
+- …and 30 more (see JSON report)
+
+## Architecture (380)
+
+- **[MEDIUM] Oversized source file** — `.pdim-cluster-test-Pidv4k/cluster-fixture.mjs`
+  - Details: L1: 10557 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/request_intelligence.py`
+  - Details: L1: 2324 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/server.py`
+  - Details: L1: 12123 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/api-server/src/services/contentAwarenessService.ts`
+  - Details: L1: 2153 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/.pdim-cluster-test-Pidv4k/cluster-fixture.mjs`
+  - Details: L1: 10557 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/request_intelligence.py`
+  - Details: L1: 2324 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/server.py`
+  - Details: L1: 12123 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/api-server/src/services/contentAwarenessService.ts`
+  - Details: L1: 2153 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/AI enhancements/SocialMedia.tsx`
+  - Details: L1: 5742 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/AI enhancements/socialMedia.ts`
+  - Details: L1: 5182 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/components/content/ServerVideoGenerator.tsx`
+  - Details: L1: 2036 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/components/distribution/AutoArtistSync.tsx`
+  - Details: L1: 2954 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/components/marketplace/StorefrontBuilder.tsx`
+  - Details: L1: 3195 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/components/marketplace/StorefrontDnsZoneManager.tsx`
+  - Details: L1: 2566 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/components/social/ContentGenerator.tsx`
+  - Details: L1: 2294 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/components/studio/HighPerformanceDAW.tsx`
+  - Details: L1: 2032 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/components/studio/PluginControlDialog.tsx`
+  - Details: L1: 2001 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/components/studio/StudioOneDAW.tsx`
+  - Details: L1: 6145 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/lib/audioEngine.ts`
+  - Details: L1: 3172 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/lib/studioStore.ts`
+  - Details: L1: 2247 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/lib/video/templates/PromoTemplates.ts`
+  - Details: L1: 2458 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/pages/Admin.tsx`
+  - Details: L1: 3054 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/pages/AdminDashboard.tsx`
+  - Details: L1: 2471 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/pages/Advertisement.tsx`
+  - Details: L1: 3455 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/pages/Analytics.tsx`
+  - Details: L1: 3518 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/pages/Distribution.tsx`
+  - Details: L1: 7291 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/pages/Marketplace.tsx`
+  - Details: L1: 8865 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/pages/Royalties.tsx`
+  - Details: L1: 2924 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/pages/Settings.tsx`
+  - Details: L1: 2382 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/client/src/pages/SocialMedia.tsx`
+  - Details: L1: 6304 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/request_intelligence.py`
+  - Details: L1: 2663 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/server.py`
+  - Details: L1: 13618 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/external/pdim/artifacts/api-server/src/redis/store.ts`
+  - Details: L1: 4665 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/migrations/0000_wandering_champions.sql`
+  - Details: L1: 2374 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/aso/isolated-full-20261106T233139Z/rechecks/admin-entitlement-regression/studio-loader-browser/browser-script.js`
+  - Details: L1: 29808 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/aso/isolated-full-20261106T233139Z/studio-loader-browser/browser-script.js`
+  - Details: L1: 29808 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/aso/pr-reconciliation/merged-validation/studio-loader-browser/browser-script.js`
+  - Details: L1: 29808 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/server/routes.ts`
+  - Details: L1: 8768 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-28-next-contract-trace/controls/external__pdim__artifacts__api-server__src__redis__store.ts.vite-tsconfig-ssr.js`
+  - Details: L1: 4025 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-28-shared-producer-candidate/p1-shared-3/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.body.js`
+  - Details: L1: 4028 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-28-shared-producer-candidate/p1-shared-3/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.executed.js`
+  - Details: L1: 4030 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-29-main-integration/runtime/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.body.js`
+  - Details: L1: 4028 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-29-main-integration/runtime/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.executed.js`
+  - Details: L1: 4030 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-29-p2-review-blocked/candidate/runtime/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.body.js`
+  - Details: L1: 4028 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-29-p2-review-blocked/candidate/runtime/e63e116c181fa0fe419f330f160b2137ba9b1b86737cd8ff2923381dc3385a4a.executed.js`
+  - Details: L1: 4030 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/fix-all/.snapshots/imports-1785703854037/server/services/musicWorkflowAutomationService.ts`
+  - Details: L1: 2449 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/fix-all/.snapshots/imports-1785703854037/server/services/platformAutoFixer.ts`
+  - Details: L1: 2103 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/fix-all/.snapshots/imports-1785815521041/server/services/musicWorkflowAutomationService.ts`
+  - Details: L1: 2449 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/fix-all/.snapshots/imports-1785815521041/server/services/platformAutoFixer.ts`
+  - Details: L1: 2103 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.task123-publishing-candidate/reports/fix-all/.snapshots/schema-1785703854638/server/routes.ts`
+  - Details: L1: 7784 lines
+  - Fix: Break into smaller modules
+- …and 330 more (see JSON report)
+
+## Reliability (372)
+
+- **[MEDIUM] Swallowed or overly broad exception** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py`
+  - Details: L35: except: return r.status, raw.decode(errors="replace")[:200]
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py`
+  - Details: L145: except Exception: pass
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py`
+  - Details: L35: except: return r.status, raw.decode(errors="replace")[:200]
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/.pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py`
+  - Details: L145: except Exception: pass
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/AI enhancements/AudioWorkletEngine.ts`
+  - Details: L522: } catch (e) {}; L542: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/built-in plugins dsp/CompressorPlugin.ts`
+  - Details: L62: } catch (e) {}; L65: } catch (e) {}; L68: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/built-in plugins dsp/DeEsserPlugin.ts`
+  - Details: L132: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/built-in plugins dsp/DynamicEQPlugin.ts`
+  - Details: L123: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/built-in plugins dsp/PhaserPlugin.ts`
+  - Details: L53: } catch (_) {}; L60: } catch (_) {}; L146: } catch (_) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/public/js/theme-init.js`
+  - Details: L3: try { theme = localStorage.getItem("max-booster-theme") || "dark"; } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/public/sw.js`
+  - Details: L452: } catch {}; L901: } catch {}; L906: } catch {}; L907: } catch {}; L929: } catch {}; L956: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/components/achievements/AchievementNotification.tsx`
+  - Details: L134: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/components/auth/InactivityManager.tsx`
+  - Details: L57: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/components/export/BulkExportManager.tsx`
+  - Details: L606: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/components/marketplace/StorefrontBuilder.tsx`
+  - Details: L797: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/components/marketplace/StorefrontDnsZoneManager.tsx`
+  - Details: L491: } catch {}; L525: } catch {}; L581: } catch {}; L689: } catch {}; L1767: } catch {}; L1815: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/components/settings/CrossPlatformSync.tsx`
+  - Details: L160: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/components/studio/PanningModes.tsx`
+  - Details: L110: } catch {}; L116: } catch {}; L304: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/components/studio/PatternEditor.tsx`
+  - Details: L838: } catch (error) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/components/studio/SpatialAudio.tsx`
+  - Details: L268: } catch {}; L276: } catch {}; L281: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/hooks/useAudioContext.ts`
+  - Details: L216: } catch {}; L221: } catch {}; L226: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/hooks/useAutoUpdate.ts`
+  - Details: L31: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/hooks/useBatchSelection.ts`
+  - Details: L62: } catch {}; L79: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/hooks/useDAWAudioPlayback.ts`
+  - Details: L87: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/hooks/useFocusReturn.ts`
+  - Details: L53: } catch {}; L88: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/hooks/useNPSSurvey.ts`
+  - Details: L26: } catch {}; L33: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/hooks/useSelection.ts`
+  - Details: L66: } catch {}; L81: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/lib/audioEngine.ts`
+  - Details: L1690: } catch (e) {}; L1693: } catch (e) {}; L1696: } catch (e) {}; L1699: } catch (e) {}; L1702: } catch (e) {}; L1706: } catch (e) {}; L1709: } catch (e) {}; L1714: } catch (e) {}; L1717: } catch (e) {}; L1721: } catch (e) {}; +29 more
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/lib/audioPreviewEngine.ts`
+  - Details: L222: } catch (e) {}; L294: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/lib/daw/AudioWorkletEngine.ts`
+  - Details: L543: } catch (e) {}; L563: } catch (e) {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/lib/video/BrowserCapabilities.ts`
+  - Details: L192: } catch {}; L197: } catch {}; L202: } catch {}; L270: } catch {}; L473: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/pages/Marketplace.tsx`
+  - Details: L1471: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/client/src/pages/Storefront.tsx`
+  - Details: L467: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/evaluations/maxcore-fused/live-api.mjs`
+  - Details: L137: try { json = JSON.parse(bytes.toString()); } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py`
+  - Details: L35: except: return r.status, raw.decode(errors="replace")[:200]
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py`
+  - Details: L145: except Exception: pass
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/external/pdim/artifacts/api-server/src/index.ts`
+  - Details: L32: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/external/pdim/artifacts/api-server/src/pocket-dimension/fabric/compression/CompressionProfileRouter.ts`
+  - Details: L103: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/external/pdim/artifacts/api-server/src/services/modelWeightStorage.ts`
+  - Details: L65: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/external/pdim/artifacts/api-server/src/services/serverHealthMonitor.ts`
+  - Details: L612: } catch {}; L744: } catch {}; L777: } catch {}; L844: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/external/pdim/artifacts/dashboard/src/components/CreateInstanceDialog.tsx`
+  - Details: L63: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/external/pdim/artifacts/dashboard/src/components/KeyExplorer.tsx`
+  - Details: L122: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/scripts/testing/integration-browser.mjs`
+  - Details: L49: } catch {}; L114: } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-27-analytics-dependencies-node/59116-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-27-final-node/40003-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-27-node-with-originals/39246-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-27-stable-node/40770-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-28-a1603b13-node/125755-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-28-keepnames-final/profile/201184-0/679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e.js`
+  - Details: L135: `;async function execLuaViaPdim(pdimExec,script,numKeys,allArgs){const keys=allA
+  - Fix: Catch specific errors and log or re-raise
+- **[MEDIUM] Swallowed or overly broad exception** — `.task123-publishing-candidate/reports/coverage-producer/2026-10-28-next-contract-trace/controls/external__pdim__artifacts__api-server__src__redis__store.ts.vite-tsconfig-ssr.js`
+  - Details: L1: __vite_ssr_exportName__("getLuaConcurrency", () => { try { return getLuaConcurre; L2: __vite_ssr_exportName__("RedisStore", () => { try { return RedisStore } catch {}
+  - Fix: Catch specific errors and log or re-raise
+- …and 322 more (see JSON report)
+
+## Documentation (1)
+
+- **[LOW] Missing LICENSE** — `*`
+  - Details: No LICENSE at repository root
+  - Fix: Add a license file
