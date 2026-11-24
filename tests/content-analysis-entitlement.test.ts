@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { withFixtureDatabase } from "./helpers-http-fixture";
 
 const email = `content_entitlement_${randomUUID().replaceAll("-", "")}@maxbooster-test.invalid`;
-const password = "ContentFixture79!Secure";
+const password = process.env.PASSWORD as string;
 const cookies = new Map<string, string>();
 async function request(method: string, path: string, body?: Record<string, unknown>): Promise<Response> {
   if (method !== "GET" && !cookies.has("csrf-token")) await request("GET", "/api/csrf-token");

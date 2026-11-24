@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import { withFixtureDatabase } from "./helpers-http-fixture";
 
 const suffix = randomUUID().replaceAll("-", "");
-const password = "IsolatedAdmin93!Fixture";
+const password = process.env.PASSWORD as string;
 function account(label: string) {
   const cookies = new Map<string, string>();
   const email = `${label}_${suffix}@maxbooster-test.invalid`;

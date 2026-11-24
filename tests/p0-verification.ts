@@ -195,7 +195,7 @@ async function runTests(): Promise<TestResult[]> {
   console.log("Testing P0-06: Auth Login (Invalid Credentials)...");
   const loginResult = await makeRequest("POST", "/api/auth/login", {
     email: "invalid@nonexistent.com",
-    password: "wrongpassword123",
+    password: process.env.PASSWORD as string,
   });
   results.push({
     id: "P0-06",

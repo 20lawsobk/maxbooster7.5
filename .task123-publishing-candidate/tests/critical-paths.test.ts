@@ -11,7 +11,7 @@ let testUserId = "";
 const testUser = {
   birthdate: "1990-01-01",
   email: `test_${Date.now()}@maxbooster-test.invalid`,
-  password: "SecurePass123!",
+  password: process.env.PASSWORD as string,
   username: `TestUser_${Date.now()}`,
   firstName: "Test",
   lastName: "User",

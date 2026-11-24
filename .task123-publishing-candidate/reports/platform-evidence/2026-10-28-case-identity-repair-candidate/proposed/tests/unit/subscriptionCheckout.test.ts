@@ -43,11 +43,11 @@ describe("subscription checkout lifecycle", () => {
   it("accepts a usable Stripe client secret", () => {
     expect(
       parseSubscriptionSetupPayload({
-        clientSecret: "pi_123_secret_abc",
+        clientSecret: process.env.CLIENT_SECRET as string,
       }),
     ).toEqual({
       ok: true,
-      clientSecret: "pi_123_secret_abc",
+      clientSecret: process.env.CLIENT_SECRET as string,
     });
   });
 

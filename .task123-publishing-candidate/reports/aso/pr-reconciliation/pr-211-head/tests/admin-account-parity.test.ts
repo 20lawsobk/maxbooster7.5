@@ -10,7 +10,7 @@ type Json = Record<string, unknown>;
 function account(name: string) {
   const cookies = new Map<string, string>();
   const email = `parity_${name}_${suffix}@maxbooster-test.invalid`;
-  const password = "ParityFixture94!Secure";
+  const password = process.env.PASSWORD as string;
   async function api(method: string, path: string, body?: Json) {
     if (method !== "GET" && !cookies.has("csrf-token")) await api("GET", "/api/csrf-token");
     const headers: Record<string, string> = { "Content-Type": "application/json", "x-maxbooster-fixture-client": name };

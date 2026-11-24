@@ -137,7 +137,7 @@ test("active root fabric preserves shared bytes and recovers failed SQL publicat
     url.searchParams.set("host",options.host);url.searchParams.set("port",String(options.port));
     const child = spawnSync(process.execPath,[fixture],{cwd:scratch,encoding:"utf8",timeout:50_000,
       env:{PATH:process.env.PATH,HOME:scratch,NODE_ENV:"test",DATABASE_URL:url.toString(),
-        SESSION_SECRET:"isolated-root-fabric-fixture-secret-not-an-application-binding",
+        SESSION_SECRET:process.env.SESSION_SECRET,
         READINESS_ISOLATED_PG:"1",READINESS_EGRESS_GUARD:"1",READINESS_LOCAL_CODECS:"1",
         NODE_OPTIONS:`--import=${path.join(root,"scripts/readiness-egress-guard.mjs")}`,
         ...(process.env.LD_LIBRARY_PATH?{LD_LIBRARY_PATH:process.env.LD_LIBRARY_PATH}:{})} });

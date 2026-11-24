@@ -102,7 +102,7 @@ describe("Input Validation — Auth Endpoints", () => {
     const r = await req("POST", "/api/auth/register", {
       birthdate: "1990-01-01",
       email,
-      password: "SecurePass123!",
+      password: process.env.PASSWORD as string,
       firstName: "Test",
       lastName: "User",
     });

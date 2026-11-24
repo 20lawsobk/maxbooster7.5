@@ -187,7 +187,7 @@ test("actual webhook signature middleware preserves raw-byte signature boundary 
   const event = { id: "evt_signed", type: "payout.paid", data: { object: { amount: 9000 } } };
   globalThis.__outboundWebhookEvent = event;
   globalThis.__outboundWebhookEnv = {
-    STRIPE_WEBHOOK_SECRET: "whsec_isolated_marker",
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     STRIPE_SECRET_KEY: "sk_test_isolated_marker",
   };
   const { stripeWebhookMiddleware, stripeRawBodyParser, getWebhookAuditLog } = await loadOutboundSubject(

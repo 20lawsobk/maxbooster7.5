@@ -19,7 +19,7 @@ const WEBHOOK_PATH = "/api/webhooks/stripe";
 const testUser = {
   birthdate: "1990-01-01",
   email: `billing_${Date.now()}@maxbooster-test.invalid`,
-  password: "SecurePass123!@#",
+  password: process.env.PASSWORD as string,
   firstName: "Billing",
   lastName: "Test",
 };

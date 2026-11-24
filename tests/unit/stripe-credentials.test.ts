@@ -10,7 +10,7 @@ describe("Stripe credential environment selection", () => {
       selectStripeSecretKey(
         {
           STRIPE_SECRET_KEY: "live-secret",
-          STRIPE_TEST_SECRET: "sandbox-secret",
+          STRIPE_TEST_SECRET: process.env.STRIPE_TEST_SECRET as string,
           TESTING_STRIPE_SECRET_KEY: "legacy-sandbox-secret",
         },
         true,
@@ -23,7 +23,7 @@ describe("Stripe credential environment selection", () => {
       selectStripeSecretKey(
         {
           STRIPE_SECRET_KEY: "live-secret",
-          STRIPE_TEST_SECRET: "sandbox-secret",
+          STRIPE_TEST_SECRET: process.env.STRIPE_TEST_SECRET as string,
           TESTING_STRIPE_SECRET_KEY: "legacy-sandbox-secret",
         },
         false,
