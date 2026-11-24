@@ -223,3 +223,8 @@ external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning_ru
 /reports/test-verification/final-plan-fix/completion-plan.json
 /reports/test-verification/recheck-2026-11-10/completion-plan.json
 /reports/test-verification/current-coverage/coverage/coverage-final.json
+
+# Added by production audit
+.env.*
+!.env.example
+!.env.*.example
