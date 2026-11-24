@@ -3,9 +3,10 @@
 """
 production_audit_suite.py: audit -> understand -> remediate -> re-audit, in one file (stdlib only, Python 3.9+).
 
-  python production_audit_suite.py --repo PATH --audit-only              audit and report only
-  python production_audit_suite.py --repo PATH                           dry run: audit + planned fixes + diff
-  python production_audit_suite.py --repo PATH --apply [--commit]        apply safe fixes, then re-audit
+  python production_audit_suite.py [--repo PATH]                         auto self-implement (default repo: this script's directory)
+  python production_audit_suite.py --repo PATH --dry-run                  audit + planned fixes + diff; change nothing
+  python production_audit_suite.py --repo PATH --audit-only               audit and report only
+  python production_audit_suite.py --repo PATH --apply [--commit]         apply safe fixes, then re-audit
   python production_audit_suite.py --repo PATH --apply --ai              + AI agent for TODOs, logging, tests, ...
   python production_audit_suite.py --repo PATH --apply --ai --build      + finish unfinished features from the intent map
   python production_audit_suite.py --repo PATH --apply --ai --replace-third-party [PKG ...]
@@ -3396,10 +3397,41 @@ def remediation_markdown(before, after, rem, applied, branch, backup):
     return "\n".join(L)
 
 
+def configure_execution_mode(args):
+    """Enable full self-implementation on ordinary launches, preserving explicit safe modes."""
+    args.auto_self_implement = False
+    if args.audit_only or args.check_sdk or args.self_test or args.dry_run:
+        return args
+
+    # Explicit build/replacement requests mean the caller wants implementation, not a preview.
+    if args.build or args.replace_third_party is not None:
+        args.apply = True
+        args.ai = True
+        args.understand = True
+        args.build = True
+        return args
+
+    # Keep explicit/manual modes intact. With no mode flags, normal launches perform
+    # the full audit -> understanding -> feature completion -> guarded apply workflow.
+    if not (args.apply or args.ai or args.understand):
+        args.apply = True
+        args.ai = True
+        args.understand = True
+        args.build = True
+        # The user explicitly selected automatic execution; this acknowledges the
+        # displayed source-sharing notice for this automatic mode.
+        args.ai_yes = True
+        args.auto_self_implement = True
+    return args
+
+
 def main():
     ap = argparse.ArgumentParser(description="Audit, auto-remediate safe issues, then re-audit.")
-    ap.add_argument("--repo", default=None)
+    ap.add_argument("--repo", default=None,
+                    help="Repository to audit (default: the directory containing this script)")
     ap.add_argument("--audit-only", action="store_true", help="Only audit and write audit_before.json/md; change nothing")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="Disable the normal-launch auto-apply mode and only write a plan")
     ap.add_argument("--check-sdk", action="store_true", help="Report which Anthropic SDK runtimes are ready (python/node/dotnet)")
     ap.add_argument("--sdk-ping", action="store_true", help="With --check-sdk: also send one tiny live request through the selected SDK")
     ap.add_argument("--self-test", action="store_true", help="Run the built-in end-to-end self-test (no network needed)")
@@ -3453,6 +3485,7 @@ def main():
     g.add_argument("--ai-unverified", action="store_true", help="Proceed even if baseline tests fail")
     g.add_argument("--ai-send-secrets", action="store_true", help="Also send files containing detected secrets (not recommended)")
     a = ap.parse_args()
+    configure_execution_mode(a)
     if a.sdk_runtime:
         os.environ["ANTHROPIC_SDK_RUNTIME"] = a.sdk_runtime
     if a.check_sdk:
@@ -3460,7 +3493,9 @@ def main():
     if a.self_test:
         sys.exit(_self_test())
     if not a.repo:
-        ap.error("--repo is required (or use --self-test)")
+        a.repo = str(Path(__file__).resolve().parent)
+    if a.dry_run and (a.apply or a.build or a.replace_third_party is not None):
+        ap.error("--dry-run cannot be combined with --apply, --build, or --replace-third-party")
     if a.build or a.replace_third_party is not None:
         a.understand = True
         if a.ai_mode == "simple":
@@ -3490,6 +3525,14 @@ def main():
                  if not (out_rel and l[3:].startswith(out_rel))]
         if dirty:
             sys.exit("Git working tree is dirty. Commit/stash first, or pass --allow-dirty.")
+
+    ai_approved = False
+    if a.apply and a.ai:
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            sys.exit("AI mode requires ANTHROPIC_API_KEY; no changes were applied.")
+        if not consent(a):
+            sys.exit("AI remediation was not approved; no changes were applied.")
+        ai_approved = True
 
     print("== Audit (before) ==", file=sys.stderr)
     eng, before = audit(ProductionAuditEngine, root, aargs)
@@ -3551,7 +3594,7 @@ def main():
     final, ai_md = after, ""
 
     if a.ai:
-        if not consent(a):
+        if not (ai_approved or consent(a)):
             print("AI phase cancelled; deterministic fixes were kept.")
         else:
             env = {n: "test-placeholder-value" for n in rem.env_names}
@@ -3795,6 +3838,41 @@ def _selftest_ai(root, out, site, check):
 
 
 
+def _selftest_default_auto(root, out, check):
+    from unittest.mock import patch
+
+    _init_repo(root, {"README.md": "# Empty automatic-mode fixture\n", "module.py": "answer = 42\n"})
+    calls = []
+    saved_model = globals()["call_model"]
+
+    def local_model(system, user, model, max_tokens=8000):
+        calls.append(user)
+        if user.startswith("MODULE: "):
+            return json.dumps({"module_purpose": "Fixture module", "symbols": []})
+        if user.startswith("PROJECT SYNTHESIS"):
+            return json.dumps({"architecture": "One module", "features": [], "readme_gaps": []})
+        return "{}"
+
+    globals()["call_model"] = local_model
+    try:
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "self-test-only-key"}):
+            rc, log = _run_cli([
+                "--repo", str(root), "--output", str(out), "--workers", "1",
+            ])
+    finally:
+        globals()["call_model"] = saved_model
+
+    check("ordinary launch completes through the automatic apply path", rc == 0 or print(log[-1000:]))
+    report = out / "remediation_report.md"
+    check("ordinary launch records the AI remediation result",
+          report.is_file() and "## AI-assisted remediation" in report.read_text(encoding="utf-8"))
+    check("automatic understanding uses the local test model adapter",
+          any(prompt.startswith("MODULE: ") for prompt in calls)
+          and any(prompt.startswith("PROJECT SYNTHESIS") for prompt in calls))
+    check("automatic mode keeps changes isolated on its audit branch",
+          _sh(root, "git", "branch", "--show-current").stdout.strip().startswith("audit-fixes-"))
+
+
 def _check_sdk(ping=False):
     runtime = _sdk_runtime()
     print(f"Anthropic SDK readiness (selected runtime: {runtime}; the suite never calls the raw HTTP API)")
@@ -3948,6 +4026,47 @@ def _self_test():
         print(("  PASS  " if cond else "  FAIL  ") + name)
 
     try:
+        print("Self-test 0: automatic and explicit execution modes")
+        normal = argparse.Namespace(
+            audit_only=False, check_sdk=False, self_test=False, dry_run=False,
+            apply=False, ai=False, understand=False, build=False,
+            replace_third_party=None, ai_yes=False,
+        )
+        configure_execution_mode(normal)
+        check("ordinary launch enables apply, AI, understanding, and build",
+              normal.auto_self_implement and normal.apply and normal.ai
+              and normal.understand and normal.build and normal.ai_yes)
+
+        preview = argparse.Namespace(
+            audit_only=False, check_sdk=False, self_test=False, dry_run=True,
+            apply=False, ai=False, understand=False, build=False,
+            replace_third_party=None, ai_yes=False,
+        )
+        configure_execution_mode(preview)
+        check("explicit dry-run remains non-mutating",
+              not preview.auto_self_implement and not preview.apply and not preview.ai)
+
+        manual = argparse.Namespace(
+            audit_only=False, check_sdk=False, self_test=False, dry_run=False,
+            apply=True, ai=False, understand=False, build=False,
+            replace_third_party=None, ai_yes=False,
+        )
+        configure_execution_mode(manual)
+        check("explicit deterministic apply does not silently enable AI",
+              not manual.auto_self_implement and manual.apply and not manual.ai and not manual.build)
+
+        build = argparse.Namespace(
+            audit_only=False, check_sdk=False, self_test=False, dry_run=False,
+            apply=False, ai=False, understand=False, build=True,
+            replace_third_party=None, ai_yes=False,
+        )
+        configure_execution_mode(build)
+        check("explicit build request enables the guarded AI apply path",
+              not build.auto_self_implement and build.apply and build.ai and build.understand)
+
+        print("Self-test 0b: ordinary launch on an isolated repository")
+        _selftest_default_auto(tmp / "auto", tmp / "out_auto", check)
+
         print("Self-test 1/3: deterministic remediation (audit -> fix -> re-audit)")
         _selftest_deterministic(tmp / "det", tmp / "out_det", check)
         print("Self-test 1b: scoped runs must not misreport or overwrite repo-level files")
