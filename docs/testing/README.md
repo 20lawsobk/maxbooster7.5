@@ -338,6 +338,46 @@ most once, including after a restart. Unsupported or ambiguous findings remain
 proposals; free-form instructions are never converted into code. A dirty
 worktree blocks application rather than being overwritten.
 
+### Rule-based local code audit and repair
+
+`npm run code:audit` runs the deterministic production audit plus a versioned
+capability registry. The registry lists the checks and their language/path
+scope, evidence, repair status, and required verification. Audit findings show
+safe evidence fingerprints and source identities rather than raw source
+diagnostics. Semantic correctness, data/control flow, concurrency, compiler
+and framework checks, dependency advisories, and runtime/provider/deployment
+behavior are explicitly unsupported; this is not an exhaustive programming
+audit.
+
+Run the workflow only in a worktree marked by the existing isolated-copy
+initializer. From the primary checkout:
+
+```sh
+mkdir -p .local
+git worktree add --detach .local/code-audit-worktree HEAD
+npm run completion:loop -- --initialize-isolated \
+  --root "$PWD/.local/code-audit-worktree" --source-root "$PWD"
+npm run code:audit -- --root "$PWD/.local/code-audit-worktree"
+```
+
+The report, targeted-test evidence, and any generated plan are stored privately
+under `.local/repository-verification/rule-based-audit/` inside that worktree.
+Only one exact registered repair currently exists: synchronizing a stale
+development-launcher assertion when its uniquely matched targeted test proves
+the mismatch. Other findings require review. To apply that plan, use the exact
+SHA-256 reported by the audit:
+
+```sh
+npm run code:audit -- --root "$PWD/.local/code-audit-worktree" \
+  --apply --plan-sha256 <reviewed-plan-sha256>
+```
+
+The command re-runs the audit and targeted test, rejects dirty or changed
+source, and delegates the patch to `completion-executor.mjs`. The executor
+requires an allowlisted passing check and handles backups, replay, and
+rollback. The audit workflow makes no model or network calls and never writes
+application source itself. It does not assess production readiness.
+
 For a separately reviewed proposal plan, supply its exact plan hash to the loop:
 
 ```sh
