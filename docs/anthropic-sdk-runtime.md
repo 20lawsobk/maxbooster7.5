@@ -1,8 +1,9 @@
 # Claude SDK runtime for audit assistance
 
-`production_audit_ai.py` and model-assisted repository understanding use the
-official Anthropic SDKs, not hand-built HTTP requests. Each operation makes one
-Claude request through the selected SDK runtime:
+`production_audit_ai.py` is the single model-transport boundary for audit review,
+tool-using remediation, and model-assisted repository understanding. It uses the
+official Anthropic SDKs only; no feature constructs its own provider HTTP
+requests. Each operation goes through exactly one selected SDK runtime:
 
 - `python` (default): Python `anthropic` package declared in `pyproject.toml`.
 - `node`: root `@anthropic-ai/sdk`, called through `scripts/anthropic-sdk-client.mjs`.
@@ -16,7 +17,9 @@ The Python SDK is used by default. Node selection requires the project Node
 dependencies to be installed. .NET selection builds/runs the small `net9.0`
 client against the configured .NET SDK and restores its pinned NuGet dependency
 when needed. It can roll forward to a later installed .NET runtime.
-All runtimes require `ANTHROPIC_API_KEY` in the process environment.
+All runtimes require `ANTHROPIC_API_KEY` in the process environment because the
+SDK authenticates requests to Anthropic. The SDK replaces hand-written transport
+code; it does not remove the need for an Anthropic account credential.
 
 `production_audit_suite.py` is the supported entry point for a deterministic
 audit and the suite's guarded AI review/remediation. Its npm commands are:
@@ -25,7 +28,8 @@ audit and the suite's guarded AI review/remediation. Its npm commands are:
 - `npm run audit:production:review`: audit plus read-only AI review.
 - `npm run audit:production:apply`: audit, guarded remediation with
   re-audits, then a read-only AI review of the final report.
-- `npm run test:production-audit-suite`: run the focused integration tests.
+- `npm run test:production-audit-suite`: run focused tests for the suite and all
+  three SDK runtimes.
 
 The npm commands only run remediation through the explicitly named `:apply`
 command. The CLI's `--apply` and `--ai-remediate` switches select the guarded

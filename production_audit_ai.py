@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-AI-assisted remediation phase (used by production_audit_remediate.py --ai).
+SDK-backed AI assistance shared by the production audit suite and
+model-assisted repository understanding.
 
 Handles the findings that need judgment: TODOs, placeholder logic, swallowed
 exceptions, missing logging / error handling, and missing tests. Every change
@@ -159,7 +160,12 @@ def _call_sdk(request):
     if runtime != "python":
         return _run_sdk_process(runtime, request)
 
-    from anthropic import Anthropic, APIConnectionError, APIStatusError
+    try:
+        from anthropic import Anthropic, APIConnectionError, APIStatusError
+    except ImportError:
+        raise RuntimeError(
+            "Anthropic Python SDK is not installed; install the dependency declared in pyproject.toml"
+        ) from None
 
     try:
         with Anthropic(api_key=key, max_retries=4, timeout=300) as client:
@@ -267,7 +273,10 @@ def consent(args, n_hint=""):
     print("AI REMEDIATION: DATA SHARING NOTICE")
     print("Source files with audit findings, plus any other file the AI agent chooses to")
     print("read or search (README, callers, tests, package.json scripts), will be sent to")
-    print(f"the Anthropic API using model '{args.model}'. Files containing detected")
+    print(
+        f"the Anthropic service through the selected official SDK using model "
+        f"'{args.model}'. Files containing detected"
+    )
     print("secrets and .env files are never sent. Your test command will also be")
     print("executed repeatedly, which runs your repository's code on this machine.")
     print("=" * 60)
@@ -996,7 +1005,7 @@ class AgentRemediator(AIRemediator):
                 outcome = ("reverted", f"no conclusion within {turns} turns")
                 break
             if self.calls >= self.a.ai_max_calls:
-                outcome = ("reverted", "API call budget reached")
+                outcome = ("reverted", "SDK call budget reached")
                 break
             self.calls += 1
             resp = self.chat_fn(self.system, messages, TOOLS)

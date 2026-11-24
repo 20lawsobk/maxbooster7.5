@@ -59,7 +59,9 @@ class ProductionAuditSuiteAiTests(unittest.TestCase):
         )
         self.assertEqual(
             scripts["test:production-audit-suite"],
-            "PYTHONPATH=. python3 tests/testing/test_production_audit_suite_ai.py",
+            "PYTHONPATH=. python3 tests/testing/test_production_audit_suite_ai.py && "
+            "PYTHONPATH=. python3 tests/testing/test_production_audit_sdk_runtime.py && "
+            "node --test tests/testing/anthropic-sdk-node.test.mjs",
         )
         self.assertTrue(suite.build_parser().parse_args(["--apply"]).ai_remediate)
         self.assertEqual(

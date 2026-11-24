@@ -14,11 +14,13 @@ Production audit CLI (Python 3.9+).
 
 With no mode flags, the CLI retains its existing behavior: review and guarded
 remediation are both selected and require confirmation.
-AI modes require ANTHROPIC_API_KEY and use one selected official Anthropic SDK
-runtime (--sdk-runtime python|node|dotnet). They require confirmation before
-sharing eligible audit data; remediation also edits files. Changes pass the
-remediator's syntax, audit-regression, test, scope, and rollback gates. This
-heuristic audit is not a production certification.
+All model-assisted capabilities use the official Anthropic SDK dispatcher;
+there is no hand-built HTTP/API fallback. AI modes require ANTHROPIC_API_KEY
+for SDK authentication and use one selected SDK runtime
+(--sdk-runtime python|node|dotnet). They require confirmation before sharing
+eligible audit data; remediation also edits files. Changes pass the remediator's
+syntax, audit-regression, test, scope, and rollback gates. This heuristic audit
+is not a production certification.
 """
 
 # ==========================================================================
