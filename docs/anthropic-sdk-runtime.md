@@ -23,16 +23,17 @@ audit and the suite's guarded AI review/remediation. Its npm commands are:
 
 - `npm run audit:production`: audit-only; no network calls or file edits.
 - `npm run audit:production:review`: audit plus read-only AI review.
-- `npm run audit:production:apply`: audit, AI review, guarded remediation, and
-  re-audit in one invocation.
+- `npm run audit:production:apply`: audit, guarded remediation with
+  re-audits, then a read-only AI review of the final report.
 - `npm run test:production-audit-suite`: run the focused integration tests.
 
-Remediation is opt-in through the explicitly named `:apply` command or the
-CLI's `--apply`/`--ai-remediate` switch. AI modes ask for confirmation before
-sending eligible findings or making changes. Non-interactive use must pass
-`--confirm-ai`; the key is required and absence fails closed. `--local-only`
-(also `--audit-only`) bypasses all AI calls and runs only the deterministic
-audit. `--ai-review` alone selects the read-only review.
+The npm commands only run remediation through the explicitly named `:apply`
+command. The CLI's `--apply` and `--ai-remediate` switches select the guarded
+remediation stage. AI modes ask for confirmation before sending eligible
+findings or making changes. Non-interactive use must pass `--confirm-ai`; the
+key is required and absence fails closed. `--local-only` (also `--audit-only`)
+bypasses all AI calls and runs only the deterministic audit. `--ai-review`
+alone selects the read-only review.
 
 For compatibility, a bare `python3 production_audit_suite.py` invocation
 continues to select both AI review and guarded remediation; it still requires
@@ -52,8 +53,9 @@ python3 production_audit_suite.py --ai-review --sdk-runtime node --confirm-ai
 ```
 
 Set the key through the workspace secrets manager before running the command.
-The command above selects review only. To run guarded remediation in the same
-pass, add `--apply`; review and remediation are independently selectable.
+The command above selects review only. To include guarded remediation in the
+same invocation, add `--apply`; the remediation loop re-audits after edits and
+the review then receives the final report.
 
 Use `--audit-only` when running in CI or another environment where external
 model calls and repository edits are not intended. Neither AI mode makes the

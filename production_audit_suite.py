@@ -8,7 +8,7 @@ Production audit CLI (Python 3.9+).
   python production_audit_suite.py --repo PATH --ai-review
       Audit and request a read-only AI review.
   python production_audit_suite.py --repo PATH --ai-review --apply
-      Audit, review, run guarded remediation, and re-audit in one invocation.
+      Audit, run guarded remediation with re-audits, then review the final report.
   python production_audit_suite.py --repo PATH --apply --ai-test-cmd "..."
       Run guarded remediation with an explicit project test command.
 

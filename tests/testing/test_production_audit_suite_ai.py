@@ -42,6 +42,27 @@ class _LocalAnthropicEndpoint(BaseHTTPRequestHandler):
 
 
 class ProductionAuditSuiteAiTests(unittest.TestCase):
+    def test_package_scripts_wire_audit_review_and_one_pass_apply(self):
+        package = json.loads((Path(__file__).resolve().parents[2] / "package.json").read_text(encoding="utf-8"))
+        scripts = package["scripts"]
+        self.assertEqual(
+            scripts["audit:production"],
+            "python3 production_audit_suite.py --audit-only",
+        )
+        self.assertEqual(
+            scripts["audit:production:review"],
+            "python3 production_audit_suite.py --ai-review",
+        )
+        self.assertEqual(
+            scripts["audit:production:apply"],
+            "python3 production_audit_suite.py --ai-review --apply",
+        )
+        self.assertEqual(
+            scripts["test:production-audit-suite"],
+            "PYTHONPATH=. python3 tests/testing/test_production_audit_suite_ai.py",
+        )
+        self.assertTrue(suite.build_parser().parse_args(["--apply"]).ai_remediate)
+
     def test_ai_review_uses_each_official_sdk_runtime_once_locally(self):
         server = ThreadingHTTPServer(("127.0.0.1", 0), _LocalAnthropicEndpoint)
         server.requests = []
@@ -214,7 +235,7 @@ class ProductionAuditSuiteAiTests(unittest.TestCase):
                             "--repo", temp_dir,
                             "--workers", "1",
                             "--quiet",
-                            "--ai-remediate",
+                            "--apply",
                             "--confirm-ai",
                             "--sdk-runtime", runtime,
                             "--json",
