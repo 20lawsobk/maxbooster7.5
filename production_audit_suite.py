@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
 # audit:ignore-file  (this file defines the audit's own detection vocabulary and test fixtures)
 """
-Production audit engine and command-line runner (Python 3.9+).
+Production audit CLI (Python 3.9+).
 
-  python production_audit_suite.py                   audit and run confirmed AI self-review/remediation
-  python production_audit_suite.py --local-only       run the deterministic audit only
-  python production_audit_suite.py --repo PATH       audit another folder
-  python production_audit_suite.py --json            print the report as JSON
-  python production_audit_suite.py --help            show all scan options
+  python production_audit_suite.py --repo PATH --audit-only
+      Deterministic audit; no network calls and no file changes.
+  python production_audit_suite.py --repo PATH --ai-review
+      Audit and request a read-only AI review.
+  python production_audit_suite.py --repo PATH --ai-review --apply
+      Audit, review, run guarded remediation, and re-audit in one invocation.
+  python production_audit_suite.py --repo PATH --apply --ai-test-cmd "..."
+      Run guarded remediation with an explicit project test command.
 
-The default run performs a local audit, then an explicitly confirmed AI review
-and guarded remediation using the official Anthropic SDK selected with
---sdk-runtime. Use --local-only for a deterministic audit without network calls
-or file changes.
-
-Exit codes: 0 = audit completed; 1 = findings with --fail-on-findings;
-2 = invalid arguments or an execution error; 130 = interrupted.
-The score and readiness flag represent heuristic checks, not certification.
+With no mode flags, the CLI retains its existing behavior: review and guarded
+remediation are both selected and require confirmation.
+AI modes require ANTHROPIC_API_KEY and use one selected official Anthropic SDK
+runtime (--sdk-runtime python|node|dotnet). They require confirmation before
+sharing eligible audit data; remediation also edits files. Changes pass the
+remediator's syntax, audit-regression, test, scope, and rollback gates. This
+heuristic audit is not a production certification.
 """
 
 # ==========================================================================
@@ -513,7 +515,7 @@ def build_parser():
                         help="Run deterministic audit only; skip AI network calls and remediation")
     parser.add_argument("--ai-review", action="store_true",
                         help="Ask Claude to prioritize and explain the audit findings (read-only)")
-    parser.add_argument("--ai-remediate", action="store_true",
+    parser.add_argument("--ai-remediate", "--apply", dest="ai_remediate", action="store_true",
                         help="Run the guarded AI remediation agent; may edit files and run the test command")
     parser.add_argument("--sdk-runtime", choices=("python", "node", "dotnet"),
                         default=os.environ.get("ANTHROPIC_SDK_RUNTIME", "python"),

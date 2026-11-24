@@ -18,13 +18,26 @@ client against the configured .NET SDK and restores its pinned NuGet dependency
 when needed. It can roll forward to a later installed .NET runtime.
 All runtimes require `ANTHROPIC_API_KEY` in the process environment.
 
-`production_audit_suite.py` uses the same runtime selector. A normal launch
-selects both read-only `--ai-review` and guarded `--ai-remediate`; it asks for
-confirmation before sending findings or making changes. Non-interactive use
-must pass `--confirm-ai`. The run requires `ANTHROPIC_API_KEY` and fails closed
-if it is absent. Use `--local-only` (or its `--audit-only` alias) to bypass AI
-and run only the deterministic local audit. Passing only `--ai-review` or only
-`--ai-remediate` selects that single mode.
+`production_audit_suite.py` is the supported entry point for a deterministic
+audit and the suite's guarded AI review/remediation. Its npm commands are:
+
+- `npm run audit:production`: audit-only; no network calls or file edits.
+- `npm run audit:production:review`: audit plus read-only AI review.
+- `npm run audit:production:apply`: audit, AI review, guarded remediation, and
+  re-audit in one invocation.
+- `npm run test:production-audit-suite`: run the focused integration tests.
+
+Remediation is opt-in through the explicitly named `:apply` command or the
+CLI's `--apply`/`--ai-remediate` switch. AI modes ask for confirmation before
+sending eligible findings or making changes. Non-interactive use must pass
+`--confirm-ai`; the key is required and absence fails closed. `--local-only`
+(also `--audit-only`) bypasses all AI calls and runs only the deterministic
+audit. `--ai-review` alone selects the read-only review.
+
+For compatibility, a bare `python3 production_audit_suite.py` invocation
+continues to select both AI review and guarded remediation; it still requires
+interactive confirmation. Prefer the named audit-only npm command when a
+read-only local run is intended.
 
 Review sends a bounded audit summary. Remediation can inspect eligible
 repository files, edit files, and run the selected test command. It continues
@@ -39,10 +52,10 @@ python3 production_audit_suite.py --ai-review --sdk-runtime node --confirm-ai
 ```
 
 Set the key through the workspace secrets manager before running the command.
-The command above selects review only; omit the mode flags to run the full
-confirmed review-and-remediation sequence by default.
+The command above selects review only. To run guarded remediation in the same
+pass, add `--apply`; review and remediation are independently selectable.
 
-Use `--local-only` when running in CI or another environment where external
+Use `--audit-only` when running in CI or another environment where external
 model calls and repository edits are not intended. Neither AI mode makes the
 heuristic audit a production certification.
 
