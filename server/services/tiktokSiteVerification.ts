@@ -35,3 +35,14 @@ export function verificationTextForHost(
     ? developmentVerificationText
     : existingVerificationText;
 }
+
+export function verificationMetaTagForHost(
+  requestHost: string | null | undefined,
+  configuredDevHost: string | null | undefined,
+): string | null {
+  if (!isConfiguredDevHost(requestHost, configuredDevHost)) return null;
+
+  const prefix = "tiktok-developers-site-verification=";
+  const signature = developmentVerificationText.slice(prefix.length);
+  return `<meta name="tiktok-developers-site-verification" content="${signature}" />`;
+}

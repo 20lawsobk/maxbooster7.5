@@ -1,19 +1,22 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   developmentVerificationFilePath,
+  verificationMetaTagForHost,
   verificationTextForHost,
 } from "../server/services/tiktokSiteVerification.js";
 
-test("root page exposes the submitted TikTok verification signature", () => {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const html = readFileSync(path.join(root, "client", "index.html"), "utf8");
-  assert.match(
-    html,
-    /<meta\s+name="tiktok-developers-site-verification"\s+content="YuaYzlWqoobUDQLsXg8nt8UAv5y5jBxr"\s*\/>/,
+test("verification metadata is emitted only for the configured dev host", () => {
+  assert.equal(
+    verificationMetaTagForHost(
+      "a28d7898-bbab-4e83-93d1-b2a6ecd20030-00-hv6pcaw3lbdn.spock.replit.dev",
+      "a28d7898-bbab-4e83-93d1-b2a6ecd20030-00-hv6pcaw3lbdn.spock.replit.dev",
+    ),
+    '<meta name="tiktok-developers-site-verification" content="YuaYzlWqoobUDQLsXg8nt8UAv5y5jBxr" />',
+  );
+  assert.equal(
+    verificationMetaTagForHost("maxbooster.replit.app", "maxbooster.replit.dev"),
+    null,
   );
 });
 

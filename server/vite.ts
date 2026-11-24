@@ -4,6 +4,7 @@ import { type Server } from "http";
 import { createClientViteConfig } from "../vite.config";
 import fs from "fs";
 import path from "path";
+import { verificationMetaTagForHost } from "./services/tiktokSiteVerification.js";
 
 const viteLogger = createLogger();
 
@@ -34,26 +35,56 @@ export async function createViteRuntime(server: Server) {
   } as Parameters<typeof createViteServer>[0];
   const vite = await createViteServer(inlineConfig);
 
+  async function renderIndexHtml(url: string) {
+    const clientTemplate = path.resolve(
+      import.meta.dirname,
+      "..",
+      "client",
+      "index.html",
+    );
+    const template = await fs.promises.readFile(clientTemplate, "utf-8");
+    return vite.transformIndexHtml(url, template);
+  }
+
   return {
     middleware: vite.middlewares,
+    registerVerificationRoot(app: Express) {
+      app.get("/", async (req, res, next) => {
+        const verificationTag = verificationMetaTagForHost(
+          req.get("host"),
+          process.env.REPLIT_DEV_DOMAIN,
+        );
+        if (!verificationTag) {
+          next();
+          return;
+        }
+
+        try {
+          let page = await renderIndexHtml(req.originalUrl);
+          const headClose = page.toLowerCase().lastIndexOf("</head>");
+          if (headClose < 0) {
+            throw new Error(
+              "Cannot serve the dev page without its TikTok verification metadata.",
+            );
+          }
+          page = `${page.slice(0, headClose)}${verificationTag}\n${page.slice(headClose)}`;
+          res.status(200).set({ "Content-Type": "text/html" }).end(page);
+        } catch (e) {
+          vite.ssrFixStacktrace(e as Error);
+          next(e);
+        }
+      });
+    },
     registerSpaFallback(app: Express) {
       app.use("/{*splat}", async (req, res, next) => {
         const url = req.originalUrl;
 
         try {
-          const clientTemplate = path.resolve(
-            import.meta.dirname,
-            "..",
-            "client",
-            "index.html",
-          );
-
           // Always read the current template so source edits remain visible.
           // Keep the Vite entry URL stable: a timestamp query creates a new
           // module-graph identity on every navigation/reload and retains stale
           // transformed entry modules in the long-lived dev server.
-          let template = await fs.promises.readFile(clientTemplate, "utf-8");
-          const page = await vite.transformIndexHtml(url, template);
+          const page = await renderIndexHtml(url);
           res.status(200).set({ "Content-Type": "text/html" }).end(page);
         } catch (e) {
           vite.ssrFixStacktrace(e as Error);
@@ -68,6 +99,7 @@ export type ViteRuntime = Awaited<ReturnType<typeof createViteRuntime>>;
 
 export async function setupVite(server: Server, app: Express) {
   const runtime = await createViteRuntime(server);
+  runtime.registerVerificationRoot(app);
   app.use(runtime.middleware);
   runtime.registerSpaFallback(app);
 }
