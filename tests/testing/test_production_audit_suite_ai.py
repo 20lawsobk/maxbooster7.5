@@ -62,6 +62,10 @@ class ProductionAuditSuiteAiTests(unittest.TestCase):
             "PYTHONPATH=. python3 tests/testing/test_production_audit_suite_ai.py",
         )
         self.assertTrue(suite.build_parser().parse_args(["--apply"]).ai_remediate)
+        self.assertEqual(
+            suite.build_parser().parse_args([]).repo.resolve(),
+            Path(suite.__file__).resolve().parent,
+        )
 
     def test_ai_review_uses_each_official_sdk_runtime_once_locally(self):
         server = ThreadingHTTPServer(("127.0.0.1", 0), _LocalAnthropicEndpoint)

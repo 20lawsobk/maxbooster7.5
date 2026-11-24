@@ -485,7 +485,7 @@ def build_parser():
         description="Audit the current folder or --repo PATH and print findings.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--repo", type=Path, default=Path("."), metavar="PATH",
+    parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parent, metavar="PATH",
                         help="Repository folder to scan")
     parser.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 1),
                         help="Number of scanner processes")
