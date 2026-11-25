@@ -31,3 +31,4 @@
 - [Deterministic completion patches](completion-loop-patching.md) — generate only registered, evidence-bound local fixes and route all writes through the existing isolated executor.
 - [Drizzle public schema](drizzle-public-schema.md) — this Drizzle version rejects `pgSchema("public")`; keep public tables on `pgTable` and qualify raw SQL explicitly.
 - [Collaboration region routing](collaboration-region-routing.md) — use Max Booster’s built-in DNS/storefront for regional discovery; verify media health and capacity separately.
+- [Isolated MaxCore test dependencies](isolated-maxcore-test-dependencies.md) — isolated clones must preserve nested workspace package links or mocks may miss and hit live local services.
