@@ -115,6 +115,8 @@ GENERIC_SECRET_RE = re.compile(
     r"""["']?\s*[:=]\s*["']([^"'\s]{12,})["']""")
 FAKE_VALUE_HINTS = ("example", "changeme", "your", "xxx", "<", "${", "{{", "env", "placeholder",
                     "dummy", "test", "sample", "process.", "os.environ", "getenv")
+TEST_FIXTURE_SECRET_RE = re.compile(
+    r"(?i)^(?:live-secret|sandbox-secret|legacy-sandbox-secret|pi_\d+_secret_[a-z0-9]+)$")
 
 TEST_DIR_RE = re.compile(r"(^|/)(tests?|__tests__|specs?|e2e)(/|$)", re.IGNORECASE)
 TEST_NAME_RE = re.compile(r"(^test_|_test\.|\.test\.|\.spec\.|_spec\.|Tests?\.(java|cs|kt|swift)$)", re.IGNORECASE)
@@ -151,6 +153,10 @@ def is_binary(path):
 def is_test_path(rel):
     rel = rel.replace(os.sep, "/")
     return bool(TEST_DIR_RE.search(rel) or TEST_NAME_RE.search(os.path.basename(rel)))
+
+
+def is_synthetic_test_secret(rel, value):
+    return is_test_path(rel) and bool(TEST_FIXTURE_SECRET_RE.fullmatch(value.strip()))
 
 
 def is_generated_snapshot_path(rel):
@@ -290,7 +296,9 @@ def scan_file(task):
                 if m:
                     val = m.group(2)
                     low = val.lower()
-                    if shannon_entropy(val) >= 3.5 and not any(h in low for h in FAKE_VALUE_HINTS):
+                    if (shannon_entropy(val) >= 3.5
+                            and not any(h in low for h in FAKE_VALUE_HINTS)
+                            and not is_synthetic_test_secret(rel, val)):
                         add("secret", lineno, f"Assigned {m.group(1)}: {redact(val)}")
 
                 if not scan_markers:
@@ -3086,13 +3094,15 @@ def env_name(name):
     return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name).upper()
 
 
-def looks_secret(line):
+def looks_secret(line, rel=None):
     m = GENERIC_SECRET_RE.search(line)
     if not m:
         return False
     val = m.group(2)
     low = val.lower()
-    return shannon_entropy(val) >= 3.5 and not any(h in low for h in FAKE_VALUE_HINTS)
+    return (shannon_entropy(val) >= 3.5
+            and not any(h in low for h in FAKE_VALUE_HINTS)
+            and not is_synthetic_test_secret(rel or "", val))
 
 
 def ensure_py_import_os(text):
@@ -3241,9 +3251,9 @@ class Remediator:
             if text is None:
                 continue
             if ext == ".py":
-                new, names = self._fix_py_secrets(text)
+                new, names = self._fix_py_secrets(text, rel)
             elif ext in JS_EXT:
-                new, names = self._fix_js_secrets(text, ext in (".ts", ".tsx"))
+                new, names = self._fix_js_secrets(text, ext in (".ts", ".tsx"), rel)
             else:
                 self.manual.append(("secret", rel, "unsupported file type: move the secret out by hand"))
                 continue
@@ -3255,13 +3265,13 @@ class Remediator:
             else:
                 self.manual.append(("secret", rel, "no safe automatic rewrite found: fix by hand"))
 
-    def _fix_py_secrets(self, text):
+    def _fix_py_secrets(self, text, rel=None):
         lines, names = text.splitlines(keepends=True), []
         for i, line in enumerate(lines):
             s = line.rstrip("\r\n")
             eol = line[len(s):]
             m = PY_ASSIGN.match(s)
-            if not m or not looks_secret(s):
+            if not m or not looks_secret(s, rel):
                 continue
             indent, name, eq, _q, _v, cm = m.groups()
             env = env_name(name)
@@ -3276,21 +3286,21 @@ class Remediator:
             return text, []
         return new, names
 
-    def _fix_js_secrets(self, text, is_ts):
+    def _fix_js_secrets(self, text, is_ts, rel=None):
         lines, names = text.splitlines(keepends=True), []
         cast = " as string" if is_ts else ""
         for i, line in enumerate(lines):
             s = line.rstrip("\r\n")
             eol = line[len(s):]
             m = JS_DECL.match(s)
-            if m and looks_secret(s):
+            if m and looks_secret(s, rel):
                 pre, name, eq, _q, _v, tail = m.groups()
                 env = env_name(name)
                 lines[i] = f"{pre}{name}{eq}process.env.{env}{cast}{tail}{eol}"
                 names.append(env)
                 continue
             m = JS_PROP.match(s)
-            if m and looks_secret(s):
+            if m and looks_secret(s, rel):
                 indent, q, name, colon, _q2, _v, tail = m.groups()
                 env = env_name(name)
                 lines[i] = f"{indent}{q}{name}{q}{colon}process.env.{env}{cast}{tail}{eol}"
@@ -3797,12 +3807,23 @@ def _selftest_deterministic(root, out, check):
     _init_repo(root, {
         "src/a.py": ('"""Doc."""\nimport logging\n\napi_key = "' + _FIXTURE_KEY + '"\n\n\ndef f():\n'
                      '    try:\n        return 1\n    except:\n        logging.exception("x")\n'),
+        "tests/stripe-credentials.test.ts": (
+            'const config = { STRIPE_TEST_SECRET: "sandbox-secret", STRIPE_SECRET_KEY: "live-secret" };\n'
+            'const checkout = { clientSecret: "pi_123_secret_abc" };\n'),
         ".env": "SECRET_KEY=abc123\n", "requirements.txt": "requests\n"})
     rc, log = _run_cli(["--repo", str(root), "--output", str(out), "--apply", "--commit",
                         "--license", "MIT", "--license-holder", "Self-test"])
     check("deterministic run exits cleanly", rc == 0 or print(log[-800:]))
     before = json.loads((out / "audit_before.json").read_text())
     after = json.loads((out / "audit_after.json").read_text())
+    fixture_rel = "tests/stripe-credentials.test.ts"
+    fixture = root / fixture_rel
+    fixture_contents = (
+        'const config = { STRIPE_TEST_SECRET: "sandbox-secret", STRIPE_SECRET_KEY: "live-secret" };\n'
+        'const checkout = { clientSecret: "pi_123_secret_abc" };\n')
+    check("synthetic test credentials are not reported as secrets",
+          not any(f["file"] == fixture_rel and f["rule"] == "secret" for f in before["findings"]))
+    check("synthetic Stripe fixtures are preserved unchanged", fixture.read_text() == fixture_contents)
     check(f"score improved ({before['production_score']} -> {after['production_score']})",
           after["production_score"] > before["production_score"])
     src = (root / "src/a.py").read_text()
