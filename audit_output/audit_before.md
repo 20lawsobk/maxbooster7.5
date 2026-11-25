@@ -1,19 +1,19 @@
 # Production Audit Report
 
-Generated: 2026-11-24T22:49:39.665337+00:00
+Generated: 2026-11-24T23:22:53.574994+00:00
 Repository: `/home/runner/workspace`
 
 **Production Score:** 3/100  
 **Production Ready:** False  
-**Blockers:** 713  
+**Blockers:** 655  
 
 ## Scan Summary
 
 - Files: 28140 (text 27391, binary 749, skipped 0)
-- Lines scanned: 59408753
+- Lines scanned: 59408763
 - Source files: 11746, test files: 3590
 
-## Security (123)
+## Security (65)
 
 - **[CRITICAL] Potential hardcoded secret** — `.agents/memory/maxcore-test-suite-auth.md`
   - Details: L5: Assigned API_KEY: $MAX…[18 chars]
@@ -24,29 +24,11 @@ Repository: `/home/runner/workspace`
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py`
   - Details: L107: Assigned API_KEY: fixt…[12 chars]; L108: Assigned API_KEY: fixt…[12 chars]; L134: Assigned API_KEY: fixt…[12 chars]; L135: Assigned API_KEY: fixt…[12 chars]; L151: Assigned API_KEY: fixt…[12 chars]; L152: Assigned API_KEY: fixt…[12 chars]; L281: Assigned API_KEY: fixt…[12 chars]; L346: Assigned API_KEY: fixt…[23 chars]; L409: Assigned API_KEY: fixt…[23 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/admin-account-parity.test.ts`
-  - Details: L13: Assigned password: Pari…[22 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/aso/pr-reconciliation/pr-211-head/tests/content-analysis-entitlement.test.ts`
-  - Details: L7: Assigned password: Cont…[23 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703493686/server/services/mobilePushService.ts`
   - Details: L137: Private key block: ----…[27 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/fix-all/.snapshots/ts-server-1785703851828/server/services/mobilePushService.ts`
   - Details: L137: Private key block: ----…[27 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/baseline-source/tests/unit/subscriptionCheckout.test.ts`
-  - Details: L46: Assigned Secret: pi_1…[17 chars]; L50: Assigned Secret: pi_1…[17 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-28-case-identity-repair-candidate/proposed/tests/unit/subscriptionCheckout.test.ts`
-  - Details: L46: Assigned Secret: pi_1…[17 chars]; L50: Assigned Secret: pi_1…[17 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/billing-lifecycle.test.ts`
-  - Details: L22: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-access-policy-candidate/tests/file-management.test.ts`
-  - Details: L21: Assigned password: Secu…[16 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py`
   - Details: L120: Assigned SECRET: fram…[37 chars]
@@ -70,7 +52,7 @@ Repository: `/home/runner/workspace`
   - Details: L23: Assigned SECRET: isol…[47 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/scripts/simulate-production.mjs`
-  - Details: L438: Assigned password: Pack…[29 chars]; L439: Assigned Password: Pack…[29 chars]; L1629: Assigned SECRET: prod…[47 chars]; L1640: Assigned TOKEN: prod…[32 chars]; L1871: Assigned password: Pack…[29 chars]; L1872: Assigned Password: Pack…[29 chars]
+  - Details: L1640: Assigned TOKEN: prod…[32 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/scripts/testing/run-pdim-smoke.mjs`
   - Details: L74: Assigned TOKEN: isol…[22 chars]
@@ -81,71 +63,14 @@ Repository: `/home/runner/workspace`
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/server/services/mobilePushService.ts`
   - Details: L137: Private key block: ----…[27 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/admin-account-parity.test.ts`
-  - Details: L13: Assigned password: Pari…[22 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/ai-analytics-integration.test.ts`
-  - Details: L17: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/auth-2fa.test.ts`
-  - Details: L16: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/auth-flows.test.ts`
-  - Details: L14: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/billing-lifecycle.test.ts`
-  - Details: L22: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/content-analysis-entitlement.test.ts`
-  - Details: L7: Assigned password: Cont…[23 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/critical-paths.test.ts`
-  - Details: L14: Assigned password: Secu…[14 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/current-storage-joint-recovery.test.mjs`
   - Details: L41: Assigned SECRET: owne…[42 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/direct-upload.test.ts`
-  - Details: L10: Assigned password: Secu…[16 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/fabric-migration-outbox-postgres.test.mjs`
   - Details: L190: Assigned SECRET: isol…[60 chars]; L194: Assigned SECRET: isol…[60 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/fabric-root-storage-postgres.test.mjs`
-  - Details: L140: Assigned SECRET: isol…[62 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/feature-catalog-production.test.ts`
-  - Details: L14: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/feature-marketplace-distribution.test.ts`
-  - Details: L11: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/feature-press-pitching-ar.test.ts`
-  - Details: L14: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/feature-revenue-merch.test.ts`
-  - Details: L12: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/feature-storefront-dns.test.ts`
-  - Details: L13: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/file-management.test.ts`
-  - Details: L21: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/p0-verification.ts`
-  - Details: L198: Assigned password: wron…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/paid-user-e2e.test.ts`
-  - Details: L14: Assigned password: Secu…[16 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/payment-processing/outbound-services-webhooks.mjs`
-  - Details: L190: Assigned SECRET: whse…[21 chars]; L298: Assigned SECRET: whse…[14 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/private-admin-http.test.ts`
-  - Details: L8: Assigned password: Isol…[23 chars]
-  - Fix: Rotate the credential and move it to a secrets manager / env vars
-- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/security-hardening.test.ts`
-  - Details: L105: Assigned password: Secu…[14 chars]
+  - Details: L298: Assigned SECRET: whse…[14 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/testing/test_commerce_subject_selector.py`
   - Details: L120: Assigned SECRET: fram…[37 chars]
@@ -165,7 +90,82 @@ Repository: `/home/runner/workspace`
 - **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/checkout-subscription-page-contracts.test.ts`
   - Details: L268: Assigned Secret: mont…[19 chars]
   - Fix: Rotate the credential and move it to a secrets manager / env vars
-- …and 73 more (see JSON report)
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/client-auth-beta-contracts.test.mjs`
+  - Details: L21: Assigned secret: simu…[21 chars]; L35: Assigned password: pass…[16 chars]; L60: Assigned password: pass…[16 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/developer-api-page-backend.test.ts`
+  - Details: L31: Assigned apiKey: fixt…[12 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/growth-rights.test.ts`
+  - Details: L45: Assigned API_KEY: isol…[23 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/maxcore-connector-contract.test.ts`
+  - Details: L67: Assigned TOKEN: priv…[12 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/readiness-gauge.test.ts`
+  - Details: L437: Private key block: ----…[27 chars]; L443: Private key block: ----…[31 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tests/unit/toolost-release-transport.test.ts`
+  - Details: L72: Assigned SECRET: olde…[20 chars]; L73: Assigned SECRET: sand…[14 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `.task123-publishing-candidate/tools/legacy-security-update.json`
+  - Details: L287: Private key block: ----…[27 chars]; L294: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `client/src/i18n/locales/ja.json`
+  - Details: L24: Assigned Password: パスワー…[13 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_platform_discovery.py`
+  - Details: L88: Assigned API_KEY: fixt…[14 chars]; L130: Assigned API_KEY: fixt…[12 chars]; L131: Assigned API_KEY: fixt…[12 chars]; L157: Assigned API_KEY: fixt…[12 chars]; L158: Assigned API_KEY: fixt…[12 chars]; L174: Assigned API_KEY: fixt…[12 chars]; L175: Assigned API_KEY: fixt…[12 chars]; L304: Assigned API_KEY: fixt…[12 chars]; L376: Assigned API_KEY: fixt…[23 chars]; L436: Assigned API_KEY: fixt…[23 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/fix-all/.snapshots/ts-server-1785703493686/server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/fix-all/.snapshots/ts-server-1785703851828/server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/candidate/tests/testing/test_commerce_subject_selector.py`
+  - Details: L120: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/selector/candidate/tests/testing/test_commerce_subject_selector.py`
+  - Details: L120: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/platform-evidence/2026-10-29-commerce-catalog-repairs/source.patch`
+  - Details: L253: Assigned SECRET: fram…[37 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `reports/readiness-audit/scanner-dependencies.json`
+  - Details: L7053: Assigned secret: /tmp…[33 chars]; L12339: Assigned secret: /tmp…[33 chars]; L16970: AWS access key: ASIA…[20 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/production-provider-simulation.mjs`
+  - Details: L50: Assigned SECRET: simu…[56 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/readiness-gauge/lib/checks.ts`
+  - Details: L93: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/rehearse-publishing-start.sh`
+  - Details: L23: Assigned SECRET: isol…[47 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/simulate-production.mjs`
+  - Details: L1640: Assigned TOKEN: prod…[32 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `scripts/testing/run-pdim-smoke.mjs`
+  - Details: L74: Assigned TOKEN: isol…[22 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `server/services/acmeCrypto.ts`
+  - Details: L136: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `server/services/mobilePushService.ts`
+  - Details: L137: Private key block: ----…[27 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/completion-understanding.test.mjs`
+  - Details: L188: Assigned API_KEY: fixt…[20 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/current-storage-joint-recovery.test.mjs`
+  - Details: L41: Assigned SECRET: owne…[42 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- **[CRITICAL] Potential hardcoded secret** — `tests/fabric-migration-outbox-postgres.test.mjs`
+  - Details: L190: Assigned SECRET: isol…[60 chars]; L194: Assigned SECRET: isol…[60 chars]
+  - Fix: Rotate the credential and move it to a secrets manager / env vars
+- …and 15 more (see JSON report)
 
 ## Placeholder Logic (510)
 

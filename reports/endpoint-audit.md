@@ -1,13 +1,13 @@
 # Static Frontend/Backend API Inventory
 
-Generated 2026-11-22T12:57:59.724Z without live requests.
+Generated 2026-11-24T23:55:17.001Z without live requests.
 
-- Backend route registrations: **2485** (2418 unique method/path pairs).
+- Backend route registrations: **2486** (2418 unique method/path pairs).
 - Mounted router files: **160**.
 - Frontend API call sites: **1199** (932 unique method/path pairs).
 - Matched: **932**; unmatched confirmed: **0**; method-unconfirmed: **0**.
 - Cache/comment/non-API references: **938**; external URL references: **42**; SPA URL references: **258**.
-- Dynamic frontend URLs unresolved: **15**.
+- Dynamic frontend URLs unresolved: **16**.
 
 ## Confirmed matches
 
@@ -106,7 +106,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/social/generate-music-video` via fetch — client/src/components/content/ServerVideoGenerator.tsx:966 → server/routes/socialMedia.ts:6530
 - `POST /api/contracts/validate` via fetch — client/src/components/contracts/ContractBuilder.tsx:73 → server/routes/contracts.ts:545
 - `POST /api/contracts/preview` via fetch — client/src/components/contracts/ContractBuilder.tsx:102 → server/routes/contracts.ts:586
-- `GET /api/auth/me` via useQuery — client/src/components/dashboard/AICareerCoach.tsx:248 → server/index.ts:390, server/routes.ts:309
+- `GET /api/auth/me` via useQuery — client/src/components/dashboard/AICareerCoach.tsx:248 → server/index.ts:404, server/routes.ts:309
 - `GET /api/career-coach/recommendations` via useQuery — client/src/components/dashboard/AICareerCoach.tsx:255 → server/routes/careerCoach.ts:30
 - `GET /api/career-coach/goals` via useQuery — client/src/components/dashboard/AICareerCoach.tsx:261 → server/routes/careerCoach.ts:142
 - `POST /api/career-coach/dismiss/:param` via apiRequest — client/src/components/dashboard/AICareerCoach.tsx:268 → server/routes/careerCoach.ts:70
@@ -247,8 +247,8 @@ Every entry below has a statically detected frontend transport and at least one 
 - `DELETE /api/storefront/:param` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:648 → server/routes/storefront.ts:524
 - `POST /api/social/veo-campaign/promote-storefront` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:682 → server/routes/socialMedia.ts:5363
 - `POST /api/storefront-domains/managed/reserve` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:717 → server/routes/storefrontDomains.ts:115
-- `GET /api/dns-manager/zones` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:766 → server/routes/dnsManager.ts:216
-- `POST /api/dns-manager/zones` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:772 → server/routes/dnsManager.ts:236
+- `GET /api/dns-manager/zones` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:766 → server/routes/dnsManager.ts:215
+- `POST /api/dns-manager/zones` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:772 → server/routes/dnsManager.ts:235
 - `GET /api/storefront-domains/platform/:param` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:813 → server/routes/storefrontDomains.ts:586
 - `POST /api/storefront-domains/platform/claim` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:826 → server/routes/storefrontDomains.ts:421
 - `POST /api/storefront-domains/platform/check` via apiRequest — client/src/components/marketplace/StorefrontBuilder.tsx:871 → server/routes/storefrontDomains.ts:339
@@ -501,7 +501,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `GET /api/user/accessibility-preferences` via useQuery — client/src/hooks/useAccessibilityPreferences.ts:42 → server/routes/accessibility.ts:124
 - `PUT /api/user/accessibility-preferences` via apiRequest — client/src/hooks/useAccessibilityPreferences.ts:51 → server/routes/accessibility.ts:151
 - `DELETE /api/user/accessibility-preferences` via apiRequest — client/src/hooks/useAccessibilityPreferences.ts:148 → server/routes/accessibility.ts:199
-- `GET /api/version` via fetch — client/src/hooks/useAutoUpdate.ts:17 → server/index.ts:384
+- `GET /api/version` via fetch — client/src/hooks/useAutoUpdate.ts:17 → server/index.ts:398
 - `GET /api/batch/progress/:param` via apiRequest — client/src/hooks/useBatchActions.ts:301 → server/routes/batch.ts:1238
 - `GET /api/personalization/behavior-analysis` via useQuery — client/src/hooks/useDashboardPersonalization.ts:54 → server/routes/personalization.ts:222
 - `POST /api/retention/feature-event` via fetch — client/src/hooks/useFeatureTracking.ts:34 → server/routes/retention.ts:121
@@ -956,6 +956,7 @@ None.
 
 ## Dynamic unresolved URLs and registrations
 
+- `GET developmentVerificationFilePath, (req, res, next) => {` — server/index.ts:214
 - `POST route, requireAuth, async (req: Request, res: Response) => {` — server/routes/distribution.ts:8912
 - `POST ["/audio/:projectId", "/audio/:projectId/stems"], requireAut` — server/routes/durableExports.ts:57
 - `POST ["/data", "/analytics"], requireAuth, handler(async (req, re` — server/routes/durableExports.ts:69
@@ -1944,13 +1945,13 @@ External URL references: 42; SPA path references: 258. These are intentionally n
 
 ## Mounted router prefixes
 
-- `server/monitoring.ts` → `/` (server/index.ts:127)
-- `server/middleware/cloudflare.ts` → `/` (server/index.ts:183)
-- `server/safety/index.ts` → `/` (server/index.ts:199)
-- `server/middleware/sessionAuthority.ts` → `/` (server/index.ts:658)
-- `server/middleware/csrf.ts` → `/` (server/index.ts:779, server/index.ts:780)
-- `server/middleware/multiTenantRouter.ts` → `/` (server/index.ts:1050)
-- `server/routes/seo.ts` → `/` (server/index.ts:1311, server/routes.ts:7755)
+- `server/monitoring.ts` → `/` (server/index.ts:132)
+- `server/middleware/cloudflare.ts` → `/` (server/index.ts:188)
+- `server/safety/index.ts` → `/` (server/index.ts:204)
+- `server/middleware/sessionAuthority.ts` → `/` (server/index.ts:673)
+- `server/middleware/csrf.ts` → `/` (server/index.ts:794, server/index.ts:795)
+- `server/middleware/multiTenantRouter.ts` → `/` (server/index.ts:1065)
+- `server/routes/seo.ts` → `/` (server/index.ts:1326, server/routes.ts:7755)
 - `server/middleware/requestId.ts` → `/` (server/routes.ts:253)
 - `server/middleware/governanceBoundary.ts` → `/` (server/routes.ts:258)
 - `server/auth.ts` → `/api` (server/routes.ts:267)

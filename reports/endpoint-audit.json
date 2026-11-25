@@ -1,7 +1,7 @@
 {
   "meta": {
     "mode": "static",
-    "backendCount": 2485,
+    "backendCount": 2486,
     "uniqueBackendCount": 2418,
     "frontendCallCount": 1199,
     "uniqueFrontendCount": 932,
@@ -11,7 +11,7 @@
     "frontendReferenceCount": 938,
     "externalReferenceCount": 42,
     "spaReferenceCount": 258,
-    "unresolvedDynamicCount": 15,
+    "unresolvedDynamicCount": 16,
     "dynamicFrontendResolvedCount": 12,
     "dynamicFrontendUnverifiedCount": 9,
     "mountedRouterCount": 160
@@ -126,7 +126,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     }
   ],
-  "generatedAt": "2026-11-22T12:57:59.705Z",
+  "generatedAt": "2026-11-24T23:55:16.980Z",
   "baseUrl": null,
   "backendRoutes": [
     {
@@ -298,11 +298,11 @@
       "method": "GET",
       "rawPath": "/tiktok-developers-site-verification.txt",
       "file": "server/index.ts",
-      "line": 202,
+      "line": 207,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
-      "callsNext": false,
+      "callsNext": true,
       "stubMarkers": [],
       "stubStrength": "none",
       "fullPath": "/tiktok-developers-site-verification.txt",
@@ -313,7 +313,7 @@
       "method": "GET",
       "rawPath": "/tiktok-developers-site-hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx",
       "file": "server/index.ts",
-      "line": 209,
+      "line": 223,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -328,7 +328,7 @@
       "method": "GET",
       "rawPath": "/tiktokhnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx.txt",
       "file": "server/index.ts",
-      "line": 219,
+      "line": 233,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -343,7 +343,7 @@
       "method": "GET",
       "rawPath": "/tiktokShgx3KxJb3b1mCeV8AHEsINRNKf2pmH5.txt",
       "file": "server/index.ts",
-      "line": 226,
+      "line": 240,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -358,7 +358,7 @@
       "method": "GET",
       "rawPath": "/.well-known/security.txt",
       "file": "server/index.ts",
-      "line": 236,
+      "line": 250,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -373,7 +373,7 @@
       "method": "GET",
       "rawPath": "/api/boot-status",
       "file": "server/index.ts",
-      "line": 358,
+      "line": 372,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -388,7 +388,7 @@
       "method": "POST",
       "rawPath": "/api/errors",
       "file": "server/index.ts",
-      "line": 369,
+      "line": 383,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -403,7 +403,7 @@
       "method": "GET",
       "rawPath": "/api/version",
       "file": "server/index.ts",
-      "line": 384,
+      "line": 398,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -418,7 +418,7 @@
       "method": "GET",
       "rawPath": "/api/auth/me",
       "file": "server/index.ts",
-      "line": 390,
+      "line": 404,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -433,7 +433,7 @@
       "method": "POST",
       "rawPath": "/api/dev/trigger-beat",
       "file": "server/index.ts",
-      "line": 402,
+      "line": 416,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -448,7 +448,7 @@
       "method": "GET",
       "rawPath": "/api/ready",
       "file": "server/index.ts",
-      "line": 441,
+      "line": 455,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -463,7 +463,7 @@
       "method": "GET",
       "rawPath": "/api/health/ready",
       "file": "server/index.ts",
-      "line": 442,
+      "line": 456,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -478,7 +478,7 @@
       "method": "POST",
       "rawPath": "/api/metrics/web-vitals",
       "file": "server/index.ts",
-      "line": 444,
+      "line": 458,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -493,7 +493,7 @@
       "method": "POST",
       "rawPath": "/api/metrics/web-vitals",
       "file": "server/index.ts",
-      "line": 1055,
+      "line": 1070,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -508,7 +508,7 @@
       "method": "GET",
       "rawPath": "/s/:label",
       "file": "server/index.ts",
-      "line": 1415,
+      "line": 1430,
       "resolvedVia": "literal",
       "registeredOn": "app",
       "hasAuthMarker": false,
@@ -14706,7 +14706,7 @@
       "method": "GET",
       "rawPath": "/usage",
       "file": "server/routes/dnsManager.ts",
-      "line": 175,
+      "line": 174,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14724,7 +14724,7 @@
       "method": "GET",
       "rawPath": "/info",
       "file": "server/routes/dnsManager.ts",
-      "line": 198,
+      "line": 197,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14742,7 +14742,7 @@
       "method": "GET",
       "rawPath": "/zones",
       "file": "server/routes/dnsManager.ts",
-      "line": 216,
+      "line": 215,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14760,7 +14760,7 @@
       "method": "POST",
       "rawPath": "/zones",
       "file": "server/routes/dnsManager.ts",
-      "line": 236,
+      "line": 235,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14778,7 +14778,7 @@
       "method": "POST",
       "rawPath": "/zones/:zoneId/verify",
       "file": "server/routes/dnsManager.ts",
-      "line": 314,
+      "line": 313,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14796,7 +14796,7 @@
       "method": "DELETE",
       "rawPath": "/zones/:zoneId",
       "file": "server/routes/dnsManager.ts",
-      "line": 437,
+      "line": 436,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14814,7 +14814,7 @@
       "method": "GET",
       "rawPath": "/zones/:zoneId/records",
       "file": "server/routes/dnsManager.ts",
-      "line": 465,
+      "line": 464,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14832,7 +14832,7 @@
       "method": "POST",
       "rawPath": "/zones/:zoneId/records",
       "file": "server/routes/dnsManager.ts",
-      "line": 493,
+      "line": 492,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14850,7 +14850,7 @@
       "method": "PUT",
       "rawPath": "/zones/:zoneId/records/:recordId",
       "file": "server/routes/dnsManager.ts",
-      "line": 544,
+      "line": 543,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14868,7 +14868,7 @@
       "method": "DELETE",
       "rawPath": "/zones/:zoneId/records/:recordId",
       "file": "server/routes/dnsManager.ts",
-      "line": 596,
+      "line": 595,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14886,7 +14886,7 @@
       "method": "POST",
       "rawPath": "/zones/:zoneId/records/batch",
       "file": "server/routes/dnsManager.ts",
-      "line": 623,
+      "line": 622,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14904,7 +14904,7 @@
       "method": "GET",
       "rawPath": "/zones/:zoneId/storefront-link",
       "file": "server/routes/dnsManager.ts",
-      "line": 694,
+      "line": 693,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14922,7 +14922,7 @@
       "method": "POST",
       "rawPath": "/zones/:zoneId/use-as-storefront",
       "file": "server/routes/dnsManager.ts",
-      "line": 747,
+      "line": 746,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14940,7 +14940,7 @@
       "method": "GET",
       "rawPath": "/zones/:zoneId/export",
       "file": "server/routes/dnsManager.ts",
-      "line": 852,
+      "line": 851,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14958,7 +14958,7 @@
       "method": "POST",
       "rawPath": "/zones/:zoneId/transfer-out",
       "file": "server/routes/dnsManager.ts",
-      "line": 956,
+      "line": 955,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -14976,7 +14976,7 @@
       "method": "DELETE",
       "rawPath": "/zones/:zoneId/use-as-storefront",
       "file": "server/routes/dnsManager.ts",
-      "line": 1014,
+      "line": 1013,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -30188,7 +30188,7 @@
       "fullPath": "/sitemap.xml",
       "confidence": "high",
       "mountedFrom": [
-        "server/index.ts:1311",
+        "server/index.ts:1326",
         "server/routes.ts:7755"
       ],
       "processScope": "main-app"
@@ -30207,7 +30207,7 @@
       "fullPath": "/robots.txt",
       "confidence": "high",
       "mountedFrom": [
-        "server/index.ts:1311",
+        "server/index.ts:1326",
         "server/routes.ts:7755"
       ],
       "processScope": "main-app"
@@ -44182,6 +44182,21 @@
       "fullPath": "/api-docs.json",
       "confidence": "high",
       "processScope": "main-app"
+    },
+    {
+      "method": "GET",
+      "rawPath": "/",
+      "file": "server/vite.ts",
+      "line": 52,
+      "resolvedVia": "literal",
+      "registeredOn": "app",
+      "hasAuthMarker": false,
+      "callsNext": true,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/",
+      "confidence": "high",
+      "processScope": "main-app"
     }
   ],
   "mountedRouters": [
@@ -44189,14 +44204,14 @@
       "file": "server/monitoring.ts",
       "prefix": "",
       "mountedFrom": [
-        "server/index.ts:127"
+        "server/index.ts:132"
       ],
       "contexts": [
         {
           "prefix": "",
           "processScope": "main-app",
           "mountedFrom": [
-            "server/index.ts:127"
+            "server/index.ts:132"
           ]
         }
       ]
@@ -44205,14 +44220,14 @@
       "file": "server/middleware/cloudflare.ts",
       "prefix": "",
       "mountedFrom": [
-        "server/index.ts:183"
+        "server/index.ts:188"
       ],
       "contexts": [
         {
           "prefix": "",
           "processScope": "main-app",
           "mountedFrom": [
-            "server/index.ts:183"
+            "server/index.ts:188"
           ]
         }
       ]
@@ -44221,14 +44236,14 @@
       "file": "server/safety/index.ts",
       "prefix": "",
       "mountedFrom": [
-        "server/index.ts:199"
+        "server/index.ts:204"
       ],
       "contexts": [
         {
           "prefix": "",
           "processScope": "main-app",
           "mountedFrom": [
-            "server/index.ts:199"
+            "server/index.ts:204"
           ]
         }
       ]
@@ -44237,14 +44252,14 @@
       "file": "server/middleware/sessionAuthority.ts",
       "prefix": "",
       "mountedFrom": [
-        "server/index.ts:658"
+        "server/index.ts:673"
       ],
       "contexts": [
         {
           "prefix": "",
           "processScope": "main-app",
           "mountedFrom": [
-            "server/index.ts:658"
+            "server/index.ts:673"
           ]
         }
       ]
@@ -44253,16 +44268,16 @@
       "file": "server/middleware/csrf.ts",
       "prefix": "",
       "mountedFrom": [
-        "server/index.ts:779",
-        "server/index.ts:780"
+        "server/index.ts:794",
+        "server/index.ts:795"
       ],
       "contexts": [
         {
           "prefix": "",
           "processScope": "main-app",
           "mountedFrom": [
-            "server/index.ts:779",
-            "server/index.ts:780"
+            "server/index.ts:794",
+            "server/index.ts:795"
           ]
         }
       ]
@@ -44271,14 +44286,14 @@
       "file": "server/middleware/multiTenantRouter.ts",
       "prefix": "",
       "mountedFrom": [
-        "server/index.ts:1050"
+        "server/index.ts:1065"
       ],
       "contexts": [
         {
           "prefix": "",
           "processScope": "main-app",
           "mountedFrom": [
-            "server/index.ts:1050"
+            "server/index.ts:1065"
           ]
         }
       ]
@@ -44287,7 +44302,7 @@
       "file": "server/routes/seo.ts",
       "prefix": "",
       "mountedFrom": [
-        "server/index.ts:1311",
+        "server/index.ts:1326",
         "server/routes.ts:7755"
       ],
       "contexts": [
@@ -44295,7 +44310,7 @@
           "prefix": "",
           "processScope": "main-app",
           "mountedFrom": [
-            "server/index.ts:1311",
+            "server/index.ts:1326",
             "server/routes.ts:7755"
           ]
         }
@@ -49410,7 +49425,7 @@
           "method": "GET",
           "path": "/api/auth/me",
           "file": "server/index.ts",
-          "line": 390,
+          "line": 404,
           "confidence": "high"
         },
         {
@@ -52864,7 +52879,7 @@
           "method": "GET",
           "path": "/api/dns-manager/zones",
           "file": "server/routes/dnsManager.ts",
-          "line": 216,
+          "line": 215,
           "confidence": "high"
         }
       ]
@@ -52887,7 +52902,7 @@
           "method": "POST",
           "path": "/api/dns-manager/zones",
           "file": "server/routes/dnsManager.ts",
-          "line": 236,
+          "line": 235,
           "confidence": "high"
         }
       ]
@@ -58923,7 +58938,7 @@
           "method": "GET",
           "path": "/api/version",
           "file": "server/index.ts",
-          "line": 384,
+          "line": 398,
           "confidence": "high"
         }
       ]
@@ -80508,6 +80523,12 @@
     }
   ],
   "unresolvedDynamic": [
+    {
+      "method": "GET",
+      "file": "server/index.ts",
+      "line": 214,
+      "rawExpr": "developmentVerificationFilePath, (req, res, next) => {"
+    },
     {
       "method": "POST",
       "file": "server/routes/distribution.ts",
