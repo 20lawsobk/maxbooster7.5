@@ -153,6 +153,46 @@ def is_test_path(rel):
     return bool(TEST_DIR_RE.search(rel) or TEST_NAME_RE.search(os.path.basename(rel)))
 
 
+def is_generated_snapshot_path(rel):
+    """Exclude copied repositories and archived evidence snapshots from live audits."""
+    parts = rel.replace("\\", "/").strip("/").split("/")
+    if any(part.startswith(".pdim-scratch-") for part in parts):
+        return True
+    if any(part.startswith(".task") and part.endswith("-publishing-candidate") for part in parts):
+        return True
+    if ".snapshots" in parts and "reports" in parts:
+        return True
+    if parts[:3] == ["reports", "aso", "pr-reconciliation"] and any(
+        part.endswith("-head") for part in parts[3:]
+    ):
+        return True
+    if parts[:2] == ["reports", "platform-evidence"] and any(
+        part in {"candidate", "baseline-source", "proposed"} or part.endswith("-candidate")
+        for part in parts[2:]
+    ):
+        return True
+    return False
+
+
+def is_write_path_selected(rel, args):
+    """Allow source writes only to selected repository paths, never generated copies."""
+    if not isinstance(rel, str) or not rel or os.path.isabs(rel):
+        return False
+    normalized = rel.replace("\\", "/")
+    parts = normalized.split("/")
+    if any(part in ("", ".", "..") for part in parts):
+        return False
+    if any(part in SKIP_DIRS for part in parts[:-1]) or is_generated_snapshot_path(normalized):
+        return False
+    includes = getattr(args, "include", None) or []
+    excludes = getattr(args, "exclude", None) or []
+    if includes and not any(fnmatch.fnmatch(normalized, pattern.replace("\\", "/")) for pattern in includes):
+        return False
+    if any(fnmatch.fnmatch(normalized, pattern.replace("\\", "/")) for pattern in excludes):
+        return False
+    return True
+
+
 # --------------------------------------------------------------------------
 # Per-file scan (runs in worker processes; must be top-level and picklable)
 # --------------------------------------------------------------------------
@@ -290,6 +330,8 @@ class ProductionAuditEngine:
 
     def _excluded(self, rel):
         rel = rel.replace(os.sep, "/")
+        if is_generated_snapshot_path(rel):
+            return True
         if self.args.include and not any(fnmatch.fnmatch(rel, g) for g in self.args.include):
             return True
         return any(fnmatch.fnmatch(rel, g) for g in (self.args.exclude or []))
@@ -328,7 +370,7 @@ class ProductionAuditEngine:
                                 continue
                             rel = os.path.relpath(entry.path, self.repo_root)
                             if entry.is_dir(follow_symlinks=False):
-                                if entry.name not in SKIP_DIRS:
+                                if entry.name not in SKIP_DIRS and not is_generated_snapshot_path(rel):
                                     stack.append(Path(entry.path))
                             elif entry.is_file(follow_symlinks=False) and not self._excluded(rel):
                                 yield entry.path, rel
@@ -1628,6 +1670,8 @@ class AIRemediator:
             return None
 
     def write(self, rel, text):
+        if not is_write_path_selected(rel, self.a):
+            raise EditError(f"write rejected: {rel!r} is outside the selected file scope")
         p = self.root / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         with open(p, "w", encoding="utf-8", newline="") as f:
@@ -2171,12 +2215,18 @@ class AgentRemediator(AIRemediator):
         entries = []
         for dirpath, dirs, files in os.walk(self.root):
             depth = os.path.relpath(dirpath, self.root).count(os.sep)
-            dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS and not d.startswith("."))
+            rel_dir = os.path.relpath(dirpath, self.root).replace(os.sep, "/")
+            dirs[:] = sorted(
+                d for d in dirs
+                if d not in SKIP_DIRS and not d.startswith(".")
+                and not is_generated_snapshot_path(os.path.join(rel_dir, d).replace(os.sep, "/"))
+            )
             if depth >= 2:
                 dirs[:] = []
             for f in sorted(files):
-                if not f.startswith(".") and len(entries) < 90:
-                    entries.append(os.path.relpath(os.path.join(dirpath, f), self.root).replace(os.sep, "/"))
+                rel = os.path.relpath(os.path.join(dirpath, f), self.root).replace(os.sep, "/")
+                if not f.startswith(".") and not is_generated_snapshot_path(rel) and len(entries) < 90:
+                    entries.append(rel)
         readme = ""
         for name in ("README.md", "readme.md"):
             t = self.read(name)
@@ -2437,6 +2487,9 @@ class AgentRemediator(AIRemediator):
                     continue
                 keep.append(line)
             if changed:
+                if not self.a.ai_allow_manifests or not is_write_path_selected(mf.name, self.a):
+                    manual.append(mf.name)
+                    continue
                 self.backup(mf.name, text)
                 self.write(mf.name, "".join(keep))
                 self.touched.add(mf.name)
@@ -2450,6 +2503,10 @@ class AgentRemediator(AIRemediator):
                     if name in j.get(k, {}):
                         del j[k][name]
                         hit = True
+                if hit:
+                    if not self.a.ai_allow_manifests or not is_write_path_selected("package.json", self.a):
+                        manual.append("package.json")
+                        hit = False
                 if hit:
                     self.backup("package.json", pj.read_text(encoding="utf-8"))
                     self.write("package.json", json.dumps(j, indent=2) + "\n")
