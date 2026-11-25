@@ -28,6 +28,7 @@ import json
 import math
 import os
 import re
+import stat
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -1045,6 +1046,129 @@ MODULE_SCHEMA = ('{"module_purpose": "...", "symbols": [{"qualname": "...", "int
                  '"open_questions": ["..."]}')
 
 
+class MidRunRecovery:
+    """Journal safe repairs and retry malformed model output once."""
+
+    def __init__(self, journal_path=None):
+        self.journal_path = Path(journal_path) if journal_path else None
+        self.events = []
+
+    def reset(self, journal_path=None):
+        self.events = []
+        self.journal_path = Path(journal_path) if journal_path else None
+        if self.journal_path:
+            self.journal_path.parent.mkdir(parents=True, exist_ok=True)
+            with self._open_journal(truncate=True):
+                pass
+
+    def _open_journal(self, truncate=False):
+        flags = os.O_WRONLY | os.O_CREAT | (0 if truncate else os.O_APPEND)
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        try:
+            fd = os.open(str(self.journal_path), flags, 0o600)
+        except OSError as exc:
+            raise RuntimeError(
+                f"could not safely open mid-run recovery journal ({exc.__class__.__name__})"
+            ) from None
+        try:
+            metadata = os.fstat(fd)
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+                raise RuntimeError("mid-run recovery journal must be a single-link regular file")
+            if truncate:
+                os.ftruncate(fd, 0)
+            return os.fdopen(fd, "w" if truncate else "a", encoding="utf-8")
+        except BaseException:
+            os.close(fd)
+            raise
+
+    def record(self, stage, category, action, outcome, attempt=None, error_type=None):
+        event = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "stage": str(stage)[:80],
+            "category": str(category)[:80],
+            "action": str(action)[:80],
+            "outcome": str(outcome)[:40],
+        }
+        if attempt is not None:
+            event["attempt"] = int(attempt)
+        if error_type:
+            event["error_type"] = str(error_type)[:80]
+        self.events.append(event)
+        if self.journal_path:
+            try:
+                with self._open_journal() as journal:
+                    journal.write(json.dumps(event, separators=(",", ":")) + "\n")
+                    journal.flush()
+            except (OSError, RuntimeError) as exc:
+                raise RuntimeError(
+                    f"could not persist mid-run recovery event ({exc.__class__.__name__})"
+                ) from None
+        print(
+            f"[mid-run recovery] {event['stage']}: {event['category']} "
+            f"{event['action']} ({event['outcome']})",
+            file=sys.stderr,
+        )
+
+    def request_json(self, stage, model_call, system, prompt):
+        """Repair a malformed model JSON response with one format-only retry."""
+        current_prompt = prompt
+        for attempt in (1, 2):
+            try:
+                raw = model_call(system, current_prompt)
+            except Exception as exc:
+                self.record(
+                    stage, "model_call_exception", "stop_without_retry", "failed",
+                    attempt, type(exc).__name__,
+                )
+                raise
+            try:
+                if not isinstance(raw, str):
+                    raise ValueError("response must be text")
+                result = parse_json(raw)
+                if not isinstance(result, dict):
+                    raise ValueError("response root must be an object")
+            except ValueError:
+                if attempt == 1:
+                    self.record(stage, "invalid_model_json", "request_json_format_repair", "retrying", attempt)
+                    current_prompt = (
+                        prompt
+                        + "\n\nFORMAT RECOVERY: Your previous response was not a valid JSON object. "
+                        "Return only a valid JSON object matching the requested schema. "
+                        "Do not include markdown fences or explanatory text."
+                    )
+                    continue
+                self.record(stage, "invalid_model_json", "request_json_format_repair", "failed", attempt)
+                raise ValueError("model response remained invalid after one format-repair attempt") from None
+            if attempt > 1:
+                self.record(stage, "invalid_model_json", "request_json_format_repair", "recovered", attempt)
+            return result
+        raise AssertionError("bounded JSON repair loop exited unexpectedly")
+
+    def markdown(self):
+        lines = ["", "## Mid-run recovery", ""]
+        if not self.events:
+            return "\n".join(lines + ["- No recovery actions were needed.", ""])
+        recovered = sum(event["outcome"] == "recovered" for event in self.events)
+        retries = sum(event["outcome"] == "retrying" for event in self.events)
+        blocked = sum(event["outcome"] in ("failed", "blocked", "rolled_back") for event in self.events)
+        lines.append(
+            f"- Events: {len(self.events)}; retries: {retries}; recovered: {recovered}; "
+            f"blocked or rolled back: {blocked}."
+        )
+        for event in self.events:
+            attempt = f", attempt {event['attempt']}" if "attempt" in event else ""
+            error_type = f", {event['error_type']}" if event.get("error_type") else ""
+            lines.append(
+                f"- [{event['outcome']}] `{event['stage']}`: {event['category']} — "
+                f"{event['action']}{attempt}{error_type}"
+            )
+        lines.append("")
+        return "\n".join(lines)
+
+
+MIDRUN_RECOVERY = MidRunRecovery()
+
+
 class Understander:
     def __init__(self, root, cfg, args, discover, model_fn=None):
         self.root, self.cfg, self.a, self.discover = Path(root).resolve(), cfg, args, discover
@@ -1052,8 +1176,13 @@ class Understander:
         self.calls = 0
 
     def ask(self, system, user):
-        self.calls += 1
-        return parse_json(self.model_fn(system, user))
+        def counted_model_call(call_system, call_user):
+            self.calls += 1
+            return self.model_fn(call_system, call_user)
+
+        return MIDRUN_RECOVERY.request_json(
+            "repository_understanding", counted_model_call, system, user
+        )
 
     def order(self, inv, limit):
         mods = {r: m for r, m in inv["modules"].items() if not m["is_test"]}
@@ -1786,6 +1915,9 @@ class AIRemediator:
               file=sys.stderr)
         eng, rep = audit_fn()
         if ok is False and not self.a.ai_unverified:
+            MIDRUN_RECOVERY.record(
+                "baseline_tests", "baseline_test_failure", "preserve_safety_gate", "blocked"
+            )
             self.rec("setup", "*", [], "aborted",
                      "baseline tests fail before any AI change; fix them or pass --ai-unverified. " + tail[-300:])
             return rep
@@ -1810,6 +1942,10 @@ class AIRemediator:
                     if active:  # roll back any partial edits from the interrupted session
                         self.revert_session(active)
                         self._active = None
+                        MIDRUN_RECOVERY.record(
+                            "ai_remediation", "session_exception", "rollback_unverified_edits",
+                            "rolled_back", error_type=type(e).__name__,
+                        )
                     for r in rules:
                         self.deferred.add((rel, r))
                     status = self.rec(kind, rel, rules, "failed", f"{type(e).__name__}: {e} (changes rolled back)")
@@ -1923,7 +2059,9 @@ class AIRemediator:
                       f"\n\n<file path=\"{rel}\">\n{src}\n</file>\n")
             if feedback:
                 prompt += f"\nYour previous attempt was rejected: {feedback}\nTry again with a corrected approach.\n"
-            data = parse_json(self.ask(prompt))
+            data = MIDRUN_RECOVERY.request_json(
+                "ai_fix_response", lambda _system, user: self.ask(user), SYSTEM_PROMPT, prompt
+            )
             status = data.get("status")
             if status in ("needs_human", "no_change_needed"):
                 for r in rules:
@@ -1931,9 +2069,15 @@ class AIRemediator:
                 return self.rec("fix", rel, rules, status, str(data.get("reason", ""))[:300])
             edits = data.get("edits")
             if status != "edited" or not isinstance(edits, list) or not edits:
+                MIDRUN_RECOVERY.record(
+                    "ai_fix_response", "invalid_edit_response", "request_corrected_edit", "retrying", attempt
+                )
                 feedback = "response had no valid edits"
                 continue
             if any(not isinstance(e, dict) or e.get("path") != rel for e in edits) or data.get("new_files"):
+                MIDRUN_RECOVERY.record(
+                    "ai_fix_response", "edit_outside_scope", "reject_and_request_scoped_edit", "retrying", attempt
+                )
                 feedback = f"edits may only target {rel} and new_files are not allowed for this task"
                 continue
             try:
@@ -1946,6 +2090,9 @@ class AIRemediator:
                 continue
             ok, msg = self.syntax_ok(rel, new)
             if not ok:
+                MIDRUN_RECOVERY.record(
+                    "ai_fix_response", "invalid_syntax", "reject_and_request_valid_edit", "retrying", attempt
+                )
                 feedback = f"syntax error: {msg}"
                 continue
             if new.count("audit:ignore") > orig.count("audit:ignore"):
@@ -1958,12 +2105,18 @@ class AIRemediator:
             improved = any(after_m.get(r, 0) < before_m.get(r, 0) for r in rules)
             if worse or not improved:
                 self.write(rel, orig)
+                MIDRUN_RECOVERY.record(
+                    "ai_fix_response", "audit_regression", "restore_original_and_retry", "retrying", attempt
+                )
                 feedback = (f"audit regression on {worse}" if worse else
                             "the targeted findings did not decrease")
                 continue
             tok, tail = self.run_tests()
             if tok is False:
                 self.write(rel, orig)
+                MIDRUN_RECOVERY.record(
+                    "ai_fix_response", "test_regression", "restore_original_and_retry", "retrying", attempt
+                )
                 feedback = "tests failed after your change:\n" + tail[-1500:]
                 continue
             self.touched.add(rel)
@@ -2018,11 +2171,16 @@ class AIRemediator:
                       f"- Top-level layout: {layout}\n{extra}\n\n<file path=\"{rel}\">\n{src}\n</file>\n")
             if feedback:
                 prompt += f"\nYour previous attempt failed:\n{feedback}\nFix the tests (do not change source code).\n"
-            data = parse_json(self.ask(prompt))
+            data = MIDRUN_RECOVERY.request_json(
+                "ai_test_response", lambda _system, user: self.ask(user), SYSTEM_PROMPT, prompt
+            )
             if data.get("status") == "needs_human":
                 return self.rec("tests", rel, rules, "needs_human", str(data.get("reason", ""))[:300])
             files = data.get("new_files")
             if not isinstance(files, list) or not 1 <= len(files) <= 2 or data.get("edits"):
+                MIDRUN_RECOVERY.record(
+                    "ai_test_response", "invalid_test_response", "request_valid_test_files", "retrying", attempt
+                )
                 feedback = "respond with 1-2 new_files and no edits"
                 continue
             planned, bad = [], None
@@ -2054,6 +2212,9 @@ class AIRemediator:
                     self.created.add(frel)
                 return self.rec("tests", rel, rules, "applied",
                                 f"added {', '.join(f for f, _ in planned)} (characterization tests; they encode current behavior)")
+            MIDRUN_RECOVERY.record(
+                "ai_test_response", "test_regression", "remove_generated_tests_and_retry", "retrying", attempt
+            )
             for frel, _ in planned:
                 try:
                     (self.root / frel).unlink()
@@ -3519,7 +3680,7 @@ def remediation_markdown(before, after, rem, applied, branch, backup):
           "- Removing a secret from the code does **not** remove it from git history. Rotate it.",
           "- Review the diff and run your tests before merging.",
           "- Generated README/CI are starting points, not finished artifacts.", ""]
-    return "\n".join(L)
+    return "\n".join(L) + MIDRUN_RECOVERY.markdown()
 
 
 def configure_execution_mode(args):
@@ -3634,6 +3795,7 @@ def main():
         sys.exit(f"Not a directory: {root}")
     out = Path(a.output)
     out.mkdir(parents=True, exist_ok=True)
+    MIDRUN_RECOVERY.reset(out / "recovery_events.jsonl")
 
     excl = list(a.exclude) + [".audit_backup/*"]
     out_rel = None
@@ -4094,6 +4256,87 @@ def _selftest_default_auto(root, out, check):
           _sh(root, "git", "branch", "--show-current").stdout.strip().startswith("audit-fixes-"))
 
 
+def _selftest_recovery(root, check):
+    root.mkdir(parents=True, exist_ok=True)
+    journal = root / "recovery_events.jsonl"
+    recovery = MidRunRecovery(journal)
+    private_marker = "PRIVATE_MODEL_OUTPUT_MUST_NOT_BE_LOGGED"
+    replies = iter((private_marker, '{"status":"ok"}'))
+    prompts = []
+
+    def malformed_once(system, prompt):
+        prompts.append(prompt)
+        return next(replies)
+
+    result = recovery.request_json("selftest", malformed_once, "system", "return a JSON object")
+    persisted = journal.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in persisted.splitlines() if line.strip()]
+    check("mid-run recovery retries malformed JSON once and accepts corrected output",
+          result == {"status": "ok"} and len(prompts) == 2 and "FORMAT RECOVERY" in prompts[1])
+    check("recovery journal records safe metadata without model output",
+          [event["outcome"] for event in events] == ["retrying", "recovered"]
+          and private_marker not in persisted)
+
+    attempts = []
+
+    def permanent_failure(_system, _prompt):
+        attempts.append(1)
+        raise PermissionError("private failure detail")
+
+    try:
+        recovery.request_json("selftest_permanent", permanent_failure, "system", "prompt")
+        stopped = False
+    except PermissionError:
+        stopped = True
+    final_events = [json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines() if line.strip()]
+    check("mid-run recovery does not retry permanent model-call failures",
+          stopped and len(attempts) == 1 and final_events[-1]["error_type"] == "PermissionError")
+    check("recovery journal does not persist exception details",
+          "private failure detail" not in journal.read_text(encoding="utf-8"))
+
+    symlink_target = root / "must_not_be_truncated.txt"
+    symlink_target.write_text("preserve this file\n", encoding="utf-8")
+    symlink = root / "recovery_symlink.jsonl"
+    try:
+        symlink.symlink_to(symlink_target)
+        try:
+            MidRunRecovery(symlink).reset(symlink)
+            symlink_rejected = False
+        except RuntimeError:
+            symlink_rejected = True
+        check("recovery journal refuses symlink targets",
+              symlink_rejected and symlink_target.read_text(encoding="utf-8") == "preserve this file\n")
+    except OSError as exc:
+        check(f"recovery journal symlink protection (symlink unavailable: {type(exc).__name__})", True)
+    finally:
+        symlink.unlink(missing_ok=True)
+
+    invalid_recovery = MidRunRecovery()
+    invalid_calls = []
+    try:
+        invalid_recovery.request_json(
+            "selftest_exhausted",
+            lambda _system, _prompt: invalid_calls.append(1) or "still not json",
+            "system",
+            "prompt",
+        )
+        exhausted = False
+    except ValueError:
+        exhausted = True
+    check("mid-run recovery stops after its single bounded format retry",
+          exhausted and len(invalid_calls) == 2
+          and invalid_recovery.events[-1]["outcome"] == "failed")
+
+    counted_replies = iter(("invalid", '{"status":"ok"}'))
+    understander = Understander(
+        root, {}, Namespace(), lambda: [],
+        model_fn=lambda _system, _prompt: next(counted_replies),
+    )
+    understander.ask("system", "prompt")
+    check("understanding call metrics include the automatic format retry",
+          understander.calls == 2)
+
+
 def _check_sdk(ping=False):
     runtime = _sdk_runtime()
     print(f"Anthropic SDK readiness (selected runtime: {runtime}; the suite never calls the raw HTTP API)")
@@ -4287,6 +4530,8 @@ def _self_test():
 
         print("Self-test 0b: ordinary launch on an isolated repository")
         _selftest_default_auto(tmp / "auto", tmp / "out_auto", check)
+        print("Self-test 0c: bounded mid-run recovery")
+        _selftest_recovery(tmp / "recovery", check)
 
         print("Self-test 1/3: deterministic remediation (audit -> fix -> re-audit)")
         _selftest_deterministic(tmp / "det", tmp / "out_det", check)
