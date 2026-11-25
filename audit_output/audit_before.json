@@ -1,18 +1,18 @@
 {
-  "timestamp": "2026-11-25T01:19:40.257997+00:00",
+  "timestamp": "2026-11-25T03:51:09.963404+00:00",
   "repository": "/home/runner/workspace",
   "production_score": 3,
   "production_ready": false,
-  "finding_count": 444,
+  "finding_count": 446,
   "blockers": 204,
   "stats": {
-    "files": 12039,
-    "text": 11669,
-    "lines": 29932431,
+    "files": 12041,
+    "text": 11671,
+    "lines": 29962928,
     "binary": 370,
-    "source_files": 3961,
-    "logging_files": 966,
-    "error_handling_files": 1704,
+    "source_files": 3963,
+    "logging_files": 968,
+    "error_handling_files": 1706,
     "test_files": 1711
   },
   "findings": [
@@ -3730,6 +3730,28 @@
       "file": ".pdim-cluster-test-Pidv4k/cluster-fixture.mjs",
       "title": "Oversized source file",
       "details": "L1: 10557 lines",
+      "recommendation": "Break into smaller modules",
+      "production_blocker": false,
+      "count": 1
+    },
+    {
+      "rule": "large_file",
+      "severity": "MEDIUM",
+      "category": "Architecture",
+      "file": ".pdim-recovery-simulation-FnED0j/fixture-worker.mjs",
+      "title": "Oversized source file",
+      "details": "L1: 11077 lines",
+      "recommendation": "Break into smaller modules",
+      "production_blocker": false,
+      "count": 1
+    },
+    {
+      "rule": "large_file",
+      "severity": "MEDIUM",
+      "category": "Architecture",
+      "file": ".pdim-recovery-simulation-FnED0j/verifier-worker.mjs",
+      "title": "Oversized source file",
+      "details": "L1: 19420 lines",
       "recommendation": "Break into smaller modules",
       "production_blocker": false,
       "count": 1

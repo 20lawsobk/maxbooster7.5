@@ -1,6 +1,6 @@
 # Production Audit Report
 
-Generated: 2026-11-25T01:20:05.096532+00:00
+Generated: 2026-11-25T03:51:34.933203+00:00
 Repository: `/home/runner/workspace`
 
 **Production Score:** 3/100  
@@ -9,9 +9,9 @@ Repository: `/home/runner/workspace`
 
 ## Scan Summary
 
-- Files: 12039 (text 11669, binary 370, skipped 0)
-- Lines scanned: 29932431
-- Source files: 3961, test files: 1711
+- Files: 12041 (text 11671, binary 370, skipped 0)
+- Lines scanned: 29962928
+- Source files: 3963, test files: 1711
 
 ## Security (30)
 
@@ -489,10 +489,16 @@ Repository: `/home/runner/workspace`
   - Fix: Catch specific errors and log or re-raise
 - …and 107 more (see JSON report)
 
-## Architecture (82)
+## Architecture (84)
 
 - **[MEDIUM] Oversized source file** — `.pdim-cluster-test-Pidv4k/cluster-fixture.mjs`
   - Details: L1: 10557 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.pdim-recovery-simulation-FnED0j/fixture-worker.mjs`
+  - Details: L1: 11077 lines
+  - Fix: Break into smaller modules
+- **[MEDIUM] Oversized source file** — `.pdim-recovery-simulation-FnED0j/verifier-worker.mjs`
+  - Details: L1: 19420 lines
   - Fix: Break into smaller modules
 - **[MEDIUM] Oversized source file** — `AI enhancements/SocialMedia.tsx`
   - Details: L1: 5742 lines
@@ -635,13 +641,7 @@ Repository: `/home/runner/workspace`
 - **[MEDIUM] Oversized source file** — `server/routes/analytics-internal.ts`
   - Details: L1: 2119 lines
   - Fix: Break into smaller modules
-- **[MEDIUM] Oversized source file** — `server/routes/billing.ts`
-  - Details: L1: 2626 lines
-  - Fix: Break into smaller modules
-- **[MEDIUM] Oversized source file** — `server/routes/contracts.ts`
-  - Details: L1: 2204 lines
-  - Fix: Break into smaller modules
-- …and 32 more (see JSON report)
+- …and 34 more (see JSON report)
 
 ## Documentation (1)
 
