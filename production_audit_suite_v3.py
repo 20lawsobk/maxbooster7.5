@@ -193,6 +193,25 @@ def is_write_path_selected(rel, args):
     return True
 
 
+def safe_write_target(root, rel, args):
+    """Resolve a selected write target without following symlink components."""
+    if not is_write_path_selected(rel, args):
+        return None
+    normalized = rel.replace("\\", "/")
+    root = Path(root).resolve()
+    target = root.joinpath(*normalized.split("/"))
+    current = root
+    try:
+        for part in normalized.split("/"):
+            current = current / part
+            if current.is_symlink():
+                return None
+        target.resolve(strict=False).relative_to(root)
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return target
+
+
 # --------------------------------------------------------------------------
 # Per-file scan (runs in worker processes; must be top-level and picklable)
 # --------------------------------------------------------------------------
@@ -1670,9 +1689,9 @@ class AIRemediator:
             return None
 
     def write(self, rel, text):
-        if not is_write_path_selected(rel, self.a):
-            raise EditError(f"write rejected: {rel!r} is outside the selected file scope")
-        p = self.root / rel
+        p = safe_write_target(self.root, rel, self.a)
+        if p is None:
+            raise EditError(f"write rejected: {rel!r} is outside the selected scope or resolves through a symlink")
         p.parent.mkdir(parents=True, exist_ok=True)
         with open(p, "w", encoding="utf-8", newline="") as f:
             f.write(text)
@@ -2487,7 +2506,7 @@ class AgentRemediator(AIRemediator):
                     continue
                 keep.append(line)
             if changed:
-                if not self.a.ai_allow_manifests or not is_write_path_selected(mf.name, self.a):
+                if not self.a.ai_allow_manifests or safe_write_target(self.root, mf.name, self.a) is None:
                     manual.append(mf.name)
                     continue
                 self.backup(mf.name, text)
@@ -2504,7 +2523,7 @@ class AgentRemediator(AIRemediator):
                         del j[k][name]
                         hit = True
                 if hit:
-                    if not self.a.ai_allow_manifests or not is_write_path_selected("package.json", self.a):
+                    if not self.a.ai_allow_manifests or safe_write_target(self.root, "package.json", self.a) is None:
                         manual.append("package.json")
                         hit = False
                 if hit:
@@ -2562,6 +2581,8 @@ class AgentRemediator(AIRemediator):
         if st["kind"] not in ("build", "replace"):
             return "create_module is only for feature-completion and replacement sessions"
         rel = self.rel_of(inp.get("path"))
+        if safe_write_target(self.root, rel, self.a) is None:
+            return f"create rejected: {rel!r} is outside the selected file scope"
         content = inp.get("content")
         ext = os.path.splitext(rel)[1].lower()
         if (self.root / rel).exists():
@@ -2619,11 +2640,18 @@ class AgentRemediator(AIRemediator):
     def iter_code_files(self):
         exts = set(self.cfg["code_exts"])
         for dirpath, dirs, files in os.walk(self.root):
-            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            rel_dir = os.path.relpath(dirpath, self.root).replace(os.sep, "/")
+            dirs[:] = [
+                d for d in dirs
+                if d not in SKIP_DIRS
+                and not is_generated_snapshot_path(os.path.join(rel_dir, d).replace(os.sep, "/"))
+            ]
             for fn in files:
                 if os.path.splitext(fn)[1].lower() in exts:
                     full = os.path.join(dirpath, fn)
-                    yield full, os.path.relpath(full, self.root).replace(os.sep, "/")
+                    rel = os.path.relpath(full, self.root).replace(os.sep, "/")
+                    if not is_generated_snapshot_path(rel):
+                        yield full, rel
 
     def known_third_party(self, ctx, exclude=()):
         known = set()
@@ -2703,10 +2731,16 @@ class AgentRemediator(AIRemediator):
         glob = inp.get("glob")
         out, scanned = [], 0
         for dirpath, dirs, files in os.walk(self.root):
-            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            rel_dir = os.path.relpath(dirpath, self.root).replace(os.sep, "/")
+            dirs[:] = [
+                d for d in dirs
+                if d not in SKIP_DIRS
+                and not is_generated_snapshot_path(os.path.join(rel_dir, d).replace(os.sep, "/"))
+            ]
             for fn in files:
                 rel = os.path.relpath(os.path.join(dirpath, fn), self.root).replace(os.sep, "/")
-                if (glob and not fnmatch.fnmatch(rel, glob)) or re.match(r"^\.env", fn):
+                if (glob and not fnmatch.fnmatch(rel, glob)) or re.match(r"^\.env", fn) \
+                        or is_generated_snapshot_path(rel):
                     continue
                 full = os.path.join(dirpath, fn)
                 try:
@@ -2729,6 +2763,8 @@ class AgentRemediator(AIRemediator):
         if st["kind"] == "tests":
             return "this is a test-writing session: source files may not be edited"
         rel = self.rel_of(inp.get("path"))
+        if not is_write_path_selected(rel, self.a):
+            return f"edit rejected: {rel!r} is outside the selected file scope"
         base = os.path.basename(rel)
         fresh = rel in st["created"] or rel in st["new_src"]
         if is_test_path(rel) and rel not in st["created"]:
@@ -2758,6 +2794,8 @@ class AgentRemediator(AIRemediator):
 
     def t_create(self, inp, st):
         frel = self.rel_of(inp.get("path"))
+        if not is_write_path_selected(frel, self.a):
+            return f"create rejected: {frel!r} is outside the selected file scope"
         content = inp.get("content")
         if (self.root / frel).exists():
             return "file already exists; only new test files may be created"
@@ -2791,6 +2829,10 @@ class AgentRemediator(AIRemediator):
             return
         from datetime import date
         rel = "docs/audit-decisions.md"
+        if safe_write_target(self.root, rel, self.a) is None:
+            self.rec("decision_log", rel, [], "reported_only",
+                     "decision details remain in the remediation report because this file is outside the selected scope")
+            return
         text = self.read(rel)
         if text is None:
             text = ("# Audit decisions\n\nDecisions made automatically under the remediation policy. "
@@ -3111,6 +3153,11 @@ class Remediator:
             return None
 
     def write(self, rel, text, rule, desc):
+        if safe_write_target(self.root, rel, self.args) is None:
+            detail = "not changed: path is outside the selected scope, is generated output, or resolves through a symlink"
+            if (rule, rel, detail) not in self.manual:
+                self.manual.append((rule, rel, detail))
+            return
         if rel not in self.orig:
             self.orig[rel] = self.read(rel)
         self.new[rel] = text
@@ -3396,7 +3443,18 @@ class Remediator:
 
     def apply(self, backup_dir):
         for rel, text in self.new.items():
-            p = self.root / rel
+            p = safe_write_target(self.root, rel, self.args)
+            if p is None:
+                raise RuntimeError(f"refusing to apply remediation outside the selected scope: {rel}")
+            current = None
+            if p.exists():
+                try:
+                    with open(p, "r", encoding="utf-8", newline="") as f:
+                        current = f.read()
+                except (OSError, UnicodeDecodeError) as e:
+                    raise RuntimeError(f"refusing to overwrite unreadable file {rel}: {e}") from e
+            if current != self.orig.get(rel):
+                raise RuntimeError(f"refusing to overwrite {rel}: it changed after audit planning")
             p.parent.mkdir(parents=True, exist_ok=True)
             if backup_dir and self.orig.get(rel) is not None:
                 dest = backup_dir / rel
@@ -3493,7 +3551,8 @@ def main():
     ap.add_argument("--sdk-ping", action="store_true", help="With --check-sdk: also send one tiny live request through the selected SDK")
     ap.add_argument("--self-test", action="store_true", help="Run the built-in end-to-end self-test (no network needed)")
     ap.add_argument("--output", default="audit_output")
-    ap.add_argument("--apply", action="store_true", help="Actually modify the repo (default: dry run)")
+    ap.add_argument("--apply", action="store_true",
+                    help="Apply fixes; ordinary launches self-implement unless --dry-run or --audit-only")
     ap.add_argument("--allow-dirty", action="store_true", help="Allow a dirty git working tree")
     ap.add_argument("--no-branch", action="store_true", help="Don't create a git branch for the fixes")
     ap.add_argument("--commit", action="store_true", help="Commit the changes on the fix branch")
@@ -3511,7 +3570,9 @@ def main():
     ap.add_argument("--no-git", action="store_true")
     ap.add_argument("--ready-threshold", type=int, default=95)
     ap.add_argument("--fail-under", type=int, default=None)
-    g = ap.add_argument_group("AI-assisted remediation (needs ANTHROPIC_API_KEY and --apply)")
+    g = ap.add_argument_group(
+        "AI-assisted remediation (needs ANTHROPIC_API_KEY; ordinary launches apply suggestions)"
+    )
     g.add_argument("--ai", action="store_true", help="Use an LLM for TODOs, placeholders, logging, error handling, tests")
     g.add_argument("--ai-yes", action="store_true", help="Confirm the data-sharing notice non-interactively")
     g.add_argument("--model", default="claude-sonnet-5-5")
@@ -3571,6 +3632,7 @@ def main():
         excl.append(f"{out_rel}/*")
     except ValueError:
         pass
+    a.exclude = excl
     aargs = Namespace(workers=a.workers, max_scan_mb=a.max_scan_mb, scan_all=a.scan_all,
                       extra_code_ext=a.extra_code_ext, include=a.include, exclude=excl,
                       no_git=a.no_git, max_hits_per_file=200, large_file_lines=2000,
@@ -3773,8 +3835,21 @@ def _selftest_scoped(root, out, check):
     _init_repo(root, {
         "README.md": "REAL README\n", ".gitignore": "node_modules/\n", "LICENSE": "REAL LICENSE\n",
         ".github/workflows/ci.yml": "name: REAL CI\n",
-        "src/a.py": '"""Doc."""\nimport logging\n\n\ndef f():\n    try:\n        return 1\n    except:\n        logging.exception("x")\n',
+        "src/a.py": ('"""Doc."""\nimport logging\n\napi_key = "' + _FIXTURE_KEY + '"\n\n'
+                     'def f():\n    try:\n        return 1\n    except:\n        logging.exception("x")\n'),
         "other/b.py": "x = 1\n"})
+    for rel in (
+        ".pdim-scratch-fixture/module.py",
+        ".task123-publishing-candidate/tests/copy.py",
+        "reports/aso/pr-reconciliation/pr-211-head/tests/copy.py",
+        "reports/platform-evidence/sample-candidate/tests/copy.py",
+        "reports/fix-all/.snapshots/generated/tests/copy.py",
+    ):
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("copied = True\n", encoding="utf-8")
+    _sh(root, "git", "add", "-A")
+    _sh(root, "git", "commit", "-qm", "add generated audit fixtures")
     rc, log = _run_cli(["--repo", str(root), "--output", str(out), "--include", "src/*", "--apply", "--commit"])
     check("scoped run exits cleanly", rc == 0 or print(log[-800:]))
     before = json.loads((out / "audit_before.json").read_text())
@@ -3787,6 +3862,73 @@ def _selftest_scoped(root, out, check):
           and (root / ".github/workflows/ci.yml").read_text() == "name: REAL CI\n")
     check("only in-scope files were fixed", "except Exception:" in (root / "src/a.py").read_text()
           and (root / "other/b.py").read_text() == "x = 1\n")
+    check("scoped deterministic remediation does not write generated env/config files",
+          not (root / ".env.example").exists() and (root / ".gitignore").read_text() == "node_modules/\n")
+    check("default audit discovery skips copied and archived repository snapshots",
+          all(not is_generated_snapshot_path(rel) for _full, rel in
+              ProductionAuditEngine(root, Namespace(
+                  workers=1, max_scan_mb=0, scan_all=False, extra_code_ext=[], include=None, exclude=[],
+                  no_git=False, max_hits_per_file=200, large_file_lines=2000, ready_threshold=95,
+              )).discover()))
+
+    ai_args = Namespace(include=["src/*"], exclude=[], test_cmd=None, test_timeout=1,
+                        ai_unverified=False, ai_allow_manifests=False, policy=None, inhouse_dir="inhouse")
+    ai_cfg = ProductionAuditEngine(root, Namespace(
+        extra_code_ext=[], scan_all=False, max_scan_mb=0, max_hits_per_file=200, large_file_lines=2000,
+    )).cfg
+    agent = AgentRemediator(root, ai_cfg, ai_args, chat_fn=lambda *_args, **_kwargs: {},
+                            model_fn=lambda *_args, **_kwargs: "{}")
+    search_reply = agent.t_search({"pattern": "copied = True", "ignore_case": False})
+    check("AI search excludes generated repository snapshots", "copied = True" not in search_reply)
+    source = agent.read("src/a.py")
+    state = agent.new_state("src/a.py", ["todo"], "fix", source, None)
+    try:
+        agent.write("other/b.py", "x = 2\n")
+        central_write_rejected = False
+    except EditError:
+        central_write_rejected = True
+    check("central AI writer enforces --include independently",
+          central_write_rejected and (root / "other/b.py").read_text() == "x = 1\n")
+    reply, _outcome = agent.exec_tool("edit_file", {
+        "path": "other/b.py", "old_str": "x = 1", "new_str": "x = 2",
+    }, state)
+    check("AI edits outside --include are rejected", "outside the selected file scope" in reply
+          and (root / "other/b.py").read_text() == "x = 1\n")
+    reply, _outcome = agent.exec_tool("create_file", {
+        "path": "tests/test_outside.py", "content": "def test_value():\n    assert 1 == 1\n",
+    }, state)
+    check("AI-created tests outside --include are rejected",
+          "outside the selected file scope" in reply and not (root / "tests" / "test_outside.py").exists())
+    symlink_target = root.parent / "audit-scope-outside.py"
+    symlink_target.write_text("must remain unchanged\n", encoding="utf-8")
+    symlink = root / "src" / "linked.py"
+    try:
+        symlink.symlink_to(symlink_target)
+        check("selected writes refuse symlink escapes",
+              safe_write_target(root, "src/linked.py", ai_args) is None
+              and symlink_target.read_text(encoding="utf-8") == "must remain unchanged\n")
+    except OSError as e:
+        check(f"selected writes refuse symlink escapes (symlink unavailable: {type(e).__name__})", True)
+    finally:
+        symlink.unlink(missing_ok=True)
+        symlink_target.unlink(missing_ok=True)
+    check("audit output paths are excluded from source writes",
+          not is_write_path_selected("audit_output/remediation_report.md",
+                                    Namespace(include=None, exclude=["audit_output/*"])))
+    guard_root = root.parent / "concurrent-write-guard"
+    guard_root.mkdir()
+    guard_file = guard_root / "source.py"
+    guard_file.write_text("original\n", encoding="utf-8")
+    guard = Remediator(guard_root, [], Namespace(include=None, exclude=[]), set())
+    guard.write("source.py", "planned\n", "selftest", "optimistic write guard")
+    guard_file.write_text("concurrent update\n", encoding="utf-8")
+    try:
+        guard.apply(None)
+        stale_write_rejected = False
+    except RuntimeError:
+        stale_write_rejected = True
+    check("deterministic apply refuses concurrent file changes",
+          stale_write_rejected and guard_file.read_text(encoding="utf-8") == "concurrent update\n")
 
 
 def _selftest_ai(root, out, site, check):
@@ -3872,6 +4014,7 @@ def _selftest_ai(root, out, site, check):
     test_cmd = " ".join(shlex.quote(x) for x in [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-q"])
     try:
         rc, log = _run_cli(["--repo", str(root), "--output", str(out), "--apply", "--ai", "--ai-yes", "--commit",
+                            "--ai-allow-manifests",
                             "--build", "--replace-third-party", "--test-cmd", test_cmd])
     finally:
         g["call_model"], g["call_model_tools"] = saved[0], saved[1]
